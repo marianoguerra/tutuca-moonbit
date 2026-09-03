@@ -117,7 +117,7 @@ test "collect_view_classes reads :class and @if.class literals" {
   let classes = classes_of(
     (
       #|<template>
-      #|  <a @if.class="equals? .tab 'a'" @then="'tab tab-active'" @else="'tab'"></a>
+      #|  <a @if.class=".tab is 'a'" @then="'tab tab-active'" @else="'tab'"></a>
       #|  <b :class="$'badge badge-{.kind}'"></b>
       #|</template>
     ),

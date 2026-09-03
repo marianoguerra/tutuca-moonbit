@@ -164,7 +164,7 @@ pub fn register_module(
   // decisions; this owns the mechanics — see tgc/SECURITY.md.
   refuse_if_any(policy.check_quotas(facts_of(manifest)))
   let diagnostics : Array[String] = []
-  // Before anything is parsed, because the parse depends on it: a `$$name` in
+  // Before anything is parsed, because the parse depends on it: a `host.name` in
   // a view resolves against `config.view`, and the policy the views are then
   // JUDGED against may have grown an origin from a manifest default this host
   // said it trusts. Both have to be settled first or the two disagree.
@@ -577,7 +577,7 @@ fn screen_view(
   let collector = @lint.LintCollector::new()
   // The SAME table `View::new` got, and passing it is the whole point of this
   // parameter. This is a second, throwaway parse of the same source; if it
-  // resolved `$$name` differently from the tree that will actually render, the
+  // resolved `host.name` differently from the tree that will actually render, the
   // check would be about a document nobody displays. Screening the unresolved
   // tree refuses every config-origin sink; screening a resolved one while
   // rendering an unresolved one checks nothing.

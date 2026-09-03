@@ -13,8 +13,8 @@ pub(all) struct ResolvedConfig {
   /// Declared defaults included, because a module nobody configured should
   /// still be the thing its author shipped.
   all : Map[String, String]
-  /// What a VIEW may name with `$$name`: the origins, and only the ones a host
-  /// stands behind. A text variable is absent because a `$$name` becomes a
+  /// What a VIEW may name with `host.name`: the origins, and only the ones a host
+  /// stands behind. A text variable is absent because a `host.name` becomes a
   /// literal and a literal can pin a URL; an unbound origin default is absent
   /// because a module that could name its own origin would make the rule in
   /// `external_url.mbt` decorative.
@@ -56,7 +56,7 @@ fn ResolvedConfig::canonical(self : ResolvedConfig) -> String {
 /// - a declared `origin` whose own default is not an origin, when the host
 ///   asked to trust those defaults — it asked for something that does not
 ///   exist.
-/// - a `$$name` in a view that resolves to nothing, which the parser reports
+/// - a `host.name` in a view that resolves to nothing, which the parser reports
 ///   on its own (`BadConfigVar`) and `screen_view` surfaces.
 ///
 /// A host that binds a name this module does not declare gets a DIAGNOSTIC

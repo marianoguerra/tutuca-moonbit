@@ -9,7 +9,7 @@ import {
 }
 
 // Values
-pub fn check(Array[@tscript.Decl], @statedef.StateDef, surface? : Surface, retired? : Array[@tscript.Retirement]) -> Array[Finding]
+pub fn check(Array[@tscript.Decl], @statedef.StateDef, surface? : Surface) -> Array[Finding]
 
 pub fn check_rules(@statedef.StateDef) -> Array[Finding]
 

@@ -34,8 +34,8 @@ pub let activity_entry_spec_source : String =
   #|    matched : String
   #|    pathLabel : String
   #|    time : String
-  #|    before : Component?
-  #|    after : Component?
+  #|    before : Instance?
+  #|    after : Instance?
   #|    hasAfter : Bool
   #|
   #|    where matched is one of ["exact", "none"]

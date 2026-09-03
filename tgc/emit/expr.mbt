@@ -145,7 +145,7 @@ fn emit_expr(ctx : Ctx, src : Src, e : @tutuca.Expr) -> String raise Refused {
       )
     EConfigVar(name~, ..) =>
       raise Refused(
-        "`$$\{name}` is a host config variable, which this backend does not carry yet",
+        "`host.\{name}` is a host config variable, which this backend does not carry yet",
       )
     ETypeName(name~, ..) =>
       raise Refused("`\{name}` is a type name, and a type is not a value")

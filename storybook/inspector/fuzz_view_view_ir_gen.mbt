@@ -41,7 +41,7 @@ pub let fuzz_row_spec_source : String =
   #|    disagreed : Bool
   #|    rowClass : String
   #|    current : Bool
-  #|    after : Component?
+  #|    after : Instance?
   #|    open : Bool
   #|
   #|    where verb is one of ["send", "intent", "set", "write"]

@@ -33,7 +33,6 @@ pub fn plan(argv : Array[String]) -> Outcome {
     // five is a command whose name has to be explained. Both spellings work
     // this release; `gen` is the one `help` lists.
     "gen" | "gen-views" => return run_gen_views(command_args, opts)
-    "migrate" => return run_migrate(command_args, opts)
     "gen-tailwind-css" => return run_gen_css(command_args, opts, margaui=false)
     "gen-margaui-css" => return run_gen_css(command_args, opts, margaui=true)
     "watch" => return run_watch(command_args, opts)

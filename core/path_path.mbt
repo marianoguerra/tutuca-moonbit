@@ -249,19 +249,8 @@ pub fn IntentOpts::new(
   on_failed_name? : String,
   on_unhandled_name? : String,
   live_path? : Bool = false,
-  /// The retired spelling of `on_failed_name`, accepted for one release.
-  on_error_name? : String,
 ) -> IntentOpts {
-  {
-    route,
-    on_ok_name,
-    on_failed_name: match on_failed_name {
-      Some(_) => on_failed_name
-      None => on_error_name
-    },
-    on_unhandled_name,
-    live_path,
-  }
+  { route, on_ok_name, on_failed_name, on_unhandled_name, live_path, }
 }
 
 ///|

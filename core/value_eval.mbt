@@ -364,7 +364,7 @@ pub fn Val::eval(self : Val, stack : &Stack) -> Value {
       Null
     }
     EConfigVar(name~, ..) => {
-      warn("`$$\{name}` was not substituted before this was evaluated")
+      warn("`host.\{name}` was not substituted before this was evaluated")
       Null
     }
     ERef(place~, ..) => {

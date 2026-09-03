@@ -2093,7 +2093,7 @@ fn config_manifest(module_name : String) -> DynManifest {
         views: [
           {
             name: "main",
-            html: "<img :src=\"$'{$$mediaOrigin}avatars/{.count}.png'\" />",
+            html: "<img :src=\"$'{host.mediaOrigin}avatars/{.count}.png'\" />",
           },
         ],
       },
@@ -2162,7 +2162,7 @@ test "a config origin lets one module serve two instances" {
 ///|
 /// The trap this design has: `register_module` parses each view TWICE — once
 /// into the tree that renders (`View::new`) and once into a throwaway tree the
-/// policy screens (`screen_view`). If only one of them resolved `$$name`, the
+/// policy screens (`screen_view`). If only one of them resolved `host.name`, the
 /// check would be about a document nobody displays.
 ///
 /// Held from both sides, because each failure looks like success from the

@@ -189,26 +189,7 @@ test "the script block is lifted out unparsed, with where it came from" {
 }
 
 ///|
-test "the block's old name still splits, and the file says it was used" {
-  // `tutuca/state` is what the spec block used to be called. A card in the
-  // field is one file someone else's page loads, so the old name keeps
-  // working — and the file records that it was used, because the one consumer
-  // that talks to an author is the one that should mention it.
-  let vs = @viewfile.split_file(
-    (
-      #|<script type="tutuca/state">
-      #|  state Counter { count: Int }
-      #|</script>
-      #|<template><b @text=".count"></b></template>
-    ),
-  )
-  assert_true(vs.legacy_spec)
-  assert_eq(vs.state.length(), 1)
-  assert_eq(vs.state[0].fields[0].name, "count")
-}
-
-///|
-test "the new name splits the same and is not reported" {
+test "the spec block splits and its fields are read" {
   let vs = @viewfile.split_file(
     (
       #|<script type="tutuca/spec">
@@ -217,21 +198,19 @@ test "the new name splits the same and is not reported" {
       #|<template><b @text=".count"></b></template>
     ),
   )
-  assert_false(vs.legacy_spec)
+  assert_eq(vs.state.length(), 1)
   assert_eq(vs.state[0].fields[0].name, "count")
 }
 
 ///|
-test "one block of each spelling is still two blocks" {
-  // Two specs however they are spelled, and there is no order in which to
-  // merge them — the same answer two `tutuca/spec` blocks get.
+test "two spec blocks are two specs, and there is no order to merge them in" {
   try
     @viewfile.split_file(
       (
         #|<script type="tutuca/spec">
         #|  state A { n: Int }
         #|</script>
-        #|<script type="tutuca/state">
+        #|<script type="tutuca/spec">
         #|  state B { n: Int }
         #|</script>
         #|<template><p>hi</p></template>

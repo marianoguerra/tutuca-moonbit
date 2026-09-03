@@ -324,30 +324,6 @@ test "an operator is transparent to the surface walk" {
 }
 
 ///|
-test "a retired spelling still compiles, and hints once" {
-  // Soft retirement: a compiled loaded module carries its view markup as a
-  // STRING inside the wasm and the host parses it at load time, so a spelling
-  // cannot simply be deleted. It parses, it works, and the hint is the only
-  // thing that tells an author it moved.
-  let s = surface_of(
-    (
-      #|<template>
-      #|  <p @show="equals? .view 'detail'">a</p>
-      #|  <p @hide="equals? .view 'list'">b</p>
-      #|  <p @show="falsy? .open">c</p>
-      #|</template>
-    ),
-  )
-  // It still reads its fields, so nothing downstream is affected.
-  assert_eq(s.fields, ["open", "view"])
-  let retired = s.hints.filter(h => h.contains("retired"))
-  // Two names, two hints — deduped per name, not per use.
-  assert_eq(retired.length(), 2)
-  assert_true(retired.any(h => h.contains("`equals?`") && h.contains("`is`")))
-  assert_true(retired.any(h => h.contains("`falsy?`") && h.contains("`not`")))
-}
-
-///|
 test "a macro argument is an operand in a conditional slot" {
   // The regression this covers, and the exact shape it broke: a `macro:row`
   // that hides itself when the value it was handed is empty. `^value` is a

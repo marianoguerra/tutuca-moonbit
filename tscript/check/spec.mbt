@@ -114,7 +114,6 @@ declare pub fn check(
   decls : Array[@tscript.Decl],
   def : @statedef.StateDef,
   surface? : Surface,
-  retired? : Array[@tscript.Retirement],
 ) -> Array[Finding]
 
 ///|

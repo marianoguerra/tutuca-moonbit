@@ -150,7 +150,7 @@ test "an opaque scope silences the checks inside it" {
   assert_eq(
     gen_err(
       board(
-        "state Board { detail: Any, slot: Component, rows: Array[Any] }",
+        "state Board { detail: Any, slot: Instance, rows: Array[Any] }",
         "<div><x render=\".slot\"></x>" +
         "<ul><li @each=\".rows\"><x text=\".whatever\"></x></li></ul>" +
         "</div>",
@@ -458,7 +458,7 @@ test "a view name that does resolve, or cannot be known, is reported by nothing"
   // the hints channel as much as in the fatal one.
   assert_eq(
     gen_hints(
-      "<script type=\"tutuca/spec\">\nstate Page { sel: Component }\n</script>" +
+      "<script type=\"tutuca/spec\">\nstate Page { sel: Instance }\n</script>" +
       "<template id=\"Page\"><x render=\".sel\" as=\"edit\"></x></template>",
       "Page",
     ).length(),

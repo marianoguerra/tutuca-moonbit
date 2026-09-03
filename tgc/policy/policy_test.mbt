@@ -616,15 +616,15 @@ test "a bound config origin pins a sink the same way a written one does" {
   for
     html in [
       (
-        #|<img :src="$'{$$mediaOrigin}{.avatarPath}'">
+        #|<img :src="$'{host.mediaOrigin}{.avatarPath}'">
       ),
       (
-        #|<a :href="$'{$$mediaOrigin}{.profilePath}'"></a>
+        #|<a :href="$'{host.mediaOrigin}{.profilePath}'"></a>
       ),
       // The slash written in the view rather than carried by the value: the
       // literal head arrives in two pieces and `pinned_prefix` joins them.
       (
-        #|<img :src="$'{$$mediaOrigin}cache/{.avatarPath}'">
+        #|<img :src="$'{host.mediaOrigin}cache/{.avatarPath}'">
       ),
     ] {
     debug_inspect(
@@ -646,7 +646,7 @@ test "an unbound config origin reaches the guest and never a view" {
   let px = @anode.ParseContext::new()
   let tree = @anode.ANode::parse(
     (
-      #|<img :src="$'{$$mediaOrigin}{.avatarPath}'">
+      #|<img :src="$'{host.mediaOrigin}{.avatarPath}'">
     ),
     px,
   ).unwrap()
@@ -678,7 +678,7 @@ test "a text config variable cannot become an origin" {
   let px = @anode.ParseContext::new(config_vars=cfg)
   let tree = @anode.ANode::parse(
     (
-      #|<img :src="$'https://{$$instanceName}/{.avatarPath}'">
+      #|<img :src="$'https://{host.instanceName}/{.avatarPath}'">
     ),
     px,
   ).unwrap()
@@ -771,7 +771,7 @@ test "a literal head split across parts still pins" {
         "C/main",
         parsed_with(
           (
-            #|<img :src="$'{$$o}/{.path}'">
+            #|<img :src="$'{host.o}/{.path}'">
           ),
           { "o": "https://cdn.example" },
         ),
@@ -787,7 +787,7 @@ test "a literal head split across parts still pins" {
         "C/main",
         parsed_with(
           (
-            #|<img :src="$'{.host}/{$$o}/x.png'">
+            #|<img :src="$'{.host}/{host.o}/x.png'">
           ),
           { "o": "https://cdn.example" },
         ),
@@ -827,7 +827,7 @@ test "a config origin does not widen anything else" {
       p.check_view(
         "S/main",
         (
-          #|<iframe :src="$'{$$mediaOrigin}{.path}'"></iframe>
+          #|<iframe :src="$'{host.mediaOrigin}{.path}'"></iframe>
         )
         |> parsed_with(cfg),
       ),

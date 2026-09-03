@@ -2135,7 +2135,7 @@ fn E::expr(self : E, e : @tutuca.Expr) -> (String, @tutuca.Ty) raise NoWay {
       )
     EConfigVar(name~, ..) =>
       raise Cannot(
-        "`$$\{name}` is a value the host bound, and a block is compiled ahead of any host",
+        "`host.\{name}` is a value the host bound, and a block is compiled ahead of any host",
       )
     ERef(..) => raise Cannot("a place is not a value")
     // The two forms only a SLOT produces. A block body cannot write either, so

@@ -22,7 +22,7 @@
     note   : String?
   }
   handle Corpus {
-    message { case0, case1, case2(Int), case3(String), case4(Int), case5(String), case6(String), case7(String), case8(String), case9(String), case10, case11, case12(Int), case13, case14, case15, case16, case17, case26(Int), case27(String), case28(String), case29(String) }
+    message { case0, case1, case2(Int), case3(String), case4(Int), case5(String), case6(String), case7(String), case8(String), case9(String), case10, case11, case12(Int), case13, case14, case15, case16, case17, case26(Int), case27(String), case28(String) }
     intent { case18(String), case19(String), case20(Int), case21(Int), case22(String), case23(String), case24(String), case25(String) }
   }
 </script>
@@ -185,13 +185,8 @@
     .name = why
   }
 
-  /// case 28: the retired Error spelling still names an arm
-  receive case28(why) {
-    .name = why
-  }
-
-  /// case 29: a parameter named `s` is the argument, not the state
-  receive case29(s) {
+  /// case 28: a parameter named `s` is the argument, not the state
+  receive case28(s) {
     .name = s
   }
 

@@ -25,7 +25,7 @@
 /// land.
 pub(all) enum ConfigTy {
   /// An `http(s)` origin, complete through the `/` that ends the authority.
-  /// The ONLY type a view can read: `$$name` resolves to a literal, and a
+  /// The ONLY type a view can read: `host.name` resolves to a literal, and a
   /// literal in a `<img src>` / `<a href>` head is a pinned origin.
   TyOrigin
   /// A string. Guest-side only — prose, a label, a server's name as a person
@@ -64,7 +64,7 @@ pub fn ConfigTy::parse(s : String) -> ConfigTy? {
 /// worth.
 ///
 /// The value is a String at every type, because a String is what crosses to
-/// the guest (`config.get`) and what lands in a view (`$$name`). `TyBool` and
+/// the guest (`config.get`) and what lands in a view (`host.name`). `TyBool` and
 /// `TyNumber` are about the SPELLING being one a guest can parse back, not
 /// about carrying a different runtime type.
 pub(all) struct ConfigBinding {
@@ -241,10 +241,10 @@ pub fn Policy::trusting_manifest_config(self : Policy) -> Policy {
 }
 
 ///|
-/// What `$$name` resolves to in this bundle's views: the ORIGINS and nothing
+/// What `host.name` resolves to in this bundle's views: the ORIGINS and nothing
 /// else.
 ///
-/// The narrowing is the enforcement `ConfigTy` describes. A `$$name` resolves
+/// The narrowing is the enforcement `ConfigTy` describes. A `host.name` resolves
 /// to a `Const` the URL rule will happily pin, so a text variable reachable
 /// from a view would be a text variable that could be an origin. Leaving them
 /// out of the table means a view naming one gets `BadConfigVar` — a sentence

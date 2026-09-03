@@ -166,10 +166,10 @@ pub(all) enum Expr {
   /// resolve to nothing — `tscript/check` refuses it by name rather than
   /// letting it read Null.
   EMacroVar(name~ : String, span~ : Span)
-  /// `$$name` — a value the HOST bound, substituted as a literal and not
+  /// `host.name` — a value the HOST bound, substituted as a literal and not
   /// re-parsed. The mirror of `EMacroVar`, and the MARKING is the whole
   /// difference between them: a `^name` constant is the caller's source and
-  /// carries `from_macro`, a `$$name` constant is the host's and does not.
+  /// carries `from_macro`, a `host.name` constant is the host's and does not.
   EConfigVar(name~ : String, span~ : Span)
   /// A bare name. In a declaration body it is a parameter; in a handler slot
   /// it is an event argument, resolved against the closed table in

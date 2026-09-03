@@ -50,7 +50,7 @@ pub let comp_name_spec_source : String =
   #|  }
   #|
   #|  state CompSection {
-  #|    items : Array[Component]
+  #|    items : Array[Instance]
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int

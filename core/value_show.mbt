@@ -119,6 +119,13 @@ fn val_source(val : Expr) -> String {
       // holds once the vocabulary admits one.
       if args.is_empty() {
         name
+      } else if is_infix_op(name) && args.length() == 2 {
+        // A comparison is written INFIX and has to print that way. The view
+        // slot parser builds one as an application — the same node a named
+        // builtin makes — so the shape says nothing about the spelling, and a
+        // printer that ignored the difference would answer a form nothing
+        // parses.
+        operand_source(args[0]) + " " + name + " " + operand_source(args[1])
       } else {
         name + " " + args.map(a => operand_source(a)).join(" ")
       }
@@ -164,4 +171,12 @@ pub fn Expr::to_source(self : Expr) -> String {
 ///|
 pub impl Show for Val with fn output(self, logger) {
   logger.write_string(val_source(self))
+}
+
+///|
+/// Written between its operands rather than in front of them. The compare
+/// family and nothing else: `and` / `or` / `implies` are named applications in
+/// a view slot and read as such.
+fn is_infix_op(name : String) -> Bool {
+  name is ("is" | "is not" | "<" | "<=" | ">" | ">=")
 }

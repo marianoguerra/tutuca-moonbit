@@ -73,7 +73,7 @@ fn forms() -> Array[(String, @core.Expr)] {
       ),
     ),
     ("^macroVar", EMacroVar(name="title", span=@core.no_span)),
-    ("$$configVar", EConfigVar(name="host", span=@core.no_span)),
+    ("host.configVar", EConfigVar(name="host", span=@core.no_span)),
     ("not .count", EUnary(op=UNot, operand=field, span=@core.no_span)),
     ("-.count", EUnary(op=UNeg, operand=field, span=@core.no_span)),
     (
@@ -157,7 +157,7 @@ test "the admission table, every form against every position" {
       #|param.x               !         !     !       !    !         !        !       !     !         !          .    
       #|&.rows[.k]            !         !     !       !    !         !        !       !     !         !          .    
       #|^macroVar             -         -     -       -    -         -        -       -     -         -          .    
-      #|$$configVar           -         -     -       -    -         -        -       -     -         -          .    
+      #|host.configVar        -         -     -       -    -         -        -       -     -         -          .    
       #|not .count            .         -     -       -    -         -        -       -     -         -          .    
       #|-.count               !         !     !       !    !         !        !       !     !         !          .    
       #|a and b               .         -     -       -    -         -        -       -     -         -          .    

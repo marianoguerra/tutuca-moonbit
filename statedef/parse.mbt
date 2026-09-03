@@ -1848,10 +1848,7 @@ fn named(
           )
       }
     }
-    // `Component` is the retired spelling. A field holds an INSTANCE of a
-    // component, not the component — the same word named the definition and
-    // the thing made from it.
-    "Instance" | "Component" =>
+    "Instance" =>
       if args.is_empty() {
         TyComp(None)
       } else {

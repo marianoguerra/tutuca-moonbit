@@ -231,30 +231,6 @@ let commands : Array[CommandSpec] = [
       ),
     ],
   },
-  // Carrying a tree across a rename (migrate.mbt). Reads a view file and
-  // writes it back with retired spellings replaced; needs no module and no
-  // compiler, because a retirement is a fact about the language rather than
-  // about any one component.
-  {
-    name: "migrate",
-    describe: "Rewrite view files from a retired spelling of the language to the current one.",
-    flags: [
-      flag(
-        "write",
-        type_="boolean",
-        description="Apply the edits. Without it nothing on disk is touched and the changes are only listed.",
-      ),
-      help_flag,
-    ],
-    positionals: [
-      positional(
-        "path",
-        required=true,
-        description="View files or directories to rewrite.",
-        note="A directory contributes the .html files that already have a generated sibling, the same rule `gen` and `watch` follow.",
-      ),
-    ],
-  },
   // Reading and shortening an execution trace (trace.mbt). One command over
   // one file: the flags say what to do to it, and no flags says what is in it.
   //

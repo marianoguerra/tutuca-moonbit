@@ -165,14 +165,14 @@ fn origin_of(url : String) -> String? {
 /// `origin_of` insists on.
 ///
 /// A run rather than `parts[0]` alone because a literal head can arrive in more
-/// than one piece. `$'{$$mediaOrigin}/{.path}'` splits into the host's origin,
+/// than one piece. `$'{host.mediaOrigin}/{.path}'` splits into the host's origin,
 /// the `/`, and the field: three parts whose first two are both settled, and
 /// reading only the first would refuse a spelling that pins perfectly well.
 /// Concatenating stops being safe exactly where the parts stop being literal,
 /// which is the same place the old rule stopped.
 ///
 /// `from_macro` is excluded: a `^name` constant is the CALLER's string wearing
-/// a literal's shape, and the caller is the guest. A `$$name` constant is the
+/// a literal's shape, and the caller is the guest. A `host.name` constant is the
 /// HOST's string wearing a literal's shape, so it is not excluded — that is the
 /// whole of what config vars buy (`config.mbt`).
 fn pinned_prefix(val : @tutuca.Val) -> String? {

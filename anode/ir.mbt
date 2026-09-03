@@ -66,7 +66,7 @@ fn ParseContext::from_ir(
     parent: None,
     frame: None,
     // Nothing left to resolve: an ahead-of-time tree was parsed by the
-    // generator, so every `$$name` in it is already the literal it became.
+    // generator, so every `host.name` in it is already the literal it became.
     config_vars: Map([]),
     val_ctx: None,
     current_tag: None,

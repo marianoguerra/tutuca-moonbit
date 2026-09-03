@@ -40,7 +40,6 @@ inspect a component, the answer is a `moon test` block.
 | Command                  | Purpose                                                                                                                |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
 | `gen [path...]`  | Compile `.html` files of views into companion MoonBit modules of typed view surfaces. Paths are files or directories (a directory contributes the `.html` files that already have a generated sibling). Flags: `--name <Name>`, `--out <dir-or-file>`, `--dry-run`, `--no-ir`. See below |
-| `migrate [path...]`      | Rewrite view files from a retired spelling of the language to the current one. Says what would change and writes nothing without `--write`. Paths follow `gen`' rule. See below |
 | `gen-tailwind-css [path...]` | Compile the classes a project's views use into CSS, against stock Tailwind. Flags: `-o/--out <file>`, `--entry <file>`, `--classes <file>`, `--print-classes`, `--polyfills <0..3>`. See below |
 | `gen-margaui-css [path...]` | The same, against Tailwind **+ margaui**'s component layers (`btn`, `card`, `stat`, …) |
 | `watch [path...]`        | Regenerate view modules on every save. Paths are `.html` files or directories (which contribute the `.html` files that already have a generated sibling). Flags: `--name`, `--out`, `--no-ir`, and `--tailwind-css`/`--margaui-css` (+ `--css-entry`, `--css-classes`) to keep a stylesheet current too |
@@ -252,37 +251,6 @@ is not optional bookkeeping: it is the only thing that ties the two together.
 Run `gen` (or leave `watch` running) after every view edit, and have CI
 re-run it and fail on any difference — `tutuca gen src/` followed by
 `git diff --exit-code` is the whole check.
-
-### `migrate` — carrying a tree across a rename
-
-```
-tutuca migrate src/            # say what would change
-tutuca migrate src/ --write    # apply it
-```
-
-A rename in the language lands with the old spelling still parsing for one
-release. `migrate` is what carries your files across in between — and after
-that release the old spelling stops parsing, so a tree that was never migrated
-stops building.
-
-Each line is `path:offset  rule  old -> new`. `rule` names the retirement, so a
-file with nine edits from one rename reads differently from one with nine
-renames touching it once.
-
-Every edit replaces a **span of the original text**. Comments, blank lines and
-alignment come back exactly as you left them: nothing here re-serialises a
-declaration, which is the shape that would reformat a file it only meant to
-rename a word in. Running it twice is running it once, so `--write` in a
-pre-commit hook is safe.
-
-A file that cannot be split into blocks is reported and skipped rather than
-half-rewritten, and the rest of the tree still migrates.
-
-Worth putting in CI beside the drift check above, for the same reason and
-against a different failure: a retired spelling does not fail a build. It sits
-in a file that parses while the code reading for it drifts away underneath —
-this repo lost a benchmark corpus and a playground editor pane to exactly that,
-neither of which failed anything for months.
 
 ### `gen-tailwind-css` / `gen-margaui-css` — build-time CSS
 

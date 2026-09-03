@@ -127,15 +127,6 @@ pub(all) struct ViewFile {
   /// at index 0, so moving the root to the front would move a stylesheet as a
   /// side effect of saying which component is the interesting one.
   root : String
-  /// The file spelled its spec block `tutuca/spec`, the name that block used
-  /// to have.
-  ///
-  /// A fact about the file and not a failure, which is why it rides here rather
-  /// than in `FileError`: the block parsed, the components are complete, and
-  /// nothing downstream behaves differently. What it is for is letting the ONE
-  /// consumer that talks to an author — `gen` — say so, without every
-  /// other consumer of a `ViewFile` having to grow a warning channel to ignore.
-  legacy_spec : Bool
 } derive(Eq, @debug.Debug)
 
 ///|

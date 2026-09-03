@@ -4172,7 +4172,7 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   depth arrives in the view as a `rail` list to draw rather than as a margin.
 
   Two things fell out of building it and are written up in
-  [`guests/bluesky/README.md`](guests/bluesky/README.md):
+  `guests/bluesky/README.md`:
 
   - A view cannot iterate a value it found inside another iteration (`@each`
     takes a field path, not a loop binding), so a message's rich text can only

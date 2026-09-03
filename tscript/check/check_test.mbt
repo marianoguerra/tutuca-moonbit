@@ -36,7 +36,7 @@ fn schema() -> String {
     #|  pri    : Priority
     #|  blob   : Any
     #|  maybe  : String?
-    #|  row    : Component
+    #|  row    : Instance
     #|  provide { count = .count }
     #|  lookup { theme, color = 'gray' }
     #|}
@@ -166,7 +166,7 @@ test "a handler for a message the schema does not declare" {
   assert_eq(messages_with_views("receive rowPicked(i) { .count = i }", []), [
     "the schema declares no `receive` case `rowPicked`; add it to `variant receive` in the <script type=\"tutuca/spec\"> block",
   ])
-  assert_eq(codes("intent rowPicked(i) { .count = i }"), [])
+  assert_eq(codes("answer rowPicked(i) { .count = i }"), [])
 }
 
 ///|
@@ -302,7 +302,7 @@ test "a collection method has to fit its receiver" {
 ///|
 test "an effect's message name has to be known before anything runs" {
   assert_eq(codes("receive x { send 'flash' .name }"), [])
-  assert_eq(codes("receive x { stop }"), [])
+  assert_eq(codes("receive x { drop }"), [])
   assert_eq(codes("receive x { sendAt &.labels[0] 'select' }"), [])
   assert_eq(messages("receive x { send .name 'body' }"), [
     "`send` needs a raw quoted name or a declared protocol operation",
@@ -324,7 +324,7 @@ test "raw, implicit, and named-protocol effects are distinct" {
 ///|
 test "a binding is assignable only where bindings are produced" {
   assert_eq(codes("enrich rowInfo { @cls = 'row' }"), [])
-  assert_eq(codes("enrichScope header { @title = .name }"), [])
+  assert_eq(codes("bindWith header { @title = .name }"), [])
   assert_eq(messages("receive x { @cls = 'row' }"), [
     "`@cls` is a binding, and only `enrich` and `bindWith` produce bindings — a handler assigns state, and `new` builds a value in `cur`",
   ])
@@ -344,14 +344,14 @@ test "a substituted sigil in a block is refused, and says where it belongs" {
   // same language and a slot DOES stand in a macro frame. That asymmetry is
   // real and is why these two are not in the slot/block "refuse alike" corpus.
   assert_eq(codes("compute a { ^title }"), ["NO_MACRO_FRAME"])
-  assert_eq(codes("compute a { $$origin }"), ["NO_CONFIG_FRAME"])
+  assert_eq(codes("compute a { host.origin }"), ["NO_CONFIG_FRAME"])
   assert_eq(codes("pred p { empty? ^label }"), ["NO_MACRO_FRAME"])
-  assert_eq(codes("receive x { .name = $$origin }"), ["NO_CONFIG_FRAME"])
+  assert_eq(codes("receive x { .name = host.origin }"), ["NO_CONFIG_FRAME"])
   assert_true(
     messages("compute a { ^title }")[0].contains("has no macro slots"),
   )
   assert_true(
-    messages("compute a { $$origin }")[0].contains("ahead of any host"),
+    messages("compute a { host.origin }")[0].contains("ahead of any host"),
   )
 }
 
@@ -501,26 +501,26 @@ test "a finding points at the thing it is about" {
 ///|
 test "a new gives the target a type, so a field of it is checked" {
   assert_eq(
-    codes("receive x {\n  new Label\n  @cur.text = 'a'\n  .labels.push @cur\n}"),
+    codes("receive x {\n  new Label\n  cur.text = 'a'\n  .labels.push cur\n}"),
     [],
   )
-  // The payoff for typing the target: `@cur.dnoe` reads exactly like
+  // The payoff for typing the target: `cur.dnoe` reads exactly like
   // `.labels[0].dnoe` does, because it goes through the same step walk.
-  assert_eq(messages("receive x {\n  new Label\n  @cur.dnoe = 'a'\n}"), [
+  assert_eq(messages("receive x {\n  new Label\n  cur.dnoe = 'a'\n}"), [
     "`Label` has no field `dnoe`",
   ])
-  assert_eq(messages("receive x {\n  new Label\n  @cur.done = 'yes'\n}"), [
+  assert_eq(messages("receive x {\n  new Label\n  cur.done = 'yes'\n}"), [
     "this place is Bool, but the value is String",
   ])
 }
 
 ///|
 test "the target does not exist until a new makes one" {
-  assert_eq(messages("receive x { .labels.push @cur }"), [
+  assert_eq(messages("receive x { .labels.push cur }"), [
     "`cur` holds what a `new` built, and no `new` has run here — write `new <Type>` above this",
   ])
   // And the report is once, not once per step below it.
-  assert_eq(codes("receive x { @cur.text = 'a' }"), ["NO_TARGET"])
+  assert_eq(codes("receive x { cur.text = 'a' }"), ["NO_TARGET"])
 }
 
 ///|
@@ -542,8 +542,8 @@ test "a type the state does not declare is named, with the nearest one" {
 
 ///|
 test "a collection method on the target is checked against what it built" {
-  assert_eq(codes("receive x {\n  new Array[String]\n  @cur.push 'a'\n}"), [])
-  assert_eq(messages("receive x {\n  new Label\n  @cur.push 'a'\n}"), [
+  assert_eq(codes("receive x {\n  new Array[String]\n  cur.push 'a'\n}"), [])
+  assert_eq(messages("receive x {\n  new Label\n  cur.push 'a'\n}"), [
     "`push` does not apply to Label",
   ])
 }
@@ -553,14 +553,14 @@ test "a target built in a branch is known only where both arms agree" {
   // Same type on both sides: known below.
   assert_eq(
     codes(
-      "receive x {\n  if .ok { new Label } else { new Label }\n  @cur.text = 'a'\n}",
+      "receive x {\n  if .ok { new Label } else { new Label }\n  cur.text = 'a'\n}",
     ),
     [],
   )
   // One arm only: nothing is there on the other path, so a read below reports.
   assert_eq(
     codes(
-      "receive x {\n  if .ok { new Label } else { .count = 1 }\n  @cur.text = 'a'\n}",
+      "receive x {\n  if .ok { new Label } else { .count = 1 }\n  cur.text = 'a'\n}",
     ),
     ["NO_TARGET"],
   )
@@ -568,7 +568,7 @@ test "a target built in a branch is known only where both arms agree" {
   // the field goes unchecked rather than misreported.
   assert_eq(
     codes(
-      "receive x {\n  if .ok { new Label } else { new Array[String] }\n  @cur.dnoe = 'a'\n}",
+      "receive x {\n  if .ok { new Label } else { new Array[String] }\n  cur.dnoe = 'a'\n}",
     ),
     [],
   )
@@ -578,12 +578,12 @@ test "a target built in a branch is known only where both arms agree" {
 test "the target is not a binding an enrich can publish" {
   // It never reaches a view — the interpreter withholds it — so an enricher
   // that assigned it would be writing into a workbench and calling it output.
-  assert_eq(messages("enrich row { @cur = 'x' }"), [
+  assert_eq(messages("enrich row { cur = 'x' }"), [
     "`cur` is the target `new` builds into, not a binding this `enrich` can hand a view — bind another name",
   ])
   // Building one and publishing something else is fine.
   assert_eq(
-    codes("enrich row {\n  new Label\n  @cur.text = 'a'\n  @tag = @cur.text\n}"),
+    codes("enrich row {\n  new Label\n  cur.text = 'a'\n  @tag = cur.text\n}"),
     [],
   )
 }
@@ -770,13 +770,13 @@ fn codes_with_views(
 /// `reply` answers whoever asked, in either bucket, and the bucket decides
 /// where the name comes from.
 ///
-/// This is what the `sendReply` retirement bought: there was a second word for
+/// This is what the `reply` retirement bought: there was a second word for
 /// the same operation, and the only thing it said that this one does not is
 /// which bucket you were in — which the block already says, three lines up.
 test "reply answers whoever asked, in either bucket" {
   // An intent's raiser declared arms, so the walk names the answer and the one
   // argument is the value.
-  assert_eq(codes("intent rowPicked(k) { reply .count }"), [])
+  assert_eq(codes("answer rowPicked(k) { reply .count }"), [])
   // A message's sender declared none, so the replier names it: the first
   // argument is a message name, and a value there is reported as one.
   assert_eq(codes("receive resetTo(n) { reply 'wasReset' .count }"), [])
@@ -794,7 +794,7 @@ test "reply answers whoever asked, in either bucket" {
 /// message down is a `reply` that says so — which the sender reads as an
 /// ordinary message, because that is what it is.
 test "fail ends the walk an intent is on, and a message is not on one" {
-  assert_eq(codes("intent rowPicked(k) { fail 'no' }"), [])
+  assert_eq(codes("answer rowPicked(k) { fail 'no' }"), [])
   assert_eq(messages("receive click { fail 'no' }"), [
     "`fail` ends the walk an intent is on, and `receive click` is not on one — to turn a message down, answer the sender with a `reply` that says so",
   ])
@@ -812,7 +812,7 @@ test "forward hands on a walk, and a bare ask starts one" {
   assert_eq(codes("receive resetTo(n) { ask }"), [])
   // The retired spelling in a `receive` body normalises to `ask`, so it is the
   // legal one and reports nothing.
-  assert_eq(codes("receive resetTo(n) { forward }"), [])
+  assert_eq(codes("receive resetTo(n) { ask }"), [])
   assert_eq(messages("compute a { .count }"), [])
   assert_eq(messages("enrich row { forward }"), [
     "`forward` hands on the walk this body is answering, and `enrich row` is not on one — to turn a message into an intent, write a bare `ask`",
@@ -845,7 +845,7 @@ test "reply and fail are not dynamic message names" {
 
 ///|
 test "a view name the block neither answers nor forwards is a warning" {
-  assert_eq(codes_with_views("receive save(t) { forward }", ["save"]), [])
+  assert_eq(codes_with_views("receive save(t) { ask }", ["save"]), [])
   assert_eq(codes_with_views("receive save(t) { .name = t }", ["save"]), [])
   // The handler answers a name the SCHEMA declares, and the view's `saev` is
   // answered by nothing — one warning, and no NO_SUCH_MESSAGE, because
@@ -904,7 +904,7 @@ test "a generated mutator answers a view name, so it is not reported" {
 test "an intent declaration does not answer a view name" {
   // A view raises MESSAGES. An `intent` declaration answers a routed dispatch,
   // which is a different channel, so it does not silence this rule.
-  assert_eq(codes_with_views("intent save(t) { reply 1 }", ["save"]), [
+  assert_eq(codes_with_views("answer save(t) { reply 1 }", ["save"]), [
     "NO_VIEW_HANDLER",
   ])
 }

@@ -101,7 +101,7 @@ test "…and the child-component slots, named and bare" {
   inspect(
     shown(
       (
-        #|state Board { editor: Sheet, preview: Component }
+        #|state Board { editor: Sheet, preview: Instance }
         #|state Sheet { text: String }
       ),
     ),

@@ -57,9 +57,9 @@ pub(all) enum IssueKind {
 /// What was malformed (the `info.role`)
 pub(all) enum IssueRole {
   BadMacroVar // "macro-var": unknown ^name
-  /// "config-var": a `$$name` the host bound nothing to. Separate from
+  /// "config-var": a `host.name` the host bound nothing to. Separate from
   /// `BadMacroVar` because the two name different parties: an unknown `^name`
-  /// is the view's mistake, an unknown `$$name` is a view asking for something
+  /// is the view's mistake, an unknown `host.name` is a view asking for something
   /// the HOST did not hand over, and the fix is in a different file.
   BadConfigVar
   BadHandlerName // "handler-name"
@@ -99,7 +99,7 @@ pub(all) struct Issue {
 ///
 /// `config_vars` is the HOST's table, and it is separate from `macro_vars` for
 /// the reason the two sigils are separate: a `^name` resolves to the CALLER's
-/// string and a `$$name` resolves to the host's, and the difference decides
+/// string and a `host.name` resolves to the host's, and the difference decides
 /// whether the result may pin a URL origin. See `parse_tok`.
 pub struct ParseCtx {
   macro_vars : Map[String, String]

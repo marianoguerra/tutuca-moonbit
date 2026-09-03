@@ -27,7 +27,7 @@
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let instance_fields_spec_source : String =
   #|  state InstanceFields {
-  #|    items : Array[Component]
+  #|    items : Array[Instance]
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int

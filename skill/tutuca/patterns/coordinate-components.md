@@ -34,7 +34,7 @@ not happen is the one outcome nobody can reason about afterwards.
 
   state Feed { items: Array[Any], isLoading: Bool, error: String }
   /// The three `loadData…` names are the ANSWERS. Declaring them is what makes
-  /// `intent lex 'loadData'` a request rather than a notification — the
+  /// `ask lex 'loadData'` a request rather than a notification — the
   /// generator reads this list and fills the intent's opts in.
   handle Feed {
     message { init, loadDataOk(Array[Any]), loadDataFailed(String),
@@ -54,7 +54,7 @@ not happen is the one outcome nobody can reason about afterwards.
 <script type="tutuca/script" for="Log">
   /// Name the JOB, not the target, and let the route find who does it. `dyn`
   /// walks the ancestors, starting at the sender's PARENT.
-  receive onItemClick { intent dyn 'itemSelected' .label }
+  receive onItemClick { ask dyn 'itemSelected' .label }
 
   /// The ancestor that answers. The first `intent` arm that REPLIES ends the
   /// walk; one that only records it is an observer.
@@ -63,7 +63,7 @@ not happen is the one outcome nobody can reason about afterwards.
 
 <script type="tutuca/script" for="Feed">
   /// `lex` walks the IntentFns registered on the SCOPE, not the tree. A bare
-  /// `intent` takes `dyn lex`: try the ancestors, then the scope.
+  /// `ask` takes `dyn lex`: try the ancestors, then the scope.
   receive init {
     ask lex 'loadData'
     .isLoading = true
@@ -119,7 +119,7 @@ as ordinary `receive` arms. `<name>Unhandled` means the route ran out with
 nobody claiming it, which is a different sentence from a handler failing.
 
 Carry the most granular payload across the channel, not whole objects you
-won't use — `intent dyn 'itemSelected' .label` over passing the entire
+won't use — `ask dyn 'itemSelected' .label` over passing the entire
 instance (same reasoning as handler args:
 [testing.md](../testing.md) *Designing handlers so tests stay simple*).
 
@@ -139,7 +139,7 @@ update=(s : ChatState, msg, ctx) => match msg {
 },
 
 // 2. An intent naming its OWN answers, which is all `IntentOpts` carries. The
-//    block's `intent lex 'loadData'` gets these three filled in from the
+//    block's `ask lex 'loadData'` gets these three filled in from the
 //    schema; writing them here is how a sender names its own.
 update=(s : FeedState, msg, ctx) => match msg {
   Receive("loadAnotherWay", _) => {

@@ -390,7 +390,7 @@ pub fn value_cases() -> Array[ValueCase] {
     value_case(
       "a scope enricher is handed no row, and answers the map",
       // `storybook/examples/collections.html`'s RenderWithScope, in one line.
-      "enrichScope info { @len = len .name }",
+      "bindWith info { @len = len .name }",
       "info",
       role=VEnrichScope,
       answer=ABinds({ "len": Num(3) }),
@@ -801,7 +801,7 @@ pub fn cases() -> Array[Case] {
     // half of the same rule.
     intent_case(
       "a requires that does not hold takes the reply with it",
-      "pred hasSome { .count > 0 }\nintent saveDraft(text) requires hasSome {\n  .count += 1\n  reply .count\n}",
+      "pred hasSome { .count > 0 }\nanswer saveDraft(text) requires hasSome {\n  .count += 1\n  reply .count\n}",
       "saveDraft",
       args=[Str("hi")],
       after=None,
@@ -809,7 +809,7 @@ pub fn cases() -> Array[Case] {
     ),
     intent_case(
       "an ensures that does not hold takes the reply with it",
-      "pred small { .count > 5 }\nintent saveDraft(text) ensures small {\n  .count += 1\n  reply .count\n}",
+      "pred small { .count > 5 }\nanswer saveDraft(text) ensures small {\n  .count += 1\n  reply .count\n}",
       "saveDraft",
       args=[Str("hi")],
       after=None,
@@ -832,16 +832,6 @@ pub fn cases() -> Array[Case] {
       "a failure answer arrives as an ordinary message too",
       "receive saveDraftFailed(why) { .name = why }",
       "saveDraftFailed",
-      args=[Str("disk full")],
-      after=Some(with_fields({ "name": Str("disk full") })),
-    ),
-    // The retired spelling, which a backend still has to answer for one
-    // release. It is an ordinary `receive` name and always was — what changed
-    // is which name the WALK derives, and that is not what this row is about.
-    recv_case(
-      "the retired Error spelling still names an arm",
-      "receive saveDraftError(why) { .name = why }",
-      "saveDraftError",
       args=[Str("disk full")],
       after=Some(with_fields({ "name": Str("disk full") })),
     ),

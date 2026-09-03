@@ -49,7 +49,7 @@ test "an application resolves its name and applies the builtin" {
   assert_true(app("empty?", "items").eval(stack) is Bool(true))
   assert_true(app("empty?", "name").eval(stack) is Bool(false))
   assert_true(app("truthy?", "name").eval(stack) is Bool(true))
-  assert_true(app("falsy?", "items").eval(stack) is Bool(true))
+  assert_true(app("empty?", "items").eval(stack) is Bool(true))
   assert_true(app("null?", "items").eval(stack) is Bool(false))
   // A name nothing answers evaluates to Null rather than failing: the parser
   // refuses one, so reaching here means an App built by hand or decoded from
@@ -88,10 +88,10 @@ test "MethodVal.eval_as_handler hands back the raw function" {
 }
 
 ///|
-test "equals? eval compares the field value against the literal" {
+test "is eval compares the field value against the literal" {
   let stack : FieldStack = { fields: { "view": Str("detail") }, }
   fn eq(lit : String) -> @core.Val {
-    Expr::app("equals?", [Expr::field("view"), Expr::lit(LStr(lit))])
+    Expr::app("is", [Expr::field("view"), Expr::lit(LStr(lit))])
   }
 
   assert_true(eq("detail").eval(stack) is Bool(true))

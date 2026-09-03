@@ -429,7 +429,7 @@ fn parse_wiring(c : Map[String, Json], key : String) -> Array[(String, String)] 
 /// The variables a module declares. A malformed entry RAISES rather than
 /// being kept: a config var with no name or an unreadable type is not a
 /// declaration at all — nothing can be bound to it and nothing can refuse it,
-/// so letting it through would leave a `$$name` in the views with no way to
+/// so letting it through would leave a `host.name` in the views with no way to
 /// say what went wrong.
 fn parse_config(
   root : Map[String, Json],

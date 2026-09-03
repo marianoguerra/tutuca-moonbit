@@ -128,14 +128,16 @@ fn parse_tok(tok : Token, ctx : ParseCtx) -> @tutuca.Val? {
   if s.contains("{") || s.contains("}") {
     return None
   }
+  // `host.name` — a value the HOST bound, read the same way a block reads it.
+  // Before the `match` below, because the token starts with an ordinary
+  // identifier character and would otherwise be read as a state field.
+  if s.has_prefix(config_root + ".") {
+    let name = s[config_root.length() + 1:].to_owned()
+    return resolve_config_var(name, s, tok.span, ctx)
+  }
   match c0 {
     '^' => resolve_macro_var(s[1:].to_owned(), s, tok.span, ctx)
-    '$' =>
-      if s.get_char(1) is Some('$') {
-        resolve_config_var(s[2:].to_owned(), s, tok.span, ctx)
-      } else {
-        mk_id(s[1:].to_owned(), n => @tutuca.Expr::method_(n, span~))
-      }
+    '$' => mk_id(s[1:].to_owned(), n => @tutuca.Expr::method_(n, span~))
     '@' => {
       // @name bind, or @name.member — one-level member read on a binding.
       let rest = s[1:].to_owned()
@@ -294,7 +296,7 @@ fn parse_str_tpl(s : String, ctx : ParseCtx, span : Span) -> @tutuca.Val {
         // what a hole always did; and it is not TEXT, which matters more —
         // `pinned_prefix` (`tgc/policy/external_url.mbt`) concatenates the
         // literal head of a template to decide whether it pins an origin, and
-        // a hole that vanished would let `$'https://{$$unbound}.evil/'` read as
+        // a hole that vanished would let `$'https://{host.unbound}.evil/'` read as
         // a literal `https://.evil/`. The parse issue was already recorded.
         match parse_text(expr.to_string(), ctx) {
           Some(ELit(lit=LStr(t), from_macro~, ..)) =>
@@ -376,12 +378,12 @@ fn resolve_macro_var(
 }
 
 ///|
-/// `$$name` — a string the HOST bound, substituted here as a literal.
+/// `host.name` — a string the HOST bound, substituted here as a literal.
 ///
 /// The mirror of `resolve_macro_var`, and the marking is the whole difference
 /// between them. A `^name` constant is the CALLER's string wearing a literal's
 /// shape, and the caller is the guest, so it is `from_macro=true` and cannot
-/// pin a URL origin. A `$$name` constant is the HOST's string wearing a
+/// pin a URL origin. A `host.name` constant is the HOST's string wearing a
 /// literal's shape, and the host is the one party the origin rule was ever
 /// about — so it is `from_macro=false` and pins, which is the point.
 ///
@@ -427,7 +429,7 @@ fn parse_single(
 /// A conditional slot: ONE expression, in the block's grammar.
 ///
 /// A single token still goes through `parse_tok`, so `.isOpen`, `$canSubmit`
-/// and `@isSelected` cost nothing and `^name` / `$$name` keep the substitution
+/// and `@isSelected` cost nothing and `^name` / `host.name` keep the substitution
 /// semantics only that path implements. Anything longer is handed to
 /// `parse_expr_source` and lowered — which is what makes a slot and a
 /// block body the same language rather than two that resemble each other.
@@ -457,7 +459,7 @@ pub fn parse_bool(s : String, ctx : ParseCtx) -> @tutuca.Val? {
 /// value itself, so an operand's position is already the one the reader is
 /// looking at and nothing is rebased.
 fn parse_expression(s : String, ctx : ParseCtx) -> @tutuca.Val? {
-  // `^name` and `$$name` reach here as ORDINARY OPERANDS, and the grammar has
+  // `^name` and `host.name` reach here as ORDINARY OPERANDS, and the grammar has
   // a leaf for each. They are resolved by substitution during `resolve_expr`,
   // through the same two functions the single-token path calls, which is what
   // keeps one meaning per sigil rather than two that resemble each other.
@@ -505,7 +507,7 @@ fn slice_span(src : String, span : Span) -> String {
 /// tree (`@tutuca.Expr`), and what used to be a lowering is now three things
 /// that stayed.
 ///
-///   - SUBSTITUTION. `^name` and `$$name` are replaced by what the caller and
+///   - SUBSTITUTION. `^name` and `host.name` are replaced by what the caller and
 ///     the host bound, through the same two resolvers the single-token path
 ///     calls, so a `^name` in `empty? ^name` means exactly what a `^name`
 ///     alone means.
@@ -533,7 +535,7 @@ fn resolve_expr(
     EMacroVar(name~, span~) =>
       return resolve_macro_var(name, "^" + name, span, ctx)
     EConfigVar(name~, span~) =>
-      return resolve_config_var(name, "$$" + name, span, ctx)
+      return resolve_config_var(name, "\{config_root}.\{name}", span, ctx)
     _ => ()
   }
   if e.admitted_in(pos) is Refused(why) {

@@ -27,7 +27,7 @@
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let schema_scalar_spec_source : String =
   #|  state SchemaScalar {
-  #|    items : Array[Component]
+  #|    items : Array[Instance]
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int
@@ -47,7 +47,7 @@ pub let schema_scalar_spec_source : String =
   #|  }
   #|
   #|  state SchemaObject {
-  #|    items : Array[Component]
+  #|    items : Array[Instance]
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int
@@ -67,7 +67,7 @@ pub let schema_scalar_spec_source : String =
   #|  }
   #|
   #|  state SchemaArray {
-  #|    items : Array[Component]
+  #|    items : Array[Instance]
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int
@@ -87,7 +87,7 @@ pub let schema_scalar_spec_source : String =
   #|  }
   #|
   #|  state SchemaEnum {
-  #|    items : Array[Component]
+  #|    items : Array[Instance]
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int
@@ -107,7 +107,7 @@ pub let schema_scalar_spec_source : String =
   #|  }
   #|
   #|  state SchemaCombinator {
-  #|    items : Array[Component]
+  #|    items : Array[Instance]
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int

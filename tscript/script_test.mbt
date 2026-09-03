@@ -85,7 +85,7 @@ test "the seven declaration kinds" {
   )
   // The retired spelling still parses, and comes back as the current one.
   assert_eq(
-    trip("enrichScope header { @title = .name }"),
+    trip("bindWith header { @title = .name }"),
     "bindWith header {\n  @title = .name\n}",
   )
 }
@@ -202,15 +202,13 @@ test "the collection methods are receiver-first" {
 }
 
 ///|
-/// `@cur` still parses, and comes back as `cur`.
+/// `cur` still parses, and comes back as `cur`.
 ///
 /// It was never a binding — a binding is what an `enrich` produces and a view
 /// reads — so the sigil said it lived in a namespace it was reserved OUT of.
 test "the retired target sigil round-trips to the bare name" {
   assert_eq(
-    trip(
-      "receive init {\n  new Label\n  @cur.text = 'a'\n  .labels.push @cur\n}",
-    ),
+    trip("receive init {\n  new Label\n  cur.text = 'a'\n  .labels.push cur\n}"),
     "receive init {\n  new Label\n  cur.text = 'a'\n  .labels.push cur\n}",
   )
 }
@@ -222,12 +220,12 @@ test "`new` builds a value into the target, and the target is a place" {
       (
         #|receive init {
         #|  new Label
-        #|  @cur.text = 'Buy milk'
-        #|  @cur.done = false
-        #|  .labels.push @cur
+        #|  cur.text = 'Buy milk'
+        #|  cur.done = false
+        #|  .labels.push cur
         #|  new Array[String]
-        #|  @cur.push 'a'
-        #|  .grid.push @cur
+        #|  cur.push 'a'
+        #|  .grid.push cur
         #|}
       ),
     ),
@@ -344,15 +342,11 @@ test "the atoms are the view's atoms" {
   // has to be total over what parses, or the round trip stops pinning it.
   assert_eq(trip("compute a { ^macro }"), "compute a { ^macro }")
   assert_eq(trip("compute a { host.config }"), "compute a { host.config }")
-  // The retired sigil still parses, and comes back as the current spelling.
-  assert_eq(trip("compute a { $$config }"), "compute a { host.config }")
   assert_eq(trip("pred p { empty? ^label }"), "pred p { empty? ^label }")
   assert_eq(
     trip("pred p { host.origin is 'x' }"),
     "pred p { host.origin is 'x' }",
   )
-  // The retired sigil still parses, and comes back as the current spelling.
-  assert_eq(trip("pred p { $$origin is 'x' }"), "pred p { host.origin is 'x' }")
   assert_eq(trip("compute a { 'text' }"), "compute a { 'text' }")
   assert_eq(trip("compute a { 42 }"), "compute a { 42 }")
   assert_eq(trip("compute a { 2.5 }"), "compute a { 2.5 }")
@@ -741,9 +735,6 @@ test "reply, fail and drop are one-word answers" {
     "answer go {\n  fail 'disk full'\n}",
   )
   assert_eq(trip("answer go { drop }"), "answer go {\n  drop\n}")
-  // The retired spelling still parses, and comes back as the current one:
-  // the AST holds one vocabulary, so a round trip is also a migration.
-  assert_eq(trip("intent go { stop }"), "answer go {\n  drop\n}")
 }
 
 ///|
@@ -788,10 +779,6 @@ test "a bare ask takes leg words, arguments, both or neither" {
   assert_eq(
     trip("receive saveDraft(t) { ask .enriched }"),
     "receive saveDraft(t) {\n  ask .enriched\n}",
-  )
-  assert_eq(
-    trip("receive saveDraft(t) { forward dyn .enriched }"),
-    "receive saveDraft(t) {\n  ask dyn .enriched\n}",
   )
 }
 

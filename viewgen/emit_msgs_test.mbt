@@ -110,7 +110,7 @@ test "a composite payload is decoded at its declared type, not erased" {
 /// `Any` and a component slot are NOT decoded, because `@tutuca.Value` is what
 /// they declare — there is nothing to read them into.
 test "an Any payload stays the Value it declares" {
-  let src = msgs_src("handle Chat { message { raw(Any), kid(Component) } }")
+  let src = msgs_src("handle Chat { message { raw(Any), kid(Instance) } }")
   assert_true(src.contains("  Raw(@tutuca.Value)\n"))
   assert_true(src.contains("  Kid(@tutuca.Value)\n"))
   assert_true(src.contains("(\"raw\", [a0]) => Raw(a0)"))

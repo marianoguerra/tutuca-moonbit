@@ -33,7 +33,7 @@ fn schema() -> String {
     #|  blob    : Any
     #|  note    : String?
     #|  year    : Int?
-    #|  row     : Component
+    #|  row     : Instance
     #|}
     #|handle Counter { message { resetTo(Int), rename(String, Int) } }
   )
@@ -208,9 +208,7 @@ test "an enricher writes bindings, and may read one it wrote" {
 
 ///|
 test "a scope enricher answers the map, since it is handed none" {
-  let e = out_values("enrichScope info { @len = len .label }", bind_withs=[
-    "info",
-  ])
+  let e = out_values("bindWith info { @len = len .label }", bind_withs=["info"])
   assert_eq(e.answers_bind_withs, ["info"])
   assert_true(
     e.source.contains(
@@ -698,9 +696,9 @@ test "a new is a let at the type's zero, and a write to it rebinds" {
       (
         #|receive init {
         #|  new Label
-        #|  @cur.text = 'Buy milk'
-        #|  @cur.done = true
-        #|  .labels.push @cur
+        #|  cur.text = 'Buy milk'
+        #|  cur.done = true
+        #|  .labels.push cur
         #|}
       ),
     ),
@@ -721,8 +719,8 @@ test "a collection method on the target works on the target" {
       (
         #|receive init {
         #|  new Array[String]
-        #|  @cur.push 'a'
-        #|  .grid.push @cur
+        #|  cur.push 'a'
+        #|  .grid.push cur
         #|}
       ),
     ),
@@ -740,7 +738,7 @@ test "a path into the target is a record update, not a spine rebuild" {
   // The write this backend refuses on `.a.b` is emittable here, and for one
   // reason: the target is a local whose type is known at every step.
   assert_eq(
-    rows_body("receive init {\n  new Label\n  @cur.tags.push 'x'\n}"),
+    rows_body("receive init {\n  new Label\n  cur.tags.push 'x'\n}"),
     (
       #|let cur0 : CardLabel = { text: "", done: false, tags: [] }
       #|let cur0 = { ..cur0, tags: (cur0.tags + ["x"]) }
@@ -755,9 +753,9 @@ test "two news in one body do not shadow each other" {
     (
       #|receive init {
       #|  new Label
-      #|  .labels.push @cur
+      #|  .labels.push cur
       #|  new Label
-      #|  .labels.push @cur
+      #|  .labels.push cur
       #|}
     ),
   )
@@ -767,14 +765,14 @@ test "two news in one body do not shadow each other" {
 
 ///|
 test "the target a branch built does not outlive the branch" {
-  // A `let` inside the branch EXPRESSION does not escape it, so a `@cur` below
+  // A `let` inside the branch EXPRESSION does not escape it, so a `cur` below
   // is refused by name rather than emitted as a temporary out of scope.
   assert_eq(
     rows_whys(
       (
         #|receive init {
-        #|  if true { new Label } else { stop }
-        #|  .labels.push @cur
+        #|  if true { new Label } else { drop }
+        #|  .labels.push cur
         #|}
       ),
     ),
@@ -793,7 +791,7 @@ test "a new of a type the state does not declare says so" {
 
 ///|
 test "an index into the target is refused, as one into the state is" {
-  assert_eq(rows_whys("receive init {\n  new Label\n  @cur.tags[0] = 'x'\n}"), [
+  assert_eq(rows_whys("receive init {\n  new Label\n  cur.tags[0] = 'x'\n}"), [
     "writing through an index into `cur` needs a bounds check this backend does not emit yet — write the handler in MoonBit",
   ])
 }
@@ -1003,7 +1001,7 @@ test "an enricher takes the stack too, in both its shapes" {
     ),
   )
   assert_true(
-    out_values("enrichScope info { @t = *theme }", bind_withs=["info"]).source.contains(
+    out_values("bindWith info { @t = *theme }", bind_withs=["info"]).source.contains(
       "fn counter_bind_with_info(_s : CounterState, stack : &@tutuca.Stack) -> Map[String, @tutuca.Value]",
     ),
   )

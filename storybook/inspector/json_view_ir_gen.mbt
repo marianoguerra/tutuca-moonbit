@@ -49,7 +49,7 @@ pub let json_null_spec_source : String =
   #|  }
   #|
   #|  state JsonArray {
-  #|    items : Array[Component]
+  #|    items : Array[Instance]
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int

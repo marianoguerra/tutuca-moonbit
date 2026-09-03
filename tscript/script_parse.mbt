@@ -29,14 +29,11 @@ priv struct P {
   /// a `forward` in a `receive` body starts a walk and a `forward` in an
   /// `answer` body continues one. Those are two operations, so they are two
   /// words now — and the parser is where the position is known.
-  mut decl_kind : DeclKind
   /// Retired spellings met on the way, in source order.
   ///
   /// A side channel rather than a field on the statement, because the AST is
   /// the CURRENT vocabulary and nothing below the parser should have to know
   /// there was another one. Two consumers read this: the checker, which warns,
-  /// and `tutuca migrate`, which rewrites.
-  retired : Array[Retirement]
 }
 
 ///|
@@ -186,36 +183,10 @@ pub fn effect_names() -> Array[String] {
 }
 
 ///|
-/// The current spelling of an effect name.
-///
-/// A retired spelling still parses for one release, and this is where it stops
-/// being one: the parser normalises before it builds the statement, so every
-/// backend below sees ONE vocabulary and no `match` on an effect has to carry
-/// two arms for a word. `@tutuca.retired(KeywordName, …)` is what says so to
-/// the author, once, in the checker.
-pub fn current_effect(name : String, kind : DeclKind) -> String {
-  match name {
-    "stop" => "drop"
-    "sendReply" => "reply"
-    "intent" => "ask"
-    // `forward` used to mean two things by position, which is the collision
-    // this family removes. In a `receive` body it STARTED a walk from the
-    // message that arrived — that is asking, with the question already in
-    // hand, so it is a bare `ask`. In an `answer` body it hands the walk that
-    // is already running to the next hop, and there it keeps its name.
-    "forward" => if kind is DReceive { "ask" } else { "forward" }
-    _ => name
-  }
-}
-
-///|
 /// The effects, and the fewest arguments each takes.
 pub fn effect_min_arity(name : String) -> Int? {
-  // The retired spellings answer here too, so a block written in them still
-  // parses. They are normalised away by `current_effect` before the statement
-  // is built.
   match name {
-    "drop" | "stop" => Some(0)
+    "drop" => Some(0)
     // Bare in a `receive` body — the question is the message that arrived —
     // and named everywhere else. The checker is what says which body a bare
     // one is legal in; the arity table cannot, and should not try.
@@ -225,7 +196,6 @@ pub fn effect_min_arity(name : String) -> Int? {
     "notify" => Some(1)
     // A name plus whatever the message carries.
     "send" => Some(1)
-    "sendReply" => Some(1)
     // A place, then a name, then the payload.
     "sendAt" => Some(2)
     // `intent` takes a name after its leg words; `forward` takes none, because
@@ -339,7 +309,6 @@ pub fn kind_of_word(w : String) -> DeclKind? {
   match w {
     "receive" => Some(DReceive)
     "answer" => Some(DAnswer)
-    "intent" => Some(DAnswer)
     "compute" => Some(DCompute)
     "get" => Some(DGet)
     "set" => Some(DSet)
@@ -347,10 +316,6 @@ pub fn kind_of_word(w : String) -> DeclKind? {
     "invariant" => Some(DInvariant)
     "enrich" => Some(DEnrich)
     "bindWith" => Some(DBindWith)
-    // The retired spelling, still parsing for one release. It is recorded on
-    // the parser's side channel where it is READ, so that this table stays a
-    // table: what to write instead lives in `@tutuca.retired`.
-    "enrichScope" => Some(DBindWith)
     _ => None
   }
 }
@@ -423,12 +388,7 @@ fn is_binary_only(f : @tutuca.OpFamily) -> Bool {
 /// this way — a fresh cursor over a bare substring, and a demand that the
 /// whole of it was consumed.
 pub fn parse_expr_source(source : String) -> @tutuca.Expr raise ScriptError {
-  let p : P = {
-    toks: tokenize_script(source),
-    at: 0,
-    retired: [],
-    decl_kind: DReceive,
-  }
+  let p : P = { toks: tokenize_script(source), at: 0, }
   let e = parse_expr(p)
   if !(p.peek() is TEof) {
     raise Unexpected(
@@ -442,27 +402,7 @@ pub fn parse_expr_source(source : String) -> @tutuca.Expr raise ScriptError {
 
 ///|
 pub fn parse_script(source : String) -> Array[Decl] raise ScriptError {
-  parse_script_retiring(source).0
-}
-
-///|
-/// Parse a block, and say which retired spellings it was written with.
-///
-/// The parse is the ONE thing that knows where a keyword can appear: `stop` is
-/// a retired effect at the head of a statement and an ordinary field name
-/// everywhere else, and only something that has parsed as far as the statement
-/// can tell the two apart. So both consumers of a retirement — the checker's
-/// warning and `tutuca migrate`'s edit — come from here rather than from a
-/// scan over the text.
-pub fn parse_script_retiring(
-  source : String,
-) -> (Array[Decl], Array[Retirement]) raise ScriptError {
-  let p : P = {
-    toks: tokenize_script(source),
-    at: 0,
-    retired: [],
-    decl_kind: DReceive,
-  }
+  let p : P = { toks: tokenize_script(source), at: 0, }
   let out : Array[Decl] = []
   // One name per bucket: a name answered twice is refused rather than ordered,
   // in the spirit of `Path::update`'s "one lookup, by exact name, with no
@@ -481,28 +421,7 @@ pub fn parse_script_retiring(
     seen[key] = ()
     out.push(d)
   }
-  (out, p.retired)
-}
-
-///|
-/// The retired spellings a block is written with, for a block that need not
-/// parse.
-///
-/// `migrate` calls this: a file mid-rename is a file somebody is about to fix,
-/// and refusing to rewrite the part that lexed because a later declaration has
-/// a typo in it would make the tool useless exactly when it is wanted. What
-/// was found before the failure is still true about the text before it.
-pub fn retired_spellings(source : String) -> Array[Retirement] {
-  let toks = tokenize_script(source) catch { _ => return [] }
-  let p : P = { toks, at: 0, retired: [], decl_kind: DReceive, }
-  for ;; {
-    p.skip_seps()
-    if p.peek() is TEof {
-      break
-    }
-    let _ = parse_decl(p) catch { _ => break }
-  }
-  p.retired
+  out
 }
 
 ///|
@@ -527,22 +446,6 @@ fn parse_decl(p : P) -> Decl raise ScriptError {
   }
   guard kind_of_word(word) is Some(kind) else {
     raise UnknownKind(got=word, span=word_span)
-  }
-  // Every effect below is parsed knowing which body it is in, because one of
-  // them means two things by position and this is where the position is.
-  p.decl_kind = kind
-  // A declaration kind can be retired too, and it is recorded the same way an
-  // effect is: the AST below carries only `kind`, so nothing under the parser
-  // knows there was another spelling.
-  if kind_word(kind) != word {
-    p.retired.push({
-      word,
-      replacement: kind_word(kind),
-      advice: @tutuca.retired(KeywordName, word).unwrap_or(
-        "write `\{kind_word(kind)}`",
-      ),
-      span: word_span,
-    })
   }
   let (name, name_span) = p.ident("the name this declaration answers")
   let params : Array[Param] = []
@@ -750,19 +653,7 @@ fn parse_stmt(p : P) -> Stmt raise ScriptError {
   }
   // An effect: a bare name the effect table knows.
   if p.peek() is TIdent(name) && effect_min_arity(name) is Some(min) {
-    let word_span = p.span()
     p.bump() |> ignore
-    // Normalised here and nowhere else: below this point the statement carries
-    // the current spelling, so no backend has two arms for one operation.
-    let cur = current_effect(name, p.decl_kind)
-    if cur != name {
-      p.retired.push({
-        word: name,
-        replacement: cur,
-        advice: @tutuca.retired(KeywordName, name).unwrap_or("write `\{cur}`"),
-        span: word_span,
-      })
-    }
     let args : Array[@tutuca.Expr] = []
     // The one new parse rule: read leg words while the next token is one, then
     // parse normally. It adds no ambiguity to juxtaposition, because an
@@ -798,7 +689,7 @@ fn parse_stmt(p : P) -> Stmt raise ScriptError {
         span=p.since(from),
       )
     }
-    return SEffect(name=cur, args~, route~, span=p.since(from))
+    return SEffect(name~, args~, route~, span=p.since(from))
   }
   // Otherwise it is a place: an assignment, or a collection method on it.
   if !(p.peek() is (TDot | TAt)) &&
@@ -940,22 +831,9 @@ fn parse_place(p : P, for_ref~ : Bool) -> @tutuca.Place raise ScriptError {
       PTarget
     }
     TAt => {
-      let at = p.span()
       p.bump() |> ignore
-      let (n, span) = p.ident("a binding name after `@`")
-      if n == @tutuca.target_bind {
-        p.retired.push({
-          word: "@" + n,
-          replacement: n,
-          advice: @tutuca.retired(KeywordName, "@" + n).unwrap_or(
-            "write `\{n}`",
-          ),
-          span: { start: at.start, end_: span.end_, },
-        })
-        PTarget
-      } else {
-        PBind(n)
-      }
+      let (n, _) = p.ident("a binding name after `@`")
+      PBind(n)
     }
     _ => p.fail("a place: `.field`, `@binding` or `\{@tutuca.target_bind}`")
   }
@@ -1161,30 +1039,14 @@ fn parse_value(p : P, apply~ : Bool) -> @tutuca.Expr raise ScriptError {
       let place = parse_place(p, for_ref=false)
       ERead(place~, span=place.span)
     }
-    // `$name` is a `compute` this component answers. `$$name` was a value the
-    // host bound, and is retired: two sigils that differ by one character for
-    // two questions of two different things is a distinction a reader has to
-    // count to see. It is `host.name` now, read above.
-    TDollar =>
-      if p.peek_at(1) is TDollar {
-        let word_span = p.span()
-        p.bump() |> ignore
-        p.bump() |> ignore
-        let (n, _) = p.ident("a config variable name after `$$`")
-        p.retired.push({
-          word: "$$",
-          replacement: config_root + ".",
-          advice: @tutuca.retired(KeywordName, "$$").unwrap_or(
-            "write `\{config_root}.\{n}`",
-          ),
-          span: word_span,
-        })
-        EConfigVar(name=n, span=p.since(from))
-      } else {
-        p.bump() |> ignore
-        let (n, _) = p.ident("a method name after `$`")
-        EMethod(name=n, span=p.since(from))
-      }
+    // `$name` is a `compute` this component answers. A value the HOST bound is
+    // `host.name`, read above — two questions of two different things, and no
+    // longer one character apart.
+    TDollar => {
+      p.bump() |> ignore
+      let (n, _) = p.ident("a method name after `$`")
+      EMethod(name=n, span=p.since(from))
+    }
     TCaret => {
       p.bump() |> ignore
       let (n, _) = p.ident("a macro variable name after `^`")
@@ -1320,12 +1182,7 @@ fn parse_tpl_parts(
         // The interior is its own little expression. Its spans index the
         // interior, so they are rebased onto the template token — a column
         // inside an interpolation is not worth a second offset discipline.
-        let ip : P = {
-          toks: tokenize_script(inner.to_string()),
-          decl_kind: DReceive,
-          at: 0,
-          retired: [],
-        }
+        let ip : P = { toks: tokenize_script(inner.to_string()), at: 0, }
         let e = parse_expr(ip)
         if !(ip.peek() is TEof) {
           raise Unexpected(

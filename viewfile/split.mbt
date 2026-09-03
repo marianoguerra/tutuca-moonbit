@@ -33,16 +33,6 @@ const MACRO_PREFIX = "macro:"
 const SPEC_TYPE = "tutuca/spec"
 
 ///|
-/// What the spec block used to be called.
-///
-/// Kept parsing rather than cut, because a view file is a FORMAT and not just
-/// this repo's input: a card is one file that someone else's page loads, and
-/// breaking every one of them in the field to rename a string is a cost the
-/// rename does not earn. A file that writes it still splits, and `gen`
-/// says so once per file.
-const LEGACY_SPEC_TYPE = "tutuca/state"
-
-///|
 /// The `type=` that marks a `<script>` as the file's named initial states.
 ///
 /// Separate from the schema because a default is a value, not a type: WIT
@@ -52,17 +42,8 @@ const LEGACY_SPEC_TYPE = "tutuca/state"
 const FIXTURES_TYPE = "tutuca/fixtures"
 
 ///|
-/// What the fixtures block used to be called.
-///
-/// Kept parsing for the same reason `tutuca/state` is: a view file is a
-/// FORMAT, and a card is one file someone else's page loads. `init` was also
-/// the wrong word twice over — the block holds SEVERAL named states, and
-/// `receive init` is an unrelated convention a host dispatches.
-const LEGACY_INIT_TYPE = "tutuca/init"
-
-///|
 fn is_fixtures_type(ty : String?) -> Bool {
-  ty is Some(FIXTURES_TYPE | LEGACY_INIT_TYPE)
+  ty is Some(FIXTURES_TYPE)
 }
 
 ///|
@@ -127,7 +108,7 @@ priv struct TplSpan {
 /// twice — once to claim the block and once to notice which name it was given —
 /// and a `|` pattern spread over two lines is not a guard MoonBit accepts.
 fn is_spec_type(ty : String?) -> Bool {
-  ty is Some(SPEC_TYPE | LEGACY_SPEC_TYPE)
+  ty is Some(SPEC_TYPE)
 }
 
 ///|
@@ -321,7 +302,6 @@ pub fn split_file(
   let mut open_at = ""
   let mut stray : Char? = None
   let mut state_src : (String, Int)? = None
-  let mut legacy_spec = false
   let mut init_src : (String, Int)? = None
   let mut test_src : (String, Int)? = None
   let script_srcs : Array[(String, String, Int)] = []
@@ -351,15 +331,8 @@ pub fn split_file(
           // Character arm below, so its `<` and `>` never reach the
           // tokenizer as markup and its text never counts as stray.
           //
-          // One arm for both spellings, so a file carrying one of each hits
-          // `DuplicateStateBlock` — which is the right answer. Two blocks are
-          // two specs however they are spelled, and there is no order in which
-          // to merge them.
           "script" if is_spec_type(attr_of(attrs, "type")) => {
             let content_at = after
-            if attr_of(attrs, "type") is Some(LEGACY_SPEC_TYPE) {
-              legacy_spec = true
-            }
             let (text, end_) = read_raw(tok, "script")
             if state_src is Some(_) {
               raise DuplicateStateBlock
@@ -479,7 +452,6 @@ pub fn split_file(
         scripts,
         tests,
         root: "",
-        legacy_spec,
         state_block,
       }
     }
@@ -504,7 +476,6 @@ pub fn split_file(
       scripts,
       tests,
       root: "",
-      legacy_spec,
       state_block,
     }
   }
@@ -643,7 +614,6 @@ pub fn split_file(
     scripts,
     tests,
     root: root_marked.unwrap_or(""),
-    legacy_spec,
     state_block,
   }
 }

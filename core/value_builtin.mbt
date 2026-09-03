@@ -227,24 +227,6 @@ let builtin_table : Map[String, Builtin] = {
     arity: 1,
     apply: args => Str(args[0].str().trim(chars=" \t\n\r").to_owned()),
   },
-
-  // -- Retired ---------------------------------------------------------------
-  //
-  // Still here, and still answering, because a compiled loaded module carries
-  // its view markup as a STRING inside the wasm and the host parses it at load
-  // time (`tgc/host/manifest.mbt`). Deleting a spelling would break a
-  // bundle nobody can recompile. `retired` is what points an author at the
-  // one that stays; these go at the next apiVersion.
-  "equals?": {
-    name: "equals?",
-    arity: 2,
-    apply: args => Bool(args[0] == args[1]),
-  },
-  "falsy?": {
-    name: "falsy?",
-    arity: 1,
-    apply: args => Bool(!pred_truthy(args[0])),
-  },
 }
 
 ///|
@@ -257,18 +239,13 @@ pub fn builtin(name : String) -> Builtin? {
 /// Every builtin name in BYTE order — the vocabulary a "did you mean" search
 /// ranges over, and the reason it is public rather than a private table.
 ///
-/// Retired names are NOT in it: a suggestion is advice about what to write,
-/// and the answer is never a name on its way out.
-///
 /// Not `Array::sort`: MoonBit's `Compare for String` is length-first, which
 /// would answer `null?, empty?, falsy?, equals?, truthy?`. That is still
 /// deterministic, and it reads as unordered to the person the list is for.
 pub fn builtin_names() -> Array[String] {
   let out : Array[String] = []
   for name, _ in builtin_table {
-    if !retired_builtins.contains(name) {
-      out.push(name)
-    }
+    out.push(name)
   }
   out.sort_by((a, b) => a.lexical_compare(b))
   out

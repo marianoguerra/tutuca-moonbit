@@ -47,22 +47,6 @@ test "the three outcome names are carried separately, not as one pair" {
 }
 
 ///|
-/// `on_error_name` is the retired spelling, and it still fills the same field.
-///
-/// It goes when the release after this one does. A caller that passes both is
-/// passing the new one twice as far as this is concerned: the new spelling
-/// wins, because a caller who wrote it meant it.
-test "the retired on_error_name still names the failed arm" {
-  let old = @core.IntentOpts::new(on_error_name="saveDraftError")
-  assert_eq(old.on_failed_name, Some("saveDraftError"))
-  let both = @core.IntentOpts::new(
-    on_failed_name="saveDraftFailed",
-    on_error_name="saveDraftError",
-  )
-  assert_eq(both.on_failed_name, Some("saveDraftFailed"))
-}
-
-///|
 test "a handler with no dispatcher can reply, and nothing happens" {
   let ctx : &@core.Ctx = @core.NullCtx::{ }
   // None of these has a transactor under it. Each is a no-op, and the test is

@@ -200,8 +200,7 @@ them the right signature).
 Without an `@each` on the same element, `@enrich-with` resolves in the
 **`bind_with`** bucket instead: the handler takes only the state, and
 its **returned** `Map[String, Value]`'s keys become `@`-prefixed
-bindings for descendants. The block-language keyword is `bindWith`
-(retired spelling: `enrichScope`).
+bindings for descendants. The block-language keyword is `bindWith`.
 
 ```moonbit nocheck
 // nocheck: a bucket argument, not a top-level item

@@ -195,12 +195,6 @@ A component answers an intent with an `answer <name>` handler. Inside it:
 - ...or none of the above: the body runs, changes state, and the walk
   goes on. A handler that does not reply is an **observer**.
 
-> **Retired spellings.** `stop` is now `drop`; `sendReply` is now `reply`;
-> the `intent` DECLARATION is now `answer` and the `intent` EFFECT is now
-> `ask`; and a `forward` in a `receive` body is now a bare `ask`. Every old
-> word still parses in this release and is reported as a `RETIRED_KEYWORD`
-> warning; `tutuca migrate --write` rewrites them. They stop parsing in the
-> next release.
 
 ```html
 <script type="tutuca/spec">
@@ -336,10 +330,6 @@ derive the same way, so a sender that names one and not the others still
 hears the others under their derived names. A sender that names **none** is
 sending a notification and hears nothing at all.
 
-`on_error_name` is the retired spelling of `on_failed_name`. It still fills
-the same field for one release, and a script block's `receive <name>Error` arm
-is still wired to the failure — what changed is the word the runtime derives.
-
 ## Asking the question you were handed — a bare `ask`, and `forward`
 
 Two operations, and they used to share a word. Both re-dispatch a
@@ -351,8 +341,7 @@ depends on whether a walk is running yet.
 - **`forward` in an `answer` body** *continues* one: the walk goes on to
   the next hop, optionally with new arguments or a narrowed route.
 
-Writing either in the wrong body is reported. `forward` in a `receive`
-still parses this release, as the retired spelling of the bare `ask`.
+Writing either in the wrong body is reported.
 
 The arms below are ALTERNATIVES, not one block — several spell `saveDraft`
 to show one route each, and a real block declares a name once per bucket.

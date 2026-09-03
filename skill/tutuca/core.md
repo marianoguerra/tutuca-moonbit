@@ -375,11 +375,6 @@ the other way, a `<script type="tutuca/script">` block cannot write either one
 — a block is parsed once for the component, with no macro call site and no host
 around it — so read the value in the view and pass it in.
 
-> **Retired spellings.** `equals? a b` is now `a is b`, and `falsy? x` is
-> `not (truthy? x)`. Both still parse — a compiled loaded module carries its
-> view markup as a string and the host parses it at load time — and
-> `gen` hints where one is left.
-
 | Prefix   | Means                                     | Example               |
 | -------- | ----------------------------------------- | --------------------- |
 | `.x`     | property on the component (explicit property before implicit field property) | `.count`, `.title` |

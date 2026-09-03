@@ -10,10 +10,6 @@ and writes the MoonBit state struct, the codec, the descriptor and the typed
 message enums; nothing you write restates it. Change a field here, regenerate,
 and every read of it in every view and handler is re-checked.
 
-**The block used to be called `tutuca/state`.** That name still parses and
-`gen` reports it once per file, because a card in the field is one file
-someone else's page loads. Rename the `type=` and nothing else changes.
-
 ## The two blocks
 
 The split is what a reader can rely on: the **spec** block says what the
@@ -523,11 +519,8 @@ does not take is the half that needs a body: a nested read, an `if`,
 arithmetic, and a bare parameter — see
 [core.md](./core.md#conditional-display).
 
-`equals?` and `falsy?` are retired: `is` says the first and `not` says the
-second, and one meaning keeps one spelling. Both still parse — a compiled
-loaded module carries its view markup as a string and the host parses it at
-load time, so a spelling cannot simply be deleted — and `gen` hints
-where one is left.
+`is` compares and `not` negates, and each meaning keeps one spelling: `is` is
+written INFIX (`.tab is 'a'`), `not` in front of its operand.
 
 ## Changing a collection
 

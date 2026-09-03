@@ -203,7 +203,7 @@ test "single-token value is not an application" {
 ///|
 test "unary predicates parse to a one-argument application" {
   let ctx = @tscript.ParseCtx::new()
-  for pred_name in ["empty?", "truthy?", "falsy?", "null?"] {
+  for pred_name in ["empty?", "truthy?", "null?"] {
     guard! @tscript.parse_bool("\{pred_name} .items", ctx)
       is Some(EApp(name~, args~, ..))
     // The AST carries the NAME, not a constructor: that is what lets the
@@ -233,23 +233,6 @@ test "the builtin vocabulary is a table a caller can enumerate" {
   guard! @tutuca.builtin("is") is Some(eq)
   assert_eq(eq.arity, 2)
   assert_true(@tutuca.builtin("present?") is None)
-}
-
-///|
-test "a retired name still answers, and says what to write instead" {
-  // A compiled loaded module carries its view markup as a STRING inside the
-  // wasm, and the host parses it at load time. Deleting a spelling would break
-  // a bundle nobody can recompile, so the two that `is` and `not` replaced are
-  // still rows — just not rows a suggestion ever offers.
-  guard! @tutuca.builtin("equals?") is Some(eq)
-  assert_eq(eq.arity, 2)
-  assert_true(@tutuca.builtin("falsy?") is Some(_))
-  assert_true(@tutuca.retired(BuiltinName, "equals?") is Some(_))
-  assert_true(@tutuca.retired(BuiltinName, "falsy?") is Some(_))
-  assert_true(@tutuca.retired(BuiltinName, "empty?") is None)
-  // …and neither is in the vocabulary a "did you mean" ranges over.
-  assert_false(@tutuca.builtin_names().contains("equals?"))
-  assert_false(@tutuca.builtin_names().contains("falsy?"))
 }
 
 ///|
@@ -406,11 +389,15 @@ test "$ method handler keeps its args" {
 }
 
 ///|
-test "equals? parses to a two-argument application with a Const string arg" {
+/// `is` is written INFIX — `a is b` reads as the sentence it is, which is the
+/// whole reason the prefix `equals?` went. In a view slot it still builds an
+/// application, because that is the one node an operand-and-operands shape has;
+/// what changed is the spelling, at both ends.
+test "is parses to a two-argument application, written infix" {
   let ctx = @tscript.ParseCtx::new()
-  guard! @tscript.parse_bool("equals? .view 'detail'", ctx)
+  guard! @tscript.parse_bool(".view is 'detail'", ctx)
     is Some(EApp(name~, args~, ..))
-  assert_eq(name, "equals?")
+  assert_eq(name, "is")
   assert_eq(args.length(), 2)
   assert_true(
     args[0] is ERead(place={ root: PState("view"), steps: [], .. }, ..),
@@ -421,31 +408,23 @@ test "equals? parses to a two-argument application with a Const string arg" {
 ///|
 test "string literal arg preserves interior spaces" {
   let ctx = @tscript.ParseCtx::new()
-  guard! @tscript.parse_bool("equals? .name 'John Doe'", ctx)
+  guard! @tscript.parse_bool(".name is 'John Doe'", ctx)
     is Some(EApp(args~, ..))
-  assert_eq(args.length(), 2)
   assert_true(args[1] is ELit(lit=LStr("John Doe"), ..))
 }
 
 ///|
 test "escaped quote in a string literal arg" {
   let ctx = @tscript.ParseCtx::new()
-  guard! @tscript.parse_bool("equals? .name 'it\\'s'", ctx)
-    is Some(EApp(args~, ..))
+  guard! @tscript.parse_bool(".name is 'it\\'s'", ctx) is Some(EApp(args~, ..))
   assert_true(args[1] is ELit(lit=LStr("it's"), ..))
-}
-
-///|
-test "equals? arity mismatch returns None" {
-  let ctx = @tscript.ParseCtx::new()
-  assert_true(@tscript.parse_bool("equals? .view", ctx) is None)
 }
 
 ///|
 test "to_string round-trips a quoted literal" {
   let ctx = @tscript.ParseCtx::new()
-  guard! @tscript.parse_bool("equals? .view 'detail'", ctx) is Some(r)
-  assert_eq("\{r}", "equals? .view 'detail'")
+  guard! @tscript.parse_bool(".view is 'detail'", ctx) is Some(r)
+  assert_eq("\{r}", ".view is 'detail'")
 }
 
 ///|
@@ -605,14 +584,14 @@ test "a span indexes the string handed to the parser, untrimmed" {
 }
 
 ///|
-test "a $$name config variable is the host's literal, and it pins" {
+test "a host.name config variable is the host's literal, and it pins" {
   // The mirror of `^name`, and the marking is the difference: a config value
   // is the HOST's string, so the Const it becomes is not from_macro and the
   // template around it stays literal enough to pin a URL origin.
   let ctx = @tscript.ParseCtx::new(config_vars={
     "mediaOrigin": "https://files.hachyderm.io/",
   })
-  guard! @tscript.parse_text("$'{$$mediaOrigin}{.avatarPath}'", ctx)
+  guard! @tscript.parse_text("$'{host.mediaOrigin}{.avatarPath}'", ctx)
     is Some(ETpl(parts~, ..))
   // Three, not two: the split leaves an empty text part BETWEEN the two
   // placeholders, and only the bookends are trimmed. What matters is that
@@ -630,12 +609,12 @@ test "a $$name config variable is the host's literal, and it pins" {
 }
 
 ///|
-test "a $$name nothing was bound to is an issue, not a silent empty string" {
+test "a host.name nothing was bound to is an issue, not a silent empty string" {
   let ctx = @tscript.ParseCtx::new()
-  assert_true(@tscript.parse_text("$$mediaOrigin", ctx) is None)
+  assert_true(@tscript.parse_text("host.mediaOrigin", ctx) is None)
   assert_eq(ctx.issues.length(), 1)
   assert_eq(ctx.issues[0].role, BadConfigVar)
-  assert_eq(ctx.issues[0].value, "$$mediaOrigin")
+  assert_eq(ctx.issues[0].value, "host.mediaOrigin")
 }
 
 ///|
@@ -645,24 +624,24 @@ test "a config value is substituted, not re-parsed" {
   // decided, so it lands as text — a bound value that looks like an
   // expression is that expression's characters, not that expression.
   let ctx = @tscript.ParseCtx::new(config_vars={ "who": ".secret" })
-  guard! @tscript.parse_text("$$who", ctx) is Some(v)
+  guard! @tscript.parse_text("host.who", ctx) is Some(v)
   assert_true(v is ELit(lit=LStr(".secret"), from_macro=false, ..))
 }
 
 ///|
-test "$ and $$ stay apart" {
+test "$name and host.name stay apart" {
   let ctx = @tscript.ParseCtx::new(config_vars={ "total": "9" })
   assert_true(
     @tscript.parse_text("$total", ctx) is Some(EMethod(name="total", ..)),
   )
-  guard! @tscript.parse_text("$$total", ctx) is Some(v)
+  guard! @tscript.parse_text("host.total", ctx) is Some(v)
   assert_true(v is ELit(lit=LStr("9"), ..))
 }
 
 ///|
 /// The last link: a config template does not merely PARSE to a pinned literal,
 /// it evaluates to the url the browser fetches. This is what
-/// `<img :src="$'{$$mediaOrigin}{.avatarPath}'">` actually puts in the DOM.
+/// `<img :src="$'{host.mediaOrigin}{.avatarPath}'">` actually puts in the DOM.
 priv struct AvatarStack {
   fields : Map[String, @tutuca.Value]
 }
@@ -674,7 +653,7 @@ impl @tutuca.Stack for AvatarStack with fn lookup_storage(self, name) {
 
 ///|
 test "a config origin template renders the url the host pointed at" {
-  let tpl = "$'{$$mediaOrigin}{.avatarPath}'"
+  let tpl = "$'{host.mediaOrigin}{.avatarPath}'"
   let stack = AvatarStack::{
     fields: { "avatarPath": Str("accounts/avatars/000/111/aa.png") },
   }
@@ -732,7 +711,7 @@ test "a slot and a block are one grammar, and refuse alike" {
   // and the answer is to lift more of the block's parser rather than to
   // special-case the slot.
   //
-  // `^name` and `$$name` are deliberately NOT in this corpus. They parse in
+  // `^name` and `host.name` are deliberately NOT in this corpus. They parse in
   // both front ends — one grammar — and are refused in only one of them,
   // because the difference is not grammatical: a slot stands in a macro frame
   // with a host attached and a block does not. `block_err` only parses, so it
@@ -772,7 +751,7 @@ test "a slot refuses what only a body can hold, and names the way out" {
 ///|
 test "a substituted value is an operand, and keeps the mark that decides an origin" {
   // The regression this covers: unifying the slot with the block's grammar
-  // pre-scanned for `^` and `$$` and refused the whole expression, so
+  // pre-scanned for `^` and the host sigil and refused the whole expression, so
   // `@hide="empty? ^label"` — which parsed at 0.28.1, through the old
   // predicate-application path — stopped parsing.
   //
@@ -795,7 +774,7 @@ test "a substituted value is an operand, and keeps the mark that decides an orig
     @tscript.parse_bool("^label is 'x'", ctx) is Some(EApp(name="is", ..)),
   )
   assert_true(
-    @tscript.parse_bool("(empty? ^label) and (empty? $$origin)", ctx)
+    @tscript.parse_bool("(empty? ^label) and (empty? host.origin)", ctx)
     is Some(EApp(name="and", ..)),
   )
   assert_eq(ctx.issues.length(), 0)
@@ -810,7 +789,7 @@ test "a host's value nested under an operator is still the host's" {
     macro_vars={ "u": "'https://evil.example/'" },
     config_vars={ "origin": "https://files.example/" },
   )
-  guard! @tscript.parse_bool("$$origin is ^u", ctx) is Some(EApp(args~, ..))
+  guard! @tscript.parse_bool("host.origin is ^u", ctx) is Some(EApp(args~, ..))
   assert_true(args[0] is ELit(from_macro=false, ..))
   assert_true(args[1] is ELit(from_macro=true, ..))
 }

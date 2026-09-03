@@ -32,13 +32,6 @@ fn view_diagnostics(
   fallback : String,
 ) -> Array[String] {
   let out : Array[String] = []
-  // The block's old name. Once per FILE and not once per component, because
-  // the spelling is a property of the `<script>` tag and a file has one.
-  if file.legacy_spec {
-    out.push(
-      "spec-block-name (warning) \{fallback}: `<script type=\"tutuca/state\">` is now `<script type=\"tutuca/spec\">` — the block declares more than state (types, `handle`/`express`, protocols, wiring, and the `pred`s and `invariant`s the component keeps). The old name still parses; rename the `type=`.",
-    )
-  }
   // A schema interface with no template declares state for a component whose
   // views are built in MoonBit. Legitimate, and also what a mistyped
   // interface name looks like — so it is reported, not generated in silence.

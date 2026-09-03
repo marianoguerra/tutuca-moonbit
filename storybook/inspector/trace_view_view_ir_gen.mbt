@@ -40,7 +40,7 @@ pub let trace_row_spec_source : String =
   #|    rowClass : String
   #|    depth : Int
   #|    current : Bool
-  #|    after : Component?
+  #|    after : Instance?
   #|    hasAfter : Bool
   #|    open : Bool
   #|

@@ -62,7 +62,6 @@ pub(all) struct ViewFile {
   scripts : Array[ScriptBlock]
   tests : Array[@scenedef.Scene]
   root : String
-  legacy_spec : Bool
 } derive(Eq, @debug.Debug)
 pub fn ViewFile::script_for(Self, String) -> Block?
 pub fn ViewFile::state_of(Self, String, fallback~ : String) -> @statedef.StateDef?

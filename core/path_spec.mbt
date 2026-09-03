@@ -254,7 +254,6 @@ declare pub fn IntentOpts::new(
   on_failed_name? : String,
   on_unhandled_name? : String,
   live_path? : Bool,
-  on_error_name? : String,
 ) -> IntentOpts
 
 ///|

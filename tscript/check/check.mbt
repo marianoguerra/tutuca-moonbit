@@ -183,27 +183,7 @@ pub fn check(
   decls : Array[@tscript.Decl],
   def : @statedef.StateDef,
   surface? : Surface = Surface::empty(),
-  retired? : Array[@tscript.Retirement] = [],
 ) -> Array[Finding] {
-  // The retired spellings the block was written with, as warnings. They come
-  // from the PARSE — `stop` is a retired effect at the head of a statement and
-  // an ordinary field name everywhere else, and only something that has parsed
-  // as far as the statement can tell the two apart — and a caller that did not
-  // keep them passes none, which is the same block with one fewer thing said
-  // about it rather than a different verdict.
-  //
-  // A warning and never an error: the old spelling still means what it meant,
-  // and this is the release in which both work. It stops parsing in the next
-  // one, which is what `tutuca migrate` is for.
-  let out_retired : Array[Finding] = []
-  for r in retired {
-    out_retired.push({
-      code: "RETIRED_KEYWORD",
-      message: "`\{r.word}` is now `\{r.replacement}` — \{r.advice}. The old spelling still parses in this release; `tutuca migrate --write` rewrites it",
-      severity: SWarning,
-      span: r.span,
-    })
-  }
   // Collected first, because a body may apply a predicate declared BELOW it.
   // Declaration order is only a termination proof for predicates calling
   // predicates, which is a rule for a later pass; nothing here needs order.
@@ -283,10 +263,7 @@ pub fn check(
   }
   c.view_names(decls)
   c.notified_names(decls)
-  // Retirements first: they are about the WORDS the block is written with, and
-  // a reader fixing a spelling wants to see that before a finding about what
-  // the spelling means.
-  out_retired + c.out
+  c.out
 }
 
 ///|
@@ -1194,7 +1171,7 @@ fn C::expr(self : C, e : @tutuca.Expr) -> @tutuca.Ty? {
     EConfigVar(name~, span~) => {
       self.say(
         "NO_CONFIG_FRAME",
-        "`$$\{name}` is a value the host bound, substituted into view markup as it is parsed — and a block is compiled ahead of any host, so there is nothing here to substitute. Read it in the view and pass it in",
+        "`host.\{name}` is a value the host bound, substituted into view markup as it is parsed — and a block is compiled ahead of any host, so there is nothing here to substitute. Read it in the view and pass it in",
         span,
       )
       None

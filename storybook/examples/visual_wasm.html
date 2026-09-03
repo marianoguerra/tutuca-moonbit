@@ -8,18 +8,18 @@
   }
 
   state VwTypes {
-    items : Array[Component]
+    items : Array[Instance]
   }
 
   state VwContainer {
-    items : Array[Component]
+    items : Array[Instance]
     expanded : Bool
     editing : Bool
   }
 
   state VwIf {
-    thn : Array[Component]
-    else : Array[Component]
+    thn : Array[Instance]
+    else : Array[Instance]
     expanded : Bool
     editingIf : Bool
     editingThn : Bool
@@ -29,7 +29,7 @@
   state VwSection {
     id : Int
     name : String
-    items : Array[Component]
+    items : Array[Instance]
     expanded : Bool
     defaultItem : Instance
 

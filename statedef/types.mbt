@@ -428,7 +428,7 @@ pub fn DefError::message(self : DefError) -> String {
     UnsupportedType(ty~, why~, ..) =>
       "spec block: `\{ty}` is not something component state can carry — \{why}"
     UnknownTypeRef(name~, ..) =>
-      "spec block: unknown type `\{name}`; declare it, name a component in this file, or use a builtin (Bool, Int, Double, String, Array[T], Set[T], Map[String, V], Any, Component)"
+      "spec block: unknown type `\{name}`; declare it, name a component in this file, or use a builtin (Bool, Int, Double, String, Array[T], Set[T], Map[String, V], Any, Instance)"
     BadTypeArgs(name~, want~, got~, ..) =>
       "spec block: `\{name}` takes \{want} type argument(s), not \{got}"
     CyclicType(name~, ..) =>

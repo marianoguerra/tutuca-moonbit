@@ -631,7 +631,7 @@ pub struct ParseContext {
   macro_nodes : Array[ANode]
   parent : ParseContext?
   frame : MacroFrame?
-  /// The `$$name` table this parse runs against — what the HOST bound, not
+  /// The `host.name` table this parse runs against — what the HOST bound, not
   /// anything the parsed source can add to.
   ///
   /// Context-wide rather than per-frame, which is the opposite of `macro_vars`
@@ -724,7 +724,7 @@ pub(all) struct View {
   name : String
   raw_view : String
   style : String
-  /// What `$$name` resolves to when this view is parsed — the host's table,
+  /// What `host.name` resolves to when this view is parsed — the host's table,
   /// carried here rather than on `ParseContext` because `Component::compile`
   /// builds the context and knows nothing about any of this. `parse_source`
   /// moves it across.

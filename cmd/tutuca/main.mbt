@@ -336,81 +336,6 @@ async fn run_gen_views(
 }
 
 ///|
-/// The shell half of `tutuca migrate`: read every view file under the roots,
-/// let the pure core decide the edits, and — only under `--write` — write the
-/// ones that changed back.
-///
-/// The discovery rule is `gen`', deliberately: a migration is aimed at
-/// the files a project treats as views, and `index.html` is not one.
-///
-/// A file that comes back unchanged is not rewritten. Not as an optimisation —
-/// writing identical bytes would touch every mtime in the tree, and every
-/// watcher, formatter and build cache downstream would act as though the whole
-/// project had moved.
-async fn run_migrate(
-  opts : @cli.GlobalOpts,
-  roots : Array[String],
-  write : Bool,
-) -> Unit noraise {
-  let paths = collect_view_files(roots, managed_only=false)
-  if paths.is_empty() {
-    emit_and_exit(
-      @cli.error_emit(
-        opts,
-        @cli.err(
-          @cli.CODE_USAGE_MISSING_ARGUMENT,
-          "no .html files under \{roots.join(", ")}",
-        ),
-      ),
-    )
-    return
-  }
-  let explicit : Map[String, Bool] = Map([])
-  for r in roots {
-    if @cli.is_view_path(r) {
-      explicit[r] = true
-    }
-  }
-  let inputs : Array[(String, String)] = []
-  for path in paths {
-    let source = @fs.read_file(path).text() catch {
-      e => {
-        emit_and_exit(
-          @cli.error_emit(
-            opts,
-            @cli.err(@cli.CODE_INTERNAL, "cannot read \{path}: \{e}"),
-          ),
-        )
-        return
-      }
-    }
-    inputs.push((path, source))
-  }
-  let plan = @cli.migrate_all(inputs, explicit~)
-  if write {
-    for i in 0..<plan.files.length() {
-      let f = plan.files[i]
-      guard f.out is Some(out) else { continue }
-      if out == inputs[i].1 {
-        continue
-      }
-      @fs.write_file(f.path, out, create_mode=CreateOrTruncate) catch {
-        e => {
-          emit_and_exit(
-            @cli.error_emit(
-              opts,
-              @cli.err(@cli.CODE_INTERNAL, "cannot write \{f.path}: \{e}"),
-            ),
-          )
-          return
-        }
-      }
-    }
-  }
-  emit_and_exit(@cli.migrate_emit(opts, plan, write))
-}
-
-///|
 /// Which input a written file came from, for the "generated X from Y" line.
 /// Both of a file's modules are derived from its target, so the mapping is the
 /// same rule that produced the paths rather than a second guess at them.
@@ -672,10 +597,7 @@ async fn refresh_watch_css(
 /// tells a view file from a page — watching a project root should not try to
 /// compile index.html — and it means adding a view to a watched tree takes
 /// one `tutuca gen` before watch picks it up.
-async fn collect_view_files(
-  paths : Array[String],
-  managed_only? : Bool = true,
-) -> Array[String] noraise {
+async fn collect_view_files(paths : Array[String]) -> Array[String] noraise {
   let found : Array[String] = []
   let seen : Map[String, Bool] = Map([])
   for p in paths {
@@ -685,7 +607,7 @@ async fn collect_view_files(
         found.push(p)
       }
     } else {
-      scan_dir(p, found, seen, managed_only)
+      scan_dir(p, found, seen)
     }
   }
   found
@@ -700,19 +622,12 @@ fn skip_dir(name : String) -> Bool {
 }
 
 ///|
-/// `managed_only` is the difference between the two questions a directory can
-/// be asked. `gen` and the CSS commands want the files this project
-/// GENERATES from, and a generated sibling is what says so — otherwise
-/// `index.html` is compiled as a view. `migrate` wants every file written in
-/// the language, generated sibling or not: a starter card has none and is
-/// exactly the file a rename must reach. What keeps that honest is that a file
-/// found this way and refused by the splitter is skipped in silence, because
-/// nobody claimed it was a view.
+/// The files this project GENERATES from, which a generated sibling is what
+/// says: otherwise `index.html` would be compiled as a view.
 async fn scan_dir(
   dir : String,
   found : Array[String],
   seen : Map[String, Bool],
-  managed_only : Bool,
 ) -> Unit noraise {
   let names = @fs.readdir(dir) catch { _ => return }
   for n in names {
@@ -722,15 +637,9 @@ async fn scan_dir(
     let full = if dir.has_suffix("/") { dir + n } else { dir + "/" + n }
     let kind = @fs.kind(full) catch { _ => continue }
     if kind is Directory {
-      scan_dir(full, found, seen, managed_only)
+      scan_dir(full, found, seen)
     } else if @cli.is_view_path(full) && !seen.contains(full) {
-      let managed = if managed_only {
-        @fs.exists(@cli.watch_sibling(full)) catch {
-          _ => false
-        }
-      } else {
-        true
-      }
+      let managed = @fs.exists(@cli.watch_sibling(full)) catch { _ => false }
       if managed {
         seen[full] = true
         found.push(full)
@@ -923,7 +832,6 @@ async fn main {
       run_serve_storybook(opts, dir, port, out)
     GenViews(opts, roots~, out~, name~, dry_run~, ir~) =>
       run_gen_views(opts, roots, out, name, dry_run, ir)
-    Migrate(opts, roots~, write~) => run_migrate(opts, roots, write)
     Watch(opts, plan~) => run_watch(opts, plan)
     GenCss(opts, plan~) => run_gen_css(opts, plan)
     Trace(opts, plan~) => run_trace(opts, plan)
