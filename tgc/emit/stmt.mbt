@@ -375,7 +375,13 @@ fn emit_effect(
   // language's rather than this backend's.
   let named_question = @tscript.ask_names_a_question(args)
   let vals = []
-  for a in args {
+  for i, a in args {
+    // A `&.place` is an address, not a value. `sendAt` reifies its first
+    // argument below; evaluating it here would refuse the whole effect.
+    if name == "sendAt" && i == 0 {
+      vals.push("tg_null()")
+      continue
+    }
     let v = emit_expr(ctx, src, a)
     let t = ctx.temp()
     src.line("let \{t} = \{v};")
@@ -432,10 +438,17 @@ fn emit_effect(
       let rest = vals_array(src, ctx, vals, 0)
       src.line("eff_forward(\{rest}, \{route_code});")
     }
-    "sendAt" =>
-      raise Refused(
-        "`sendAt` addresses a place, and this backend does not reify one yet",
-      )
+    "sendAt" => {
+      guard args.length() >= 2 && args[0] is ERef(place~, ..) else {
+        raise Refused("`sendAt` takes a place and then a message name")
+      }
+      // The place is REIFIED rather than read: `vals` above evaluated every
+      // argument, and the first one is not a value.
+      let path = emit_path(ctx, src, place)
+      let name_v = vals[1]
+      let rest = vals_array(src, ctx, vals, 2)
+      src.line("eff_send_at(\{path}, display(\{name_v}), \{rest});")
+    }
     _ => raise Refused("no effect called `\{name}`")
   }
 }
@@ -487,3 +500,90 @@ const ROUTE_DYN_LEX : Int = 3
 
 ///|
 const ROUTE_LEX_DYN : Int = 4
+
+///|
+/// A `&.place`, reified as the path a host walks.
+///
+/// The walk is done HERE, at compile time, and the corpus pins what it means. A
+/// `PIndex` attaches to the field before it — `.a[k]` is one keyed step, not a
+/// field step and an index — and a `PField` closes the pending one first.
+///
+/// A key READ FROM LIVE STATE is refused. `&.panes[.sel]` means "re-read `.sel`
+/// on every dispatch", which is what makes it follow a moving selection, and
+/// the host's path has no step that says so — `core.Step::SeqAccessStep` exists
+/// but nothing carries it across this boundary. Freezing the key would be a
+/// different path that looks like this one, so it is refused rather than
+/// approximated.
+fn emit_path(
+  ctx : Ctx,
+  src : Src,
+  place : @tutuca.Place,
+) -> String raise Refused {
+  guard place.root is PState(root) else {
+    raise Refused(
+      "`sendAt` addresses this component's own subtree, so its place starts at a field",
+    )
+  }
+  let steps = []
+  let mut pending : String? = Some(root)
+  for step in place.steps {
+    match step {
+      PField(name) => {
+        if pending is Some(f) {
+          steps.push("mk_step_field(\{wax_str(f)})")
+        }
+        pending = Some(name)
+      }
+      PIndex(key) => {
+        guard pending is Some(f) else {
+          raise Refused("`sendAt` cannot index the same field twice in a row")
+        }
+        guard !reads_state(key) else {
+          raise Refused(
+            "`sendAt` with a key read from live state means \"re-read it on every " +
+            "dispatch\", and the host's path has no step that says so — a literal " +
+            "or a parameter key compiles",
+          )
+        }
+        let k = emit_expr(ctx, src, key)
+        let t = ctx.temp()
+        src.line("let \{t} = \{k};")
+        src.line("if \{t} == null { return null; }")
+        steps.push("mk_step_key(\{wax_str(f)}, \{t})")
+        pending = None
+      }
+    }
+  }
+  if pending is Some(f) {
+    steps.push("mk_step_field(\{wax_str(f)})")
+  }
+  let a = ctx.temp()
+  src.line("let \{a} = [tg_vals| null; \{steps.length()}];")
+  for i, e in steps {
+    src.line("\{a}[\{i}] = \{e};")
+  }
+  "tg_list(\{a})"
+}
+
+///|
+/// Whether an expression reads the component's own state.
+fn reads_state(e : @tutuca.Expr) -> Bool {
+  match e {
+    ERead(place~, ..) | ERef(place~, ..) => place.root is PState(_)
+    EApp(args~, ..) => args.iter().any(reads_state)
+    EChain(operands~, ..) => operands.iter().any(reads_state)
+    EUnary(operand~, ..) => reads_state(operand)
+    EIf(cond~, then_~, else_~, ..) =>
+      reads_state(cond) || reads_state(then_) || reads_state(else_)
+    ETpl(parts~, ..) =>
+      parts
+      .iter()
+      .any(p => {
+        match p {
+          TExpr(inner) => reads_state(inner)
+          TText(..) => false
+        }
+      })
+    _ => false
+  }
+}

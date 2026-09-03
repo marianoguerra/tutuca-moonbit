@@ -30,13 +30,19 @@ const runtime = (
 ).instance.exports;
 
 const CARD = `<script type="tutuca/spec">
-  state Counter { count: Int, label: String, tags: Set[String] }
+  struct Pane { inner: String }
+  state Counter {
+    count: Int, label: String, tags: Set[String]
+    rows: Array[String], panes: Map[String, Pane]
+  }
 </script>
 <script type="tutuca/script">
   receive inc { .count += 1 }
   receive setTo(n) { .count = n }
   receive tag(t) { .tags.add t }
   receive announce { send 'shouted' .label }
+  receive poke(i) { sendAt &.rows[i] 'ping' 1 }
+  receive pokeNamed(k) { sendAt &.panes[k].inner 'ping' }
   compute shown { $'count: {.count}' }
   pred big { .count > 2 }
 </script>
@@ -95,6 +101,27 @@ test("an effect is buffered by the host and comes back with the dispatch", () =>
   const h = guest.create("Counter", JSON.stringify({ label: "ada" }));
   const r = JSON.parse(guest.dispatch(h, 0, "announce", "[]", "{}"));
   assert.deepEqual(r.msgs, [{ kind: "send", name: "shouted", args: ["ada"] }]);
+});
+
+// `sendAt` names a POSITION, and which wire case a keyed step becomes is
+// decided at RUN time — a whole non-negative number is an index, anything else
+// is a key. The card cannot know which, because `.rows[k]` and `.panes[k]` are
+// the same syntax.
+test("sendAt reifies a place, and the key decides its own step", () => {
+  const h = guest.create("Counter", JSON.stringify({}));
+  const byIndex = JSON.parse(guest.dispatch(h, 0, "poke", "[2]", "{}"));
+  assert.deepEqual(byIndex.msgs, [
+    { kind: "sendAt", path: [{ at: ["rows", 2] }], name: "ping", args: [1] },
+  ]);
+  const byKey = JSON.parse(guest.dispatch(h, 0, "pokeNamed", '["left"]', "{}"));
+  assert.deepEqual(byKey.msgs, [
+    {
+      kind: "sendAt",
+      path: [{ item: ["panes", "left"] }, { field: "inner" }],
+      name: "ping",
+      args: [],
+    },
+  ]);
 });
 
 test("a compute answers its value and a pred answers truthiness", () => {

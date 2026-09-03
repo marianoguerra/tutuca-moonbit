@@ -384,6 +384,13 @@ let runtime_imports : Array[(String, String, String)] = [
   // knows when it ended: an effect performed before a statement that abandons
   // is discarded with the transition.
   ("eff_send", "eff_send", "(name: &tg_bytes, args: &tg_vals)"),
+  (
+    "eff_send_at", "eff_send_at", "(path: &?tg_val, name: &tg_bytes, args: &tg_vals)",
+  ),
+  ("mk_step_field", "mk_step_field", "(name: &tg_bytes) -> &?tg_val"),
+  (
+    "mk_step_key", "mk_step_key", "(field: &tg_bytes, key: &?tg_val) -> &?tg_val",
+  ),
   ("eff_reply", "eff_reply", "(name: &tg_bytes, args: &tg_vals)"),
   ("eff_answer", "eff_answer", "(v: &?tg_val)"),
   ("eff_ask", "eff_ask", "(name: &tg_bytes, args: &tg_vals, route: i32)"),

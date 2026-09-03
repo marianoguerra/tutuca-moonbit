@@ -1023,5 +1023,39 @@ pub fn source() -> String {
     #|    v
     #|}
     #|
+    #|fn tg_pair(a: &?tg_val, b: &?tg_val) -> &?tg_val {
+    #|    let items = [tg_vals| null; 2];
+    #|    items[0] = a;
+    #|    items[1] = b;
+    #|    tg_list(items)
+    #|}
+    #|
+    #|fn tg_one_entry(key: &tg_bytes, value: &?tg_val) -> &?tg_val {
+    #|    let es = [tg_entries| null; 1];
+    #|    es[0] = tg_entry_of(key, value);
+    #|    tg_map(es)
+    #|}
+    #|
+    #|#[export = "mk_step_field"]
+    #|fn tg_step_field(name: &tg_bytes) -> &?tg_val {
+    #|    tg_one_entry("field", tg_str(name))
+    #|}
+    #|
+    #|#[export = "mk_step_key"]
+    #|fn tg_step_key(field: &tg_bytes, key: &?tg_val) -> &?tg_val {
+    #|    if key == null { return null; }
+    #|    let k = key!;
+    #|    if k.kind == 2 {
+    #|        let n = (k as &tg_num).value;
+    #|        if n >= 0.0 {
+    #|            let whole = (n as i64_s) as f64_s;
+    #|            if whole == n {
+    #|                return tg_one_entry("at", tg_pair(tg_str(field), tg_num(n)));
+    #|            }
+    #|        }
+    #|    }
+    #|    tg_one_entry("item", tg_pair(tg_str(field), tg_str(tg_display(key))))
+    #|}
+    #|
   src
 }

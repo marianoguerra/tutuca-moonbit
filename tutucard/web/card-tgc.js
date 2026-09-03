@@ -116,6 +116,16 @@ export async function loadTgcGuest(bytes, key = "default", { runtime } = {}) {
   const effects = {
     eff_send: (name, args) =>
       control.push({ kind: "send", name: V.text(name), args: argsOf(args) }),
+    // A PLACE, reified by the generator and walked by the host. The steps are
+    // already in the host's own spelling — `{"field":…}`, `{"item":[seq,key]}`,
+    // `{"at":[seq,i]}` — so this hands them over rather than translating them.
+    eff_send_at: (path, name, args) =>
+      control.push({
+        kind: "sendAt",
+        path: V.toJson(path) ?? [],
+        name: V.text(name),
+        args: argsOf(args),
+      }),
     eff_reply: (name, args) =>
       control.push({ kind: "sendReply", name: V.text(name), args: argsOf(args) }),
     eff_answer: (v) => control.push({ kind: "reply", value: V.toJson(v) ?? null }),

@@ -302,7 +302,7 @@ worth naming because none of them showed up in the corpus:
 
 | | why |
 |---|---|
-| `sendAt` | addresses a place, and this backend does not reify one yet |
+| `sendAt` with a key read from live state | `&.panes[.sel]` means "re-read `.sel` on every dispatch", which is what makes it follow a moving selection. The host's path has no step that says so, and freezing the key would be a different path that looks like this one. A literal or a parameter key compiles. |
 | `$method`, `*dyn`, `e.` paths, `^macro`, `$$config` | answered by the render stack or by the view parser, and a compiled handler runs after both |
 | `clear`, `delete`, `set`, `removeAt` | parsed as collection methods that no backend has ever implemented, so there is no behaviour to compile |
 
@@ -321,12 +321,6 @@ worth naming because none of them showed up in the corpus:
 
 ## 11. What is not here yet
 
-- **`sendAt`.** It addresses a PLACE, and this backend does not reify one. The
-  format it replaces compiles a literal or parameter key and refuses a key
-  re-read from live state; this compiles neither. Nothing in the repository
-  uses it — no starter card, no guest, and the corpus names it only in the
-  vocabulary its `kind` field draws on — so nothing regresses today, but
-  removing the older backend would take the only implementation with it.
 - **The host.** No `&Obj` wrapper, no renderer, no dispatch, no policy. The
   security argument in `dyncomp/SECURITY.md` has to be re-made against this
   import surface before anything untrusted is loaded through it.

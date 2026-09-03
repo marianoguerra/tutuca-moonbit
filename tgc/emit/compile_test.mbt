@@ -55,13 +55,13 @@ test "one declaration is refused and the rest still compiles" {
     #|</script>
     #|<script type="tutuca/script">
     #|  receive inc { .count += 1 }
-    #|  receive ping { sendAt &.rows[0] 'ping' }
+    #|  receive ping { .count = @value }
     #|</script>
     #|<template id="Counter:main" data-root><b></b></template>
   let out = @emit.compile(card, name="counter")
   assert_eq(out.refusals.map(r => r.name), ["ping"])
   assert_true(
-    out.refusals[0].reason.contains("sendAt"),
+    out.refusals[0].reason.contains("handed no row"),
     msg=out.refusals[0].reason,
   )
   assert_true(
@@ -110,5 +110,56 @@ test "a card that performs no effect imports no effect" {
   assert_false(
     loud.wax.contains("#[import = \"eff_ask\"]"),
     msg="but not an asker",
+  )
+}
+
+///|
+/// `sendAt` addresses a PLACE, and a place is reified rather than read.
+///
+/// The walk happens when the card compiles; which wire case a keyed step
+/// becomes is decided at run time, because `.rows[k]` and `.panes[k]` are the
+/// same syntax and a list indexes where a map keys.
+test "sendAt reifies its place" {
+  let card =
+    #|<script type="tutuca/spec">
+    #|  struct Pane { inner: String }
+    #|  state Board { rows: Array[String], panes: Map[String, Pane] }
+    #|</script>
+    #|<script type="tutuca/script">
+    #|  receive poke(i) { sendAt &.rows[i] 'ping' }
+    #|  receive named(k) { sendAt &.panes[k].inner 'ping' 1 }
+    #|  receive whole { sendAt &.rows 'ping' }
+    #|</script>
+    #|<template id="Board" data-root><b></b></template>
+  let out = @emit.compile(card, name="board")
+  assert_eq(out.refusals.map(r => r.name), [])
+  assert_true(out.wax.contains("eff_send_at"), msg="the effect")
+  assert_true(out.wax.contains("mk_step_key(\"rows\""), msg="a keyed step")
+  assert_true(
+    out.wax.contains("mk_step_field(\"inner\")"),
+    msg="a field after a key",
+  )
+  assert_true(out.wax.contains("mk_step_field(\"rows\")"), msg="a bare field")
+}
+
+///|
+/// A key READ FROM LIVE STATE is refused, and the reason is the host's rather
+/// than this backend's: `&.panes[.sel]` means "re-read `.sel` on every
+/// dispatch", and freezing it would be a different path that looks like this
+/// one.
+test "a sendAt key read from live state is refused" {
+  let card =
+    #|<script type="tutuca/spec">
+    #|  state Board { panes: Map[String, String], sel: String }
+    #|</script>
+    #|<script type="tutuca/script">
+    #|  receive poke { sendAt &.panes[.sel] 'ping' }
+    #|</script>
+    #|<template id="Board" data-root><b></b></template>
+  let out = @emit.compile(card, name="board")
+  assert_eq(out.refusals.map(r => r.name), ["poke"])
+  assert_true(
+    out.refusals[0].reason.contains("re-read"),
+    msg=out.refusals[0].reason,
   )
 }
