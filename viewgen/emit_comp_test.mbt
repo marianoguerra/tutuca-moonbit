@@ -31,7 +31,7 @@ test "a schema-backed component gets a wrapper over component()" {
   assert_true(
     ir.contains("  views? : Map[String, @anode.View] = counter_views(),"),
   )
-  assert_true(ir.contains("  init? : CounterState = CounterState::zero(),"))
+  assert_true(ir.contains("  initial? : CounterState = CounterState::zero(),"))
   assert_true(ir.contains("  common_style? : String = counter_common_style,"))
   assert_true(ir.contains("  global_style? : String = counter_global_style,"))
   // The schema and the codec are NOT arguments: `CounterState` states them

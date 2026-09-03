@@ -26,7 +26,7 @@ pub(all) struct PersonState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..PersonState::zero(), label: "Counter" }
+///   initial={ ..PersonState::zero(), label: "Counter" }
 pub fn PersonState::zero() -> PersonState {
   { name: "", email: "", active: false, }
 }
@@ -99,7 +99,7 @@ pub(all) struct StrategiesState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..StrategiesState::zero(), label: "Counter" }
+///   initial={ ..StrategiesState::zero(), label: "Counter" }
 pub fn StrategiesState::zero() -> StrategiesState {
   { naive: Null, shared: Null, coupled: Null, }
 }
@@ -173,7 +173,7 @@ pub(all) struct NaivePeopleState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..NaivePeopleState::zero(), label: "Counter" }
+///   initial={ ..NaivePeopleState::zero(), label: "Counter" }
 pub fn NaivePeopleState::zero() -> NaivePeopleState {
   { items: [], query: "", page: 0, pageSize: 0, }
 }
@@ -216,14 +216,16 @@ impl @component.Fields for NaivePeopleState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum NaivePeopleReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum NaivePeopleMsg {
   Next
   Prev
   Search(String)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -241,9 +243,9 @@ pub(all) enum NaivePeopleReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn NaivePeopleReceive::from_dispatch(
+pub fn NaivePeopleMsg::from_dispatch(
   d : @component.Dispatch,
-) -> NaivePeopleReceive? {
+) -> NaivePeopleMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -265,8 +267,8 @@ pub fn NaivePeopleReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn NaivePeopleReceive::to_dispatch(
-  self : NaivePeopleReceive,
+pub fn NaivePeopleMsg::to_dispatch(
+  self : NaivePeopleMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Next => ("next", [])
@@ -281,10 +283,7 @@ pub fn NaivePeopleReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn NaivePeopleReceive::send(
-  self : NaivePeopleReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn NaivePeopleMsg::send(self : NaivePeopleMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -296,70 +295,6 @@ pub let naive_people_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let naive_people_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum NaivePeopleInput {
-  Next
-  Prev
-  Search
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn NaivePeopleInput::name(self : NaivePeopleInput) -> String {
-  match self {
-    Next => "next"
-    Prev => "prev"
-    Search => "search"
-  }
-}
-
-///|
-pub fn NaivePeopleInput::parse(s : String) -> NaivePeopleInput? {
-  match s {
-    "next" => Some(Next)
-    "prev" => Some(Prev)
-    "search" => Some(Search)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to filter_paginate.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum NaivePeopleMsg {
-  /// `@on.click="next …"`
-  Next
-  /// `@on.click="prev …"`
-  Prev
-  /// `@on.input="search …"`
-  Search(String)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn NaivePeopleMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> NaivePeopleMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("next", []) => Next
-      ("prev", []) => Prev
-      ("search", [Str(a0)]) => Search(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// Every `@when` handler the views name.
@@ -435,55 +370,35 @@ pub let shared_people_common_style : String = ""
 pub let shared_people_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum SharedPeopleInput {
-  Next
-  Prev
-  Search
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SharedPeopleInput::name(self : SharedPeopleInput) -> String {
-  match self {
-    Next => "next"
-    Prev => "prev"
-    Search => "search"
-  }
-}
-
-///|
-pub fn SharedPeopleInput::parse(s : String) -> SharedPeopleInput? {
-  match s {
-    "next" => Some(Next)
-    "prev" => Some(Prev)
-    "search" => Some(Search)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to filter_paginate.html breaks every `match` over this type
-/// until it is handled.
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
 pub(all) enum SharedPeopleMsg {
-  /// `@on.click="next …"`
   Next
-  /// `@on.click="prev …"`
   Prev
-  /// `@on.input="search …"`
   Search(String)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
+  /// A message the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SharedPeopleMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> SharedPeopleMsg? {
@@ -493,9 +408,43 @@ pub fn SharedPeopleMsg::from_dispatch(
       ("next", []) => Next
       ("prev", []) => Prev
       ("search", [Str(a0)]) => Search(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "next" => @tutuca.bad_payload(name, "", args)
+          "prev" => @tutuca.bad_payload(name, "", args)
+          "search" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn SharedPeopleMsg::to_dispatch(
+  self : SharedPeopleMsg,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    Next => ("next", [])
+    Prev => ("prev", [])
+    Search(a0) => ("search", [Str(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn SharedPeopleMsg::send(
+  self : SharedPeopleMsg,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|
@@ -546,55 +495,35 @@ pub let coupled_people_common_style : String = ""
 pub let coupled_people_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum CoupledPeopleInput {
-  Next
-  Prev
-  Search
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CoupledPeopleInput::name(self : CoupledPeopleInput) -> String {
-  match self {
-    Next => "next"
-    Prev => "prev"
-    Search => "search"
-  }
-}
-
-///|
-pub fn CoupledPeopleInput::parse(s : String) -> CoupledPeopleInput? {
-  match s {
-    "next" => Some(Next)
-    "prev" => Some(Prev)
-    "search" => Some(Search)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to filter_paginate.html breaks every `match` over this type
-/// until it is handled.
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
 pub(all) enum CoupledPeopleMsg {
-  /// `@on.click="next …"`
   Next
-  /// `@on.click="prev …"`
   Prev
-  /// `@on.input="search …"`
   Search(String)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
+  /// A message the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn CoupledPeopleMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> CoupledPeopleMsg? {
@@ -604,9 +533,43 @@ pub fn CoupledPeopleMsg::from_dispatch(
       ("next", []) => Next
       ("prev", []) => Prev
       ("search", [Str(a0)]) => Search(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "next" => @tutuca.bad_payload(name, "", args)
+          "prev" => @tutuca.bad_payload(name, "", args)
+          "search" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn CoupledPeopleMsg::to_dispatch(
+  self : CoupledPeopleMsg,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    Next => ("next", [])
+    Prev => ("prev", [])
+    Search(a0) => ("search", [Str(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn CoupledPeopleMsg::send(
+  self : CoupledPeopleMsg,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|

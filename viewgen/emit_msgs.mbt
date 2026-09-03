@@ -7,32 +7,39 @@
 // `Array[Value]` end to end — the one place the generator had nothing to say.
 //
 // Declaring them buys both directions at once: a typed decode on the way in
-// (`CounterReceive::from_dispatch`) and a typed raise on the way out
-// (`CounterReceive::Tick.send(ctx)`), so the name is written once, in the
+// (`CounterMsg::from_dispatch`) and a typed raise on the way out
+// (`CounterMsg::Tick.send(ctx)`), so the name is written once, in the
 // schema, instead of twice as a matching pair of string literals.
 
 ///|
-/// The declared buckets, if the schema declares any.
+/// The two message enums.
 ///
-/// Two, and the interesting one is `Receive`: it is the schema's `receive`
-/// variant **merged with the view names**, because one bucket holds every
-/// addressed message whoever sent it. `Intent` is the schema's `intent`
-/// variant.
+/// `<T>Msg` is the schema's `message` variant **merged with the view names**,
+/// because one bucket holds every addressed message whoever sent it — and
+/// there is one type over it for the same reason. There used to be two: this
+/// one under the name `<T>Receive`, and a `<T>Msg` in `emit.mbt` holding the
+/// view names alone with their inferred shapes. The second was a strictly
+/// weaker view of the first — every name in it is in this one, typed by the
+/// schema where the schema says anything — so an author matching the bucket
+/// had to write two matches over one thing, or find out which of the two to
+/// use. `<T>Intent` is the schema's `intent` variant.
 fn emit_msgs(
   t : String,
   def : @statedef.StateDef,
   surface : Surface,
+  answered_inputs : Array[String],
   out : StringBuilder,
 ) -> Unit raise GenError {
   emit_bucket_enum(
     t,
-    "Receive",
+    "Msg",
     "Receive",
     merged_receive(def, surface),
     def,
+    answered_inputs,
     out,
   )
-  emit_bucket_enum(t, "Intent", "Intent", def.intent, def, out)
+  emit_bucket_enum(t, "Intent", "Intent", def.intent, def, [], out)
 }
 
 ///|
@@ -142,8 +149,9 @@ fn arg_kind_word(t : ArgType) -> String {
 /// The variant name goes through `variants_for` at the call site, so this only
 /// has to answer what the name and the payload are. Payload types are the ones
 /// the call sites wrote; `args: None` — call sites that disagreed about arity —
-/// becomes an empty payload, and the decode's `Unknown` arm carries the
-/// arguments instead, which is exactly what `<T>Msg` does with the same input.
+/// is VARIADIC, and the arm is handed the raw argument list. Not an empty
+/// payload: `activate @key` and `activate @key e.isCtrl` are two call sites of
+/// one name, and a case that took nothing would decode both to `Unknown`.
 fn msg_of_sig(sig : InputSig) -> @statedef.MsgDef {
   let capped = sig.name[0:1].to_owned().to_upper() + sig.name[1:].to_owned()
   {
@@ -160,7 +168,103 @@ fn msg_of_sig(sig : InputSig) -> @statedef.MsgDef {
       Some(types) => types.map(t => arg_state_ty(t).unwrap_or(TyAny))
       None => []
     },
+    variadic: sig.args is None,
     doc: None,
+  }
+}
+
+///|
+/// Which cases the script block already answers, as a doc line.
+///
+/// They are still IN the enum, because its variants are also what
+/// `to_dispatch` raises and a parent raising one is exactly what the block is
+/// there to answer. What the note buys is the other half: an `update` arm for
+/// one of these can never run, because the generated wrapper consults the
+/// author's `update` only for a dispatch the block did not claim.
+fn answered_note(answered : Array[String]) -> String {
+  if answered.is_empty() {
+    return ""
+  }
+  "///\n" +
+  "/// The script block answers \{answered.join(", ")}, so an `update` arm for\n" +
+  "/// one of those can never run — the wrapper consults `update` only for a\n" +
+  "/// dispatch the block did not claim. They are still here because raising\n" +
+  "/// one is what a parent does, and `to_dispatch` is how.\n"
+}
+
+///|
+/// A schema that declares nothing, to build a view-only enum against.
+///
+/// It is only ever asked to resolve a payload's user type, and a view-inferred
+/// payload has none — the inference answers scalars and `TyAny`. So there is
+/// nothing for it to carry and no reason to make one that does.
+fn empty_def() -> @statedef.StateDef {
+  {
+    source_name: "",
+    component: "",
+    fields: [],
+    properties: [],
+    receive: [],
+    intent: [],
+    express_message: [],
+    express_intent: [],
+    implements: [],
+    protocols: [],
+    protocol_imports: [],
+    property_bindings: [],
+    view_bindings: [],
+    provide_bindings: [],
+    lookup_bindings: [],
+    types: [],
+    provide: [],
+    lookup: [],
+    rules: [],
+    wheres: [],
+    doc: None,
+  }
+}
+
+///|
+/// The same enum for a file that declares no schema.
+///
+/// Every case comes from a view call site, so there is nothing to merge and no
+/// user type a payload could name — which is why an empty `StateDef` is enough
+/// to build it with, and why this is a call rather than a second emitter.
+fn emit_view_only_msgs(
+  t : String,
+  surface : Surface,
+  answered_inputs : Array[String],
+  out : StringBuilder,
+) -> Unit raise GenError {
+  emit_bucket_enum(
+    t,
+    "Msg",
+    "Receive",
+    surface.inputs.map(msg_of_sig),
+    empty_def(),
+    answered_inputs,
+    out,
+  )
+}
+
+///|
+/// Where a bucket's names come from, as the enum's own doc comment.
+///
+/// The two answer differently and it is worth saying which: an `intent` is
+/// raised by component code and never written in a view, so the schema is the
+/// only place it can be declared; a message is written in both, and the enum
+/// is the union with the schema winning where they overlap.
+fn origin_note(suffix : String) -> String {
+  if suffix == "Msg" {
+    "/// Every addressed name: the `message` variant the state block declares,\n" +
+    "/// plus every bare `@on` handler the views write. One bucket holds them\n" +
+    "/// however they were sent, so one type covers it — where the two overlap\n" +
+    "/// the schema's declared payload wins, and a view whose call sites\n" +
+    "/// disagree with it is a build error.\n"
+  } else {
+    "/// Declared as `variant intent` in the state block. These names are\n" +
+    "/// raised by component code rather than written in a view, so the views\n" +
+    "/// cannot type them — the schema is the only place they can be declared.\n"
   }
 }
 
@@ -172,6 +276,7 @@ fn emit_bucket_enum(
   dispatch_arm : String,
   msgs : Array[@statedef.MsgDef],
   def : @statedef.StateDef,
+  answered_inputs : Array[String],
   out : StringBuilder,
 ) -> Unit raise GenError {
   if msgs.is_empty() {
@@ -180,14 +285,15 @@ fn emit_bucket_enum(
   // Guards against a schema whose case names collapse onto one variant.
   variants_for(msgs.map(m => m.name)) |> ignore
   let ty = "\{t}\{suffix}"
-  let lower = suffix.to_lower()
+  // The word the doc comments use for one of these. `Msg` is the merged
+  // bucket, and what a reader calls one is a message.
+  let lower = if suffix == "Msg" { "message" } else { suffix.to_lower() }
   out.write_string(
     "///|\n" +
     "/// The \{dispatch_arm} arm of @component.Dispatch, decoded.\n" +
     "///\n" +
-    "/// Declared as `variant \{lower}` in the state block. These names are\n" +
-    "/// raised by component code rather than written in a view, so the views\n" +
-    "/// cannot type them — the schema is the only place they can be declared.\n" +
+    "\{origin_note(suffix)}" +
+    "\{answered_note(answered_inputs)}" +
     "pub(all) enum \{ty} {\n",
   )
   for m in msgs {
@@ -201,7 +307,11 @@ fn emit_bucket_enum(
         }
       None => ()
     }
-    if m.payload.is_empty() {
+    if m.variadic {
+      // Any number, of shapes the call sites did not agree on. The raw list,
+      // which is the honest answer and the one the arm can still read.
+      out.write_string("  \{m.variant}(Array[@tutuca.Value])\n")
+    } else if m.payload.is_empty() {
       out.write_string("  \{m.variant}\n")
     } else {
       let ps = m.payload.map(p => msg_payload_ty(def, p)).join(", ")
@@ -295,6 +405,11 @@ fn emit_bad_payload_report(
 ) -> Unit {
   out.write_string("        match name {\n")
   for m in msgs {
+    // A variadic name cannot reach here: its arm matches on the name alone,
+    // so nothing about its arguments can be wrong.
+    if m.variadic {
+      continue
+    }
     out.write_string(
       "          \{quote(m.name)} =>\n" +
       "            @tutuca.bad_payload(name, \{quote(payload_source(m))}, args)\n",
@@ -313,6 +428,12 @@ fn emit_decode_arm(
   def : @statedef.StateDef,
   out : StringBuilder,
 ) -> Unit {
+  if m.variadic {
+    // Any arguments at all, handed over as they arrived. Nothing can be wrong
+    // with the shape, because nothing said what the shape should be.
+    out.write_string("      (\{quote(m.name)}, _) => \{m.variant}(args)\n")
+    return
+  }
   if m.payload.is_empty() {
     out.write_string("      (\{quote(m.name)}, []) => \{m.variant}\n")
     return
@@ -417,7 +538,9 @@ fn emit_raise(
     "  match self {\n",
   )
   for m in msgs {
-    if m.payload.is_empty() {
+    if m.variadic {
+      out.write_string("    \{m.variant}(args) => (\{quote(m.name)}, args)\n")
+    } else if m.payload.is_empty() {
       out.write_string("    \{m.variant} => (\{quote(m.name)}, [])\n")
     } else {
       let binders = m.payload.mapi((i, _) => "a\{i}")
@@ -438,7 +561,7 @@ fn emit_raise(
   // which is why `Intent` gets a raiser and nothing replaces `Response`'s
   // absence.
   match suffix {
-    "Receive" =>
+    "Msg" =>
       emit_sender(
         ty, "send", "send", "Send this message to self; it arrives as a later Receive dispatch.",
         out,

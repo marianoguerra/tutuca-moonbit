@@ -24,7 +24,7 @@ pub(all) struct CompNameState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..CompNameState::zero(), label: "Counter" }
+///   initial={ ..CompNameState::zero(), label: "Counter" }
 pub fn CompNameState::zero() -> CompNameState {
   { name: "", }
 }
@@ -92,7 +92,7 @@ pub(all) struct CompFieldState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..CompFieldState::zero(), label: "Counter" }
+///   initial={ ..CompFieldState::zero(), label: "Counter" }
 pub fn CompFieldState::zero() -> CompFieldState {
   { name: "", typeName: "", child: Null, }
 }
@@ -169,7 +169,7 @@ pub(all) struct CompViewState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..CompViewState::zero(), label: "Counter" }
+///   initial={ ..CompViewState::zero(), label: "Counter" }
 pub fn CompViewState::zero() -> CompViewState {
   { name: "", rawView: "", isExpanded: false, }
 }
@@ -202,12 +202,14 @@ impl @component.Fields for CompViewState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum CompViewReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum CompViewMsg {
   Toggle(Bool)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -225,9 +227,7 @@ pub(all) enum CompViewReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn CompViewReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> CompViewReceive? {
+pub fn CompViewMsg::from_dispatch(d : @component.Dispatch) -> CompViewMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -245,8 +245,8 @@ pub fn CompViewReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn CompViewReceive::to_dispatch(
-  self : CompViewReceive,
+pub fn CompViewMsg::to_dispatch(
+  self : CompViewMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Toggle(a0) => ("toggle", [Bool(a0)])
@@ -259,10 +259,7 @@ pub fn CompViewReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn CompViewReceive::send(
-  self : CompViewReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn CompViewMsg::send(self : CompViewMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -276,63 +273,13 @@ pub let comp_view_common_style : String = ""
 pub let comp_view_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum CompViewInput {
-  Toggle
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CompViewInput::name(self : CompViewInput) -> String {
-  match self {
-    Toggle => "toggle"
-  }
-}
-
-///|
-pub fn CompViewInput::parse(s : String) -> CompViewInput? {
-  match s {
-    "toggle" => Some(Toggle)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to component_inspector.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum CompViewMsg {
-  /// `@on.click="toggle …"`
-  Toggle(Bool)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn CompViewMsg::from_dispatch(d : @component.Dispatch) -> CompViewMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("toggle", [Bool(a0)]) => Toggle(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
-pub(all) enum CompViewMethod {
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+pub(all) enum CompViewCompute {
   ArrowText
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn CompViewMethod::name(self : CompViewMethod) -> String {
+pub fn CompViewCompute::name(self : CompViewCompute) -> String {
   match self {
     ArrowText => "arrowText"
   }
@@ -382,7 +329,7 @@ pub(all) struct CompSectionState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..CompSectionState::zero(), label: "Counter" }
+///   initial={ ..CompSectionState::zero(), label: "Counter" }
 pub fn CompSectionState::zero() -> CompSectionState {
   { items: [], isExpanded: false, itemsPerPage: 0, currentPage: 0, label: "", }
 }
@@ -433,14 +380,16 @@ impl @component.Fields for CompSectionState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum CompSectionReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum CompSectionMsg {
   NextPage
   PrevPage
   Toggle(Bool)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -458,9 +407,9 @@ pub(all) enum CompSectionReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn CompSectionReceive::from_dispatch(
+pub fn CompSectionMsg::from_dispatch(
   d : @component.Dispatch,
-) -> CompSectionReceive? {
+) -> CompSectionMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -482,8 +431,8 @@ pub fn CompSectionReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn CompSectionReceive::to_dispatch(
-  self : CompSectionReceive,
+pub fn CompSectionMsg::to_dispatch(
+  self : CompSectionMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     NextPage => ("nextPage", [])
@@ -498,10 +447,7 @@ pub fn CompSectionReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn CompSectionReceive::send(
-  self : CompSectionReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn CompSectionMsg::send(self : CompSectionMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -515,76 +461,12 @@ pub let comp_section_common_style : String = ""
 pub let comp_section_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum CompSectionInput {
-  NextPage
-  PrevPage
-  Toggle
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CompSectionInput::name(self : CompSectionInput) -> String {
-  match self {
-    NextPage => "nextPage"
-    PrevPage => "prevPage"
-    Toggle => "toggle"
-  }
-}
-
-///|
-pub fn CompSectionInput::parse(s : String) -> CompSectionInput? {
-  match s {
-    "nextPage" => Some(NextPage)
-    "prevPage" => Some(PrevPage)
-    "toggle" => Some(Toggle)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to component_inspector.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum CompSectionMsg {
-  /// `@on.click="nextPage …"`
-  NextPage
-  /// `@on.click="prevPage …"`
-  PrevPage
-  /// `@on.click="toggle …"`
-  Toggle(Bool)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn CompSectionMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> CompSectionMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("nextPage", []) => NextPage
-      ("prevPage", []) => PrevPage
-      ("toggle", [Bool(a0)]) => Toggle(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: pageExists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
 /// these could never run.
-pub(all) enum CompSectionMethod {
+pub(all) enum CompSectionCompute {
   ArrowText
   CannotNextPage
   CannotPrevPage
@@ -596,7 +478,7 @@ pub(all) enum CompSectionMethod {
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn CompSectionMethod::name(self : CompSectionMethod) -> String {
+pub fn CompSectionCompute::name(self : CompSectionCompute) -> String {
   match self {
     ArrowText => "arrowText"
     CannotNextPage => "cannotNextPage"
@@ -673,7 +555,7 @@ pub(all) struct ComponentInspectorState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ComponentInspectorState::zero(), label: "Counter" }
+///   initial={ ..ComponentInspectorState::zero(), label: "Counter" }
 pub fn ComponentInspectorState::zero() -> ComponentInspectorState {
   { compName: "", compId: 0, sections: [], }
 }
@@ -794,14 +676,14 @@ pub let component_inspector_common_style : String = ""
 pub let component_inspector_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum ComponentInspectorMethod {
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+pub(all) enum ComponentInspectorCompute {
   IdText
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn ComponentInspectorMethod::name(
-  self : ComponentInspectorMethod,
+pub fn ComponentInspectorCompute::name(
+  self : ComponentInspectorCompute,
 ) -> String {
   match self {
     IdText => "idText"

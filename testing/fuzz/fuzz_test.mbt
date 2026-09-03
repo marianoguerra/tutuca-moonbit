@@ -63,7 +63,7 @@ fn till_module(enforced? : Bool = true) -> @component.ModuleDef {
       ),
     },
     name="Till",
-    init=TillState::{ till: 10, float_: 5, },
+    initial=TillState::{ till: 10, float_: 5, },
     // The only transition the component itself offers, and it keeps the
     // invariant: drawing lowers the till and the float with it.
     update=(s : TillState, msg, _ctx) => {
@@ -528,7 +528,7 @@ fn album_module() -> @component.ModuleDef {
       ),
     },
     name="Album",
-    init=AlbumState::{ photos: [Str("a"), Str("b"), Str("c")], cursor: 0, },
+    initial=AlbumState::{ photos: [Str("a"), Str("b"), Str("c")], cursor: 0, },
     spec=ALBUM_SPEC,
   )
   @component.ModuleDef::new(name="album", components=[comp], examples=[

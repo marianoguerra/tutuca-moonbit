@@ -116,7 +116,7 @@ pub fn styles_example_views() -> Map[String, @anode.View] {
 pub fn styles_example_component(
   name? : String = "StylesExample",
   views? : Map[String, @anode.View] = styles_example_views(),
-  init? : StylesExampleState = StylesExampleState::zero(),
+  initial? : StylesExampleState = StylesExampleState::zero(),
   common_style? : String = styles_example_common_style,
   global_style? : String = styles_example_global_style,
   update? : (StylesExampleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -130,7 +130,7 @@ pub fn styles_example_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -186,7 +186,7 @@ pub fn styles_example_root_views() -> Map[String, @anode.View] {
 pub fn styles_example_root_component(
   name? : String = "StylesExampleRoot",
   views? : Map[String, @anode.View] = styles_example_root_views(),
-  init? : StylesExampleRootState = StylesExampleRootState::zero(),
+  initial? : StylesExampleRootState = StylesExampleRootState::zero(),
   common_style? : String = styles_example_root_common_style,
   global_style? : String = styles_example_root_global_style,
   update? : (StylesExampleRootState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -200,7 +200,7 @@ pub fn styles_example_root_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

@@ -93,7 +93,7 @@ let svg_sample : String =
 ///|
 fn build() -> @component.ModuleDef {
   let editor = markup_preview_component(
-    init=MarkupPreviewState::{ html: html_sample, svg: svg_sample },
+    initial=MarkupPreviewState::{ html: html_sample, svg: svg_sample },
   )
   @component.ModuleDef::new(
     name="markup",

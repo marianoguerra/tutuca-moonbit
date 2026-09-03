@@ -14,7 +14,7 @@
 // generator says so by name — and that one goes here, as an `update~`.
 
 fn build() -> @component.ModuleDef {
-  let counter = counter_component(init=CounterState::{ count: 0 })
+  let counter = counter_component(initial=CounterState::{ count: 0 })
   @component.ModuleDef::new(
     name="counter",
     components=[counter],

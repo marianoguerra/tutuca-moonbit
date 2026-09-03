@@ -39,7 +39,7 @@ pub(all) struct CorpusState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..CorpusState::zero(), label: "Counter" }
+///   initial={ ..CorpusState::zero(), label: "Counter" }
 pub fn CorpusState::zero() -> CorpusState {
   {
     name: "",
@@ -156,10 +156,12 @@ impl @component.Fields for CorpusState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum CorpusReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum CorpusMsg {
   Case0
   Case1
   Case2(Int)
@@ -182,7 +184,7 @@ pub(all) enum CorpusReceive {
   Case27(String)
   Case28(String)
   Case29(String)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -200,7 +202,7 @@ pub(all) enum CorpusReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn CorpusReceive::from_dispatch(d : @component.Dispatch) -> CorpusReceive? {
+pub fn CorpusMsg::from_dispatch(d : @component.Dispatch) -> CorpusMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -268,8 +270,8 @@ pub fn CorpusReceive::from_dispatch(d : @component.Dispatch) -> CorpusReceive? {
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn CorpusReceive::to_dispatch(
-  self : CorpusReceive,
+pub fn CorpusMsg::to_dispatch(
+  self : CorpusMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Case0 => ("case0", [])
@@ -303,7 +305,7 @@ pub fn CorpusReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn CorpusReceive::send(self : CorpusReceive, ctx : &@tutuca.Ctx) -> Unit {
+pub fn CorpusMsg::send(self : CorpusMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }

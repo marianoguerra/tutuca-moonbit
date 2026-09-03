@@ -128,7 +128,7 @@ pub fn selector_entry_views() -> Map[String, @anode.View] {
 pub fn selector_entry_component(
   name? : String = "SelectorEntry",
   views? : Map[String, @anode.View] = selector_entry_views(),
-  init? : SelectorEntryState = SelectorEntryState::zero(),
+  initial? : SelectorEntryState = SelectorEntryState::zero(),
   common_style? : String = selector_entry_common_style,
   global_style? : String = selector_entry_global_style,
   update? : (SelectorEntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -142,7 +142,7 @@ pub fn selector_entry_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -218,7 +218,7 @@ pub fn selector_views() -> Map[String, @anode.View] {
 pub fn selector_component(
   name? : String = "Selector",
   views? : Map[String, @anode.View] = selector_views(),
-  init? : SelectorState = SelectorState::zero(),
+  initial? : SelectorState = SelectorState::zero(),
   common_style? : String = selector_common_style,
   global_style? : String = selector_global_style,
   update? : (SelectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -232,7 +232,7 @@ pub fn selector_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -324,7 +324,7 @@ pub fn entry_editor_and_selector_views() -> Map[String, @anode.View] {
 pub fn entry_editor_and_selector_component(
   name? : String = "EntryEditorAndSelector",
   views? : Map[String, @anode.View] = entry_editor_and_selector_views(),
-  init? : EntryEditorAndSelectorState = EntryEditorAndSelectorState::zero(),
+  initial? : EntryEditorAndSelectorState = EntryEditorAndSelectorState::zero(),
   common_style? : String = entry_editor_and_selector_common_style,
   global_style? : String = entry_editor_and_selector_global_style,
   update? : (EntryEditorAndSelectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -338,7 +338,7 @@ pub fn entry_editor_and_selector_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -409,7 +409,7 @@ pub fn sheet_views() -> Map[String, @anode.View] {
 pub fn sheet_component(
   name? : String = "Sheet",
   views? : Map[String, @anode.View] = sheet_views(),
-  init? : SheetState = SheetState::zero(),
+  initial? : SheetState = SheetState::zero(),
   common_style? : String = sheet_common_style,
   global_style? : String = sheet_global_style,
   update? : (SheetState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -423,7 +423,7 @@ pub fn sheet_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -479,7 +479,7 @@ pub fn toolbar_views() -> Map[String, @anode.View] {
 pub fn toolbar_component(
   name? : String = "Toolbar",
   views? : Map[String, @anode.View] = toolbar_views(),
-  init? : ToolbarState = ToolbarState::zero(),
+  initial? : ToolbarState = ToolbarState::zero(),
   common_style? : String = toolbar_common_style,
   global_style? : String = toolbar_global_style,
   update? : (ToolbarState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -493,7 +493,7 @@ pub fn toolbar_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -549,7 +549,7 @@ pub fn panel_views() -> Map[String, @anode.View] {
 pub fn panel_component(
   name? : String = "Panel",
   views? : Map[String, @anode.View] = panel_views(),
-  init? : PanelState = PanelState::zero(),
+  initial? : PanelState = PanelState::zero(),
   common_style? : String = panel_common_style,
   global_style? : String = panel_global_style,
   update? : (PanelState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -563,7 +563,7 @@ pub fn panel_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -616,13 +616,13 @@ pub fn workspace_views() -> Map[String, @anode.View] {
 pub fn workspace_component(
   name? : String = "Workspace",
   views? : Map[String, @anode.View] = workspace_views(),
-  init? : WorkspaceState = WorkspaceState::zero(),
+  initial? : WorkspaceState = WorkspaceState::zero(),
   common_style? : String = workspace_common_style,
   global_style? : String = workspace_global_style,
   update? : (WorkspaceState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     WorkspaceState,
   ],
-  compute? : (WorkspaceMethod) -> ((
+  compute? : (WorkspaceCompute) -> ((
     WorkspaceState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -635,15 +635,15 @@ pub fn workspace_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([SheetTitle] : Array[WorkspaceMethod]),
-          WorkspaceMethod::name,
+          ([SheetTitle] : Array[WorkspaceCompute]),
+          WorkspaceCompute::name,
           f,
         )
       None => Map([])

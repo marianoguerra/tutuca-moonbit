@@ -122,7 +122,7 @@ pub fn dn_d_example_views() -> Map[String, @anode.View] {
 pub fn dn_d_example_component(
   name? : String = "DnDExample",
   views? : Map[String, @anode.View] = dn_d_example_views(),
-  init? : DnDExampleState = DnDExampleState::zero(),
+  initial? : DnDExampleState = DnDExampleState::zero(),
   common_style? : String = dn_d_example_common_style,
   global_style? : String = dn_d_example_global_style,
   update? : (DnDExampleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -143,7 +143,7 @@ pub fn dn_d_example_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

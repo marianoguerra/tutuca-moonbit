@@ -28,7 +28,7 @@ fn ns_toggle_label(
 ///|
 fn nested_state_comp() -> @component.Component {
   nested_state_component(
-    init={
+    initial={
       ..NestedStateState::zero(),
       title: "Write the codec",
       labels: [{ text: "schema", done: true, }, { text: "codec", done: false, }],

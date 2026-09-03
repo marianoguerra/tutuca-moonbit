@@ -77,7 +77,7 @@ pub fn greeting_views() -> Map[String, @anode.View] {
 pub fn greeting_component(
   name? : String = "Greeting",
   views? : Map[String, @anode.View] = greeting_views(),
-  init? : GreetingState = GreetingState::zero(),
+  initial? : GreetingState = GreetingState::zero(),
   common_style? : String = greeting_common_style,
   global_style? : String = greeting_global_style,
   update? : (GreetingState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -91,7 +91,7 @@ pub fn greeting_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -143,7 +143,7 @@ pub fn page_views() -> Map[String, @anode.View] {
 pub fn page_component(
   name? : String = "Page",
   views? : Map[String, @anode.View] = page_views(),
-  init? : PageState = PageState::zero(),
+  initial? : PageState = PageState::zero(),
   common_style? : String = page_common_style,
   global_style? : String = page_global_style,
   update? : (PageState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -157,7 +157,7 @@ pub fn page_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -290,7 +290,7 @@ fn entry_inline_compute() -> Map[
 pub fn entry_component(
   name? : String = "Entry",
   views? : Map[String, @anode.View] = entry_views(),
-  init? : EntryState = EntryState::zero(),
+  initial? : EntryState = EntryState::zero(),
   common_style? : String = entry_common_style,
   global_style? : String = entry_global_style,
   update? : (EntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -304,7 +304,7 @@ pub fn entry_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -355,7 +355,7 @@ pub fn multiple_views_views() -> Map[String, @anode.View] {
 pub fn multiple_views_component(
   name? : String = "MultipleViews",
   views? : Map[String, @anode.View] = multiple_views_views(),
-  init? : MultipleViewsState = MultipleViewsState::zero(),
+  initial? : MultipleViewsState = MultipleViewsState::zero(),
   common_style? : String = multiple_views_common_style,
   global_style? : String = multiple_views_global_style,
   update? : (MultipleViewsState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -369,7 +369,7 @@ pub fn multiple_views_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

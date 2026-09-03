@@ -5,7 +5,7 @@
 
 fn build() -> @component.ModuleDef {
   let panel = panel_component(
-    init=PanelState::{ open: false },
+    initial=PanelState::{ open: false },
     compute=m => match m {
       Label =>
         Some((s, _a, _stack) => Str(

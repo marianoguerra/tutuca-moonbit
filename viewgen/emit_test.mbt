@@ -23,55 +23,35 @@ test "the generated counter module" {
       #|pub let counter_global_style : String = ""
       #|
       #|///|
-      #|/// Every bare `@on` handler name the views reference.
-      #|pub(all) enum CounterInput {
-      #|  Add
-      #|  ResetCount
-      #|  SetLabel
-      #|} derive(Eq, @debug.Debug)
-      #|
-      #|///|
-      #|pub fn CounterInput::name(self : CounterInput) -> String {
-      #|  match self {
-      #|    Add => "add"
-      #|    ResetCount => "resetCount"
-      #|    SetLabel => "setLabel"
-      #|  }
-      #|}
-      #|
-      #|///|
-      #|pub fn CounterInput::parse(s : String) -> CounterInput? {
-      #|  match s {
-      #|    "add" => Some(Add)
-      #|    "resetCount" => Some(ResetCount)
-      #|    "setLabel" => Some(SetLabel)
-      #|    _ => None
-      #|  }
-      #|}
-      #|
-      #|///|
-      #|/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-      #|/// Payload types are
-      #|/// inferred from the argument shapes written at the call sites, so a
-      #|/// handler added to counter.html breaks every `match` over this type
-      #|/// until it is handled.
+      #|/// The Receive arm of @component.Dispatch, decoded.
+      #|///
+      #|/// Every addressed name: the `message` variant the state block declares,
+      #|/// plus every bare `@on` handler the views write. One bucket holds them
+      #|/// however they were sent, so one type covers it — where the two overlap
+      #|/// the schema's declared payload wins, and a view whose call sites
+      #|/// disagree with it is a build error.
       #|pub(all) enum CounterMsg {
-      #|  /// `@on.click="add …"`
       #|  Add(Double)
-      #|  /// `@on.click="resetCount …"`
       #|  ResetCount
-      #|  /// `@on.input, @on.keydown="setLabel …"`
       #|  SetLabel(String)
-      #|  /// A dispatch the views do not declare, or a declared name
-      #|  /// whose runtime arguments did not match the inferred shape.
+      #|  /// A message the schema does not declare, or a declared name whose
+      #|  /// runtime arguments did not match the declared types.
       #|  Unknown(String, Array[@tutuca.Value])
       #|}
       #|
       #|///|
-      #|/// None for an `Intent` — a routed name is raised by component code and
-      #|/// never written in a view, so the views cannot type it. A `Receive` the
-      #|/// views do not name decodes to `Unknown`, which is what the sibling
-      #|/// `<T>Receive` (the schema's half of the same bucket) is for.
+      #|/// Decode a Receive dispatch. None for any other bucket.
+      #|///
+      #|/// A payload that does not match falls into `Unknown` rather than being
+      #|/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+      #|/// and silently truncating it would hide that.
+      #|///
+      #|/// It is also REPORTED. `Unknown` answers two different questions —
+      #|/// nobody declares this name, and this name is declared here and was
+      #|/// handed the wrong shape — and the second one is a bug in the sender
+      #|/// that used to be indistinguishable from silence. Every arm below that
+      #|/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+      #|/// which costs nothing unless a host is listening.
       #|pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
       #|  guard d is Receive(name, args) else { return None }
       #|  Some(
@@ -79,9 +59,41 @@ test "the generated counter module" {
       #|      ("add", [Num(a0)]) => Add(a0)
       #|      ("resetCount", []) => ResetCount
       #|      ("setLabel", [Str(a0)]) => SetLabel(a0)
-      #|      _ => Unknown(name, args)
+      #|      _ => {
+      #|        match name {
+      #|          "add" =>
+      #|            @tutuca.bad_payload(name, "Double", args)
+      #|          "resetCount" =>
+      #|            @tutuca.bad_payload(name, "", args)
+      #|          "setLabel" =>
+      #|            @tutuca.bad_payload(name, "String", args)
+      #|          _ => ()
+      #|        }
+      #|        Unknown(name, args)
+      #|      }
       #|    },
       #|  )
+      #|}
+      #|
+      #|///|
+      #|/// The dispatch name and arguments this message raises as.
+      #|pub fn CounterMsg::to_dispatch(self : CounterMsg) -> (String, Array[@tutuca.Value]) {
+      #|  match self {
+      #|    Add(a0) => ("add", [Num(a0)])
+      #|    ResetCount => ("resetCount", [])
+      #|    SetLabel(a0) => ("setLabel", [Str(a0)])
+      #|    Unknown(n, args) => (n, args)
+      #|  }
+      #|}
+      #|
+      #|///|
+      #|/// Send this message to self; it arrives as a later Receive dispatch.
+      #|///
+      #|/// The name comes from the schema, so it cannot drift from the one
+      #|/// `from_dispatch` decodes.
+      #|pub fn CounterMsg::send(self : CounterMsg, ctx : &@tutuca.Ctx) -> Unit {
+      #|  let (name, args) = self.to_dispatch()
+      #|  ctx.send(name, args)
       #|}
       #|
       #|
@@ -212,63 +224,77 @@ test "a view with a $method, several views and styles" {
       #|pub let todo_list_global_style : String = ""
       #|
       #|///|
-      #|/// Every bare `@on` handler name the views reference.
-      #|pub(all) enum TodoListInput {
-      #|  ClearDone
-      #|} derive(Eq, @debug.Debug)
-      #|
-      #|///|
-      #|pub fn TodoListInput::name(self : TodoListInput) -> String {
-      #|  match self {
-      #|    ClearDone => "clearDone"
-      #|  }
-      #|}
-      #|
-      #|///|
-      #|pub fn TodoListInput::parse(s : String) -> TodoListInput? {
-      #|  match s {
-      #|    "clearDone" => Some(ClearDone)
-      #|    _ => None
-      #|  }
-      #|}
-      #|
-      #|///|
-      #|/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-      #|/// Payload types are
-      #|/// inferred from the argument shapes written at the call sites, so a
-      #|/// handler added to todo.html breaks every `match` over this type
-      #|/// until it is handled.
+      #|/// The Receive arm of @component.Dispatch, decoded.
+      #|///
+      #|/// Every addressed name: the `message` variant the state block declares,
+      #|/// plus every bare `@on` handler the views write. One bucket holds them
+      #|/// however they were sent, so one type covers it — where the two overlap
+      #|/// the schema's declared payload wins, and a view whose call sites
+      #|/// disagree with it is a build error.
       #|pub(all) enum TodoListMsg {
-      #|  /// `@on.click="clearDone …"`
       #|  ClearDone
-      #|  /// A dispatch the views do not declare, or a declared name
-      #|  /// whose runtime arguments did not match the inferred shape.
+      #|  /// A message the schema does not declare, or a declared name whose
+      #|  /// runtime arguments did not match the declared types.
       #|  Unknown(String, Array[@tutuca.Value])
       #|}
       #|
       #|///|
-      #|/// None for an `Intent` — a routed name is raised by component code and
-      #|/// never written in a view, so the views cannot type it. A `Receive` the
-      #|/// views do not name decodes to `Unknown`, which is what the sibling
-      #|/// `<T>Receive` (the schema's half of the same bucket) is for.
+      #|/// Decode a Receive dispatch. None for any other bucket.
+      #|///
+      #|/// A payload that does not match falls into `Unknown` rather than being
+      #|/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+      #|/// and silently truncating it would hide that.
+      #|///
+      #|/// It is also REPORTED. `Unknown` answers two different questions —
+      #|/// nobody declares this name, and this name is declared here and was
+      #|/// handed the wrong shape — and the second one is a bug in the sender
+      #|/// that used to be indistinguishable from silence. Every arm below that
+      #|/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+      #|/// which costs nothing unless a host is listening.
       #|pub fn TodoListMsg::from_dispatch(d : @component.Dispatch) -> TodoListMsg? {
       #|  guard d is Receive(name, args) else { return None }
       #|  Some(
       #|    match (name, args) {
       #|      ("clearDone", []) => ClearDone
-      #|      _ => Unknown(name, args)
+      #|      _ => {
+      #|        match name {
+      #|          "clearDone" =>
+      #|            @tutuca.bad_payload(name, "", args)
+      #|          _ => ()
+      #|        }
+      #|        Unknown(name, args)
+      #|      }
       #|    },
       #|  )
       #|}
       #|
       #|///|
-      #|/// Every `$name` the views call.
-      #|pub(all) enum TodoListMethod {
+      #|/// The dispatch name and arguments this message raises as.
+      #|pub fn TodoListMsg::to_dispatch(self : TodoListMsg) -> (String, Array[@tutuca.Value]) {
+      #|  match self {
+      #|    ClearDone => ("clearDone", [])
+      #|    Unknown(n, args) => (n, args)
+      #|  }
+      #|}
+      #|
+      #|///|
+      #|/// Send this message to self; it arrives as a later Receive dispatch.
+      #|///
+      #|/// The name comes from the schema, so it cannot drift from the one
+      #|/// `from_dispatch` decodes.
+      #|pub fn TodoListMsg::send(self : TodoListMsg, ctx : &@tutuca.Ctx) -> Unit {
+      #|  let (name, args) = self.to_dispatch()
+      #|  ctx.send(name, args)
+      #|}
+      #|
+      #|///|
+      #|/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+      #|pub(all) enum TodoListCompute {
       #|  DoneLabel
       #|} derive(Eq, @debug.Debug)
       #|
       #|///|
-      #|pub fn TodoListMethod::name(self : TodoListMethod) -> String {
+      #|pub fn TodoListCompute::name(self : TodoListCompute) -> String {
       #|  match self {
       #|    DoneLabel => "doneLabel"
       #|  }

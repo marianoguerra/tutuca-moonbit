@@ -449,7 +449,7 @@ produces a new instance:
 ```mbt check
 ///|
 test "instances are copy-on-write values, visible through Obj" {
-  let greeting = fp_greeting_component(init={ name: "world", })
+  let greeting = fp_greeting_component(initial={ name: "world", })
   let a = greeting.make(Map([]))
   // writes go through the Obj trait (or a `.field = v` in a view):
   // they return a NEW instance value
@@ -504,7 +504,7 @@ tree is navigable and rebuildable:
 /// spine worth rebuilding.
 fn mailbox_module() -> @component.ModuleDef {
   let note = note_component(update=(_s, msg, _ctx) => {
-    match NoteReceive::from_dispatch(msg) {
+    match NoteMsg::from_dispatch(msg) {
       Some(Write(t)) => Next({ text: t, })
       Some(Unknown(_, _)) | None => Unhandled
     }

@@ -26,7 +26,7 @@ pub(all) struct DseRootState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..DseRootState::zero(), label: "Counter" }
+///   initial={ ..DseRootState::zero(), label: "Counter" }
 pub fn DseRootState::zero() -> DseRootState {
   { items: Map([]), selectedKey: "", editor: Null, }
 }
@@ -71,12 +71,14 @@ impl @component.Fields for DseRootState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum DseRootReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum DseRootMsg {
   SelectItem(@tutuca.Value)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -94,9 +96,7 @@ pub(all) enum DseRootReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn DseRootReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> DseRootReceive? {
+pub fn DseRootMsg::from_dispatch(d : @component.Dispatch) -> DseRootMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -114,8 +114,8 @@ pub fn DseRootReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn DseRootReceive::to_dispatch(
-  self : DseRootReceive,
+pub fn DseRootMsg::to_dispatch(
+  self : DseRootMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     SelectItem(a0) => ("selectItem", [a0])
@@ -128,7 +128,7 @@ pub fn DseRootReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn DseRootReceive::send(self : DseRootReceive, ctx : &@tutuca.Ctx) -> Unit {
+pub fn DseRootMsg::send(self : DseRootMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -140,56 +140,6 @@ pub let dse_root_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let dse_root_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum DseRootInput {
-  SelectItem
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn DseRootInput::name(self : DseRootInput) -> String {
-  match self {
-    SelectItem => "selectItem"
-  }
-}
-
-///|
-pub fn DseRootInput::parse(s : String) -> DseRootInput? {
-  match s {
-    "selectItem" => Some(SelectItem)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to dynamic_selected_edit.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum DseRootMsg {
-  /// `@on.click="selectItem …"`
-  SelectItem(@tutuca.Value)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn DseRootMsg::from_dispatch(d : @component.Dispatch) -> DseRootMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("selectItem", [a0]) => SelectItem(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -230,7 +180,7 @@ pub(all) struct DseEditorState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..DseEditorState::zero(), label: "Counter" }
+///   initial={ ..DseEditorState::zero(), label: "Counter" }
 pub fn DseEditorState::zero() -> DseEditorState {
   { missing: Null, }
 }
@@ -295,7 +245,7 @@ pub(all) struct DseEntryState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..DseEntryState::zero(), label: "Counter" }
+///   initial={ ..DseEntryState::zero(), label: "Counter" }
 pub fn DseEntryState::zero() -> DseEntryState {
   { name: "", }
 }

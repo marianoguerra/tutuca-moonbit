@@ -819,7 +819,7 @@ fn shell_module() -> @component.ModuleDef {
       ),
     },
     name="Shell",
-    init=TestShellState::{ slot: Null, note: "", },
+    initial=TestShellState::{ slot: Null, note: "", },
     // A HOST component publishing to its subtree, which includes whatever
     // bundle gets mounted into `.slot`. The guest reads it as `*theme` — see
     // the manifest's `lookup` — and nothing about that crosses the guest ABI.
@@ -896,7 +896,7 @@ fn filler_comp() -> @component.Component {
         ),
       ),
     },
-    init=FillerState::{ note: "fresh", },
+    initial=FillerState::{ note: "fresh", },
     update=(s, msg, _ctx) => {
       match msg {
         Receive("bump", _) => Next({ note: s.note + "!", })
@@ -2405,7 +2405,7 @@ fn no_provide_shell() -> @component.ModuleDef {
       ),
     },
     name="Bare",
-    init=TestShellState::{ slot: Null, note: "", },
+    initial=TestShellState::{ slot: Null, note: "", },
     update=(s : TestShellState, msg, _ctx) => {
       match msg {
         Receive("setSlot", [v, ..]) => Next({ ..s, slot: v, })

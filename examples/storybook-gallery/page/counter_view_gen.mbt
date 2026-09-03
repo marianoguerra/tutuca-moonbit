@@ -27,7 +27,7 @@ pub(all) struct CounterState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..CounterState::zero(), label: "Counter" }
+///   initial={ ..CounterState::zero(), label: "Counter" }
 pub fn CounterState::zero() -> CounterState {
   {
     count: 0,
@@ -64,7 +64,7 @@ impl @component.Fields for CounterState with fn decode(f) {
 /// Declared as `variant receive` in the state block. These names are
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
-pub(all) enum CounterReceive {
+pub(all) enum CounterMsg {
   Inc
   Dec
   /// A receive the schema does not declare, or a declared name whose
@@ -85,7 +85,7 @@ pub(all) enum CounterReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn CounterReceive::from_dispatch(d : @component.Dispatch) -> CounterReceive? {
+pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -107,7 +107,7 @@ pub fn CounterReceive::from_dispatch(d : @component.Dispatch) -> CounterReceive?
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn CounterReceive::to_dispatch(self : CounterReceive) -> (String, Array[@tutuca.Value]) {
+pub fn CounterMsg::to_dispatch(self : CounterMsg) -> (String, Array[@tutuca.Value]) {
   match self {
     Inc => ("inc", [])
     Dec => ("dec", [])
@@ -120,7 +120,7 @@ pub fn CounterReceive::to_dispatch(self : CounterReceive) -> (String, Array[@tut
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn CounterReceive::send(self : CounterReceive, ctx : &@tutuca.Ctx) -> Unit {
+pub fn CounterMsg::send(self : CounterMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }

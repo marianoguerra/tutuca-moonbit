@@ -266,7 +266,7 @@ fn activity_entry_inline_compute() -> Map[
 pub fn activity_entry_component(
   name? : String = "ActivityEntry",
   views? : Map[String, @anode.View] = activity_entry_views(),
-  init? : ActivityEntryState = ActivityEntryState::zero(),
+  initial? : ActivityEntryState = ActivityEntryState::zero(),
   common_style? : String = activity_entry_common_style,
   global_style? : String = activity_entry_global_style,
   update? : (ActivityEntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -280,7 +280,7 @@ pub fn activity_entry_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -376,7 +376,7 @@ fn activity_log_inline_compute() -> Map[
 pub fn activity_log_component(
   name? : String = "ActivityLog",
   views? : Map[String, @anode.View] = activity_log_views(),
-  init? : ActivityLogState = ActivityLogState::zero(),
+  initial? : ActivityLogState = ActivityLogState::zero(),
   common_style? : String = activity_log_common_style,
   global_style? : String = activity_log_global_style,
   update? : (ActivityLogState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -390,7 +390,7 @@ pub fn activity_log_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

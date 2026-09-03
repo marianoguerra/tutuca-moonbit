@@ -157,7 +157,7 @@ fn counter_property_set_magnitude(
 pub fn counter_component(
   name? : String = "Counter",
   views? : Map[String, @anode.View] = counter_views(),
-  init? : CounterState = CounterState::zero(),
+  initial? : CounterState = CounterState::zero(),
   common_style? : String = counter_common_style,
   global_style? : String = counter_global_style,
   update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -171,7 +171,7 @@ pub fn counter_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => {

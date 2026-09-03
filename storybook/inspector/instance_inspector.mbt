@@ -76,7 +76,7 @@ impl Composite for InstanceFieldsState with fn with_current_page(self, p) {
 ///|
 fn instance_fields_comp() -> @component.Component {
   instance_fields_component(
-    init={ ..InstanceFieldsState::zero(), itemsPerPage: 10, },
+    initial={ ..InstanceFieldsState::zero(), itemsPerPage: 10, },
     update=(s, msg, _ctx) => composite_update(s, msg),
     compute=m => {
       match m {
@@ -173,7 +173,7 @@ fn Inspector::inspect_value_as_instance(
 /// Two tabs over one instance: its values (InstanceInspector) and its
 /// definition (ComponentInspector).
 fn instance_explorer_comp() -> @component.Component {
-  instance_explorer_component(init={
+  instance_explorer_component(initial={
     ..InstanceExplorerState::zero(),
     activeTab: "instance",
   })

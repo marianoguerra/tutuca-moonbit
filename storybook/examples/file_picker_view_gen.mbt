@@ -28,7 +28,7 @@ pub(all) struct FilePickerState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..FilePickerState::zero(), label: "Counter" }
+///   initial={ ..FilePickerState::zero(), label: "Counter" }
 pub fn FilePickerState::zero() -> FilePickerState {
   { name: "", size: 0.0, type_: "", lastModified: 0.0, hasFile: false, }
 }
@@ -71,12 +71,14 @@ impl @component.Fields for FilePickerState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum FilePickerReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum FilePickerMsg {
   OnPickFile(@tutuca.Value)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -94,9 +96,7 @@ pub(all) enum FilePickerReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn FilePickerReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> FilePickerReceive? {
+pub fn FilePickerMsg::from_dispatch(d : @component.Dispatch) -> FilePickerMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -114,8 +114,8 @@ pub fn FilePickerReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn FilePickerReceive::to_dispatch(
-  self : FilePickerReceive,
+pub fn FilePickerMsg::to_dispatch(
+  self : FilePickerMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     OnPickFile(a0) => ("onPickFile", [a0])
@@ -128,10 +128,7 @@ pub fn FilePickerReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn FilePickerReceive::send(
-  self : FilePickerReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn FilePickerMsg::send(self : FilePickerMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -145,69 +142,19 @@ pub let file_picker_common_style : String = ""
 pub let file_picker_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum FilePickerInput {
-  OnPickFile
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn FilePickerInput::name(self : FilePickerInput) -> String {
-  match self {
-    OnPickFile => "onPickFile"
-  }
-}
-
-///|
-pub fn FilePickerInput::parse(s : String) -> FilePickerInput? {
-  match s {
-    "onPickFile" => Some(OnPickFile)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to file_picker.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum FilePickerMsg {
-  /// `@on.change="onPickFile …"`
-  OnPickFile(@tutuca.Value)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn FilePickerMsg::from_dispatch(d : @component.Dispatch) -> FilePickerMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("onPickFile", [a0]) => OnPickFile(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: pickedFileIsDescribed.
 /// The block's own handlers are merged into this bucket, so an arm for one of
 /// these could never run.
-pub(all) enum FilePickerMethod {
+pub(all) enum FilePickerCompute {
   LastModifiedLabel
   SizeLabel
   TypeLabel
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn FilePickerMethod::name(self : FilePickerMethod) -> String {
+pub fn FilePickerCompute::name(self : FilePickerCompute) -> String {
   match self {
     LastModifiedLabel => "lastModifiedLabel"
     SizeLabel => "sizeLabel"

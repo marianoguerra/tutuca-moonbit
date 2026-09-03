@@ -946,7 +946,7 @@ Four things to know about the clauses themselves:
   `gen-views` writes into the generated module — a rule that does not hold in
   the state the component starts in is broken before anything happens. The
   schema's zero is deliberately not checked: a wrapper is normally called with
-  `init~`, which the generator cannot see.
+  `initial~`, which the generator cannot see.
 
 ### `format` — what the rule says when it fails
 

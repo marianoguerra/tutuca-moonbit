@@ -118,7 +118,7 @@ fn lk_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Cell",
-    init=LkCellState::{ label: "registered", },
+    initial=LkCellState::{ label: "registered", },
   )
   let slot = @component.component(
     views={
@@ -130,7 +130,7 @@ fn lk_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Slot",
-    init=LkSlotState::{ made: "", },
+    initial=LkSlotState::{ made: "", },
     lookup=[@component.lookup_name("Cell"), @component.lookup_name("theme")],
     update=lk_slot_update(),
   )
@@ -142,7 +142,7 @@ fn lk_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Board",
-    init=LkBoardState::{
+    initial=LkBoardState::{
       theme: "dark",
       lex_theme: "scope-light",
       label: "published",
@@ -168,7 +168,7 @@ fn lk_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Plain",
-    init=LkPlainState::{ },
+    initial=LkPlainState::{ },
   )
   scope.register_paths({
     "theme": @tutuca.Path::new(steps=[FieldStep("lex_theme")]),

@@ -1678,6 +1678,9 @@ fn msgs_of(raw : Array[RawCase], env : Env) -> Array[MsgDef] raise DefError {
       source_name: c.name,
       name: runtime[i].1,
       variant: variants[i].1,
+      // The schema never declares one: a `message { … }` case states its
+      // payload or has none, and there is no syntax for "any number".
+      variadic: false,
       payload,
       doc: c.doc,
     })

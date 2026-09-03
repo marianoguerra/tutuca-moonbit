@@ -115,7 +115,7 @@ pub fn dse_root_views() -> Map[String, @anode.View] {
 pub fn dse_root_component(
   name? : String = "DseRoot",
   views? : Map[String, @anode.View] = dse_root_views(),
-  init? : DseRootState = DseRootState::zero(),
+  initial? : DseRootState = DseRootState::zero(),
   common_style? : String = dse_root_common_style,
   global_style? : String = dse_root_global_style,
   update? : (DseRootState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -129,7 +129,7 @@ pub fn dse_root_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -206,7 +206,7 @@ pub fn dse_editor_views() -> Map[String, @anode.View] {
 pub fn dse_editor_component(
   name? : String = "DseEditor",
   views? : Map[String, @anode.View] = dse_editor_views(),
-  init? : DseEditorState = DseEditorState::zero(),
+  initial? : DseEditorState = DseEditorState::zero(),
   common_style? : String = dse_editor_common_style,
   global_style? : String = dse_editor_global_style,
   update? : (DseEditorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -220,7 +220,7 @@ pub fn dse_editor_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -294,7 +294,7 @@ pub fn dse_entry_views() -> Map[String, @anode.View] {
 pub fn dse_entry_component(
   name? : String = "DseEntry",
   views? : Map[String, @anode.View] = dse_entry_views(),
-  init? : DseEntryState = DseEntryState::zero(),
+  initial? : DseEntryState = DseEntryState::zero(),
   common_style? : String = dse_entry_common_style,
   global_style? : String = dse_entry_global_style,
   update? : (DseEntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -308,7 +308,7 @@ pub fn dse_entry_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

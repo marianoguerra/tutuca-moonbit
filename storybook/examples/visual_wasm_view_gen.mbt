@@ -22,7 +22,7 @@ pub(all) struct VwEmptyState {} derive(Default)
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..VwEmptyState::zero(), label: "Counter" }
+///   initial={ ..VwEmptyState::zero(), label: "Counter" }
 pub fn VwEmptyState::zero() -> VwEmptyState {
   Default::default()
 }
@@ -74,7 +74,7 @@ pub(all) struct VwImmState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..VwImmState::zero(), label: "Counter" }
+///   initial={ ..VwImmState::zero(), label: "Counter" }
 pub fn VwImmState::zero() -> VwImmState {
   { value: 0, rawValue: "", }
 }
@@ -131,7 +131,7 @@ pub(all) struct VwTypesState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..VwTypesState::zero(), label: "Counter" }
+///   initial={ ..VwTypesState::zero(), label: "Counter" }
 pub fn VwTypesState::zero() -> VwTypesState {
   { items: [], }
 }
@@ -193,7 +193,7 @@ pub(all) struct VwContainerState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..VwContainerState::zero(), label: "Counter" }
+///   initial={ ..VwContainerState::zero(), label: "Counter" }
 pub fn VwContainerState::zero() -> VwContainerState {
   { items: [], expanded: false, editing: false, }
 }
@@ -266,7 +266,7 @@ pub(all) struct VwIfState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..VwIfState::zero(), label: "Counter" }
+///   initial={ ..VwIfState::zero(), label: "Counter" }
 pub fn VwIfState::zero() -> VwIfState {
   {
     thn: [],
@@ -367,7 +367,7 @@ pub(all) struct VwSectionState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..VwSectionState::zero(), label: "Counter" }
+///   initial={ ..VwSectionState::zero(), label: "Counter" }
 pub fn VwSectionState::zero() -> VwSectionState {
   { id: 0, name: "", items: [], expanded: false, defaultItem: Null, }
 }
@@ -456,7 +456,7 @@ pub(all) struct VwMemoryState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..VwMemoryState::zero(), label: "Counter" }
+///   initial={ ..VwMemoryState::zero(), label: "Counter" }
 pub fn VwMemoryState::zero() -> VwMemoryState {
   { n: 0, m: 0, }
 }
@@ -524,7 +524,7 @@ pub(all) struct VwPickerState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..VwPickerState::zero(), label: "Counter" }
+///   initial={ ..VwPickerState::zero(), label: "Counter" }
 pub fn VwPickerState::zero() -> VwPickerState {
   { currentSection: "", instructions: [], filter: "", }
 }

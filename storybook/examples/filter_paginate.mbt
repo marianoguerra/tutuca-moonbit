@@ -114,7 +114,7 @@ fn fp_num_keys(keys : Array[Int]) -> @component.LoopWith {
 
 ///|
 fn person_comp() -> @component.Component {
-  person_component(init={ name: "", email: "", active: false, })
+  person_component(initial={ name: "", email: "", active: false, })
 }
 
 ///|
@@ -138,7 +138,7 @@ fn fp_pager_info(s : NaivePeopleState) -> Map[String, @tutuca.Value] {
 /// scans again for the count. Two independent walks, nothing shared.
 fn naive_people_comp() -> @component.Component {
   naive_people_component(
-    init={ items: [], query: "", page: 0, pageSize: 5, },
+    initial={ items: [], query: "", page: 0, pageSize: 5, },
     update=fp_update(),
     when=w => {
       match w {
@@ -178,7 +178,7 @@ fn shared_people_comp() -> @component.Component {
   @component.component(
     views={ "main": shared_people_main_view_ir() },
     name="SharedPeople",
-    init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5, },
+    initial=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5, },
     update=fp_update(),
     when=fp_only_matches(),
     bind_with={ "pagerInfo": (s, _stack) => fp_pager_info(s) },
@@ -216,7 +216,7 @@ fn coupled_people_comp() -> @component.Component {
   @component.component(
     views={ "main": coupled_people_main_view_ir() },
     name="CoupledPeople",
-    init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5, },
+    initial=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5, },
     update=fp_update(),
     bind_with={
       "pagerInfo": (s : NaivePeopleState, _stack) => {

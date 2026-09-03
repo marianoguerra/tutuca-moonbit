@@ -152,13 +152,13 @@ fn file_picker_inline_compute() -> Map[
 pub fn file_picker_component(
   name? : String = "FilePicker",
   views? : Map[String, @anode.View] = file_picker_views(),
-  init? : FilePickerState = FilePickerState::zero(),
+  initial? : FilePickerState = FilePickerState::zero(),
   common_style? : String = file_picker_common_style,
   global_style? : String = file_picker_global_style,
   update? : (FilePickerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     FilePickerState,
   ],
-  compute? : (FilePickerMethod) -> ((
+  compute? : (FilePickerCompute) -> ((
     FilePickerState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -171,7 +171,7 @@ pub fn file_picker_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -179,8 +179,10 @@ pub fn file_picker_component(
       let bucket = match compute {
         Some(f) =>
           @component.build_bucket(
-            ([LastModifiedLabel, SizeLabel, TypeLabel] : Array[FilePickerMethod]),
-            FilePickerMethod::name,
+            (
+              [LastModifiedLabel, SizeLabel, TypeLabel] :
+              Array[FilePickerCompute]),
+            FilePickerCompute::name,
             f,
           )
         None => Map([])

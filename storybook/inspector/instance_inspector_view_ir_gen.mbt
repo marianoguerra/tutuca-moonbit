@@ -225,13 +225,13 @@ fn instance_fields_inline_compute() -> Map[
 pub fn instance_fields_component(
   name? : String = "InstanceFields",
   views? : Map[String, @anode.View] = instance_fields_views(),
-  init? : InstanceFieldsState = InstanceFieldsState::zero(),
+  initial? : InstanceFieldsState = InstanceFieldsState::zero(),
   common_style? : String = instance_fields_common_style,
   global_style? : String = instance_fields_global_style,
   update? : (InstanceFieldsState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     InstanceFieldsState,
   ],
-  compute? : (InstanceFieldsMethod) -> ((
+  compute? : (InstanceFieldsCompute) -> ((
     InstanceFieldsState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -249,7 +249,7 @@ pub fn instance_fields_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -267,8 +267,8 @@ pub fn instance_fields_component(
                 PageIndicatorText,
                 ShowPagination,
                 TypeText,
-              ] : Array[InstanceFieldsMethod]),
-            InstanceFieldsMethod::name,
+              ] : Array[InstanceFieldsCompute]),
+            InstanceFieldsCompute::name,
             f,
           )
         None => Map([])
@@ -327,7 +327,7 @@ pub fn instance_inspector_views() -> Map[String, @anode.View] {
 pub fn instance_inspector_component(
   name? : String = "InstanceInspector",
   views? : Map[String, @anode.View] = instance_inspector_views(),
-  init? : InstanceInspectorState = InstanceInspectorState::zero(),
+  initial? : InstanceInspectorState = InstanceInspectorState::zero(),
   common_style? : String = instance_inspector_common_style,
   global_style? : String = instance_inspector_global_style,
   update? : (InstanceInspectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -341,7 +341,7 @@ pub fn instance_inspector_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -522,7 +522,7 @@ fn instance_explorer_inline_compute() -> Map[
 pub fn instance_explorer_component(
   name? : String = "InstanceExplorer",
   views? : Map[String, @anode.View] = instance_explorer_views(),
-  init? : InstanceExplorerState = InstanceExplorerState::zero(),
+  initial? : InstanceExplorerState = InstanceExplorerState::zero(),
   common_style? : String = instance_explorer_common_style,
   global_style? : String = instance_explorer_global_style,
   update? : (InstanceExplorerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -536,7 +536,7 @@ pub fn instance_explorer_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

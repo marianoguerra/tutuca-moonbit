@@ -117,13 +117,13 @@ pub fn rich_sample_views() -> Map[String, @anode.View] {
 pub fn rich_sample_component(
   name? : String = "RichSample",
   views? : Map[String, @anode.View] = rich_sample_views(),
-  init? : RichSampleState = RichSampleState::zero(),
+  initial? : RichSampleState = RichSampleState::zero(),
   common_style? : String = rich_sample_common_style,
   global_style? : String = rich_sample_global_style,
   update? : (RichSampleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     RichSampleState,
   ],
-  compute? : (RichSampleMethod) -> ((
+  compute? : (RichSampleCompute) -> ((
     RichSampleState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -141,15 +141,15 @@ pub fn rich_sample_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([Double, Label] : Array[RichSampleMethod]),
-          RichSampleMethod::name,
+          ([Double, Label] : Array[RichSampleCompute]),
+          RichSampleCompute::name,
           f,
         )
       None => Map([])
@@ -203,13 +203,13 @@ pub fn sample_card_views() -> Map[String, @anode.View] {
 pub fn sample_card_component(
   name? : String = "SampleCard",
   views? : Map[String, @anode.View] = sample_card_views(),
-  init? : SampleCardState = SampleCardState::zero(),
+  initial? : SampleCardState = SampleCardState::zero(),
   common_style? : String = sample_card_common_style,
   global_style? : String = sample_card_global_style,
   update? : (SampleCardState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SampleCardState,
   ],
-  compute? : (SampleCardMethod) -> ((
+  compute? : (SampleCardCompute) -> ((
     SampleCardState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -222,15 +222,15 @@ pub fn sample_card_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([Label] : Array[SampleCardMethod]),
-          SampleCardMethod::name,
+          ([Label] : Array[SampleCardCompute]),
+          SampleCardCompute::name,
           f,
         )
       None => Map([])

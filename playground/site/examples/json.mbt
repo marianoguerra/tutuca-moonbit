@@ -44,7 +44,7 @@ fn json_null_comp() -> @component.Component {
 ///|
 fn json_bool_comp() -> @component.Component {
   json_bool_component(
-    init=JsonBoolState::{ value: true },
+    initial=JsonBoolState::{ value: true },
   )
 }
 
@@ -52,7 +52,7 @@ fn json_bool_comp() -> @component.Component {
 ///|
 fn json_string_comp() -> @component.Component {
   json_string_component(
-    init=JsonStringState::{ value: "hello" },
+    initial=JsonStringState::{ value: "hello" },
   )
 }
 
@@ -60,7 +60,7 @@ fn json_string_comp() -> @component.Component {
 ///|
 fn json_number_comp() -> @component.Component {
   json_number_component(
-    init=JsonNumberState::{ strValue: "0", value: 0 },
+    initial=JsonNumberState::{ strValue: "0", value: 0 },
     // Keep the raw string always, update the numeric value only when finite.
     // The payload is typed String by the generator, so no unpacking.
     update=(s, msg, _ctx) => match JsonNumberMsg::from_dispatch(msg) {
@@ -146,7 +146,7 @@ fn json_dropped_items(
 ///|
 fn json_array_comp(reg : JsonReg) -> @component.Component {
   json_array_component(
-    init=JsonArrayState::{ items: [] },
+    initial=JsonArrayState::{ items: [] },
     update=(s, msg, _ctx) => match JsonArrayMsg::from_dispatch(msg) {
       // add a fresh JsonSelector so the user can pick the new element's type
       Some(AddItem) => Next({ items: s.items + [json_make_selector(reg)] })
@@ -168,14 +168,14 @@ fn json_array_comp(reg : JsonReg) -> @component.Component {
 ///|
 fn json_object_kv_comp() -> @component.Component {
   json_object_key_val_component(
-    init=JsonObjectKeyValState::{ key: "k", value: Null },
+    initial=JsonObjectKeyValState::{ key: "k", value: Null },
   )
 }
 
 ///|
 fn json_object_comp(reg : JsonReg) -> @component.Component {
   json_object_component(
-    init=JsonObjectState::{ items: [] },
+    initial=JsonObjectState::{ items: [] },
     update=(s, msg, _ctx) => match JsonObjectMsg::from_dispatch(msg) {
       // a key/value row whose value is a fresh selector
       Some(AddItem) => {

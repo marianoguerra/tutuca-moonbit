@@ -175,7 +175,7 @@ fn status_inline_update(
 pub fn status_component(
   name? : String = "Status",
   views? : Map[String, @anode.View] = status_views(),
-  init? : StatusState = StatusState::zero(),
+  initial? : StatusState = StatusState::zero(),
   common_style? : String = status_common_style,
   global_style? : String = status_global_style,
   update? : (StatusState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -189,7 +189,7 @@ pub fn status_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => {
@@ -301,7 +301,7 @@ fn send_receive_inline_update(
 pub fn send_receive_component(
   name? : String = "SendReceive",
   views? : Map[String, @anode.View] = send_receive_views(),
-  init? : SendReceiveState = SendReceiveState::zero(),
+  initial? : SendReceiveState = SendReceiveState::zero(),
   common_style? : String = send_receive_common_style,
   global_style? : String = send_receive_global_style,
   update? : (SendReceiveState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -315,7 +315,7 @@ pub fn send_receive_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => {
@@ -430,13 +430,13 @@ fn tree_item_inline_compute() -> Map[
 pub fn tree_item_component(
   name? : String = "TreeItem",
   views? : Map[String, @anode.View] = tree_item_views(),
-  init? : TreeItemState = TreeItemState::zero(),
+  initial? : TreeItemState = TreeItemState::zero(),
   common_style? : String = tree_item_common_style,
   global_style? : String = tree_item_global_style,
   update? : (TreeItemState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TreeItemState,
   ],
-  compute? : (TreeItemMethod) -> ((
+  compute? : (TreeItemCompute) -> ((
     TreeItemState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -449,7 +449,7 @@ pub fn tree_item_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -457,8 +457,8 @@ pub fn tree_item_component(
       let bucket = match compute {
         Some(f) =>
           @component.build_bucket(
-            ([AreChildsVisible] : Array[TreeItemMethod]),
-            TreeItemMethod::name,
+            ([AreChildsVisible] : Array[TreeItemCompute]),
+            TreeItemCompute::name,
             f,
           )
         None => Map([])
@@ -526,7 +526,7 @@ pub fn tree_root_views() -> Map[String, @anode.View] {
 pub fn tree_root_component(
   name? : String = "TreeRoot",
   views? : Map[String, @anode.View] = tree_root_views(),
-  init? : TreeRootState = TreeRootState::zero(),
+  initial? : TreeRootState = TreeRootState::zero(),
   common_style? : String = tree_root_common_style,
   global_style? : String = tree_root_global_style,
   update? : (TreeRootState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -540,7 +540,7 @@ pub fn tree_root_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

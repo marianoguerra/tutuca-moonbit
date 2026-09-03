@@ -25,7 +25,7 @@ pub(all) struct EmojiPickerState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..EmojiPickerState::zero(), label: "Counter" }
+///   initial={ ..EmojiPickerState::zero(), label: "Counter" }
 pub fn EmojiPickerState::zero() -> EmojiPickerState {
   { current: Null, isPickerVisible: false, }
 }
@@ -55,12 +55,14 @@ impl @component.Fields for EmojiPickerState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum EmojiPickerReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum EmojiPickerMsg {
   OnEmojiClick(String)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -78,9 +80,9 @@ pub(all) enum EmojiPickerReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn EmojiPickerReceive::from_dispatch(
+pub fn EmojiPickerMsg::from_dispatch(
   d : @component.Dispatch,
-) -> EmojiPickerReceive? {
+) -> EmojiPickerMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -98,8 +100,8 @@ pub fn EmojiPickerReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn EmojiPickerReceive::to_dispatch(
-  self : EmojiPickerReceive,
+pub fn EmojiPickerMsg::to_dispatch(
+  self : EmojiPickerMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     OnEmojiClick(a0) => ("onEmojiClick", [Str(a0)])
@@ -112,10 +114,7 @@ pub fn EmojiPickerReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn EmojiPickerReceive::send(
-  self : EmojiPickerReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn EmojiPickerMsg::send(self : EmojiPickerMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -127,58 +126,6 @@ pub let emoji_picker_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let emoji_picker_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum EmojiPickerInput {
-  OnEmojiClick
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn EmojiPickerInput::name(self : EmojiPickerInput) -> String {
-  match self {
-    OnEmojiClick => "onEmojiClick"
-  }
-}
-
-///|
-pub fn EmojiPickerInput::parse(s : String) -> EmojiPickerInput? {
-  match s {
-    "onEmojiClick" => Some(OnEmojiClick)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to web_component.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum EmojiPickerMsg {
-  /// `@on.emoji-click="onEmojiClick …"`
-  OnEmojiClick(String)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn EmojiPickerMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> EmojiPickerMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("onEmojiClick", [Str(a0)]) => OnEmojiClick(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.

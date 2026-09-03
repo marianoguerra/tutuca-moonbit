@@ -108,7 +108,7 @@ pub fn item_views() -> Map[String, @anode.View] {
 pub fn item_component(
   name? : String = "Item",
   views? : Map[String, @anode.View] = item_views(),
-  init? : ItemState = ItemState::zero(),
+  initial? : ItemState = ItemState::zero(),
   common_style? : String = item_common_style,
   global_style? : String = item_global_style,
   update? : (ItemState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -122,7 +122,7 @@ pub fn item_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -210,7 +210,7 @@ pub fn items_views() -> Map[String, @anode.View] {
 pub fn items_component(
   name? : String = "Items",
   views? : Map[String, @anode.View] = items_views(),
-  init? : ItemsState = ItemsState::zero(),
+  initial? : ItemsState = ItemsState::zero(),
   common_style? : String = items_common_style,
   global_style? : String = items_global_style,
   update? : (ItemsState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -224,7 +224,7 @@ pub fn items_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

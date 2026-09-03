@@ -28,7 +28,7 @@ pub(all) struct LintDemoState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..LintDemoState::zero(), label: "Counter" }
+///   initial={ ..LintDemoState::zero(), label: "Counter" }
 pub fn LintDemoState::zero() -> LintDemoState {
   { count: 0, items: [], kind: "", isOpen: false, child: Null, }
 }
@@ -109,7 +109,7 @@ pub(all) struct HtmlLintDemoState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..HtmlLintDemoState::zero(), label: "Counter" }
+///   initial={ ..HtmlLintDemoState::zero(), label: "Counter" }
 pub fn HtmlLintDemoState::zero() -> HtmlLintDemoState {
   { count: 0, }
 }
@@ -164,7 +164,7 @@ pub(all) struct ScopedStyleDemoState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ScopedStyleDemoState::zero(), label: "Counter" }
+///   initial={ ..ScopedStyleDemoState::zero(), label: "Counter" }
 pub fn ScopedStyleDemoState::zero() -> ScopedStyleDemoState {
   { count: 0, }
 }

@@ -127,7 +127,7 @@ fn counter_inline_update(
 pub fn counter_component(
   name? : String = "Counter",
   views? : Map[String, @anode.View] = counter_views(),
-  init? : CounterState = CounterState::zero(),
+  initial? : CounterState = CounterState::zero(),
   common_style? : String = counter_common_style,
   global_style? : String = counter_global_style,
   update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[CounterState],
@@ -139,7 +139,7 @@ pub fn counter_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => match counter_inline_update(s, msg, ctx) {

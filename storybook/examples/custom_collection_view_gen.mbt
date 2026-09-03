@@ -24,7 +24,7 @@ pub(all) struct PlaylistState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..PlaylistState::zero(), label: "Counter" }
+///   initial={ ..PlaylistState::zero(), label: "Counter" }
 pub fn PlaylistState::zero() -> PlaylistState {
   { songs: Null, }
 }
@@ -51,12 +51,14 @@ impl @component.Fields for PlaylistState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum PlaylistReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum PlaylistMsg {
   RemoveSong(@tutuca.Value)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -74,9 +76,7 @@ pub(all) enum PlaylistReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn PlaylistReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> PlaylistReceive? {
+pub fn PlaylistMsg::from_dispatch(d : @component.Dispatch) -> PlaylistMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -94,8 +94,8 @@ pub fn PlaylistReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn PlaylistReceive::to_dispatch(
-  self : PlaylistReceive,
+pub fn PlaylistMsg::to_dispatch(
+  self : PlaylistMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     RemoveSong(a0) => ("removeSong", [a0])
@@ -108,10 +108,7 @@ pub fn PlaylistReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn PlaylistReceive::send(
-  self : PlaylistReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn PlaylistMsg::send(self : PlaylistMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -123,56 +120,6 @@ pub let playlist_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let playlist_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum PlaylistInput {
-  RemoveSong
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PlaylistInput::name(self : PlaylistInput) -> String {
-  match self {
-    RemoveSong => "removeSong"
-  }
-}
-
-///|
-pub fn PlaylistInput::parse(s : String) -> PlaylistInput? {
-  match s {
-    "removeSong" => Some(RemoveSong)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to custom_collection.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum PlaylistMsg {
-  /// `@on.click="removeSong …"`
-  RemoveSong(@tutuca.Value)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn PlaylistMsg::from_dispatch(d : @component.Dispatch) -> PlaylistMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("removeSong", [a0]) => RemoveSong(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -208,7 +155,7 @@ pub(all) struct SongState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SongState::zero(), label: "Counter" }
+///   initial={ ..SongState::zero(), label: "Counter" }
 pub fn SongState::zero() -> SongState {
   { title: "", }
 }

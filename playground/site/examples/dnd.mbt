@@ -9,7 +9,7 @@
 
 fn build() -> @component.ModuleDef {
   let dnd = dn_d_example_component(
-    init=DnDExampleState::{ items: [], query: "" },
+    initial=DnDExampleState::{ items: [], query: "" },
     when=w => match w {
       FilterItem =>
         Some((s, _key, item, _iter, _stack) => match item {

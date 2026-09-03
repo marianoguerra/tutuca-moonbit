@@ -18,7 +18,7 @@ fn sheet_comp() -> @component.Component {
       ),
     },
     name="Sheet",
-    init=SheetState::{ title: "Q1", },
+    initial=SheetState::{ title: "Q1", },
     update=(_s : SheetState, msg, ctx) => {
       match msg {
         Receive("rename", [Str(t)]) => Next({ title: t, })
@@ -81,7 +81,7 @@ fn resume_path_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Toolbar",
-    init=SeenState::{ seen: false, },
+    initial=SeenState::{ seen: false, },
     lookup=[@component.lookup_name("active")],
     update=seen_update(),
   )
@@ -93,7 +93,7 @@ fn resume_path_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Panel",
-    init=ResumePanelState::{ seen: false, },
+    initial=ResumePanelState::{ seen: false, },
     update=(_s, msg, _ctx) => {
       match msg {
         Intent("sheet-poked", _) => Next({ seen: true, })
@@ -109,7 +109,7 @@ fn resume_path_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Workspace",
-    init=ResumeWorkspaceState::{ seen: false, },
+    initial=ResumeWorkspaceState::{ seen: false, },
     provide={ "active": ".sheet" },
     update=(_s, msg, _ctx) => {
       match msg {
@@ -204,7 +204,7 @@ test "lexical resume path renders and dispatches without a root provider" {
       ),
     },
     name="Sheet",
-    init=SheetState::{ title: "Q1", },
+    initial=SheetState::{ title: "Q1", },
     update=(_s : SheetState, msg, _ctx) => {
       match msg {
         Receive("rename", [Str(title)]) => Next({ title, })
@@ -220,7 +220,7 @@ test "lexical resume path renders and dispatches without a root provider" {
       ),
     },
     name="LexWorkspace",
-    init=ResumeWorkspaceState::{ seen: false, },
+    initial=ResumeWorkspaceState::{ seen: false, },
   )
   let scope = @component.ComponentStack::new()
   // This belongs to the lexical module/session scope. LexWorkspace itself
@@ -293,7 +293,7 @@ test "own-provide: a component can resume at its own dynamic value" {
       ),
     },
     name="Solo",
-    init=ResumeSoloState::{ },
+    initial=ResumeSoloState::{ },
     provide={ "active": ".sheet" },
   )
   scope.register_components([sheet_comp(), solo])
@@ -323,7 +323,7 @@ test "iterated dynamic (@each *rows + render-it) resumes at the keyed item" {
       ),
     },
     name="RowList",
-    init=NoState::{ },
+    initial=NoState::{ },
     lookup=[@component.lookup_name("rows")],
   )
   let grid = @component.component(
@@ -334,7 +334,7 @@ test "iterated dynamic (@each *rows + render-it) resumes at the keyed item" {
       ),
     },
     name="Grid",
-    init=RowsState::{ rows: Map([]), },
+    initial=RowsState::{ rows: Map([]), },
     provide={ "rows": ".rows" },
   )
   scope.register_components([sheet_comp(), list, grid])
@@ -386,7 +386,7 @@ test "seq-access dynamic (.sheets[.selId]) resumes at the live-keyed item" {
       ),
     },
     name="Viewer",
-    init=NoState::{ },
+    initial=NoState::{ },
     lookup=[@component.lookup_name("sel")],
   )
   let deck = @component.component(
@@ -397,7 +397,7 @@ test "seq-access dynamic (.sheets[.selId]) resumes at the live-keyed item" {
       ),
     },
     name="Deck",
-    init=DeckState::{ sheets: Map([]), selId: "b", },
+    initial=DeckState::{ sheets: Map([]), selId: "b", },
     provide={ "sel": ".sheets[.selId]" },
   )
   scope.register_components([sheet_comp(), viewer, deck])
@@ -446,7 +446,7 @@ test "lookup default: a consumer without its producer falls back" {
       ),
     },
     name="Lonely",
-    init=ResumeLonelyState::{ },
+    initial=ResumeLonelyState::{ },
     lookup=[@component.lookup_or("active", ".backup")],
   )
   scope.register_components([sheet_comp(), lonely])

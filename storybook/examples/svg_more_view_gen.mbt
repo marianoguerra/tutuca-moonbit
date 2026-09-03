@@ -24,7 +24,7 @@ pub(all) struct IconGalleryState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..IconGalleryState::zero(), label: "Counter" }
+///   initial={ ..IconGalleryState::zero(), label: "Counter" }
 pub fn IconGalleryState::zero() -> IconGalleryState {
   { size: 0, }
 }
@@ -81,7 +81,7 @@ pub(all) struct BarChartState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..BarChartState::zero(), label: "Counter" }
+///   initial={ ..BarChartState::zero(), label: "Counter" }
 pub fn BarChartState::zero() -> BarChartState {
   { values: [], }
 }
@@ -115,14 +115,16 @@ impl @component.Fields for BarChartState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum BarChartReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum BarChartMsg {
   AddBar
   RemoveBar
   Randomize
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -140,9 +142,7 @@ pub(all) enum BarChartReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn BarChartReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> BarChartReceive? {
+pub fn BarChartMsg::from_dispatch(d : @component.Dispatch) -> BarChartMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -164,8 +164,8 @@ pub fn BarChartReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn BarChartReceive::to_dispatch(
-  self : BarChartReceive,
+pub fn BarChartMsg::to_dispatch(
+  self : BarChartMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     AddBar => ("addBar", [])
@@ -180,10 +180,7 @@ pub fn BarChartReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn BarChartReceive::send(
-  self : BarChartReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn BarChartMsg::send(self : BarChartMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -195,68 +192,6 @@ pub let bar_chart_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let bar_chart_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum BarChartInput {
-  AddBar
-  Randomize
-  RemoveBar
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn BarChartInput::name(self : BarChartInput) -> String {
-  match self {
-    AddBar => "addBar"
-    Randomize => "randomize"
-    RemoveBar => "removeBar"
-  }
-}
-
-///|
-pub fn BarChartInput::parse(s : String) -> BarChartInput? {
-  match s {
-    "addBar" => Some(AddBar)
-    "randomize" => Some(Randomize)
-    "removeBar" => Some(RemoveBar)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to svg_more.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum BarChartMsg {
-  /// `@on.click="addBar …"`
-  AddBar
-  /// `@on.click="randomize …"`
-  Randomize
-  /// `@on.click="removeBar …"`
-  RemoveBar
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn BarChartMsg::from_dispatch(d : @component.Dispatch) -> BarChartMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("addBar", []) => AddBar
-      ("randomize", []) => Randomize
-      ("removeBar", []) => RemoveBar
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// Every `@enrich-with` handler named INSIDE an `@each`.

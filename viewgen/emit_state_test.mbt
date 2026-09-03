@@ -29,7 +29,7 @@ test "a state block emits the struct, its zero and its declared field kinds" {
   assert_false(src.contains("derive(ToJson"))
   // The zero, so `init` spreads it and names only what differs. Public,
   // because a file with no generated `component()` wrapper has nothing else to
-  // default `init~` from.
+  // default `initial~` from.
   assert_true(src.contains("\npub fn CounterState::zero() -> CounterState {"))
   assert_true(src.contains("label: \"\","))
   assert_true(src.contains("count: 0,"))

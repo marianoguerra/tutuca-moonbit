@@ -32,7 +32,13 @@
 /// into entries.
 fn request_example_comp(entry : @component.Component) -> @component.Component {
   request_example_component(
-    init={ items: [], query: "", view: "main", isLoading: false, error: None, },
+    initial={
+      items: [],
+      query: "",
+      view: "main",
+      isLoading: false,
+      error: None,
+    },
     update=(s, msg, ctx) => {
       match msg {
         // The same intent, dispatched from MoonBit rather than from the block

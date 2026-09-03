@@ -30,7 +30,7 @@ pub(all) struct ComposabilityState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ComposabilityState::zero(), label: "Counter" }
+///   initial={ ..ComposabilityState::zero(), label: "Counter" }
 pub fn ComposabilityState::zero() -> ComposabilityState {
   {
     activeSection: "",

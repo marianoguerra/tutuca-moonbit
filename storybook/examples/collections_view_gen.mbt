@@ -24,7 +24,7 @@ pub(all) struct RenderWithScopeState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..RenderWithScopeState::zero(), label: "Counter" }
+///   initial={ ..RenderWithScopeState::zero(), label: "Counter" }
 pub fn RenderWithScopeState::zero() -> RenderWithScopeState {
   { text: "", }
 }
@@ -105,7 +105,7 @@ pub(all) struct ListFilterEnrichState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ListFilterEnrichState::zero(), label: "Counter" }
+///   initial={ ..ListFilterEnrichState::zero(), label: "Counter" }
 pub fn ListFilterEnrichState::zero() -> ListFilterEnrichState {
   { items: [], query: "", }
 }
@@ -210,7 +210,7 @@ pub(all) struct ListFilterEnrichWithState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ListFilterEnrichWithState::zero(), label: "Counter" }
+///   initial={ ..ListFilterEnrichWithState::zero(), label: "Counter" }
 pub fn ListFilterEnrichWithState::zero() -> ListFilterEnrichWithState {
   { items: [], query: "", }
 }

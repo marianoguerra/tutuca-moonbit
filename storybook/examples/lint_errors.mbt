@@ -145,7 +145,7 @@ fn lint_demo_comp() -> @component.Component {
       ),
     },
     name="LintDemo",
-    init=LintDemoState::{
+    initial=LintDemoState::{
       count: 0,
       items: [],
       kind: "",
@@ -218,7 +218,7 @@ fn html_lint_demo_comp() -> @component.Component {
       ),
     },
     name="HtmlLintDemo",
-    init=HtmlLintDemoState::{ count: 0, },
+    initial=HtmlLintDemoState::{ count: 0, },
   )
 }
 
@@ -229,7 +229,7 @@ fn scoped_style_demo_comp() -> @component.Component {
       "main": @anode.View::new("main", raw_view="<p @text=\".count\">0</p>"),
     },
     name="ScopedStyleDemo",
-    init=ScopedStyleDemoState::{ count: 0, },
+    initial=ScopedStyleDemoState::{ count: 0, },
     // commonStyle/style are wrapped in a component-scoped selector, so
     // top-level CSS lands inside a style-rule block where it is invalid or
     // dead. Both belong in globalStyle (injected verbatim).

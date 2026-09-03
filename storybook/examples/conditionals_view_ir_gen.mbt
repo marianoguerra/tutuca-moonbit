@@ -155,13 +155,13 @@ fn traffic_light_inline_update(
 pub fn traffic_light_component(
   name? : String = "TrafficLight",
   views? : Map[String, @anode.View] = traffic_light_views(),
-  init? : TrafficLightState = TrafficLightState::zero(),
+  initial? : TrafficLightState = TrafficLightState::zero(),
   common_style? : String = traffic_light_common_style,
   global_style? : String = traffic_light_global_style,
   update? : (TrafficLightState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TrafficLightState,
   ],
-  compute? : (TrafficLightMethod) -> ((
+  compute? : (TrafficLightCompute) -> ((
     TrafficLightState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -174,7 +174,7 @@ pub fn traffic_light_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => {
@@ -190,8 +190,8 @@ pub fn traffic_light_component(
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([Light] : Array[TrafficLightMethod]),
-          TrafficLightMethod::name,
+          ([Light] : Array[TrafficLightCompute]),
+          TrafficLightCompute::name,
           f,
         )
       None => Map([])
@@ -359,7 +359,7 @@ pub fn tabbed_u_i_views() -> Map[String, @anode.View] {
 pub fn tabbed_u_i_component(
   name? : String = "TabbedUI",
   views? : Map[String, @anode.View] = tabbed_u_i_views(),
-  init? : TabbedUIState = TabbedUIState::zero(),
+  initial? : TabbedUIState = TabbedUIState::zero(),
   common_style? : String = tabbed_u_i_common_style,
   global_style? : String = tabbed_u_i_global_style,
   update? : (TabbedUIState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -373,7 +373,7 @@ pub fn tabbed_u_i_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -457,7 +457,7 @@ pub fn list_and_filter_views() -> Map[String, @anode.View] {
 pub fn list_and_filter_component(
   name? : String = "ListAndFilter",
   views? : Map[String, @anode.View] = list_and_filter_views(),
-  init? : ListAndFilterState = ListAndFilterState::zero(),
+  initial? : ListAndFilterState = ListAndFilterState::zero(),
   common_style? : String = list_and_filter_common_style,
   global_style? : String = list_and_filter_global_style,
   update? : (ListAndFilterState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -478,7 +478,7 @@ pub fn list_and_filter_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

@@ -303,7 +303,7 @@ fn bar_chart_inline_compute() -> Map[
 pub fn bar_chart_component(
   name? : String = "BarChart",
   views? : Map[String, @anode.View] = bar_chart_views(),
-  init? : BarChartState = BarChartState::zero(),
+  initial? : BarChartState = BarChartState::zero(),
   common_style? : String = bar_chart_common_style,
   global_style? : String = bar_chart_global_style,
   update? : (BarChartState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -330,7 +330,7 @@ pub fn bar_chart_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => {

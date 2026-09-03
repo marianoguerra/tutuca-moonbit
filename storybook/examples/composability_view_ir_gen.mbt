@@ -312,7 +312,7 @@ pub fn composability_views() -> Map[String, @anode.View] {
 pub fn composability_component(
   name? : String = "Composability",
   views? : Map[String, @anode.View] = composability_views(),
-  init? : ComposabilityState = ComposabilityState::zero(),
+  initial? : ComposabilityState = ComposabilityState::zero(),
   common_style? : String = composability_common_style,
   global_style? : String = composability_global_style,
   update? : (ComposabilityState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -326,7 +326,7 @@ pub fn composability_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

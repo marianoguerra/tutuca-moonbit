@@ -120,7 +120,7 @@ pub fn emoji_picker_views() -> Map[String, @anode.View] {
 pub fn emoji_picker_component(
   name? : String = "EmojiPicker",
   views? : Map[String, @anode.View] = emoji_picker_views(),
-  init? : EmojiPickerState = EmojiPickerState::zero(),
+  initial? : EmojiPickerState = EmojiPickerState::zero(),
   common_style? : String = emoji_picker_common_style,
   global_style? : String = emoji_picker_global_style,
   update? : (EmojiPickerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -134,7 +134,7 @@ pub fn emoji_picker_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

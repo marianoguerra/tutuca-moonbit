@@ -38,7 +38,7 @@ fn todo_module() -> @component.ModuleDef {
       ),
     },
     name="Todo",
-    init=TodoState::{ draft: "", todos: [], done: false, },
+    initial=TodoState::{ draft: "", todos: [], done: false, },
     compute={ "total": (s, _args, _stack) => Num(s.todos.length().to_double()) },
     update=(s : TodoState, msg, _ctx) => {
       match msg {

@@ -24,7 +24,7 @@ test "a component that renders itself renders a marker, not a stack overflow" {
       ),
     },
     name="SelfLoop",
-    init=SelfLoopState::{ label: "once", },
+    initial=SelfLoopState::{ label: "once", },
   )
   scope.register_components([looper])
   scope.compile_all()

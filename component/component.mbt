@@ -122,7 +122,7 @@ fn new_component(
 pub fn[S : @tutuca.Fields] component(
   name~ : String,
   views~ : Map[String, @anode.View],
-  init~ : S,
+  initial~ : S,
   common_style? : String = "",
   global_style? : String = "",
   update? : (S, Dispatch, &@tutuca.Ctx) -> Update[S],
@@ -165,7 +165,7 @@ pub fn[S : @tutuca.Fields] component(
   let schema = S::schema()
   let encode = (s : S) => s.encode()
   let decode = (f : Map[String, @tutuca.Value]) => S::decode(f)
-  let init_fields = encode(init)
+  let init_fields = encode(initial)
   // Every spec comes from the SCHEMA now. The kind is `fi.kind()` and the
   // default `fi.ty.zero()`, both projections of the declared type, so there is
   // nothing here a caller could state differently from what the block says.
@@ -254,7 +254,7 @@ pub fn[S : @tutuca.Fields] component(
   }
   let tspec : TypedSpec[S] = {
     comp: None,
-    init,
+    init: initial,
     s_fields,
     update,
     get_property,

@@ -14,21 +14,21 @@
 fn cx_counter_comp() -> @component.Component {
   // `inc` and `dec` are in the view file's `<script type="tutuca/script"
   // for="Counter">` block, so the whole counter is its seed.
-  counter_component(init=CounterState::{ count: 0 })
+  counter_component(initial=CounterState::{ count: 0 })
 }
 
 // --- To-Do (from the todo example) -----------------------------------------
 
 fn cx_todo_item_comp() -> @component.Component {
   item_component(
-    init=ItemState::{ completed: false, text: "do the thing" },
+    initial=ItemState::{ completed: false, text: "do the thing" },
   )
 }
 
 
 fn cx_todo_items_comp(item : @component.Component) -> @component.Component {
   items_component(
-    init=ItemsState::{ items: [] },
+    initial=ItemsState::{ items: [] },
     update=(s, msg, _ctx) => match ItemsMsg::from_dispatch(msg) {
       Some(OnAddItem) => Next({ items: s.items + [item.make(Map([]))] })
       // Served by a generated mutator or another bucket: the view
@@ -44,7 +44,7 @@ fn cx_todo_items_comp(item : @component.Component) -> @component.Component {
 
 fn cx_tree_item_comp() -> @component.Component {
   tree_item_component(
-    init=TreeItemState::{
+    initial=TreeItemState::{
       type_: "dir",
       label: "A Tree Item",
       isOpen: true,
@@ -75,7 +75,7 @@ fn cx_tree_item_comp() -> @component.Component {
 
 fn cx_tree_root_comp() -> @component.Component {
   tree_root_component(
-    init={ ..TreeRootState::zero(), log: [] },
+    initial={ ..TreeRootState::zero(), log: [] },
     update=(s, msg, _ctx) => match msg {
       Intent("treeItemSelected", args) => {
         let label = match args {
@@ -122,7 +122,7 @@ fn cx_tree_sample(item : @component.Component) -> @tutuca.Value {
 
 fn composability_comp(tree_args : Map[String, @tutuca.Value]) -> @component.Component {
   composability_component(
-    init={ ..ComposabilityState::zero(), activeSection: "counter" },
+    initial={ ..ComposabilityState::zero(), activeSection: "counter" },
     slot_args={ "tree": tree_args },
   )
 }

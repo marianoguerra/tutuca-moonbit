@@ -6,7 +6,7 @@
 
 ///|
 fn todo_item_comp() -> @component.Component {
-  item_component(init={ completed: false, text: "do the thing", })
+  item_component(initial={ completed: false, text: "do the thing", })
 }
 
 ///|
@@ -14,7 +14,7 @@ fn todo_item_comp() -> @component.Component {
 /// loop is currently on. `$removeInItemsAt @key` is a generated list mutator,
 /// passed the loop's key.
 fn todo_items_comp(item : @component.Component) -> @component.Component {
-  items_component(init={ items: [], }, update=(s, msg, _ctx) => {
+  items_component(initial={ items: [], }, update=(s, msg, _ctx) => {
     match ItemsMsg::from_dispatch(msg) {
       Some(OnAddItem) => Next({ items: s.items + [item.make(Map([]))], })
       Some(Unknown(_, _)) | None => Unhandled

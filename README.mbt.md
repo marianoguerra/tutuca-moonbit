@@ -88,9 +88,11 @@ style, or its global style with `data-global`.
 For a component named `Counter` the generated module declares
 `counter_views()` (the built views, for `views~`) and — with a schema —
 `counter_component()`, the wrapper that passes them,
-`CounterInput` and `CounterMsg` (`@on` handler names, with payload types
-inferred from the argument shapes at the call sites, plus
-`CounterMsg::from_dispatch`), `CounterMethod` with `counter_compute` (the `$`-callables, as an exhaustive
+`CounterMsg` — every addressed name, the schema's `message` cases and the
+views' `@on` handlers in one bucket, with payload types declared by the schema
+where it says anything and inferred from the call sites otherwise, plus
+`CounterMsg::from_dispatch` and `CounterMsg::to_dispatch` — and
+`CounterCompute` with `counter_compute` (the `$`-callables, as an exhaustive
 match).
 The package it lands in must import
 `"marianoguerra/tutuca/core" @tutuca`, `"marianoguerra/tutuca/component"` and
@@ -177,7 +179,7 @@ view file already states filled in:
 
 ```moonbit nocheck
 counter_component(
-  init=CounterState::fresh(),
+  initial=CounterState::fresh(),
   update=(s, msg, _ctx) => ...,
 )
 ```
@@ -259,7 +261,7 @@ runs the same generator in the browser. Its left pane has three tabs:
 | **Generated** | read-only: what `gen-views` makes of the View tab, updating as you type |
 
 The generated modules are compiled as extra files of *your* package, so the
-Component tab names `counter_views()` / `CounterMsg` / `CounterInput`
+Component tab names `counter_views()` / `CounterMsg`
 with no import — and adding an `@on` handler in the View tab fails the build
 with `Partial match … Some(Del(_))` until the Component tab handles it. Load
 the "Counter (view tab)" example to see it.

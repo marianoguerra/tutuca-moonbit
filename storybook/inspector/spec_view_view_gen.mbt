@@ -37,7 +37,7 @@ pub(all) struct SpecFieldState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SpecFieldState::zero(), label: "Counter" }
+///   initial={ ..SpecFieldState::zero(), label: "Counter" }
 pub fn SpecFieldState::zero() -> SpecFieldState {
   { name: "", typeName: "", attrs: "", doc: "", }
 }
@@ -119,7 +119,7 @@ pub(all) struct SpecMsgState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SpecMsgState::zero(), label: "Counter" }
+///   initial={ ..SpecMsgState::zero(), label: "Counter" }
 pub fn SpecMsgState::zero() -> SpecMsgState {
   { name: "", payload: "", doc: "", }
 }
@@ -202,7 +202,7 @@ pub(all) struct SpecRuleState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SpecRuleState::zero(), label: "Counter" }
+///   initial={ ..SpecRuleState::zero(), label: "Counter" }
 pub fn SpecRuleState::zero() -> SpecRuleState {
   { kind: "", kindClass: "", name: "", source: "", format: "", doc: "", }
 }
@@ -298,7 +298,7 @@ pub(all) struct SpecDocState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SpecDocState::zero(), label: "Counter" }
+///   initial={ ..SpecDocState::zero(), label: "Counter" }
 pub fn SpecDocState::zero() -> SpecDocState {
   { text: "", }
 }
@@ -373,7 +373,7 @@ pub(all) struct SpecViewerState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SpecViewerState::zero(), label: "Counter" }
+///   initial={ ..SpecViewerState::zero(), label: "Counter" }
 pub fn SpecViewerState::zero() -> SpecViewerState {
   { compName: "", sections: [], hasSpec: false, hint: "", note: "", }
 }
@@ -548,7 +548,7 @@ pub(all) struct SpecSourceState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SpecSourceState::zero(), label: "Counter" }
+///   initial={ ..SpecSourceState::zero(), label: "Counter" }
 pub fn SpecSourceState::zero() -> SpecSourceState {
   { source: "", hasSource: false, hint: "", note: "", }
 }

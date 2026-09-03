@@ -4,7 +4,7 @@
 
 fn build() -> @component.ModuleDef {
   let greeter = greeter_component(
-    init=GreeterState::{ name: "world" },
+    initial=GreeterState::{ name: "world" },
   )
   @component.ModuleDef::new(
     name="greeter",

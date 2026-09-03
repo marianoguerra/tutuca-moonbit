@@ -519,7 +519,7 @@ fn trace_row_inline_compute() -> Map[
 pub fn trace_row_component(
   name? : String = "TraceRow",
   views? : Map[String, @anode.View] = trace_row_views(),
-  init? : TraceRowState = TraceRowState::zero(),
+  initial? : TraceRowState = TraceRowState::zero(),
   common_style? : String = trace_row_common_style,
   global_style? : String = trace_row_global_style,
   update? : (TraceRowState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -533,7 +533,7 @@ pub fn trace_row_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => {
@@ -721,7 +721,7 @@ fn trace_log_inline_compute() -> Map[
 pub fn trace_log_component(
   name? : String = "TraceLog",
   views? : Map[String, @anode.View] = trace_log_views(),
-  init? : TraceLogState = TraceLogState::zero(),
+  initial? : TraceLogState = TraceLogState::zero(),
   common_style? : String = trace_log_common_style,
   global_style? : String = trace_log_global_style,
   update? : (TraceLogState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -735,7 +735,7 @@ pub fn trace_log_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => {
@@ -944,7 +944,7 @@ fn trace_header_inline_compute() -> Map[
 pub fn trace_header_component(
   name? : String = "TraceHeader",
   views? : Map[String, @anode.View] = trace_header_views(),
-  init? : TraceHeaderState = TraceHeaderState::zero(),
+  initial? : TraceHeaderState = TraceHeaderState::zero(),
   common_style? : String = trace_header_common_style,
   global_style? : String = trace_header_global_style,
   update? : (TraceHeaderState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -958,7 +958,7 @@ pub fn trace_header_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -1101,7 +1101,7 @@ fn trace_place_inline_update(
 pub fn trace_place_component(
   name? : String = "TracePlace",
   views? : Map[String, @anode.View] = trace_place_views(),
-  init? : TracePlaceState = TracePlaceState::zero(),
+  initial? : TracePlaceState = TracePlaceState::zero(),
   common_style? : String = trace_place_common_style,
   global_style? : String = trace_place_global_style,
   update? : (TracePlaceState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -1115,7 +1115,7 @@ pub fn trace_place_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => {
@@ -1217,7 +1217,7 @@ fn trace_places_inline_compute() -> Map[
 pub fn trace_places_component(
   name? : String = "TracePlaces",
   views? : Map[String, @anode.View] = trace_places_views(),
-  init? : TracePlacesState = TracePlacesState::zero(),
+  initial? : TracePlacesState = TracePlacesState::zero(),
   common_style? : String = trace_places_common_style,
   global_style? : String = trace_places_global_style,
   update? : (TracePlacesState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -1231,7 +1231,7 @@ pub fn trace_places_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -1783,7 +1783,7 @@ fn recorder_bar_inline_compute() -> Map[
 pub fn recorder_bar_component(
   name? : String = "RecorderBar",
   views? : Map[String, @anode.View] = recorder_bar_views(),
-  init? : RecorderBarState = RecorderBarState::zero(),
+  initial? : RecorderBarState = RecorderBarState::zero(),
   common_style? : String = recorder_bar_common_style,
   global_style? : String = recorder_bar_global_style,
   update? : (RecorderBarState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -1797,7 +1797,7 @@ pub fn recorder_bar_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => {
@@ -3107,7 +3107,7 @@ fn trace_panel_inline_compute() -> Map[
 pub fn trace_panel_component(
   name? : String = "TracePanel",
   views? : Map[String, @anode.View] = trace_panel_views(),
-  init? : TracePanelState = TracePanelState::zero(),
+  initial? : TracePanelState = TracePanelState::zero(),
   common_style? : String = trace_panel_common_style,
   global_style? : String = trace_panel_global_style,
   update? : (TracePanelState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -3121,7 +3121,7 @@ pub fn trace_panel_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => {

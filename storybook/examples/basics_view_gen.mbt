@@ -22,7 +22,7 @@ pub(all) struct MinimumViableComponentState {} derive(Default)
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..MinimumViableComponentState::zero(), label: "Counter" }
+///   initial={ ..MinimumViableComponentState::zero(), label: "Counter" }
 pub fn MinimumViableComponentState::zero() -> MinimumViableComponentState {
   Default::default()
 }
@@ -83,7 +83,7 @@ pub(all) struct StaticViewComponentState {} derive(Default)
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..StaticViewComponentState::zero(), label: "Counter" }
+///   initial={ ..StaticViewComponentState::zero(), label: "Counter" }
 pub fn StaticViewComponentState::zero() -> StaticViewComponentState {
   Default::default()
 }
@@ -149,7 +149,7 @@ pub(all) struct TextDirectiveState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..TextDirectiveState::zero(), label: "Counter" }
+///   initial={ ..TextDirectiveState::zero(), label: "Counter" }
 pub fn TextDirectiveState::zero() -> TextDirectiveState {
   { str: "", num: 0, bool: false, notSet: Null, }
 }
@@ -191,13 +191,13 @@ pub let text_directive_common_style : String = ""
 pub let text_directive_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum TextDirectiveMethod {
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+pub(all) enum TextDirectiveCompute {
   GetStrUpper
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn TextDirectiveMethod::name(self : TextDirectiveMethod) -> String {
+pub fn TextDirectiveCompute::name(self : TextDirectiveCompute) -> String {
   match self {
     GetStrUpper => "getStrUpper"
   }
@@ -242,7 +242,7 @@ pub(all) struct DangerSetInnerHtmlState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..DangerSetInnerHtmlState::zero(), label: "Counter" }
+///   initial={ ..DangerSetInnerHtmlState::zero(), label: "Counter" }
 pub fn DangerSetInnerHtmlState::zero() -> DangerSetInnerHtmlState {
   { content: "", }
 }
@@ -307,7 +307,7 @@ pub(all) struct SetInnerMdState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SetInnerMdState::zero(), label: "Counter" }
+///   initial={ ..SetInnerMdState::zero(), label: "Counter" }
 pub fn SetInnerMdState::zero() -> SetInnerMdState {
   { source: "", }
 }

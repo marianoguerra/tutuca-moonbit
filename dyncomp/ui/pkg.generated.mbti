@@ -18,7 +18,7 @@ pub let builtin_module : String
 
 pub let command_bar_common_style : String
 
-pub fn command_bar_component(name? : String, views? : Map[String, @anode.View], init? : CommandBarState, common_style? : String, global_style? : String, update? : (CommandBarState, @core.Dispatch, &@core.Ctx) -> @component.Update[CommandBarState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn command_bar_component(name? : String, views? : Map[String, @anode.View], initial? : CommandBarState, common_style? : String, global_style? : String, update? : (CommandBarState, @core.Dispatch, &@core.Ctx) -> @component.Update[CommandBarState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let command_bar_global_style : String
 
@@ -26,7 +26,7 @@ pub fn command_bar_views() -> Map[String, @anode.View]
 
 pub let config_panel_common_style : String
 
-pub fn config_panel_component(name? : String, views? : Map[String, @anode.View], init? : ConfigPanelState, common_style? : String, global_style? : String, update? : (ConfigPanelState, @core.Dispatch, &@core.Ctx) -> @component.Update[ConfigPanelState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn config_panel_component(name? : String, views? : Map[String, @anode.View], initial? : ConfigPanelState, common_style? : String, global_style? : String, update? : (ConfigPanelState, @core.Dispatch, &@core.Ctx) -> @component.Update[ConfigPanelState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let config_panel_global_style : String
 
@@ -36,7 +36,7 @@ pub fn is_builtin(@registry.ComponentRef) -> Bool
 
 pub let palette_row_common_style : String
 
-pub fn palette_row_component(name? : String, views? : Map[String, @anode.View], init? : PaletteRowState, common_style? : String, global_style? : String, update? : (PaletteRowState, @core.Dispatch, &@core.Ctx) -> @component.Update[PaletteRowState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn palette_row_component(name? : String, views? : Map[String, @anode.View], initial? : PaletteRowState, common_style? : String, global_style? : String, update? : (PaletteRowState, @core.Dispatch, &@core.Ctx) -> @component.Update[PaletteRowState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let palette_row_global_style : String
 
@@ -46,7 +46,7 @@ pub fn palette_row_views() -> Map[String, @anode.View]
 
 pub let schema_field_common_style : String
 
-pub fn schema_field_component(name? : String, views? : Map[String, @anode.View], init? : SchemaFieldState, common_style? : String, global_style? : String, update? : (SchemaFieldState, @core.Dispatch, &@core.Ctx) -> @component.Update[SchemaFieldState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn schema_field_component(name? : String, views? : Map[String, @anode.View], initial? : SchemaFieldState, common_style? : String, global_style? : String, update? : (SchemaFieldState, @core.Dispatch, &@core.Ctx) -> @component.Update[SchemaFieldState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let schema_field_global_style : String
 
@@ -54,7 +54,7 @@ pub fn schema_field_views() -> Map[String, @anode.View]
 
 pub let schema_form_common_style : String
 
-pub fn schema_form_component(name? : String, views? : Map[String, @anode.View], init? : SchemaFormState, common_style? : String, global_style? : String, update? : (SchemaFormState, @core.Dispatch, &@core.Ctx) -> @component.Update[SchemaFormState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn schema_form_component(name? : String, views? : Map[String, @anode.View], initial? : SchemaFormState, common_style? : String, global_style? : String, update? : (SchemaFormState, @core.Dispatch, &@core.Ctx) -> @component.Update[SchemaFormState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let schema_form_global_style : String
 
@@ -64,7 +64,7 @@ pub fn seeded_app(@registry.Registry, (@registry.ComponentRef, String, Map[Strin
 
 pub let universal_app_common_style : String
 
-pub fn universal_app_component(name? : String, views? : Map[String, @anode.View], init? : UniversalAppState, common_style? : String, global_style? : String, update? : (UniversalAppState, @core.Dispatch, &@core.Ctx) -> @component.Update[UniversalAppState], compute? : (UniversalAppMethod) -> ((UniversalAppState, Array[@core.Value], &@core.Stack) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn universal_app_component(name? : String, views? : Map[String, @anode.View], initial? : UniversalAppState, common_style? : String, global_style? : String, update? : (UniversalAppState, @core.Dispatch, &@core.Ctx) -> @component.Update[UniversalAppState], compute? : (UniversalAppCompute) -> ((UniversalAppState, Array[@core.Value], &@core.Stack) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let universal_app_global_style : String
 
@@ -80,32 +80,16 @@ pub(all) struct CommandBarInitChoice {
   label : String
 } derive(Eq, @debug.Debug)
 
-pub(all) enum CommandBarInput {
-  Close
-  Nav
-  SetQuery
-} derive(Eq, @debug.Debug)
-pub fn CommandBarInput::name(Self) -> String
-pub fn CommandBarInput::parse(String) -> Self?
-
 pub(all) enum CommandBarMsg {
-  Close
-  Nav(String)
-  SetQuery(String)
-  Unknown(String, Array[@core.Value])
-}
-pub fn CommandBarMsg::from_dispatch(@core.Dispatch) -> Self?
-
-pub(all) enum CommandBarReceive {
   SetCursor(Int)
   Close
   Nav(String)
   SetQuery(String)
   Unknown(String, Array[@core.Value])
 }
-pub fn CommandBarReceive::from_dispatch(@core.Dispatch) -> Self?
-pub fn CommandBarReceive::send(Self, &@core.Ctx) -> Unit
-pub fn CommandBarReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+pub fn CommandBarMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn CommandBarMsg::send(Self, &@core.Ctx) -> Unit
+pub fn CommandBarMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct CommandBarState {
   query : String
@@ -121,12 +105,6 @@ pub(all) struct ConfigPanelInitChoice {
   label : String
 } derive(Eq, @debug.Debug)
 
-pub(all) enum ConfigPanelInput {
-  Close
-} derive(Eq, @debug.Debug)
-pub fn ConfigPanelInput::name(Self) -> String
-pub fn ConfigPanelInput::parse(String) -> Self?
-
 pub(all) enum ConfigPanelIntent {
   CloseConfig
   Unknown(String, Array[@core.Value])
@@ -140,14 +118,8 @@ pub(all) enum ConfigPanelMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn ConfigPanelMsg::from_dispatch(@core.Dispatch) -> Self?
-
-pub(all) enum ConfigPanelReceive {
-  Close
-  Unknown(String, Array[@core.Value])
-}
-pub fn ConfigPanelReceive::from_dispatch(@core.Dispatch) -> Self?
-pub fn ConfigPanelReceive::send(Self, &@core.Ctx) -> Unit
-pub fn ConfigPanelReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+pub fn ConfigPanelMsg::send(Self, &@core.Ctx) -> Unit
+pub fn ConfigPanelMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct ConfigPanelState {
   title : String
@@ -162,12 +134,6 @@ pub(all) struct PaletteRowInitChoice {
   label : String
 } derive(Eq, @debug.Debug)
 
-pub(all) enum PaletteRowInput {
-  Pick
-} derive(Eq, @debug.Debug)
-pub fn PaletteRowInput::name(Self) -> String
-pub fn PaletteRowInput::parse(String) -> Self?
-
 pub(all) enum PaletteRowIntent {
   ComponentPicked(String, String, Bool)
   Unknown(String, Array[@core.Value])
@@ -177,19 +143,13 @@ pub fn PaletteRowIntent::from_dispatch(@core.Dispatch) -> Self?
 pub fn PaletteRowIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) enum PaletteRowMsg {
-  Pick(Bool)
-  Unknown(String, Array[@core.Value])
-}
-pub fn PaletteRowMsg::from_dispatch(@core.Dispatch) -> Self?
-
-pub(all) enum PaletteRowReceive {
   SetSelected(Bool)
   Pick(Bool)
   Unknown(String, Array[@core.Value])
 }
-pub fn PaletteRowReceive::from_dispatch(@core.Dispatch) -> Self?
-pub fn PaletteRowReceive::send(Self, &@core.Ctx) -> Unit
-pub fn PaletteRowReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+pub fn PaletteRowMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn PaletteRowMsg::send(Self, &@core.Ctx) -> Unit
+pub fn PaletteRowMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct PaletteRowState {
   module_ : String
@@ -206,12 +166,6 @@ pub(all) struct SchemaFieldInitChoice {
   label : String
 } derive(Eq, @debug.Debug)
 
-pub(all) enum SchemaFieldInput {
-  Edit
-} derive(Eq, @debug.Debug)
-pub fn SchemaFieldInput::name(Self) -> String
-pub fn SchemaFieldInput::parse(String) -> Self?
-
 pub(all) enum SchemaFieldIntent {
   FieldEdited(String, String)
   Unknown(String, Array[@core.Value])
@@ -225,14 +179,8 @@ pub(all) enum SchemaFieldMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn SchemaFieldMsg::from_dispatch(@core.Dispatch) -> Self?
-
-pub(all) enum SchemaFieldReceive {
-  Edit(@core.Value)
-  Unknown(String, Array[@core.Value])
-}
-pub fn SchemaFieldReceive::from_dispatch(@core.Dispatch) -> Self?
-pub fn SchemaFieldReceive::send(Self, &@core.Ctx) -> Unit
-pub fn SchemaFieldReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+pub fn SchemaFieldMsg::send(Self, &@core.Ctx) -> Unit
+pub fn SchemaFieldMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct SchemaFieldState {
   name : String
@@ -253,32 +201,16 @@ pub(all) struct SchemaFormInitChoice {
   label : String
 } derive(Eq, @debug.Debug)
 
-pub(all) enum SchemaFormInput {
-  Cancel
-  Create
-  UseInit
-} derive(Eq, @debug.Debug)
-pub fn SchemaFormInput::name(Self) -> String
-pub fn SchemaFormInput::parse(String) -> Self?
-
 pub(all) enum SchemaFormMsg {
-  Cancel
-  Create
-  UseInit(@core.Value)
-  Unknown(String, Array[@core.Value])
-}
-pub fn SchemaFormMsg::from_dispatch(@core.Dispatch) -> Self?
-
-pub(all) enum SchemaFormReceive {
   ShowErrors(Map[String, String])
   Cancel
   Create
   UseInit(@core.Value)
   Unknown(String, Array[@core.Value])
 }
-pub fn SchemaFormReceive::from_dispatch(@core.Dispatch) -> Self?
-pub fn SchemaFormReceive::send(Self, &@core.Ctx) -> Unit
-pub fn SchemaFormReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+pub fn SchemaFormMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn SchemaFormMsg::send(Self, &@core.Ctx) -> Unit
+pub fn SchemaFormMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct SchemaFormState {
   module_ : String
@@ -292,33 +224,17 @@ pub(all) struct SchemaFormState {
 }
 pub fn SchemaFormState::zero() -> Self
 
+pub(all) enum UniversalAppCompute {
+  ModeLabel
+} derive(Eq, @debug.Debug)
+pub fn UniversalAppCompute::name(Self) -> String
+
 pub(all) struct UniversalAppInitChoice {
   name : String
   label : String
 } derive(Eq, @debug.Debug)
 
-pub(all) enum UniversalAppInput {
-  FilesDropped
-  OpenCommand
-  ToggleMode
-} derive(Eq, @debug.Debug)
-pub fn UniversalAppInput::name(Self) -> String
-pub fn UniversalAppInput::parse(String) -> Self?
-
-pub(all) enum UniversalAppMethod {
-  ModeLabel
-} derive(Eq, @debug.Debug)
-pub fn UniversalAppMethod::name(Self) -> String
-
 pub(all) enum UniversalAppMsg {
-  FilesDropped(String)
-  OpenCommand
-  ToggleMode
-  Unknown(String, Array[@core.Value])
-}
-pub fn UniversalAppMsg::from_dispatch(@core.Dispatch) -> Self?
-
-pub(all) enum UniversalAppReceive {
   CatalogChanged(String)
   RestoreTree(@core.Value)
   FilesDropped(String)
@@ -326,9 +242,9 @@ pub(all) enum UniversalAppReceive {
   ToggleMode
   Unknown(String, Array[@core.Value])
 }
-pub fn UniversalAppReceive::from_dispatch(@core.Dispatch) -> Self?
-pub fn UniversalAppReceive::send(Self, &@core.Ctx) -> Unit
-pub fn UniversalAppReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+pub fn UniversalAppMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn UniversalAppMsg::send(Self, &@core.Ctx) -> Unit
+pub fn UniversalAppMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct UniversalAppState {
   root : @core.Value

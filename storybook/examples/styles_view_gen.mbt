@@ -22,7 +22,7 @@ pub(all) struct StylesExampleState {} derive(Default)
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..StylesExampleState::zero(), label: "Counter" }
+///   initial={ ..StylesExampleState::zero(), label: "Counter" }
 pub fn StylesExampleState::zero() -> StylesExampleState {
   Default::default()
 }
@@ -89,7 +89,7 @@ pub(all) struct StylesExampleRootState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..StylesExampleRootState::zero(), label: "Counter" }
+///   initial={ ..StylesExampleRootState::zero(), label: "Counter" }
 pub fn StylesExampleRootState::zero() -> StylesExampleRootState {
   { value: Null, }
 }

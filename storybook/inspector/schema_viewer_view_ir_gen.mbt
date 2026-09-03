@@ -137,13 +137,13 @@ fn schema_viewer_inline_compute() -> Map[
 pub fn schema_viewer_component(
   name? : String = "SchemaViewer",
   views? : Map[String, @anode.View] = schema_viewer_views(),
-  init? : SchemaViewerState = SchemaViewerState::zero(),
+  initial? : SchemaViewerState = SchemaViewerState::zero(),
   common_style? : String = schema_viewer_common_style,
   global_style? : String = schema_viewer_global_style,
   update? : (SchemaViewerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaViewerState,
   ],
-  compute? : (SchemaViewerMethod) -> ((
+  compute? : (SchemaViewerCompute) -> ((
     SchemaViewerState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -156,7 +156,7 @@ pub fn schema_viewer_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -164,8 +164,8 @@ pub fn schema_viewer_component(
       let bucket = match compute {
         Some(f) =>
           @component.build_bucket(
-            ([ToggleLabel] : Array[SchemaViewerMethod]),
-            SchemaViewerMethod::name,
+            ([ToggleLabel] : Array[SchemaViewerCompute]),
+            SchemaViewerCompute::name,
             f,
           )
         None => Map([])

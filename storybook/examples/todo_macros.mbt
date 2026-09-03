@@ -71,7 +71,7 @@ fn tm_item_comp() -> @component.Component {
       ),
     },
     name="Item",
-    init=TmItemState::{ completed: false, text: "do the thing", },
+    initial=TmItemState::{ completed: false, text: "do the thing", },
     // Declared arms, where the view used to pass `$setCompleted` / `$setText`
     // — generated mutators reached through the dispatch path. A `$name` and a
     // bare name are the same dispatch, so that was the fallback wearing a
@@ -114,7 +114,7 @@ fn tm_items_comp(item : @component.Component) -> @component.Component {
       ),
     },
     name="Items",
-    init=TmItemsState::{ items: [], },
+    initial=TmItemsState::{ items: [], },
     update=(s : TmItemsState, msg, _ctx) => {
       match msg {
         // A DECLARED arm, where the view used to pass `$removeInItemsAt` — a

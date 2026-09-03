@@ -84,7 +84,7 @@ pub fn playlist_views() -> Map[String, @anode.View] {
 pub fn playlist_component(
   name? : String = "Playlist",
   views? : Map[String, @anode.View] = playlist_views(),
-  init? : PlaylistState = PlaylistState::zero(),
+  initial? : PlaylistState = PlaylistState::zero(),
   common_style? : String = playlist_common_style,
   global_style? : String = playlist_global_style,
   update? : (PlaylistState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -98,7 +98,7 @@ pub fn playlist_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -142,7 +142,7 @@ pub fn song_views() -> Map[String, @anode.View] {
 pub fn song_component(
   name? : String = "Song",
   views? : Map[String, @anode.View] = song_views(),
-  init? : SongState = SongState::zero(),
+  initial? : SongState = SongState::zero(),
   common_style? : String = song_common_style,
   global_style? : String = song_global_style,
   update? : (SongState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -156,7 +156,7 @@ pub fn song_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

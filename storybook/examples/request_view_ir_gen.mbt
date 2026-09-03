@@ -328,7 +328,7 @@ fn request_example_inline_compute() -> Map[
 pub fn request_example_component(
   name? : String = "RequestExample",
   views? : Map[String, @anode.View] = request_example_views(),
-  init? : RequestExampleState = RequestExampleState::zero(),
+  initial? : RequestExampleState = RequestExampleState::zero(),
   common_style? : String = request_example_common_style,
   global_style? : String = request_example_global_style,
   update? : (RequestExampleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -349,7 +349,7 @@ pub fn request_example_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => {

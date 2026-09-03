@@ -25,7 +25,7 @@ pub(all) struct DnDExampleState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..DnDExampleState::zero(), label: "Counter" }
+///   initial={ ..DnDExampleState::zero(), label: "Counter" }
 pub fn DnDExampleState::zero() -> DnDExampleState {
   { items: [], query: "", }
 }
@@ -62,12 +62,14 @@ impl @component.Fields for DnDExampleState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum DnDExampleReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum DnDExampleMsg {
   OnDropOnItem(@tutuca.Value, @tutuca.Value)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -85,9 +87,7 @@ pub(all) enum DnDExampleReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn DnDExampleReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> DnDExampleReceive? {
+pub fn DnDExampleMsg::from_dispatch(d : @component.Dispatch) -> DnDExampleMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -105,8 +105,8 @@ pub fn DnDExampleReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn DnDExampleReceive::to_dispatch(
-  self : DnDExampleReceive,
+pub fn DnDExampleMsg::to_dispatch(
+  self : DnDExampleMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     OnDropOnItem(a0, a1) => ("onDropOnItem", [a0, a1])
@@ -119,10 +119,7 @@ pub fn DnDExampleReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn DnDExampleReceive::send(
-  self : DnDExampleReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn DnDExampleMsg::send(self : DnDExampleMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -134,56 +131,6 @@ pub let dn_d_example_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let dn_d_example_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum DnDExampleInput {
-  OnDropOnItem
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn DnDExampleInput::name(self : DnDExampleInput) -> String {
-  match self {
-    OnDropOnItem => "onDropOnItem"
-  }
-}
-
-///|
-pub fn DnDExampleInput::parse(s : String) -> DnDExampleInput? {
-  match s {
-    "onDropOnItem" => Some(OnDropOnItem)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to dnd.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum DnDExampleMsg {
-  /// `@on.drop="onDropOnItem …"`
-  OnDropOnItem(@tutuca.Value, @tutuca.Value)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn DnDExampleMsg::from_dispatch(d : @component.Dispatch) -> DnDExampleMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("onDropOnItem", [a0, a1]) => OnDropOnItem(a0, a1)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// Every `@when` handler the views name.

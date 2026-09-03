@@ -24,7 +24,7 @@ pub(all) struct GreetingState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..GreetingState::zero(), label: "Counter" }
+///   initial={ ..GreetingState::zero(), label: "Counter" }
 pub fn GreetingState::zero() -> GreetingState {
   { name: "", }
 }
@@ -89,7 +89,7 @@ pub(all) struct PageState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..PageState::zero(), label: "Counter" }
+///   initial={ ..PageState::zero(), label: "Counter" }
 pub fn PageState::zero() -> PageState {
   { greeting: Null, }
 }
@@ -155,7 +155,7 @@ pub(all) struct EntryState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..EntryState::zero(), label: "Counter" }
+///   initial={ ..EntryState::zero(), label: "Counter" }
 pub fn EntryState::zero() -> EntryState {
   { title: "", description: "", }
 }
@@ -225,7 +225,7 @@ pub(all) struct MultipleViewsState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..MultipleViewsState::zero(), label: "Counter" }
+///   initial={ ..MultipleViewsState::zero(), label: "Counter" }
 pub fn MultipleViewsState::zero() -> MultipleViewsState {
   { value: Null, }
 }

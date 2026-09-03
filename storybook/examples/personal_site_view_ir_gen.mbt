@@ -114,7 +114,7 @@ pub fn alt_url_views() -> Map[String, @anode.View] {
 pub fn alt_url_component(
   name? : String = "AltUrl",
   views? : Map[String, @anode.View] = alt_url_views(),
-  init? : AltUrlState = AltUrlState::zero(),
+  initial? : AltUrlState = AltUrlState::zero(),
   common_style? : String = alt_url_common_style,
   global_style? : String = alt_url_global_style,
   update? : (AltUrlState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -128,7 +128,7 @@ pub fn alt_url_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -271,13 +271,13 @@ pub fn ps_entry_views() -> Map[String, @anode.View] {
 pub fn ps_entry_component(
   name? : String = "PsEntry",
   views? : Map[String, @anode.View] = ps_entry_views(),
-  init? : PsEntryState = PsEntryState::zero(),
+  initial? : PsEntryState = PsEntryState::zero(),
   common_style? : String = ps_entry_common_style,
   global_style? : String = ps_entry_global_style,
   update? : (PsEntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     PsEntryState,
   ],
-  compute? : (PsEntryMethod) -> ((
+  compute? : (PsEntryCompute) -> ((
     PsEntryState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -298,15 +298,15 @@ pub fn ps_entry_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([IsSpanish, LangFlag, YearDisplay] : Array[PsEntryMethod]),
-          PsEntryMethod::name,
+          ([IsSpanish, LangFlag, YearDisplay] : Array[PsEntryCompute]),
+          PsEntryCompute::name,
           f,
         )
       None => Map([])
@@ -610,13 +610,13 @@ fn root_inline_update(
 pub fn root_component(
   name? : String = "Root",
   views? : Map[String, @anode.View] = root_views(),
-  init? : RootState = RootState::zero(),
+  initial? : RootState = RootState::zero(),
   common_style? : String = root_common_style,
   global_style? : String = root_global_style,
   update? : (RootState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     RootState,
   ],
-  compute? : (RootMethod) -> ((RootState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value)?,
+  compute? : (RootCompute) -> ((RootState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value)?,
   when? : (RootWhen) -> ((
     RootState,
     @tutuca.Value,
@@ -640,7 +640,7 @@ pub fn root_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => {
@@ -656,8 +656,8 @@ pub fn root_component(
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([HasActiveFilters] : Array[RootMethod]),
-          RootMethod::name,
+          ([HasActiveFilters] : Array[RootCompute]),
+          RootCompute::name,
           f,
         )
       None => Map([])

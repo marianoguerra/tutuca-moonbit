@@ -34,7 +34,7 @@
 /// that block rather than in the schema because a default is a value, not a
 /// type — and each is checked against the schema at generation time.
 pub fn counter_comp() -> @component.Component {
-  counter_component(init=CounterState::fresh())
+  counter_component(initial=CounterState::fresh())
 }
 
 ///|

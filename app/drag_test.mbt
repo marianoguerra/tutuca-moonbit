@@ -28,7 +28,7 @@ fn board_comp() -> @component.Component {
       ),
     },
     name="Board",
-    init=BoardState::{ cards: Map([]), received: "", from: "", kind: "", },
+    initial=BoardState::{ cards: Map([]), received: "", from: "", kind: "", },
     update=(s : BoardState, msg, _ctx) => {
       match msg {
         Receive("dropped", [Map(info)]) => {

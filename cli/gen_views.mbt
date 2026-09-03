@@ -214,7 +214,7 @@ let gen_views_help : String =
   #|    CounterInput / CounterMsg            @on handler names, with the argument
   #|                                         shapes inferred from the call sites,
   #|                                         plus CounterMsg::from_dispatch
-  #|    CounterMethod                        $-callable names, answered as an
+  #|    CounterCompute                        $-callable names, answered as an
   #|                                         exhaustive match
   #|
   #|  With a <script type="tutuca/spec"> block it also declares CounterState,

@@ -74,7 +74,7 @@ pub fn list_iteration_views() -> Map[String, @anode.View] {
 pub fn list_iteration_component(
   name? : String = "ListIteration",
   views? : Map[String, @anode.View] = list_iteration_views(),
-  init? : ListIterationState = ListIterationState::zero(),
+  initial? : ListIterationState = ListIterationState::zero(),
   common_style? : String = list_iteration_common_style,
   global_style? : String = list_iteration_global_style,
   update? : (ListIterationState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -88,7 +88,7 @@ pub fn list_iteration_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

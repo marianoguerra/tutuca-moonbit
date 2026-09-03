@@ -179,7 +179,7 @@ impl Composite for CompSectionState with fn with_current_page(self, p) {
 ///|
 fn comp_section_comp() -> @component.Component {
   comp_section_component(
-    init={ ..CompSectionState::zero(), itemsPerPage: 10, },
+    initial={ ..CompSectionState::zero(), itemsPerPage: 10, },
     compute=m => {
       match m {
         ArrowText => Some(composite_arrow_text)

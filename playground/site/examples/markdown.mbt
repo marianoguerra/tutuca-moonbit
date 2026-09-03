@@ -130,7 +130,7 @@ let sample : String =
 
 ///|
 fn build() -> @component.ModuleDef {
-  let editor = md_preview_component(init=MdPreviewState::{ source: sample })
+  let editor = md_preview_component(initial=MdPreviewState::{ source: sample })
   @component.ModuleDef::new(
     name="markdown",
     components=[editor],

@@ -24,7 +24,7 @@ pub(all) struct CounterState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..CounterState::zero(), label: "Counter" }
+///   initial={ ..CounterState::zero(), label: "Counter" }
 pub fn CounterState::zero() -> CounterState {
   { count: 0, }
 }
@@ -52,13 +52,20 @@ impl @component.Fields for CounterState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum CounterReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+///
+/// The script block answers inc, dec, so an `update` arm for
+/// one of those can never run — the wrapper consults `update` only for a
+/// dispatch the block did not claim. They are still here because raising
+/// one is what a parent does, and `to_dispatch` is how.
+pub(all) enum CounterMsg {
   Dec
   Inc
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -76,9 +83,7 @@ pub(all) enum CounterReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn CounterReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> CounterReceive? {
+pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -98,8 +103,8 @@ pub fn CounterReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn CounterReceive::to_dispatch(
-  self : CounterReceive,
+pub fn CounterMsg::to_dispatch(
+  self : CounterMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Dec => ("dec", [])
@@ -113,7 +118,7 @@ pub fn CounterReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn CounterReceive::send(self : CounterReceive, ctx : &@tutuca.Ctx) -> Unit {
+pub fn CounterMsg::send(self : CounterMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -125,60 +130,6 @@ pub let counter_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let counter_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum CounterInput {
-  Dec
-  Inc
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CounterInput::name(self : CounterInput) -> String {
-  match self {
-    Dec => "dec"
-    Inc => "inc"
-  }
-}
-
-///|
-pub fn CounterInput::parse(s : String) -> CounterInput? {
-  match s {
-    "dec" => Some(Dec)
-    "inc" => Some(Inc)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to tutorial.html breaks every `match` over this type
-/// until it is handled.
-///
-/// Absent, because the script block answers them: inc, dec.
-/// `update` is consulted only for a dispatch the block did not claim, so
-/// an arm for one of these could never run.
-pub(all) enum CounterMsg {
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -215,7 +166,7 @@ pub(all) struct ProfileState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ProfileState::zero(), label: "Counter" }
+///   initial={ ..ProfileState::zero(), label: "Counter" }
 pub fn ProfileState::zero() -> ProfileState {
   { name: "", waving: false, }
 }
@@ -285,7 +236,7 @@ pub(all) struct SearchState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SearchState::zero(), label: "Counter" }
+///   initial={ ..SearchState::zero(), label: "Counter" }
 pub fn SearchState::zero() -> SearchState {
   { draft: "", sent: "", }
 }
@@ -355,7 +306,7 @@ pub(all) struct ToggleState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ToggleState::zero(), label: "Counter" }
+///   initial={ ..ToggleState::zero(), label: "Counter" }
 pub fn ToggleState::zero() -> ToggleState {
   { on: false, message: Null, }
 }
@@ -424,7 +375,7 @@ pub(all) struct FruitsState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..FruitsState::zero(), label: "Counter" }
+///   initial={ ..FruitsState::zero(), label: "Counter" }
 pub fn FruitsState::zero() -> FruitsState {
   { items: [], }
 }
@@ -508,7 +459,7 @@ pub(all) struct GreetingState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..GreetingState::zero(), label: "Counter" }
+///   initial={ ..GreetingState::zero(), label: "Counter" }
 pub fn GreetingState::zero() -> GreetingState {
   { name: "", }
 }
@@ -573,7 +524,7 @@ pub(all) struct PageState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..PageState::zero(), label: "Counter" }
+///   initial={ ..PageState::zero(), label: "Counter" }
 pub fn PageState::zero() -> PageState {
   { greeting: Null, }
 }
@@ -638,7 +589,7 @@ pub(all) struct StatusState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..StatusState::zero(), label: "Counter" }
+///   initial={ ..StatusState::zero(), label: "Counter" }
 pub fn StatusState::zero() -> StatusState {
   { message: "", }
 }
@@ -665,12 +616,14 @@ impl @component.Fields for StatusState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum StatusReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum StatusMsg {
   Flash(String)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -688,7 +641,7 @@ pub(all) enum StatusReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn StatusReceive::from_dispatch(d : @component.Dispatch) -> StatusReceive? {
+pub fn StatusMsg::from_dispatch(d : @component.Dispatch) -> StatusMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -706,8 +659,8 @@ pub fn StatusReceive::from_dispatch(d : @component.Dispatch) -> StatusReceive? {
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn StatusReceive::to_dispatch(
-  self : StatusReceive,
+pub fn StatusMsg::to_dispatch(
+  self : StatusMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Flash(a0) => ("flash", [Str(a0)])
@@ -720,7 +673,7 @@ pub fn StatusReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn StatusReceive::send(self : StatusReceive, ctx : &@tutuca.Ctx) -> Unit {
+pub fn StatusMsg::send(self : StatusMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -768,7 +721,7 @@ pub(all) struct ChatState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ChatState::zero(), label: "Counter" }
+///   initial={ ..ChatState::zero(), label: "Counter" }
 pub fn ChatState::zero() -> ChatState {
   { draft: "", status: Null, }
 }
@@ -796,12 +749,14 @@ impl @component.Fields for ChatState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum ChatReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum ChatMsg {
   Submit
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -819,7 +774,7 @@ pub(all) enum ChatReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn ChatReceive::from_dispatch(d : @component.Dispatch) -> ChatReceive? {
+pub fn ChatMsg::from_dispatch(d : @component.Dispatch) -> ChatMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -837,9 +792,7 @@ pub fn ChatReceive::from_dispatch(d : @component.Dispatch) -> ChatReceive? {
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn ChatReceive::to_dispatch(
-  self : ChatReceive,
-) -> (String, Array[@tutuca.Value]) {
+pub fn ChatMsg::to_dispatch(self : ChatMsg) -> (String, Array[@tutuca.Value]) {
   match self {
     Submit => ("submit", [])
     Unknown(n, args) => (n, args)
@@ -851,7 +804,7 @@ pub fn ChatReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn ChatReceive::send(self : ChatReceive, ctx : &@tutuca.Ctx) -> Unit {
+pub fn ChatMsg::send(self : ChatMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -863,56 +816,6 @@ pub let chat_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let chat_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum ChatInput {
-  Submit
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ChatInput::name(self : ChatInput) -> String {
-  match self {
-    Submit => "submit"
-  }
-}
-
-///|
-pub fn ChatInput::parse(s : String) -> ChatInput? {
-  match s {
-    "submit" => Some(Submit)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to tutorial.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum ChatMsg {
-  /// `@on.click="submit …"`
-  Submit
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn ChatMsg::from_dispatch(d : @component.Dispatch) -> ChatMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("submit", []) => Submit
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -952,7 +855,7 @@ pub(all) struct QuotesState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..QuotesState::zero(), label: "Counter" }
+///   initial={ ..QuotesState::zero(), label: "Counter" }
 pub fn QuotesState::zero() -> QuotesState {
   { items: [], isLoading: false, }
 }
@@ -989,14 +892,16 @@ impl @component.Fields for QuotesState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum QuotesReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum QuotesMsg {
   Init
   LoadQuotesOk(Array[@tutuca.Value])
   LoadQuotesError(String)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -1007,9 +912,7 @@ pub(all) enum QuotesReceive {
 /// The same `dec_stmts` the state codec is written from, so a payload and
 /// a field of the same declared type are read by one rule. `None` is a
 /// mismatch anywhere in the shape, however deep.
-fn quotes_receive_load_quotes_ok_of_args(
-  args : Array[@tutuca.Value],
-) -> QuotesReceive? {
+fn quotes_msg_load_quotes_ok_of_args(args : Array[@tutuca.Value]) -> QuotesMsg? {
   guard args.length() == 1 else { return None }
   guard args.get(0) is Some(t1_0) else { return None }
   guard t1_0 is List(u1_0) else { return None }
@@ -1034,13 +937,13 @@ fn quotes_receive_load_quotes_ok_of_args(
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn QuotesReceive::from_dispatch(d : @component.Dispatch) -> QuotesReceive? {
+pub fn QuotesMsg::from_dispatch(d : @component.Dispatch) -> QuotesMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("init", []) => Init
       ("loadQuotesOk", _) =>
-        match quotes_receive_load_quotes_ok_of_args(args) {
+        match quotes_msg_load_quotes_ok_of_args(args) {
           Some(v) => v
           None => {
             @tutuca.bad_payload(name, "Array[Any]", args)
@@ -1063,8 +966,8 @@ pub fn QuotesReceive::from_dispatch(d : @component.Dispatch) -> QuotesReceive? {
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn QuotesReceive::to_dispatch(
-  self : QuotesReceive,
+pub fn QuotesMsg::to_dispatch(
+  self : QuotesMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Init => ("init", [])
@@ -1080,7 +983,7 @@ pub fn QuotesReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn QuotesReceive::send(self : QuotesReceive, ctx : &@tutuca.Ctx) -> Unit {
+pub fn QuotesMsg::send(self : QuotesMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -1130,7 +1033,7 @@ pub(all) struct FeaturesState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..FeaturesState::zero(), label: "Counter" }
+///   initial={ ..FeaturesState::zero(), label: "Counter" }
 pub fn FeaturesState::zero() -> FeaturesState {
   { status: "", }
 }

@@ -220,7 +220,7 @@ pub fn palette_row_views() -> Map[String, @anode.View] {
 pub fn palette_row_component(
   name? : String = "PaletteRow",
   views? : Map[String, @anode.View] = palette_row_views(),
-  init? : PaletteRowState = PaletteRowState::zero(),
+  initial? : PaletteRowState = PaletteRowState::zero(),
   common_style? : String = palette_row_common_style,
   global_style? : String = palette_row_global_style,
   update? : (PaletteRowState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -234,7 +234,7 @@ pub fn palette_row_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -363,7 +363,7 @@ pub fn command_bar_views() -> Map[String, @anode.View] {
 pub fn command_bar_component(
   name? : String = "CommandBar",
   views? : Map[String, @anode.View] = command_bar_views(),
-  init? : CommandBarState = CommandBarState::zero(),
+  initial? : CommandBarState = CommandBarState::zero(),
   common_style? : String = command_bar_common_style,
   global_style? : String = command_bar_global_style,
   update? : (CommandBarState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -377,7 +377,7 @@ pub fn command_bar_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -592,7 +592,7 @@ pub fn schema_field_views() -> Map[String, @anode.View] {
 pub fn schema_field_component(
   name? : String = "SchemaField",
   views? : Map[String, @anode.View] = schema_field_views(),
-  init? : SchemaFieldState = SchemaFieldState::zero(),
+  initial? : SchemaFieldState = SchemaFieldState::zero(),
   common_style? : String = schema_field_common_style,
   global_style? : String = schema_field_global_style,
   update? : (SchemaFieldState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -606,7 +606,7 @@ pub fn schema_field_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -729,7 +729,7 @@ pub fn schema_form_views() -> Map[String, @anode.View] {
 pub fn schema_form_component(
   name? : String = "SchemaForm",
   views? : Map[String, @anode.View] = schema_form_views(),
-  init? : SchemaFormState = SchemaFormState::zero(),
+  initial? : SchemaFormState = SchemaFormState::zero(),
   common_style? : String = schema_form_common_style,
   global_style? : String = schema_form_global_style,
   update? : (SchemaFormState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -743,7 +743,7 @@ pub fn schema_form_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -840,7 +840,7 @@ pub fn config_panel_views() -> Map[String, @anode.View] {
 pub fn config_panel_component(
   name? : String = "ConfigPanel",
   views? : Map[String, @anode.View] = config_panel_views(),
-  init? : ConfigPanelState = ConfigPanelState::zero(),
+  initial? : ConfigPanelState = ConfigPanelState::zero(),
   common_style? : String = config_panel_common_style,
   global_style? : String = config_panel_global_style,
   update? : (ConfigPanelState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -854,7 +854,7 @@ pub fn config_panel_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -973,13 +973,13 @@ pub fn universal_app_views() -> Map[String, @anode.View] {
 pub fn universal_app_component(
   name? : String = "UniversalApp",
   views? : Map[String, @anode.View] = universal_app_views(),
-  init? : UniversalAppState = UniversalAppState::zero(),
+  initial? : UniversalAppState = UniversalAppState::zero(),
   common_style? : String = universal_app_common_style,
   global_style? : String = universal_app_global_style,
   update? : (UniversalAppState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     UniversalAppState,
   ],
-  compute? : (UniversalAppMethod) -> ((
+  compute? : (UniversalAppCompute) -> ((
     UniversalAppState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -992,15 +992,15 @@ pub fn universal_app_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([ModeLabel] : Array[UniversalAppMethod]),
-          UniversalAppMethod::name,
+          ([ModeLabel] : Array[UniversalAppCompute]),
+          UniversalAppCompute::name,
           f,
         )
       None => Map([])

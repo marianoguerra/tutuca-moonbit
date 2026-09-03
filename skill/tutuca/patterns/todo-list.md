@@ -59,7 +59,7 @@ is the handlers:
 ```moonbit
 ///|
 fn todo_item_comp() -> @component.Component {
-  item_component(init=ItemState::{ completed: false, text: "do the thing" })
+  item_component(initial=ItemState::{ completed: false, text: "do the thing" })
   // no update: the view writes `.completed` and `.text` itself, which is a
   // synchronous member write and raises no message at all. Give the component
   // an arm only when something has to HAPPEN besides the write.
@@ -67,7 +67,7 @@ fn todo_item_comp() -> @component.Component {
 
 fn todo_items_comp(item : @component.Component) -> @component.Component {
   items_component(
-    init=ItemsState::{ items: [], hideCompleted: false },
+    initial=ItemsState::{ items: [], hideCompleted: false },
     update=(s, msg, _ctx) => match ItemsMsg::from_dispatch(msg) {
       // the handler CAPTURES the child Component; the view just says
       // @on.click="onAddItem" (no component-reference value exists)

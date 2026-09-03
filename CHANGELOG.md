@@ -8,6 +8,42 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **One `<C>Msg` where there were three enums over one bucket.** `gen-views`
+  emitted `<C>Msg` (the view names, shapes inferred from the call sites),
+  `<C>Receive` (the schema's `message` cases, payloads declared) and
+  `<C>Input` (every `@on` name, no payloads). The first two are halves of ONE
+  bucket — an addressed message is answered the same way whoever sent it — so
+  a component with both made you match twice over one thing, or pick between
+  them with nothing to pick on.
+
+  `<C>Receive` was already the union: `merged_receive` folded the view names in
+  and let the schema win where they overlap. So the merge is a deletion. The
+  union is `<C>Msg`, with `from_dispatch`'s typed `BAD_PAYLOAD` reporting and
+  `to_dispatch` / `send` on the raise side.
+
+  `<C>Input` is gone outright. Its one stated reason for existing was keying
+  the `swap` bucket, and `swap` went with M6 — a node that supersedes itself
+  answers `Replace(v)` from an ordinary `update` arm.
+
+  A name the script block answers is no longer DROPPED from the enum. That
+  trimming was right when this type only decoded; the merged one also raises,
+  and a component sending `bump` to itself writes `CounterMsg::Bump(1.0)
+  .send(ctx)` precisely because the block answers `bump`. The doc comment says
+  which cases can never reach an `update` arm instead.
+
+- **`<C>Method` is `<C>Compute`**, named for the bucket it keys.
+
+- **`init~` is `initial~`**, on the generated wrapper and on `component()`
+  itself. `init` collides with `receive init`, an unrelated convention a host
+  dispatches after mounting — the same two-meanings-one-word the
+  `tutuca/init` → `tutuca/fixtures` rename fixed.
+
+- **`<C>State::fixture(name)`** — a fixture by the name the block wrote.
+  The per-name functions are package-private and their names are mangled to be
+  identifiers, so `with-history` answers to `with_history()`: a spelling
+  nothing in the file contains, and unreachable from outside the package at
+  all.
+
 - **`.child.x = v` — a card and a component can write a member of a child they
   hold.** M6 removed the generated mutators, and with them the `sendAt 'setX'`
   workaround that was the only way to do this; after it there was no way at
@@ -145,8 +181,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `cmd/dev -- migrate-check` runs it over the whole view tree and asserts it
   finds nothing; `ci` includes it.
 
-### Changed
-
 - **One `Origin`, where there were three enums saying who.** `DispatchProvenance`
   is `@tutuca.Origin { Host, View, Handler }` — the fourth case, `Diagnostic`,
   existed only to say a stress run could reach a generated mutator, and there is
@@ -249,6 +283,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   mutators*, and the source is named `fields`.
 
 ### Fixed
+
+- **A view-only name whose call sites disagreed about arity lost its
+  payload.** `activate @key` and `activate @key e.isCtrl` are two sites of one
+  name; the inference answers "arity unknown", which the old view-only enum
+  emitted as a variadic case and the merged one would have emitted as a case
+  taking nothing — decoding both call sites to `Unknown`. `MsgDef.variadic`
+  carries it, and the generated arm takes the raw argument list.
 
 - **Every starter card in the card playground was refused, and the scenes
   behind them never ran.** `tutucard/wasm/check.mbt` passed the checker the

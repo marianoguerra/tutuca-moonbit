@@ -51,18 +51,18 @@ fn json_null_comp() -> @component.Component {
 
 ///|
 fn json_bool_comp() -> @component.Component {
-  json_bool_component(init={ value: true, })
+  json_bool_component(initial={ value: true, })
 }
 
 ///|
 fn json_string_comp() -> @component.Component {
-  json_string_component(init={ value: "hello", })
+  json_string_component(initial={ value: "hello", })
 }
 
 ///|
 fn json_number_comp() -> @component.Component {
   json_number_component(
-    init={ strValue: "0", value: 0, },
+    initial={ strValue: "0", value: 0, },
     // Keep the raw string always, update the numeric value only when finite.
     // The payload is typed `String` by the generator, so the arg no longer
     // has to be unpacked from an untyped list.
@@ -153,7 +153,7 @@ fn json_dropped_items(
 
 ///|
 fn json_array_comp(reg : JsonReg) -> @component.Component {
-  json_array_component(init={ items: [], }, update=(s, msg, _ctx) => {
+  json_array_component(initial={ items: [], }, update=(s, msg, _ctx) => {
     match JsonArrayMsg::from_dispatch(msg) {
       // add a fresh JsonSelector so the user can pick the new element's type
       Some(AddItem) => Next({ items: s.items + [json_make_selector(reg)], })
@@ -171,12 +171,12 @@ fn json_array_comp(reg : JsonReg) -> @component.Component {
 
 ///|
 fn json_object_kv_comp() -> @component.Component {
-  json_object_key_val_component(init={ key: "k", value: Null, })
+  json_object_key_val_component(initial={ key: "k", value: Null, })
 }
 
 ///|
 fn json_object_comp(reg : JsonReg) -> @component.Component {
-  json_object_component(init={ items: [], }, update=(s, msg, _ctx) => {
+  json_object_component(initial={ items: [], }, update=(s, msg, _ctx) => {
     match JsonObjectMsg::from_dispatch(msg) {
       // a key/value row whose value is a fresh selector
       Some(AddItem) => {

@@ -217,7 +217,7 @@ fn state_editor_row_inline_compute() -> Map[
 pub fn state_editor_row_component(
   name? : String = "StateEditorRow",
   views? : Map[String, @anode.View] = state_editor_row_views(),
-  init? : StateEditorRowState = StateEditorRowState::zero(),
+  initial? : StateEditorRowState = StateEditorRowState::zero(),
   common_style? : String = state_editor_row_common_style,
   global_style? : String = state_editor_row_global_style,
   update? : (StateEditorRowState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -231,7 +231,7 @@ pub fn state_editor_row_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -291,7 +291,7 @@ pub fn state_editor_views() -> Map[String, @anode.View] {
 pub fn state_editor_component(
   name? : String = "StateEditor",
   views? : Map[String, @anode.View] = state_editor_views(),
-  init? : StateEditorState = StateEditorState::zero(),
+  initial? : StateEditorState = StateEditorState::zero(),
   common_style? : String = state_editor_common_style,
   global_style? : String = state_editor_global_style,
   update? : (StateEditorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -305,7 +305,7 @@ pub fn state_editor_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

@@ -66,7 +66,7 @@ fn ledger_comp() -> @component.Component {
         raw_view="<div><x text=\".here\"></x></div>",
       ),
     },
-    init=LedgerState::{ here: 8, there: 0, total: 8, },
+    initial=LedgerState::{ here: 8, there: 0, total: 8, },
     update=(s : LedgerState, msg, _ctx) => {
       match msg {
         Receive("push", _) =>
@@ -152,7 +152,7 @@ test "a rule that cannot be evaluated does not refuse anything" {
         raw_view="<div><x text=\".here\"></x></div>",
       ),
     },
-    init=LedgerState::{ here: 8, there: 0, total: 8, },
+    initial=LedgerState::{ here: 8, there: 0, total: 8, },
     compute={ "conserved": (_s : LedgerState, _args, _stack) => Null },
   )
   let after = write(comp.make(Map([])), "there", Num(3))

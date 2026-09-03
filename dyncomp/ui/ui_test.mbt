@@ -476,7 +476,7 @@ test "a declared payload is decoded, and a mismatch says so" {
   })
   defer off()
   // The shape it declares: decoded, and no word said about it.
-  let ok = SchemaFormReceive::from_dispatch(
+  let ok = SchemaFormMsg::from_dispatch(
     Receive("showErrors", [Map({ "/email": Str("required") })]),
   )
   @debug.assert_eq(said.length(), 0)
@@ -487,7 +487,7 @@ test "a declared payload is decoded, and a mismatch says so" {
   // A map of the wrong VALUE type is a mismatch however deep it is: the decode
   // walks the shape, so a `Map[String, Int]` is caught inside the map rather
   // than passed on as "a map, near enough".
-  let bad = SchemaFormReceive::from_dispatch(
+  let bad = SchemaFormMsg::from_dispatch(
     Receive("showErrors", [Map({ "/email": Num(1) })]),
   )
   assert_true(bad is Some(Unknown(_, _)))

@@ -11,7 +11,7 @@ import {
 // Values
 pub let corpus_common_style : String
 
-pub fn corpus_component(name? : String, views? : Map[String, @anode.View], init? : CorpusState, common_style? : String, global_style? : String, update? : (CorpusState, @core.Dispatch, &@core.Ctx) -> @component.Update[CorpusState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn corpus_component(name? : String, views? : Map[String, @anode.View], initial? : CorpusState, common_style? : String, global_style? : String, update? : (CorpusState, @core.Dispatch, &@core.Ctx) -> @component.Update[CorpusState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let corpus_global_style : String
 
@@ -44,7 +44,7 @@ pub(all) struct CorpusLabel {
   done : Bool
 } derive(Eq, @debug.Debug)
 
-pub(all) enum CorpusReceive {
+pub(all) enum CorpusMsg {
   Case0
   Case1
   Case2(Int)
@@ -69,9 +69,9 @@ pub(all) enum CorpusReceive {
   Case29(String)
   Unknown(String, Array[@core.Value])
 }
-pub fn CorpusReceive::from_dispatch(@core.Dispatch) -> Self?
-pub fn CorpusReceive::send(Self, &@core.Ctx) -> Unit
-pub fn CorpusReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+pub fn CorpusMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn CorpusMsg::send(Self, &@core.Ctx) -> Unit
+pub fn CorpusMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct CorpusState {
   name : String

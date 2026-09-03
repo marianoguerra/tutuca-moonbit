@@ -26,7 +26,7 @@ pub(all) struct SchemaPropertyState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SchemaPropertyState::zero(), label: "Counter" }
+///   initial={ ..SchemaPropertyState::zero(), label: "Counter" }
 pub fn SchemaPropertyState::zero() -> SchemaPropertyState {
   { key: "", child: Null, required: false, }
 }
@@ -100,7 +100,7 @@ pub(all) struct SchemaBranchState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SchemaBranchState::zero(), label: "Counter" }
+///   initial={ ..SchemaBranchState::zero(), label: "Counter" }
 pub fn SchemaBranchState::zero() -> SchemaBranchState {
   { label: "", child: Null, labelClass: "", }
 }
@@ -135,13 +135,13 @@ pub let schema_branch_common_style : String = ""
 pub let schema_branch_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum SchemaBranchMethod {
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+pub(all) enum SchemaBranchCompute {
   LabelCssClass
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn SchemaBranchMethod::name(self : SchemaBranchMethod) -> String {
+pub fn SchemaBranchCompute::name(self : SchemaBranchCompute) -> String {
   match self {
     LabelCssClass => "labelCssClass"
   }

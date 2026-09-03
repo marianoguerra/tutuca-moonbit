@@ -74,7 +74,7 @@ fn kid_comp() -> @component.Component {
   @component.component(
     views={ "main": @anode.View::new("main", raw_view="<b></b>") },
     name="Kid",
-    init=KidState::{ n: 0, },
+    initial=KidState::{ n: 0, },
   )
 }
 
@@ -84,7 +84,7 @@ fn parent_comp() -> @component.Component {
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Parent",
     // Seeded None — the state the old code read `s_fields` off.
-    init=ParentState::{ label: "p", kid: None, },
+    initial=ParentState::{ label: "p", kid: None, },
     // What a `compute` or a `loop_with` does: derive from the slot. It reads
     // the STRUCT, which is the half that used to go stale.
     compute={

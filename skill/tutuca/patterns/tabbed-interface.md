@@ -40,7 +40,7 @@ and the generator turns it into `TabsState::fresh()`.
 ```moonbit
 ///|
 fn tabs_comp() -> @component.Component {
-  tabs_component(init=TabsState::fresh())
+  tabs_component(initial=TabsState::fresh())
 }
 ```
 

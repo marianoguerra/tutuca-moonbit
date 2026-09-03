@@ -14,7 +14,7 @@ pub fn args_json(Map[String, @core.Value]) -> String
 
 pub let dyncomp_storybook_common_style : String
 
-pub fn dyncomp_storybook_component(name? : String, views? : Map[String, @anode.View], init? : DyncompStorybookState, common_style? : String, global_style? : String, update? : (DyncompStorybookState, @core.Dispatch, &@core.Ctx) -> @component.Update[DyncompStorybookState], compute? : (DyncompStorybookMethod) -> ((DyncompStorybookState, Array[@core.Value], &@core.Stack) -> @core.Value)?, when? : (DyncompStorybookWhen) -> ((DyncompStorybookState, @core.Value, @core.Value, @core.Value, &@core.Stack) -> Bool)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn dyncomp_storybook_component(name? : String, views? : Map[String, @anode.View], initial? : DyncompStorybookState, common_style? : String, global_style? : String, update? : (DyncompStorybookState, @core.Dispatch, &@core.Ctx) -> @component.Update[DyncompStorybookState], compute? : (DyncompStorybookCompute) -> ((DyncompStorybookState, Array[@core.Value], &@core.Stack) -> @core.Value)?, when? : (DyncompStorybookWhen) -> ((DyncompStorybookState, @core.Value, @core.Value, @core.Value, &@core.Stack) -> Bool)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let dyncomp_storybook_global_style : String
 
@@ -28,7 +28,7 @@ pub fn stories_of(@registry.Registry) -> Array[Story]
 
 pub let story_card_common_style : String
 
-pub fn story_card_component(name? : String, views? : Map[String, @anode.View], init? : StoryCardState, common_style? : String, global_style? : String, update? : (StoryCardState, @core.Dispatch, &@core.Ctx) -> @component.Update[StoryCardState], compute? : (StoryCardMethod) -> ((StoryCardState, Array[@core.Value], &@core.Stack) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn story_card_component(name? : String, views? : Map[String, @anode.View], initial? : StoryCardState, common_style? : String, global_style? : String, update? : (StoryCardState, @core.Dispatch, &@core.Ctx) -> @component.Update[StoryCardState], compute? : (StoryCardCompute) -> ((StoryCardState, Array[@core.Value], &@core.Stack) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let story_card_global_style : String
 
@@ -36,7 +36,7 @@ pub fn story_card_views() -> Map[String, @anode.View]
 
 pub let story_nav_common_style : String
 
-pub fn story_nav_component(name? : String, views? : Map[String, @anode.View], init? : StoryNavState, common_style? : String, global_style? : String, update? : (StoryNavState, @core.Dispatch, &@core.Ctx) -> @component.Update[StoryNavState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn story_nav_component(name? : String, views? : Map[String, @anode.View], initial? : StoryNavState, common_style? : String, global_style? : String, update? : (StoryNavState, @core.Dispatch, &@core.Ctx) -> @component.Update[StoryNavState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let story_nav_global_style : String
 
@@ -47,16 +47,12 @@ pub fn story_nav_views() -> Map[String, @anode.View]
 // Errors
 
 // Types and methods
-pub(all) enum DyncompStorybookInput {
-  ChooseTheme
-  FilesDropped
-  SetQuery
-  ShowAll
-  ToggleDetails
-  ToggleWide
+pub(all) enum DyncompStorybookCompute {
+  DetailsLabel
+  IsEmpty
+  LayoutLabel
 } derive(Eq, @debug.Debug)
-pub fn DyncompStorybookInput::name(Self) -> String
-pub fn DyncompStorybookInput::parse(String) -> Self?
+pub fn DyncompStorybookCompute::name(Self) -> String
 
 pub(all) enum DyncompStorybookIntent {
   CatalogChanged(String)
@@ -66,25 +62,7 @@ pub fn DyncompStorybookIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOp
 pub fn DyncompStorybookIntent::from_dispatch(@core.Dispatch) -> Self?
 pub fn DyncompStorybookIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
-pub(all) enum DyncompStorybookMethod {
-  DetailsLabel
-  IsEmpty
-  LayoutLabel
-} derive(Eq, @debug.Debug)
-pub fn DyncompStorybookMethod::name(Self) -> String
-
 pub(all) enum DyncompStorybookMsg {
-  ChooseTheme(String)
-  FilesDropped(String)
-  SetQuery(String)
-  ShowAll
-  ToggleDetails
-  ToggleWide
-  Unknown(String, Array[@core.Value])
-}
-pub fn DyncompStorybookMsg::from_dispatch(@core.Dispatch) -> Self?
-
-pub(all) enum DyncompStorybookReceive {
   CatalogChanged(String)
   SetStatus(String)
   ChooseTheme(String)
@@ -95,9 +73,9 @@ pub(all) enum DyncompStorybookReceive {
   ToggleWide
   Unknown(String, Array[@core.Value])
 }
-pub fn DyncompStorybookReceive::from_dispatch(@core.Dispatch) -> Self?
-pub fn DyncompStorybookReceive::send(Self, &@core.Ctx) -> Unit
-pub fn DyncompStorybookReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+pub fn DyncompStorybookMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn DyncompStorybookMsg::send(Self, &@core.Ctx) -> Unit
+pub fn DyncompStorybookMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct DyncompStorybookState {
   cards : Array[@core.Value]
@@ -139,11 +117,10 @@ pub(all) struct Story {
   args : String
 } derive(Eq)
 
-pub(all) enum StoryCardInput {
-  Rebuild
+pub(all) enum StoryCardCompute {
+  RefLabel
 } derive(Eq, @debug.Debug)
-pub fn StoryCardInput::name(Self) -> String
-pub fn StoryCardInput::parse(String) -> Self?
+pub fn StoryCardCompute::name(Self) -> String
 
 pub(all) enum StoryCardIntent {
   RebuildCard(String, String, String)
@@ -153,24 +130,13 @@ pub fn StoryCardIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> 
 pub fn StoryCardIntent::from_dispatch(@core.Dispatch) -> Self?
 pub fn StoryCardIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
-pub(all) enum StoryCardMethod {
-  RefLabel
-} derive(Eq, @debug.Debug)
-pub fn StoryCardMethod::name(Self) -> String
-
 pub(all) enum StoryCardMsg {
   Rebuild
   Unknown(String, Array[@core.Value])
 }
 pub fn StoryCardMsg::from_dispatch(@core.Dispatch) -> Self?
-
-pub(all) enum StoryCardReceive {
-  Rebuild
-  Unknown(String, Array[@core.Value])
-}
-pub fn StoryCardReceive::from_dispatch(@core.Dispatch) -> Self?
-pub fn StoryCardReceive::send(Self, &@core.Ctx) -> Unit
-pub fn StoryCardReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+pub fn StoryCardMsg::send(Self, &@core.Ctx) -> Unit
+pub fn StoryCardMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct StoryCardState {
   title : String
@@ -183,12 +149,6 @@ pub(all) struct StoryCardState {
   error : String
 }
 pub fn StoryCardState::zero() -> Self
-
-pub(all) enum StoryNavInput {
-  Pick
-} derive(Eq, @debug.Debug)
-pub fn StoryNavInput::name(Self) -> String
-pub fn StoryNavInput::parse(String) -> Self?
 
 pub(all) enum StoryNavIntent {
   NavPicked(String, String)
@@ -203,14 +163,8 @@ pub(all) enum StoryNavMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn StoryNavMsg::from_dispatch(@core.Dispatch) -> Self?
-
-pub(all) enum StoryNavReceive {
-  Pick
-  Unknown(String, Array[@core.Value])
-}
-pub fn StoryNavReceive::from_dispatch(@core.Dispatch) -> Self?
-pub fn StoryNavReceive::send(Self, &@core.Ctx) -> Unit
-pub fn StoryNavReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+pub fn StoryNavMsg::send(Self, &@core.Ctx) -> Unit
+pub fn StoryNavMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct StoryNavState {
   module_ : String

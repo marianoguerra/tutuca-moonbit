@@ -106,7 +106,7 @@ pub fn schema_property_views() -> Map[String, @anode.View] {
 pub fn schema_property_component(
   name? : String = "SchemaProperty",
   views? : Map[String, @anode.View] = schema_property_views(),
-  init? : SchemaPropertyState = SchemaPropertyState::zero(),
+  initial? : SchemaPropertyState = SchemaPropertyState::zero(),
   common_style? : String = schema_property_common_style,
   global_style? : String = schema_property_global_style,
   update? : (SchemaPropertyState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -120,7 +120,7 @@ pub fn schema_property_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -197,13 +197,13 @@ pub fn schema_branch_views() -> Map[String, @anode.View] {
 pub fn schema_branch_component(
   name? : String = "SchemaBranch",
   views? : Map[String, @anode.View] = schema_branch_views(),
-  init? : SchemaBranchState = SchemaBranchState::zero(),
+  initial? : SchemaBranchState = SchemaBranchState::zero(),
   common_style? : String = schema_branch_common_style,
   global_style? : String = schema_branch_global_style,
   update? : (SchemaBranchState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaBranchState,
   ],
-  compute? : (SchemaBranchMethod) -> ((
+  compute? : (SchemaBranchCompute) -> ((
     SchemaBranchState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -216,15 +216,15 @@ pub fn schema_branch_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([LabelCssClass] : Array[SchemaBranchMethod]),
-          SchemaBranchMethod::name,
+          ([LabelCssClass] : Array[SchemaBranchCompute]),
+          SchemaBranchCompute::name,
           f,
         )
       None => Map([])

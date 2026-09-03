@@ -23,6 +23,12 @@ fn emit_state(
   inits : Array[@statedef.InitState],
   derives : String,
   surface : Surface,
+  /// The `@on` names the script block itself answers. Not used to TRIM the
+  /// message enum — its variants are also what `to_dispatch` raises, so a
+  /// trimmed one would take the typed raise away with the dead arm — but said
+  /// in the enum's doc comment, because an `update` arm for one of them can
+  /// never run.
+  answered_inputs : Array[String],
   out : StringBuilder,
 ) -> Unit raise GenError {
   emit_user_types(def, derives, out)
@@ -30,7 +36,7 @@ fn emit_state(
   emit_zero(t, def, out)
   emit_inits(t, v, def, inits, out)
   emit_codec(t, def, out)
-  emit_msgs(t, def, surface, out)
+  emit_msgs(t, def, surface, answered_inputs, out)
 }
 
 ///|
@@ -84,6 +90,30 @@ fn emit_inits(
       out.write_string("  }\n}\n\n")
     }
   }
+  // The keyed entry point. The per-name functions above are package-private
+  // and their names are MANGLED — `with-history` becomes `with_history()`,
+  // a spelling nothing in the file says out loud — so a caller outside this
+  // package had no way to reach a fixture at all, and one inside had to know
+  // the mangling. This takes the name as the block wrote it.
+  out.write_string(
+    "///|\n" +
+    "/// A named fixture, or None when no fixture has that name.\n" +
+    "///\n" +
+    "/// Keyed by the name as WRITTEN, for a caller holding one at run time — a\n" +
+    "/// storybook, a host, a test driven by a table. The functions above are\n" +
+    "/// one per fixture and are the spelling to reach for inside this package,\n" +
+    "/// where the name is known and a typo should not compile; their names are\n" +
+    "/// mangled to be identifiers, so `with-history` answers to\n" +
+    "/// `with_history()`, which is why this one exists for everybody else.\n" +
+    "pub fn \{t}State::fixture(name : String) -> \{t}State? {\n" +
+    "  match name {\n",
+  )
+  for st in inits {
+    out.write_string(
+      "    \{quote(st.name)} => Some(\{t}State::\{st.ident}())\n",
+    )
+  }
+  out.write_string("    _ => None\n  }\n}\n\n")
   // The NAMES go in `SchemaInfo.init_names` and nowhere else: a second `pub let`
   // saying the same thing could only be read by code that already knows this
   // component's module, while the descriptor is reachable from a bare Value.
@@ -238,7 +268,7 @@ fn emit_zero(t : String, def : @statedef.StateDef, out : StringBuilder) -> Unit 
     "/// type — so this\n" +
     "/// is type-directed, and `init` spreads it to name only what differs:\n" +
     "///\n" +
-    "///   init={ ..\{t}State::zero(), label: \"Counter\" }\n" +
+    "///   initial={ ..\{t}State::zero(), label: \"Counter\" }\n" +
     // `pub`, like the `pub(all)` struct it returns.
     "pub fn \{t}State::zero() -> \{t}State {\n",
   )

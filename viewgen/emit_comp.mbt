@@ -84,7 +84,7 @@ fn emit_wrapper(
   out.write_string(
     wrapper_opt("views", "Map[String, @anode.View]", "\{v}_views()"),
   )
-  out.write_string(wrapper_opt("init", s, "\{s}::zero()"))
+  out.write_string(wrapper_opt("initial", s, "\{s}::zero()"))
   out.write_string(wrapper_opt("common_style", "String", "\{v}_common_style"))
   out.write_string(wrapper_opt("global_style", "String", "\{v}_global_style"))
   // No default: `component()` takes an update as an Option, and this one is
@@ -137,7 +137,7 @@ fn emit_wrapper(
     "  @component.component(\n" +
     "    name~,\n" +
     "    views~,\n" +
-    "    init~,\n" +
+    "    initial~,\n" +
     "    common_style~,\n" +
     "    global_style~,\n" +
     update_arg,
@@ -373,11 +373,12 @@ fn wrapper_buckets(
     variant_list(unanswered(names, bucket_answers(param, answered)))
   }
 
-  // `compute` answers `$name` in a VALUE position, so it is keyed by Method.
+  // `compute` answers `$name` in a VALUE position, and the enum is named for
+  // the bucket it keys.
   if !methods.is_empty() {
     out.push({
       param: "compute",
-      enum_: "\{t}Method",
+      enum_: "\{t}Compute",
       handler: "(\{s}, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value",
       all: cases("compute", methods),
     })

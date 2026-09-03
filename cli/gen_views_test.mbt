@@ -230,7 +230,7 @@ test "a successful plan carries one file" {
   guard! r is Ok(plan)
   assert_eq(plan.files.length(), 1)
   assert_eq(plan.files[0].0, "views/counter_view_gen.mbt")
-  assert_true(plan.files[0].1.contains("pub(all) enum CounterInput {\n  Go\n}"))
+  assert_true(plan.files[0].1.contains("pub(all) enum CounterMsg {\n  Go\n"))
   // The header cites the file's basename, not the path it was written from.
   assert_true(
     plan.files[0].1.has_prefix(

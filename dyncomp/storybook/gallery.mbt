@@ -218,7 +218,7 @@ fn Gallery::root_comp(
 ) -> @component.Component {
   let cards = self.cards()
   let nav = self.nav("", "")
-  let init : DyncompStorybookState = {
+  let initial : DyncompStorybookState = {
     ..DyncompStorybookState::zero(),
     cards,
     nav,
@@ -232,7 +232,7 @@ fn Gallery::root_comp(
     // generator resolves a sibling only within one file and this one lives
     // wherever the host is.
     slots=if dev_tools == "" { Map([]) } else { { "devTools": dev_tools } },
-    init~,
+    initial~,
     compute=m => {
       match m {
         LayoutLabel =>
@@ -295,15 +295,15 @@ fn Gallery::root_comp(
           )
           return Unhandled
         }
-        Some(Unknown(_, _)) | None => ()
+        // Everything else falls through to the match below, which is the
+        // other half of this one bucket.
+        _ => ()
       }
-      match DyncompStorybookReceive::from_dispatch(msg) {
+      match DyncompStorybookMsg::from_dispatch(msg) {
         Some(CatalogChanged(module_)) => return Next(self.reloaded(s, module_))
         Some(SetStatus(t)) => return Next({ ..s, status: t, })
-        // The merged `Receive` carries this component's own VIEW names as
-        // well as the schema's, so `Unknown` covers cases this match has
-        // nothing to say about. They are answered by the match
-        // beside this one.
+        // The merged enum carries this component's own VIEW names as well as
+        // the schema's, so this covers the cases the match above answered.
         _ => ()
       }
       // The same two, arriving from BELOW: the host's loader sits inside the

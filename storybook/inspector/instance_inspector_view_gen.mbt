@@ -28,7 +28,7 @@ pub(all) struct InstanceFieldsState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..InstanceFieldsState::zero(), label: "Counter" }
+///   initial={ ..InstanceFieldsState::zero(), label: "Counter" }
 pub fn InstanceFieldsState::zero() -> InstanceFieldsState {
   {
     items: [],
@@ -85,14 +85,16 @@ impl @component.Fields for InstanceFieldsState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum InstanceFieldsReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum InstanceFieldsMsg {
   NextPage
   PrevPage
   ToggleIsExpanded
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -110,9 +112,9 @@ pub(all) enum InstanceFieldsReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn InstanceFieldsReceive::from_dispatch(
+pub fn InstanceFieldsMsg::from_dispatch(
   d : @component.Dispatch,
-) -> InstanceFieldsReceive? {
+) -> InstanceFieldsMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -134,8 +136,8 @@ pub fn InstanceFieldsReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn InstanceFieldsReceive::to_dispatch(
-  self : InstanceFieldsReceive,
+pub fn InstanceFieldsMsg::to_dispatch(
+  self : InstanceFieldsMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     NextPage => ("nextPage", [])
@@ -150,8 +152,8 @@ pub fn InstanceFieldsReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn InstanceFieldsReceive::send(
-  self : InstanceFieldsReceive,
+pub fn InstanceFieldsMsg::send(
+  self : InstanceFieldsMsg,
   ctx : &@tutuca.Ctx,
 ) -> Unit {
   let (name, args) = self.to_dispatch()
@@ -167,76 +169,12 @@ pub let instance_fields_common_style : String = ""
 pub let instance_fields_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum InstanceFieldsInput {
-  NextPage
-  PrevPage
-  ToggleIsExpanded
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn InstanceFieldsInput::name(self : InstanceFieldsInput) -> String {
-  match self {
-    NextPage => "nextPage"
-    PrevPage => "prevPage"
-    ToggleIsExpanded => "toggleIsExpanded"
-  }
-}
-
-///|
-pub fn InstanceFieldsInput::parse(s : String) -> InstanceFieldsInput? {
-  match s {
-    "nextPage" => Some(NextPage)
-    "prevPage" => Some(PrevPage)
-    "toggleIsExpanded" => Some(ToggleIsExpanded)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to instance_inspector.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum InstanceFieldsMsg {
-  /// `@on.click="nextPage …"`
-  NextPage
-  /// `@on.click="prevPage …"`
-  PrevPage
-  /// `@on.click="toggleIsExpanded …"`
-  ToggleIsExpanded
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn InstanceFieldsMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> InstanceFieldsMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("nextPage", []) => NextPage
-      ("prevPage", []) => PrevPage
-      ("toggleIsExpanded", []) => ToggleIsExpanded
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: pageExists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
 /// these could never run.
-pub(all) enum InstanceFieldsMethod {
+pub(all) enum InstanceFieldsCompute {
   ArrowText
   CannotNextPage
   CannotPrevPage
@@ -248,7 +186,7 @@ pub(all) enum InstanceFieldsMethod {
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn InstanceFieldsMethod::name(self : InstanceFieldsMethod) -> String {
+pub fn InstanceFieldsCompute::name(self : InstanceFieldsCompute) -> String {
   match self {
     ArrowText => "arrowText"
     CannotNextPage => "cannotNextPage"
@@ -323,7 +261,7 @@ pub(all) struct InstanceInspectorState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..InstanceInspectorState::zero(), label: "Counter" }
+///   initial={ ..InstanceInspectorState::zero(), label: "Counter" }
 pub fn InstanceInspectorState::zero() -> InstanceInspectorState {
   { value: Null, }
 }
@@ -391,7 +329,7 @@ pub(all) struct InstanceExplorerState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..InstanceExplorerState::zero(), label: "Counter" }
+///   initial={ ..InstanceExplorerState::zero(), label: "Counter" }
 pub fn InstanceExplorerState::zero() -> InstanceExplorerState {
   {
     activeTab: "",

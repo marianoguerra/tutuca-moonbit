@@ -115,6 +115,7 @@ pub(all) struct MsgDef {
   name : String
   variant : String
   payload : Array[@core.Ty]
+  variadic : Bool
   doc : String?
 } derive(Eq, @debug.Debug)
 

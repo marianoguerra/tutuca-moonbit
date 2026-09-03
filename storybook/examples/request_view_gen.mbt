@@ -28,7 +28,7 @@ pub(all) struct RequestExampleState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..RequestExampleState::zero(), label: "Counter" }
+///   initial={ ..RequestExampleState::zero(), label: "Counter" }
 pub fn RequestExampleState::zero() -> RequestExampleState {
   { items: [], query: "", view: "", isLoading: false, error: None, }
 }
@@ -86,17 +86,24 @@ impl @component.Fields for RequestExampleState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum RequestExampleReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+///
+/// The script block answers toggleView, so an `update` arm for
+/// one of those can never run — the wrapper consults `update` only for a
+/// dispatch the block did not claim. They are still here because raising
+/// one is what a parent does, and `to_dispatch` is how.
+pub(all) enum RequestExampleMsg {
   Init
   LoadDataOk(@tutuca.Value)
   LoadDataFailed(String)
   LoadDataUnhandled
   LoadAnotherWay
   ToggleView
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -114,9 +121,9 @@ pub(all) enum RequestExampleReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn RequestExampleReceive::from_dispatch(
+pub fn RequestExampleMsg::from_dispatch(
   d : @component.Dispatch,
-) -> RequestExampleReceive? {
+) -> RequestExampleMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -144,8 +151,8 @@ pub fn RequestExampleReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn RequestExampleReceive::to_dispatch(
-  self : RequestExampleReceive,
+pub fn RequestExampleMsg::to_dispatch(
+  self : RequestExampleMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Init => ("init", [])
@@ -163,8 +170,8 @@ pub fn RequestExampleReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn RequestExampleReceive::send(
-  self : RequestExampleReceive,
+pub fn RequestExampleMsg::send(
+  self : RequestExampleMsg,
   ctx : &@tutuca.Ctx,
 ) -> Unit {
   let (name, args) = self.to_dispatch()
@@ -178,65 +185,6 @@ pub let request_example_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let request_example_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum RequestExampleInput {
-  LoadAnotherWay
-  ToggleView
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn RequestExampleInput::name(self : RequestExampleInput) -> String {
-  match self {
-    LoadAnotherWay => "loadAnotherWay"
-    ToggleView => "toggleView"
-  }
-}
-
-///|
-pub fn RequestExampleInput::parse(s : String) -> RequestExampleInput? {
-  match s {
-    "loadAnotherWay" => Some(LoadAnotherWay)
-    "toggleView" => Some(ToggleView)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to request.html breaks every `match` over this type
-/// until it is handled.
-///
-/// Absent, because the script block answers them: toggleView.
-/// `update` is consulted only for a dispatch the block did not claim, so
-/// an arm for one of these could never run.
-pub(all) enum RequestExampleMsg {
-  /// `@on.click="loadAnotherWay …"`
-  LoadAnotherWay
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn RequestExampleMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> RequestExampleMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("loadAnotherWay", []) => LoadAnotherWay
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// Every `@when` handler the views name.

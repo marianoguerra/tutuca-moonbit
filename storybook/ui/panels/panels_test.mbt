@@ -42,7 +42,7 @@ fn demo_sections() -> Array[@sb.Section] {
           ),
         },
         name="Counter",
-        init=CountState::{ count: 3, },
+        initial=CountState::{ count: 3, },
       ),
     ],
     examples=[{ component: "Counter", title: "", args: Map([]), view: None, }],

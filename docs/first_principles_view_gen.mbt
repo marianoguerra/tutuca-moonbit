@@ -24,7 +24,7 @@ pub(all) struct FpGreetingState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..FpGreetingState::zero(), label: "Counter" }
+///   initial={ ..FpGreetingState::zero(), label: "Counter" }
 pub fn FpGreetingState::zero() -> FpGreetingState {
   { name: "", }
 }
@@ -89,7 +89,7 @@ pub(all) struct NoteState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..NoteState::zero(), label: "Counter" }
+///   initial={ ..NoteState::zero(), label: "Counter" }
 pub fn NoteState::zero() -> NoteState {
   { text: "", }
 }
@@ -116,12 +116,14 @@ impl @component.Fields for NoteState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum NoteReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum NoteMsg {
   Write(String)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -139,7 +141,7 @@ pub(all) enum NoteReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn NoteReceive::from_dispatch(d : @component.Dispatch) -> NoteReceive? {
+pub fn NoteMsg::from_dispatch(d : @component.Dispatch) -> NoteMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -157,9 +159,7 @@ pub fn NoteReceive::from_dispatch(d : @component.Dispatch) -> NoteReceive? {
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn NoteReceive::to_dispatch(
-  self : NoteReceive,
-) -> (String, Array[@tutuca.Value]) {
+pub fn NoteMsg::to_dispatch(self : NoteMsg) -> (String, Array[@tutuca.Value]) {
   match self {
     Write(a0) => ("write", [Str(a0)])
     Unknown(n, args) => (n, args)
@@ -171,7 +171,7 @@ pub fn NoteReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn NoteReceive::send(self : NoteReceive, ctx : &@tutuca.Ctx) -> Unit {
+pub fn NoteMsg::send(self : NoteMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -218,7 +218,7 @@ pub(all) struct MailboxState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..MailboxState::zero(), label: "Counter" }
+///   initial={ ..MailboxState::zero(), label: "Counter" }
 pub fn MailboxState::zero() -> MailboxState {
   { note: Null, }
 }

@@ -212,7 +212,7 @@ test "a rerun against changed behaviour reports where they parted" {
     @component.component(
       name="Board",
       views=board_views(),
-      init=BoardState::{ title: "", rows: [], },
+      initial=BoardState::{ title: "", rows: [], },
       update=(s, msg, ctx) => {
         match msg {
           Receive("touch", _) => {

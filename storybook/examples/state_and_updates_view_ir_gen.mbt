@@ -163,7 +163,7 @@ pub fn attribute_binding_views() -> Map[String, @anode.View] {
 pub fn attribute_binding_component(
   name? : String = "AttributeBinding",
   views? : Map[String, @anode.View] = attribute_binding_views(),
-  init? : AttributeBindingState = AttributeBindingState::zero(),
+  initial? : AttributeBindingState = AttributeBindingState::zero(),
   common_style? : String = attribute_binding_common_style,
   global_style? : String = attribute_binding_global_style,
   update? : (AttributeBindingState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -177,7 +177,7 @@ pub fn attribute_binding_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -264,7 +264,7 @@ pub fn conditional_attributes_views() -> Map[String, @anode.View] {
 pub fn conditional_attributes_component(
   name? : String = "ConditionalAttributes",
   views? : Map[String, @anode.View] = conditional_attributes_views(),
-  init? : ConditionalAttributesState = ConditionalAttributesState::zero(),
+  initial? : ConditionalAttributesState = ConditionalAttributesState::zero(),
   common_style? : String = conditional_attributes_common_style,
   global_style? : String = conditional_attributes_global_style,
   update? : (ConditionalAttributesState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -278,7 +278,7 @@ pub fn conditional_attributes_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -366,7 +366,7 @@ pub fn event_modifiers_views() -> Map[String, @anode.View] {
 pub fn event_modifiers_component(
   name? : String = "EventModifiers",
   views? : Map[String, @anode.View] = event_modifiers_views(),
-  init? : EventModifiersState = EventModifiersState::zero(),
+  initial? : EventModifiersState = EventModifiersState::zero(),
   common_style? : String = event_modifiers_common_style,
   global_style? : String = event_modifiers_global_style,
   update? : (EventModifiersState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -380,7 +380,7 @@ pub fn event_modifiers_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -516,13 +516,13 @@ fn show_hide_inline_update(
 pub fn show_hide_component(
   name? : String = "ShowHide",
   views? : Map[String, @anode.View] = show_hide_views(),
-  init? : ShowHideState = ShowHideState::zero(),
+  initial? : ShowHideState = ShowHideState::zero(),
   common_style? : String = show_hide_common_style,
   global_style? : String = show_hide_global_style,
   update? : (ShowHideState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ShowHideState,
   ],
-  compute? : (ShowHideMethod) -> ((
+  compute? : (ShowHideCompute) -> ((
     ShowHideState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -535,7 +535,7 @@ pub fn show_hide_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => {
@@ -551,8 +551,8 @@ pub fn show_hide_component(
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([Label] : Array[ShowHideMethod]),
-          ShowHideMethod::name,
+          ([Label] : Array[ShowHideCompute]),
+          ShowHideCompute::name,
           f,
         )
       None => Map([])

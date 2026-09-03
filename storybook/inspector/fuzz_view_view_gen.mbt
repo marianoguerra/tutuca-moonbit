@@ -58,7 +58,7 @@ pub(all) struct FuzzRowState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..FuzzRowState::zero(), label: "Counter" }
+///   initial={ ..FuzzRowState::zero(), label: "Counter" }
 pub fn FuzzRowState::zero() -> FuzzRowState {
   {
     at: 0,
@@ -164,12 +164,19 @@ impl @component.Fields for FuzzRowState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum FuzzRowReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+///
+/// The script block answers toggle, so an `update` arm for
+/// one of those can never run — the wrapper consults `update` only for a
+/// dispatch the block did not claim. They are still here because raising
+/// one is what a parent does, and `to_dispatch` is how.
+pub(all) enum FuzzRowMsg {
   Toggle
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -187,9 +194,7 @@ pub(all) enum FuzzRowReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn FuzzRowReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> FuzzRowReceive? {
+pub fn FuzzRowMsg::from_dispatch(d : @component.Dispatch) -> FuzzRowMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -207,8 +212,8 @@ pub fn FuzzRowReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn FuzzRowReceive::to_dispatch(
-  self : FuzzRowReceive,
+pub fn FuzzRowMsg::to_dispatch(
+  self : FuzzRowMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Toggle => ("toggle", [])
@@ -221,7 +226,7 @@ pub fn FuzzRowReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn FuzzRowReceive::send(self : FuzzRowReceive, ctx : &@tutuca.Ctx) -> Unit {
+pub fn FuzzRowMsg::send(self : FuzzRowMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -233,57 +238,6 @@ pub let fuzz_row_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let fuzz_row_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum FuzzRowInput {
-  Toggle
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn FuzzRowInput::name(self : FuzzRowInput) -> String {
-  match self {
-    Toggle => "toggle"
-  }
-}
-
-///|
-pub fn FuzzRowInput::parse(s : String) -> FuzzRowInput? {
-  match s {
-    "toggle" => Some(Toggle)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to fuzz_view.html breaks every `match` over this type
-/// until it is handled.
-///
-/// Absent, because the script block answers them: toggle.
-/// `update` is consulted only for a dispatch the block did not claim, so
-/// an arm for one of these could never run.
-pub(all) enum FuzzRowMsg {
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn FuzzRowMsg::from_dispatch(d : @component.Dispatch) -> FuzzRowMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -348,7 +302,7 @@ pub(all) struct FuzzLogState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..FuzzLogState::zero(), label: "Counter" }
+///   initial={ ..FuzzLogState::zero(), label: "Counter" }
 pub fn FuzzLogState::zero() -> FuzzLogState {
   { rows: [], hasRows: false, emptyHint: "", }
 }
@@ -461,7 +415,7 @@ pub(all) struct FuzzControlsState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..FuzzControlsState::zero(), label: "Counter" }
+///   initial={ ..FuzzControlsState::zero(), label: "Counter" }
 pub fn FuzzControlsState::zero() -> FuzzControlsState {
   {
     seed: "",
@@ -542,10 +496,17 @@ impl @component.Fields for FuzzControlsState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum FuzzControlsReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+///
+/// The script block answers setSeed, setSteps, setSource, burst, play, stop, step, reset, so an `update` arm for
+/// one of those can never run — the wrapper consults `update` only for a
+/// dispatch the block did not claim. They are still here because raising
+/// one is what a parent does, and `to_dispatch` is how.
+pub(all) enum FuzzControlsMsg {
   Burst
   Play
   Reset
@@ -554,7 +515,7 @@ pub(all) enum FuzzControlsReceive {
   SetSteps(String)
   Step
   Stop
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -572,9 +533,9 @@ pub(all) enum FuzzControlsReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn FuzzControlsReceive::from_dispatch(
+pub fn FuzzControlsMsg::from_dispatch(
   d : @component.Dispatch,
-) -> FuzzControlsReceive? {
+) -> FuzzControlsMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -606,8 +567,8 @@ pub fn FuzzControlsReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn FuzzControlsReceive::to_dispatch(
-  self : FuzzControlsReceive,
+pub fn FuzzControlsMsg::to_dispatch(
+  self : FuzzControlsMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Burst => ("burst", [])
@@ -627,8 +588,8 @@ pub fn FuzzControlsReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn FuzzControlsReceive::send(
-  self : FuzzControlsReceive,
+pub fn FuzzControlsMsg::send(
+  self : FuzzControlsMsg,
   ctx : &@tutuca.Ctx,
 ) -> Unit {
   let (name, args) = self.to_dispatch()
@@ -642,80 +603,6 @@ pub let fuzz_controls_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let fuzz_controls_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum FuzzControlsInput {
-  Burst
-  Play
-  Reset
-  SetSeed
-  SetSource
-  SetSteps
-  Step
-  Stop
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn FuzzControlsInput::name(self : FuzzControlsInput) -> String {
-  match self {
-    Burst => "burst"
-    Play => "play"
-    Reset => "reset"
-    SetSeed => "setSeed"
-    SetSource => "setSource"
-    SetSteps => "setSteps"
-    Step => "step"
-    Stop => "stop"
-  }
-}
-
-///|
-pub fn FuzzControlsInput::parse(s : String) -> FuzzControlsInput? {
-  match s {
-    "burst" => Some(Burst)
-    "play" => Some(Play)
-    "reset" => Some(Reset)
-    "setSeed" => Some(SetSeed)
-    "setSource" => Some(SetSource)
-    "setSteps" => Some(SetSteps)
-    "step" => Some(Step)
-    "stop" => Some(Stop)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to fuzz_view.html breaks every `match` over this type
-/// until it is handled.
-///
-/// Absent, because the script block answers them: setSeed, setSteps, setSource, burst, play, stop, step, reset.
-/// `update` is consulted only for a dispatch the block did not claim, so
-/// an arm for one of these could never run.
-pub(all) enum FuzzControlsMsg {
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn FuzzControlsMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> FuzzControlsMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -800,7 +687,7 @@ pub(all) struct FuzzVerdictState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..FuzzVerdictState::zero(), label: "Counter" }
+///   initial={ ..FuzzVerdictState::zero(), label: "Counter" }
 pub fn FuzzVerdictState::zero() -> FuzzVerdictState {
   {
     kind: "",
@@ -878,12 +765,19 @@ impl @component.Fields for FuzzVerdictState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum FuzzVerdictReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+///
+/// The script block answers shrink, so an `update` arm for
+/// one of those can never run — the wrapper consults `update` only for a
+/// dispatch the block did not claim. They are still here because raising
+/// one is what a parent does, and `to_dispatch` is how.
+pub(all) enum FuzzVerdictMsg {
   Shrink
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -901,9 +795,9 @@ pub(all) enum FuzzVerdictReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn FuzzVerdictReceive::from_dispatch(
+pub fn FuzzVerdictMsg::from_dispatch(
   d : @component.Dispatch,
-) -> FuzzVerdictReceive? {
+) -> FuzzVerdictMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -921,8 +815,8 @@ pub fn FuzzVerdictReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn FuzzVerdictReceive::to_dispatch(
-  self : FuzzVerdictReceive,
+pub fn FuzzVerdictMsg::to_dispatch(
+  self : FuzzVerdictMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Shrink => ("shrink", [])
@@ -935,10 +829,7 @@ pub fn FuzzVerdictReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn FuzzVerdictReceive::send(
-  self : FuzzVerdictReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn FuzzVerdictMsg::send(self : FuzzVerdictMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -950,59 +841,6 @@ pub let fuzz_verdict_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let fuzz_verdict_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum FuzzVerdictInput {
-  Shrink
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn FuzzVerdictInput::name(self : FuzzVerdictInput) -> String {
-  match self {
-    Shrink => "shrink"
-  }
-}
-
-///|
-pub fn FuzzVerdictInput::parse(s : String) -> FuzzVerdictInput? {
-  match s {
-    "shrink" => Some(Shrink)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to fuzz_view.html breaks every `match` over this type
-/// until it is handled.
-///
-/// Absent, because the script block answers them: shrink.
-/// `update` is consulted only for a dispatch the block did not claim, so
-/// an arm for one of these could never run.
-pub(all) enum FuzzVerdictMsg {
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn FuzzVerdictMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> FuzzVerdictMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -1074,7 +912,7 @@ pub(all) struct FuzzPanelState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..FuzzPanelState::zero(), label: "Counter" }
+///   initial={ ..FuzzPanelState::zero(), label: "Counter" }
 pub fn FuzzPanelState::zero() -> FuzzPanelState {
   { controls: Null, verdict: Null, log: Null, hasRun: false, at: 0, total: 0, }
 }

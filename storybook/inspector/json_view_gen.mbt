@@ -22,7 +22,7 @@ pub(all) struct JsonNullState {} derive(Default)
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..JsonNullState::zero(), label: "Counter" }
+///   initial={ ..JsonNullState::zero(), label: "Counter" }
 pub fn JsonNullState::zero() -> JsonNullState {
   Default::default()
 }
@@ -83,7 +83,7 @@ pub(all) struct JsonBooleanState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..JsonBooleanState::zero(), label: "Counter" }
+///   initial={ ..JsonBooleanState::zero(), label: "Counter" }
 pub fn JsonBooleanState::zero() -> JsonBooleanState {
   { value: false, }
 }
@@ -116,14 +116,14 @@ pub let json_boolean_common_style : String = ""
 pub let json_boolean_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum JsonBooleanMethod {
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+pub(all) enum JsonBooleanCompute {
   CssClass
   Text
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn JsonBooleanMethod::name(self : JsonBooleanMethod) -> String {
+pub fn JsonBooleanCompute::name(self : JsonBooleanCompute) -> String {
   match self {
     CssClass => "cssClass"
     Text => "text"
@@ -164,7 +164,7 @@ pub(all) struct JsonNumberState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..JsonNumberState::zero(), label: "Counter" }
+///   initial={ ..JsonNumberState::zero(), label: "Counter" }
 pub fn JsonNumberState::zero() -> JsonNumberState {
   { value: 0.0, }
 }
@@ -197,13 +197,13 @@ pub let json_number_common_style : String = ""
 pub let json_number_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum JsonNumberMethod {
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+pub(all) enum JsonNumberCompute {
   Text
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn JsonNumberMethod::name(self : JsonNumberMethod) -> String {
+pub fn JsonNumberCompute::name(self : JsonNumberCompute) -> String {
   match self {
     Text => "text"
   }
@@ -243,7 +243,7 @@ pub(all) struct JsonStringState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..JsonStringState::zero(), label: "Counter" }
+///   initial={ ..JsonStringState::zero(), label: "Counter" }
 pub fn JsonStringState::zero() -> JsonStringState {
   { value: "", }
 }
@@ -276,13 +276,13 @@ pub let json_string_common_style : String = ""
 pub let json_string_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum JsonStringMethod {
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+pub(all) enum JsonStringCompute {
   Text
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn JsonStringMethod::name(self : JsonStringMethod) -> String {
+pub fn JsonStringCompute::name(self : JsonStringCompute) -> String {
   match self {
     Text => "text"
   }
@@ -320,7 +320,7 @@ pub(all) struct ValueFnState {} derive(Default)
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ValueFnState::zero(), label: "Counter" }
+///   initial={ ..ValueFnState::zero(), label: "Counter" }
 pub fn ValueFnState::zero() -> ValueFnState {
   Default::default()
 }
@@ -381,7 +381,7 @@ pub(all) struct ValueObjState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ValueObjState::zero(), label: "Counter" }
+///   initial={ ..ValueObjState::zero(), label: "Counter" }
 pub fn ValueObjState::zero() -> ValueObjState {
   { text: "", }
 }
@@ -449,7 +449,7 @@ pub(all) struct JsonArrayState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..JsonArrayState::zero(), label: "Counter" }
+///   initial={ ..JsonArrayState::zero(), label: "Counter" }
 pub fn JsonArrayState::zero() -> JsonArrayState {
   { items: [], isExpanded: false, itemsPerPage: 0, currentPage: 0, }
 }
@@ -497,13 +497,15 @@ impl @component.Fields for JsonArrayState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum JsonArrayReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum JsonArrayMsg {
   NextPage
   PrevPage
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -521,9 +523,7 @@ pub(all) enum JsonArrayReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn JsonArrayReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> JsonArrayReceive? {
+pub fn JsonArrayMsg::from_dispatch(d : @component.Dispatch) -> JsonArrayMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -543,8 +543,8 @@ pub fn JsonArrayReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn JsonArrayReceive::to_dispatch(
-  self : JsonArrayReceive,
+pub fn JsonArrayMsg::to_dispatch(
+  self : JsonArrayMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     NextPage => ("nextPage", [])
@@ -558,10 +558,7 @@ pub fn JsonArrayReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn JsonArrayReceive::send(
-  self : JsonArrayReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn JsonArrayMsg::send(self : JsonArrayMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -575,68 +572,12 @@ pub let json_array_common_style : String = ""
 pub let json_array_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum JsonArrayInput {
-  NextPage
-  PrevPage
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonArrayInput::name(self : JsonArrayInput) -> String {
-  match self {
-    NextPage => "nextPage"
-    PrevPage => "prevPage"
-  }
-}
-
-///|
-pub fn JsonArrayInput::parse(s : String) -> JsonArrayInput? {
-  match s {
-    "nextPage" => Some(NextPage)
-    "prevPage" => Some(PrevPage)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to json.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum JsonArrayMsg {
-  /// `@on.click="nextPage …"`
-  NextPage
-  /// `@on.click="prevPage …"`
-  PrevPage
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn JsonArrayMsg::from_dispatch(d : @component.Dispatch) -> JsonArrayMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("nextPage", []) => NextPage
-      ("prevPage", []) => PrevPage
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: pageExists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
 /// these could never run.
-pub(all) enum JsonArrayMethod {
+pub(all) enum JsonArrayCompute {
   ArrowText
   CannotNextPage
   CannotPrevPage
@@ -648,7 +589,7 @@ pub(all) enum JsonArrayMethod {
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn JsonArrayMethod::name(self : JsonArrayMethod) -> String {
+pub fn JsonArrayCompute::name(self : JsonArrayCompute) -> String {
   match self {
     ArrowText => "arrowText"
     CannotNextPage => "cannotNextPage"
@@ -725,7 +666,7 @@ pub(all) struct JsonObjectState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..JsonObjectState::zero(), label: "Counter" }
+///   initial={ ..JsonObjectState::zero(), label: "Counter" }
 pub fn JsonObjectState::zero() -> JsonObjectState {
   { items: [], isExpanded: false, itemsPerPage: 0, currentPage: 0, }
 }
@@ -773,13 +714,15 @@ impl @component.Fields for JsonObjectState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum JsonObjectReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum JsonObjectMsg {
   NextPage
   PrevPage
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -797,9 +740,7 @@ pub(all) enum JsonObjectReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn JsonObjectReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> JsonObjectReceive? {
+pub fn JsonObjectMsg::from_dispatch(d : @component.Dispatch) -> JsonObjectMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -819,8 +760,8 @@ pub fn JsonObjectReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn JsonObjectReceive::to_dispatch(
-  self : JsonObjectReceive,
+pub fn JsonObjectMsg::to_dispatch(
+  self : JsonObjectMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     NextPage => ("nextPage", [])
@@ -834,10 +775,7 @@ pub fn JsonObjectReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn JsonObjectReceive::send(
-  self : JsonObjectReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn JsonObjectMsg::send(self : JsonObjectMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -851,68 +789,12 @@ pub let json_object_common_style : String = ""
 pub let json_object_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum JsonObjectInput {
-  NextPage
-  PrevPage
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonObjectInput::name(self : JsonObjectInput) -> String {
-  match self {
-    NextPage => "nextPage"
-    PrevPage => "prevPage"
-  }
-}
-
-///|
-pub fn JsonObjectInput::parse(s : String) -> JsonObjectInput? {
-  match s {
-    "nextPage" => Some(NextPage)
-    "prevPage" => Some(PrevPage)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to json.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum JsonObjectMsg {
-  /// `@on.click="nextPage …"`
-  NextPage
-  /// `@on.click="prevPage …"`
-  PrevPage
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn JsonObjectMsg::from_dispatch(d : @component.Dispatch) -> JsonObjectMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("nextPage", []) => NextPage
-      ("prevPage", []) => PrevPage
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: pageExists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
 /// these could never run.
-pub(all) enum JsonObjectMethod {
+pub(all) enum JsonObjectCompute {
   ArrowText
   CannotNextPage
   CannotPrevPage
@@ -924,7 +806,7 @@ pub(all) enum JsonObjectMethod {
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn JsonObjectMethod::name(self : JsonObjectMethod) -> String {
+pub fn JsonObjectCompute::name(self : JsonObjectCompute) -> String {
   match self {
     ArrowText => "arrowText"
     CannotNextPage => "cannotNextPage"
@@ -999,7 +881,7 @@ pub(all) struct JsonPropertyState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..JsonPropertyState::zero(), label: "Counter" }
+///   initial={ ..JsonPropertyState::zero(), label: "Counter" }
 pub fn JsonPropertyState::zero() -> JsonPropertyState {
   { key: "", child: Null, }
 }
@@ -1068,7 +950,7 @@ pub(all) struct DataInspectorState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..DataInspectorState::zero(), label: "Counter" }
+///   initial={ ..DataInspectorState::zero(), label: "Counter" }
 pub fn DataInspectorState::zero() -> DataInspectorState {
   { value: Null, }
 }

@@ -25,7 +25,7 @@ pub(all) struct SelectorEntryState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SelectorEntryState::zero(), label: "Counter" }
+///   initial={ ..SelectorEntryState::zero(), label: "Counter" }
 pub fn SelectorEntryState::zero() -> SelectorEntryState {
   { value: "", label: "", }
 }
@@ -95,7 +95,7 @@ pub(all) struct SelectorState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SelectorState::zero(), label: "Counter" }
+///   initial={ ..SelectorState::zero(), label: "Counter" }
 pub fn SelectorState::zero() -> SelectorState {
   { items: [], selectedValue: Null, }
 }
@@ -174,7 +174,7 @@ pub(all) struct EntryEditorAndSelectorState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..EntryEditorAndSelectorState::zero(), label: "Counter" }
+///   initial={ ..EntryEditorAndSelectorState::zero(), label: "Counter" }
 pub fn EntryEditorAndSelectorState::zero() -> EntryEditorAndSelectorState {
   { items: [], selector: Null, }
 }
@@ -211,12 +211,14 @@ impl @component.Fields for EntryEditorAndSelectorState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum EntryEditorAndSelectorReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum EntryEditorAndSelectorMsg {
   OnAddItem
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -234,9 +236,9 @@ pub(all) enum EntryEditorAndSelectorReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn EntryEditorAndSelectorReceive::from_dispatch(
+pub fn EntryEditorAndSelectorMsg::from_dispatch(
   d : @component.Dispatch,
-) -> EntryEditorAndSelectorReceive? {
+) -> EntryEditorAndSelectorMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -254,8 +256,8 @@ pub fn EntryEditorAndSelectorReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn EntryEditorAndSelectorReceive::to_dispatch(
-  self : EntryEditorAndSelectorReceive,
+pub fn EntryEditorAndSelectorMsg::to_dispatch(
+  self : EntryEditorAndSelectorMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     OnAddItem => ("onAddItem", [])
@@ -268,8 +270,8 @@ pub fn EntryEditorAndSelectorReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn EntryEditorAndSelectorReceive::send(
-  self : EntryEditorAndSelectorReceive,
+pub fn EntryEditorAndSelectorMsg::send(
+  self : EntryEditorAndSelectorMsg,
   ctx : &@tutuca.Ctx,
 ) -> Unit {
   let (name, args) = self.to_dispatch()
@@ -283,62 +285,6 @@ pub let entry_editor_and_selector_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let entry_editor_and_selector_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum EntryEditorAndSelectorInput {
-  OnAddItem
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn EntryEditorAndSelectorInput::name(
-  self : EntryEditorAndSelectorInput,
-) -> String {
-  match self {
-    OnAddItem => "onAddItem"
-  }
-}
-
-///|
-pub fn EntryEditorAndSelectorInput::parse(
-  s : String,
-) -> EntryEditorAndSelectorInput? {
-  match s {
-    "onAddItem" => Some(OnAddItem)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to dynamic.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum EntryEditorAndSelectorMsg {
-  /// `@on.click="onAddItem …"`
-  OnAddItem
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn EntryEditorAndSelectorMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> EntryEditorAndSelectorMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("onAddItem", []) => OnAddItem
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -377,7 +323,7 @@ pub(all) struct SheetState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SheetState::zero(), label: "Counter" }
+///   initial={ ..SheetState::zero(), label: "Counter" }
 pub fn SheetState::zero() -> SheetState {
   { title: "", }
 }
@@ -440,7 +386,7 @@ pub(all) struct ToolbarState {} derive(Default)
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ToolbarState::zero(), label: "Counter" }
+///   initial={ ..ToolbarState::zero(), label: "Counter" }
 pub fn ToolbarState::zero() -> ToolbarState {
   Default::default()
 }
@@ -501,7 +447,7 @@ pub(all) struct PanelState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..PanelState::zero(), label: "Counter" }
+///   initial={ ..PanelState::zero(), label: "Counter" }
 pub fn PanelState::zero() -> PanelState {
   { toolbar: Null, }
 }
@@ -567,7 +513,7 @@ pub(all) struct WorkspaceState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..WorkspaceState::zero(), label: "Counter" }
+///   initial={ ..WorkspaceState::zero(), label: "Counter" }
 pub fn WorkspaceState::zero() -> WorkspaceState {
   { sheet: Null, panel: Null, }
 }
@@ -601,13 +547,13 @@ pub let workspace_common_style : String = ""
 pub let workspace_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum WorkspaceMethod {
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+pub(all) enum WorkspaceCompute {
   SheetTitle
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn WorkspaceMethod::name(self : WorkspaceMethod) -> String {
+pub fn WorkspaceCompute::name(self : WorkspaceCompute) -> String {
   match self {
     SheetTitle => "sheetTitle"
   }

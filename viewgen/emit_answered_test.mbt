@@ -43,7 +43,7 @@ fn bucket_src(script : String) -> (String, String) raise {
 ///|
 test "a $name the block answers is dropped from the Method enum" {
   let (types, _) = bucket_src("compute hasAttachments { .n }")
-  assert_true(types.contains("pub(all) enum MailMethod {\n  RowLabel\n}"))
+  assert_true(types.contains("pub(all) enum MailCompute {\n  RowLabel\n}"))
   assert_true(
     types.contains(
       "Absent, because the script block answers them: hasAttachments.",
@@ -66,7 +66,7 @@ test "a bucket the block answers WHOLE loses its enum and its parameter" {
   // The map the block built IS the bucket, passed straight through.
   assert_true(ir.contains("    when=mail_inline_when(),"))
   // ...while the mixed bucket keeps both halves.
-  assert_true(ir.contains("  compute? : (MailMethod) ->"))
+  assert_true(ir.contains("  compute? : (MailCompute) ->"))
 }
 
 ///|
@@ -74,7 +74,7 @@ test "a mixed bucket merges the block's map over the author's" {
   let (_, ir) = bucket_src("compute hasAttachments { .n }")
   assert_true(
     ir.contains(
-      "@component.build_bucket(([RowLabel] : Array[MailMethod]), MailMethod::name, f)",
+      "@component.build_bucket(([RowLabel] : Array[MailCompute]), MailCompute::name, f)",
     ),
   )
   assert_true(ir.contains("for k, h in mail_inline_compute() {"))
@@ -117,6 +117,6 @@ test "a block that answers nothing leaves every bucket exactly as it was" {
   assert_true(types.contains("  RowLabel\n"))
   assert_true(types.contains("pub(all) enum MailWhen {\n  KeepItem\n}"))
   assert_false(types.contains("Absent, because the script block answers them"))
-  assert_true(ir.contains("  compute? : (MailMethod) ->"))
+  assert_true(ir.contains("  compute? : (MailCompute) ->"))
   assert_true(ir.contains("  when? : (MailWhen) ->"))
 }

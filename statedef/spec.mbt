@@ -61,6 +61,15 @@ pub(all) struct MsgDef {
   /// The MoonBit enum variant name.
   variant : String
   payload : Array[StateTy]
+  /// Any number of arguments, of shapes nothing here can name.
+  ///
+  /// Not something the schema language can DECLARE — a `message { … }` case
+  /// states its payload or has none. It is what a name written only in the
+  /// views comes to when its call sites disagree about arity: the generator
+  /// cannot say what the payload should have been, so it says the honest
+  /// thing and hands the arm the raw list. `payload` is empty when this is
+  /// set, and the two are not both meaningful.
+  variadic : Bool
   doc : String?
 } derive(Eq, @debug.Debug)
 

@@ -172,9 +172,11 @@ fn universal_comp() -> @component.Component {
         Some(Dropped(info)) => return drop_on_cell(s, ctx, info)
         Some(Unknown("dropped", args)) =>
           return drop_on_cell(s, ctx, args.get(0).unwrap_or(Null))
-        Some(Unknown(_, _)) | None => ()
+        // Everything else falls through to the match below, which is the
+        // other half of this one bucket.
+        _ => ()
       }
-      match UniversalReceive::from_dispatch(msg) {
+      match UniversalMsg::from_dispatch(msg) {
         Some(Hold(child)) => Next({ child, })
         Some(Empty) => Next({ child: Null, })
         // Written through the child's own COW rather than by rebuilding it
@@ -278,7 +280,7 @@ fn spliced(
 ///|
 fn Std::stack_comp(self : Std) -> @component.Component {
   stack_component(
-    init={ ..StackState::zero(), direction: "column", gap: 8, },
+    initial={ ..StackState::zero(), direction: "column", gap: 8, },
     compute=m => {
       match m {
         Style => Some((s, _args, _stack) => Str(stack_style(s)))
@@ -413,7 +415,7 @@ pub fn Std::grid(self : Std, cols? : Int = 2, rows? : Int = 2) -> @tutuca.Value 
 ///|
 fn Std::grid_comp(self : Std) -> @component.Component {
   grid_component(
-    init={ ..GridState::zero(), cols: 2, rows: 2, gap: 8, },
+    initial={ ..GridState::zero(), cols: 2, rows: 2, gap: 8, },
     compute=m => {
       match m {
         Style => Some((s, _args, _stack) => Str(grid_style(s)))
@@ -491,7 +493,7 @@ pub fn Std::tabs(self : Std, count? : Int = 1) -> @tutuca.Value {
 /// type. What Enter and Escape MEAN is the strip's business — it is the thing
 /// holding the old name — so they leave as bubbles.
 fn tab_page_comp() -> @component.Component {
-  tab_page_component(init={ ..TabPageState::zero(), label: "untitled", }, update=(
+  tab_page_component(initial={ ..TabPageState::zero(), label: "untitled", }, update=(
     s,
     msg,
     ctx,
@@ -668,7 +670,7 @@ fn text_comp() -> @component.Component {
 /// field implies, and the framework answers it. Saying so here is cheaper than
 /// letting a reader wonder where the handler went.
 fn textarea_comp() -> @component.Component {
-  textarea_component(init={
+  textarea_component(initial={
     ..TextareaState::zero(),
     rows: 6,
     placeholder: "type here…",

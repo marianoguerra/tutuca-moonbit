@@ -37,7 +37,7 @@ fn static_macro_comp() -> @component.Component {
       ),
     },
     name="StaticMacro",
-    init=MacrosNoState::{ },
+    initial=MacrosNoState::{ },
   )
 }
 
@@ -86,7 +86,7 @@ fn macro_params_comp() -> @component.Component {
       ),
     },
     name="MacroParams",
-    init=MacroParamsState::{ status: "active", },
+    initial=MacroParamsState::{ status: "active", },
   )
 }
 
@@ -146,7 +146,7 @@ fn macro_slots_comp() -> @component.Component {
       ),
     },
     name="MacroSlots",
-    init=MacroSlotsState::{ count: 0, },
+    initial=MacroSlotsState::{ count: 0, },
     // Runtime views (a macro body is registered from MoonBit), so there is
     // no generated Msg and the arm names the dispatch directly.
     update=(s : MacroSlotsState, msg, _ctx) => {
@@ -212,7 +212,7 @@ fn macro_named_slots_comp() -> @component.Component {
       ),
     },
     name="MacroNamedSlots",
-    init=MacroNamedSlotsState::{ count: 0, },
+    initial=MacroNamedSlotsState::{ count: 0, },
     update=(s : MacroNamedSlotsState, msg, _ctx) => {
       match msg {
         Receive("inc", _) => Next({ count: s.count + 1, })

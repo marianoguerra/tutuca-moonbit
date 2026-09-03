@@ -5,7 +5,6 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
-  "moonbitlang/core/debug",
 }
 
 // Values
@@ -13,7 +12,7 @@ pub let counter_common_style : String
 
 pub fn counter_comp() -> @component.Component
 
-pub fn counter_component(name? : String, views? : Map[String, @anode.View], init? : CounterState, common_style? : String, global_style? : String, update? : (CounterState, @core.Dispatch, &@core.Ctx) -> @component.Update[CounterState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn counter_component(name? : String, views? : Map[String, @anode.View], initial? : CounterState, common_style? : String, global_style? : String, update? : (CounterState, @core.Dispatch, &@core.Ctx) -> @component.Update[CounterState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let counter_global_style : String
 
@@ -28,31 +27,21 @@ pub fn module_def() -> @component.ModuleDef
 // Errors
 
 // Types and methods
-pub(all) enum CounterInput {
-  Add
-} derive(Eq, @debug.Debug)
-pub fn CounterInput::name(Self) -> String
-pub fn CounterInput::parse(String) -> Self?
-
 pub(all) enum CounterMsg {
-  Unknown(String, Array[@core.Value])
-}
-pub fn CounterMsg::from_dispatch(@core.Dispatch) -> Self?
-
-pub(all) enum CounterReceive {
   ResetTo(Int)
   Add(Double)
   Unknown(String, Array[@core.Value])
 }
-pub fn CounterReceive::from_dispatch(@core.Dispatch) -> Self?
-pub fn CounterReceive::send(Self, &@core.Ctx) -> Unit
-pub fn CounterReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+pub fn CounterMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn CounterMsg::send(Self, &@core.Ctx) -> Unit
+pub fn CounterMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct CounterState {
   label : String
   count : Int
   history : Array[Int]
 }
+pub fn CounterState::fixture(String) -> Self?
 pub fn CounterState::zero() -> Self
 
 // Type aliases

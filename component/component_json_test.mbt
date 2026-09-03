@@ -85,14 +85,14 @@ fn json_scope() -> (
   @component.Component,
 ) {
   let scope = @component.ComponentStack::new()
-  let leaf = @component.component(views=view("<i>leaf</i>"), name="JLeaf", init=JLeaf::{
+  let leaf = @component.component(views=view("<i>leaf</i>"), name="JLeaf", initial=JLeaf::{
     text: "seeded",
     n: 42,
   })
   let holder = @component.component(
     views=view("<i>holder</i>"),
     name="JHolder",
-    init=JHolder::zero(),
+    initial=JHolder::zero(),
   )
   scope.register_components([leaf, holder], aliases={ "Alias": "JLeaf" })
   (scope, leaf, holder)
@@ -237,7 +237,7 @@ test "a component with no scope has nowhere to resolve a name" {
   let unregistered = @component.component(
     views=view("<i>x</i>"),
     name="JLeaf",
-    init=(Default::default() : JLeaf),
+    initial=(Default::default() : JLeaf),
   )
   let doc : Json = { "$component": "JLeaf" }
   assert_true(unregistered.from_json(doc) is None)

@@ -43,7 +43,7 @@ fn card_scope() -> (@component.ComponentStack, @component.Component) raise {
       ),
     },
     name="Card",
-    init=CardState::{ title: "", },
+    initial=CardState::{ title: "", },
     update=(_s : CardState, msg, _ctx) => {
       match msg {
         Receive("rename", [Str(t)]) => Next({ title: t, })
@@ -274,7 +274,7 @@ test "a compute reading `*name` is answered by the render chain it is under" {
       ),
     },
     name="Themed",
-    init=ThemedState::{ label: "", child: Null, },
+    initial=ThemedState::{ label: "", child: Null, },
     compute={
       "themeLabel": (_s : ThemedState, _args, stack) => {
         stack.lookup_dynamic("theme")
@@ -290,7 +290,7 @@ test "a compute reading `*name` is answered by the render chain it is under" {
       ),
     },
     name="Shell",
-    init=ThemedState::{ label: "dark", child: Null, },
+    initial=ThemedState::{ label: "dark", child: Null, },
     provide={ "theme": ".label" },
   )
   let scope = @component.ComponentStack::new()

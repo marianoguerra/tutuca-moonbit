@@ -17,7 +17,7 @@ let traffic_lights : Array[String] = ["red", "orange", "green"]
 /// follow it: naming the colours means indexing `traffic_lights`, and the
 /// block has no way to name a MoonBit value.
 fn traffic_light_comp() -> @component.Component {
-  traffic_light_component(init={ lightIndex: 0, }, compute=m => {
+  traffic_light_component(initial={ lightIndex: 0, }, compute=m => {
     match m {
       Light =>
         Some((s, _args, _stack) => {
@@ -55,7 +55,7 @@ pub fn traffic_light_module() -> @component.ModuleDef {
 /// visible panel, and the same predicate in `@if.class` highlights the active
 /// button. No per-tab flags, no component per tab.
 fn tabbed_ui_comp() -> @component.Component {
-  tabbed_u_i_component(init={ tab: "overview", })
+  tabbed_u_i_component(initial={ tab: "overview", })
 }
 
 ///|
@@ -79,7 +79,7 @@ pub fn tabbed_ui_module() -> @component.ModuleDef {
 /// Call convention (the renderer, render/render.mbt): a @when handler gets
 /// (key, value, iterData).
 fn list_and_filter_comp() -> @component.Component {
-  list_and_filter_component(init={ items: [], query: "", }, when=w => {
+  list_and_filter_component(initial={ items: [], query: "", }, when=w => {
     match w {
       FilterItem =>
         Some((s, _key, value, _iter, _stack) => {

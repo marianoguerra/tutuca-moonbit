@@ -120,7 +120,7 @@ pub fn comp_name_views() -> Map[String, @anode.View] {
 pub fn comp_name_component(
   name? : String = "CompName",
   views? : Map[String, @anode.View] = comp_name_views(),
-  init? : CompNameState = CompNameState::zero(),
+  initial? : CompNameState = CompNameState::zero(),
   common_style? : String = comp_name_common_style,
   global_style? : String = comp_name_global_style,
   update? : (CompNameState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -134,7 +134,7 @@ pub fn comp_name_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -202,7 +202,7 @@ pub fn comp_field_views() -> Map[String, @anode.View] {
 pub fn comp_field_component(
   name? : String = "CompField",
   views? : Map[String, @anode.View] = comp_field_views(),
-  init? : CompFieldState = CompFieldState::zero(),
+  initial? : CompFieldState = CompFieldState::zero(),
   common_style? : String = comp_field_common_style,
   global_style? : String = comp_field_global_style,
   update? : (CompFieldState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -216,7 +216,7 @@ pub fn comp_field_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -329,13 +329,13 @@ pub fn comp_view_views() -> Map[String, @anode.View] {
 pub fn comp_view_component(
   name? : String = "CompView",
   views? : Map[String, @anode.View] = comp_view_views(),
-  init? : CompViewState = CompViewState::zero(),
+  initial? : CompViewState = CompViewState::zero(),
   common_style? : String = comp_view_common_style,
   global_style? : String = comp_view_global_style,
   update? : (CompViewState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     CompViewState,
   ],
-  compute? : (CompViewMethod) -> ((
+  compute? : (CompViewCompute) -> ((
     CompViewState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -348,15 +348,15 @@ pub fn comp_view_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([ArrowText] : Array[CompViewMethod]),
-          CompViewMethod::name,
+          ([ArrowText] : Array[CompViewCompute]),
+          CompViewCompute::name,
           f,
         )
       None => Map([])
@@ -538,13 +538,13 @@ fn comp_section_inline_compute() -> Map[
 pub fn comp_section_component(
   name? : String = "CompSection",
   views? : Map[String, @anode.View] = comp_section_views(),
-  init? : CompSectionState = CompSectionState::zero(),
+  initial? : CompSectionState = CompSectionState::zero(),
   common_style? : String = comp_section_common_style,
   global_style? : String = comp_section_global_style,
   update? : (CompSectionState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     CompSectionState,
   ],
-  compute? : (CompSectionMethod) -> ((
+  compute? : (CompSectionCompute) -> ((
     CompSectionState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -562,7 +562,7 @@ pub fn comp_section_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -580,8 +580,8 @@ pub fn comp_section_component(
                 PageIndicatorText,
                 ShowPagination,
                 TypeText,
-              ] : Array[CompSectionMethod]),
-            CompSectionMethod::name,
+              ] : Array[CompSectionCompute]),
+            CompSectionCompute::name,
             f,
           )
         None => Map([])
@@ -671,13 +671,13 @@ pub fn component_inspector_views() -> Map[String, @anode.View] {
 pub fn component_inspector_component(
   name? : String = "ComponentInspector",
   views? : Map[String, @anode.View] = component_inspector_views(),
-  init? : ComponentInspectorState = ComponentInspectorState::zero(),
+  initial? : ComponentInspectorState = ComponentInspectorState::zero(),
   common_style? : String = component_inspector_common_style,
   global_style? : String = component_inspector_global_style,
   update? : (ComponentInspectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ComponentInspectorState,
   ],
-  compute? : (ComponentInspectorMethod) -> ((
+  compute? : (ComponentInspectorCompute) -> ((
     ComponentInspectorState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -690,15 +690,15 @@ pub fn component_inspector_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([IdText] : Array[ComponentInspectorMethod]),
-          ComponentInspectorMethod::name,
+          ([IdText] : Array[ComponentInspectorCompute]),
+          ComponentInspectorCompute::name,
           f,
         )
       None => Map([])

@@ -22,7 +22,7 @@ pub(all) struct JsonSelectorState {} derive(Default)
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..JsonSelectorState::zero(), label: "Counter" }
+///   initial={ ..JsonSelectorState::zero(), label: "Counter" }
 pub fn JsonSelectorState::zero() -> JsonSelectorState {
   Default::default()
 }
@@ -48,17 +48,19 @@ impl @component.Fields for JsonSelectorState with fn decode(_f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum JsonSelectorReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum JsonSelectorMsg {
   SetToArray
   SetToBool(Bool)
   SetToNull
   SetToNumber
   SetToObject
   SetToString
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -76,9 +78,9 @@ pub(all) enum JsonSelectorReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn JsonSelectorReceive::from_dispatch(
+pub fn JsonSelectorMsg::from_dispatch(
   d : @component.Dispatch,
-) -> JsonSelectorReceive? {
+) -> JsonSelectorMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -106,8 +108,8 @@ pub fn JsonSelectorReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn JsonSelectorReceive::to_dispatch(
-  self : JsonSelectorReceive,
+pub fn JsonSelectorMsg::to_dispatch(
+  self : JsonSelectorMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     SetToArray => ("setToArray", [])
@@ -125,8 +127,8 @@ pub fn JsonSelectorReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn JsonSelectorReceive::send(
-  self : JsonSelectorReceive,
+pub fn JsonSelectorMsg::send(
+  self : JsonSelectorMsg,
   ctx : &@tutuca.Ctx,
 ) -> Unit {
   let (name, args) = self.to_dispatch()
@@ -140,88 +142,6 @@ pub let json_selector_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let json_selector_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum JsonSelectorInput {
-  SetToArray
-  SetToBool
-  SetToNull
-  SetToNumber
-  SetToObject
-  SetToString
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonSelectorInput::name(self : JsonSelectorInput) -> String {
-  match self {
-    SetToArray => "setToArray"
-    SetToBool => "setToBool"
-    SetToNull => "setToNull"
-    SetToNumber => "setToNumber"
-    SetToObject => "setToObject"
-    SetToString => "setToString"
-  }
-}
-
-///|
-pub fn JsonSelectorInput::parse(s : String) -> JsonSelectorInput? {
-  match s {
-    "setToArray" => Some(SetToArray)
-    "setToBool" => Some(SetToBool)
-    "setToNull" => Some(SetToNull)
-    "setToNumber" => Some(SetToNumber)
-    "setToObject" => Some(SetToObject)
-    "setToString" => Some(SetToString)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to json.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum JsonSelectorMsg {
-  /// `@on.click="setToArray …"`
-  SetToArray
-  /// `@on.click="setToBool …"`
-  SetToBool(Bool)
-  /// `@on.click="setToNull …"`
-  SetToNull
-  /// `@on.click="setToNumber …"`
-  SetToNumber
-  /// `@on.click="setToObject …"`
-  SetToObject
-  /// `@on.click="setToString …"`
-  SetToString
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn JsonSelectorMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> JsonSelectorMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setToArray", []) => SetToArray
-      ("setToBool", [Bool(a0)]) => SetToBool(a0)
-      ("setToNull", []) => SetToNull
-      ("setToNumber", []) => SetToNumber
-      ("setToObject", []) => SetToObject
-      ("setToString", []) => SetToString
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -256,7 +176,7 @@ pub(all) struct JsonNullState {} derive(Default)
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..JsonNullState::zero(), label: "Counter" }
+///   initial={ ..JsonNullState::zero(), label: "Counter" }
 pub fn JsonNullState::zero() -> JsonNullState {
   Default::default()
 }
@@ -317,7 +237,7 @@ pub(all) struct JsonBoolState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..JsonBoolState::zero(), label: "Counter" }
+///   initial={ ..JsonBoolState::zero(), label: "Counter" }
 pub fn JsonBoolState::zero() -> JsonBoolState {
   { value: false, }
 }
@@ -382,7 +302,7 @@ pub(all) struct JsonStringState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..JsonStringState::zero(), label: "Counter" }
+///   initial={ ..JsonStringState::zero(), label: "Counter" }
 pub fn JsonStringState::zero() -> JsonStringState {
   { value: "", }
 }
@@ -448,7 +368,7 @@ pub(all) struct JsonNumberState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..JsonNumberState::zero(), label: "Counter" }
+///   initial={ ..JsonNumberState::zero(), label: "Counter" }
 pub fn JsonNumberState::zero() -> JsonNumberState {
   { strValue: "", value: 0.0, }
 }
@@ -476,12 +396,14 @@ impl @component.Fields for JsonNumberState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum JsonNumberReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum JsonNumberMsg {
   SetRawValue(String)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -499,9 +421,7 @@ pub(all) enum JsonNumberReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn JsonNumberReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> JsonNumberReceive? {
+pub fn JsonNumberMsg::from_dispatch(d : @component.Dispatch) -> JsonNumberMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -519,8 +439,8 @@ pub fn JsonNumberReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn JsonNumberReceive::to_dispatch(
-  self : JsonNumberReceive,
+pub fn JsonNumberMsg::to_dispatch(
+  self : JsonNumberMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     SetRawValue(a0) => ("setRawValue", [Str(a0)])
@@ -533,10 +453,7 @@ pub fn JsonNumberReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn JsonNumberReceive::send(
-  self : JsonNumberReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn JsonNumberMsg::send(self : JsonNumberMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -548,56 +465,6 @@ pub let json_number_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let json_number_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum JsonNumberInput {
-  SetRawValue
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonNumberInput::name(self : JsonNumberInput) -> String {
-  match self {
-    SetRawValue => "setRawValue"
-  }
-}
-
-///|
-pub fn JsonNumberInput::parse(s : String) -> JsonNumberInput? {
-  match s {
-    "setRawValue" => Some(SetRawValue)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to json.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum JsonNumberMsg {
-  /// `@on.input="setRawValue …"`
-  SetRawValue(String)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn JsonNumberMsg::from_dispatch(d : @component.Dispatch) -> JsonNumberMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setRawValue", [Str(a0)]) => SetRawValue(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -636,7 +503,7 @@ pub(all) struct JsonArrayState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..JsonArrayState::zero(), label: "Counter" }
+///   initial={ ..JsonArrayState::zero(), label: "Counter" }
 pub fn JsonArrayState::zero() -> JsonArrayState {
   { items: [], }
 }
@@ -669,13 +536,15 @@ impl @component.Fields for JsonArrayState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum JsonArrayReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum JsonArrayMsg {
   AddItem
   OnDropOnItem(@tutuca.Value, @tutuca.Value)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -693,9 +562,7 @@ pub(all) enum JsonArrayReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn JsonArrayReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> JsonArrayReceive? {
+pub fn JsonArrayMsg::from_dispatch(d : @component.Dispatch) -> JsonArrayMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -715,8 +582,8 @@ pub fn JsonArrayReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn JsonArrayReceive::to_dispatch(
-  self : JsonArrayReceive,
+pub fn JsonArrayMsg::to_dispatch(
+  self : JsonArrayMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     AddItem => ("addItem", [])
@@ -730,10 +597,7 @@ pub fn JsonArrayReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn JsonArrayReceive::send(
-  self : JsonArrayReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn JsonArrayMsg::send(self : JsonArrayMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -745,62 +609,6 @@ pub let json_array_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let json_array_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum JsonArrayInput {
-  AddItem
-  OnDropOnItem
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonArrayInput::name(self : JsonArrayInput) -> String {
-  match self {
-    AddItem => "addItem"
-    OnDropOnItem => "onDropOnItem"
-  }
-}
-
-///|
-pub fn JsonArrayInput::parse(s : String) -> JsonArrayInput? {
-  match s {
-    "addItem" => Some(AddItem)
-    "onDropOnItem" => Some(OnDropOnItem)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to json.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum JsonArrayMsg {
-  /// `@on.click="addItem …"`
-  AddItem
-  /// `@on.drop="onDropOnItem …"`
-  OnDropOnItem(@tutuca.Value, @tutuca.Value)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn JsonArrayMsg::from_dispatch(d : @component.Dispatch) -> JsonArrayMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("addItem", []) => AddItem
-      ("onDropOnItem", [a0, a1]) => OnDropOnItem(a0, a1)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -837,7 +645,7 @@ pub(all) struct JsonObjectKeyValState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..JsonObjectKeyValState::zero(), label: "Counter" }
+///   initial={ ..JsonObjectKeyValState::zero(), label: "Counter" }
 pub fn JsonObjectKeyValState::zero() -> JsonObjectKeyValState {
   { key: "", value: Null, }
 }
@@ -906,7 +714,7 @@ pub(all) struct JsonObjectState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..JsonObjectState::zero(), label: "Counter" }
+///   initial={ ..JsonObjectState::zero(), label: "Counter" }
 pub fn JsonObjectState::zero() -> JsonObjectState {
   { items: [], }
 }
@@ -939,13 +747,15 @@ impl @component.Fields for JsonObjectState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum JsonObjectReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum JsonObjectMsg {
   AddItem
   OnDropOnItem(@tutuca.Value, @tutuca.Value)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -963,9 +773,7 @@ pub(all) enum JsonObjectReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn JsonObjectReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> JsonObjectReceive? {
+pub fn JsonObjectMsg::from_dispatch(d : @component.Dispatch) -> JsonObjectMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -985,8 +793,8 @@ pub fn JsonObjectReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn JsonObjectReceive::to_dispatch(
-  self : JsonObjectReceive,
+pub fn JsonObjectMsg::to_dispatch(
+  self : JsonObjectMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     AddItem => ("addItem", [])
@@ -1000,10 +808,7 @@ pub fn JsonObjectReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn JsonObjectReceive::send(
-  self : JsonObjectReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn JsonObjectMsg::send(self : JsonObjectMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -1015,62 +820,6 @@ pub let json_object_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let json_object_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum JsonObjectInput {
-  AddItem
-  OnDropOnItem
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonObjectInput::name(self : JsonObjectInput) -> String {
-  match self {
-    AddItem => "addItem"
-    OnDropOnItem => "onDropOnItem"
-  }
-}
-
-///|
-pub fn JsonObjectInput::parse(s : String) -> JsonObjectInput? {
-  match s {
-    "addItem" => Some(AddItem)
-    "onDropOnItem" => Some(OnDropOnItem)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to json.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum JsonObjectMsg {
-  /// `@on.click="addItem …"`
-  AddItem
-  /// `@on.drop="onDropOnItem …"`
-  OnDropOnItem(@tutuca.Value, @tutuca.Value)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn JsonObjectMsg::from_dispatch(d : @component.Dispatch) -> JsonObjectMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("addItem", []) => AddItem
-      ("onDropOnItem", [a0, a1]) => OnDropOnItem(a0, a1)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.

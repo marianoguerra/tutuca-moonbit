@@ -205,7 +205,7 @@ fn sample_comp() -> @component.Component {
       ),
     },
     name="RichSample",
-    init=RichState::{ title: "", count: 0, tags: [], open: false, },
+    initial=RichState::{ title: "", count: 0, tags: [], open: false, },
     compute={
       "label": (s : RichState, _args, _stack) => Str(s.title),
       "double": (s : RichState, _args, _stack) => Num((s.count * 2).to_double()),
@@ -461,7 +461,7 @@ fn schema_sample_comp() -> @component.Component {
   @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Described",
-    init=DescribedState::{ title: "", count: 0, tags: [], open: false, },
+    initial=DescribedState::{ title: "", count: 0, tags: [], open: false, },
     update=(_s : DescribedState, _msg, _ctx) => Unhandled,
   )
 }

@@ -373,7 +373,7 @@ pub struct Component {
 declare pub fn[S : @tutuca.Fields] component(
   name~ : String,
   views~ : Map[String, @anode.View],
-  init~ : S,
+  initial~ : S,
   common_style? : String,
   global_style? : String,
   update? : (S, Dispatch, &@tutuca.Ctx) -> Update[S],

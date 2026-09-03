@@ -73,7 +73,7 @@ fn file_picker_comp() -> @component.Component {
   file_picker_component(
     // The File metadata is flattened into plain fields so the view can bind
     // each piece reactively. `hasFile` gates summary vs. empty-state.
-    init={ name: "", size: 0, type_: "", lastModified: 0, hasFile: false, },
+    initial={ name: "", size: 0, type_: "", lastModified: 0, hasFile: false, },
     update=(s, msg, _ctx) => {
       match msg {
         Receive("onPickFile", args) =>

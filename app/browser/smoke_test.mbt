@@ -41,7 +41,7 @@ fn counter_comp() -> @component.Component {
       ),
     },
     name="Counter",
-    init=SmokeCounterState::{ n: 0, label: "start", },
+    initial=SmokeCounterState::{ n: 0, label: "start", },
     update=(s : SmokeCounterState, msg, _ctx) => {
       match msg {
         Receive("bump", _) => Next({ ..s, n: s.n + 1, })
@@ -102,7 +102,7 @@ test "browser: styles are compiled into a head style element" {
       ),
     },
     name="Styled",
-    init=SmokeEmptyState::{ },
+    initial=SmokeEmptyState::{ },
   )
   scope.register_components([styled])
   let a = @app.App::new(
@@ -143,7 +143,7 @@ test "browser: real drag events run the drag lifecycle" {
       ),
     },
     name="DropBoard",
-    init=DropBoardState::{ landed_kind: "", },
+    initial=DropBoardState::{ landed_kind: "", },
     update=(_s : DropBoardState, msg, _ctx) => {
       match msg {
         Receive("landed", [Map(info), ..]) =>
@@ -224,7 +224,7 @@ fn effects_comp() -> @component.Component {
       ),
     },
     name="Effects",
-    init=EffectsState::{ n: 0, },
+    initial=EffectsState::{ n: 0, },
     update=(s : EffectsState, msg, _ctx) => {
       match msg {
         Receive("bump", _) => Next({ n: s.n + 1, })

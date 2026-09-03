@@ -24,7 +24,7 @@ pub(all) struct ListIterationState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ListIterationState::zero(), label: "Counter" }
+///   initial={ ..ListIterationState::zero(), label: "Counter" }
 pub fn ListIterationState::zero() -> ListIterationState {
   { items: [], }
 }

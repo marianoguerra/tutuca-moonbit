@@ -69,7 +69,7 @@ fn spike_module() -> (@component.ModuleDef, Std) {
         ),
       ),
     },
-    init=SpikeState::{ root: Null, mode: "edit", status: "", },
+    initial=SpikeState::{ root: Null, mode: "edit", status: "", },
     update=(s, msg, ctx) => {
       match msg {
         // The bubble arrives with a SHORTENED path (one hop popped per

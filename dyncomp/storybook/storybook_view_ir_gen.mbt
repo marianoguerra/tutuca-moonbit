@@ -164,7 +164,7 @@ pub fn story_nav_views() -> Map[String, @anode.View] {
 pub fn story_nav_component(
   name? : String = "StoryNav",
   views? : Map[String, @anode.View] = story_nav_views(),
-  init? : StoryNavState = StoryNavState::zero(),
+  initial? : StoryNavState = StoryNavState::zero(),
   common_style? : String = story_nav_common_style,
   global_style? : String = story_nav_global_style,
   update? : (StoryNavState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -178,7 +178,7 @@ pub fn story_nav_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -429,13 +429,13 @@ fn story_card_inline_compute() -> Map[
 pub fn story_card_component(
   name? : String = "StoryCard",
   views? : Map[String, @anode.View] = story_card_views(),
-  init? : StoryCardState = StoryCardState::zero(),
+  initial? : StoryCardState = StoryCardState::zero(),
   common_style? : String = story_card_common_style,
   global_style? : String = story_card_global_style,
   update? : (StoryCardState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     StoryCardState,
   ],
-  compute? : (StoryCardMethod) -> ((
+  compute? : (StoryCardCompute) -> ((
     StoryCardState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -448,7 +448,7 @@ pub fn story_card_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -456,8 +456,8 @@ pub fn story_card_component(
       let bucket = match compute {
         Some(f) =>
           @component.build_bucket(
-            ([RefLabel] : Array[StoryCardMethod]),
-            StoryCardMethod::name,
+            ([RefLabel] : Array[StoryCardCompute]),
+            StoryCardCompute::name,
             f,
           )
         None => Map([])
@@ -724,13 +724,13 @@ pub fn dyncomp_storybook_views() -> Map[String, @anode.View] {
 pub fn dyncomp_storybook_component(
   name? : String = "DyncompStorybook",
   views? : Map[String, @anode.View] = dyncomp_storybook_views(),
-  init? : DyncompStorybookState = DyncompStorybookState::zero(),
+  initial? : DyncompStorybookState = DyncompStorybookState::zero(),
   common_style? : String = dyncomp_storybook_common_style,
   global_style? : String = dyncomp_storybook_global_style,
   update? : (DyncompStorybookState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     DyncompStorybookState,
   ],
-  compute? : (DyncompStorybookMethod) -> ((
+  compute? : (DyncompStorybookCompute) -> ((
     DyncompStorybookState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -750,15 +750,15 @@ pub fn dyncomp_storybook_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([DetailsLabel, IsEmpty, LayoutLabel] : Array[DyncompStorybookMethod]),
-          DyncompStorybookMethod::name,
+          ([DetailsLabel, IsEmpty, LayoutLabel] : Array[DyncompStorybookCompute]),
+          DyncompStorybookCompute::name,
           f,
         )
       None => Map([])

@@ -115,83 +115,86 @@ pub fn loader_bar_comp(
   status? : String = "",
   notify? : (LoaderEvent, &@tutuca.Ctx) -> Unit = ignore_event,
 ) -> @component.Component {
-  loader_bar_component(init={ status, url: "", showUrl: show_url, samples, }, update=(
-    s,
-    msg,
-    ctx,
-  ) => {
-    match LoaderBarMsg::from_dispatch(msg) {
-      // The payload is a `Value` rather than a `String` because the button
-      // reads `@value.url` out of the loop rather than naming a literal — the
-      // generator types a loop-sourced argument as `any`, which is the honest
-      // answer for something the schema cannot see through.
-      Some(LoadSample(Str(url))) => {
-        // The load id first, then the event: `Started` is what lets a host
-        // bind id -> url, and it cannot do that before there is an id. Nothing
-        // is lost by starting the fetch first — it is asynchronous, so no
-        // completion can overtake the line below.
-        let id = @dhw.load_url(ctx.path(), url)
-        notify(Started(url, id), ctx)
-        return Next({ ..s, url, status: "loading \{url}…", })
-      }
-      // The name was claimed, and a payload that is not a URL is not a load.
-      Some(LoadSample(_)) => return Unchanged
-      Some(TypeUrl(url)) => return Next({ ..s, url, })
-      Some(LoadUrl) => {
-        let url = s.url.trim().to_owned()
-        if url == "" {
-          return Next({ ..s, status: "nothing to load", })
+  loader_bar_component(
+    initial={ status, url: "", showUrl: show_url, samples, },
+    update=(s, msg, ctx) => {
+      match LoaderBarMsg::from_dispatch(msg) {
+        // The payload is a `Value` rather than a `String` because the button
+        // reads `@value.url` out of the loop rather than naming a literal — the
+        // generator types a loop-sourced argument as `any`, which is the honest
+        // answer for something the schema cannot see through.
+        Some(LoadSample(Str(url))) => {
+          // The load id first, then the event: `Started` is what lets a host
+          // bind id -> url, and it cannot do that before there is an id. Nothing
+          // is lost by starting the fetch first — it is asynchronous, so no
+          // completion can overtake the line below.
+          let id = @dhw.load_url(ctx.path(), url)
+          notify(Started(url, id), ctx)
+          return Next({ ..s, url, status: "loading \{url}…", })
         }
-        let id = @dhw.load_url(ctx.path(), url)
-        notify(Started(url, id), ctx)
-        return Next({ ..s, status: "loading \{url}…", })
-      }
-      Some(Unknown(_, _)) | None => ()
-    }
-    match LoaderBarReceive::from_dispatch(msg) {
-      // A dropped file: the payload is the list of descriptors the drop event
-      // carried, and the id names the file the browser still holds. No
-      // page-level JS is involved — this is an ordinary handler.
-      Some(FilesDropped(files)) => {
-        guard files is List(items) else { return Unchanged }
-        let mut any = false
-        for f in items {
-          match f.field("id") {
-            Num(id) => {
-              any = true
-              // One `Started` per file rather than one per drop: dropping
-              // three archives is three loads, and a host binding ids to what
-              // it asked for needs all three.
-              let load = @dhw.load_dropped(ctx.path(), id.to_int())
-              notify(Started("", load), ctx)
-            }
-            _ => ()
+        // The name was claimed, and a payload that is not a URL is not a load.
+        Some(LoadSample(_)) => return Unchanged
+        Some(TypeUrl(url)) => return Next({ ..s, url, })
+        Some(LoadUrl) => {
+          let url = s.url.trim().to_owned()
+          if url == "" {
+            return Next({ ..s, status: "nothing to load", })
           }
+          let id = @dhw.load_url(ctx.path(), url)
+          notify(Started(url, id), ctx)
+          return Next({ ..s, status: "loading \{url}…", })
         }
-        // A drop that carried no file at all is not a load, and telling
-        // somebody it is loading would be a lie that never resolves.
-        guard any else { return Unchanged }
-        Next({ ..s, status: "loading…", })
+        // Everything else falls through to the second match below, which is the
+        // other half of this one bucket. Two matches over one enum now that the
+        // view-named and schema-declared halves are one type — worth collapsing,
+        // and a bigger change than this rename.
+        _ => ()
       }
-      Some(DyncompLoaded(module_name, load)) => {
-        LoaderBarIntent::CatalogChanged(module_name).dispatch(ctx)
-        notify(Loaded(module_name, load), ctx)
-        Next({ ..s, status: "loaded \{module_name}", })
+      match LoaderBarMsg::from_dispatch(msg) {
+        // A dropped file: the payload is the list of descriptors the drop event
+        // carried, and the id names the file the browser still holds. No
+        // page-level JS is involved — this is an ordinary handler.
+        Some(FilesDropped(files)) => {
+          guard files is List(items) else { return Unchanged }
+          let mut any = false
+          for f in items {
+            match f.field("id") {
+              Num(id) => {
+                any = true
+                // One `Started` per file rather than one per drop: dropping
+                // three archives is three loads, and a host binding ids to what
+                // it asked for needs all three.
+                let load = @dhw.load_dropped(ctx.path(), id.to_int())
+                notify(Started("", load), ctx)
+              }
+              _ => ()
+            }
+          }
+          // A drop that carried no file at all is not a load, and telling
+          // somebody it is loading would be a lie that never resolves.
+          guard any else { return Unchanged }
+          Next({ ..s, status: "loading…", })
+        }
+        Some(DyncompLoaded(module_name, load)) => {
+          LoaderBarIntent::CatalogChanged(module_name).dispatch(ctx)
+          notify(Loaded(module_name, load), ctx)
+          Next({ ..s, status: "loaded \{module_name}", })
+        }
+        // The refusal's own words: "this host takes no CSS from a bundle", "no
+        // such component". A generic sentence here would throw away the one
+        // thing a person can act on.
+        Some(DyncompError(why, load)) => {
+          notify(Failed(why, load), ctx)
+          Next({ ..s, status: why, })
+        }
+        // The merged `Receive` carries this component's own VIEW names as
+        // well as the schema's, so `Unknown` covers cases this match has
+        // nothing to say about. They are answered by the match
+        // beside this one.
+        _ => Unhandled
       }
-      // The refusal's own words: "this host takes no CSS from a bundle", "no
-      // such component". A generic sentence here would throw away the one
-      // thing a person can act on.
-      Some(DyncompError(why, load)) => {
-        notify(Failed(why, load), ctx)
-        Next({ ..s, status: why, })
-      }
-      // The merged `Receive` carries this component's own VIEW names as
-      // well as the schema's, so `Unknown` covers cases this match has
-      // nothing to say about. They are answered by the match
-      // beside this one.
-      _ => Unhandled
-    }
-  })
+    },
+  )
 }
 
 ///|

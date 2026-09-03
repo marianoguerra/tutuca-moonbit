@@ -109,12 +109,15 @@ instead of making you remember to regenerate.
 For `--name Counter` the module declares `counter_views()` /
 `counter_common_style` / `counter_global_style` (feed straight into
 `component()` as `views~` / `common_style~` / `global_style~`),
-`CounterInput` + `CounterMsg` with `CounterMsg::from_dispatch` (payload types
+`CounterMsg` with `CounterMsg::from_dispatch` and `CounterMsg::to_dispatch`
+— every addressed name, the schema's `message` cases and the views' `@on`
+handlers in one bucket, typed by the schema where it says anything and
+otherwise (payload types
 inferred from the argument shapes at the `@on` call sites: `add 1` ->
 `Add(Double)`, `setLabel e.value` -> `SetLabel(String)` — `e.value` becomes
 `Bool` on a checkbox and `@tutuca.Value` on a file input, per the host
 element's static `type` — anything unresolvable
--> `@tutuca.Value`), and `CounterMethod`, the `$`-callables the views name
+-> `@tutuca.Value`) — and `CounterCompute`, the `$`-callables the views name
 that a block has NOT already answered. A `compute` in
 `<script type="tutuca/script">`, and a `pred` or an `invariant` in
 `<script type="tutuca/spec">`, are merged into the bucket ahead of your match,
@@ -126,7 +129,7 @@ a `<script type="tutuca/spec">` block gets the state half: `CounterState`
 (a plain struct — no derives), `CounterState::zero()`, an
 `impl @component.Fields for CounterState` carrying the whole contract as
 static metadata plus the direct encode/decode, and a typed
-`CounterReceive`/`CounterIntent` for each message bucket the
+`CounterMsg`/`CounterIntent` for each message bucket the
 schema declares.
 
 The field names, their declared kinds, the view names, the constant element

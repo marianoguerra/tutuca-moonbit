@@ -422,7 +422,7 @@ fn corpus_inline_compute() -> Map[
 pub fn corpus_component(
   name? : String = "Corpus",
   views? : Map[String, @anode.View] = corpus_views(),
-  init? : CorpusState = CorpusState::zero(),
+  initial? : CorpusState = CorpusState::zero(),
   common_style? : String = corpus_common_style,
   global_style? : String = corpus_global_style,
   update? : (CorpusState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -436,7 +436,7 @@ pub fn corpus_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => {

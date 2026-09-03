@@ -25,7 +25,7 @@ pub(all) struct SwatchPickerState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SwatchPickerState::zero(), label: "Counter" }
+///   initial={ ..SwatchPickerState::zero(), label: "Counter" }
 pub fn SwatchPickerState::zero() -> SwatchPickerState {
   { color: "", palette: [], }
 }
@@ -121,7 +121,7 @@ pub(all) struct QuadraticState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..QuadraticState::zero(), label: "Counter" }
+///   initial={ ..QuadraticState::zero(), label: "Counter" }
 pub fn QuadraticState::zero() -> QuadraticState {
   { a: 0, b: 0, c: 0, }
 }
@@ -163,14 +163,14 @@ pub let quadratic_common_style : String = ""
 pub let quadratic_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum QuadraticMethod {
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+pub(all) enum QuadraticCompute {
   Classify
   Discriminant
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn QuadraticMethod::name(self : QuadraticMethod) -> String {
+pub fn QuadraticCompute::name(self : QuadraticCompute) -> String {
   match self {
     Classify => "classify"
     Discriminant => "discriminant"

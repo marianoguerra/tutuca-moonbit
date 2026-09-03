@@ -461,7 +461,7 @@ need no annotation:
 // nocheck: the wrapper's parameter list, annotated — not a compilable item
 my_comp_component(
   // `init` defaults to MyCompState::zero() — pass it only for what differs
-  init={ ..MyCompState::zero(), count: 0 },
+  initial={ ..MyCompState::zero(), count: 0 },
   // ONE effectful dispatch match: (s, msg, ctx) => Update[S]
   // (Next = successor, Unchanged = mine and no, Unhandled = not mine)
   update=(s, msg, ctx) => match msg {

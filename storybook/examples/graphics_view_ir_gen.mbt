@@ -153,7 +153,7 @@ fn swatch_picker_inline_compute() -> Map[
 pub fn swatch_picker_component(
   name? : String = "SwatchPicker",
   views? : Map[String, @anode.View] = swatch_picker_views(),
-  init? : SwatchPickerState = SwatchPickerState::zero(),
+  initial? : SwatchPickerState = SwatchPickerState::zero(),
   common_style? : String = swatch_picker_common_style,
   global_style? : String = swatch_picker_global_style,
   update? : (SwatchPickerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -175,7 +175,7 @@ pub fn swatch_picker_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -368,13 +368,13 @@ pub fn quadratic_views() -> Map[String, @anode.View] {
 pub fn quadratic_component(
   name? : String = "Quadratic",
   views? : Map[String, @anode.View] = quadratic_views(),
-  init? : QuadraticState = QuadraticState::zero(),
+  initial? : QuadraticState = QuadraticState::zero(),
   common_style? : String = quadratic_common_style,
   global_style? : String = quadratic_global_style,
   update? : (QuadraticState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     QuadraticState,
   ],
-  compute? : (QuadraticMethod) -> ((
+  compute? : (QuadraticCompute) -> ((
     QuadraticState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -387,15 +387,15 @@ pub fn quadratic_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([Classify, Discriminant] : Array[QuadraticMethod]),
-          QuadraticMethod::name,
+          ([Classify, Discriminant] : Array[QuadraticCompute]),
+          QuadraticCompute::name,
           f,
         )
       None => Map([])

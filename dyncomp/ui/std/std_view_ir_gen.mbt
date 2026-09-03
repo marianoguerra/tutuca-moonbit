@@ -207,13 +207,13 @@ pub fn universal_views() -> Map[String, @anode.View] {
 pub fn universal_component(
   name? : String = "Universal",
   views? : Map[String, @anode.View] = universal_views(),
-  init? : UniversalState = UniversalState::zero(),
+  initial? : UniversalState = UniversalState::zero(),
   common_style? : String = universal_common_style,
   global_style? : String = universal_global_style,
   update? : (UniversalState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     UniversalState,
   ],
-  compute? : (UniversalMethod) -> ((
+  compute? : (UniversalCompute) -> ((
     UniversalState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -226,15 +226,15 @@ pub fn universal_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([Label] : Array[UniversalMethod]),
-          UniversalMethod::name,
+          ([Label] : Array[UniversalCompute]),
+          UniversalCompute::name,
           f,
         )
       None => Map([])
@@ -361,13 +361,13 @@ pub fn stack_views() -> Map[String, @anode.View] {
 pub fn stack_component(
   name? : String = "Stack",
   views? : Map[String, @anode.View] = stack_views(),
-  init? : StackState = StackState::zero(),
+  initial? : StackState = StackState::zero(),
   common_style? : String = stack_common_style,
   global_style? : String = stack_global_style,
   update? : (StackState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     StackState,
   ],
-  compute? : (StackMethod) -> ((
+  compute? : (StackCompute) -> ((
     StackState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -380,15 +380,15 @@ pub fn stack_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([IsRow, Style] : Array[StackMethod]),
-          StackMethod::name,
+          ([IsRow, Style] : Array[StackCompute]),
+          StackCompute::name,
           f,
         )
       None => Map([])
@@ -530,13 +530,13 @@ pub fn grid_views() -> Map[String, @anode.View] {
 pub fn grid_component(
   name? : String = "Grid",
   views? : Map[String, @anode.View] = grid_views(),
-  init? : GridState = GridState::zero(),
+  initial? : GridState = GridState::zero(),
   common_style? : String = grid_common_style,
   global_style? : String = grid_global_style,
   update? : (GridState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     GridState,
   ],
-  compute? : (GridMethod) -> ((GridState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value)?,
+  compute? : (GridCompute) -> ((GridState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -545,15 +545,15 @@ pub fn grid_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([Style] : Array[GridMethod]),
-          GridMethod::name,
+          ([Style] : Array[GridCompute]),
+          GridCompute::name,
           f,
         )
       None => Map([])
@@ -630,7 +630,7 @@ pub fn tab_page_views() -> Map[String, @anode.View] {
 pub fn tab_page_component(
   name? : String = "TabPage",
   views? : Map[String, @anode.View] = tab_page_views(),
-  init? : TabPageState = TabPageState::zero(),
+  initial? : TabPageState = TabPageState::zero(),
   common_style? : String = tab_page_common_style,
   global_style? : String = tab_page_global_style,
   update? : (TabPageState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -644,7 +644,7 @@ pub fn tab_page_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -823,7 +823,7 @@ pub fn tabs_views() -> Map[String, @anode.View] {
 pub fn tabs_component(
   name? : String = "Tabs",
   views? : Map[String, @anode.View] = tabs_views(),
-  init? : TabsState = TabsState::zero(),
+  initial? : TabsState = TabsState::zero(),
   common_style? : String = tabs_common_style,
   global_style? : String = tabs_global_style,
   update? : (TabsState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -852,7 +852,7 @@ pub fn tabs_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -919,13 +919,13 @@ pub fn text_views() -> Map[String, @anode.View] {
 pub fn text_component(
   name? : String = "Text",
   views? : Map[String, @anode.View] = text_views(),
-  init? : TextState = TextState::zero(),
+  initial? : TextState = TextState::zero(),
   common_style? : String = text_common_style,
   global_style? : String = text_global_style,
   update? : (TextState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TextState,
   ],
-  compute? : (TextMethod) -> ((TextState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value)?,
+  compute? : (TextCompute) -> ((TextState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -934,15 +934,15 @@ pub fn text_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([Style] : Array[TextMethod]),
-          TextMethod::name,
+          ([Style] : Array[TextCompute]),
+          TextCompute::name,
           f,
         )
       None => Map([])
@@ -1008,7 +1008,7 @@ pub fn textarea_views() -> Map[String, @anode.View] {
 pub fn textarea_component(
   name? : String = "Textarea",
   views? : Map[String, @anode.View] = textarea_views(),
-  init? : TextareaState = TextareaState::zero(),
+  initial? : TextareaState = TextareaState::zero(),
   common_style? : String = textarea_common_style,
   global_style? : String = textarea_global_style,
   update? : (TextareaState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -1022,7 +1022,7 @@ pub fn textarea_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

@@ -25,7 +25,7 @@ pub(all) struct AltUrlState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..AltUrlState::zero(), label: "Counter" }
+///   initial={ ..AltUrlState::zero(), label: "Counter" }
 pub fn AltUrlState::zero() -> AltUrlState {
   { label: "", url: "", }
 }
@@ -107,7 +107,7 @@ pub(all) struct PsEntryState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..PsEntryState::zero(), label: "Counter" }
+///   initial={ ..PsEntryState::zero(), label: "Counter" }
 pub fn PsEntryState::zero() -> PsEntryState {
   {
     title: "",
@@ -223,15 +223,15 @@ pub let ps_entry_common_style : String = ""
 pub let ps_entry_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum PsEntryMethod {
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+pub(all) enum PsEntryCompute {
   IsSpanish
   LangFlag
   YearDisplay
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn PsEntryMethod::name(self : PsEntryMethod) -> String {
+pub fn PsEntryCompute::name(self : PsEntryCompute) -> String {
   match self {
     IsSpanish => "isSpanish"
     LangFlag => "langFlag"
@@ -315,7 +315,7 @@ pub(all) struct RootState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..RootState::zero(), label: "Counter" }
+///   initial={ ..RootState::zero(), label: "Counter" }
 pub fn RootState::zero() -> RootState {
   {
     allEntries: [],
@@ -420,10 +420,12 @@ impl @component.Fields for RootState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum RootReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum RootMsg {
   Init
   LoadDataOk(Array[@tutuca.Value])
   ClearFilters
@@ -432,7 +434,7 @@ pub(all) enum RootReceive {
   OnToggleFeaturedFirst
   OnToggleSortAsc
   OnToggleSortByEnd
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -443,9 +445,7 @@ pub(all) enum RootReceive {
 /// The same `dec_stmts` the state codec is written from, so a payload and
 /// a field of the same declared type are read by one rule. `None` is a
 /// mismatch anywhere in the shape, however deep.
-fn root_receive_load_data_ok_of_args(
-  args : Array[@tutuca.Value],
-) -> RootReceive? {
+fn root_msg_load_data_ok_of_args(args : Array[@tutuca.Value]) -> RootMsg? {
   guard args.length() == 1 else { return None }
   guard args.get(0) is Some(t1_0) else { return None }
   guard t1_0 is List(u1_0) else { return None }
@@ -470,13 +470,13 @@ fn root_receive_load_data_ok_of_args(
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn RootReceive::from_dispatch(d : @component.Dispatch) -> RootReceive? {
+pub fn RootMsg::from_dispatch(d : @component.Dispatch) -> RootMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("init", []) => Init
       ("loadDataOk", _) =>
-        match root_receive_load_data_ok_of_args(args) {
+        match root_msg_load_data_ok_of_args(args) {
           Some(v) => v
           None => {
             @tutuca.bad_payload(name, "Array[Any]", args)
@@ -509,9 +509,7 @@ pub fn RootReceive::from_dispatch(d : @component.Dispatch) -> RootReceive? {
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn RootReceive::to_dispatch(
-  self : RootReceive,
-) -> (String, Array[@tutuca.Value]) {
+pub fn RootMsg::to_dispatch(self : RootMsg) -> (String, Array[@tutuca.Value]) {
   match self {
     Init => ("init", [])
     LoadDataOk(a0) => ("loadDataOk", [(List(a0.map(x => x)) : @tutuca.Value)])
@@ -530,7 +528,7 @@ pub fn RootReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn RootReceive::send(self : RootReceive, ctx : &@tutuca.Ctx) -> Unit {
+pub fn RootMsg::send(self : RootMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -544,93 +542,13 @@ pub let root_common_style : String = ""
 pub let root_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum RootInput {
-  ClearFilters
-  OnCategoryToggle
-  OnRoleToggle
-  OnToggleFeaturedFirst
-  OnToggleSortAsc
-  OnToggleSortByEnd
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn RootInput::name(self : RootInput) -> String {
-  match self {
-    ClearFilters => "clearFilters"
-    OnCategoryToggle => "onCategoryToggle"
-    OnRoleToggle => "onRoleToggle"
-    OnToggleFeaturedFirst => "onToggleFeaturedFirst"
-    OnToggleSortAsc => "onToggleSortAsc"
-    OnToggleSortByEnd => "onToggleSortByEnd"
-  }
-}
-
-///|
-pub fn RootInput::parse(s : String) -> RootInput? {
-  match s {
-    "clearFilters" => Some(ClearFilters)
-    "onCategoryToggle" => Some(OnCategoryToggle)
-    "onRoleToggle" => Some(OnRoleToggle)
-    "onToggleFeaturedFirst" => Some(OnToggleFeaturedFirst)
-    "onToggleSortAsc" => Some(OnToggleSortAsc)
-    "onToggleSortByEnd" => Some(OnToggleSortByEnd)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to personal_site.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum RootMsg {
-  /// `@on.click="clearFilters …"`
-  ClearFilters
-  /// `@on.click="onCategoryToggle …"`
-  OnCategoryToggle(@tutuca.Value, Bool)
-  /// `@on.click="onRoleToggle …"`
-  OnRoleToggle(@tutuca.Value, Bool)
-  /// `@on.change="onToggleFeaturedFirst …"`
-  OnToggleFeaturedFirst
-  /// `@on.change="onToggleSortAsc …"`
-  OnToggleSortAsc
-  /// `@on.change="onToggleSortByEnd …"`
-  OnToggleSortByEnd
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn RootMsg::from_dispatch(d : @component.Dispatch) -> RootMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("clearFilters", []) => ClearFilters
-      ("onCategoryToggle", [a0, Bool(a1)]) => OnCategoryToggle(a0, a1)
-      ("onRoleToggle", [a0, Bool(a1)]) => OnRoleToggle(a0, a1)
-      ("onToggleFeaturedFirst", []) => OnToggleFeaturedFirst
-      ("onToggleSortAsc", []) => OnToggleSortAsc
-      ("onToggleSortByEnd", []) => OnToggleSortByEnd
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
-pub(all) enum RootMethod {
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+pub(all) enum RootCompute {
   HasActiveFilters
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn RootMethod::name(self : RootMethod) -> String {
+pub fn RootCompute::name(self : RootCompute) -> String {
   match self {
     HasActiveFilters => "hasActiveFilters"
   }

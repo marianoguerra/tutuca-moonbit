@@ -25,7 +25,7 @@
 /// answered in the file's `<script type="tutuca/script">` block, so the whole
 /// component is its view file: nothing is left to pass.
 fn status_comp() -> @component.Component {
-  status_component(init={ message: "", count: 0, })
+  status_component(initial={ message: "", count: 0, })
 }
 
 ///|
@@ -37,7 +37,7 @@ fn status_comp() -> @component.Component {
 /// which is the one thing the script block deliberately does not spell.
 /// `clearDraft` — the message `submit` sends to itself — is in the block.
 fn send_receive_comp() -> @component.Component {
-  send_receive_component(init={ ..SendReceiveState::zero(), draft: "", }, update=(
+  send_receive_component(initial={ ..SendReceiveState::zero(), draft: "", }, update=(
     s,
     msg,
     ctx,
@@ -85,7 +85,7 @@ pub fn send_receive_module() -> @component.ModuleDef {
 /// they are plain functions.
 fn tree_item_comp() -> @component.Component {
   tree_item_component(
-    init={ type_: "dir", label: "A Tree Item", isOpen: true, items: [], },
+    initial={ type_: "dir", label: "A Tree Item", isOpen: true, items: [], },
     compute=m => {
       match m {
         AreChildsVisible =>
@@ -123,7 +123,7 @@ fn tree_item_comp() -> @component.Component {
 /// The root catches the bubbled event and records it — aggregate state kept
 /// without threading callbacks down the tree.
 fn tree_root_comp() -> @component.Component {
-  tree_root_component(init={ ..TreeRootState::zero(), log: [], }, update=(
+  tree_root_component(initial={ ..TreeRootState::zero(), log: [], }, update=(
     s,
     msg,
     _ctx,

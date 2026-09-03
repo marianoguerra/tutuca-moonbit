@@ -127,7 +127,7 @@ them through every component in between. **`provide`** on the producer;
 ```moonbit
 ///|
 fn theme_comp() -> @component.Component {
-  theme_component(init={ ..ThemeState::zero(), color: "blue" }, provide={
+  theme_component(initial={ ..ThemeState::zero(), color: "blue" }, provide={
     "color": ".color",
   })
 }
@@ -193,7 +193,7 @@ fn root_comp() -> @component.Component {
   },
   name="Root",
   // omitted
-    init=RootState::{ items: {}, selectedKey: "" },
+    initial=RootState::{ items: {}, selectedKey: "" },
   provide={
       "items": ".items",                  // the whole sequence
       "selected": ".items[.selectedKey]", // seq-access to one entry

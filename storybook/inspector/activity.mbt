@@ -23,7 +23,7 @@ let activity_cap : Int = 50
 ///
 /// The state and the views live in activity.html.
 fn activity_entry_comp() -> @component.Component {
-  activity_entry_component(init={
+  activity_entry_component(initial={
     ..ActivityEntryState::zero(),
     hasAfter: true,
   })
@@ -36,7 +36,7 @@ fn activity_entry_comp() -> @component.Component {
 /// caps the list. Renders an empty hint until the first entry lands.
 fn activity_log_comp() -> @component.Component {
   activity_log_component(update=(s, msg, _ctx) => {
-    match ActivityLogReceive::from_dispatch(msg) {
+    match ActivityLogMsg::from_dispatch(msg) {
       Some(AppendEntry(entry)) => {
         let out : Array[@tutuca.Value] = [entry]
         for i, e in s.events {

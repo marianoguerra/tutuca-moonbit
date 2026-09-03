@@ -393,7 +393,7 @@ fn emit_component(
   // -- state ---------------------------------------------------------------
   // First, because everything below may refer to its types.
   if state is Some(def) {
-    emit_state(t, v, def, inits, derives, surface, out)
+    emit_state(t, v, def, inits, derives, surface, answered.inputs, out)
   }
 
   // -- views ---------------------------------------------------------------
@@ -420,71 +420,28 @@ fn emit_component(
     views.global_style,
   )
 
-  // -- inputs --------------------------------------------------------------
-  if !surface.inputs.is_empty() {
-    let unanswered = surface.inputs.filter(i => {
-      !answered.inputs.contains(i.name)
-    })
-    let input_variants = variants_for(surface.inputs.map(i => i.name))
-    emit_name_enum(
-      out,
-      "Every bare `@on` handler name the views reference.",
-      "\{t}Input",
-      "name",
-      input_variants,
-      derives,
-    )
-    out.write_string(
-      "///|\npub fn \{t}Input::parse(s : String) -> \{t}Input? {\n  match s {\n",
-    )
-    for pair in input_variants {
-      out.write_string("    \{quote(pair.0)} => Some(\{pair.1})\n")
-    }
-    out.write_string("    _ => None\n  }\n}\n\n")
-
-    // The typed decode: this is the point of the whole generator.
-    let answered_note = absent_note(
-      answered.inputs,
-      "`update` is consulted only for a dispatch the block did not claim, so\nan arm for one of these could never run.",
-    )
-    out.write_string(
-      "///|\n" +
-      "/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.\n" +
-      "/// Payload types are\n" +
-      "/// inferred from the argument shapes written at the call sites, so a\n" +
-      "/// handler added to \{source_file} breaks every `match` over this type\n" +
-      "/// until it is handled.\n" +
-      answered_note +
-      "pub(all) enum \{t}Msg {\n",
-    )
-    for sig in unanswered {
-      emit_msg_variant(out, sig, variant_of(input_variants, sig.name))
-    }
-    out.write_string(
-      "  /// A dispatch the views do not declare, or a declared name\n" +
-      "  /// whose runtime arguments did not match the inferred shape.\n" +
-      "  Unknown(String, Array[@tutuca.Value])\n" +
-      // No derives: @tutuca.Value carries Fn and &Obj, so it is neither Eq
-      // nor Debug, and a payload of it would make the derive fail.
-      "}\n\n",
-    )
-    out.write_string(
-      "///|\n" +
-      "/// None for an `Intent` — a routed name is raised by component code and\n" +
-      "/// never written in a view, so the views cannot type it. A `Receive` the\n" +
-      "/// views do not name decodes to `Unknown`, which is what the sibling\n" +
-      "/// `<T>Receive` (the schema's half of the same bucket) is for.\n" +
-      "pub fn \{t}Msg::from_dispatch(d : @component.Dispatch) -> \{t}Msg? {\n" +
-      "  guard d is Receive(name, args) else { return None }\n" +
-      "  Some(\n" +
-      "    match (name, args) {\n",
-    )
-    for sig in unanswered {
-      out.write_string("  ")
-      emit_msg_arm(out, sig, variant_of(input_variants, sig.name))
-    }
-    out.write_string("      _ => Unknown(name, args)\n    },\n  )\n}\n\n")
+  // -- the addressed bucket, for a file with no schema ---------------------
+  // With a schema, `emit_state` above emitted it from the two halves merged.
+  // Without one there is still a bucket to type — the view names, with the
+  // shapes their call sites imply — and a file that declares no state is an
+  // ordinary thing: views in HTML, state as a MoonBit struct.
+  if state is None && !surface.inputs.is_empty() {
+    emit_view_only_msgs(t, surface, answered.inputs, out)
   }
+
+  // -- the addressed bucket ------------------------------------------------
+  // `<T>Msg` is emitted by `emit_msgs` beside the state, because it is the
+  // schema's `message` variant merged with these view names and the schema is
+  // what types the overlap. There used to be a second enum here — the view
+  // names alone, shapes inferred from the call sites — and it was a strictly
+  // weaker view of that one: every name in it was in the other, typed better
+  // wherever the schema said anything. Two types over one bucket meant two
+  // matches, or a choice between them nothing documented.
+  //
+  // `<T>Input` went with it. It held every `@on` name with no payloads and
+  // keyed the `swap` bucket, and `swap` is gone — a node that replaces itself
+  // answers `Replace(v)` from an ordinary `update` arm now, so nothing was
+  // left for a name-only enum to key.
 
   // -- $-callables ---------------------------------------------------------
   // The views' `$name` calls PLUS the `pred` / `compute` declarations in the
@@ -497,8 +454,8 @@ fn emit_component(
     let method_variants = variants_for(all_methods)
     emit_name_enum(
       out,
-      "Every `$name` the views call.",
-      "\{t}Method",
+      "Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.",
+      "\{t}Compute",
       "name",
       method_variants,
       derives,
@@ -788,7 +745,7 @@ fn emit_state_only(
   }
   // A schema-only file has no call sites, so the `receive` merge has nothing
   // to merge and nothing to disagree with.
-  emit_state(t, v, def, inits, derives, empty_surface, out)
+  emit_state(t, v, def, inits, derives, empty_surface, [], out)
   let no_views : @viewfile.ViewSet = {
     name: def.component_name(name),
     views: [],

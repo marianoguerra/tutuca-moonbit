@@ -33,7 +33,7 @@ pub(all) struct StateEditorRowState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..StateEditorRowState::zero(), label: "Counter" }
+///   initial={ ..StateEditorRowState::zero(), label: "Counter" }
 pub fn StateEditorRowState::zero() -> StateEditorRowState {
   {
     name: "",
@@ -94,12 +94,14 @@ impl @component.Fields for StateEditorRowState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum StateEditorRowReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum StateEditorRowMsg {
   Edit(@tutuca.Value)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -117,9 +119,9 @@ pub(all) enum StateEditorRowReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn StateEditorRowReceive::from_dispatch(
+pub fn StateEditorRowMsg::from_dispatch(
   d : @component.Dispatch,
-) -> StateEditorRowReceive? {
+) -> StateEditorRowMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -137,8 +139,8 @@ pub fn StateEditorRowReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn StateEditorRowReceive::to_dispatch(
-  self : StateEditorRowReceive,
+pub fn StateEditorRowMsg::to_dispatch(
+  self : StateEditorRowMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Edit(a0) => ("edit", [a0])
@@ -151,8 +153,8 @@ pub fn StateEditorRowReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn StateEditorRowReceive::send(
-  self : StateEditorRowReceive,
+pub fn StateEditorRowMsg::send(
+  self : StateEditorRowMsg,
   ctx : &@tutuca.Ctx,
 ) -> Unit {
   let (name, args) = self.to_dispatch()
@@ -166,58 +168,6 @@ pub let state_editor_row_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let state_editor_row_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum StateEditorRowInput {
-  Edit
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn StateEditorRowInput::name(self : StateEditorRowInput) -> String {
-  match self {
-    Edit => "edit"
-  }
-}
-
-///|
-pub fn StateEditorRowInput::parse(s : String) -> StateEditorRowInput? {
-  match s {
-    "edit" => Some(Edit)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to state_editor.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum StateEditorRowMsg {
-  /// `@on.input="edit …"`
-  Edit(@tutuca.Value)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn StateEditorRowMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> StateEditorRowMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("edit", [a0]) => Edit(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -275,7 +225,7 @@ pub(all) struct StateEditorState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..StateEditorState::zero(), label: "Counter" }
+///   initial={ ..StateEditorState::zero(), label: "Counter" }
 pub fn StateEditorState::zero() -> StateEditorState {
   { target: Null, rows: [], name: "", }
 }

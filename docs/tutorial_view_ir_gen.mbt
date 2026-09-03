@@ -160,7 +160,7 @@ fn counter_inline_update(
 pub fn counter_component(
   name? : String = "Counter",
   views? : Map[String, @anode.View] = counter_views(),
-  init? : CounterState = CounterState::zero(),
+  initial? : CounterState = CounterState::zero(),
   common_style? : String = counter_common_style,
   global_style? : String = counter_global_style,
   update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -174,7 +174,7 @@ pub fn counter_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => {
@@ -277,7 +277,7 @@ pub fn profile_views() -> Map[String, @anode.View] {
 pub fn profile_component(
   name? : String = "Profile",
   views? : Map[String, @anode.View] = profile_views(),
-  init? : ProfileState = ProfileState::zero(),
+  initial? : ProfileState = ProfileState::zero(),
   common_style? : String = profile_common_style,
   global_style? : String = profile_global_style,
   update? : (ProfileState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -291,7 +291,7 @@ pub fn profile_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -373,7 +373,7 @@ pub fn search_views() -> Map[String, @anode.View] {
 pub fn search_component(
   name? : String = "Search",
   views? : Map[String, @anode.View] = search_views(),
-  init? : SearchState = SearchState::zero(),
+  initial? : SearchState = SearchState::zero(),
   common_style? : String = search_common_style,
   global_style? : String = search_global_style,
   update? : (SearchState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -387,7 +387,7 @@ pub fn search_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -472,7 +472,7 @@ pub fn toggle_views() -> Map[String, @anode.View] {
 pub fn toggle_component(
   name? : String = "Toggle",
   views? : Map[String, @anode.View] = toggle_views(),
-  init? : ToggleState = ToggleState::zero(),
+  initial? : ToggleState = ToggleState::zero(),
   common_style? : String = toggle_common_style,
   global_style? : String = toggle_global_style,
   update? : (ToggleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -486,7 +486,7 @@ pub fn toggle_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -541,7 +541,7 @@ pub fn fruits_views() -> Map[String, @anode.View] {
 pub fn fruits_component(
   name? : String = "Fruits",
   views? : Map[String, @anode.View] = fruits_views(),
-  init? : FruitsState = FruitsState::zero(),
+  initial? : FruitsState = FruitsState::zero(),
   common_style? : String = fruits_common_style,
   global_style? : String = fruits_global_style,
   update? : (FruitsState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -562,7 +562,7 @@ pub fn fruits_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -631,7 +631,7 @@ pub fn greeting_views() -> Map[String, @anode.View] {
 pub fn greeting_component(
   name? : String = "Greeting",
   views? : Map[String, @anode.View] = greeting_views(),
-  init? : GreetingState = GreetingState::zero(),
+  initial? : GreetingState = GreetingState::zero(),
   common_style? : String = greeting_common_style,
   global_style? : String = greeting_global_style,
   update? : (GreetingState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -645,7 +645,7 @@ pub fn greeting_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -695,7 +695,7 @@ pub fn page_views() -> Map[String, @anode.View] {
 pub fn page_component(
   name? : String = "Page",
   views? : Map[String, @anode.View] = page_views(),
-  init? : PageState = PageState::zero(),
+  initial? : PageState = PageState::zero(),
   common_style? : String = page_common_style,
   global_style? : String = page_global_style,
   update? : (PageState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -709,7 +709,7 @@ pub fn page_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -756,7 +756,7 @@ pub fn status_views() -> Map[String, @anode.View] {
 pub fn status_component(
   name? : String = "Status",
   views? : Map[String, @anode.View] = status_views(),
-  init? : StatusState = StatusState::zero(),
+  initial? : StatusState = StatusState::zero(),
   common_style? : String = status_common_style,
   global_style? : String = status_global_style,
   update? : (StatusState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -770,7 +770,7 @@ pub fn status_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -840,7 +840,7 @@ pub fn chat_views() -> Map[String, @anode.View] {
 pub fn chat_component(
   name? : String = "Chat",
   views? : Map[String, @anode.View] = chat_views(),
-  init? : ChatState = ChatState::zero(),
+  initial? : ChatState = ChatState::zero(),
   common_style? : String = chat_common_style,
   global_style? : String = chat_global_style,
   update? : (ChatState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -854,7 +854,7 @@ pub fn chat_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -913,7 +913,7 @@ pub fn quotes_views() -> Map[String, @anode.View] {
 pub fn quotes_component(
   name? : String = "Quotes",
   views? : Map[String, @anode.View] = quotes_views(),
-  init? : QuotesState = QuotesState::zero(),
+  initial? : QuotesState = QuotesState::zero(),
   common_style? : String = quotes_common_style,
   global_style? : String = quotes_global_style,
   update? : (QuotesState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -927,7 +927,7 @@ pub fn quotes_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -987,7 +987,7 @@ pub fn features_views() -> Map[String, @anode.View] {
 pub fn features_component(
   name? : String = "Features",
   views? : Map[String, @anode.View] = features_views(),
-  init? : FeaturesState = FeaturesState::zero(),
+  initial? : FeaturesState = FeaturesState::zero(),
   common_style? : String = features_common_style,
   global_style? : String = features_global_style,
   update? : (FeaturesState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -1001,7 +1001,7 @@ pub fn features_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

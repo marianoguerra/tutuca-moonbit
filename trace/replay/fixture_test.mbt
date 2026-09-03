@@ -65,7 +65,7 @@ fn row_comp() -> @component.Component {
   @component.component(
     name="Row",
     views=row_views(),
-    init=RowState::{ label: "", n: 0, },
+    initial=RowState::{ label: "", n: 0, },
     update=(s, msg, ctx) => {
       match msg {
         // Counting up, and asking the HOST to persist it. The intent is what
@@ -158,7 +158,7 @@ fn board_comp() -> @component.Component {
   @component.component(
     name="Board",
     views=board_views(),
-    init=BoardState::{ title: "", rows: [], },
+    initial=BoardState::{ title: "", rows: [], },
     update=(s, msg, ctx) => {
       match msg {
         // The cross-level event: the board reacts to one message by sending into

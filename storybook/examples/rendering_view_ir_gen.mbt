@@ -194,13 +194,13 @@ fn push_view_inline_update(
 pub fn push_view_component(
   name? : String = "PushView",
   views? : Map[String, @anode.View] = push_view_views(),
-  init? : PushViewState = PushViewState::zero(),
+  initial? : PushViewState = PushViewState::zero(),
   common_style? : String = push_view_common_style,
   global_style? : String = push_view_global_style,
   update? : (PushViewState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     PushViewState,
   ],
-  compute? : (PushViewMethod) -> ((
+  compute? : (PushViewCompute) -> ((
     PushViewState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -220,7 +220,7 @@ pub fn push_view_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => {
@@ -236,8 +236,8 @@ pub fn push_view_component(
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([GetToggleLabel] : Array[PushViewMethod]),
-          PushViewMethod::name,
+          ([GetToggleLabel] : Array[PushViewCompute]),
+          PushViewCompute::name,
           f,
         )
       None => Map([])
@@ -346,13 +346,13 @@ pub fn seq_item_access_views() -> Map[String, @anode.View] {
 pub fn seq_item_access_component(
   name? : String = "SeqItemAccess",
   views? : Map[String, @anode.View] = seq_item_access_views(),
-  init? : SeqItemAccessState = SeqItemAccessState::zero(),
+  initial? : SeqItemAccessState = SeqItemAccessState::zero(),
   common_style? : String = seq_item_access_common_style,
   global_style? : String = seq_item_access_global_style,
   update? : (SeqItemAccessState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SeqItemAccessState,
   ],
-  compute? : (SeqItemAccessMethod) -> ((
+  compute? : (SeqItemAccessCompute) -> ((
     SeqItemAccessState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -365,15 +365,15 @@ pub fn seq_item_access_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([GetMaxIndex] : Array[SeqItemAccessMethod]),
-          SeqItemAccessMethod::name,
+          ([GetMaxIndex] : Array[SeqItemAccessCompute]),
+          SeqItemAccessCompute::name,
           f,
         )
       None => Map([])
@@ -595,13 +595,13 @@ fn pagination_inline_compute() -> Map[
 pub fn pagination_component(
   name? : String = "Pagination",
   views? : Map[String, @anode.View] = pagination_views(),
-  init? : PaginationState = PaginationState::zero(),
+  initial? : PaginationState = PaginationState::zero(),
   common_style? : String = pagination_common_style,
   global_style? : String = pagination_global_style,
   update? : (PaginationState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     PaginationState,
   ],
-  compute? : (PaginationMethod) -> ((
+  compute? : (PaginationCompute) -> ((
     PaginationState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -619,7 +619,7 @@ pub fn pagination_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update=(s, msg, ctx) => {
@@ -636,8 +636,8 @@ pub fn pagination_component(
       let bucket = match compute {
         Some(f) =>
           @component.build_bucket(
-            ([IsFirstPage, IsLastPage, PageLabel] : Array[PaginationMethod]),
-            PaginationMethod::name,
+            ([IsFirstPage, IsLastPage, PageLabel] : Array[PaginationCompute]),
+            PaginationCompute::name,
             f,
           )
         None => Map([])

@@ -26,7 +26,7 @@ pub(all) struct TableRowState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..TableRowState::zero(), label: "Counter" }
+///   initial={ ..TableRowState::zero(), label: "Counter" }
 pub fn TableRowState::zero() -> TableRowState {
   { name: "", qty: 0, price: 0.0, }
 }
@@ -102,7 +102,7 @@ pub(all) struct ItemTableState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ItemTableState::zero(), label: "Counter" }
+///   initial={ ..ItemTableState::zero(), label: "Counter" }
 pub fn ItemTableState::zero() -> ItemTableState {
   { rows: [], }
 }
@@ -174,7 +174,7 @@ pub(all) struct SelectOptionState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SelectOptionState::zero(), label: "Counter" }
+///   initial={ ..SelectOptionState::zero(), label: "Counter" }
 pub fn SelectOptionState::zero() -> SelectOptionState {
   { value: "", label: "", }
 }
@@ -244,7 +244,7 @@ pub(all) struct ItemSelectState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ItemSelectState::zero(), label: "Counter" }
+///   initial={ ..ItemSelectState::zero(), label: "Counter" }
 pub fn ItemSelectState::zero() -> ItemSelectState {
   { options: [], current: "", }
 }
@@ -323,7 +323,7 @@ pub(all) struct PseudoXDemoState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..PseudoXDemoState::zero(), label: "Counter" }
+///   initial={ ..PseudoXDemoState::zero(), label: "Counter" }
 pub fn PseudoXDemoState::zero() -> PseudoXDemoState {
   { table: Null, select: Null, }
 }

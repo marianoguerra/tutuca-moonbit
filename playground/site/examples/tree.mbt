@@ -8,7 +8,7 @@
 /// component renders ITSELF, recursively, stopping where `items` is empty.
 fn tree_item_comp() -> @component.Component {
   tree_item_component(
-    init=TreeItemState::{
+    initial=TreeItemState::{
       type_: "dir",
       label: "A Tree Item",
       isOpen: true,
@@ -46,7 +46,7 @@ fn tree_item_comp() -> @component.Component {
 ///|
 fn tree_root_comp() -> @component.Component {
   tree_root_component(
-    init={ ..TreeRootState::zero(), log: [] },
+    initial={ ..TreeRootState::zero(), log: [] },
     update=(s, msg, _ctx) => match msg {
       Intent("treeItemSelected", args) => {
         let label = match args {

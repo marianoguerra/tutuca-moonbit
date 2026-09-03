@@ -696,7 +696,7 @@ fn emit_ir_component(
 ///
 /// The DECLARED initial states, and not the schema's `zero()`. The zero is what
 /// a field falls back to, not a state anybody said the component starts in: a
-/// wrapper is normally called with `init~`, which this cannot see, so a rule
+/// wrapper is normally called with `initial~`, which this cannot see, so a rule
 /// that is false of all-zeros and true of every real fixture is a component
 /// that works. Asserting over the zero would fail those, which is the shape of
 /// a check people turn off.

@@ -37,7 +37,7 @@ fn chk_comp(
   @component.component(
     views={ "main": @anode.View::new("main", raw_view=view) },
     name~,
-    init=ChkState::{ n: 0, },
+    initial=ChkState::{ n: 0, },
     provide~,
     lookup~,
   )

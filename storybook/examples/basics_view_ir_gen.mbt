@@ -73,7 +73,7 @@ pub fn minimum_viable_component_views() -> Map[String, @anode.View] {
 pub fn minimum_viable_component_component(
   name? : String = "MinimumViableComponent",
   views? : Map[String, @anode.View] = minimum_viable_component_views(),
-  init? : MinimumViableComponentState = MinimumViableComponentState::zero(),
+  initial? : MinimumViableComponentState = MinimumViableComponentState::zero(),
   common_style? : String = minimum_viable_component_common_style,
   global_style? : String = minimum_viable_component_global_style,
   update? : (MinimumViableComponentState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -87,7 +87,7 @@ pub fn minimum_viable_component_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -129,7 +129,7 @@ pub fn static_view_component_views() -> Map[String, @anode.View] {
 pub fn static_view_component_component(
   name? : String = "StaticViewComponent",
   views? : Map[String, @anode.View] = static_view_component_views(),
-  init? : StaticViewComponentState = StaticViewComponentState::zero(),
+  initial? : StaticViewComponentState = StaticViewComponentState::zero(),
   common_style? : String = static_view_component_common_style,
   global_style? : String = static_view_component_global_style,
   update? : (StaticViewComponentState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -143,7 +143,7 @@ pub fn static_view_component_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -222,13 +222,13 @@ pub fn text_directive_views() -> Map[String, @anode.View] {
 pub fn text_directive_component(
   name? : String = "TextDirective",
   views? : Map[String, @anode.View] = text_directive_views(),
-  init? : TextDirectiveState = TextDirectiveState::zero(),
+  initial? : TextDirectiveState = TextDirectiveState::zero(),
   common_style? : String = text_directive_common_style,
   global_style? : String = text_directive_global_style,
   update? : (TextDirectiveState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TextDirectiveState,
   ],
-  compute? : (TextDirectiveMethod) -> ((
+  compute? : (TextDirectiveCompute) -> ((
     TextDirectiveState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -241,15 +241,15 @@ pub fn text_directive_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([GetStrUpper] : Array[TextDirectiveMethod]),
-          TextDirectiveMethod::name,
+          ([GetStrUpper] : Array[TextDirectiveCompute]),
+          TextDirectiveCompute::name,
           f,
         )
       None => Map([])
@@ -301,7 +301,7 @@ pub fn danger_set_inner_html_views() -> Map[String, @anode.View] {
 pub fn danger_set_inner_html_component(
   name? : String = "DangerSetInnerHtml",
   views? : Map[String, @anode.View] = danger_set_inner_html_views(),
-  init? : DangerSetInnerHtmlState = DangerSetInnerHtmlState::zero(),
+  initial? : DangerSetInnerHtmlState = DangerSetInnerHtmlState::zero(),
   common_style? : String = danger_set_inner_html_common_style,
   global_style? : String = danger_set_inner_html_global_style,
   update? : (DangerSetInnerHtmlState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -315,7 +315,7 @@ pub fn danger_set_inner_html_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -366,7 +366,7 @@ pub fn set_inner_md_views() -> Map[String, @anode.View] {
 pub fn set_inner_md_component(
   name? : String = "SetInnerMd",
   views? : Map[String, @anode.View] = set_inner_md_views(),
-  init? : SetInnerMdState = SetInnerMdState::zero(),
+  initial? : SetInnerMdState = SetInnerMdState::zero(),
   common_style? : String = set_inner_md_common_style,
   global_style? : String = set_inner_md_global_style,
   update? : (SetInnerMdState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -380,7 +380,7 @@ pub fn set_inner_md_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

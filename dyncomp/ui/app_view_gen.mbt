@@ -44,7 +44,7 @@ pub(all) struct PaletteRowState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..PaletteRowState::zero(), label: "Counter" }
+///   initial={ ..PaletteRowState::zero(), label: "Counter" }
 pub fn PaletteRowState::zero() -> PaletteRowState {
   {
     module_: "",
@@ -112,13 +112,15 @@ impl @component.Fields for PaletteRowState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum PaletteRowReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum PaletteRowMsg {
   SetSelected(Bool)
   Pick(Bool)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -136,9 +138,7 @@ pub(all) enum PaletteRowReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn PaletteRowReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> PaletteRowReceive? {
+pub fn PaletteRowMsg::from_dispatch(d : @component.Dispatch) -> PaletteRowMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -158,8 +158,8 @@ pub fn PaletteRowReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn PaletteRowReceive::to_dispatch(
-  self : PaletteRowReceive,
+pub fn PaletteRowMsg::to_dispatch(
+  self : PaletteRowMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     SetSelected(a0) => ("setSelected", [Bool(a0)])
@@ -173,10 +173,7 @@ pub fn PaletteRowReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn PaletteRowReceive::send(
-  self : PaletteRowReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn PaletteRowMsg::send(self : PaletteRowMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -266,56 +263,6 @@ pub let palette_row_common_style : String = ""
 pub let palette_row_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum PaletteRowInput {
-  Pick
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PaletteRowInput::name(self : PaletteRowInput) -> String {
-  match self {
-    Pick => "pick"
-  }
-}
-
-///|
-pub fn PaletteRowInput::parse(s : String) -> PaletteRowInput? {
-  match s {
-    "pick" => Some(Pick)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to app.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum PaletteRowMsg {
-  /// `@on.click="pick …"`
-  Pick(Bool)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn PaletteRowMsg::from_dispatch(d : @component.Dispatch) -> PaletteRowMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("pick", [Bool(a0)]) => Pick(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no
@@ -378,7 +325,7 @@ pub(all) struct CommandBarState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..CommandBarState::zero(), label: "Counter" }
+///   initial={ ..CommandBarState::zero(), label: "Counter" }
 pub fn CommandBarState::zero() -> CommandBarState {
   { query: "", hits: [], cursor: 0, configure: false, emptyMessage: "", }
 }
@@ -443,15 +390,17 @@ impl @component.Fields for CommandBarState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum CommandBarReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum CommandBarMsg {
   SetCursor(Int)
   Close
   Nav(String)
   SetQuery(String)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -469,9 +418,7 @@ pub(all) enum CommandBarReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn CommandBarReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> CommandBarReceive? {
+pub fn CommandBarMsg::from_dispatch(d : @component.Dispatch) -> CommandBarMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -497,8 +444,8 @@ pub fn CommandBarReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn CommandBarReceive::to_dispatch(
-  self : CommandBarReceive,
+pub fn CommandBarMsg::to_dispatch(
+  self : CommandBarMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     SetCursor(a0) => ("setCursor", [Num(a0.to_double())])
@@ -514,10 +461,7 @@ pub fn CommandBarReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn CommandBarReceive::send(
-  self : CommandBarReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn CommandBarMsg::send(self : CommandBarMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -529,68 +473,6 @@ pub let command_bar_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let command_bar_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum CommandBarInput {
-  Close
-  Nav
-  SetQuery
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CommandBarInput::name(self : CommandBarInput) -> String {
-  match self {
-    Close => "close"
-    Nav => "nav"
-    SetQuery => "setQuery"
-  }
-}
-
-///|
-pub fn CommandBarInput::parse(s : String) -> CommandBarInput? {
-  match s {
-    "close" => Some(Close)
-    "nav" => Some(Nav)
-    "setQuery" => Some(SetQuery)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to app.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum CommandBarMsg {
-  /// `@on.click="close …"`
-  Close
-  /// `@on.keydown="nav …"`
-  Nav(String)
-  /// `@on.input="setQuery …"`
-  SetQuery(String)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn CommandBarMsg::from_dispatch(d : @component.Dispatch) -> CommandBarMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("close", []) => Close
-      ("nav", [Str(a0)]) => Nav(a0)
-      ("setQuery", [Str(a0)]) => SetQuery(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -657,7 +539,7 @@ pub(all) struct SchemaFieldState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SchemaFieldState::zero(), label: "Counter" }
+///   initial={ ..SchemaFieldState::zero(), label: "Counter" }
 pub fn SchemaFieldState::zero() -> SchemaFieldState {
   {
     name: "",
@@ -751,12 +633,14 @@ impl @component.Fields for SchemaFieldState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum SchemaFieldReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum SchemaFieldMsg {
   Edit(@tutuca.Value)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -774,9 +658,9 @@ pub(all) enum SchemaFieldReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn SchemaFieldReceive::from_dispatch(
+pub fn SchemaFieldMsg::from_dispatch(
   d : @component.Dispatch,
-) -> SchemaFieldReceive? {
+) -> SchemaFieldMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -794,8 +678,8 @@ pub fn SchemaFieldReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn SchemaFieldReceive::to_dispatch(
-  self : SchemaFieldReceive,
+pub fn SchemaFieldMsg::to_dispatch(
+  self : SchemaFieldMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Edit(a0) => ("edit", [a0])
@@ -808,10 +692,7 @@ pub fn SchemaFieldReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn SchemaFieldReceive::send(
-  self : SchemaFieldReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn SchemaFieldMsg::send(self : SchemaFieldMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -896,58 +777,6 @@ pub let schema_field_common_style : String = ""
 pub let schema_field_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum SchemaFieldInput {
-  Edit
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaFieldInput::name(self : SchemaFieldInput) -> String {
-  match self {
-    Edit => "edit"
-  }
-}
-
-///|
-pub fn SchemaFieldInput::parse(s : String) -> SchemaFieldInput? {
-  match s {
-    "edit" => Some(Edit)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to app.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum SchemaFieldMsg {
-  /// `@on.input="edit …"`
-  Edit(@tutuca.Value)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn SchemaFieldMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> SchemaFieldMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("edit", [a0]) => Edit(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no
@@ -1016,7 +845,7 @@ pub(all) struct SchemaFormState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SchemaFormState::zero(), label: "Counter" }
+///   initial={ ..SchemaFormState::zero(), label: "Counter" }
 pub fn SchemaFormState::zero() -> SchemaFormState {
   {
     module_: "",
@@ -1108,15 +937,17 @@ impl @component.Fields for SchemaFormState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum SchemaFormReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum SchemaFormMsg {
   ShowErrors(Map[String, String])
   Cancel
   Create
   UseInit(@tutuca.Value)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -1127,9 +958,9 @@ pub(all) enum SchemaFormReceive {
 /// The same `dec_stmts` the state codec is written from, so a payload and
 /// a field of the same declared type are read by one rule. `None` is a
 /// mismatch anywhere in the shape, however deep.
-fn schema_form_receive_show_errors_of_args(
+fn schema_form_msg_show_errors_of_args(
   args : Array[@tutuca.Value],
-) -> SchemaFormReceive? {
+) -> SchemaFormMsg? {
   guard args.length() == 1 else { return None }
   guard args.get(0) is Some(t1_0) else { return None }
   guard t1_0 is Map(u1_0) else { return None }
@@ -1154,14 +985,12 @@ fn schema_form_receive_show_errors_of_args(
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn SchemaFormReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> SchemaFormReceive? {
+pub fn SchemaFormMsg::from_dispatch(d : @component.Dispatch) -> SchemaFormMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("showErrors", _) =>
-        match schema_form_receive_show_errors_of_args(args) {
+        match schema_form_msg_show_errors_of_args(args) {
           Some(v) => v
           None => {
             @tutuca.bad_payload(name, "Map[String, String]", args)
@@ -1187,8 +1016,8 @@ pub fn SchemaFormReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn SchemaFormReceive::to_dispatch(
-  self : SchemaFormReceive,
+pub fn SchemaFormMsg::to_dispatch(
+  self : SchemaFormMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     ShowErrors(a0) =>
@@ -1216,10 +1045,7 @@ pub fn SchemaFormReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn SchemaFormReceive::send(
-  self : SchemaFormReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn SchemaFormMsg::send(self : SchemaFormMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -1231,68 +1057,6 @@ pub let schema_form_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let schema_form_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum SchemaFormInput {
-  Cancel
-  Create
-  UseInit
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaFormInput::name(self : SchemaFormInput) -> String {
-  match self {
-    Cancel => "cancel"
-    Create => "create"
-    UseInit => "useInit"
-  }
-}
-
-///|
-pub fn SchemaFormInput::parse(s : String) -> SchemaFormInput? {
-  match s {
-    "cancel" => Some(Cancel)
-    "create" => Some(Create)
-    "useInit" => Some(UseInit)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to app.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum SchemaFormMsg {
-  /// `@on.click="cancel …"`
-  Cancel
-  /// `@on.click="create …"`
-  Create
-  /// `@on.click="useInit …"`
-  UseInit(@tutuca.Value)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn SchemaFormMsg::from_dispatch(d : @component.Dispatch) -> SchemaFormMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("cancel", []) => Cancel
-      ("create", []) => Create
-      ("useInit", [a0]) => UseInit(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -1362,7 +1126,7 @@ pub(all) struct ConfigPanelState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ConfigPanelState::zero(), label: "Counter" }
+///   initial={ ..ConfigPanelState::zero(), label: "Counter" }
 pub fn ConfigPanelState::zero() -> ConfigPanelState {
   { title: "", mode: "", target: Null, form: Null, }
 }
@@ -1416,12 +1180,14 @@ impl @component.Fields for ConfigPanelState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum ConfigPanelReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum ConfigPanelMsg {
   Close
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -1439,9 +1205,9 @@ pub(all) enum ConfigPanelReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn ConfigPanelReceive::from_dispatch(
+pub fn ConfigPanelMsg::from_dispatch(
   d : @component.Dispatch,
-) -> ConfigPanelReceive? {
+) -> ConfigPanelMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -1459,8 +1225,8 @@ pub fn ConfigPanelReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn ConfigPanelReceive::to_dispatch(
-  self : ConfigPanelReceive,
+pub fn ConfigPanelMsg::to_dispatch(
+  self : ConfigPanelMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Close => ("close", [])
@@ -1473,10 +1239,7 @@ pub fn ConfigPanelReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn ConfigPanelReceive::send(
-  self : ConfigPanelReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn ConfigPanelMsg::send(self : ConfigPanelMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -1561,58 +1324,6 @@ pub let config_panel_common_style : String = ""
 pub let config_panel_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum ConfigPanelInput {
-  Close
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ConfigPanelInput::name(self : ConfigPanelInput) -> String {
-  match self {
-    Close => "close"
-  }
-}
-
-///|
-pub fn ConfigPanelInput::parse(s : String) -> ConfigPanelInput? {
-  match s {
-    "close" => Some(Close)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to app.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum ConfigPanelMsg {
-  /// `@on.click="close …"`
-  Close
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn ConfigPanelMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> ConfigPanelMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("close", []) => Close
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no
@@ -1688,7 +1399,7 @@ pub(all) struct UniversalAppState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..UniversalAppState::zero(), label: "Counter" }
+///   initial={ ..UniversalAppState::zero(), label: "Counter" }
 pub fn UniversalAppState::zero() -> UniversalAppState {
   {
     root: Null,
@@ -1760,10 +1471,12 @@ impl @component.Fields for UniversalAppState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum UniversalAppReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum UniversalAppMsg {
   /// A bundle loaded: the catalog changed, so a bar showing results has to
   /// say so.
   CatalogChanged(String)
@@ -1772,7 +1485,7 @@ pub(all) enum UniversalAppReceive {
   FilesDropped(String)
   OpenCommand
   ToggleMode
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -1790,9 +1503,9 @@ pub(all) enum UniversalAppReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn UniversalAppReceive::from_dispatch(
+pub fn UniversalAppMsg::from_dispatch(
   d : @component.Dispatch,
-) -> UniversalAppReceive? {
+) -> UniversalAppMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -1818,8 +1531,8 @@ pub fn UniversalAppReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn UniversalAppReceive::to_dispatch(
-  self : UniversalAppReceive,
+pub fn UniversalAppMsg::to_dispatch(
+  self : UniversalAppMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     CatalogChanged(a0) => ("catalogChanged", [Str(a0)])
@@ -1836,8 +1549,8 @@ pub fn UniversalAppReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn UniversalAppReceive::send(
-  self : UniversalAppReceive,
+pub fn UniversalAppMsg::send(
+  self : UniversalAppMsg,
   ctx : &@tutuca.Ctx,
 ) -> Unit {
   let (name, args) = self.to_dispatch()
@@ -1853,77 +1566,13 @@ pub let universal_app_common_style : String = ""
 pub let universal_app_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum UniversalAppInput {
-  FilesDropped
-  OpenCommand
-  ToggleMode
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn UniversalAppInput::name(self : UniversalAppInput) -> String {
-  match self {
-    FilesDropped => "filesDropped"
-    OpenCommand => "openCommand"
-    ToggleMode => "toggleMode"
-  }
-}
-
-///|
-pub fn UniversalAppInput::parse(s : String) -> UniversalAppInput? {
-  match s {
-    "filesDropped" => Some(FilesDropped)
-    "openCommand" => Some(OpenCommand)
-    "toggleMode" => Some(ToggleMode)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to app.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum UniversalAppMsg {
-  /// `@on.drop="filesDropped …"`
-  FilesDropped(String)
-  /// `@on.click="openCommand …"`
-  OpenCommand
-  /// `@on.click="toggleMode …"`
-  ToggleMode
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn UniversalAppMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> UniversalAppMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("filesDropped", [Str(a0)]) => FilesDropped(a0)
-      ("openCommand", []) => OpenCommand
-      ("toggleMode", []) => ToggleMode
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
-pub(all) enum UniversalAppMethod {
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+pub(all) enum UniversalAppCompute {
   ModeLabel
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn UniversalAppMethod::name(self : UniversalAppMethod) -> String {
+pub fn UniversalAppCompute::name(self : UniversalAppCompute) -> String {
   match self {
     ModeLabel => "modeLabel"
   }

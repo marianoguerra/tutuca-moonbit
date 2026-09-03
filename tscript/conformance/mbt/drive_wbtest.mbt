@@ -105,8 +105,8 @@ test "every projected v2 case names a declaration the file actually holds" {
       // answers — which is one of them, deliberately. Asked through
       // `from_dispatch`, which is the router the generator wrote: a name it
       // cannot place is a case whose declaration went missing.
-      let placed = CorpusReceive::from_dispatch(Receive(name, [])) is Some(_) ||
-        CorpusReceive::from_dispatch(Intent(name, [])) is Some(_)
+      let placed = CorpusMsg::from_dispatch(Receive(name, [])) is Some(_) ||
+        CorpusMsg::from_dispatch(Intent(name, [])) is Some(_)
       assert_true(placed || name == "nope")
     }
   }

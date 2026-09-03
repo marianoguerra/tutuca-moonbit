@@ -369,13 +369,13 @@ fn schema_scalar_inline_compute() -> Map[
 pub fn schema_scalar_component(
   name? : String = "SchemaScalar",
   views? : Map[String, @anode.View] = schema_scalar_views(),
-  init? : SchemaScalarState = SchemaScalarState::zero(),
+  initial? : SchemaScalarState = SchemaScalarState::zero(),
   common_style? : String = schema_scalar_common_style,
   global_style? : String = schema_scalar_global_style,
   update? : (SchemaScalarState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaScalarState,
   ],
-  compute? : (SchemaScalarMethod) -> ((
+  compute? : (SchemaScalarCompute) -> ((
     SchemaScalarState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -393,7 +393,7 @@ pub fn schema_scalar_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -411,8 +411,8 @@ pub fn schema_scalar_component(
                 PageIndicatorText,
                 ShowPagination,
                 TypeText,
-              ] : Array[SchemaScalarMethod]),
-            SchemaScalarMethod::name,
+              ] : Array[SchemaScalarCompute]),
+            SchemaScalarCompute::name,
             f,
           )
         None => Map([])
@@ -655,13 +655,13 @@ fn schema_object_inline_compute() -> Map[
 pub fn schema_object_component(
   name? : String = "SchemaObject",
   views? : Map[String, @anode.View] = schema_object_views(),
-  init? : SchemaObjectState = SchemaObjectState::zero(),
+  initial? : SchemaObjectState = SchemaObjectState::zero(),
   common_style? : String = schema_object_common_style,
   global_style? : String = schema_object_global_style,
   update? : (SchemaObjectState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaObjectState,
   ],
-  compute? : (SchemaObjectMethod) -> ((
+  compute? : (SchemaObjectCompute) -> ((
     SchemaObjectState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -679,7 +679,7 @@ pub fn schema_object_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -697,8 +697,8 @@ pub fn schema_object_component(
                 PageIndicatorText,
                 ShowPagination,
                 TypeText,
-              ] : Array[SchemaObjectMethod]),
-            SchemaObjectMethod::name,
+              ] : Array[SchemaObjectCompute]),
+            SchemaObjectCompute::name,
             f,
           )
         None => Map([])
@@ -941,13 +941,13 @@ fn schema_array_inline_compute() -> Map[
 pub fn schema_array_component(
   name? : String = "SchemaArray",
   views? : Map[String, @anode.View] = schema_array_views(),
-  init? : SchemaArrayState = SchemaArrayState::zero(),
+  initial? : SchemaArrayState = SchemaArrayState::zero(),
   common_style? : String = schema_array_common_style,
   global_style? : String = schema_array_global_style,
   update? : (SchemaArrayState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaArrayState,
   ],
-  compute? : (SchemaArrayMethod) -> ((
+  compute? : (SchemaArrayCompute) -> ((
     SchemaArrayState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -965,7 +965,7 @@ pub fn schema_array_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -983,8 +983,8 @@ pub fn schema_array_component(
                 PageIndicatorText,
                 ShowPagination,
                 TypeText,
-              ] : Array[SchemaArrayMethod]),
-            SchemaArrayMethod::name,
+              ] : Array[SchemaArrayCompute]),
+            SchemaArrayCompute::name,
             f,
           )
         None => Map([])
@@ -1222,13 +1222,13 @@ fn schema_enum_inline_compute() -> Map[
 pub fn schema_enum_component(
   name? : String = "SchemaEnum",
   views? : Map[String, @anode.View] = schema_enum_views(),
-  init? : SchemaEnumState = SchemaEnumState::zero(),
+  initial? : SchemaEnumState = SchemaEnumState::zero(),
   common_style? : String = schema_enum_common_style,
   global_style? : String = schema_enum_global_style,
   update? : (SchemaEnumState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaEnumState,
   ],
-  compute? : (SchemaEnumMethod) -> ((
+  compute? : (SchemaEnumCompute) -> ((
     SchemaEnumState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -1246,7 +1246,7 @@ pub fn schema_enum_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -1264,8 +1264,8 @@ pub fn schema_enum_component(
                 PageIndicatorText,
                 ShowPagination,
                 TypeText,
-              ] : Array[SchemaEnumMethod]),
-            SchemaEnumMethod::name,
+              ] : Array[SchemaEnumCompute]),
+            SchemaEnumCompute::name,
             f,
           )
         None => Map([])
@@ -1507,13 +1507,13 @@ fn schema_combinator_inline_compute() -> Map[
 pub fn schema_combinator_component(
   name? : String = "SchemaCombinator",
   views? : Map[String, @anode.View] = schema_combinator_views(),
-  init? : SchemaCombinatorState = SchemaCombinatorState::zero(),
+  initial? : SchemaCombinatorState = SchemaCombinatorState::zero(),
   common_style? : String = schema_combinator_common_style,
   global_style? : String = schema_combinator_global_style,
   update? : (SchemaCombinatorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaCombinatorState,
   ],
-  compute? : (SchemaCombinatorMethod) -> ((
+  compute? : (SchemaCombinatorCompute) -> ((
     SchemaCombinatorState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -1531,7 +1531,7 @@ pub fn schema_combinator_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -1549,8 +1549,8 @@ pub fn schema_combinator_component(
                 PageIndicatorText,
                 ShowPagination,
                 TypeText,
-              ] : Array[SchemaCombinatorMethod]),
-            SchemaCombinatorMethod::name,
+              ] : Array[SchemaCombinatorCompute]),
+            SchemaCombinatorCompute::name,
             f,
           )
         None => Map([])
@@ -1625,7 +1625,7 @@ pub fn schema_const_views() -> Map[String, @anode.View] {
 pub fn schema_const_component(
   name? : String = "SchemaConst",
   views? : Map[String, @anode.View] = schema_const_views(),
-  init? : SchemaConstState = SchemaConstState::zero(),
+  initial? : SchemaConstState = SchemaConstState::zero(),
   common_style? : String = schema_const_common_style,
   global_style? : String = schema_const_global_style,
   update? : (SchemaConstState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -1639,7 +1639,7 @@ pub fn schema_const_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -1820,7 +1820,7 @@ pub fn schema_conditional_views() -> Map[String, @anode.View] {
 pub fn schema_conditional_component(
   name? : String = "SchemaConditional",
   views? : Map[String, @anode.View] = schema_conditional_views(),
-  init? : SchemaConditionalState = SchemaConditionalState::zero(),
+  initial? : SchemaConditionalState = SchemaConditionalState::zero(),
   common_style? : String = schema_conditional_common_style,
   global_style? : String = schema_conditional_global_style,
   update? : (SchemaConditionalState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -1834,7 +1834,7 @@ pub fn schema_conditional_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -1894,7 +1894,7 @@ pub fn schema_not_views() -> Map[String, @anode.View] {
 pub fn schema_not_component(
   name? : String = "SchemaNot",
   views? : Map[String, @anode.View] = schema_not_views(),
-  init? : SchemaNotState = SchemaNotState::zero(),
+  initial? : SchemaNotState = SchemaNotState::zero(),
   common_style? : String = schema_not_common_style,
   global_style? : String = schema_not_global_style,
   update? : (SchemaNotState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -1908,7 +1908,7 @@ pub fn schema_not_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -1967,13 +1967,13 @@ pub fn schema_boolean_views() -> Map[String, @anode.View] {
 pub fn schema_boolean_component(
   name? : String = "SchemaBoolean",
   views? : Map[String, @anode.View] = schema_boolean_views(),
-  init? : SchemaBooleanState = SchemaBooleanState::zero(),
+  initial? : SchemaBooleanState = SchemaBooleanState::zero(),
   common_style? : String = schema_boolean_common_style,
   global_style? : String = schema_boolean_global_style,
   update? : (SchemaBooleanState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaBooleanState,
   ],
-  compute? : (SchemaBooleanMethod) -> ((
+  compute? : (SchemaBooleanCompute) -> ((
     SchemaBooleanState,
     Array[@tutuca.Value],
     &@tutuca.Stack,
@@ -1986,15 +1986,15 @@ pub fn schema_boolean_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
-          ([CssClass, Text] : Array[SchemaBooleanMethod]),
-          SchemaBooleanMethod::name,
+          ([CssClass, Text] : Array[SchemaBooleanCompute]),
+          SchemaBooleanCompute::name,
           f,
         )
       None => Map([])
@@ -2048,7 +2048,7 @@ pub fn schema_ref_views() -> Map[String, @anode.View] {
 pub fn schema_ref_component(
   name? : String = "SchemaRef",
   views? : Map[String, @anode.View] = schema_ref_views(),
-  init? : SchemaRefState = SchemaRefState::zero(),
+  initial? : SchemaRefState = SchemaRefState::zero(),
   common_style? : String = schema_ref_common_style,
   global_style? : String = schema_ref_global_style,
   update? : (SchemaRefState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -2062,7 +2062,7 @@ pub fn schema_ref_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

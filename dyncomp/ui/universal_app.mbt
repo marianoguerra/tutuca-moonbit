@@ -332,7 +332,7 @@ fn UniversalUi::app_comp(
     // generator resolves a sibling only within one file and this one lives
     // wherever the host is.
     slots=if dev_tools == "" { Map([]) } else { { "devTools": dev_tools } },
-    init={
+    initial={
       ..UniversalAppState::zero(),
       mode: "edit",
       status: "click the + to choose what this page is",
@@ -382,15 +382,15 @@ fn UniversalUi::app_comp(
           )
           return Unhandled
         }
-        Some(Unknown(_, _)) | None => ()
+        // Everything else falls through to the match below, which is the
+        // other half of this one bucket.
+        _ => ()
       }
-      match UniversalAppReceive::from_dispatch(msg) {
+      match UniversalAppMsg::from_dispatch(msg) {
         Some(CatalogChanged(module_)) => return self.catalog_changed(s, module_)
         Some(RestoreTree(root)) => return restore_tree(s, root)
-        // The merged `Receive` carries this component's own VIEW names as
-        // well as the schema's, so `Unknown` covers cases this match has
-        // nothing to say about. They are answered by the match
-        // beside this one.
+        // The merged enum carries this component's own VIEW names as well as
+        // the schema's, so this covers the cases the match above answered.
         _ => ()
       }
       match msg {

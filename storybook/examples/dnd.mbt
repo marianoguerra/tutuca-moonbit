@@ -38,7 +38,7 @@ fn[T] move_index_to_index(
 ///|
 fn dnd_comp() -> @component.Component {
   dn_d_example_component(
-    init={ items: [], query: "", },
+    initial={ items: [], query: "", },
     when=w => {
       match w {
         FilterItem =>

@@ -53,7 +53,7 @@ fn item_comp() -> @component.Component {
       ),
     },
     name="Item",
-    init=ItemState::{ label: "plain", },
+    initial=ItemState::{ label: "plain", },
     update=(_s : ItemState, msg, _ctx) => {
       match msg {
         Receive("pick", [Str(l)]) => Next({ label: l, })
@@ -79,7 +79,7 @@ fn panel_comp() -> @component.Component {
       ),
     },
     name="Panel",
-    init=PanelState::{ title: "panel", },
+    initial=PanelState::{ title: "panel", },
   )
 }
 
@@ -209,7 +209,7 @@ test "a view raises a message, and the lexical leg answers an intent" {
       ),
     },
     name="Lexy",
-    init=LexyState::{ seen: "", },
+    initial=LexyState::{ seen: "", },
     update=(_s : LexyState, msg, ctx) => {
       match msg {
         // The view's name arrives as a MESSAGE now.

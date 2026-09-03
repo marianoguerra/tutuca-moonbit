@@ -86,7 +86,7 @@ test "`Init => Inv`: the declared fixtures are asserted at build time" {
 ///|
 test "a file with no fixtures gets no build-time assertion" {
   // The DECLARED initial states, and not the schema's zero. A wrapper is
-  // normally called with `init~`, which the generator cannot see, so asserting
+  // normally called with `initial~`, which the generator cannot see, so asserting
   // over all-zeros would fail components that work.
   let f = @viewgen.split_file(
     (

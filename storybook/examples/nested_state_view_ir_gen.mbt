@@ -116,7 +116,7 @@ pub fn nested_state_views() -> Map[String, @anode.View] {
 pub fn nested_state_component(
   name? : String = "NestedState",
   views? : Map[String, @anode.View] = nested_state_views(),
-  init? : NestedStateState = NestedStateState::zero(),
+  initial? : NestedStateState = NestedStateState::zero(),
   common_style? : String = nested_state_common_style,
   global_style? : String = nested_state_global_style,
   update? : (NestedStateState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -130,7 +130,7 @@ pub fn nested_state_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

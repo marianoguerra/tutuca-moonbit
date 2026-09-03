@@ -32,7 +32,7 @@ pub(all) struct SchemaScalarState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SchemaScalarState::zero(), label: "Counter" }
+///   initial={ ..SchemaScalarState::zero(), label: "Counter" }
 pub fn SchemaScalarState::zero() -> SchemaScalarState {
   {
     items: [],
@@ -111,14 +111,16 @@ impl @component.Fields for SchemaScalarState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum SchemaScalarReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum SchemaScalarMsg {
   NextPage
   PrevPage
   ToggleIsExpanded
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -136,9 +138,9 @@ pub(all) enum SchemaScalarReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn SchemaScalarReceive::from_dispatch(
+pub fn SchemaScalarMsg::from_dispatch(
   d : @component.Dispatch,
-) -> SchemaScalarReceive? {
+) -> SchemaScalarMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -160,8 +162,8 @@ pub fn SchemaScalarReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn SchemaScalarReceive::to_dispatch(
-  self : SchemaScalarReceive,
+pub fn SchemaScalarMsg::to_dispatch(
+  self : SchemaScalarMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     NextPage => ("nextPage", [])
@@ -176,8 +178,8 @@ pub fn SchemaScalarReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn SchemaScalarReceive::send(
-  self : SchemaScalarReceive,
+pub fn SchemaScalarMsg::send(
+  self : SchemaScalarMsg,
   ctx : &@tutuca.Ctx,
 ) -> Unit {
   let (name, args) = self.to_dispatch()
@@ -193,76 +195,12 @@ pub let schema_scalar_common_style : String = ""
 pub let schema_scalar_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum SchemaScalarInput {
-  NextPage
-  PrevPage
-  ToggleIsExpanded
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaScalarInput::name(self : SchemaScalarInput) -> String {
-  match self {
-    NextPage => "nextPage"
-    PrevPage => "prevPage"
-    ToggleIsExpanded => "toggleIsExpanded"
-  }
-}
-
-///|
-pub fn SchemaScalarInput::parse(s : String) -> SchemaScalarInput? {
-  match s {
-    "nextPage" => Some(NextPage)
-    "prevPage" => Some(PrevPage)
-    "toggleIsExpanded" => Some(ToggleIsExpanded)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to schema_components.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum SchemaScalarMsg {
-  /// `@on.click="nextPage …"`
-  NextPage
-  /// `@on.click="prevPage …"`
-  PrevPage
-  /// `@on.click="toggleIsExpanded …"`
-  ToggleIsExpanded
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn SchemaScalarMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> SchemaScalarMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("nextPage", []) => NextPage
-      ("prevPage", []) => PrevPage
-      ("toggleIsExpanded", []) => ToggleIsExpanded
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: pageExists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
 /// these could never run.
-pub(all) enum SchemaScalarMethod {
+pub(all) enum SchemaScalarCompute {
   ArrowText
   CannotNextPage
   CannotPrevPage
@@ -274,7 +212,7 @@ pub(all) enum SchemaScalarMethod {
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn SchemaScalarMethod::name(self : SchemaScalarMethod) -> String {
+pub fn SchemaScalarCompute::name(self : SchemaScalarCompute) -> String {
   match self {
     ArrowText => "arrowText"
     CannotNextPage => "cannotNextPage"
@@ -361,7 +299,7 @@ pub(all) struct SchemaObjectState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SchemaObjectState::zero(), label: "Counter" }
+///   initial={ ..SchemaObjectState::zero(), label: "Counter" }
 pub fn SchemaObjectState::zero() -> SchemaObjectState {
   {
     items: [],
@@ -440,14 +378,16 @@ impl @component.Fields for SchemaObjectState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum SchemaObjectReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum SchemaObjectMsg {
   NextPage
   PrevPage
   ToggleIsExpanded
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -465,9 +405,9 @@ pub(all) enum SchemaObjectReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn SchemaObjectReceive::from_dispatch(
+pub fn SchemaObjectMsg::from_dispatch(
   d : @component.Dispatch,
-) -> SchemaObjectReceive? {
+) -> SchemaObjectMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -489,8 +429,8 @@ pub fn SchemaObjectReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn SchemaObjectReceive::to_dispatch(
-  self : SchemaObjectReceive,
+pub fn SchemaObjectMsg::to_dispatch(
+  self : SchemaObjectMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     NextPage => ("nextPage", [])
@@ -505,8 +445,8 @@ pub fn SchemaObjectReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn SchemaObjectReceive::send(
-  self : SchemaObjectReceive,
+pub fn SchemaObjectMsg::send(
+  self : SchemaObjectMsg,
   ctx : &@tutuca.Ctx,
 ) -> Unit {
   let (name, args) = self.to_dispatch()
@@ -522,76 +462,12 @@ pub let schema_object_common_style : String = ""
 pub let schema_object_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum SchemaObjectInput {
-  NextPage
-  PrevPage
-  ToggleIsExpanded
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaObjectInput::name(self : SchemaObjectInput) -> String {
-  match self {
-    NextPage => "nextPage"
-    PrevPage => "prevPage"
-    ToggleIsExpanded => "toggleIsExpanded"
-  }
-}
-
-///|
-pub fn SchemaObjectInput::parse(s : String) -> SchemaObjectInput? {
-  match s {
-    "nextPage" => Some(NextPage)
-    "prevPage" => Some(PrevPage)
-    "toggleIsExpanded" => Some(ToggleIsExpanded)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to schema_components.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum SchemaObjectMsg {
-  /// `@on.click="nextPage …"`
-  NextPage
-  /// `@on.click="prevPage …"`
-  PrevPage
-  /// `@on.click="toggleIsExpanded …"`
-  ToggleIsExpanded
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn SchemaObjectMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> SchemaObjectMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("nextPage", []) => NextPage
-      ("prevPage", []) => PrevPage
-      ("toggleIsExpanded", []) => ToggleIsExpanded
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: pageExists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
 /// these could never run.
-pub(all) enum SchemaObjectMethod {
+pub(all) enum SchemaObjectCompute {
   ArrowText
   CannotNextPage
   CannotPrevPage
@@ -603,7 +479,7 @@ pub(all) enum SchemaObjectMethod {
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn SchemaObjectMethod::name(self : SchemaObjectMethod) -> String {
+pub fn SchemaObjectCompute::name(self : SchemaObjectCompute) -> String {
   match self {
     ArrowText => "arrowText"
     CannotNextPage => "cannotNextPage"
@@ -690,7 +566,7 @@ pub(all) struct SchemaArrayState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SchemaArrayState::zero(), label: "Counter" }
+///   initial={ ..SchemaArrayState::zero(), label: "Counter" }
 pub fn SchemaArrayState::zero() -> SchemaArrayState {
   {
     items: [],
@@ -769,14 +645,16 @@ impl @component.Fields for SchemaArrayState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum SchemaArrayReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum SchemaArrayMsg {
   NextPage
   PrevPage
   ToggleIsExpanded
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -794,9 +672,9 @@ pub(all) enum SchemaArrayReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn SchemaArrayReceive::from_dispatch(
+pub fn SchemaArrayMsg::from_dispatch(
   d : @component.Dispatch,
-) -> SchemaArrayReceive? {
+) -> SchemaArrayMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -818,8 +696,8 @@ pub fn SchemaArrayReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn SchemaArrayReceive::to_dispatch(
-  self : SchemaArrayReceive,
+pub fn SchemaArrayMsg::to_dispatch(
+  self : SchemaArrayMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     NextPage => ("nextPage", [])
@@ -834,10 +712,7 @@ pub fn SchemaArrayReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn SchemaArrayReceive::send(
-  self : SchemaArrayReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn SchemaArrayMsg::send(self : SchemaArrayMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -851,76 +726,12 @@ pub let schema_array_common_style : String = ""
 pub let schema_array_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum SchemaArrayInput {
-  NextPage
-  PrevPage
-  ToggleIsExpanded
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaArrayInput::name(self : SchemaArrayInput) -> String {
-  match self {
-    NextPage => "nextPage"
-    PrevPage => "prevPage"
-    ToggleIsExpanded => "toggleIsExpanded"
-  }
-}
-
-///|
-pub fn SchemaArrayInput::parse(s : String) -> SchemaArrayInput? {
-  match s {
-    "nextPage" => Some(NextPage)
-    "prevPage" => Some(PrevPage)
-    "toggleIsExpanded" => Some(ToggleIsExpanded)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to schema_components.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum SchemaArrayMsg {
-  /// `@on.click="nextPage …"`
-  NextPage
-  /// `@on.click="prevPage …"`
-  PrevPage
-  /// `@on.click="toggleIsExpanded …"`
-  ToggleIsExpanded
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn SchemaArrayMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> SchemaArrayMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("nextPage", []) => NextPage
-      ("prevPage", []) => PrevPage
-      ("toggleIsExpanded", []) => ToggleIsExpanded
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: pageExists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
 /// these could never run.
-pub(all) enum SchemaArrayMethod {
+pub(all) enum SchemaArrayCompute {
   ArrowText
   CannotNextPage
   CannotPrevPage
@@ -932,7 +743,7 @@ pub(all) enum SchemaArrayMethod {
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn SchemaArrayMethod::name(self : SchemaArrayMethod) -> String {
+pub fn SchemaArrayCompute::name(self : SchemaArrayCompute) -> String {
   match self {
     ArrowText => "arrowText"
     CannotNextPage => "cannotNextPage"
@@ -1019,7 +830,7 @@ pub(all) struct SchemaEnumState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SchemaEnumState::zero(), label: "Counter" }
+///   initial={ ..SchemaEnumState::zero(), label: "Counter" }
 pub fn SchemaEnumState::zero() -> SchemaEnumState {
   {
     items: [],
@@ -1098,14 +909,16 @@ impl @component.Fields for SchemaEnumState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum SchemaEnumReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum SchemaEnumMsg {
   NextPage
   PrevPage
   ToggleIsExpanded
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -1123,9 +936,7 @@ pub(all) enum SchemaEnumReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn SchemaEnumReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> SchemaEnumReceive? {
+pub fn SchemaEnumMsg::from_dispatch(d : @component.Dispatch) -> SchemaEnumMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -1147,8 +958,8 @@ pub fn SchemaEnumReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn SchemaEnumReceive::to_dispatch(
-  self : SchemaEnumReceive,
+pub fn SchemaEnumMsg::to_dispatch(
+  self : SchemaEnumMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     NextPage => ("nextPage", [])
@@ -1163,10 +974,7 @@ pub fn SchemaEnumReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn SchemaEnumReceive::send(
-  self : SchemaEnumReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn SchemaEnumMsg::send(self : SchemaEnumMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -1180,74 +988,12 @@ pub let schema_enum_common_style : String = ""
 pub let schema_enum_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum SchemaEnumInput {
-  NextPage
-  PrevPage
-  ToggleIsExpanded
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaEnumInput::name(self : SchemaEnumInput) -> String {
-  match self {
-    NextPage => "nextPage"
-    PrevPage => "prevPage"
-    ToggleIsExpanded => "toggleIsExpanded"
-  }
-}
-
-///|
-pub fn SchemaEnumInput::parse(s : String) -> SchemaEnumInput? {
-  match s {
-    "nextPage" => Some(NextPage)
-    "prevPage" => Some(PrevPage)
-    "toggleIsExpanded" => Some(ToggleIsExpanded)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to schema_components.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum SchemaEnumMsg {
-  /// `@on.click="nextPage …"`
-  NextPage
-  /// `@on.click="prevPage …"`
-  PrevPage
-  /// `@on.click="toggleIsExpanded …"`
-  ToggleIsExpanded
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn SchemaEnumMsg::from_dispatch(d : @component.Dispatch) -> SchemaEnumMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("nextPage", []) => NextPage
-      ("prevPage", []) => PrevPage
-      ("toggleIsExpanded", []) => ToggleIsExpanded
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: pageExists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
 /// these could never run.
-pub(all) enum SchemaEnumMethod {
+pub(all) enum SchemaEnumCompute {
   ArrowText
   CannotNextPage
   CannotPrevPage
@@ -1259,7 +1005,7 @@ pub(all) enum SchemaEnumMethod {
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn SchemaEnumMethod::name(self : SchemaEnumMethod) -> String {
+pub fn SchemaEnumCompute::name(self : SchemaEnumCompute) -> String {
   match self {
     ArrowText => "arrowText"
     CannotNextPage => "cannotNextPage"
@@ -1346,7 +1092,7 @@ pub(all) struct SchemaCombinatorState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SchemaCombinatorState::zero(), label: "Counter" }
+///   initial={ ..SchemaCombinatorState::zero(), label: "Counter" }
 pub fn SchemaCombinatorState::zero() -> SchemaCombinatorState {
   {
     items: [],
@@ -1425,14 +1171,16 @@ impl @component.Fields for SchemaCombinatorState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum SchemaCombinatorReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum SchemaCombinatorMsg {
   NextPage
   PrevPage
   ToggleIsExpanded
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -1450,9 +1198,9 @@ pub(all) enum SchemaCombinatorReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn SchemaCombinatorReceive::from_dispatch(
+pub fn SchemaCombinatorMsg::from_dispatch(
   d : @component.Dispatch,
-) -> SchemaCombinatorReceive? {
+) -> SchemaCombinatorMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -1474,8 +1222,8 @@ pub fn SchemaCombinatorReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn SchemaCombinatorReceive::to_dispatch(
-  self : SchemaCombinatorReceive,
+pub fn SchemaCombinatorMsg::to_dispatch(
+  self : SchemaCombinatorMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     NextPage => ("nextPage", [])
@@ -1490,8 +1238,8 @@ pub fn SchemaCombinatorReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn SchemaCombinatorReceive::send(
-  self : SchemaCombinatorReceive,
+pub fn SchemaCombinatorMsg::send(
+  self : SchemaCombinatorMsg,
   ctx : &@tutuca.Ctx,
 ) -> Unit {
   let (name, args) = self.to_dispatch()
@@ -1507,76 +1255,12 @@ pub let schema_combinator_common_style : String = ""
 pub let schema_combinator_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum SchemaCombinatorInput {
-  NextPage
-  PrevPage
-  ToggleIsExpanded
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaCombinatorInput::name(self : SchemaCombinatorInput) -> String {
-  match self {
-    NextPage => "nextPage"
-    PrevPage => "prevPage"
-    ToggleIsExpanded => "toggleIsExpanded"
-  }
-}
-
-///|
-pub fn SchemaCombinatorInput::parse(s : String) -> SchemaCombinatorInput? {
-  match s {
-    "nextPage" => Some(NextPage)
-    "prevPage" => Some(PrevPage)
-    "toggleIsExpanded" => Some(ToggleIsExpanded)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to schema_components.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum SchemaCombinatorMsg {
-  /// `@on.click="nextPage …"`
-  NextPage
-  /// `@on.click="prevPage …"`
-  PrevPage
-  /// `@on.click="toggleIsExpanded …"`
-  ToggleIsExpanded
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn SchemaCombinatorMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> SchemaCombinatorMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("nextPage", []) => NextPage
-      ("prevPage", []) => PrevPage
-      ("toggleIsExpanded", []) => ToggleIsExpanded
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: pageExists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
 /// these could never run.
-pub(all) enum SchemaCombinatorMethod {
+pub(all) enum SchemaCombinatorCompute {
   ArrowText
   CannotNextPage
   CannotPrevPage
@@ -1588,7 +1272,7 @@ pub(all) enum SchemaCombinatorMethod {
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn SchemaCombinatorMethod::name(self : SchemaCombinatorMethod) -> String {
+pub fn SchemaCombinatorCompute::name(self : SchemaCombinatorCompute) -> String {
   match self {
     ArrowText => "arrowText"
     CannotNextPage => "cannotNextPage"
@@ -1669,7 +1353,7 @@ pub(all) struct SchemaConstState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SchemaConstState::zero(), label: "Counter" }
+///   initial={ ..SchemaConstState::zero(), label: "Counter" }
 pub fn SchemaConstState::zero() -> SchemaConstState {
   { value: Null, }
 }
@@ -1739,7 +1423,7 @@ pub(all) struct SchemaConditionalState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SchemaConditionalState::zero(), label: "Counter" }
+///   initial={ ..SchemaConditionalState::zero(), label: "Counter" }
 pub fn SchemaConditionalState::zero() -> SchemaConditionalState {
   {
     ifNode: Null,
@@ -1837,7 +1521,7 @@ pub(all) struct SchemaNotState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SchemaNotState::zero(), label: "Counter" }
+///   initial={ ..SchemaNotState::zero(), label: "Counter" }
 pub fn SchemaNotState::zero() -> SchemaNotState {
   { child: Null, }
 }
@@ -1902,7 +1586,7 @@ pub(all) struct SchemaBooleanState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SchemaBooleanState::zero(), label: "Counter" }
+///   initial={ ..SchemaBooleanState::zero(), label: "Counter" }
 pub fn SchemaBooleanState::zero() -> SchemaBooleanState {
   { value: false, }
 }
@@ -1935,14 +1619,14 @@ pub let schema_boolean_common_style : String = ""
 pub let schema_boolean_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum SchemaBooleanMethod {
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+pub(all) enum SchemaBooleanCompute {
   CssClass
   Text
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn SchemaBooleanMethod::name(self : SchemaBooleanMethod) -> String {
+pub fn SchemaBooleanCompute::name(self : SchemaBooleanCompute) -> String {
   match self {
     CssClass => "cssClass"
     Text => "text"
@@ -1983,7 +1667,7 @@ pub(all) struct SchemaRefState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SchemaRefState::zero(), label: "Counter" }
+///   initial={ ..SchemaRefState::zero(), label: "Counter" }
 pub fn SchemaRefState::zero() -> SchemaRefState {
   { target: "", }
 }

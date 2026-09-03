@@ -44,7 +44,7 @@ fn link_component() -> @component.Component {
       ),
     },
     name="Linker",
-    init=LinkState::{ url: "/safe", },
+    initial=LinkState::{ url: "/safe", },
   )
 }
 
@@ -266,7 +266,7 @@ fn child_comp() -> @component.Component {
       ),
     },
     name="FChild",
-    init=ChildState::{ label: "a", },
+    initial=ChildState::{ label: "a", },
   )
 }
 
@@ -304,7 +304,7 @@ fn parent_comp() -> @component.Component {
       ),
     },
     name="FParent",
-    init=ParentState::{ title: "t", },
+    initial=ParentState::{ title: "t", },
   )
 }
 
@@ -414,7 +414,7 @@ fn md_component() -> @component.Component {
       ),
     },
     name="Bodied",
-    init=BodyState::{ body: "# one\n\n*hi* <script>alert(1)</script>", },
+    initial=BodyState::{ body: "# one\n\n*hi* <script>alert(1)</script>", },
   )
 }
 
@@ -547,7 +547,7 @@ fn mk_links_app() -> (@app.App[@memdom.MemNode], @memdom.MemNode) raise {
       ),
     },
     name="Linker",
-    init=LinksState::{ links: ["javascript:alert(document.cookie)"], },
+    initial=LinksState::{ links: ["javascript:alert(document.cookie)"], },
   )
   scope.register_components([c])
   let doc = @memdom.document()
@@ -613,7 +613,7 @@ fn safe_markup_component() -> @component.Component {
       ),
     },
     name="Marked",
-    init=BodyState::{
+    initial=BodyState::{
       body: "<b>ok</b><script>alert(1)</script><style>b{display:none}</style>",
     },
   )

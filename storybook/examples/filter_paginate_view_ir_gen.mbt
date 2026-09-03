@@ -153,7 +153,7 @@ pub fn person_views() -> Map[String, @anode.View] {
 pub fn person_component(
   name? : String = "Person",
   views? : Map[String, @anode.View] = person_views(),
-  init? : PersonState = PersonState::zero(),
+  initial? : PersonState = PersonState::zero(),
   common_style? : String = person_common_style,
   global_style? : String = person_global_style,
   update? : (PersonState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -167,7 +167,7 @@ pub fn person_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -230,7 +230,7 @@ pub fn strategies_views() -> Map[String, @anode.View] {
 pub fn strategies_component(
   name? : String = "Strategies",
   views? : Map[String, @anode.View] = strategies_views(),
-  init? : StrategiesState = StrategiesState::zero(),
+  initial? : StrategiesState = StrategiesState::zero(),
   common_style? : String = strategies_common_style,
   global_style? : String = strategies_global_style,
   update? : (StrategiesState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -244,7 +244,7 @@ pub fn strategies_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -386,7 +386,7 @@ pub fn naive_people_views() -> Map[String, @anode.View] {
 pub fn naive_people_component(
   name? : String = "NaivePeople",
   views? : Map[String, @anode.View] = naive_people_views(),
-  init? : NaivePeopleState = NaivePeopleState::zero(),
+  initial? : NaivePeopleState = NaivePeopleState::zero(),
   common_style? : String = naive_people_common_style,
   global_style? : String = naive_people_global_style,
   update? : (NaivePeopleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -416,7 +416,7 @@ pub fn naive_people_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

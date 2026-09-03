@@ -17,7 +17,7 @@ fn text_editor() -> @component.Component {
       ),
     },
     name="Editor",
-    init=EditorState::{ text: "start", count: 0, },
+    initial=EditorState::{ text: "start", count: 0, },
   )
 }
 
@@ -98,7 +98,7 @@ test "checked @bind coercion skips invalid numeric edits" {
       ],
     ],
   )
-  let comp = @component.component(views={ "main": view }, name="BoundNumber", init=EditorState::{
+  let comp = @component.component(views={ "main": view }, name="BoundNumber", initial=EditorState::{
     text: "",
     count: 7,
   })
@@ -165,7 +165,7 @@ test "`e.value` reads the event and `@value` reads the @each item" {
       ),
     },
     name="Picker",
-    init=PickerState::{ items: [], picked: "", },
+    initial=PickerState::{ items: [], picked: "", },
     update=(s : PickerState, msg, _ctx) => {
       match msg {
         Receive("pick", [Str(p)]) => Next({ ..s, picked: p, })
@@ -200,7 +200,7 @@ test "`@value` in an event argument reads the @each item, not the event" {
       ),
     },
     name="Picker",
-    init=PickerState::{ items: [], picked: "", },
+    initial=PickerState::{ items: [], picked: "", },
     update=(s : PickerState, msg, _ctx) => {
       match msg {
         Receive("pick", [Str(p)]) => Next({ ..s, picked: p, })
@@ -252,7 +252,7 @@ test "batching: a cascade of swaps renders exactly once per dispatch" {
       ),
     },
     name="Chatty",
-    init=ChattyState::{ n: 0, },
+    initial=ChattyState::{ n: 0, },
     update=(s : ChattyState, msg, ctx) => {
       match msg {
         Receive("go", _) => {

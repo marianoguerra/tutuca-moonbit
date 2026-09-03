@@ -24,7 +24,7 @@ pub(all) struct TrafficLightState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..TrafficLightState::zero(), label: "Counter" }
+///   initial={ ..TrafficLightState::zero(), label: "Counter" }
 pub fn TrafficLightState::zero() -> TrafficLightState {
   { lightIndex: 0, }
 }
@@ -52,12 +52,14 @@ impl @component.Fields for TrafficLightState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum TrafficLightReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum TrafficLightMsg {
   NextLight
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -75,9 +77,9 @@ pub(all) enum TrafficLightReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn TrafficLightReceive::from_dispatch(
+pub fn TrafficLightMsg::from_dispatch(
   d : @component.Dispatch,
-) -> TrafficLightReceive? {
+) -> TrafficLightMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -95,8 +97,8 @@ pub fn TrafficLightReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn TrafficLightReceive::to_dispatch(
-  self : TrafficLightReceive,
+pub fn TrafficLightMsg::to_dispatch(
+  self : TrafficLightMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     NextLight => ("nextLight", [])
@@ -109,8 +111,8 @@ pub fn TrafficLightReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn TrafficLightReceive::send(
-  self : TrafficLightReceive,
+pub fn TrafficLightMsg::send(
+  self : TrafficLightMsg,
   ctx : &@tutuca.Ctx,
 ) -> Unit {
   let (name, args) = self.to_dispatch()
@@ -126,65 +128,13 @@ pub let traffic_light_common_style : String = ""
 pub let traffic_light_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum TrafficLightInput {
-  NextLight
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn TrafficLightInput::name(self : TrafficLightInput) -> String {
-  match self {
-    NextLight => "nextLight"
-  }
-}
-
-///|
-pub fn TrafficLightInput::parse(s : String) -> TrafficLightInput? {
-  match s {
-    "nextLight" => Some(NextLight)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to conditionals.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum TrafficLightMsg {
-  /// `@on.click="nextLight …"`
-  NextLight
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn TrafficLightMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> TrafficLightMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("nextLight", []) => NextLight
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
-pub(all) enum TrafficLightMethod {
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+pub(all) enum TrafficLightCompute {
   Light
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn TrafficLightMethod::name(self : TrafficLightMethod) -> String {
+pub fn TrafficLightCompute::name(self : TrafficLightCompute) -> String {
   match self {
     Light => "light"
   }
@@ -229,7 +179,7 @@ pub(all) struct TabbedUIState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..TabbedUIState::zero(), label: "Counter" }
+///   initial={ ..TabbedUIState::zero(), label: "Counter" }
 pub fn TabbedUIState::zero() -> TabbedUIState {
   { tab: "", }
 }
@@ -302,7 +252,7 @@ pub(all) struct ListAndFilterState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ListAndFilterState::zero(), label: "Counter" }
+///   initial={ ..ListAndFilterState::zero(), label: "Counter" }
 pub fn ListAndFilterState::zero() -> ListAndFilterState {
   { items: [], query: "", }
 }

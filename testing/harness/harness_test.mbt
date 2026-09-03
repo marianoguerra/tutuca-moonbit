@@ -34,7 +34,7 @@ fn counter_module() -> @component.ModuleDef {
       ),
     },
     name="Counter",
-    init=CounterState::{ count: 0, label: "", },
+    initial=CounterState::{ count: 0, label: "", },
     // Hand-written and complete. A fixture is not exempt: `component` takes a
     // schema because the runtime should be told a component's shape rather
     // than reconstruct it, and that holds whether the shape came from
@@ -191,7 +191,7 @@ fn gate_module() -> @component.ModuleDef {
       ),
     },
     name="Gate",
-    init=GateState::{ on: true, },
+    initial=GateState::{ on: true, },
     update=(_s : GateState, msg, _ctx) => {
       match msg {
         Receive("hide", _) => Next(({ on: false, } : GateState))

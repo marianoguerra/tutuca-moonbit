@@ -34,7 +34,7 @@ fn pb_slot() -> @component.Component {
       ),
     },
     name="PbSlot",
-    init=PbSlotState::{ },
+    initial=PbSlotState::{ },
     lookup=[@component.lookup_name("psel")],
   )
 }
@@ -49,7 +49,7 @@ fn pb_cell() -> @component.Component {
       ),
     },
     name="PbCell",
-    init=PbCellState::{ doc: Null, },
+    initial=PbCellState::{ doc: Null, },
     provide={ "psel": ".doc" },
   )
 }
@@ -64,13 +64,13 @@ fn pb_scope(
     @component.component(
       views={ "main": @anode.View::new("main", raw_view=grid_view) },
       name="PbGrid",
-      init=PbGridState::{ rows: [], },
+      initial=PbGridState::{ rows: [], },
     )
   } else {
     @component.component(
       views={ "main": @anode.View::new("main", raw_view=grid_view) },
       name="PbGrid",
-      init=PbPlainState::{ cell: Null, },
+      initial=PbPlainState::{ cell: Null, },
     )
   }
   scope.register_components([sheet_comp(), pb_slot(), pb_cell(), grid])

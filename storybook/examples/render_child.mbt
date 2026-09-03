@@ -7,7 +7,7 @@
 
 ///|
 fn greeting_comp() -> @component.Component {
-  greeting_component(init={ name: "world", })
+  greeting_component(initial={ name: "world", })
 }
 
 ///|
@@ -41,7 +41,7 @@ fn entry_comp() -> @component.Component {
   // what puts it in `EntryMethod` — no view of Entry calls it; the `@when` of
   // a PARENT does. Its body is compiled from the block, so there is no
   // `compute~` argument here.
-  entry_component(init={
+  entry_component(initial={
     title: "Entry Title",
     description: "Entry Description",
   })

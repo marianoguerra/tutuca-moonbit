@@ -183,7 +183,7 @@ pub fn spec_field_views() -> Map[String, @anode.View] {
 pub fn spec_field_component(
   name? : String = "SpecField",
   views? : Map[String, @anode.View] = spec_field_views(),
-  init? : SpecFieldState = SpecFieldState::zero(),
+  initial? : SpecFieldState = SpecFieldState::zero(),
   common_style? : String = spec_field_common_style,
   global_style? : String = spec_field_global_style,
   update? : (SpecFieldState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -197,7 +197,7 @@ pub fn spec_field_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -277,7 +277,7 @@ pub fn spec_msg_views() -> Map[String, @anode.View] {
 pub fn spec_msg_component(
   name? : String = "SpecMsg",
   views? : Map[String, @anode.View] = spec_msg_views(),
-  init? : SpecMsgState = SpecMsgState::zero(),
+  initial? : SpecMsgState = SpecMsgState::zero(),
   common_style? : String = spec_msg_common_style,
   global_style? : String = spec_msg_global_style,
   update? : (SpecMsgState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -291,7 +291,7 @@ pub fn spec_msg_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -387,7 +387,7 @@ pub fn spec_rule_views() -> Map[String, @anode.View] {
 pub fn spec_rule_component(
   name? : String = "SpecRule",
   views? : Map[String, @anode.View] = spec_rule_views(),
-  init? : SpecRuleState = SpecRuleState::zero(),
+  initial? : SpecRuleState = SpecRuleState::zero(),
   common_style? : String = spec_rule_common_style,
   global_style? : String = spec_rule_global_style,
   update? : (SpecRuleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -401,7 +401,7 @@ pub fn spec_rule_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -451,7 +451,7 @@ pub fn spec_doc_views() -> Map[String, @anode.View] {
 pub fn spec_doc_component(
   name? : String = "SpecDoc",
   views? : Map[String, @anode.View] = spec_doc_views(),
-  init? : SpecDocState = SpecDocState::zero(),
+  initial? : SpecDocState = SpecDocState::zero(),
   common_style? : String = spec_doc_common_style,
   global_style? : String = spec_doc_global_style,
   update? : (SpecDocState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -465,7 +465,7 @@ pub fn spec_doc_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -561,7 +561,7 @@ fn spec_viewer_inline_compute() -> Map[
 pub fn spec_viewer_component(
   name? : String = "SpecViewer",
   views? : Map[String, @anode.View] = spec_viewer_views(),
-  init? : SpecViewerState = SpecViewerState::zero(),
+  initial? : SpecViewerState = SpecViewerState::zero(),
   common_style? : String = spec_viewer_common_style,
   global_style? : String = spec_viewer_global_style,
   update? : (SpecViewerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -575,7 +575,7 @@ pub fn spec_viewer_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -692,7 +692,7 @@ fn spec_source_inline_compute() -> Map[
 pub fn spec_source_component(
   name? : String = "SpecSource",
   views? : Map[String, @anode.View] = spec_source_views(),
-  init? : SpecSourceState = SpecSourceState::zero(),
+  initial? : SpecSourceState = SpecSourceState::zero(),
   common_style? : String = spec_source_common_style,
   global_style? : String = spec_source_global_style,
   update? : (SpecSourceState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -706,7 +706,7 @@ pub fn spec_source_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

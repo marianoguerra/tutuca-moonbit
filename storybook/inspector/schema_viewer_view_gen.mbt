@@ -27,7 +27,7 @@ pub(all) struct SchemaViewerState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SchemaViewerState::zero(), label: "Counter" }
+///   initial={ ..SchemaViewerState::zero(), label: "Counter" }
 pub fn SchemaViewerState::zero() -> SchemaViewerState {
   { value: Null, raw: Null, rawSchema: Null, showRaw: false, }
 }
@@ -73,17 +73,17 @@ pub let schema_viewer_common_style : String = ""
 pub let schema_viewer_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: rawPaneHasSomethingInIt.
 /// The block's own handlers are merged into this bucket, so an arm for one of
 /// these could never run.
-pub(all) enum SchemaViewerMethod {
+pub(all) enum SchemaViewerCompute {
   ToggleLabel
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn SchemaViewerMethod::name(self : SchemaViewerMethod) -> String {
+pub fn SchemaViewerCompute::name(self : SchemaViewerCompute) -> String {
   match self {
     ToggleLabel => "toggleLabel"
   }

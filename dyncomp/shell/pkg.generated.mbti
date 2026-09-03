@@ -17,7 +17,7 @@ pub let loader_bar_common_style : String
 
 pub fn loader_bar_comp(samples? : Array[LoaderBarSample], show_url? : Bool, status? : String, notify? : (LoaderEvent, &@core.Ctx) -> Unit) -> @component.Component
 
-pub fn loader_bar_component(name? : String, views? : Map[String, @anode.View], init? : LoaderBarState, common_style? : String, global_style? : String, update? : (LoaderBarState, @core.Dispatch, &@core.Ctx) -> @component.Update[LoaderBarState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn loader_bar_component(name? : String, views? : Map[String, @anode.View], initial? : LoaderBarState, common_style? : String, global_style? : String, update? : (LoaderBarState, @core.Dispatch, &@core.Ctx) -> @component.Update[LoaderBarState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let loader_bar_global_style : String
 
@@ -38,14 +38,6 @@ pub fn set_live_app(@app.App[@wasm.WasmNode]) -> Unit
 // Errors
 
 // Types and methods
-pub(all) enum LoaderBarInput {
-  LoadSample
-  LoadUrl
-  TypeUrl
-} derive(Eq, @debug.Debug)
-pub fn LoaderBarInput::name(Self) -> String
-pub fn LoaderBarInput::parse(String) -> Self?
-
 pub(all) enum LoaderBarIntent {
   CatalogChanged(String)
   Unknown(String, Array[@core.Value])
@@ -55,14 +47,6 @@ pub fn LoaderBarIntent::from_dispatch(@core.Dispatch) -> Self?
 pub fn LoaderBarIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) enum LoaderBarMsg {
-  LoadSample(@core.Value)
-  LoadUrl
-  TypeUrl(String)
-  Unknown(String, Array[@core.Value])
-}
-pub fn LoaderBarMsg::from_dispatch(@core.Dispatch) -> Self?
-
-pub(all) enum LoaderBarReceive {
   FilesDropped(@core.Value)
   DyncompLoaded(String, Int)
   DyncompError(String, Int)
@@ -71,9 +55,9 @@ pub(all) enum LoaderBarReceive {
   TypeUrl(String)
   Unknown(String, Array[@core.Value])
 }
-pub fn LoaderBarReceive::from_dispatch(@core.Dispatch) -> Self?
-pub fn LoaderBarReceive::send(Self, &@core.Ctx) -> Unit
-pub fn LoaderBarReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+pub fn LoaderBarMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn LoaderBarMsg::send(Self, &@core.Ctx) -> Unit
+pub fn LoaderBarMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct LoaderBarSample {
   label : String

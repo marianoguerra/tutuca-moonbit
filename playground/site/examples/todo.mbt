@@ -7,7 +7,7 @@
 ///|
 fn todo_item_comp() -> @component.Component {
   item_component(
-    init=ItemState::{ completed: false, text: "do the thing" },
+    initial=ItemState::{ completed: false, text: "do the thing" },
   )
 }
 
@@ -15,7 +15,7 @@ fn todo_item_comp() -> @component.Component {
 ///|
 fn todo_items_comp(item : @component.Component) -> @component.Component {
   items_component(
-    init=ItemsState::{ items: [] },
+    initial=ItemsState::{ items: [] },
     update=(s, msg, _ctx) => match ItemsMsg::from_dispatch(msg) {
       Some(OnAddItem) => Next({ items: s.items + [item.make(Map([]))] })
       // Served by a generated mutator or another bucket: the view

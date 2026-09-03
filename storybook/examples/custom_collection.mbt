@@ -34,13 +34,13 @@ impl @tutuca.Obj for KeyedList with fn item(self, key) {
 
 ///|
 fn song_comp() -> @component.Component {
-  song_component(init={ title: "", })
+  song_component(initial={ title: "", })
 }
 
 ///|
 fn playlist_comp() -> @component.Component {
   playlist_component(
-    init={ songs: Obj(KeyedList::{ order: [], items: Map([]), }), },
+    initial={ songs: Obj(KeyedList::{ order: [], items: Map([]), }), },
     // The state only sees `&Obj`, so the removal REBUILDS the keyed list from
     // seq_entries minus the key (there is no downcast back to KeyedList —
     // the port's trait-object rule).

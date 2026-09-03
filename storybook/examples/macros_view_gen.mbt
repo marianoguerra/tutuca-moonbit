@@ -22,7 +22,7 @@ pub(all) struct MacrosNoState {} derive(Default)
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..MacrosNoState::zero(), label: "Counter" }
+///   initial={ ..MacrosNoState::zero(), label: "Counter" }
 pub fn MacrosNoState::zero() -> MacrosNoState {
   Default::default()
 }
@@ -73,7 +73,7 @@ pub(all) struct MacroParamsState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..MacroParamsState::zero(), label: "Counter" }
+///   initial={ ..MacroParamsState::zero(), label: "Counter" }
 pub fn MacroParamsState::zero() -> MacroParamsState {
   { status: "", }
 }
@@ -131,7 +131,7 @@ pub(all) struct MacroSlotsState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..MacroSlotsState::zero(), label: "Counter" }
+///   initial={ ..MacroSlotsState::zero(), label: "Counter" }
 pub fn MacroSlotsState::zero() -> MacroSlotsState {
   { count: 0, }
 }
@@ -186,7 +186,7 @@ pub(all) struct MacroNamedSlotsState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..MacroNamedSlotsState::zero(), label: "Counter" }
+///   initial={ ..MacroNamedSlotsState::zero(), label: "Counter" }
 pub fn MacroNamedSlotsState::zero() -> MacroNamedSlotsState {
   { count: 0, }
 }

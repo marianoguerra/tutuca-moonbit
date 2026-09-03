@@ -26,7 +26,7 @@ pub(all) struct PushViewState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..PushViewState::zero(), label: "Counter" }
+///   initial={ ..PushViewState::zero(), label: "Counter" }
 pub fn PushViewState::zero() -> PushViewState {
   { items: [], query: "", view: "", }
 }
@@ -65,12 +65,19 @@ impl @component.Fields for PushViewState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum PushViewReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+///
+/// The script block answers toggleView, so an `update` arm for
+/// one of those can never run — the wrapper consults `update` only for a
+/// dispatch the block did not claim. They are still here because raising
+/// one is what a parent does, and `to_dispatch` is how.
+pub(all) enum PushViewMsg {
   ToggleView
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -88,9 +95,7 @@ pub(all) enum PushViewReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn PushViewReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> PushViewReceive? {
+pub fn PushViewMsg::from_dispatch(d : @component.Dispatch) -> PushViewMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -108,8 +113,8 @@ pub fn PushViewReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn PushViewReceive::to_dispatch(
-  self : PushViewReceive,
+pub fn PushViewMsg::to_dispatch(
+  self : PushViewMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     ToggleView => ("toggleView", [])
@@ -122,10 +127,7 @@ pub fn PushViewReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn PushViewReceive::send(
-  self : PushViewReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn PushViewMsg::send(self : PushViewMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -139,64 +141,13 @@ pub let push_view_common_style : String = ""
 pub let push_view_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum PushViewInput {
-  ToggleView
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PushViewInput::name(self : PushViewInput) -> String {
-  match self {
-    ToggleView => "toggleView"
-  }
-}
-
-///|
-pub fn PushViewInput::parse(s : String) -> PushViewInput? {
-  match s {
-    "toggleView" => Some(ToggleView)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to rendering.html breaks every `match` over this type
-/// until it is handled.
-///
-/// Absent, because the script block answers them: toggleView.
-/// `update` is consulted only for a dispatch the block did not claim, so
-/// an arm for one of these could never run.
-pub(all) enum PushViewMsg {
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn PushViewMsg::from_dispatch(d : @component.Dispatch) -> PushViewMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
-pub(all) enum PushViewMethod {
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+pub(all) enum PushViewCompute {
   GetToggleLabel
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn PushViewMethod::name(self : PushViewMethod) -> String {
+pub fn PushViewCompute::name(self : PushViewCompute) -> String {
   match self {
     GetToggleLabel => "getToggleLabel"
   }
@@ -258,7 +209,7 @@ pub(all) struct SeqItemAccessState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..SeqItemAccessState::zero(), label: "Counter" }
+///   initial={ ..SeqItemAccessState::zero(), label: "Counter" }
 pub fn SeqItemAccessState::zero() -> SeqItemAccessState {
   { byKey: Map([]), byIndex: [], currentKey: Null, currentIndex: 0, }
 }
@@ -323,13 +274,13 @@ pub let seq_item_access_common_style : String = ""
 pub let seq_item_access_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum SeqItemAccessMethod {
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+pub(all) enum SeqItemAccessCompute {
   GetMaxIndex
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn SeqItemAccessMethod::name(self : SeqItemAccessMethod) -> String {
+pub fn SeqItemAccessCompute::name(self : SeqItemAccessCompute) -> String {
   match self {
     GetMaxIndex => "getMaxIndex"
   }
@@ -383,7 +334,7 @@ pub(all) struct PaginationState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..PaginationState::zero(), label: "Counter" }
+///   initial={ ..PaginationState::zero(), label: "Counter" }
 pub fn PaginationState::zero() -> PaginationState {
   { items: [], page: 0, pageSize: 0, }
 }
@@ -424,13 +375,20 @@ impl @component.Fields for PaginationState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum PaginationReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+///
+/// The script block answers prev, next, so an `update` arm for
+/// one of those can never run — the wrapper consults `update` only for a
+/// dispatch the block did not claim. They are still here because raising
+/// one is what a parent does, and `to_dispatch` is how.
+pub(all) enum PaginationMsg {
   Next
   Prev
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -448,9 +406,7 @@ pub(all) enum PaginationReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn PaginationReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> PaginationReceive? {
+pub fn PaginationMsg::from_dispatch(d : @component.Dispatch) -> PaginationMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -470,8 +426,8 @@ pub fn PaginationReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn PaginationReceive::to_dispatch(
-  self : PaginationReceive,
+pub fn PaginationMsg::to_dispatch(
+  self : PaginationMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Next => ("next", [])
@@ -485,10 +441,7 @@ pub fn PaginationReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn PaginationReceive::send(
-  self : PaginationReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn PaginationMsg::send(self : PaginationMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -502,73 +455,19 @@ pub let pagination_common_style : String = ""
 pub let pagination_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum PaginationInput {
-  Next
-  Prev
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PaginationInput::name(self : PaginationInput) -> String {
-  match self {
-    Next => "next"
-    Prev => "prev"
-  }
-}
-
-///|
-pub fn PaginationInput::parse(s : String) -> PaginationInput? {
-  match s {
-    "next" => Some(Next)
-    "prev" => Some(Prev)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to rendering.html breaks every `match` over this type
-/// until it is handled.
-///
-/// Absent, because the script block answers them: prev, next.
-/// `update` is consulted only for a dispatch the block did not claim, so
-/// an arm for one of these could never run.
-pub(all) enum PaginationMsg {
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn PaginationMsg::from_dispatch(d : @component.Dispatch) -> PaginationMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: pageExists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
 /// these could never run.
-pub(all) enum PaginationMethod {
+pub(all) enum PaginationCompute {
   IsFirstPage
   IsLastPage
   PageLabel
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn PaginationMethod::name(self : PaginationMethod) -> String {
+pub fn PaginationCompute::name(self : PaginationCompute) -> String {
   match self {
     IsFirstPage => "isFirstPage"
     IsLastPage => "isLastPage"

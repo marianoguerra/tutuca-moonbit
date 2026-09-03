@@ -33,7 +33,7 @@ pub(all) struct ActivityEntryState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ActivityEntryState::zero(), label: "Counter" }
+///   initial={ ..ActivityEntryState::zero(), label: "Counter" }
 pub fn ActivityEntryState::zero() -> ActivityEntryState {
   {
     kind: "",
@@ -184,7 +184,7 @@ pub(all) struct ActivityLogState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..ActivityLogState::zero(), label: "Counter" }
+///   initial={ ..ActivityLogState::zero(), label: "Counter" }
 pub fn ActivityLogState::zero() -> ActivityLogState {
   { events: [], hasEvents: false, }
 }
@@ -221,12 +221,14 @@ impl @component.Fields for ActivityLogState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum ActivityLogReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum ActivityLogMsg {
   AppendEntry(@tutuca.Value)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -244,9 +246,9 @@ pub(all) enum ActivityLogReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn ActivityLogReceive::from_dispatch(
+pub fn ActivityLogMsg::from_dispatch(
   d : @component.Dispatch,
-) -> ActivityLogReceive? {
+) -> ActivityLogMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -264,8 +266,8 @@ pub fn ActivityLogReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn ActivityLogReceive::to_dispatch(
-  self : ActivityLogReceive,
+pub fn ActivityLogMsg::to_dispatch(
+  self : ActivityLogMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     AppendEntry(a0) => ("appendEntry", [a0])
@@ -278,10 +280,7 @@ pub fn ActivityLogReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn ActivityLogReceive::send(
-  self : ActivityLogReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn ActivityLogMsg::send(self : ActivityLogMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }

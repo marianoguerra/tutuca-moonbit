@@ -116,7 +116,7 @@ pub fn render_with_scope_views() -> Map[String, @anode.View] {
 pub fn render_with_scope_component(
   name? : String = "RenderWithScope",
   views? : Map[String, @anode.View] = render_with_scope_views(),
-  init? : RenderWithScopeState = RenderWithScopeState::zero(),
+  initial? : RenderWithScopeState = RenderWithScopeState::zero(),
   common_style? : String = render_with_scope_common_style,
   global_style? : String = render_with_scope_global_style,
   update? : (RenderWithScopeState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -134,7 +134,7 @@ pub fn render_with_scope_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -231,7 +231,7 @@ pub fn list_filter_enrich_views() -> Map[String, @anode.View] {
 pub fn list_filter_enrich_component(
   name? : String = "ListFilterEnrich",
   views? : Map[String, @anode.View] = list_filter_enrich_views(),
-  init? : ListFilterEnrichState = ListFilterEnrichState::zero(),
+  initial? : ListFilterEnrichState = ListFilterEnrichState::zero(),
   common_style? : String = list_filter_enrich_common_style,
   global_style? : String = list_filter_enrich_global_style,
   update? : (ListFilterEnrichState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -260,7 +260,7 @@ pub fn list_filter_enrich_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -369,7 +369,7 @@ pub fn list_filter_enrich_with_views() -> Map[String, @anode.View] {
 pub fn list_filter_enrich_with_component(
   name? : String = "ListFilterEnrichWith",
   views? : Map[String, @anode.View] = list_filter_enrich_with_views(),
-  init? : ListFilterEnrichWithState = ListFilterEnrichWithState::zero(),
+  initial? : ListFilterEnrichWithState = ListFilterEnrichWithState::zero(),
   common_style? : String = list_filter_enrich_with_common_style,
   global_style? : String = list_filter_enrich_with_global_style,
   update? : (ListFilterEnrichWithState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -403,7 +403,7 @@ pub fn list_filter_enrich_with_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

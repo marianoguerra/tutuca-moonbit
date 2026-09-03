@@ -23,7 +23,7 @@
 /// the block's contracts cover.
 fn bar_chart_comp() -> @component.Component {
   bar_chart_component(
-    init={ values: [40, 72, 28, 90, 55, 63], },
+    initial={ values: [40, 72, 28, 90, 55, 63], },
     loop_with=l => {
       match l {
         // once per render, before the loop: split the 300-wide viewBox among the
@@ -144,7 +144,7 @@ fn icon_gallery_comp() -> @component.Component {
       ),
     },
     name="IconGallery",
-    init=IconGalleryState::{ size: 40, },
+    initial=IconGalleryState::{ size: 40, },
   )
 }
 

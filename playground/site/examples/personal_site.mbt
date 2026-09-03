@@ -166,7 +166,7 @@ fn ps_category_decoy_classes() -> String {
 ///|
 fn alt_url_comp() -> @component.Component {
   alt_url_component(
-    init=AltUrlState::{ label: "", url: "#" },
+    initial=AltUrlState::{ label: "", url: "#" },
   )
 }
 
@@ -187,7 +187,7 @@ fn ps_entry_comp() -> @component.Component {
           _ => ()
         })
     },
-    init=PSEntryState::{
+    initial=PSEntryState::{
       title: "?",
       description: "",
       lang: "en",
@@ -274,7 +274,7 @@ fn root_comp() -> @component.Component {
   @component.component(
     views=root_views_with_decoy(),
     name="Root",
-    init=RootState::{
+    initial=RootState::{
         allEntries: [],
         allCategories: [],
         allRoles: [],

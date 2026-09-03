@@ -152,7 +152,7 @@ pub fn loader_bar_views() -> Map[String, @anode.View] {
 pub fn loader_bar_component(
   name? : String = "LoaderBar",
   views? : Map[String, @anode.View] = loader_bar_views(),
-  init? : LoaderBarState = LoaderBarState::zero(),
+  initial? : LoaderBarState = LoaderBarState::zero(),
   common_style? : String = loader_bar_common_style,
   global_style? : String = loader_bar_global_style,
   update? : (LoaderBarState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -166,7 +166,7 @@ pub fn loader_bar_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

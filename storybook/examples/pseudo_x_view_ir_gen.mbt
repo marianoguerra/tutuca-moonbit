@@ -94,7 +94,7 @@ pub fn table_row_views() -> Map[String, @anode.View] {
 pub fn table_row_component(
   name? : String = "TableRow",
   views? : Map[String, @anode.View] = table_row_views(),
-  init? : TableRowState = TableRowState::zero(),
+  initial? : TableRowState = TableRowState::zero(),
   common_style? : String = table_row_common_style,
   global_style? : String = table_row_global_style,
   update? : (TableRowState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -108,7 +108,7 @@ pub fn table_row_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -166,7 +166,7 @@ pub fn item_table_views() -> Map[String, @anode.View] {
 pub fn item_table_component(
   name? : String = "ItemTable",
   views? : Map[String, @anode.View] = item_table_views(),
-  init? : ItemTableState = ItemTableState::zero(),
+  initial? : ItemTableState = ItemTableState::zero(),
   common_style? : String = item_table_common_style,
   global_style? : String = item_table_global_style,
   update? : (ItemTableState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -180,7 +180,7 @@ pub fn item_table_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -226,7 +226,7 @@ pub fn select_option_views() -> Map[String, @anode.View] {
 pub fn select_option_component(
   name? : String = "SelectOption",
   views? : Map[String, @anode.View] = select_option_views(),
-  init? : SelectOptionState = SelectOptionState::zero(),
+  initial? : SelectOptionState = SelectOptionState::zero(),
   common_style? : String = select_option_common_style,
   global_style? : String = select_option_global_style,
   update? : (SelectOptionState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -240,7 +240,7 @@ pub fn select_option_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -308,7 +308,7 @@ pub fn item_select_views() -> Map[String, @anode.View] {
 pub fn item_select_component(
   name? : String = "ItemSelect",
   views? : Map[String, @anode.View] = item_select_views(),
-  init? : ItemSelectState = ItemSelectState::zero(),
+  initial? : ItemSelectState = ItemSelectState::zero(),
   common_style? : String = item_select_common_style,
   global_style? : String = item_select_global_style,
   update? : (ItemSelectState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -322,7 +322,7 @@ pub fn item_select_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,
@@ -368,7 +368,7 @@ pub fn pseudo_x_demo_views() -> Map[String, @anode.View] {
 pub fn pseudo_x_demo_component(
   name? : String = "PseudoXDemo",
   views? : Map[String, @anode.View] = pseudo_x_demo_views(),
-  init? : PseudoXDemoState = PseudoXDemoState::zero(),
+  initial? : PseudoXDemoState = PseudoXDemoState::zero(),
   common_style? : String = pseudo_x_demo_common_style,
   global_style? : String = pseudo_x_demo_global_style,
   update? : (PseudoXDemoState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
@@ -382,7 +382,7 @@ pub fn pseudo_x_demo_component(
   @component.component(
     name~,
     views~,
-    init~,
+    initial~,
     common_style~,
     global_style~,
     update?,

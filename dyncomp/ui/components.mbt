@@ -10,6 +10,8 @@
 ///|
 fn palette_row_comp() -> @component.Component {
   palette_row_component(update=(s, msg, ctx) => {
+    // One match over one bucket. It was two, nested — the schema's names in
+    // the outer and the view's in the inner — back when they were two enums.
     match PaletteRowMsg::from_dispatch(msg) {
       Some(Pick(configure)) => {
         PaletteRowIntent::ComponentPicked(s.module_, s.name, configure).dispatch(
@@ -17,15 +19,8 @@ fn palette_row_comp() -> @component.Component {
         )
         Next(s)
       }
-      Some(Unknown(_, _)) | None =>
-        match PaletteRowReceive::from_dispatch(msg) {
-          Some(SetSelected(selected)) => Next({ ..s, selected, })
-          // The merged `Receive` carries this component's own VIEW names as
-          // well as the schema's, so `Unknown` covers cases this match has
-          // nothing to say about. They are answered by the match
-          // beside this one.
-          _ => Unhandled
-        }
+      Some(SetSelected(selected)) => Next({ ..s, selected, })
+      _ => Unhandled
     }
   })
 }
@@ -103,7 +98,11 @@ fn command_bar_comp() -> @component.Component {
         ctx.intent("commandClose", [], @tutuca.IntentOpts::new(route=[Dyn]))
         Unchanged
       }
-      Some(Unknown(_, _)) | None => Unhandled
+      // Declared and sent from outside — the app moves the cursor when it
+      // hands back new rows — so it has no view call site and reaches here
+      // through the same one bucket.
+      Some(SetCursor(i)) => with_cursor(i)
+      _ => Unhandled
     }
   })
 }
@@ -171,7 +170,7 @@ fn schema_form_comp() -> @component.Component {
       // beside this one.
       _ => ()
     }
-    match SchemaFormReceive::from_dispatch(msg) {
+    match SchemaFormMsg::from_dispatch(msg) {
       // Errors arrive keyed by JSON Pointer (`/email`), because that is what
       // the schema layer produces and what every other layer here already
       // speaks. Stripping the leading slash is this component's whole share of

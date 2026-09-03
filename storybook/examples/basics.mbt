@@ -62,7 +62,7 @@ pub fn static_view_module() -> @component.ModuleDef {
 /// renders: strings, numbers, booleans, null.
 fn text_directive_comp() -> @component.Component {
   text_directive_component(
-    init={ str: "hello", num: 42, bool: true, notSet: Null, },
+    initial={ str: "hello", num: 42, bool: true, notSet: Null, },
     compute=m => {
       match m {
         GetStrUpper => Some((s, _args, _stack) => Str(s.str.to_upper()))
@@ -97,7 +97,7 @@ pub fn text_directive_module() -> @component.ModuleDef {
 /// The escape hatch: `@dangerouslysetinnerhtml` sets the element's innerHTML
 /// from a field instead of building children.
 fn danger_set_inner_html_comp() -> @component.Component {
-  danger_set_inner_html_component(init={
+  danger_set_inner_html_component(initial={
     content: "<strong><em>Raw HTML!</em></strong>",
   })
 }
@@ -133,7 +133,7 @@ pub fn danger_set_inner_html_module() -> @component.ModuleDef {
 /// element and attribute value it produces is judged by the app's own
 /// sanitizer on the way out. See docs/sanitizer.md.
 fn set_inner_md_comp() -> @component.Component {
-  set_inner_md_component(init={
+  set_inner_md_component(initial={
     source: "# Markdown\n\nWith *emphasis*, `code`, and a [link](/docs).\n\n- and\n- a list\n",
   })
 }

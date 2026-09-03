@@ -100,7 +100,7 @@ fn vw_instr(name : String, label : String) -> @component.Component {
       ),
     },
     name~,
-    init=VwEmptyState::{ },
+    initial=VwEmptyState::{ },
   )
 }
 
@@ -116,7 +116,7 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
       ),
     },
     name~,
-    init=VwImmState::{ value: 0, rawValue: "0", },
+    initial=VwImmState::{ value: 0, rawValue: "0", },
     // Runtime views throughout this file (the tree is assembled in MoonBit),
     // so there is no generated Msg and every arm names the dispatch directly.
     update=(s : VwImmState, msg, _ctx) => {
@@ -164,7 +164,7 @@ fn vw_type(reg : VwReg, name : String, label : String) -> @component.Component {
       ),
     },
     name~,
-    init=VwEmptyState::{ },
+    initial=VwEmptyState::{ },
     update=(_s : VwEmptyState, msg, _ctx) => {
       match msg {
         // `Replace` supersedes this node with a DIFFERENT component's instance,
@@ -362,7 +362,7 @@ fn vw_types_comp(reg : VwReg) -> @component.Component {
       ),
     },
     name="Types",
-    init=VwTypesState::{ items: [], },
+    initial=VwTypesState::{ items: [], },
     update=(s : VwTypesState, msg, _ctx) => {
       match msg {
         Receive("addItemAt", args) => {
@@ -406,7 +406,7 @@ fn vw_block_type_comp() -> @component.Component {
       ),
     },
     name="BlockType",
-    init=VwEmptyState::{ },
+    initial=VwEmptyState::{ },
     slots={ "args": "Types", "returns": "Types" },
   )
 }
@@ -475,7 +475,7 @@ fn vw_block_comp(reg : VwReg) -> @component.Component {
       ),
     },
     name="Block",
-    init=vw_container_init(),
+    initial=vw_container_init(),
     slots={ "blockType": "BlockType" },
     update=vw_container_update(reg),
     compute=vw_container_compute(),
@@ -493,7 +493,7 @@ fn vw_loop_comp(reg : VwReg) -> @component.Component {
       ),
     },
     name="Loop",
-    init=vw_container_init(),
+    initial=vw_container_init(),
     slots={ "blockType": "BlockType" },
     update=vw_container_update(reg),
     compute=vw_container_compute(),
@@ -527,7 +527,7 @@ fn vw_func_comp(reg : VwReg) -> @component.Component {
       ),
     },
     name="Func",
-    init=vw_container_init(),
+    initial=vw_container_init(),
     slots={ "blockType": "BlockType", "locals": "Types" },
     update=vw_container_update(reg),
     compute=vw_container_compute(),
@@ -573,7 +573,7 @@ fn vw_if_comp(reg : VwReg) -> @component.Component {
       ),
     },
     name="If",
-    init=VwIfState::{
+    initial=VwIfState::{
       thn: [],
       else_: [],
       expanded: true,
@@ -620,7 +620,7 @@ fn vw_section_comp() -> @component.Component {
       ),
     },
     name="Section",
-    init=VwSectionState::{
+    initial=VwSectionState::{
       id: 0,
       name: "Section",
       items: [],
@@ -669,7 +669,7 @@ fn vw_memory_comp() -> @component.Component {
       ),
     },
     name="Memory",
-    init=VwMemoryState::{ n: 1, m: 1, },
+    initial=VwMemoryState::{ n: 1, m: 1, },
     update=(s : VwMemoryState, msg, _ctx) => {
       match msg {
         Receive("setNFromString", args) =>
@@ -697,7 +697,7 @@ fn vw_module_comp() -> @component.Component {
       ),
     },
     name="Module",
-    init=VwEmptyState::{ },
+    initial=VwEmptyState::{ },
     slots={ "mem": "Section", "func": "Section" },
     slot_args={
       "mem": { "id": Num(5), "name": Str("Memory") },
@@ -767,7 +767,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
       ),
     },
     name="InstructionPicker",
-    init=VwPickerState::{
+    initial=VwPickerState::{
       currentSection: "all",
       instructions: vw_all_ids(),
       filter: "",

@@ -32,7 +32,7 @@ pub(all) struct StoryNavState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..StoryNavState::zero(), label: "Counter" }
+///   initial={ ..StoryNavState::zero(), label: "Counter" }
 pub fn StoryNavState::zero() -> StoryNavState {
   { module_: "", name: "", count: 0, selected: false, }
 }
@@ -73,12 +73,14 @@ impl @component.Fields for StoryNavState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum StoryNavReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum StoryNavMsg {
   Pick
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -96,9 +98,7 @@ pub(all) enum StoryNavReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn StoryNavReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> StoryNavReceive? {
+pub fn StoryNavMsg::from_dispatch(d : @component.Dispatch) -> StoryNavMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -116,8 +116,8 @@ pub fn StoryNavReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn StoryNavReceive::to_dispatch(
-  self : StoryNavReceive,
+pub fn StoryNavMsg::to_dispatch(
+  self : StoryNavMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Pick => ("pick", [])
@@ -130,10 +130,7 @@ pub fn StoryNavReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn StoryNavReceive::send(
-  self : StoryNavReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn StoryNavMsg::send(self : StoryNavMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -220,56 +217,6 @@ pub let story_nav_common_style : String = ""
 pub let story_nav_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum StoryNavInput {
-  Pick
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn StoryNavInput::name(self : StoryNavInput) -> String {
-  match self {
-    Pick => "pick"
-  }
-}
-
-///|
-pub fn StoryNavInput::parse(s : String) -> StoryNavInput? {
-  match s {
-    "pick" => Some(Pick)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to storybook.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum StoryNavMsg {
-  /// `@on.click="pick …"`
-  Pick
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn StoryNavMsg::from_dispatch(d : @component.Dispatch) -> StoryNavMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("pick", []) => Pick
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no
@@ -334,7 +281,7 @@ pub(all) struct StoryCardState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..StoryCardState::zero(), label: "Counter" }
+///   initial={ ..StoryCardState::zero(), label: "Counter" }
 pub fn StoryCardState::zero() -> StoryCardState {
   {
     title: "",
@@ -395,12 +342,14 @@ impl @component.Fields for StoryCardState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum StoryCardReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum StoryCardMsg {
   Rebuild
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -418,9 +367,7 @@ pub(all) enum StoryCardReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn StoryCardReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> StoryCardReceive? {
+pub fn StoryCardMsg::from_dispatch(d : @component.Dispatch) -> StoryCardMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -438,8 +385,8 @@ pub fn StoryCardReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn StoryCardReceive::to_dispatch(
-  self : StoryCardReceive,
+pub fn StoryCardMsg::to_dispatch(
+  self : StoryCardMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Rebuild => ("rebuild", [])
@@ -452,10 +399,7 @@ pub fn StoryCardReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn StoryCardReceive::send(
-  self : StoryCardReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn StoryCardMsg::send(self : StoryCardMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -544,67 +488,17 @@ pub let story_card_common_style : String = ""
 pub let story_card_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum StoryCardInput {
-  Rebuild
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn StoryCardInput::name(self : StoryCardInput) -> String {
-  match self {
-    Rebuild => "rebuild"
-  }
-}
-
-///|
-pub fn StoryCardInput::parse(s : String) -> StoryCardInput? {
-  match s {
-    "rebuild" => Some(Rebuild)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to storybook.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum StoryCardMsg {
-  /// `@on.click="rebuild …"`
-  Rebuild
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn StoryCardMsg::from_dispatch(d : @component.Dispatch) -> StoryCardMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("rebuild", []) => Rebuild
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: aCardShowsSomething.
 /// The block's own handlers are merged into this bucket, so an arm for one of
 /// these could never run.
-pub(all) enum StoryCardMethod {
+pub(all) enum StoryCardCompute {
   RefLabel
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn StoryCardMethod::name(self : StoryCardMethod) -> String {
+pub fn StoryCardCompute::name(self : StoryCardCompute) -> String {
   match self {
     RefLabel => "refLabel"
   }
@@ -686,7 +580,7 @@ pub(all) struct DyncompStorybookState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..DyncompStorybookState::zero(), label: "Counter" }
+///   initial={ ..DyncompStorybookState::zero(), label: "Counter" }
 pub fn DyncompStorybookState::zero() -> DyncompStorybookState {
   {
     cards: [],
@@ -771,10 +665,12 @@ impl @component.Fields for DyncompStorybookState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum DyncompStorybookReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum DyncompStorybookMsg {
   /// A bundle loaded (or hot-swapped): rebuild the whole story set. Sent
   /// by a host that pushes the news itself, and by every test here.
   CatalogChanged(String)
@@ -785,7 +681,7 @@ pub(all) enum DyncompStorybookReceive {
   ShowAll
   ToggleDetails
   ToggleWide
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -803,9 +699,9 @@ pub(all) enum DyncompStorybookReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn DyncompStorybookReceive::from_dispatch(
+pub fn DyncompStorybookMsg::from_dispatch(
   d : @component.Dispatch,
-) -> DyncompStorybookReceive? {
+) -> DyncompStorybookMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -837,8 +733,8 @@ pub fn DyncompStorybookReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn DyncompStorybookReceive::to_dispatch(
-  self : DyncompStorybookReceive,
+pub fn DyncompStorybookMsg::to_dispatch(
+  self : DyncompStorybookMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     CatalogChanged(a0) => ("catalogChanged", [Str(a0)])
@@ -858,8 +754,8 @@ pub fn DyncompStorybookReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn DyncompStorybookReceive::send(
-  self : DyncompStorybookReceive,
+pub fn DyncompStorybookMsg::send(
+  self : DyncompStorybookMsg,
   ctx : &@tutuca.Ctx,
 ) -> Unit {
   let (name, args) = self.to_dispatch()
@@ -951,97 +847,15 @@ pub let dyncomp_storybook_common_style : String = ""
 pub let dyncomp_storybook_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum DyncompStorybookInput {
-  ChooseTheme
-  FilesDropped
-  SetQuery
-  ShowAll
-  ToggleDetails
-  ToggleWide
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn DyncompStorybookInput::name(self : DyncompStorybookInput) -> String {
-  match self {
-    ChooseTheme => "chooseTheme"
-    FilesDropped => "filesDropped"
-    SetQuery => "setQuery"
-    ShowAll => "showAll"
-    ToggleDetails => "toggleDetails"
-    ToggleWide => "toggleWide"
-  }
-}
-
-///|
-pub fn DyncompStorybookInput::parse(s : String) -> DyncompStorybookInput? {
-  match s {
-    "chooseTheme" => Some(ChooseTheme)
-    "filesDropped" => Some(FilesDropped)
-    "setQuery" => Some(SetQuery)
-    "showAll" => Some(ShowAll)
-    "toggleDetails" => Some(ToggleDetails)
-    "toggleWide" => Some(ToggleWide)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to storybook.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum DyncompStorybookMsg {
-  /// `@on.input="chooseTheme …"`
-  ChooseTheme(String)
-  /// `@on.drop="filesDropped …"`
-  FilesDropped(String)
-  /// `@on.input="setQuery …"`
-  SetQuery(String)
-  /// `@on.click="showAll …"`
-  ShowAll
-  /// `@on.click="toggleDetails …"`
-  ToggleDetails
-  /// `@on.click="toggleWide …"`
-  ToggleWide
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn DyncompStorybookMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> DyncompStorybookMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("chooseTheme", [Str(a0)]) => ChooseTheme(a0)
-      ("filesDropped", [Str(a0)]) => FilesDropped(a0)
-      ("setQuery", [Str(a0)]) => SetQuery(a0)
-      ("showAll", []) => ShowAll
-      ("toggleDetails", []) => ToggleDetails
-      ("toggleWide", []) => ToggleWide
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// Every `$name` the views call.
-pub(all) enum DyncompStorybookMethod {
+/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+pub(all) enum DyncompStorybookCompute {
   DetailsLabel
   IsEmpty
   LayoutLabel
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn DyncompStorybookMethod::name(self : DyncompStorybookMethod) -> String {
+pub fn DyncompStorybookCompute::name(self : DyncompStorybookCompute) -> String {
   match self {
     DetailsLabel => "detailsLabel"
     IsEmpty => "isEmpty"

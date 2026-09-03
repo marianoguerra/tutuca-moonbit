@@ -63,7 +63,7 @@ fn drawer_comp() -> @component.Component {
         raw_view="<div><span class=\"held\" @text=\".held\"></span></div>",
       ),
     },
-    init=DrawerState::{ held: 10, owed: 4, },
+    initial=DrawerState::{ held: 10, owed: 4, },
     spec=DRAWER_SPEC,
   )
 }

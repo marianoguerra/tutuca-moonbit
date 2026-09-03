@@ -50,7 +50,7 @@ pub(all) struct NestedStateState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..NestedStateState::zero(), label: "Counter" }
+///   initial={ ..NestedStateState::zero(), label: "Counter" }
 pub fn NestedStateState::zero() -> NestedStateState {
   {
     title: "",
@@ -201,13 +201,15 @@ impl @component.Fields for NestedStateState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum NestedStateReceive {
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
+pub(all) enum NestedStateMsg {
   BumpPriority
   ToggleLabel(@tutuca.Value)
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -225,9 +227,9 @@ pub(all) enum NestedStateReceive {
 /// that used to be indistinguishable from silence. Every arm below that
 /// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
 /// which costs nothing unless a host is listening.
-pub fn NestedStateReceive::from_dispatch(
+pub fn NestedStateMsg::from_dispatch(
   d : @component.Dispatch,
-) -> NestedStateReceive? {
+) -> NestedStateMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
@@ -247,8 +249,8 @@ pub fn NestedStateReceive::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn NestedStateReceive::to_dispatch(
-  self : NestedStateReceive,
+pub fn NestedStateMsg::to_dispatch(
+  self : NestedStateMsg,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     BumpPriority => ("bumpPriority", [])
@@ -262,10 +264,7 @@ pub fn NestedStateReceive::to_dispatch(
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn NestedStateReceive::send(
-  self : NestedStateReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
+pub fn NestedStateMsg::send(self : NestedStateMsg, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
 }
@@ -277,64 +276,6 @@ pub let nested_state_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let nested_state_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum NestedStateInput {
-  BumpPriority
-  ToggleLabel
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn NestedStateInput::name(self : NestedStateInput) -> String {
-  match self {
-    BumpPriority => "bumpPriority"
-    ToggleLabel => "toggleLabel"
-  }
-}
-
-///|
-pub fn NestedStateInput::parse(s : String) -> NestedStateInput? {
-  match s {
-    "bumpPriority" => Some(BumpPriority)
-    "toggleLabel" => Some(ToggleLabel)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to nested_state.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum NestedStateMsg {
-  /// `@on.click="bumpPriority …"`
-  BumpPriority
-  /// `@on.click="toggleLabel …"`
-  ToggleLabel(@tutuca.Value)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn NestedStateMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> NestedStateMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("bumpPriority", []) => BumpPriority
-      ("toggleLabel", [a0]) => ToggleLabel(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.

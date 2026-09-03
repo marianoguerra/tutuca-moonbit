@@ -6,7 +6,7 @@
 
 ///|
 fn emoji_picker_comp() -> @component.Component {
-  emoji_picker_component(init={ current: Null, isPickerVisible: false, }, update=(
+  emoji_picker_component(initial={ current: Null, isPickerVisible: false, }, update=(
     s,
     msg,
     _ctx,

@@ -25,7 +25,7 @@ pub(all) struct TmItemState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..TmItemState::zero(), label: "Counter" }
+///   initial={ ..TmItemState::zero(), label: "Counter" }
 pub fn TmItemState::zero() -> TmItemState {
   { completed: false, text: "", }
 }
@@ -81,7 +81,7 @@ pub(all) struct TmItemsState {
 /// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
-///   init={ ..TmItemsState::zero(), label: "Counter" }
+///   initial={ ..TmItemsState::zero(), label: "Counter" }
 pub fn TmItemsState::zero() -> TmItemsState {
   { items: [], }
 }

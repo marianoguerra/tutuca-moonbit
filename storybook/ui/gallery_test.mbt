@@ -61,7 +61,7 @@ fn counter_comp() -> @component.Component {
       ),
     },
     name="Counter",
-    init=CounterState::{ count: 0, },
+    initial=CounterState::{ count: 0, },
     update=(s : CounterState, msg, _ctx) => {
       match msg {
         Receive("inc", _) => Next({ count: s.count + 1, })
@@ -81,7 +81,7 @@ fn hello_comp() -> @component.Component {
       ),
     },
     name="Hello",
-    init=HelloState::{ who: "world", },
+    initial=HelloState::{ who: "world", },
   )
 }
 
@@ -255,7 +255,7 @@ test "a story renders under the view its example named" {
           ),
         },
         name="Two",
-        init=HelloState::{ who: "x", },
+        initial=HelloState::{ who: "x", },
       ),
     ],
     examples=[

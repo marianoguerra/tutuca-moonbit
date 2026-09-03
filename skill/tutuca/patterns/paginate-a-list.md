@@ -29,7 +29,7 @@ block has any way to see.
 ///|
 fn paged_comp() -> @component.Component {
   paged_component(
-    init={ items: [], page: 0, pageSize: 5 },
+    initial={ items: [], page: 0, pageSize: 5 },
     // runs once per render, before iteration: (s, seq, loopCtx) -> LoopWith
     loop_with=l => match l {
       Paginate =>

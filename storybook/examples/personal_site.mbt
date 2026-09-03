@@ -168,7 +168,7 @@ fn ps_category_decoy_classes() -> String {
 
 ///|
 fn alt_url_comp() -> @component.Component {
-  alt_url_component(init={ label: "", url: "#", })
+  alt_url_component(initial={ label: "", url: "#", })
 }
 
 ///|
@@ -190,7 +190,7 @@ fn ps_entry_comp() -> @component.Component {
           })
       }
     },
-    init={
+    initial={
       title: "?",
       description: "",
       lang: "en",
@@ -287,7 +287,7 @@ fn root_comp() -> @component.Component {
     // The one argument this component overrides: its views are the generated
     // ones plus a runtime-built decoy. Everything else the wrapper fills.
     views=root_views_with_decoy(),
-    init={
+    initial={
       allEntries: [],
       allCategories: [],
       allRoles: [],

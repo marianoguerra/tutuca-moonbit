@@ -9,14 +9,14 @@
 
 ///|
 fn dse_entry_comp() -> @component.Component {
-  dse_entry_component(name="Entry", init={ name: "", })
+  dse_entry_component(name="Entry", initial={ name: "", })
 }
 
 ///|
 fn dse_editor_comp() -> @component.Component {
   dse_editor_component(
     name="Editor",
-    init={ missing: Null, },
+    initial={ missing: Null, },
     // Consumer: forwards to Root's provides — a sequence and a single item.
     lookup=[
       @component.lookup_or("items", ".missing"),
@@ -29,7 +29,7 @@ fn dse_editor_comp() -> @component.Component {
 fn dse_root_comp() -> @component.Component {
   dse_root_component(
     name="Root",
-    init={ ..DseRootState::zero(), items: Map([]), selectedKey: "", },
+    initial={ ..DseRootState::zero(), items: Map([]), selectedKey: "", },
     // Producer: the whole sequence, plus a seq-access to the selected entry.
     provide={ "items": ".items", "selected": ".items[.selectedKey]" },
     update=(s, msg, _ctx) => {

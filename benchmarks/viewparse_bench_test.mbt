@@ -66,13 +66,13 @@ test "workload shape" {
   inspect(
     @benchmarks.gen(@benchmarks.all_views),
     content=(
-      #|271396
+      #|307144
     ),
   )
   inspect(
     @benchmarks.gen(giant_1x),
     content=(
-      #|142720
+      #|143704
     ),
   )
 }

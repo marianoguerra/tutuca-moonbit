@@ -20,7 +20,7 @@ fn msgs_src(bucket_decls : String) -> String raise {
 ///|
 test "a declared receive bucket gets an enum, a decode and a sender" {
   let src = msgs_src("handle Chat { message { init, tick, setAll(String) } }")
-  assert_true(src.contains("pub(all) enum ChatReceive {"))
+  assert_true(src.contains("pub(all) enum ChatMsg {"))
   assert_true(src.contains("  Init\n"))
   assert_true(src.contains("  SetAll(String)\n"))
   // The escape hatch is mandatory: a dispatch the schema does not declare
@@ -33,16 +33,14 @@ test "a declared receive bucket gets an enum, a decode and a sender" {
   )
   assert_true(src.contains("(\"setAll\", [Str(a0)]) => SetAll(a0)"))
   // ...and the raise side, so the name is never written as a string twice.
-  assert_true(src.contains("pub fn ChatReceive::to_dispatch"))
+  assert_true(src.contains("pub fn ChatMsg::to_dispatch"))
   // Unqualified, resolved by the annotated return type — the playground's
   // @tutuca facade re-exports the Value TYPE but not its constructors, so a
   // qualified `@tutuca.Str(...)` would generate fine and then fail to compile
   // in the browser.
   assert_true(src.contains("SetAll(a0) => (\"setAll\", [Str(a0)])"))
   assert_true(
-    src.contains(
-      "pub fn ChatReceive::send(self : ChatReceive, ctx : &@tutuca.Ctx)",
-    ),
+    src.contains("pub fn ChatMsg::send(self : ChatMsg, ctx : &@tutuca.Ctx)"),
   )
   assert_true(src.contains("ctx.send(name, args)"))
 }
@@ -54,7 +52,7 @@ test "each bucket decodes only its own dispatch arm" {
   assert_true(src.contains("guard d is Intent(name, args)"))
   // Two buckets, two enums, and neither decodes the other's arm.
   assert_true(src.contains("pub(all) enum ChatIntent {"))
-  assert_false(src.contains("ChatReceive::from_dispatch(Intent"))
+  assert_false(src.contains("ChatMsg::from_dispatch(Intent"))
   assert_false(src.contains("ChatIntent::from_dispatch(Receive"))
 }
 
@@ -99,7 +97,7 @@ test "a composite payload is decoded at its declared type, not erased" {
   // `return None`, which a `match` arm has nowhere to do.
   assert_true(
     src.contains(
-      "fn chat_receive_got_rows_of_args(args : Array[@tutuca.Value]) -> ChatReceive?",
+      "fn chat_msg_got_rows_of_args(args : Array[@tutuca.Value]) -> ChatMsg?",
     ),
   )
   assert_true(src.contains("guard chat_row_of_value(e1_0) is Some(x1_0)"))
@@ -116,7 +114,7 @@ test "an Any payload stays the Value it declares" {
   assert_true(src.contains("  Raw(@tutuca.Value)\n"))
   assert_true(src.contains("  Kid(@tutuca.Value)\n"))
   assert_true(src.contains("(\"raw\", [a0]) => Raw(a0)"))
-  assert_false(src.contains("chat_receive_raw_of_args"))
+  assert_false(src.contains("chat_msg_raw_of_args"))
 }
 
 ///|
@@ -144,7 +142,7 @@ test "a declared name handed the wrong shape is reported, not just Unknown" {
 ///|
 test "a component with no declared buckets emits none of this" {
   let src = msgs_src("")
-  assert_false(src.contains("ChatReceive"))
+  assert_false(src.contains("ChatMsg"))
   assert_false(src.contains("ChatBubble"))
   assert_false(src.contains("ChatResponse"))
   // ...but the Input bucket the views DO type is untouched.
@@ -184,29 +182,25 @@ fn enum_body(src : String, ty : String) -> String {
 }
 
 ///|
-test "a name the script block answers is dropped from the Msg enum" {
-  // A5. `update` is composed BEHIND the block, so it is only ever consulted
-  // for a dispatch the block did not claim — an arm for `bump` could not run,
-  // and making the author write `Some(Bump(_)) => Unhandled` would move the
-  // noise rather than remove it.
+/// A name the script block answers stays IN the enum, and the doc says so.
+///
+/// `update` is composed behind the block, so it is only ever consulted for a
+/// dispatch the block did not claim: an arm for `bump` could not run. That
+/// used to drop the case, back when there were two enums and this one was
+/// decode-only.
+///
+/// There is one now, and it is a RAISE surface as well as a decode surface —
+/// a component sending `bump` to itself writes `ChatMsg::Bump(1.0).send(ctx)`,
+/// and the block answering the name is exactly WHY it would. Dropping the case
+/// would take the typed raise away with the dead arm, so the note is what is
+/// left: it says which cases can never reach an `update` arm.
+test "a name the script block answers stays, and the doc says it is dead" {
   let src = answered_src("receive bump(d) { .n += d }")
-  // Asked of the `<T>Msg` enum BODY rather than of the whole file, because v2
-  // emits the same name again in the merged `<T>Receive` — deliberately. That
-  // enum is a RAISE surface as well as a decode surface: a component sending
-  // `bump` to itself writes `ChatReceive::Bump(1.0).send(ctx)`, and the block
-  // answering the name is exactly why it would. `<T>Msg` is decode-only, so
-  // dropping an unreachable arm there costs nothing and removes noise.
-  assert_false(enum_body(src, "ChatMsg").contains("  Bump(Double)\n"))
+  assert_true(enum_body(src, "ChatMsg").contains("  Bump(Double)\n"))
   assert_true(enum_body(src, "ChatMsg").contains("  Reset\n"))
-  assert_true(src.contains("  Reset\n"))
-  assert_true(
-    src.contains("Absent, because the script block answers them: bump."),
-  )
-  // …and the INPUT enum keeps it. That one keys `swap`, which wins over
-  // `update` and replaces the node rather than the state — something the
-  // block cannot say, so answering a name must not take swapping it away.
-  assert_true(src.contains("pub(all) enum ChatInput {"))
-  assert_true(src.contains("  Bump\n"))
+  assert_true(src.contains("The script block answers bump, so an `update` arm"))
+  // …and the typed raise it is kept for.
+  assert_true(src.contains("Bump(a0) => (\"bump\", [Num(a0)])"))
 }
 
 ///|
@@ -271,7 +265,7 @@ test "the receive bucket merges the schema with the view names" {
     "<button @on.click=\"bump 1\">+</button>" +
     "<button @on.click=\"reset\">0</button>",
   )
-  let body = enum_body(src, "ChatReceive")
+  let body = enum_body(src, "ChatMsg")
   // From the schema...
   assert_true(body.contains("  Init\n"))
   assert_true(body.contains("  SetAll(String)\n"))
@@ -285,7 +279,7 @@ test "the receive bucket merges the schema with the view names" {
   assert_true(src.contains("(\"bump\", [Num(a0)]) => Bump(a0)"))
   // The raise side reaches both halves, which is what makes the merge worth
   // having: a parent can send a name the child's own view also raises.
-  assert_true(src.contains("pub fn ChatReceive::send"))
+  assert_true(src.contains("pub fn ChatMsg::send"))
 }
 
 ///|
@@ -295,7 +289,7 @@ test "a view name the schema also declares is declared once, by the schema" {
   let src = merged_src(
     "handle Chat { message { bump(Int) } }", "<button @on.click=\"bump 1\">+</button>",
   )
-  let body = enum_body(src, "ChatReceive")
+  let body = enum_body(src, "ChatMsg")
   assert_true(body.contains("  Bump(Int)\n"))
   assert_false(body.contains("  Bump(Double)\n"))
 }
@@ -303,7 +297,7 @@ test "a view name the schema also declares is declared once, by the schema" {
 ///|
 test "a call site that disagrees with the schema is a build error" {
   // THE error the merge buys. Two enums could not report it: the view's `bump`
-  // variant and the schema's is a `ChatReceive` variant, and nothing in the
+  // variant and the schema's is a `ChatMsg` variant, and nothing in the
   // generator ever puts the two side by side.
   //
   // Both halves print the name as written, and the halves match because the

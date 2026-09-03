@@ -87,7 +87,7 @@ fn gallery() -> @tutuca.Value {
         raw_view="<div><x text=\".currentIndex\"></x></div>",
       ),
     },
-    init=GalleryState::{
+    initial=GalleryState::{
       items: [Str("a"), Str("b"), Str("c")],
       entries: { "k0": Num(1) },
       currentIndex: 0,
