@@ -41,7 +41,7 @@ test "counter: simple and abstract properties are synchronous" {
       "magnitude",
       Num(9),
     )
-    is PChanged(_),
+    is Changed(_),
   )
   // The complex setter preserved the internal sign and the synchronous call
   // already rebuilt the DOM before it returned.
@@ -50,7 +50,7 @@ test "counter: simple and abstract properties are synchronous" {
 
   assert_true(
     h.app.transactor.set_property(@tutuca.DispatchPath::new(), "count", Num(3))
-    is PChanged(_),
+    is Changed(_),
   )
   assert_eq(h.drive_value().property("magnitude"), Num(3))
 }
@@ -73,5 +73,5 @@ test "counter: public fuzzer plans generate properties, never internal mutators"
   }
   let actions = plan.script(seed=3, steps=80)
   assert_true(actions.iter().any(a => a is SetProperty(_, _)))
-  assert_false(actions.iter().any(a => a is InternalMutator(_)))
+  assert_false(actions.iter().any(a => a is SetField(_, _)))
 }

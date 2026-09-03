@@ -171,7 +171,7 @@ fn todo_bundle() -> @dyncomp.DynManifest {
         views: [
           {
             name: "main",
-            html: "<div><input @on.input=\"setDraft e.value\" /><button @on.click=\"add\">Add</button></div>",
+            html: "<div><input @on.input=\".draft = e.value\" /><button @on.click=\"add\">Add</button></div>",
           },
         ],
         types: [ty("ty-text"), ty("ty-record")],

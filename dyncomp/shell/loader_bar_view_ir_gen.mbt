@@ -158,11 +158,6 @@ pub fn loader_bar_component(
   update? : (LoaderBarState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     LoaderBarState,
   ],
-  swap? : (LoaderBarInput) -> ((
-    LoaderBarState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -175,15 +170,6 @@ pub fn loader_bar_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([LoadSample, LoadUrl, TypeUrl] : Array[LoaderBarInput]),
-          LoaderBarInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,

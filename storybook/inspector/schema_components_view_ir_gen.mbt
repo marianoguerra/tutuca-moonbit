@@ -380,11 +380,6 @@ pub fn schema_scalar_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (SchemaScalarInput) -> ((
-    SchemaScalarState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   loop_with? : (SchemaScalarLoopWith) -> ((
     SchemaScalarState,
     @tutuca.Value,
@@ -426,15 +421,6 @@ pub fn schema_scalar_component(
         bucket[k] = h
       }
       bucket
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([NextPage, PrevPage, ToggleIsExpanded] : Array[SchemaScalarInput]),
-          SchemaScalarInput::name,
-          f,
-        )
-      None => Map([])
     },
     loop_with=match loop_with {
       Some(f) =>
@@ -680,11 +666,6 @@ pub fn schema_object_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (SchemaObjectInput) -> ((
-    SchemaObjectState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   loop_with? : (SchemaObjectLoopWith) -> ((
     SchemaObjectState,
     @tutuca.Value,
@@ -726,15 +707,6 @@ pub fn schema_object_component(
         bucket[k] = h
       }
       bucket
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([NextPage, PrevPage, ToggleIsExpanded] : Array[SchemaObjectInput]),
-          SchemaObjectInput::name,
-          f,
-        )
-      None => Map([])
     },
     loop_with=match loop_with {
       Some(f) =>
@@ -980,11 +952,6 @@ pub fn schema_array_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (SchemaArrayInput) -> ((
-    SchemaArrayState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   loop_with? : (SchemaArrayLoopWith) -> ((
     SchemaArrayState,
     @tutuca.Value,
@@ -1026,15 +993,6 @@ pub fn schema_array_component(
         bucket[k] = h
       }
       bucket
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([NextPage, PrevPage, ToggleIsExpanded] : Array[SchemaArrayInput]),
-          SchemaArrayInput::name,
-          f,
-        )
-      None => Map([])
     },
     loop_with=match loop_with {
       Some(f) =>
@@ -1275,11 +1233,6 @@ pub fn schema_enum_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (SchemaEnumInput) -> ((
-    SchemaEnumState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   loop_with? : (SchemaEnumLoopWith) -> ((
     SchemaEnumState,
     @tutuca.Value,
@@ -1321,15 +1274,6 @@ pub fn schema_enum_component(
         bucket[k] = h
       }
       bucket
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([NextPage, PrevPage, ToggleIsExpanded] : Array[SchemaEnumInput]),
-          SchemaEnumInput::name,
-          f,
-        )
-      None => Map([])
     },
     loop_with=match loop_with {
       Some(f) =>
@@ -1574,11 +1518,6 @@ pub fn schema_combinator_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (SchemaCombinatorInput) -> ((
-    SchemaCombinatorState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   loop_with? : (SchemaCombinatorLoopWith) -> ((
     SchemaCombinatorState,
     @tutuca.Value,
@@ -1620,15 +1559,6 @@ pub fn schema_combinator_component(
         bucket[k] = h
       }
       bucket
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([NextPage, PrevPage, ToggleIsExpanded] : Array[SchemaCombinatorInput]),
-          SchemaCombinatorInput::name,
-          f,
-        )
-      None => Map([])
     },
     loop_with=match loop_with {
       Some(f) =>

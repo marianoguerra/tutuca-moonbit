@@ -80,14 +80,14 @@
         @if.class=".activeTab is 'instance'"
         @then="'tab tab-active tab-instance'"
         @else="'tab tab-instance'"
-        @on.click="setActiveTab 'instance'">
+        @on.click=".activeTab = 'instance'">
         Instance
       </a>
       <a role="tab" @show=".hasComponent"
         @if.class=".activeTab is 'component'"
         @then="'tab tab-active tab-component'"
         @else="'tab tab-component'"
-        @on.click="setActiveTab 'component'">
+        @on.click=".activeTab = 'component'">
         Component
       </a>
     </div>

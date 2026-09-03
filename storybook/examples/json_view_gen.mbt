@@ -342,130 +342,12 @@ impl @component.Fields for JsonBoolState with fn decode(f) {
 }
 
 ///|
-/// The Receive arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum JsonBoolReceive {
-  ToggleValue
-  /// A receive the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Receive dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-///
-/// It is also REPORTED. `Unknown` answers two different questions —
-/// nobody declares this name, and this name is declared here and was
-/// handed the wrong shape — and the second one is a bug in the sender
-/// that used to be indistinguishable from silence. Every arm below that
-/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
-/// which costs nothing unless a host is listening.
-pub fn JsonBoolReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> JsonBoolReceive? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("toggleValue", []) => ToggleValue
-      _ => {
-        match name {
-          "toggleValue" => @tutuca.bad_payload(name, "", args)
-          _ => ()
-        }
-        Unknown(name, args)
-      }
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn JsonBoolReceive::to_dispatch(
-  self : JsonBoolReceive,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    ToggleValue => ("toggleValue", [])
-    Unknown(n, args) => (n, args)
-  }
-}
-
-///|
-/// Send this message to self; it arrives as a later Receive dispatch.
-///
-/// The name comes from the schema, so it cannot drift from the one
-/// `from_dispatch` decodes.
-pub fn JsonBoolReceive::send(
-  self : JsonBoolReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
-  let (name, args) = self.to_dispatch()
-  ctx.send(name, args)
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let json_bool_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let json_bool_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum JsonBoolInput {
-  ToggleValue
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonBoolInput::name(self : JsonBoolInput) -> String {
-  match self {
-    ToggleValue => "toggleValue"
-  }
-}
-
-///|
-pub fn JsonBoolInput::parse(s : String) -> JsonBoolInput? {
-  match s {
-    "toggleValue" => Some(ToggleValue)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to json.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum JsonBoolMsg {
-  /// `@on.click="toggleValue …"`
-  ToggleValue
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn JsonBoolMsg::from_dispatch(d : @component.Dispatch) -> JsonBoolMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("toggleValue", []) => ToggleValue
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -479,7 +361,6 @@ impl @component.Fields for JsonBoolState with fn schema() {
     name="JsonBool",
     fingerprint="52537a69fb1aed35",
     fields=[@component.FieldInfo::new("value", TyBool)],
-    view_handlers=["toggleValue"],
     view_names=["main"],
   )
 }
@@ -526,130 +407,12 @@ impl @component.Fields for JsonStringState with fn decode(f) {
 }
 
 ///|
-/// The Receive arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum JsonStringReceive {
-  SetValue(String)
-  /// A receive the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Receive dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-///
-/// It is also REPORTED. `Unknown` answers two different questions —
-/// nobody declares this name, and this name is declared here and was
-/// handed the wrong shape — and the second one is a bug in the sender
-/// that used to be indistinguishable from silence. Every arm below that
-/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
-/// which costs nothing unless a host is listening.
-pub fn JsonStringReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> JsonStringReceive? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setValue", [Str(a0)]) => SetValue(a0)
-      _ => {
-        match name {
-          "setValue" => @tutuca.bad_payload(name, "String", args)
-          _ => ()
-        }
-        Unknown(name, args)
-      }
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn JsonStringReceive::to_dispatch(
-  self : JsonStringReceive,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    SetValue(a0) => ("setValue", [Str(a0)])
-    Unknown(n, args) => (n, args)
-  }
-}
-
-///|
-/// Send this message to self; it arrives as a later Receive dispatch.
-///
-/// The name comes from the schema, so it cannot drift from the one
-/// `from_dispatch` decodes.
-pub fn JsonStringReceive::send(
-  self : JsonStringReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
-  let (name, args) = self.to_dispatch()
-  ctx.send(name, args)
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let json_string_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let json_string_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum JsonStringInput {
-  SetValue
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonStringInput::name(self : JsonStringInput) -> String {
-  match self {
-    SetValue => "setValue"
-  }
-}
-
-///|
-pub fn JsonStringInput::parse(s : String) -> JsonStringInput? {
-  match s {
-    "setValue" => Some(SetValue)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to json.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum JsonStringMsg {
-  /// `@on.input="setValue …"`
-  SetValue(String)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn JsonStringMsg::from_dispatch(d : @component.Dispatch) -> JsonStringMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setValue", [Str(a0)]) => SetValue(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -663,7 +426,6 @@ impl @component.Fields for JsonStringState with fn schema() {
     name="JsonString",
     fingerprint="7e15bdab8f977d4f",
     fields=[@component.FieldInfo::new("value", TyText)],
-    view_handlers=["setValue"],
     view_names=["main"],
   )
 }
@@ -913,7 +675,6 @@ impl @component.Fields for JsonArrayState with fn decode(f) {
 pub(all) enum JsonArrayReceive {
   AddItem
   OnDropOnItem(@tutuca.Value, @tutuca.Value)
-  RemoveInItemsAt(@tutuca.Value)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -940,12 +701,10 @@ pub fn JsonArrayReceive::from_dispatch(
     match (name, args) {
       ("addItem", []) => AddItem
       ("onDropOnItem", [a0, a1]) => OnDropOnItem(a0, a1)
-      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
       _ => {
         match name {
           "addItem" => @tutuca.bad_payload(name, "", args)
           "onDropOnItem" => @tutuca.bad_payload(name, "Any, Any", args)
-          "removeInItemsAt" => @tutuca.bad_payload(name, "Any", args)
           _ => ()
         }
         Unknown(name, args)
@@ -962,7 +721,6 @@ pub fn JsonArrayReceive::to_dispatch(
   match self {
     AddItem => ("addItem", [])
     OnDropOnItem(a0, a1) => ("onDropOnItem", [a0, a1])
-    RemoveInItemsAt(a0) => ("removeInItemsAt", [a0])
     Unknown(n, args) => (n, args)
   }
 }
@@ -993,7 +751,6 @@ pub let json_array_global_style : String = ""
 pub(all) enum JsonArrayInput {
   AddItem
   OnDropOnItem
-  RemoveInItemsAt
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -1001,7 +758,6 @@ pub fn JsonArrayInput::name(self : JsonArrayInput) -> String {
   match self {
     AddItem => "addItem"
     OnDropOnItem => "onDropOnItem"
-    RemoveInItemsAt => "removeInItemsAt"
   }
 }
 
@@ -1010,7 +766,6 @@ pub fn JsonArrayInput::parse(s : String) -> JsonArrayInput? {
   match s {
     "addItem" => Some(AddItem)
     "onDropOnItem" => Some(OnDropOnItem)
-    "removeInItemsAt" => Some(RemoveInItemsAt)
     _ => None
   }
 }
@@ -1026,8 +781,6 @@ pub(all) enum JsonArrayMsg {
   AddItem
   /// `@on.drop="onDropOnItem …"`
   OnDropOnItem(@tutuca.Value, @tutuca.Value)
-  /// `@on.click="removeInItemsAt …"`
-  RemoveInItemsAt(@tutuca.Value)
   /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -1044,7 +797,6 @@ pub fn JsonArrayMsg::from_dispatch(d : @component.Dispatch) -> JsonArrayMsg? {
     match (name, args) {
       ("addItem", []) => AddItem
       ("onDropOnItem", [a0, a1]) => OnDropOnItem(a0, a1)
-      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
       _ => Unknown(name, args)
     },
   )
@@ -1062,7 +814,7 @@ impl @component.Fields for JsonArrayState with fn schema() {
     name="JsonArray",
     fingerprint="3cb4710a9dffd22d",
     fields=[@component.FieldInfo::new("items", TyList(TyComp(None)))],
-    view_handlers=["addItem", "onDropOnItem", "removeInItemsAt"],
+    view_handlers=["addItem", "onDropOnItem"],
     view_names=["main"],
   )
 }
@@ -1111,132 +863,12 @@ impl @component.Fields for JsonObjectKeyValState with fn decode(f) {
 }
 
 ///|
-/// The Receive arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum JsonObjectKeyValReceive {
-  SetKey(String)
-  /// A receive the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Receive dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-///
-/// It is also REPORTED. `Unknown` answers two different questions —
-/// nobody declares this name, and this name is declared here and was
-/// handed the wrong shape — and the second one is a bug in the sender
-/// that used to be indistinguishable from silence. Every arm below that
-/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
-/// which costs nothing unless a host is listening.
-pub fn JsonObjectKeyValReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> JsonObjectKeyValReceive? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setKey", [Str(a0)]) => SetKey(a0)
-      _ => {
-        match name {
-          "setKey" => @tutuca.bad_payload(name, "String", args)
-          _ => ()
-        }
-        Unknown(name, args)
-      }
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn JsonObjectKeyValReceive::to_dispatch(
-  self : JsonObjectKeyValReceive,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    SetKey(a0) => ("setKey", [Str(a0)])
-    Unknown(n, args) => (n, args)
-  }
-}
-
-///|
-/// Send this message to self; it arrives as a later Receive dispatch.
-///
-/// The name comes from the schema, so it cannot drift from the one
-/// `from_dispatch` decodes.
-pub fn JsonObjectKeyValReceive::send(
-  self : JsonObjectKeyValReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
-  let (name, args) = self.to_dispatch()
-  ctx.send(name, args)
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let json_object_key_val_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let json_object_key_val_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum JsonObjectKeyValInput {
-  SetKey
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonObjectKeyValInput::name(self : JsonObjectKeyValInput) -> String {
-  match self {
-    SetKey => "setKey"
-  }
-}
-
-///|
-pub fn JsonObjectKeyValInput::parse(s : String) -> JsonObjectKeyValInput? {
-  match s {
-    "setKey" => Some(SetKey)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to json.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum JsonObjectKeyValMsg {
-  /// `@on.input="setKey …"`
-  SetKey(String)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn JsonObjectKeyValMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> JsonObjectKeyValMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setKey", [Str(a0)]) => SetKey(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -1253,7 +885,6 @@ impl @component.Fields for JsonObjectKeyValState with fn schema() {
       @component.FieldInfo::new("key", TyText),
       @component.FieldInfo::new("value", TyAny),
     ],
-    view_handlers=["setKey"],
     view_names=["main"],
   )
 }
@@ -1314,7 +945,6 @@ impl @component.Fields for JsonObjectState with fn decode(f) {
 pub(all) enum JsonObjectReceive {
   AddItem
   OnDropOnItem(@tutuca.Value, @tutuca.Value)
-  RemoveInItemsAt(@tutuca.Value)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -1341,12 +971,10 @@ pub fn JsonObjectReceive::from_dispatch(
     match (name, args) {
       ("addItem", []) => AddItem
       ("onDropOnItem", [a0, a1]) => OnDropOnItem(a0, a1)
-      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
       _ => {
         match name {
           "addItem" => @tutuca.bad_payload(name, "", args)
           "onDropOnItem" => @tutuca.bad_payload(name, "Any, Any", args)
-          "removeInItemsAt" => @tutuca.bad_payload(name, "Any", args)
           _ => ()
         }
         Unknown(name, args)
@@ -1363,7 +991,6 @@ pub fn JsonObjectReceive::to_dispatch(
   match self {
     AddItem => ("addItem", [])
     OnDropOnItem(a0, a1) => ("onDropOnItem", [a0, a1])
-    RemoveInItemsAt(a0) => ("removeInItemsAt", [a0])
     Unknown(n, args) => (n, args)
   }
 }
@@ -1394,7 +1021,6 @@ pub let json_object_global_style : String = ""
 pub(all) enum JsonObjectInput {
   AddItem
   OnDropOnItem
-  RemoveInItemsAt
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -1402,7 +1028,6 @@ pub fn JsonObjectInput::name(self : JsonObjectInput) -> String {
   match self {
     AddItem => "addItem"
     OnDropOnItem => "onDropOnItem"
-    RemoveInItemsAt => "removeInItemsAt"
   }
 }
 
@@ -1411,7 +1036,6 @@ pub fn JsonObjectInput::parse(s : String) -> JsonObjectInput? {
   match s {
     "addItem" => Some(AddItem)
     "onDropOnItem" => Some(OnDropOnItem)
-    "removeInItemsAt" => Some(RemoveInItemsAt)
     _ => None
   }
 }
@@ -1427,8 +1051,6 @@ pub(all) enum JsonObjectMsg {
   AddItem
   /// `@on.drop="onDropOnItem …"`
   OnDropOnItem(@tutuca.Value, @tutuca.Value)
-  /// `@on.click="removeInItemsAt …"`
-  RemoveInItemsAt(@tutuca.Value)
   /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -1445,7 +1067,6 @@ pub fn JsonObjectMsg::from_dispatch(d : @component.Dispatch) -> JsonObjectMsg? {
     match (name, args) {
       ("addItem", []) => AddItem
       ("onDropOnItem", [a0, a1]) => OnDropOnItem(a0, a1)
-      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
       _ => Unknown(name, args)
     },
   )
@@ -1468,7 +1089,7 @@ impl @component.Fields for JsonObjectState with fn schema() {
         TyList(TyComp(Some("JsonObjectKeyVal"))),
       ),
     ],
-    view_handlers=["addItem", "onDropOnItem", "removeInItemsAt"],
+    view_handlers=["addItem", "onDropOnItem"],
     view_names=["main"],
   )
 }

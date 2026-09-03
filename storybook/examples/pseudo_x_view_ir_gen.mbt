@@ -275,9 +275,14 @@ fn item_select_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setCurrent"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "current",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
     ],
   )
@@ -309,11 +314,6 @@ pub fn item_select_component(
   update? : (ItemSelectState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ItemSelectState,
   ],
-  swap? : (ItemSelectInput) -> ((
-    ItemSelectState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -326,15 +326,6 @@ pub fn item_select_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetCurrent] : Array[ItemSelectInput]),
-          ItemSelectInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,

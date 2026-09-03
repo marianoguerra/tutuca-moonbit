@@ -38,8 +38,9 @@ channel needed. See [core.md](./core.md) "The value tree".
 Reach for the *narrowest* channel that does the job, and only move further down
 the ladder when the one above can't express it:
 
-- **The component owns the state needed to respond** → answer it in an
-  **`update` `Receive` arm** (or let a generated mutator serve it) — stays
+- **The component owns the state needed to respond** → write the property from
+  the view (`.open = not .open`) when that is the whole of it, and otherwise
+  answer it in an **`update` `Receive` arm** — either way it stays
   self-contained. See
   [core.md](./core.md) *Computed values & predicates*.
 - **You need to reach one known component** → **`send` / `sendAt` / `receive`**,
@@ -137,10 +138,11 @@ own events, `send`/`receive`,
   event handler is a bare name and is answered in `update`, which gets the
   `ctx`. → [core.md](./core.md) "Common pitfalls"
 
-- **Do use inline predicates and auto-generated mutators. Don't hand-write
+- **Do use inline predicates and property actions. Don't hand-write
   `isSelected` / `select` boilerplate.** A single field plus
-  `.activeSection is 'todo'` / `empty?` and the generated `$setActiveSection`
-  / `toggleX` often *is* the whole state machine. → [core.md](./core.md)
+  `.activeSection is 'todo'` / `empty?` and a view that writes
+  `.activeSection = 'todo'` or `.open = not .open` often *is* the whole state
+  machine — no handler name, and nothing to answer it. → [core.md](./core.md)
   "Computed values & predicates" and "Field Types & Auto-generated API"
 
 - **Do remember a rendered child gets a clean namespace.** Parent `@` bindings
@@ -159,8 +161,8 @@ own events, `send`/`receive`,
 ## Smells & refactors
 
 - **Hand-written `isTodoSelected` / `selectTodo` handlers → predicate +
-  generated setter.** Replace `@on.click="selectTodo"` / `@show="$isTodoSelected"`
-  with `@on.click="setActiveSection 'todo'"` / `@show=".activeSection is 'todo'"`,
+  property write.** Replace `@on.click="selectTodo"` / `@show="$isTodoSelected"`
+  with `@on.click=".activeSection = 'todo'"` / `@show=".activeSection is 'todo'"`,
   derive the current value from one field.
 - **A view that `@if`-branches on a `kind` field → one component per kind**, each
   rendered with `<x render>`.
@@ -168,8 +170,8 @@ own events, `send`/`receive`,
   state up to the nearest common owner** and let the leaf render it directly; only
   if nothing in between should know it, use `provide` / `lookup`.
 - **Host code poking the root state or attaching a listener → an
-  `app.send_at_root` handler on the root**, with the mutation expressed as
-  `Some({ ..s, ... })` in a `Receive` arm.
+  `app.send_at_root` handler on the root**, with the transition expressed as
+  `Next({ ..s, ... })` in a `Receive` arm.
 - **A `compute` entry that fabricates dispatch (or ignores that it can't) →
   move it to an `update` arm** and let the type give it a real `ctx`.
 

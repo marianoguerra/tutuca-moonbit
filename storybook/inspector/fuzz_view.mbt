@@ -24,7 +24,7 @@ fn fuzz_verb_of(d : @fuzz.Action) -> (String, String) {
     Message(Receive(_, _)) => ("send", "badge-neutral")
     Message(Intent(_, _)) => ("intent", "badge-info")
     SetProperty(_, _) => ("set", "badge-accent")
-    InternalMutator(_) => ("internal", "badge-warning")
+    SetField(_, _) => ("write", "badge-warning")
   }
   // The WHOLE class list, because `:class` replaces the written one rather
   // than adding to it — so the hook a test selects on has to be in here too.
@@ -37,7 +37,7 @@ fn fuzz_name_of(d : @fuzz.Action) -> String {
   match d {
     Message(Receive(name, _)) | Message(Intent(name, _)) => name
     SetProperty(name, _) => name
-    InternalMutator(Receive(name, _)) | InternalMutator(Intent(name, _)) => name
+    SetField(name, _) => name
   }
 }
 
@@ -51,7 +51,7 @@ fn fuzz_args_of(d : @fuzz.Action) -> String {
   let args = match d {
     Message(Receive(_, a)) | Message(Intent(_, a)) => a
     SetProperty(_, value) => [value]
-    InternalMutator(Receive(_, a)) | InternalMutator(Intent(_, a)) => a
+    SetField(_, v) => [v]
   }
   args.map(v => v.to_display_string()).join(", ")
 }
@@ -160,7 +160,7 @@ pub fn Inspector::fuzz_controls(
     "publicClass": Str(source_class("public", source)),
     "messagesClass": Str(source_class("messages", source)),
     "propertiesClass": Str(source_class("properties", source)),
-    "internalClass": Str(source_class("internal", source)),
+    "fieldsClass": Str(source_class("fields", source)),
     "playing": Bool(playing),
     "canRun": Bool(can_run),
     "noPlanHint": Str(no_plan_hint),

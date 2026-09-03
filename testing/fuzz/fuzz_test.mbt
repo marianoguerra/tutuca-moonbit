@@ -135,7 +135,7 @@ fn till_comp(enforced? : Bool = true) -> @component.Component {
 
 ///|
 fn till_plan(
-  source? : @fuzz.Source = InternalMutators,
+  source? : @fuzz.Source = Fields,
   enforced? : Bool = true,
 ) -> @fuzz.Plan raise {
   guard @fuzz.Plan::of_component(till_comp(enforced~), source~) is Some(p) else {
@@ -231,22 +231,21 @@ test "a script is a function of its seed" {
 /// Every generated mutator is a `Receive`. An `Intent` here would mean the
 /// generator invented one — a mutator is installed on the component and never
 /// routed.
-test "the mutator source draws only receives, and only declared field names" {
+test "the field source draws only writes, and only declared field names" {
   let p = till_plan()
   let names : Array[String] = []
   for d in p.script(seed=3, steps=40) {
-    guard d is InternalMutator(Receive(name, _)) else {
-      fail("every generated mutator is a Receive")
-    }
+    guard d is SetField(name, _) else { fail("every drawn action is a write") }
     if !names.contains(name) {
       names.push(name)
     }
   }
-  // Every name the generator drew is one the runtime actually installs for
-  // this schema — the table, not a guess at its spelling.
-  let installed = @component.schema_mutators(till_comp().schema)
+  // Every name the generator drew is a FIELD this schema declares — which is
+  // the whole of what a write can address, where a dispatch could name
+  // anything and be answered by nothing.
+  let declared = till_comp().schema.field_names()
   for n in names {
-    assert_true(installed.contains(n))
+    assert_true(declared.contains(n))
   }
 }
 
@@ -386,7 +385,7 @@ test "the interpreted rule agrees with every refusal the compiled one raised" {
 test "a refused transition is recorded, not failed" {
   let p = till_plan()
   let h = fresh()
-  let declined = p.step(h, InternalMutator(Receive("setTill", [Num(0.0)])))
+  let declined = p.step(h, SetField("till", Num(0.0)))
   assert_eq(declined.refused.length(), 1)
   assert_eq(declined.refused[0].code, Invariant)
   assert_eq(declined.refused[0].rule, "floatCovered")
@@ -394,11 +393,8 @@ test "a refused transition is recorded, not failed" {
   // Abandoned means abandoned: the till did not move.
   assert_eq(declined.after.get("till"), Some(Num(10)))
   // Lower the float first and the same dispatch goes through.
-  assert_eq(
-    p.step(h, InternalMutator(Receive("setFloat_", [Num(0.0)]))).refused,
-    [],
-  )
-  let ok = p.step(h, InternalMutator(Receive("setTill", [Num(0.0)])))
+  assert_eq(p.step(h, SetField("float_", Num(0.0))).refused, [])
+  let ok = p.step(h, SetField("till", Num(0.0)))
   assert_eq(ok.refused, [])
   assert_eq(ok.after.get("till"), Some(Num(0)))
 }
@@ -415,14 +411,8 @@ test "a refused transition is recorded, not failed" {
 test "a pred no handler requires is not a precondition" {
   let p = till_plan()
   let h = fresh()
-  assert_eq(
-    p.step(h, InternalMutator(Receive("setFloat_", [Num(0.0)]))).refused,
-    [],
-  )
-  assert_eq(
-    p.step(h, InternalMutator(Receive("setTill", [Num(0.0)]))).refused,
-    [],
-  )
+  assert_eq(p.step(h, SetField("float_", Num(0.0))).refused, [])
+  assert_eq(p.step(h, SetField("till", Num(0.0))).refused, [])
   // The drawer is empty, so `canDraw` does not hold…
   assert_eq(p.rules.holds("canDraw", @fuzz.settled(h)), Some(false))
   // …and drawing is not declined, because nothing asked.
@@ -440,15 +430,9 @@ test "a pred no handler requires is not a precondition" {
 test "a step counts the renders it caused" {
   let p = till_plan()
   let h = fresh()
-  assert_eq(
-    p.step(h, InternalMutator(Receive("setTill", [Num(14.0)]))).renders,
-    1,
-  )
+  assert_eq(p.step(h, SetField("till", Num(14.0))).renders, 1)
   // The same value again: the root does not swap, so nothing re-renders.
-  assert_eq(
-    p.step(h, InternalMutator(Receive("setTill", [Num(14.0)]))).renders,
-    0,
-  )
+  assert_eq(p.step(h, SetField("till", Num(14.0))).renders, 0)
 }
 
 // ---------------------------------------------------------------------------
@@ -554,10 +538,7 @@ fn album_module() -> @component.ModuleDef {
 
 ///|
 fn album_plan() -> @fuzz.Plan raise {
-  guard @fuzz.Plan::of_component(
-      album_module().components[0],
-      source=InternalMutators,
-    )
+  guard @fuzz.Plan::of_component(album_module().components[0], source=Fields)
     is Some(p) else {
     fail("Album carries a spec block, so it has a plan")
   }
@@ -580,7 +561,7 @@ test "a live draw puts the cursor in range; a script drawn up front does not" {
   let plan = album_plan()
   let in_range = (d : @fuzz.Action) => {
     match d {
-      InternalMutator(Receive("setCursor", [Num(n)])) => n >= 0.0 && n < 3.0
+      SetField("cursor", Num(n)) => n >= 0.0 && n < 3.0
       _ => true
     }
   }
@@ -588,7 +569,7 @@ test "a live draw puts the cursor in range; a script drawn up front does not" {
     let mut good = 0
     let mut total = 0
     for d in script {
-      if d is InternalMutator(Receive("setCursor", _)) {
+      if d is SetField("cursor", _) {
         total = total + 1
         if in_range(d) {
           good = good + 1

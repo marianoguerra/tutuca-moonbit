@@ -17,7 +17,7 @@
 
 <template>
   <div class="inline-flex flex-col items-start gap-1 schema-viewer">
-    <button type="button" class="btn btn-xs btn-ghost self-end raw-toggle" @on.click="toggleShowRaw" @text="$toggleLabel"></button>
+    <button type="button" class="btn btn-xs btn-ghost self-end raw-toggle" @on.click=".showRaw = not .showRaw" @text="$toggleLabel"></button>
     <x render=".value" @hide=".showRaw"></x>
     <x render=".raw" @show=".showRaw"></x>
   </div>

@@ -41,9 +41,9 @@ pub struct Plan {
 /// already says that — but whether a name was WRITTEN DOWN. `Declared` draws
 /// the messages the block spells, which is what an author asks about when they
 /// ask "does my component survive its own protocol". `Public` adds writable
-/// properties to those declared operations. `InternalMutators` is the
-/// deliberately diagnostic mode for per-field setters installed for component
-/// implementation code; ordinary callers cannot dispatch them.
+/// properties to those declared operations. `Fields` is the deliberately
+/// diagnostic mode that WRITES a field directly — the door a view's
+/// `.field = v` goes through, which is private-capable and is not a dispatch.
 pub(all) enum Source {
   /// The component's public interface: declared messages/intents and writable
   /// properties. This is the default because these are the operations an
@@ -53,25 +53,30 @@ pub(all) enum Source {
   Declared(@arb.Bucket)
   /// Only writable public properties.
   Properties
-  /// Generated field mutators are an internal diagnostic surface. They stay
-  /// available for deliberately stress-testing the implementation, but never
-  /// enter an ordinary public run.
-  InternalMutators
-  /// Public operations plus the internal diagnostic mutators.
+  /// Writes straight to a field, public or private — the internal diagnostic
+  /// surface. It stays available for deliberately stress-testing the
+  /// implementation, and never enters an ordinary public run.
+  ///
+  /// It used to DISPATCH the generated mutator names (`setCount`), which the
+  /// runtime answered through a fallback in the dispatch path. There is no
+  /// such fallback: a write is a write, and this draws one.
+  Fields
+  /// Public operations plus the internal diagnostic writes.
   All(@arb.Bucket)
 } derive(Eq, @debug.Debug)
 
 ///|
 /// One operation the driver can perform.
 ///
-/// A property write is not encoded as a pretend message: it goes through the
-/// synchronous property transition seam. Internal generated mutators are
-/// tagged separately so the driver can supply diagnostic provenance without
-/// accidentally granting that provenance to public messages.
+/// A write is not encoded as a pretend message: it goes through the
+/// synchronous write seam. The two writes are separate cases because they go
+/// through different doors — `SetProperty` through the PUBLIC one, which a
+/// read-only property refuses, and `SetField` through the private-capable one
+/// a component's own view uses.
 pub(all) enum Action {
   Message(@component.Dispatch)
   SetProperty(String, @tutuca.Value)
-  InternalMutator(@component.Dispatch)
+  SetField(String, @tutuca.Value)
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -135,7 +140,7 @@ fn dispatch_gen(
       combine(declared_gen(def, bucket, depth), property_gen(def, depth, state))
     Declared(bucket) => declared_gen(def, bucket, depth)
     Properties => property_gen(def, depth, state)
-    InternalMutators => internal_gen(def, depth, state)
+    Fields => internal_gen(def, depth, state)
     All(bucket) =>
       match
         (
@@ -189,8 +194,8 @@ fn internal_gen(
   depth : Int,
   state : Map[String, @tutuca.Value],
 ) -> @gen.Gen[Action]? {
-  @arb.mutator_dispatch_of(def, depth~, state~).map(g => {
-    g.fmap(d => InternalMutator(d))
+  @arb.property_write_of(def, depth~, state~).map(g => {
+    g.fmap(w => SetField(w.0, w.1))
   })
 }
 
@@ -290,7 +295,7 @@ pub fn Plan::has_inputs(self : Plan) -> Bool {
 /// keeps the cheap path: with no `where` in the block, a per-step draw and a
 /// sampled script are the same dispatches at more cost.
 pub fn Plan::state_aware(self : Plan) -> Bool {
-  !self.def.wheres.is_empty() && self.source is (InternalMutators | All(_))
+  !self.def.wheres.is_empty() && self.source is (Fields | All(_))
 }
 
 ///|

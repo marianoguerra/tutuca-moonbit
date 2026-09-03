@@ -62,6 +62,25 @@ fn send(
 }
 
 ///|
+/// Write `name` at `v` and return the resulting node, or `v` when the write
+/// changed nothing or was refused.
+///
+/// Beside `send`, and the pair is the point: a dispatch ASKS a component to
+/// decide something and a write says what a member is now. They used to be one
+/// call — a bare `setCount` sent as a message reached the generated setter
+/// through a fallback in the dispatch path — and only the NAME told them apart.
+fn write(
+  v : @tutuca.Value,
+  name : String,
+  value : @tutuca.Value,
+) -> @tutuca.Value {
+  match v.set_member(name, value) {
+    Changed(next) => next
+    _ => v
+  }
+}
+
+///|
 test "an instance presents the SAME Value every time it is asked" {
   // Each `Obj(self)` cast allocates, so without memoizing, an instance would
   // look different every time it crossed the value seam — and every cache

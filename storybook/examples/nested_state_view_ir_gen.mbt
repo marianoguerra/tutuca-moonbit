@@ -122,11 +122,6 @@ pub fn nested_state_component(
   update? : (NestedStateState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     NestedStateState,
   ],
-  swap? : (NestedStateInput) -> ((
-    NestedStateState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -139,15 +134,6 @@ pub fn nested_state_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([BumpPriority, ToggleLabel] : Array[NestedStateInput]),
-          NestedStateInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,

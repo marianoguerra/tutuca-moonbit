@@ -44,7 +44,7 @@ pub let fuzz_row_spec_source : String =
   #|    after : Component?
   #|    open : Bool
   #|
-  #|    where verb is one of ["send", "intent", "set", "internal"]
+  #|    where verb is one of ["send", "intent", "set", "write"]
   #|
   #|    where at >= 0
   #|    where renders >= 0
@@ -78,14 +78,14 @@ pub let fuzz_row_spec_source : String =
   #|    publicClass : String
   #|    messagesClass : String
   #|    propertiesClass : String
-  #|    internalClass : String
+  #|    fieldsClass : String
   #|    playing : Bool
   #|    canRun : Bool
   #|    noPlanHint : String
   #|    canDraw : Bool
   #|    noDrawHint : String
   #|
-  #|    where source is one of ["public", "messages", "properties", "internal"]
+  #|    where source is one of ["public", "messages", "properties", "fields"]
   #|
   #|    invariant hintExplainsTheDisabledButton
   #|      format 'nothing can be generated, and the panel does not say why' {
@@ -356,7 +356,7 @@ fn fuzz_row_inline_update(
                 Str("send"),
                 Str("intent"),
                 Str("set"),
-                Str("internal"),
+                Str("write"),
               ]),
             },
             { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
@@ -435,7 +435,6 @@ pub fn fuzz_row_component(
   update? : (FuzzRowState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     FuzzRowState,
   ],
-  swap? : (FuzzRowInput) -> ((FuzzRowState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -458,15 +457,6 @@ pub fn fuzz_row_component(
       }
     },
     compute=fuzz_row_inline_compute(),
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Toggle] : Array[FuzzRowInput]),
-          FuzzRowInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -675,10 +665,10 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
             @anode.h(
               "button",
               [
-                @anode.dyn_attr("class", @tutuca.Expr::field("internalClass")),
+                @anode.dyn_attr("class", @tutuca.Expr::field("fieldsClass")),
                 @anode.eid(5),
               ],
-              [@anode.text("Internal mutators")],
+              [@anode.text("Fields")],
             ),
           ]),
         ),
@@ -687,7 +677,7 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
           @tutuca.Expr::field("canRun"),
           @anode.h("div", [@anode.attr("class", "text-xs opacity-50")], [
             @anode.text(
-              "\n    Public API is the default: declared messages and writable properties. Generated field\n    mutators are component internals and appear only in the explicit diagnostic mode. The\n    same seed always draws the same script.\n  ",
+              "\n    Public API is the default: declared messages and writable properties. Writing straight\n    to a field reaches the private ones too, and appears only in the explicit diagnostic\n    mode. The same seed always draws the same script.\n  ",
             ),
           ]),
         ),
@@ -785,7 +775,7 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
       ],
       [
         @anode.on("click", @tutuca.Expr::name("setSource"), args=[
-          @anode.const_str("internal"),
+          @anode.const_str("fields"),
         ]),
       ],
       [@anode.on("click", @tutuca.Expr::name("play"))],
@@ -877,7 +867,7 @@ fn fuzz_controls_inline_update(
                 Str("public"),
                 Str("messages"),
                 Str("properties"),
-                Str("internal"),
+                Str("fields"),
               ]),
             },
           ],
@@ -960,7 +950,7 @@ fn fuzz_controls_inline_update(
                 Str("public"),
                 Str("messages"),
                 Str("properties"),
-                Str("internal"),
+                Str("fields"),
               ]),
             },
           ],
@@ -1043,7 +1033,7 @@ fn fuzz_controls_inline_update(
                 Str("public"),
                 Str("messages"),
                 Str("properties"),
-                Str("internal"),
+                Str("fields"),
               ]),
             },
           ],
@@ -1120,7 +1110,7 @@ fn fuzz_controls_inline_update(
                 Str("public"),
                 Str("messages"),
                 Str("properties"),
-                Str("internal"),
+                Str("fields"),
               ]),
             },
           ],
@@ -1197,7 +1187,7 @@ fn fuzz_controls_inline_update(
                 Str("public"),
                 Str("messages"),
                 Str("properties"),
-                Str("internal"),
+                Str("fields"),
               ]),
             },
           ],
@@ -1274,7 +1264,7 @@ fn fuzz_controls_inline_update(
                 Str("public"),
                 Str("messages"),
                 Str("properties"),
-                Str("internal"),
+                Str("fields"),
               ]),
             },
           ],
@@ -1351,7 +1341,7 @@ fn fuzz_controls_inline_update(
                 Str("public"),
                 Str("messages"),
                 Str("properties"),
-                Str("internal"),
+                Str("fields"),
               ]),
             },
           ],
@@ -1428,7 +1418,7 @@ fn fuzz_controls_inline_update(
                 Str("public"),
                 Str("messages"),
                 Str("properties"),
-                Str("internal"),
+                Str("fields"),
               ]),
             },
           ],
@@ -1534,11 +1524,6 @@ pub fn fuzz_controls_component(
   update? : (FuzzControlsState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     FuzzControlsState,
   ],
-  swap? : (FuzzControlsInput) -> ((
-    FuzzControlsState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -1561,17 +1546,6 @@ pub fn fuzz_controls_component(
       }
     },
     compute=fuzz_controls_inline_compute(),
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [Burst, Play, Reset, SetSeed, SetSource, SetSteps, Step, Stop] :
-            Array[FuzzControlsInput]),
-          FuzzControlsInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -1868,11 +1842,6 @@ pub fn fuzz_verdict_component(
   update? : (FuzzVerdictState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     FuzzVerdictState,
   ],
-  swap? : (FuzzVerdictInput) -> ((
-    FuzzVerdictState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -1895,15 +1864,6 @@ pub fn fuzz_verdict_component(
       }
     },
     compute=fuzz_verdict_inline_compute(),
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Shrink] : Array[FuzzVerdictInput]),
-          FuzzVerdictInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,

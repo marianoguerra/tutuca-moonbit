@@ -17,9 +17,9 @@
     <p class="text-sm opacity-60 italic nothing" @show="empty? .items">Nothing to do.</p>
     <div class="flex items-center gap-1 text-xs" @hide="empty? .items">
       <span class="opacity-70 grow count-left" @text="$countLeft"></span>
-      <button class="btn btn-xs filter-all" @on.click="setFilter 'all'">all</button>
-      <button class="btn btn-xs filter-active" @on.click="setFilter 'active'">active</button>
-      <button class="btn btn-xs filter-done" @on.click="setFilter 'completed'">done</button>
+      <button class="btn btn-xs filter-all" @on.click=".filter = 'all'">all</button>
+      <button class="btn btn-xs filter-active" @on.click=".filter = 'active'">active</button>
+      <button class="btn btn-xs filter-done" @on.click=".filter = 'completed'">done</button>
       <button class="btn btn-xs btn-ghost clear-done" @hide="empty? $done" @on.click="clearCompleted">clear</button>
     </div>
   </div>

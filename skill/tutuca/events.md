@@ -192,7 +192,7 @@ Two more rules worth holding:
   `e.pointerId` say nothing.
 
 > **There is no `event` or `ctx` argument.** A DOM object is not a `Value`, so
-> `@on.input="setCount event"` resolves to `Null` and the handler receives
+> `@on.input="countFrom event"` resolves to `Null` and the handler receives
 > `[Null, ..]` with nothing reported. Reach the event through `e.` — that is
 > what it is for — and the `&Ctx` reaches an `update` arm as the third
 > parameter, never as an argument.
@@ -233,8 +233,8 @@ runtime, arguments that don't match the inferred shape land in
 > matching what the glue delivers (checkbox → the checked state, file → the
 > metadata `Map` / `Null`). An input whose `type` is dynamic (`:type=".kind"`)
 > keeps the default `String` — if such an input can render as a checkbox at
-> runtime, handle its value via the generated mutator or a raw
-> `Receive(name, args)` arm rather than a typed case.
+> runtime, write the property from the view (`.kind = e.value`) or take it in a
+> raw `Receive(name, args)` arm rather than a typed case.
 
 ## Event modifiers
 

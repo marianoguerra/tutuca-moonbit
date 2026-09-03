@@ -65,132 +65,12 @@ impl @component.Fields for SchemaViewerState with fn decode(f) {
 }
 
 ///|
-/// The Receive arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum SchemaViewerReceive {
-  ToggleShowRaw
-  /// A receive the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Receive dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-///
-/// It is also REPORTED. `Unknown` answers two different questions —
-/// nobody declares this name, and this name is declared here and was
-/// handed the wrong shape — and the second one is a bug in the sender
-/// that used to be indistinguishable from silence. Every arm below that
-/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
-/// which costs nothing unless a host is listening.
-pub fn SchemaViewerReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> SchemaViewerReceive? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("toggleShowRaw", []) => ToggleShowRaw
-      _ => {
-        match name {
-          "toggleShowRaw" => @tutuca.bad_payload(name, "", args)
-          _ => ()
-        }
-        Unknown(name, args)
-      }
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn SchemaViewerReceive::to_dispatch(
-  self : SchemaViewerReceive,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    ToggleShowRaw => ("toggleShowRaw", [])
-    Unknown(n, args) => (n, args)
-  }
-}
-
-///|
-/// Send this message to self; it arrives as a later Receive dispatch.
-///
-/// The name comes from the schema, so it cannot drift from the one
-/// `from_dispatch` decodes.
-pub fn SchemaViewerReceive::send(
-  self : SchemaViewerReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
-  let (name, args) = self.to_dispatch()
-  ctx.send(name, args)
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let schema_viewer_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let schema_viewer_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum SchemaViewerInput {
-  ToggleShowRaw
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaViewerInput::name(self : SchemaViewerInput) -> String {
-  match self {
-    ToggleShowRaw => "toggleShowRaw"
-  }
-}
-
-///|
-pub fn SchemaViewerInput::parse(s : String) -> SchemaViewerInput? {
-  match s {
-    "toggleShowRaw" => Some(ToggleShowRaw)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to schema_viewer.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum SchemaViewerMsg {
-  /// `@on.click="toggleShowRaw …"`
-  ToggleShowRaw
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn SchemaViewerMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> SchemaViewerMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("toggleShowRaw", []) => ToggleShowRaw
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// Every `$name` the views call.
@@ -226,7 +106,6 @@ impl @component.Fields for SchemaViewerState with fn schema() {
       @component.FieldInfo::new("rawSchema", TyAny),
       @component.FieldInfo::new("showRaw", TyBool),
     ],
-    view_handlers=["toggleShowRaw"],
     methods=["rawPaneHasSomethingInIt", "toggleLabel"],
     invariants=["rawPaneHasSomethingInIt"],
     view_names=["main"],

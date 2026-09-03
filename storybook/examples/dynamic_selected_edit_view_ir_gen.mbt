@@ -121,7 +121,6 @@ pub fn dse_root_component(
   update? : (DseRootState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     DseRootState,
   ],
-  swap? : (DseRootInput) -> ((DseRootState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -134,15 +133,6 @@ pub fn dse_root_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SelectItem] : Array[DseRootInput]),
-          DseRootInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -271,9 +261,14 @@ fn dse_entry_edit_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setName"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "name",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
     ],
   )
@@ -305,11 +300,6 @@ pub fn dse_entry_component(
   update? : (DseEntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     DseEntryState,
   ],
-  swap? : (DseEntryInput) -> ((
-    DseEntryState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -322,15 +312,6 @@ pub fn dse_entry_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetName] : Array[DseEntryInput]),
-          DseEntryInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,

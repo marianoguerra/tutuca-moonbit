@@ -165,14 +165,19 @@ fn vw_type(reg : VwReg, name : String, label : String) -> @component.Component {
     },
     name~,
     init=VwEmptyState::{ },
-    swap={
-      "setType": (_s : VwEmptyState, args, _ctx) => {
-        let id = match args {
-          [Str(t), ..] => t
-          _ => ""
+    update=(_s : VwEmptyState, msg, _ctx) => {
+      match msg {
+        // `Replace` supersedes this node with a DIFFERENT component's instance,
+        // which is what picking a type does.
+        Receive("setType", args) => {
+          let id = match args {
+            [Str(t), ..] => t
+            _ => ""
+          }
+          Replace(vw_make_type(reg, type_comp_name(id)))
         }
-        Some(vw_make_type(reg, type_comp_name(id)))
-      },
+        _ => Unhandled
+      }
     },
   )
 }
@@ -752,7 +757,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
       "main": @anode.View::new(
         "main",
         raw_view="<section class=\"flex flex-col gap-3 w-xl picker\">" +
-          "<input type=\"search\" class=\"input w-full outline-0 filter\" placeholder=\"Filter instructions\" :value=\".filter\" @on.input=\"setFilter e.value\" />" +
+          "<input type=\"search\" class=\"input w-full outline-0 filter\" placeholder=\"Filter instructions\" :value=\".filter\" @on.input=\".filter = e.value\" />" +
           "<div class=\"flex gap-3 text-xs justify-between radios\">\{radio_html.to_string()}</div>" +
           "<div class=\"flex flex-col gap-1 max-h-[25vh] overflow-y-auto instr-list\">" +
           // DIVERGENCE: pass @value (the id) directly instead of reading it off the
@@ -769,6 +774,22 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
     },
     update=(s : VwPickerState, msg, _ctx) => {
       match msg {
+        // `Replace` supersedes this node with a DIFFERENT component's
+        // instance, which is what picking an instruction does.
+        Receive("selectInstructionById", args) => {
+          let id = match args {
+            [Str(t), ..] => t
+            _ => ""
+          }
+          match vw_id_to_name().get(id) {
+            Some(cname) =>
+              match reg.get(cname) {
+                Some(c) => Replace(vw_with_editing(c.make(Map([]))))
+                None => Unhandled
+              }
+            None => Unhandled
+          }
+        }
         Receive(name, _) =>
           match sections.get(name) {
             Some(f) => Next(f(s))
@@ -797,22 +818,6 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
         }
       },
     },
-    swap={
-      "selectInstructionById": (_s : VwPickerState, args, _ctx) => {
-        let id = match args {
-          [Str(t), ..] => t
-          _ => ""
-        }
-        match vw_id_to_name().get(id) {
-          Some(cname) =>
-            match reg.get(cname) {
-              Some(c) => Some(vw_with_editing(c.make(Map([]))))
-              None => None
-            }
-          None => None
-        }
-      },
-    },
   )
 }
 
@@ -832,7 +837,7 @@ fn vw_macros() -> Map[String, @anode.Macro] {
   {
     "btn-toggle-expand": {
       defaults: Map([]),
-      raw_view: "<button class=\"toggle-expand\" @if.class=\".expanded\" @then=\"'btn btn-xs btn-soft btn-primary btn-circle on'\" @else=\"'btn btn-xs btn-soft btn-success btn-circle off'\" @on.click=\"toggleExpanded\">" +
+      raw_view: "<button class=\"toggle-expand\" @if.class=\".expanded\" @then=\"'btn btn-xs btn-soft btn-primary btn-circle on'\" @else=\"'btn btn-xs btn-soft btn-success btn-circle off'\" @on.click=\".expanded = not .expanded\">" +
       "<span @show=\".expanded\">▽</span><span @hide=\".expanded\">▷</span></button>",
     },
     "btn-toggle-edit": {

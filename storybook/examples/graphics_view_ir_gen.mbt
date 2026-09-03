@@ -99,9 +99,14 @@ fn swatch_picker_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", @tutuca.Expr::name("setColor"), args=[
-          @tutuca.Expr::bind("value"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "color",
+            @tutuca.Expr::bind("value"),
+          ),
+        ),
       ],
     ],
   )
@@ -154,11 +159,6 @@ pub fn swatch_picker_component(
   update? : (SwatchPickerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SwatchPickerState,
   ],
-  swap? : (SwatchPickerInput) -> ((
-    SwatchPickerState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   enrich? : (SwatchPickerEnrich) -> ((
     SwatchPickerState,
     Map[String, @tutuca.Value],
@@ -180,15 +180,6 @@ pub fn swatch_picker_component(
     global_style~,
     update?,
     compute=swatch_picker_inline_compute(),
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetColor] : Array[SwatchPickerInput]),
-          SwatchPickerInput::name,
-          f,
-        )
-      None => Map([])
-    },
     enrich=match enrich {
       Some(f) =>
         @component.build_bucket(
@@ -324,19 +315,34 @@ fn quadratic_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setA"), args=[
-          @tutuca.Expr::event_path(["valueAsInt"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "a",
+            @tutuca.Expr::event_path(["valueAsInt"]),
+          ),
+        ),
       ],
       [
-        @anode.on("input", @tutuca.Expr::name("setB"), args=[
-          @tutuca.Expr::event_path(["valueAsInt"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "b",
+            @tutuca.Expr::event_path(["valueAsInt"]),
+          ),
+        ),
       ],
       [
-        @anode.on("input", @tutuca.Expr::name("setC"), args=[
-          @tutuca.Expr::event_path(["valueAsInt"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "c",
+            @tutuca.Expr::event_path(["valueAsInt"]),
+          ),
+        ),
       ],
     ],
   )
@@ -373,11 +379,6 @@ pub fn quadratic_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (QuadraticInput) -> ((
-    QuadraticState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -395,15 +396,6 @@ pub fn quadratic_component(
         @component.build_bucket(
           ([Classify, Discriminant] : Array[QuadraticMethod]),
           QuadraticMethod::name,
-          f,
-        )
-      None => Map([])
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetA, SetB, SetC] : Array[QuadraticInput]),
-          QuadraticInput::name,
           f,
         )
       None => Map([])

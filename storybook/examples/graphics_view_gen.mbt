@@ -60,132 +60,12 @@ impl @component.Fields for SwatchPickerState with fn decode(f) {
 }
 
 ///|
-/// The Receive arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum SwatchPickerReceive {
-  SetColor(@tutuca.Value)
-  /// A receive the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Receive dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-///
-/// It is also REPORTED. `Unknown` answers two different questions —
-/// nobody declares this name, and this name is declared here and was
-/// handed the wrong shape — and the second one is a bug in the sender
-/// that used to be indistinguishable from silence. Every arm below that
-/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
-/// which costs nothing unless a host is listening.
-pub fn SwatchPickerReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> SwatchPickerReceive? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setColor", [a0]) => SetColor(a0)
-      _ => {
-        match name {
-          "setColor" => @tutuca.bad_payload(name, "Any", args)
-          _ => ()
-        }
-        Unknown(name, args)
-      }
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn SwatchPickerReceive::to_dispatch(
-  self : SwatchPickerReceive,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    SetColor(a0) => ("setColor", [a0])
-    Unknown(n, args) => (n, args)
-  }
-}
-
-///|
-/// Send this message to self; it arrives as a later Receive dispatch.
-///
-/// The name comes from the schema, so it cannot drift from the one
-/// `from_dispatch` decodes.
-pub fn SwatchPickerReceive::send(
-  self : SwatchPickerReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
-  let (name, args) = self.to_dispatch()
-  ctx.send(name, args)
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let swatch_picker_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let swatch_picker_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum SwatchPickerInput {
-  SetColor
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SwatchPickerInput::name(self : SwatchPickerInput) -> String {
-  match self {
-    SetColor => "setColor"
-  }
-}
-
-///|
-pub fn SwatchPickerInput::parse(s : String) -> SwatchPickerInput? {
-  match s {
-    "setColor" => Some(SetColor)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to graphics.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum SwatchPickerMsg {
-  /// `@on.click="setColor …"`
-  SetColor(@tutuca.Value)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn SwatchPickerMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> SwatchPickerMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setColor", [a0]) => SetColor(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// Every `@enrich-with` handler named INSIDE an `@each`.
@@ -215,7 +95,6 @@ impl @component.Fields for SwatchPickerState with fn schema() {
       @component.FieldInfo::new("color", TyText),
       @component.FieldInfo::new("palette", TyList(TyText)),
     ],
-    view_handlers=["setColor"],
     methods=["colorIsOnThePalette"],
     invariants=["colorIsOnThePalette"],
     domains=[{ field: "palette", domain: DNonEmpty, }],
@@ -276,150 +155,12 @@ impl @component.Fields for QuadraticState with fn decode(f) {
 }
 
 ///|
-/// The Receive arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum QuadraticReceive {
-  SetA(Double)
-  SetB(Double)
-  SetC(Double)
-  /// A receive the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Receive dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-///
-/// It is also REPORTED. `Unknown` answers two different questions —
-/// nobody declares this name, and this name is declared here and was
-/// handed the wrong shape — and the second one is a bug in the sender
-/// that used to be indistinguishable from silence. Every arm below that
-/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
-/// which costs nothing unless a host is listening.
-pub fn QuadraticReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> QuadraticReceive? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setA", [Num(a0)]) => SetA(a0)
-      ("setB", [Num(a0)]) => SetB(a0)
-      ("setC", [Num(a0)]) => SetC(a0)
-      _ => {
-        match name {
-          "setA" => @tutuca.bad_payload(name, "Double", args)
-          "setB" => @tutuca.bad_payload(name, "Double", args)
-          "setC" => @tutuca.bad_payload(name, "Double", args)
-          _ => ()
-        }
-        Unknown(name, args)
-      }
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn QuadraticReceive::to_dispatch(
-  self : QuadraticReceive,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    SetA(a0) => ("setA", [Num(a0)])
-    SetB(a0) => ("setB", [Num(a0)])
-    SetC(a0) => ("setC", [Num(a0)])
-    Unknown(n, args) => (n, args)
-  }
-}
-
-///|
-/// Send this message to self; it arrives as a later Receive dispatch.
-///
-/// The name comes from the schema, so it cannot drift from the one
-/// `from_dispatch` decodes.
-pub fn QuadraticReceive::send(
-  self : QuadraticReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
-  let (name, args) = self.to_dispatch()
-  ctx.send(name, args)
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let quadratic_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let quadratic_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum QuadraticInput {
-  SetA
-  SetB
-  SetC
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn QuadraticInput::name(self : QuadraticInput) -> String {
-  match self {
-    SetA => "setA"
-    SetB => "setB"
-    SetC => "setC"
-  }
-}
-
-///|
-pub fn QuadraticInput::parse(s : String) -> QuadraticInput? {
-  match s {
-    "setA" => Some(SetA)
-    "setB" => Some(SetB)
-    "setC" => Some(SetC)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to graphics.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum QuadraticMsg {
-  /// `@on.input="setA …"`
-  SetA(Double)
-  /// `@on.input="setB …"`
-  SetB(Double)
-  /// `@on.input="setC …"`
-  SetC(Double)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn QuadraticMsg::from_dispatch(d : @component.Dispatch) -> QuadraticMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setA", [Num(a0)]) => SetA(a0)
-      ("setB", [Num(a0)]) => SetB(a0)
-      ("setC", [Num(a0)]) => SetC(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// Every `$name` the views call.
@@ -452,7 +193,6 @@ impl @component.Fields for QuadraticState with fn schema() {
       @component.FieldInfo::new("b", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("c", TyInt(width=32, signed=true)),
     ],
-    view_handlers=["setA", "setB", "setC"],
     methods=["classify", "discriminant"],
     view_names=["main"],
   )

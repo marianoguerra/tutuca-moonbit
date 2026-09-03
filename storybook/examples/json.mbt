@@ -86,24 +86,23 @@ fn json_number_comp() -> @component.Component {
 }
 
 ///|
-/// The type picker. Each button swaps the selector for a fresh value of the
-/// chosen type — the `swap` bucket answers an Input dispatch with a
-/// REPLACEMENT node (an instance of a different component). `isCtrl` on the
-/// bool button chooses the initial boolean — the event field reaches the
-/// handler as an argument.
+/// The type picker. Each button supersedes the selector with a fresh value of
+/// the chosen type — an `update` arm answering `Replace`, which is a node of a
+/// DIFFERENT component. `isCtrl` on the bool button chooses the initial
+/// boolean — the event field reaches the handler as an argument.
 fn json_selector_comp(reg : JsonReg) -> @component.Component {
-  json_selector_component(swap=m => {
-    match m {
-      SetToNull => Some((_s, _args, _ctx) => Some(reg.make_("JsonNull")))
-      SetToBool =>
-        Some((_s, args, _ctx) => {
-          let is_ctrl = args.get(0) is Some(Bool(true))
-          Some(reg.make_("JsonBool", args={ "value": Bool(!is_ctrl) }))
-        })
-      SetToNumber => Some((_s, _args, _ctx) => Some(reg.make_("JsonNumber")))
-      SetToString => Some((_s, _args, _ctx) => Some(reg.make_("JsonString")))
-      SetToArray => Some((_s, _args, _ctx) => Some(reg.make_("JsonArray")))
-      SetToObject => Some((_s, _args, _ctx) => Some(reg.make_("JsonObject")))
+  json_selector_component(update=(_s, msg, _ctx) => {
+    match msg {
+      Receive("setToNull", _) => Replace(reg.make_("JsonNull"))
+      Receive("setToBool", args) => {
+        let is_ctrl = args.get(0) is Some(Bool(true))
+        Replace(reg.make_("JsonBool", args={ "value": Bool(!is_ctrl) }))
+      }
+      Receive("setToNumber", _) => Replace(reg.make_("JsonNumber"))
+      Receive("setToString", _) => Replace(reg.make_("JsonString"))
+      Receive("setToArray", _) => Replace(reg.make_("JsonArray"))
+      Receive("setToObject", _) => Replace(reg.make_("JsonObject"))
+      _ => Unhandled
     }
   })
 }
@@ -156,10 +155,6 @@ fn json_dropped_items(
 fn json_array_comp(reg : JsonReg) -> @component.Component {
   json_array_component(init={ items: [], }, update=(s, msg, _ctx) => {
     match JsonArrayMsg::from_dispatch(msg) {
-      // Served by the mutators generated from the state's fields: the
-      // view spells them bare now, so they arrive as Inputs, and `Unhandled`
-      // falls through to them.
-      Some(RemoveInItemsAt(_)) => Unhandled
       // add a fresh JsonSelector so the user can pick the new element's type
       Some(AddItem) => Next({ items: s.items + [json_make_selector(reg)], })
       Some(OnDropOnItem(a0, a1)) =>
@@ -183,10 +178,6 @@ fn json_object_kv_comp() -> @component.Component {
 fn json_object_comp(reg : JsonReg) -> @component.Component {
   json_object_component(init={ items: [], }, update=(s, msg, _ctx) => {
     match JsonObjectMsg::from_dispatch(msg) {
-      // Served by the mutators generated from the state's fields: the
-      // view spells them bare now, so they arrive as Inputs, and `Unhandled`
-      // falls through to them.
-      Some(RemoveInItemsAt(_)) => Unhandled
       // a key/value row whose value is a fresh selector
       Some(AddItem) => {
         let row = match reg.comps.get("JsonObjectKeyVal") {

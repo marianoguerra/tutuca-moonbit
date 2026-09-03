@@ -195,6 +195,24 @@ pub fn[N] App::send_at_root(
 }
 
 ///|
+/// Write a member at the root, the way a view's `.field = v` writes one.
+///
+/// The host's door for a WRITE, beside `send_at_root`'s door for a dispatch.
+/// The two were one before: a bare `setCount` sent from outside reached the
+/// generated setter through a fallback in the dispatch path, so "ask the
+/// component to decide" and "say what the field is" were the same call and
+/// only the NAME told them apart.
+pub fn[N] App::set_at_root(
+  self : App[N],
+  name : String,
+  value : @tutuca.Value,
+  max_turns? : Int = 10000,
+) -> @transactor.SettleResult {
+  ignore(self.transactor.set_member(@tutuca.DispatchPath::new(), name, value))
+  self.transactor.settle(max_turns~)
+}
+
+///|
 /// The current settled root value. Read-back for state-oriented tests (the
 /// tutuca `drive()` return value).
 pub fn[N] App::root_value(self : App[N]) -> @tutuca.Value {

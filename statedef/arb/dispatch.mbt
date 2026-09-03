@@ -179,50 +179,42 @@ pub fn protocol_dispatch_of(
 }
 
 ///|
-/// The GENERATED mutators, as dispatches with arguments at the declared types.
+/// A WRITE to one of this component's fields, with a value drawn for it.
 ///
-/// The other half of a component's alphabet, and the half a spec block never
-/// spells out: every field brings `setX` / `resetX` / `xLen`, a `Bool` brings
-/// `toggleX`, a list and a map bring the `In…At` family, a set brings the
-/// membership verbs. A caller who sends only the declared messages is testing
-/// the handlers somebody wrote and none of the ones the field kinds wrote.
+/// The diagnostic surface, and it is worth generating for one reason above the
+/// rest. An `invariant` is checked after a write exactly as it is after a
+/// hand-written handler, and a write takes an arbitrary value — so
+/// `values = []` is the shortest input that drives a component through its own
+/// invariant, and no handler anybody wrote will produce it.
 ///
-/// They are worth generating for one reason above the rest. An `invariant` is
-/// checked after a generated mutator exactly as it is after a hand-written
-/// handler — "a generated mutator: after the successor is built" — and a
-/// mutator takes an arbitrary value. So `setValues []` is the shortest input
-/// that tries to drive a component through its own invariant, and no handler
-/// anybody wrote will produce it.
+/// The value comes from the field's DOMAIN when it has one — `value_in_domain`
+/// reads a `where` backwards — and from the type otherwise, which is what makes
+/// a drawn state one the component could actually reach.
 ///
-/// The NAMES come from `@component.schema_writers`, which is the table the
-/// runtime itself installs, minus the entries that only read: a name this
-/// package guessed and the runtime does not have would send a message nothing
-/// answers, and look like a passing test. The ARGUMENTS come from the
-/// declaration, because that table holds functions and not types.
-///
-/// `schema_writers` rather than `schema_mutators`, and the difference is not
-/// cosmetic. The full table is every generated CALLABLE, and two of its shapes
-/// — `<field>Len` and `hasIn<Field>` — answer a scalar and touch nothing. They
-/// are `$`-callables for a view, and the receive path takes a generated
-/// entry's result only when it is `Obj(_)`, so sending one lands on
-/// `Unhandled`. Drawing from the full table spent a share of every script on
-/// names that could not do anything and reported each as a refusal — noise
-/// shaped exactly like a finding.
-pub fn mutator_dispatch_of(
+/// It used to draw a DISPATCH of the generated mutator name (`setValues`),
+/// answered by a fallback in the dispatch path that no longer exists. What it
+/// draws is the write itself: the same door a view's `.values = v` goes
+/// through.
+pub fn property_write_of(
   def : @statedef.StateDef,
   depth? : Int = MAX_DEPTH,
   state? : Map[String, @tutuca.Value] = Map([]),
-) -> @gen.Gen[@component.Dispatch]? {
-  let installed = @component.schema_writers(@info.schema_info(def))
-  let choices : Array[@gen.Gen[@component.Dispatch]] = []
-  for name, args in mutator_args(def, depth~, state~) {
-    // Dropped rather than sent: the join with the runtime's own table is what
-    // keeps this from drifting into names nothing answers. `mutator_names`
-    // below is the test that the drift never goes the other way.
-    if !installed.contains(name) {
-      continue
+) -> @gen.Gen[(String, @tutuca.Value)]? {
+  let domains = def.field_domains()
+  let choices : Array[@gen.Gen[(String, @tutuca.Value)]] = []
+  for f in def.fields {
+    let name = f.name
+    // The declared domain first: a `where` read backwards produces a value the
+    // component admits, where the type alone produces one it mostly refuses.
+    let of_domain = @tutuca.domains_of(domains, name)
+      .iter()
+      .filter_map(d => value_in_domain(d, state))
+      .to_array()
+    let g = match of_domain {
+      [one, ..] => one
+      [] => value_of(def, f.ty, depth~)
     }
-    choices.push(args.fmap(a => (Receive(name, a) : @component.Dispatch)))
+    choices.push(g.fmap(v => (name, v)))
   }
   if choices.is_empty() {
     return None

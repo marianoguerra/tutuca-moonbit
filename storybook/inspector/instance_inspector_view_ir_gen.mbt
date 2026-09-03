@@ -236,11 +236,6 @@ pub fn instance_fields_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (InstanceFieldsInput) -> ((
-    InstanceFieldsState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   loop_with? : (InstanceFieldsLoopWith) -> ((
     InstanceFieldsState,
     @tutuca.Value,
@@ -282,15 +277,6 @@ pub fn instance_fields_component(
         bucket[k] = h
       }
       bucket
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([NextPage, PrevPage, ToggleIsExpanded] : Array[InstanceFieldsInput]),
-          InstanceFieldsInput::name,
-          f,
-        )
-      None => Map([])
     },
     loop_with=match loop_with {
       Some(f) =>
@@ -466,14 +452,24 @@ fn instance_explorer_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", @tutuca.Expr::name("setActiveTab"), args=[
-          @anode.const_str("instance"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "activeTab",
+            @anode.const_str("instance"),
+          ),
+        ),
       ],
       [
-        @anode.on("click", @tutuca.Expr::name("setActiveTab"), args=[
-          @anode.const_str("component"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "activeTab",
+            @anode.const_str("component"),
+          ),
+        ),
       ],
     ],
   )
@@ -532,11 +528,6 @@ pub fn instance_explorer_component(
   update? : (InstanceExplorerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     InstanceExplorerState,
   ],
-  swap? : (InstanceExplorerInput) -> ((
-    InstanceExplorerState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -550,15 +541,6 @@ pub fn instance_explorer_component(
     global_style~,
     update?,
     compute=instance_explorer_inline_compute(),
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetActiveTab] : Array[InstanceExplorerInput]),
-          InstanceExplorerInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,

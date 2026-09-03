@@ -62,7 +62,6 @@ fn new_component(
   provide : Map[String, String],
   lookup : Array[LookupSpec],
   specs : Map[String, FieldSpec],
-  swap_names? : Array[String] = [],
   alter_names? : Array[String] = [],
   schema~ : SchemaInfo,
   spec? : String = "",
@@ -88,7 +87,6 @@ fn new_component(
     common_style,
     global_style,
     specs,
-    swap_names,
     alter_names,
     schema,
     spec,
@@ -134,8 +132,6 @@ pub fn[S : @tutuca.Fields] component(
     String,
     (S, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
   ] = Map([]),
-  swap? : Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] = Map([],
-  ),
   when? : Map[
     String,
     (S, @tutuca.Value, @tutuca.Value, @tutuca.Value, &@tutuca.Stack) -> Bool,
@@ -264,7 +260,6 @@ pub fn[S : @tutuca.Fields] component(
     get_property,
     set_property,
     compute,
-    swap,
     when,
     enrich,
     enrich_scope,
@@ -296,7 +291,6 @@ pub fn[S : @tutuca.Fields] component(
     provide,
     lookup,
     all_specs,
-    swap_names=map_keys(swap),
     alter_names=map_keys(when) +
       map_keys(enrich) +
       map_keys(enrich_scope) +

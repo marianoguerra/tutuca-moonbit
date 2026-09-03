@@ -166,11 +166,6 @@ pub fn traffic_light_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (TrafficLightInput) -> ((
-    TrafficLightState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -197,15 +192,6 @@ pub fn traffic_light_component(
         @component.build_bucket(
           ([Light] : Array[TrafficLightMethod]),
           TrafficLightMethod::name,
-          f,
-        )
-      None => Map([])
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([NextLight] : Array[TrafficLightInput]),
-          TrafficLightInput::name,
           f,
         )
       None => Map([])
@@ -329,19 +315,25 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", @tutuca.Expr::name("setTab"), args=[
-          @anode.const_str("overview"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action("tab", @anode.const_str("overview")),
+        ),
       ],
       [
-        @anode.on("click", @tutuca.Expr::name("setTab"), args=[
-          @anode.const_str("features"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action("tab", @anode.const_str("features")),
+        ),
       ],
       [
-        @anode.on("click", @tutuca.Expr::name("setTab"), args=[
-          @anode.const_str("pricing"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action("tab", @anode.const_str("pricing")),
+        ),
       ],
     ],
   )
@@ -373,11 +365,6 @@ pub fn tabbed_u_i_component(
   update? : (TabbedUIState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TabbedUIState,
   ],
-  swap? : (TabbedUIInput) -> ((
-    TabbedUIState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -390,15 +377,6 @@ pub fn tabbed_u_i_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetTab] : Array[TabbedUIInput]),
-          TabbedUIInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -440,12 +418,20 @@ fn list_and_filter_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setQuery"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
-        @anode.on("keydown", @tutuca.Expr::name("resetQuery"), modifiers=[
-          "cancel",
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "query",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
+        @anode.on(
+          "keydown",
+          @anode.const_null(),
+          modifiers=["cancel"],
+          action=@anode.reset_property_action("query"),
+        ),
       ],
     ],
   )
@@ -477,11 +463,6 @@ pub fn list_and_filter_component(
   update? : (ListAndFilterState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ListAndFilterState,
   ],
-  swap? : (ListAndFilterInput) -> ((
-    ListAndFilterState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   when? : (ListAndFilterWhen) -> ((
     ListAndFilterState,
     @tutuca.Value,
@@ -501,15 +482,6 @@ pub fn list_and_filter_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([ResetQuery, SetQuery] : Array[ListAndFilterInput]),
-          ListAndFilterInput::name,
-          f,
-        )
-      None => Map([])
-    },
     when=match when {
       Some(f) =>
         @component.build_bucket(

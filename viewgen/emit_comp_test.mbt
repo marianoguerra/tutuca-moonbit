@@ -49,29 +49,19 @@ test "a schema-backed component gets a wrapper over component()" {
       "  update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[CounterState],",
     ),
   )
-  // Keyed by a generated enum, not by a string: the author writes a match the
-  // compiler checks, so a name added to the view breaks the build rather than
-  // leaving a handler that is never called. `swap` answers Input dispatches,
-  // so its key is the input enum.
-  assert_true(
-    ir.contains(
-      "  swap? : (CounterInput) -> ((CounterState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,",
-    ),
-  )
+  // There is no `swap` parameter. A handler that supersedes this node with
+  // another component's instance answers `Replace(v)` from the one `update`
+  // match — a second bucket, keyed by name and consulted before `update`, was
+  // a second answering path for a thing `update` can say.
+  assert_false(ir.contains("  swap? :"))
   // A bucket the views never use is not a PARAMETER at all, so it cannot be
   // answered by mistake. This view calls no `$name` and names no `@when`.
   assert_false(ir.contains("  compute? :"))
   assert_false(ir.contains("  when? :"))
-  // The author's match becomes the map `component()` takes through ONE generic
-  // function, given the case list.
-  assert_true(
-    ir.contains(
-      "@component.build_bucket(([Add] : Array[CounterInput]), CounterInput::name, f)",
-    ),
-  )
-  // ...and an unanswered bucket is still the empty map, not a match that
-  // answers nothing.
-  assert_true(ir.contains("None => Map([])"))
+  // A bucket that IS answered becomes the map `component()` takes through ONE
+  // generic function, given the case list — and an unanswered one is still the
+  // empty map, not a match that answers nothing. This view answers none.
+  assert_false(ir.contains("@component.build_bucket("))
   // An absent update stays absent: component() takes it as an Option and the
   // wrapper forwards one rather than inventing a no-op.
   assert_true(ir.contains("    update?=update,"))

@@ -1,12 +1,12 @@
 // Recursive JSON editor: 8 mutually-recursive components (null/bool/string/
-// number/array/object + selector + kv), a self-replacing type picker (the
-// `swap` bucket), drag-to-reorder. Components look each other up through a
-// shared `reg` map filled after all are built.
+// number/array/object + selector + kv), a self-replacing type picker (an
+// `update` arm answering `Replace`), drag-to-reorder. Components look each
+// other up through a shared `reg` map filled after all are built.
 //
 // All eight views live in the View tab (json.html), one `<template id="…">`
 // each, and arrive here compiled: json_null_views(), json_array_views(), …
 // `JsonArrayMsg` / `JsonObjectMsg` type the two components with `@on` handlers
-// of their own — the rest drive everything through generated `$` mutators.
+// of their own — the rest write their own properties straight from the view.
 
 ///|
 /// name -> Component, shared by the handlers that construct other component
@@ -28,7 +28,7 @@ fn JsonReg::make_(
 }
 
 ///|
-/// A fresh selector instance (its swap handlers are part of the component).
+/// A fresh selector instance (its picker arms are part of the component).
 fn json_make_selector(reg : JsonReg) -> @tutuca.Value {
   reg.make_("JsonSelector")
 }
@@ -77,26 +77,25 @@ fn json_number_comp() -> @component.Component {
 }
 
 ///|
-/// The type picker. Each button swaps the selector for a fresh value of the
-/// chosen type — the `swap` bucket answers an Input dispatch with a
-/// REPLACEMENT node (an instance of a different component). `isCtrl` on the
-/// bool button chooses the initial boolean — the event field reaches the
-/// handler as an argument.
+/// The type picker. Each button supersedes the selector with a fresh value of
+/// the chosen type — an `update` arm answering `Replace`, which is a node of a
+/// DIFFERENT component. `isCtrl` on the bool button chooses the initial
+/// boolean — the event field reaches the handler as an argument.
 fn json_selector_comp(reg : JsonReg) -> @component.Component {
-  json_selector_component(
-    swap=i => match i {
-      SetToNull => Some((_s, _args, _ctx) => Some(reg.make_("JsonNull")))
-      SetToBool =>
-        Some((_s, args, _ctx) => {
-          let is_ctrl = args.get(0) is Some(Bool(true))
-          Some(reg.make_("JsonBool", args={ "value": Bool(!is_ctrl) }))
-        })
-      SetToNumber => Some((_s, _args, _ctx) => Some(reg.make_("JsonNumber")))
-      SetToString => Some((_s, _args, _ctx) => Some(reg.make_("JsonString")))
-      SetToArray => Some((_s, _args, _ctx) => Some(reg.make_("JsonArray")))
-      SetToObject => Some((_s, _args, _ctx) => Some(reg.make_("JsonObject")))
-    },
-  )
+  json_selector_component(update=(_s, msg, _ctx) => {
+    match msg {
+      Receive("setToNull", _) => Replace(reg.make_("JsonNull"))
+      Receive("setToBool", args) => {
+        let is_ctrl = args.get(0) is Some(Bool(true))
+        Replace(reg.make_("JsonBool", args={ "value": Bool(!is_ctrl) }))
+      }
+      Receive("setToNumber", _) => Replace(reg.make_("JsonNumber"))
+      Receive("setToString", _) => Replace(reg.make_("JsonString"))
+      Receive("setToArray", _) => Replace(reg.make_("JsonArray"))
+      Receive("setToObject", _) => Replace(reg.make_("JsonObject"))
+      _ => Unhandled
+    }
+  })
 }
 
 ///|

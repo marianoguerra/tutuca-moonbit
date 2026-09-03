@@ -115,9 +115,14 @@ fn attribute_binding_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setStr"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "str",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
       [
         @anode.on("input", @tutuca.Expr::name("setRawNumber"), args=[
@@ -125,9 +130,14 @@ fn attribute_binding_main_view_ir() -> @anode.View {
         ]),
       ],
       [
-        @anode.on("input", @tutuca.Expr::name("setBool"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "bool",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
     ],
   )
@@ -159,11 +169,6 @@ pub fn attribute_binding_component(
   update? : (AttributeBindingState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     AttributeBindingState,
   ],
-  swap? : (AttributeBindingInput) -> ((
-    AttributeBindingState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -176,15 +181,6 @@ pub fn attribute_binding_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetBool, SetRawNumber, SetStr] : Array[AttributeBindingInput]),
-          AttributeBindingInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -233,7 +229,18 @@ fn conditional_attributes_main_view_ir() -> @anode.View {
         ],
       ),
     ]),
-    [[@anode.on("click", @tutuca.Expr::name("toggleIsActive"))]],
+    [
+      [
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "isActive",
+            @tutuca.Expr::app("not", [@tutuca.Expr::field("isActive")]),
+          ),
+        ),
+      ],
+    ],
   )
 }
 
@@ -263,11 +270,6 @@ pub fn conditional_attributes_component(
   update? : (ConditionalAttributesState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ConditionalAttributesState,
   ],
-  swap? : (ConditionalAttributesInput) -> ((
-    ConditionalAttributesState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -280,15 +282,6 @@ pub fn conditional_attributes_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([ToggleIsActive] : Array[ConditionalAttributesInput]),
-          ConditionalAttributesInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -335,13 +328,19 @@ fn event_modifiers_main_view_ir() -> @anode.View {
         ]),
         @anode.on(
           "keydown",
-          @tutuca.Expr::name("setLastSentSearch"),
-          args=[@tutuca.Expr::event_path(["value"])],
+          @anode.const_null(),
           modifiers=["send"],
+          action=@anode.set_property_action(
+            "lastSentSearch",
+            @tutuca.Expr::event_path(["value"]),
+          ),
         ),
-        @anode.on("keydown", @tutuca.Expr::name("resetQuery"), modifiers=[
-          "cancel",
-        ]),
+        @anode.on(
+          "keydown",
+          @anode.const_null(),
+          modifiers=["cancel"],
+          action=@anode.reset_property_action("query"),
+        ),
       ],
     ],
   )
@@ -373,11 +372,6 @@ pub fn event_modifiers_component(
   update? : (EventModifiersState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     EventModifiersState,
   ],
-  swap? : (EventModifiersInput) -> ((
-    EventModifiersState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -390,15 +384,6 @@ pub fn event_modifiers_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([OnInput, ResetQuery, SetLastSentSearch] : Array[EventModifiersInput]),
-          EventModifiersInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -459,7 +444,16 @@ fn show_hide_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("click", @tutuca.Expr::name("toggleIsOpen"))],
+      [
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "isOpen",
+            @tutuca.Expr::app("not", [@tutuca.Expr::field("isOpen")]),
+          ),
+        ),
+      ],
       [@anode.on("click", @tutuca.Expr::name("incCount"))],
     ],
   )
@@ -533,11 +527,6 @@ pub fn show_hide_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (ShowHideInput) -> ((
-    ShowHideState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -564,15 +553,6 @@ pub fn show_hide_component(
         @component.build_bucket(
           ([Label] : Array[ShowHideMethod]),
           ShowHideMethod::name,
-          f,
-        )
-      None => Map([])
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([IncCount, ToggleIsOpen] : Array[ShowHideInput]),
-          ShowHideInput::name,
           f,
         )
       None => Map([])

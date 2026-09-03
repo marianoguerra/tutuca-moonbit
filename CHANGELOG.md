@@ -6,6 +6,60 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **A dispatch nothing answers is refused, not routed to a setter the field
+  implies.** A `Receive` used to be offered to three things in order — the
+  `swap` bucket, `update`, and then the generated mutator of that name — so
+  `@on.click="setTitle 'x'"` reached a setter no one wrote, an `update` arm
+  answering `Unhandled` fell through to one, and a real handler could be
+  shadowed by the field beside it. There is one lookup now: `update`, and a
+  name it does not claim is refused with `NO_HANDLER`.
+
+  What replaces the fallback is the thing that was always the honest spelling
+  of it — a **property action**, written in the view:
+
+  ```html
+  <button @on.click=".title = 'x'">rename</button>
+  <input  @on.input=".query = e.value">
+  <button @on.click=".open = not .open">toggle</button>
+  <button @on.click=".count = default">reset</button>
+  <button @on.click=".items.removeAt @key">x</button>
+  ```
+
+  A write reads as a write and a name reads as a message. Both go through the
+  same doors — the domain and the invariants are asked either way — so nothing
+  is given up by writing the field directly.
+
+  Migrating a view is mechanical: `setX v` becomes `.x = v`, `toggleX` becomes
+  `.x = not .x`, `resetX` becomes `.x = default`, and the `In…At` family becomes
+  a member operation (`.items.removeAt @key`, `.items.push v`). An `update` arm
+  whose only body was `Unhandled` for such a name is deleted with it.
+
+- **`Update[S]` says what happened, in four words instead of two and a bucket.**
+  Beside `Next` and `Unchanged` it gains `Replace(Value)` — this node is
+  superseded by a different value, which is what the `swap` bucket existed for —
+  and `Refused(Refusal)`, which turns a dispatch down and says why. The `swap`
+  bucket is gone from `component()` and from the generated wrappers; a component
+  that replaced itself now answers `Replace(v)` from an ordinary `update` arm.
+
+- **`Outcome` is what a write ANSWERS, and its cases are spelled plainly.**
+  `PropertyWrite` is an alias for the same enum; the constructors are `Missing`,
+  `Unchanged`, `Refused(Refusal)` and `Changed(Value)`. `Refused` carries the
+  refusal rather than a bare marker, so the reason a write was turned down
+  travels with the answer.
+
+- **A guest that answers `unhandled` has answered.** The host's dyncomp bridge
+  no longer falls back to a mutator the guest's schema implies: a guest view
+  writes its own property (`.count = 0`), and the write crosses through the
+  property door.
+
+- **The fuzz driver's fourth source is `Fields`, and it writes.** It used to
+  DISPATCH generated mutator names, which only worked because of the fallback;
+  it now draws a `SetField(name, value)` and goes through the write seam. In the
+  storybook's Fuzz tab the button reads **Fields** rather than *Internal
+  mutators*, and the source is named `fields`.
+
 ## [0.47.1] - 2026-09-01
 
 ### Fixed

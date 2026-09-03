@@ -113,10 +113,10 @@ test "a GENERATED mutator that breaks the invariant is abandoned too" {
   // `setThere` is not declared anywhere — it is what every field gets — so it
   // is the dispatch an invariant could not reach at all. A mutator raises no
   // effects, so the abandonment here is complete.
-  let after = send(ledger(), "setThere", [Num(3)])
+  let after = write(ledger(), "there", Num(3))
   assert_eq(after.field("there"), Num(0))
   // …and one that keeps the rule still goes through.
-  let ok = send(ledger(), "setHere", [Num(8)])
+  let ok = write(ledger(), "here", Num(8))
   assert_eq(ok.field("here"), Num(8))
 }
 
@@ -128,12 +128,12 @@ test "the refusal names the rule and carries the state that was rejected" {
       refused.push(r)
     }
   })
-  let _ = send(ledger(), "setThere", [Num(3)])
+  let _ = write(ledger(), "there", Num(3))
   off()
   assert_eq(refused.length(), 1)
   assert_eq(refused[0].code, Invariant)
   assert_eq(refused[0].rule, "conserved")
-  assert_eq(refused[0].asked, "setThere")
+  assert_eq(refused[0].asked, "there")
   // The state that was REJECTED, which is the thing you actually want to look
   // at and the thing nothing could reach before the channel existed.
   assert_eq(refused[0].state.field("there"), Num(3))
@@ -155,6 +155,6 @@ test "a rule that cannot be evaluated does not refuse anything" {
     init=LedgerState::{ here: 8, there: 0, total: 8, },
     compute={ "conserved": (_s : LedgerState, _args, _stack) => Null },
   )
-  let after = send(comp.make(Map([])), "setThere", [Num(3)])
+  let after = write(comp.make(Map([])), "there", Num(3))
   assert_eq(after.field("there"), Num(3))
 }

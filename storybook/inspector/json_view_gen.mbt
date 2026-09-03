@@ -503,7 +503,6 @@ impl @component.Fields for JsonArrayState with fn decode(f) {
 pub(all) enum JsonArrayReceive {
   NextPage
   PrevPage
-  ToggleIsExpanded
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -530,12 +529,10 @@ pub fn JsonArrayReceive::from_dispatch(
     match (name, args) {
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
-      ("toggleIsExpanded", []) => ToggleIsExpanded
       _ => {
         match name {
           "nextPage" => @tutuca.bad_payload(name, "", args)
           "prevPage" => @tutuca.bad_payload(name, "", args)
-          "toggleIsExpanded" => @tutuca.bad_payload(name, "", args)
           _ => ()
         }
         Unknown(name, args)
@@ -552,7 +549,6 @@ pub fn JsonArrayReceive::to_dispatch(
   match self {
     NextPage => ("nextPage", [])
     PrevPage => ("prevPage", [])
-    ToggleIsExpanded => ("toggleIsExpanded", [])
     Unknown(n, args) => (n, args)
   }
 }
@@ -583,7 +579,6 @@ pub let json_array_global_style : String = ""
 pub(all) enum JsonArrayInput {
   NextPage
   PrevPage
-  ToggleIsExpanded
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -591,7 +586,6 @@ pub fn JsonArrayInput::name(self : JsonArrayInput) -> String {
   match self {
     NextPage => "nextPage"
     PrevPage => "prevPage"
-    ToggleIsExpanded => "toggleIsExpanded"
   }
 }
 
@@ -600,7 +594,6 @@ pub fn JsonArrayInput::parse(s : String) -> JsonArrayInput? {
   match s {
     "nextPage" => Some(NextPage)
     "prevPage" => Some(PrevPage)
-    "toggleIsExpanded" => Some(ToggleIsExpanded)
     _ => None
   }
 }
@@ -616,8 +609,6 @@ pub(all) enum JsonArrayMsg {
   NextPage
   /// `@on.click="prevPage …"`
   PrevPage
-  /// `@on.click="toggleIsExpanded …"`
-  ToggleIsExpanded
   /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -634,7 +625,6 @@ pub fn JsonArrayMsg::from_dispatch(d : @component.Dispatch) -> JsonArrayMsg? {
     match (name, args) {
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
-      ("toggleIsExpanded", []) => ToggleIsExpanded
       _ => Unknown(name, args)
     },
   )
@@ -701,7 +691,7 @@ impl @component.Fields for JsonArrayState with fn schema() {
       @component.FieldInfo::new("itemsPerPage", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("currentPage", TyInt(width=32, signed=true)),
     ],
-    view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
+    view_handlers=["nextPage", "prevPage"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageExists", "pageIndicatorText", "showPagination", "typeText",
@@ -789,7 +779,6 @@ impl @component.Fields for JsonObjectState with fn decode(f) {
 pub(all) enum JsonObjectReceive {
   NextPage
   PrevPage
-  ToggleIsExpanded
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -816,12 +805,10 @@ pub fn JsonObjectReceive::from_dispatch(
     match (name, args) {
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
-      ("toggleIsExpanded", []) => ToggleIsExpanded
       _ => {
         match name {
           "nextPage" => @tutuca.bad_payload(name, "", args)
           "prevPage" => @tutuca.bad_payload(name, "", args)
-          "toggleIsExpanded" => @tutuca.bad_payload(name, "", args)
           _ => ()
         }
         Unknown(name, args)
@@ -838,7 +825,6 @@ pub fn JsonObjectReceive::to_dispatch(
   match self {
     NextPage => ("nextPage", [])
     PrevPage => ("prevPage", [])
-    ToggleIsExpanded => ("toggleIsExpanded", [])
     Unknown(n, args) => (n, args)
   }
 }
@@ -869,7 +855,6 @@ pub let json_object_global_style : String = ""
 pub(all) enum JsonObjectInput {
   NextPage
   PrevPage
-  ToggleIsExpanded
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -877,7 +862,6 @@ pub fn JsonObjectInput::name(self : JsonObjectInput) -> String {
   match self {
     NextPage => "nextPage"
     PrevPage => "prevPage"
-    ToggleIsExpanded => "toggleIsExpanded"
   }
 }
 
@@ -886,7 +870,6 @@ pub fn JsonObjectInput::parse(s : String) -> JsonObjectInput? {
   match s {
     "nextPage" => Some(NextPage)
     "prevPage" => Some(PrevPage)
-    "toggleIsExpanded" => Some(ToggleIsExpanded)
     _ => None
   }
 }
@@ -902,8 +885,6 @@ pub(all) enum JsonObjectMsg {
   NextPage
   /// `@on.click="prevPage …"`
   PrevPage
-  /// `@on.click="toggleIsExpanded …"`
-  ToggleIsExpanded
   /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -920,7 +901,6 @@ pub fn JsonObjectMsg::from_dispatch(d : @component.Dispatch) -> JsonObjectMsg? {
     match (name, args) {
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
-      ("toggleIsExpanded", []) => ToggleIsExpanded
       _ => Unknown(name, args)
     },
   )
@@ -987,7 +967,7 @@ impl @component.Fields for JsonObjectState with fn schema() {
       @component.FieldInfo::new("itemsPerPage", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("currentPage", TyInt(width=32, signed=true)),
     ],
-    view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
+    view_handlers=["nextPage", "prevPage"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageExists", "pageIndicatorText", "showPagination", "typeText",

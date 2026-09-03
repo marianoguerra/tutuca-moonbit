@@ -54,8 +54,8 @@
 <template id="Entry:edit">
   <div class="card bg-base-100 shadow-sm gap-3">
     <div class="card-body">
-      <input class="input title" :value=".title" @on.input="setTitle e.value">
-      <input class="input desc" :value=".description" @on.input="setDescription e.value">
+      <input class="input title" :value=".title" @on.input=".title = e.value">
+      <input class="input desc" :value=".description" @on.input=".description = e.value">
     </div>
   </div>
 </template>

@@ -87,132 +87,12 @@ impl @component.Fields for ComposabilityState with fn decode(f) {
 }
 
 ///|
-/// The Receive arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum ComposabilityReceive {
-  SetActiveSection(String)
-  /// A receive the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Receive dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-///
-/// It is also REPORTED. `Unknown` answers two different questions —
-/// nobody declares this name, and this name is declared here and was
-/// handed the wrong shape — and the second one is a bug in the sender
-/// that used to be indistinguishable from silence. Every arm below that
-/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
-/// which costs nothing unless a host is listening.
-pub fn ComposabilityReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> ComposabilityReceive? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setActiveSection", [Str(a0)]) => SetActiveSection(a0)
-      _ => {
-        match name {
-          "setActiveSection" => @tutuca.bad_payload(name, "String", args)
-          _ => ()
-        }
-        Unknown(name, args)
-      }
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn ComposabilityReceive::to_dispatch(
-  self : ComposabilityReceive,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    SetActiveSection(a0) => ("setActiveSection", [Str(a0)])
-    Unknown(n, args) => (n, args)
-  }
-}
-
-///|
-/// Send this message to self; it arrives as a later Receive dispatch.
-///
-/// The name comes from the schema, so it cannot drift from the one
-/// `from_dispatch` decodes.
-pub fn ComposabilityReceive::send(
-  self : ComposabilityReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
-  let (name, args) = self.to_dispatch()
-  ctx.send(name, args)
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let composability_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let composability_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum ComposabilityInput {
-  SetActiveSection
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ComposabilityInput::name(self : ComposabilityInput) -> String {
-  match self {
-    SetActiveSection => "setActiveSection"
-  }
-}
-
-///|
-pub fn ComposabilityInput::parse(s : String) -> ComposabilityInput? {
-  match s {
-    "setActiveSection" => Some(SetActiveSection)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to composability.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum ComposabilityMsg {
-  /// `@on.click="setActiveSection …"`
-  SetActiveSection(String)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn ComposabilityMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> ComposabilityMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setActiveSection", [Str(a0)]) => SetActiveSection(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -234,7 +114,6 @@ impl @component.Fields for ComposabilityState with fn schema() {
       @component.FieldInfo::new("visualWasm", TyComp(Some("Module"))),
       @component.FieldInfo::new("dnd", TyComp(None)),
     ],
-    view_handlers=["setActiveSection"],
     domains=[
       {
         field: "activeSection",

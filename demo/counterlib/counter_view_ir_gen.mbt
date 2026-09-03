@@ -103,16 +103,27 @@ fn counter_main_view_ir() -> @anode.View {
           @anode.const_num(-1.0),
         ]),
       ],
-      [@anode.on("click", @tutuca.Expr::name("resetCount"))],
       [
-        @anode.on("input", @tutuca.Expr::name("setLabel"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.reset_property_action("count"),
+        ),
+      ],
+      [
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "label",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
         @anode.on(
           "keydown",
-          @tutuca.Expr::name("setLabel"),
-          args=[@anode.const_str("sent!")],
+          @anode.const_null(),
           modifiers=["send"],
+          action=@anode.set_property_action("label", @anode.const_str("sent!")),
         ),
       ],
     ],
@@ -233,7 +244,6 @@ pub fn counter_component(
   update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     CounterState,
   ],
-  swap? : (CounterInput) -> ((CounterState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -256,15 +266,6 @@ pub fn counter_component(
       }
     },
     compute=counter_inline_compute(),
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Add, ResetCount, SetLabel] : Array[CounterInput]),
-          CounterInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,

@@ -382,19 +382,9 @@ fn wrapper_buckets(
       all: cases("compute", methods),
     })
   }
-  // `swap` does NOT share that enum, though it reads like it should. A swap
-  // handler answers an Input dispatch — component/instance.mbt checks the swap
-  // bucket before `update` for exactly the names `@on` raises — so its keys are
-  // the input names, and it is `update`'s alternative rather than `compute`'s:
-  // the one that may replace this node with a different component's instance.
-  if !surface.inputs.is_empty() {
-    out.push({
-      param: "swap",
-      enum_: "\{t}Input",
-      handler: "(\{s}, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?",
-      all: variant_list(surface.inputs.map(i => i.name)),
-    })
-  }
+  // There is no `swap` bucket. A handler that supersedes this node with
+  // another component's instance answers `Replace(v)` from the one `update`
+  // match, which is where every other answer already comes from.
   if !surface.whens.is_empty() {
     out.push({
       param: "when",

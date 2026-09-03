@@ -223,11 +223,6 @@ pub fn state_editor_row_component(
   update? : (StateEditorRowState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     StateEditorRowState,
   ],
-  swap? : (StateEditorRowInput) -> ((
-    StateEditorRowState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -241,15 +236,6 @@ pub fn state_editor_row_component(
     global_style~,
     update?,
     compute=state_editor_row_inline_compute(),
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Edit] : Array[StateEditorRowInput]),
-          StateEditorRowInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,

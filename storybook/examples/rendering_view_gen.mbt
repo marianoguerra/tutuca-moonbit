@@ -69,8 +69,6 @@ impl @component.Fields for PushViewState with fn decode(f) {
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum PushViewReceive {
-  ResetQuery
-  SetQuery(String)
   ToggleView
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
@@ -96,13 +94,9 @@ pub fn PushViewReceive::from_dispatch(
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
-      ("resetQuery", []) => ResetQuery
-      ("setQuery", [Str(a0)]) => SetQuery(a0)
       ("toggleView", []) => ToggleView
       _ => {
         match name {
-          "resetQuery" => @tutuca.bad_payload(name, "", args)
-          "setQuery" => @tutuca.bad_payload(name, "String", args)
           "toggleView" => @tutuca.bad_payload(name, "", args)
           _ => ()
         }
@@ -118,8 +112,6 @@ pub fn PushViewReceive::to_dispatch(
   self : PushViewReceive,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
-    ResetQuery => ("resetQuery", [])
-    SetQuery(a0) => ("setQuery", [Str(a0)])
     ToggleView => ("toggleView", [])
     Unknown(n, args) => (n, args)
   }
@@ -149,16 +141,12 @@ pub let push_view_global_style : String = ""
 ///|
 /// Every bare `@on` handler name the views reference.
 pub(all) enum PushViewInput {
-  ResetQuery
-  SetQuery
   ToggleView
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn PushViewInput::name(self : PushViewInput) -> String {
   match self {
-    ResetQuery => "resetQuery"
-    SetQuery => "setQuery"
     ToggleView => "toggleView"
   }
 }
@@ -166,8 +154,6 @@ pub fn PushViewInput::name(self : PushViewInput) -> String {
 ///|
 pub fn PushViewInput::parse(s : String) -> PushViewInput? {
   match s {
-    "resetQuery" => Some(ResetQuery)
-    "setQuery" => Some(SetQuery)
     "toggleView" => Some(ToggleView)
     _ => None
   }
@@ -184,10 +170,6 @@ pub fn PushViewInput::parse(s : String) -> PushViewInput? {
 /// `update` is consulted only for a dispatch the block did not claim, so
 /// an arm for one of these could never run.
 pub(all) enum PushViewMsg {
-  /// `@on.keydown="resetQuery …"`
-  ResetQuery
-  /// `@on.input="setQuery …"`
-  SetQuery(String)
   /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -202,8 +184,6 @@ pub fn PushViewMsg::from_dispatch(d : @component.Dispatch) -> PushViewMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
-      ("resetQuery", []) => ResetQuery
-      ("setQuery", [Str(a0)]) => SetQuery(a0)
       _ => Unknown(name, args)
     },
   )
@@ -251,7 +231,7 @@ impl @component.Fields for PushViewState with fn schema() {
       @component.FieldInfo::new("query", TyText),
       @component.FieldInfo::new("view", TyText),
     ],
-    view_handlers=["resetQuery", "setQuery", "toggleView"],
+    view_handlers=["toggleView"],
     methods=["getToggleLabel"],
     domains=[{ field: "view", domain: DOneOf([Str("main"), Str("edit")]), }],
     view_names=["main"],
@@ -335,142 +315,12 @@ impl @component.Fields for SeqItemAccessState with fn decode(f) {
 }
 
 ///|
-/// The Receive arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum SeqItemAccessReceive {
-  SetCurrentIndex(Double)
-  SetCurrentKey(String)
-  /// A receive the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Receive dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-///
-/// It is also REPORTED. `Unknown` answers two different questions —
-/// nobody declares this name, and this name is declared here and was
-/// handed the wrong shape — and the second one is a bug in the sender
-/// that used to be indistinguishable from silence. Every arm below that
-/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
-/// which costs nothing unless a host is listening.
-pub fn SeqItemAccessReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> SeqItemAccessReceive? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setCurrentIndex", [Num(a0)]) => SetCurrentIndex(a0)
-      ("setCurrentKey", [Str(a0)]) => SetCurrentKey(a0)
-      _ => {
-        match name {
-          "setCurrentIndex" => @tutuca.bad_payload(name, "Double", args)
-          "setCurrentKey" => @tutuca.bad_payload(name, "String", args)
-          _ => ()
-        }
-        Unknown(name, args)
-      }
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn SeqItemAccessReceive::to_dispatch(
-  self : SeqItemAccessReceive,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    SetCurrentIndex(a0) => ("setCurrentIndex", [Num(a0)])
-    SetCurrentKey(a0) => ("setCurrentKey", [Str(a0)])
-    Unknown(n, args) => (n, args)
-  }
-}
-
-///|
-/// Send this message to self; it arrives as a later Receive dispatch.
-///
-/// The name comes from the schema, so it cannot drift from the one
-/// `from_dispatch` decodes.
-pub fn SeqItemAccessReceive::send(
-  self : SeqItemAccessReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
-  let (name, args) = self.to_dispatch()
-  ctx.send(name, args)
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let seq_item_access_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let seq_item_access_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum SeqItemAccessInput {
-  SetCurrentIndex
-  SetCurrentKey
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SeqItemAccessInput::name(self : SeqItemAccessInput) -> String {
-  match self {
-    SetCurrentIndex => "setCurrentIndex"
-    SetCurrentKey => "setCurrentKey"
-  }
-}
-
-///|
-pub fn SeqItemAccessInput::parse(s : String) -> SeqItemAccessInput? {
-  match s {
-    "setCurrentIndex" => Some(SetCurrentIndex)
-    "setCurrentKey" => Some(SetCurrentKey)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to rendering.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum SeqItemAccessMsg {
-  /// `@on.input="setCurrentIndex …"`
-  SetCurrentIndex(Double)
-  /// `@on.input="setCurrentKey …"`
-  SetCurrentKey(String)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn SeqItemAccessMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> SeqItemAccessMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setCurrentIndex", [Num(a0)]) => SetCurrentIndex(a0)
-      ("setCurrentKey", [Str(a0)]) => SetCurrentKey(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// Every `$name` the views call.
@@ -502,7 +352,6 @@ impl @component.Fields for SeqItemAccessState with fn schema() {
       @component.FieldInfo::new("currentKey", TyAny),
       @component.FieldInfo::new("currentIndex", TyInt(width=32, signed=true)),
     ],
-    view_handlers=["setCurrentIndex", "setCurrentKey"],
     methods=["getMaxIndex"],
     domains=[
       {

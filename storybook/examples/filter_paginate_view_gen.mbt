@@ -53,145 +53,12 @@ impl @component.Fields for PersonState with fn decode(f) {
 }
 
 ///|
-/// The Receive arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum PersonReceive {
-  SetActive(Bool)
-  SetEmail(String)
-  SetName(String)
-  /// A receive the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Receive dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-///
-/// It is also REPORTED. `Unknown` answers two different questions —
-/// nobody declares this name, and this name is declared here and was
-/// handed the wrong shape — and the second one is a bug in the sender
-/// that used to be indistinguishable from silence. Every arm below that
-/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
-/// which costs nothing unless a host is listening.
-pub fn PersonReceive::from_dispatch(d : @component.Dispatch) -> PersonReceive? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setActive", [Bool(a0)]) => SetActive(a0)
-      ("setEmail", [Str(a0)]) => SetEmail(a0)
-      ("setName", [Str(a0)]) => SetName(a0)
-      _ => {
-        match name {
-          "setActive" => @tutuca.bad_payload(name, "Bool", args)
-          "setEmail" => @tutuca.bad_payload(name, "String", args)
-          "setName" => @tutuca.bad_payload(name, "String", args)
-          _ => ()
-        }
-        Unknown(name, args)
-      }
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn PersonReceive::to_dispatch(
-  self : PersonReceive,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    SetActive(a0) => ("setActive", [Bool(a0)])
-    SetEmail(a0) => ("setEmail", [Str(a0)])
-    SetName(a0) => ("setName", [Str(a0)])
-    Unknown(n, args) => (n, args)
-  }
-}
-
-///|
-/// Send this message to self; it arrives as a later Receive dispatch.
-///
-/// The name comes from the schema, so it cannot drift from the one
-/// `from_dispatch` decodes.
-pub fn PersonReceive::send(self : PersonReceive, ctx : &@tutuca.Ctx) -> Unit {
-  let (name, args) = self.to_dispatch()
-  ctx.send(name, args)
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let person_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let person_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum PersonInput {
-  SetActive
-  SetEmail
-  SetName
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PersonInput::name(self : PersonInput) -> String {
-  match self {
-    SetActive => "setActive"
-    SetEmail => "setEmail"
-    SetName => "setName"
-  }
-}
-
-///|
-pub fn PersonInput::parse(s : String) -> PersonInput? {
-  match s {
-    "setActive" => Some(SetActive)
-    "setEmail" => Some(SetEmail)
-    "setName" => Some(SetName)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to filter_paginate.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum PersonMsg {
-  /// `@on.input="setActive …"`
-  SetActive(Bool)
-  /// `@on.input="setEmail …"`
-  SetEmail(String)
-  /// `@on.input="setName …"`
-  SetName(String)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn PersonMsg::from_dispatch(d : @component.Dispatch) -> PersonMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setActive", [Bool(a0)]) => SetActive(a0)
-      ("setEmail", [Str(a0)]) => SetEmail(a0)
-      ("setName", [Str(a0)]) => SetName(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -209,7 +76,6 @@ impl @component.Fields for PersonState with fn schema() {
       @component.FieldInfo::new("email", TyText),
       @component.FieldInfo::new("active", TyBool),
     ],
-    view_handlers=["setActive", "setEmail", "setName"],
     view_names=["main"],
   )
 }
@@ -356,7 +222,6 @@ impl @component.Fields for NaivePeopleState with fn decode(f) {
 pub(all) enum NaivePeopleReceive {
   Next
   Prev
-  RemoveInItemsAt(@tutuca.Value)
   Search(String)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
@@ -384,13 +249,11 @@ pub fn NaivePeopleReceive::from_dispatch(
     match (name, args) {
       ("next", []) => Next
       ("prev", []) => Prev
-      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
       ("search", [Str(a0)]) => Search(a0)
       _ => {
         match name {
           "next" => @tutuca.bad_payload(name, "", args)
           "prev" => @tutuca.bad_payload(name, "", args)
-          "removeInItemsAt" => @tutuca.bad_payload(name, "Any", args)
           "search" => @tutuca.bad_payload(name, "String", args)
           _ => ()
         }
@@ -408,7 +271,6 @@ pub fn NaivePeopleReceive::to_dispatch(
   match self {
     Next => ("next", [])
     Prev => ("prev", [])
-    RemoveInItemsAt(a0) => ("removeInItemsAt", [a0])
     Search(a0) => ("search", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
@@ -440,7 +302,6 @@ pub let naive_people_global_style : String = ""
 pub(all) enum NaivePeopleInput {
   Next
   Prev
-  RemoveInItemsAt
   Search
 } derive(Eq, @debug.Debug)
 
@@ -449,7 +310,6 @@ pub fn NaivePeopleInput::name(self : NaivePeopleInput) -> String {
   match self {
     Next => "next"
     Prev => "prev"
-    RemoveInItemsAt => "removeInItemsAt"
     Search => "search"
   }
 }
@@ -459,7 +319,6 @@ pub fn NaivePeopleInput::parse(s : String) -> NaivePeopleInput? {
   match s {
     "next" => Some(Next)
     "prev" => Some(Prev)
-    "removeInItemsAt" => Some(RemoveInItemsAt)
     "search" => Some(Search)
     _ => None
   }
@@ -476,8 +335,6 @@ pub(all) enum NaivePeopleMsg {
   Next
   /// `@on.click="prev …"`
   Prev
-  /// `@on.click="removeInItemsAt …"`
-  RemoveInItemsAt(@tutuca.Value)
   /// `@on.input="search …"`
   Search(String)
   /// A dispatch the views do not declare, or a declared name
@@ -498,7 +355,6 @@ pub fn NaivePeopleMsg::from_dispatch(
     match (name, args) {
       ("next", []) => Next
       ("prev", []) => Prev
-      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
       ("search", [Str(a0)]) => Search(a0)
       _ => Unknown(name, args)
     },
@@ -561,7 +417,7 @@ impl @component.Fields for NaivePeopleState with fn schema() {
       @component.FieldInfo::new("page", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("pageSize", TyInt(width=32, signed=true)),
     ],
-    view_handlers=["next", "prev", "removeInItemsAt", "search"],
+    view_handlers=["next", "prev", "search"],
     domains=[
       { field: "pageSize", domain: DBetween(lo=DLit(1), hi=DLit(100)), },
       { field: "page", domain: DCompare(op=DGe, rhs=DLit(0)), },
@@ -583,7 +439,6 @@ pub let shared_people_global_style : String = ""
 pub(all) enum SharedPeopleInput {
   Next
   Prev
-  RemoveInItemsAt
   Search
 } derive(Eq, @debug.Debug)
 
@@ -592,7 +447,6 @@ pub fn SharedPeopleInput::name(self : SharedPeopleInput) -> String {
   match self {
     Next => "next"
     Prev => "prev"
-    RemoveInItemsAt => "removeInItemsAt"
     Search => "search"
   }
 }
@@ -602,7 +456,6 @@ pub fn SharedPeopleInput::parse(s : String) -> SharedPeopleInput? {
   match s {
     "next" => Some(Next)
     "prev" => Some(Prev)
-    "removeInItemsAt" => Some(RemoveInItemsAt)
     "search" => Some(Search)
     _ => None
   }
@@ -619,8 +472,6 @@ pub(all) enum SharedPeopleMsg {
   Next
   /// `@on.click="prev …"`
   Prev
-  /// `@on.click="removeInItemsAt …"`
-  RemoveInItemsAt(@tutuca.Value)
   /// `@on.input="search …"`
   Search(String)
   /// A dispatch the views do not declare, or a declared name
@@ -641,7 +492,6 @@ pub fn SharedPeopleMsg::from_dispatch(
     match (name, args) {
       ("next", []) => Next
       ("prev", []) => Prev
-      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
       ("search", [Str(a0)]) => Search(a0)
       _ => Unknown(name, args)
     },
@@ -700,7 +550,6 @@ pub let coupled_people_global_style : String = ""
 pub(all) enum CoupledPeopleInput {
   Next
   Prev
-  RemoveInItemsAt
   Search
 } derive(Eq, @debug.Debug)
 
@@ -709,7 +558,6 @@ pub fn CoupledPeopleInput::name(self : CoupledPeopleInput) -> String {
   match self {
     Next => "next"
     Prev => "prev"
-    RemoveInItemsAt => "removeInItemsAt"
     Search => "search"
   }
 }
@@ -719,7 +567,6 @@ pub fn CoupledPeopleInput::parse(s : String) -> CoupledPeopleInput? {
   match s {
     "next" => Some(Next)
     "prev" => Some(Prev)
-    "removeInItemsAt" => Some(RemoveInItemsAt)
     "search" => Some(Search)
     _ => None
   }
@@ -736,8 +583,6 @@ pub(all) enum CoupledPeopleMsg {
   Next
   /// `@on.click="prev …"`
   Prev
-  /// `@on.click="removeInItemsAt …"`
-  RemoveInItemsAt(@tutuca.Value)
   /// `@on.input="search …"`
   Search(String)
   /// A dispatch the views do not declare, or a declared name
@@ -758,7 +603,6 @@ pub fn CoupledPeopleMsg::from_dispatch(
     match (name, args) {
       ("next", []) => Next
       ("prev", []) => Prev
-      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
       ("search", [Str(a0)]) => Search(a0)
       _ => Unknown(name, args)
     },

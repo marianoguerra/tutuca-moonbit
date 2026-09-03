@@ -166,7 +166,6 @@ pub fn counter_component(
   update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     CounterState,
   ],
-  swap? : (CounterInput) -> ((CounterState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -187,15 +186,6 @@ pub fn counter_component(
           }
         answered => answered
       }
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Dec, Inc] : Array[CounterInput]),
-          CounterInput::name,
-          f,
-        )
-      None => Map([])
     },
     slots~,
     slot_args~,
@@ -244,11 +234,25 @@ fn profile_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setName"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "name",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
-      [@anode.on("click", @tutuca.Expr::name("toggleWaving"))],
+      [
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "waving",
+            @tutuca.Expr::app("not", [@tutuca.Expr::field("waving")]),
+          ),
+        ),
+      ],
     ],
   )
 }
@@ -279,7 +283,6 @@ pub fn profile_component(
   update? : (ProfileState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ProfileState,
   ],
-  swap? : (ProfileInput) -> ((ProfileState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -292,15 +295,6 @@ pub fn profile_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetName, ToggleWaving] : Array[ProfileInput]),
-          ProfileInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -331,18 +325,29 @@ fn search_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setDraft"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "draft",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
         @anode.on(
           "keydown",
-          @tutuca.Expr::name("setSent"),
-          args=[@tutuca.Expr::event_path(["value"])],
+          @anode.const_null(),
           modifiers=["send"],
+          action=@anode.set_property_action(
+            "sent",
+            @tutuca.Expr::event_path(["value"]),
+          ),
         ),
-        @anode.on("keydown", @tutuca.Expr::name("resetDraft"), modifiers=[
-          "cancel",
-        ]),
+        @anode.on(
+          "keydown",
+          @anode.const_null(),
+          modifiers=["cancel"],
+          action=@anode.reset_property_action("draft"),
+        ),
       ],
     ],
   )
@@ -374,7 +379,6 @@ pub fn search_component(
   update? : (SearchState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SearchState,
   ],
-  swap? : (SearchInput) -> ((SearchState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -387,15 +391,6 @@ pub fn search_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([ResetDraft, SetDraft, SetSent] : Array[SearchInput]),
-          SearchInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -442,7 +437,18 @@ fn toggle_main_view_ir() -> @anode.View {
         ]),
       ),
     ]),
-    [[@anode.on("click", @tutuca.Expr::name("toggleOn"))]],
+    [
+      [
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "on",
+            @tutuca.Expr::app("not", [@tutuca.Expr::field("on")]),
+          ),
+        ),
+      ],
+    ],
   )
 }
 
@@ -472,7 +478,6 @@ pub fn toggle_component(
   update? : (ToggleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ToggleState,
   ],
-  swap? : (ToggleInput) -> ((ToggleState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -485,15 +490,6 @@ pub fn toggle_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([ToggleOn] : Array[ToggleInput]),
-          ToggleInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -810,9 +806,14 @@ fn chat_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setDraft"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "draft",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
       [@anode.on("click", @tutuca.Expr::name("submit"))],
     ],
@@ -845,7 +846,6 @@ pub fn chat_component(
   update? : (ChatState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ChatState,
   ],
-  swap? : (ChatInput) -> ((ChatState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -858,15 +858,6 @@ pub fn chat_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetDraft, Submit] : Array[ChatInput]),
-          ChatInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,

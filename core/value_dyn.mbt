@@ -278,28 +278,20 @@ pub fn Value::with_field(self : Value, name : String, v : Value) -> Value {
 
 ///|
 /// Apply a public synchronous property transition.
-pub fn Value::set_property(
-  self : Value,
-  name : String,
-  v : Value,
-) -> PropertyWrite {
+pub fn Value::set_property(self : Value, name : String, v : Value) -> Outcome {
   match self {
     Obj(o) => o.set_property(name, v)
-    _ => PMissing
+    _ => Missing
   }
 }
 
 ///|
 /// Apply a private-or-public property transition on behalf of the component's
 /// own view.
-pub fn Value::set_member(
-  self : Value,
-  name : String,
-  v : Value,
-) -> PropertyWrite {
+pub fn Value::set_member(self : Value, name : String, v : Value) -> Outcome {
   match self {
     Obj(o) => o.set_member(name, v)
-    _ => PMissing
+    _ => Missing
   }
 }
 
@@ -310,10 +302,10 @@ pub fn Value::mutate_member(
   name : String,
   operation : String,
   args : Array[Value],
-) -> PropertyWrite {
+) -> Outcome {
   match self {
     Obj(o) => o.mutate_member(name, operation, args)
-    _ => PMissing
+    _ => Missing
   }
 }
 
@@ -330,18 +322,18 @@ pub fn Value::set_property_at(
   path : Path,
   name : String,
   v : Value,
-) -> PropertyWrite {
-  guard path.lookup(self) is Some(child) else { return PMissing }
+) -> Outcome {
+  guard path.lookup(self) is Some(child) else { return Missing }
   match child.set_property(name, v) {
-    PMissing => PMissing
-    PUnchanged => PUnchanged
-    PRefused => PRefused
-    PChanged(next) => {
+    Missing => Missing
+    Unchanged => Unchanged
+    Refused(r) => Refused(r)
+    Changed(next) => {
       let root = path.set_value(self, next)
       if physical_equal(root, self) {
-        PUnchanged
+        Unchanged
       } else {
-        PChanged(root)
+        Changed(root)
       }
     }
   }

@@ -226,11 +226,6 @@ pub fn palette_row_component(
   update? : (PaletteRowState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     PaletteRowState,
   ],
-  swap? : (PaletteRowInput) -> ((
-    PaletteRowState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -243,15 +238,6 @@ pub fn palette_row_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Pick] : Array[PaletteRowInput]),
-          PaletteRowInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -383,11 +369,6 @@ pub fn command_bar_component(
   update? : (CommandBarState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     CommandBarState,
   ],
-  swap? : (CommandBarInput) -> ((
-    CommandBarState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -400,15 +381,6 @@ pub fn command_bar_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Close, Nav, SetQuery] : Array[CommandBarInput]),
-          CommandBarInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -626,11 +598,6 @@ pub fn schema_field_component(
   update? : (SchemaFieldState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaFieldState,
   ],
-  swap? : (SchemaFieldInput) -> ((
-    SchemaFieldState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -643,15 +610,6 @@ pub fn schema_field_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Edit] : Array[SchemaFieldInput]),
-          SchemaFieldInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -777,11 +735,6 @@ pub fn schema_form_component(
   update? : (SchemaFormState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaFormState,
   ],
-  swap? : (SchemaFormInput) -> ((
-    SchemaFormState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -794,15 +747,6 @@ pub fn schema_form_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Cancel, Create, UseInit] : Array[SchemaFormInput]),
-          SchemaFormInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -902,11 +846,6 @@ pub fn config_panel_component(
   update? : (ConfigPanelState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ConfigPanelState,
   ],
-  swap? : (ConfigPanelInput) -> ((
-    ConfigPanelState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -919,15 +858,6 @@ pub fn config_panel_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Close] : Array[ConfigPanelInput]),
-          ConfigPanelInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -1054,11 +984,6 @@ pub fn universal_app_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (UniversalAppInput) -> ((
-    UniversalAppState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -1076,15 +1001,6 @@ pub fn universal_app_component(
         @component.build_bucket(
           ([ModeLabel] : Array[UniversalAppMethod]),
           UniversalAppMethod::name,
-          f,
-        )
-      None => Map([])
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([FilesDropped, OpenCommand, ToggleMode] : Array[UniversalAppInput]),
-          UniversalAppInput::name,
           f,
         )
       None => Map([])

@@ -105,8 +105,6 @@ impl @component.Fields for CounterState with fn decode(f) {
 pub(all) enum CounterReceive {
   ResetTo(Int)
   Add(Double)
-  ResetCount
-  SetLabel(String)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -135,14 +133,10 @@ pub fn CounterReceive::from_dispatch(
         a0 >= -2147483648.0 &&
         a0 <= 2147483647.0 => ResetTo(a0.to_int())
       ("add", [Num(a0)]) => Add(a0)
-      ("resetCount", []) => ResetCount
-      ("setLabel", [Str(a0)]) => SetLabel(a0)
       _ => {
         match name {
           "resetTo" => @tutuca.bad_payload(name, "Int", args)
           "add" => @tutuca.bad_payload(name, "Double", args)
-          "resetCount" => @tutuca.bad_payload(name, "", args)
-          "setLabel" => @tutuca.bad_payload(name, "String", args)
           _ => ()
         }
         Unknown(name, args)
@@ -159,8 +153,6 @@ pub fn CounterReceive::to_dispatch(
   match self {
     ResetTo(a0) => ("resetTo", [Num(a0.to_double())])
     Add(a0) => ("add", [Num(a0)])
-    ResetCount => ("resetCount", [])
-    SetLabel(a0) => ("setLabel", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
 }
@@ -187,16 +179,12 @@ pub let counter_global_style : String = ""
 /// Every bare `@on` handler name the views reference.
 pub(all) enum CounterInput {
   Add
-  ResetCount
-  SetLabel
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn CounterInput::name(self : CounterInput) -> String {
   match self {
     Add => "add"
-    ResetCount => "resetCount"
-    SetLabel => "setLabel"
   }
 }
 
@@ -204,8 +192,6 @@ pub fn CounterInput::name(self : CounterInput) -> String {
 pub fn CounterInput::parse(s : String) -> CounterInput? {
   match s {
     "add" => Some(Add)
-    "resetCount" => Some(ResetCount)
-    "setLabel" => Some(SetLabel)
     _ => None
   }
 }
@@ -221,10 +207,6 @@ pub fn CounterInput::parse(s : String) -> CounterInput? {
 /// `update` is consulted only for a dispatch the block did not claim, so
 /// an arm for one of these could never run.
 pub(all) enum CounterMsg {
-  /// `@on.click="resetCount …"`
-  ResetCount
-  /// `@on.input, @on.keydown="setLabel …"`
-  SetLabel(String)
   /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -239,8 +221,6 @@ pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
-      ("resetCount", []) => ResetCount
-      ("setLabel", [Str(a0)]) => SetLabel(a0)
       _ => Unknown(name, args)
     },
   )
@@ -262,7 +242,7 @@ impl @component.Fields for CounterState with fn schema() {
       @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("history", TyList(TyInt(width=32, signed=true))),
     ],
-    view_handlers=["add", "resetCount", "setLabel"],
+    view_handlers=["add"],
     receives=["resetTo"],
     methods=["historyFollowsCount", "recorded"],
     invariants=["historyFollowsCount"],

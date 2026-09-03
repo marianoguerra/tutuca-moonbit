@@ -8,7 +8,7 @@
 <template>
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"
-      @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
+      @on.input=".query = e.value" @on.keydown+cancel=".query = default"
       placeholder="Filter entries">
     <div>
       <div class="cursor-grab row" @each=".items" @when="filterItem"

@@ -110,12 +110,20 @@ fn push_view_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setQuery"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
-        @anode.on("keydown", @tutuca.Expr::name("resetQuery"), modifiers=[
-          "cancel",
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "query",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
+        @anode.on(
+          "keydown",
+          @anode.const_null(),
+          modifiers=["cancel"],
+          action=@anode.reset_property_action("query"),
+        ),
       ],
       [@anode.on("click", @tutuca.Expr::name("toggleView"))],
     ],
@@ -197,11 +205,6 @@ pub fn push_view_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (PushViewInput) -> ((
-    PushViewState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   when? : (PushViewWhen) -> ((
     PushViewState,
     @tutuca.Value,
@@ -235,15 +238,6 @@ pub fn push_view_component(
         @component.build_bucket(
           ([GetToggleLabel] : Array[PushViewMethod]),
           PushViewMethod::name,
-          f,
-        )
-      None => Map([])
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([ResetQuery, SetQuery, ToggleView] : Array[PushViewInput]),
-          PushViewInput::name,
           f,
         )
       None => Map([])
@@ -309,14 +303,24 @@ fn seq_item_access_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setCurrentIndex"), args=[
-          @tutuca.Expr::event_path(["valueAsInt"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "currentIndex",
+            @tutuca.Expr::event_path(["valueAsInt"]),
+          ),
+        ),
       ],
       [
-        @anode.on("input", @tutuca.Expr::name("setCurrentKey"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "currentKey",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
     ],
   )
@@ -353,11 +357,6 @@ pub fn seq_item_access_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (SeqItemAccessInput) -> ((
-    SeqItemAccessState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -375,15 +374,6 @@ pub fn seq_item_access_component(
         @component.build_bucket(
           ([GetMaxIndex] : Array[SeqItemAccessMethod]),
           SeqItemAccessMethod::name,
-          f,
-        )
-      None => Map([])
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetCurrentIndex, SetCurrentKey] : Array[SeqItemAccessInput]),
-          SeqItemAccessInput::name,
           f,
         )
       None => Map([])
@@ -616,11 +606,6 @@ pub fn pagination_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (PaginationInput) -> ((
-    PaginationState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   loop_with? : (PaginationLoopWith) -> ((
     PaginationState,
     @tutuca.Value,
@@ -661,15 +646,6 @@ pub fn pagination_component(
         bucket[k] = h
       }
       bucket
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Next, Prev] : Array[PaginationInput]),
-          PaginationInput::name,
-          f,
-        )
-      None => Map([])
     },
     loop_with=match loop_with {
       Some(f) =>

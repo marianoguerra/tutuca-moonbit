@@ -65,14 +65,24 @@ fn item_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setCompleted"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "completed",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
       [
-        @anode.on("input", @tutuca.Expr::name("setText"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "text",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
     ],
   )
@@ -104,7 +114,6 @@ pub fn item_component(
   update? : (ItemState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ItemState,
   ],
-  swap? : (ItemInput) -> ((ItemState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -117,15 +126,6 @@ pub fn item_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetCompleted, SetText] : Array[ItemInput]),
-          ItemInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -178,9 +178,13 @@ fn items_main_view_ir() -> @anode.View {
     [
       [@anode.on("click", @tutuca.Expr::name("onAddItem"))],
       [
-        @anode.on("click", @tutuca.Expr::name("removeInItemsAt"), args=[
-          @tutuca.Expr::bind("key"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.call_property_action("items", "removeAt", [
+            @tutuca.Expr::bind("key"),
+          ]),
+        ),
       ],
     ],
   )
@@ -212,7 +216,6 @@ pub fn items_component(
   update? : (ItemsState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ItemsState,
   ],
-  swap? : (ItemsInput) -> ((ItemsState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -225,15 +228,6 @@ pub fn items_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([OnAddItem, RemoveInItemsAt] : Array[ItemsInput]),
-          ItemsInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,

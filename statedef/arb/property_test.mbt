@@ -471,31 +471,27 @@ test "a component with fields has generated mutators to send" {
   for def in fixtures() {
     let known = @arb.mutator_args(def)
     assert_true(known.length() >= def.fields.length() * 3)
-    assert_true(@arb.mutator_dispatch_of(def) is Some(_))
+    assert_true(@arb.property_write_of(def) is Some(_))
   }
 }
 
 ///|
-/// A generated script contains nothing the component cannot answer.
+/// A generated write names a field the component declares.
 ///
-/// The join with `schema_writers` is what makes this true, and the property is
-/// worth stating because the failure it prevents is invisible: a dispatch
-/// nothing claims does not crash, it just does nothing, and the run reports it
-/// as a refusal that reads exactly like a finding. `<field>Len` and
-/// `hasIn<Field>` are the shapes that used to leak through — generated
-/// callables that answer a scalar rather than a successor.
-test "property: every generated mutator is a name the component can be sent" {
+/// It used to be a DISPATCH of a generated mutator name, joined against
+/// `schema_writers` so a name nothing answered could not leak through — a
+/// dispatch nothing claims does not crash, it just does nothing, and the run
+/// reported it as a refusal that read exactly like a finding. A write cannot
+/// have that shape: the door it goes through takes a FIELD, and the field list
+/// is the declaration.
+test "property: every generated write names a declared field" {
   for def in fixtures() {
-    let schema = @info.schema_info(def)
-    let writers = @component.schema_writers(schema)
-    let all = @component.schema_mutators(schema)
-    guard @arb.mutator_dispatch_of(def) is Some(one) else { continue }
+    let names = def.fields.map(f => f.name)
+    guard @arb.property_write_of(def) is Some(one) else { continue }
     @qc.quick_check(
       @qc.forall(@gen.int_range(0, 8).bind(n => one.array_with_size(n)), script => {
-        for d in script {
-          guard d is Receive(name, _) else { return false }
-          // In the runtime's own table, and on the half of it that writes.
-          if !all.contains(name) || !writers.contains(name) {
+        for w in script {
+          if !names.contains(w.0) {
             return false
           }
         }

@@ -266,7 +266,7 @@ things per step kind:
 
 - [core.md](./core.md) — *Mental model* and *Paths, not references* (the
   high-level invariants this file expands on), `view` directives, the
-  `update`/`compute`/`swap` buckets.
+  `update`/`compute` buckets.
 - [messages-and-intents.md](./messages-and-intents.md) — the dispatch **API**:
   `send`-`Receive`, `intent` and its `dyn` / `lex` route, the three
   answers, `ctx.at()`, catch-all arms, `IntentFn` registration, and the

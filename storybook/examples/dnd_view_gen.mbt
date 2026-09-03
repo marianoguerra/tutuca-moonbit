@@ -67,8 +67,6 @@ impl @component.Fields for DnDExampleState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum DnDExampleReceive {
   OnDropOnItem(@tutuca.Value, @tutuca.Value)
-  ResetQuery
-  SetQuery(String)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -94,13 +92,9 @@ pub fn DnDExampleReceive::from_dispatch(
   Some(
     match (name, args) {
       ("onDropOnItem", [a0, a1]) => OnDropOnItem(a0, a1)
-      ("resetQuery", []) => ResetQuery
-      ("setQuery", [Str(a0)]) => SetQuery(a0)
       _ => {
         match name {
           "onDropOnItem" => @tutuca.bad_payload(name, "Any, Any", args)
-          "resetQuery" => @tutuca.bad_payload(name, "", args)
-          "setQuery" => @tutuca.bad_payload(name, "String", args)
           _ => ()
         }
         Unknown(name, args)
@@ -116,8 +110,6 @@ pub fn DnDExampleReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     OnDropOnItem(a0, a1) => ("onDropOnItem", [a0, a1])
-    ResetQuery => ("resetQuery", [])
-    SetQuery(a0) => ("setQuery", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
 }
@@ -147,16 +139,12 @@ pub let dn_d_example_global_style : String = ""
 /// Every bare `@on` handler name the views reference.
 pub(all) enum DnDExampleInput {
   OnDropOnItem
-  ResetQuery
-  SetQuery
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn DnDExampleInput::name(self : DnDExampleInput) -> String {
   match self {
     OnDropOnItem => "onDropOnItem"
-    ResetQuery => "resetQuery"
-    SetQuery => "setQuery"
   }
 }
 
@@ -164,8 +152,6 @@ pub fn DnDExampleInput::name(self : DnDExampleInput) -> String {
 pub fn DnDExampleInput::parse(s : String) -> DnDExampleInput? {
   match s {
     "onDropOnItem" => Some(OnDropOnItem)
-    "resetQuery" => Some(ResetQuery)
-    "setQuery" => Some(SetQuery)
     _ => None
   }
 }
@@ -179,10 +165,6 @@ pub fn DnDExampleInput::parse(s : String) -> DnDExampleInput? {
 pub(all) enum DnDExampleMsg {
   /// `@on.drop="onDropOnItem …"`
   OnDropOnItem(@tutuca.Value, @tutuca.Value)
-  /// `@on.keydown="resetQuery …"`
-  ResetQuery
-  /// `@on.input="setQuery …"`
-  SetQuery(String)
   /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -198,8 +180,6 @@ pub fn DnDExampleMsg::from_dispatch(d : @component.Dispatch) -> DnDExampleMsg? {
   Some(
     match (name, args) {
       ("onDropOnItem", [a0, a1]) => OnDropOnItem(a0, a1)
-      ("resetQuery", []) => ResetQuery
-      ("setQuery", [Str(a0)]) => SetQuery(a0)
       _ => Unknown(name, args)
     },
   )
@@ -233,7 +213,7 @@ impl @component.Fields for DnDExampleState with fn schema() {
       @component.FieldInfo::new("items", TyList(TyText)),
       @component.FieldInfo::new("query", TyText),
     ],
-    view_handlers=["onDropOnItem", "resetQuery", "setQuery"],
+    view_handlers=["onDropOnItem"],
     view_names=["main"],
   )
 }

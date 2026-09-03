@@ -48,7 +48,7 @@
 </template>
 
 <template id="JsonString">
-  <input class="input input-sm input-ghost text-green-500 font-mono json-string" :value=".value" @on.input="setValue e.value">
+  <input class="input input-sm input-ghost text-green-500 font-mono json-string" :value=".value" @on.input=".value = e.value">
 </template>
 
 <template id="JsonNumber">
@@ -89,7 +89,7 @@
 
 <template id="JsonObjectKeyVal">
   <div class="join gap-3 items-center justify-center json-kv">
-    <input class="input input-sm input-ghost text-green-500 font-mono json-key" :value=".key" @on.input="setKey e.value">
+    <input class="input input-sm input-ghost text-green-500 font-mono json-key" :value=".key" @on.input=".key = e.value">
     <span class="text-xs font-mono text-gray-500 colon">:</span>
     <x render=".value"></x>
   </div>

@@ -136,7 +136,7 @@ pub fn dispatch_answered(h : @harness.MemHarness) -> Int {
 ///|
 /// One dispatch of a name NOTHING answers.
 ///
-/// Not a handler, not a generated mutator, not a field. The claim is that this
+/// Not a handler, not a property, not a field. The claim is that this
 /// costs one lookup and stops — the same shape v1 paid, which is what makes
 /// stop-by-default worth having rather than a regression dressed as a
 /// simplification. Read against `dispatch_answered`: the difference is a

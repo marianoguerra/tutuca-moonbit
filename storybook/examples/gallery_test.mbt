@@ -668,7 +668,7 @@ test "a source with nothing to draw says why, and keeps the switcher" {
   assert_eq(h.find_all(".no-plan").length(), 0)
   // switching to the internal mutators draws `setTab`, and the buttons come
   // back — which is what the hint tells the reader to try
-  h.click(".src-internal")
+  h.click(".src-fields")
   assert_eq(h.find_all(".no-draw").length(), 0)
   assert_eq(h.find_all(".ctl-burst").length(), 1)
 }
@@ -729,7 +729,7 @@ test "a run reaches the dispatches the invariant has to decline" {
   )
   let h = @harness.Harness::over(app, container)
   h.click(".fuzz-tab")
-  h.click(".src-internal")
+  h.click(".src-fields")
   h.click(".ctl-burst")
   @panels.fuzz_tick()
   assert_eq(h.texts(".verdict-kind"), ["held"])
@@ -888,7 +888,7 @@ test "a run sends nothing the story leaves unhandled" {
   )
   let h = @harness.Harness::over(app, container)
   h.click(".fuzz-tab")
-  h.click(".src-internal")
+  h.click(".src-fields")
   h.click(".ctl-burst")
   @panels.fuzz_tick()
   assert_eq(h.find_all(".fuzz-row").length(), 40)

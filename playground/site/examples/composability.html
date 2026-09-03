@@ -73,8 +73,8 @@
 
 <template id="Item">
   <div class="flex gap-3 items-center">
-    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="setCompleted e.value">
-    <input class="input" :value=".text" @on.input="setText e.value" :disabled=".completed">
+    <input type="checkbox" class="checkbox" :checked=".completed" @on.input=".completed = e.value">
+    <input class="input" :value=".text" @on.input=".text = e.value" :disabled=".completed">
   </div>
 </template>
 
@@ -123,13 +123,13 @@
     <div role="tablist" class="tabs tabs-border">
       <button role="tab" id="tab-counter"
         @if.class=".activeSection is 'counter'" @then="'tab tab-active'" @else="'tab'"
-        @on.click="setActiveSection 'counter'">Counter</button>
+        @on.click=".activeSection = 'counter'">Counter</button>
       <button role="tab" id="tab-todo"
         @if.class=".activeSection is 'todo'" @then="'tab tab-active'" @else="'tab'"
-        @on.click="setActiveSection 'todo'">To-Do</button>
+        @on.click=".activeSection = 'todo'">To-Do</button>
       <button role="tab" id="tab-tree"
         @if.class=".activeSection is 'tree'" @then="'tab tab-active'" @else="'tab'"
-        @on.click="setActiveSection 'tree'">Tree</button>
+        @on.click=".activeSection = 'tree'">Tree</button>
     </div>
     <div class="pane-counter" @show=".activeSection is 'counter'"><x render=".counter"></x></div>
     <div class="pane-todo" @show=".activeSection is 'todo'"><x render=".todo"></x></div>

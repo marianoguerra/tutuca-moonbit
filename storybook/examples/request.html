@@ -71,7 +71,7 @@
     <div class="alert alert-info alert-outline loading" @show=".isLoading">Loading</div>
     <div class="flex justify-between" @hide=".isLoading">
       <input type="search" class="input" :value=".query"
-        @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
+        @on.input=".query = e.value" @on.keydown+cancel=".query = default"
         placeholder="Filter entries">
       <button class="btn bnt-sm btn-primary btn-outline another" @on.click="loadAnotherWay">Load Another Way</button>
       <button class="btn bnt-sm btn-primary toggle-btn" @text=".view" @on.click="toggleView"></button>

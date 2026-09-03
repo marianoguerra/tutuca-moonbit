@@ -17,8 +17,8 @@ and a named `<template>` per component:
 <template id="Item">
   <div class="flex gap-3 items-center">
     <input type="checkbox" class="checkbox" :checked=".completed"
-      @on.input="setCompleted e.value">
-    <input class="input" :value=".text" @on.input="setText e.value"
+      @on.input=".completed = e.value">
+    <input class="input" :value=".text" @on.input=".text = e.value"
       :disabled=".completed">
   </div>
 </template>
@@ -28,14 +28,14 @@ and a named `<template>` per component:
     <div class="flex gap-2">
       <button class="btn btn-soft btn-success add" @on.click="onAddItem">Add Task</button>
       <button class="btn btn-soft btn-sm toggle-done"
-        @on.click="toggleHideCompleted">Hide done</button>
+        @on.click=".hideCompleted = not .hideCompleted">Hide done</button>
     </div>
     <div class="flex flex-col gap-3 w-full">
       <div @each=".items" @when="onlyVisible"
         class="flex gap-3 items-center w-full row">
         <x render-it></x>
         <button class="btn btn-soft btn-sm btn-error btn-circle rm"
-          @on.click="removeInItemsAt @key">x</button>
+          @on.click=".items.removeAt @key">x</button>
       </div>
     </div>
   </div>
@@ -60,10 +60,9 @@ is the handlers:
 ///|
 fn todo_item_comp() -> @component.Component {
   item_component(init=ItemState::{ completed: false, text: "do the thing" })
-  // no update: `setCompleted e.value` and `setText e.value` are served by the
-  // generated mutators. If you do want an update arm, the typed cases are
-  // SetCompleted(Bool) and SetText(String) — `e.value` infers Bool on a
-  // checkbox (events.md "Generated `Msg` payload types").
+  // no update: the view writes `.completed` and `.text` itself, which is a
+  // synchronous member write and raises no message at all. Give the component
+  // an arm only when something has to HAPPEN besides the write.
 }
 
 fn todo_items_comp(item : @component.Component) -> @component.Component {
@@ -73,11 +72,9 @@ fn todo_items_comp(item : @component.Component) -> @component.Component {
       // the handler CAPTURES the child Component; the view just says
       // @on.click="onAddItem" (no component-reference value exists)
       Some(OnAddItem) => Next({ ..s, items: s.items + [item.make(Map([]))] })
-      // `@key` is a binding, so the payload is @tutuca.Value; returning
-      // None falls through to the generated list mutator, which answers it
-      Some(RemoveInItemsAt(_)) => Unhandled
-      // toggleHideCompleted: generated Bool mutator — same fall-through
-      Some(ToggleHideCompleted) => Unhandled
+      // remove and hide are member operations the view performs itself
+      // (`.items.removeAt @key`, `.hideCompleted = not .hideCompleted`), so
+      // no name reaches here for either
       Some(Unknown(_, _)) | None => Unhandled
     },
     when=w => match w {
@@ -126,18 +123,17 @@ Why each piece is the way it is:
   are of different shapes.
 - **`@each` + `<x render-it>`** renders each instance as its own `Item`
   component (fresh frame — the item handles its own events); the remove
-  button sits **beside** `render-it` in the loop, so `removeInItemsAt
-  @key` dispatches to the *list*, which owns the collection.
+  button sits **beside** `render-it` in the loop, so `.items.removeAt @key`
+  writes the *list*'s own field, which is where the collection lives.
 - **`@when="onlyVisible"`** filters at render time; the `when` bucket is
   a match over a generated enum (a raw `component()` call would take
   `when={ "onlyVisible": ... }` instead). The other way to write it is to put
   the predicate on the CHILD — `pred unfinished { not .completed }` in
   `Item`'s block — and have this `when` call it on each instance with
   `value.call_field("unfinished", [])`.
-- **Add / toggle / delete** show the three handler routes: an `update`
-  arm (`OnAddItem`), fall-through to a generated mutator
-  (`RemoveInItemsAt`, `ToggleHideCompleted`), and the checkbox mutator
-  on the child.
+- **Add / toggle / delete** show the two handler routes: an `update` arm
+  (`OnAddItem`), for the one that needs the child `Component` in scope, and a
+  property action written in the view for the three that are only writes.
 
 Test it end-to-end with the harness ([testing.md](../testing.md)):
 
@@ -148,7 +144,7 @@ test "todo: add, complete, filter" {
   h.click(".add")
   assert_eq(h.find_all(".row").length(), 2)
   h.check(".checkbox", true)        // complete the first item
-  h.click(".toggle-done")           // toggleHideCompleted
+  h.click(".toggle-done")           // .hideCompleted = not .hideCompleted
   assert_eq(h.find_all(".row").length(), 1)
   h.click(".rm")                    // delete the visible one
   assert_eq(h.find_all(".row").length(), 0)

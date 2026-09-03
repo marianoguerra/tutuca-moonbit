@@ -524,7 +524,7 @@ test "a generated component fills every summary row its schema can" {
   for
     row in [
       "name", "id", "fingerprint", "fields", "methods", "viewHandlers", "receive",
-      "intent", "swap", "alter", "ids", "fixtures", "views",
+      "intent", "alter", "ids", "fixtures", "views",
     ] {
     assert_true(d.get(row) is Some(_))
   }

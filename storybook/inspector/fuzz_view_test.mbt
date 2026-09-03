@@ -13,8 +13,8 @@ fn fv_mount(title : String) -> @harness.MemHarness raise {
 /// A row reads the step it came from.
 test "a row reads the step it came from" {
   let h = fv_mount("Fuzz Row · a rule nothing enforced")
-  inspect(h.text(".row-verb"), content="internal")
-  inspect(h.text(".row-name"), content="setOwed")
+  inspect(h.text(".row-verb"), content="write")
+  inspect(h.text(".row-name"), content="owed")
   inspect(h.text(".row-args"), content="99")
   inspect(h.text(".row-broke"), content="covered")
   inspect(h.text(".row-renders"), content="1 render")
@@ -50,7 +50,7 @@ test "a quiet step is neither refused nor broken" {
 /// The log is the steps, in order.
 test "the log lists every step it was given" {
   let h = fv_mount("Fuzz Log")
-  assert_eq(h.texts(".row-name"), ["setHeld", "setHeld", "setOwed"])
+  assert_eq(h.texts(".row-name"), ["held", "held", "owed"])
   // The hint is gone once there are rows: `@hide` takes it out of the tree
   // rather than styling it away, so a reader never sees "nothing drawn yet"
   // above three rows.
@@ -102,7 +102,7 @@ test "a source that draws nothing keeps the switcher" {
   inspect(h.find_all(".ctl-play").length(), content="0")
   inspect(h.find_all(".ctl-burst").length(), content="0")
   // …and everything that could change the answer is still there
-  inspect(h.find_all(".src-internal").length(), content="1")
+  inspect(h.find_all(".src-fields").length(), content="1")
   inspect(h.find_all(".ctl-seed").length(), content="1")
   inspect(h.find_all(".no-plan").length(), content="0")
 }
@@ -116,7 +116,7 @@ test "the controls show the run's whole address" {
   inspect(h.find_all(".no-plan").length(), content="0")
   // The active source is the one marked, and only that one.
   assert_true(
-    h.attr(".src-internal", "class").unwrap_or("").contains("btn-primary"),
+    h.attr(".src-fields", "class").unwrap_or("").contains("btn-primary"),
   )
   assert_true(
     h.attr(".src-public", "class").unwrap_or("").contains("btn-ghost"),

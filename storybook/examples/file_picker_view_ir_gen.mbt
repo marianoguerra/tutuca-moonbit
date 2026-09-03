@@ -163,11 +163,6 @@ pub fn file_picker_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (FilePickerInput) -> ((
-    FilePickerState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -194,15 +189,6 @@ pub fn file_picker_component(
         bucket[k] = h
       }
       bucket
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([OnPickFile] : Array[FilePickerInput]),
-          FilePickerInput::name,
-          f,
-        )
-      None => Map([])
     },
     slots~,
     slot_args~,

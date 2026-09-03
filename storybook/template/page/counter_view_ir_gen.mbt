@@ -131,7 +131,6 @@ pub fn counter_component(
   common_style? : String = counter_common_style,
   global_style? : String = counter_global_style,
   update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[CounterState],
-  swap? : (CounterInput) -> ((CounterState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -150,11 +149,6 @@ pub fn counter_component(
           None => Unhandled
         }
       answered => answered
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(([Dec, Inc] : Array[CounterInput]), CounterInput::name, f)
-      None => Map([])
     },
     slots~,
     slot_args~,

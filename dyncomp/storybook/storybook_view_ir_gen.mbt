@@ -170,11 +170,6 @@ pub fn story_nav_component(
   update? : (StoryNavState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     StoryNavState,
   ],
-  swap? : (StoryNavInput) -> ((
-    StoryNavState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -187,15 +182,6 @@ pub fn story_nav_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Pick] : Array[StoryNavInput]),
-          StoryNavInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -454,11 +440,6 @@ pub fn story_card_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (StoryCardInput) -> ((
-    StoryCardState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -485,15 +466,6 @@ pub fn story_card_component(
         bucket[k] = h
       }
       bucket
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Rebuild] : Array[StoryCardInput]),
-          StoryCardInput::name,
-          f,
-        )
-      None => Map([])
     },
     slots~,
     slot_args~,
@@ -763,11 +735,6 @@ pub fn dyncomp_storybook_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (DyncompStorybookInput) -> ((
-    DyncompStorybookState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   when? : (DyncompStorybookWhen) -> ((
     DyncompStorybookState,
     @tutuca.Value,
@@ -792,23 +759,6 @@ pub fn dyncomp_storybook_component(
         @component.build_bucket(
           ([DetailsLabel, IsEmpty, LayoutLabel] : Array[DyncompStorybookMethod]),
           DyncompStorybookMethod::name,
-          f,
-        )
-      None => Map([])
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [
-              ChooseTheme,
-              FilesDropped,
-              SetQuery,
-              ShowAll,
-              ToggleDetails,
-              ToggleWide,
-            ] : Array[DyncompStorybookInput]),
-          DyncompStorybookInput::name,
           f,
         )
       None => Map([])

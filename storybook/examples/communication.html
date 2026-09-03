@@ -90,7 +90,7 @@
 <template id="SendReceive">
   <section class="flex flex-col gap-2">
     <x render=".status"></x>
-    <input class="input" :value=".draft" @on.input="setDraft e.value"
+    <input class="input" :value=".draft" @on.input=".draft = e.value"
       @on.keydown+send="submit"
       placeholder="Type a message and press Enter">
     <div class="flex gap-2">

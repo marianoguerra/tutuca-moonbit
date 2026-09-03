@@ -617,7 +617,6 @@ pub fn root_component(
     RootState,
   ],
   compute? : (RootMethod) -> ((RootState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value)?,
-  swap? : (RootInput) -> ((RootState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   when? : (RootWhen) -> ((
     RootState,
     @tutuca.Value,
@@ -659,23 +658,6 @@ pub fn root_component(
         @component.build_bucket(
           ([HasActiveFilters] : Array[RootMethod]),
           RootMethod::name,
-          f,
-        )
-      None => Map([])
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [
-              ClearFilters,
-              OnCategoryToggle,
-              OnRoleToggle,
-              OnToggleFeaturedFirst,
-              OnToggleSortAsc,
-              OnToggleSortByEnd,
-            ] : Array[RootInput]),
-          RootInput::name,
           f,
         )
       None => Map([])

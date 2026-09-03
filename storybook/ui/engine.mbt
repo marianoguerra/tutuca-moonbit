@@ -726,7 +726,7 @@ fn build_shell(
   // collapsed rail: a single button to bring the sidebar back
   sb.write_string(
     "<button class=\"btn btn-ghost btn-sm self-start m-2\" title=\"Show sections\"" +
-    " @show=\".sidebarCollapsed\" @on.click=\"toggleSidebarCollapsed\">»</button>",
+    " @show=\".sidebarCollapsed\" @on.click=\".sidebarCollapsed = not .sidebarCollapsed\">»</button>",
   )
   // sidebar: a fixed-height column — the header stays put, the entry list below
   // it scrolls.
@@ -737,7 +737,7 @@ fn build_shell(
   // "Storybook" title used), and the theme switcher.
   sb.write_string("<div class=\"flex items-center gap-2 mb-3 shrink-0\">")
   sb.write_string(
-    "<button class=\"btn btn-ghost btn-sm\" title=\"Hide sections\" @on.click=\"toggleSidebarCollapsed\">«</button>",
+    "<button class=\"btn btn-ghost btn-sm\" title=\"Hide sections\" @on.click=\".sidebarCollapsed = not .sidebarCollapsed\">«</button>",
   )
   sb.write_string(
     "<input class=\"input input-sm flex-1 min-w-0\" type=\"search\" placeholder=\"Filter\"" +

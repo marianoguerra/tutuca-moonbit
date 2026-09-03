@@ -134,12 +134,20 @@ fn request_example_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setQuery"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
-        @anode.on("keydown", @tutuca.Expr::name("resetQuery"), modifiers=[
-          "cancel",
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "query",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
+        @anode.on(
+          "keydown",
+          @anode.const_null(),
+          modifiers=["cancel"],
+          action=@anode.reset_property_action("query"),
+        ),
       ],
       [@anode.on("click", @tutuca.Expr::name("loadAnotherWay"))],
       [@anode.on("click", @tutuca.Expr::name("toggleView"))],
@@ -326,11 +334,6 @@ pub fn request_example_component(
   update? : (RequestExampleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     RequestExampleState,
   ],
-  swap? : (RequestExampleInput) -> ((
-    RequestExampleState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   when? : (RequestExampleWhen) -> ((
     RequestExampleState,
     @tutuca.Value,
@@ -360,17 +363,6 @@ pub fn request_example_component(
       }
     },
     compute=request_example_inline_compute(),
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [LoadAnotherWay, ResetQuery, SetQuery, ToggleView] :
-            Array[RequestExampleInput]),
-          RequestExampleInput::name,
-          f,
-        )
-      None => Map([])
-    },
     when=match when {
       Some(f) =>
         @component.build_bucket(

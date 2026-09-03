@@ -37,8 +37,8 @@
     after : Component?
     open : Bool
 
-    /// The three public operation shapes (plus an explicitly internal send).
-    where verb is one of ["send", "intent", "set", "internal"]
+    /// The three public operation shapes (plus a direct write to a field).
+    where verb is one of ["send", "intent", "set", "write"]
 
     /// A position in the script and a count of renders. Neither runs
     /// backwards, and `renders` reaching 0 is the interesting case rather
@@ -87,12 +87,12 @@
     /// address lives anyway.
     seed : String
     steps : String
-    /// `public`, `messages`, `properties` or `internal`.
+    /// `public`, `messages`, `properties` or `fields`.
     source : String
     publicClass : String
     messagesClass : String
     propertiesClass : String
-    internalClass : String
+    fieldsClass : String
     /// A run is in flight, one step per frame.
     playing : Bool
     /// The component declares a block, so there is a plan behind the knobs.
@@ -109,7 +109,7 @@
     noDrawHint : String
 
     /// The four radio buttons, as the closed set they are.
-    where source is one of ["public", "messages", "properties", "internal"]
+    where source is one of ["public", "messages", "properties", "fields"]
 
     /// The hint exists to answer "why is Run disabled", so it is there when
     /// the button is and gone when it is not.
@@ -319,12 +319,12 @@
       <button :class=".publicClass" @on.click="setSource 'public'">Public API</button>
       <button :class=".messagesClass" @on.click="setSource 'messages'">Messages</button>
       <button :class=".propertiesClass" @on.click="setSource 'properties'">Properties</button>
-      <button :class=".internalClass" @on.click="setSource 'internal'">Internal mutators</button>
+      <button :class=".fieldsClass" @on.click="setSource 'fields'">Fields</button>
     </div>
     <div class="text-xs opacity-50" @show=".canRun">
-      Public API is the default: declared messages and writable properties. Generated field
-      mutators are component internals and appear only in the explicit diagnostic mode. The
-      same seed always draws the same script.
+      Public API is the default: declared messages and writable properties. Writing straight
+      to a field reaches the private ones too, and appears only in the explicit diagnostic
+      mode. The same seed always draws the same script.
     </div>
     <div @show=".canRun">
       <div class="text-xs opacity-50 no-draw" @hide=".canDraw" @text=".noDrawHint"></div>

@@ -4,7 +4,7 @@
     <div class="text-xs opacity-60 px-1 grow topic" @text=".topic"></div>
     <label class="flex items-center gap-1 text-sm px-1">Search<input type="search"
            placeholder="fuzzy search…" class="input input-bordered input-xs search"
-           :value=".query" @on.input="setQuery e.value"></label>
+           :value=".query" @on.input=".query = e.value"></label>
     <span class="badge badge-ghost badge-sm members" @text="$memberLabel"></span>
   </header>
   <div class="navbar bg-base-200 rounded-box mb-3 min-h-0 py-1 gap-2 flex-wrap">

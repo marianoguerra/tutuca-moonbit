@@ -309,11 +309,6 @@ pub fn bar_chart_component(
   update? : (BarChartState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     BarChartState,
   ],
-  swap? : (BarChartInput) -> ((
-    BarChartState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   enrich? : (BarChartEnrich) -> ((
     BarChartState,
     Map[String, @tutuca.Value],
@@ -349,15 +344,6 @@ pub fn bar_chart_component(
       }
     },
     compute=bar_chart_inline_compute(),
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([AddBar, Randomize, RemoveBar] : Array[BarChartInput]),
-          BarChartInput::name,
-          f,
-        )
-      None => Map([])
-    },
     enrich=match enrich {
       Some(f) =>
         @component.build_bucket(

@@ -37,7 +37,7 @@ fn counter_comp() -> @component.Component {
     views={
       "main": @anode.View::new(
         "main",
-        raw_view="<div><button @on.click=\"bump\">+</button><span><x text=\".n\"></x></span><input :value=\".label\" @on.input=\"setLabel e.value\"></div>",
+        raw_view="<div><button @on.click=\"bump\">+</button><span><x text=\".n\"></x></span><input :value=\".label\" @on.input=\".label = e.value\"></div>",
       ),
     },
     name="Counter",

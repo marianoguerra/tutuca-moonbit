@@ -525,11 +525,6 @@ pub fn trace_row_component(
   update? : (TraceRowState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TraceRowState,
   ],
-  swap? : (TraceRowInput) -> ((
-    TraceRowState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -552,15 +547,6 @@ pub fn trace_row_component(
       }
     },
     compute=trace_row_inline_compute(),
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Toggle] : Array[TraceRowInput]),
-          TraceRowInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -1121,11 +1107,6 @@ pub fn trace_place_component(
   update? : (TracePlaceState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TracePlaceState,
   ],
-  swap? : (TracePlaceInput) -> ((
-    TracePlaceState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -1146,15 +1127,6 @@ pub fn trace_place_component(
           }
         answered => answered
       }
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([PickPlace] : Array[TracePlaceInput]),
-          TracePlaceInput::name,
-          f,
-        )
-      None => Map([])
     },
     slots~,
     slot_args~,
@@ -1817,11 +1789,6 @@ pub fn recorder_bar_component(
   update? : (RecorderBarState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     RecorderBarState,
   ],
-  swap? : (RecorderBarInput) -> ((
-    RecorderBarState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -1844,23 +1811,6 @@ pub fn recorder_bar_component(
       }
     },
     compute=recorder_bar_inline_compute(),
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [
-              ClearRecording,
-              ClosePicker,
-              OpenPicker,
-              SetScope,
-              StartRecording,
-              StopRecording,
-            ] : Array[RecorderBarInput]),
-          RecorderBarInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -3163,11 +3113,6 @@ pub fn trace_panel_component(
   update? : (TracePanelState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TracePanelState,
   ],
-  swap? : (TracePanelInput) -> ((
-    TracePanelState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -3190,25 +3135,6 @@ pub fn trace_panel_component(
       }
     },
     compute=trace_panel_inline_compute(),
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [
-              CutToPlace,
-              ExportTrace,
-              ImportDraft,
-              ReplayReset,
-              ReplayRun,
-              ReplayStep,
-              SetTab,
-              ToggleSelecting,
-            ] : Array[TracePanelInput]),
-          TracePanelInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,

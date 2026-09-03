@@ -73,8 +73,10 @@ test "the component takes its kinds from the schema, not the seed value" {
   assert_eq(si.fingerprint.length(), 16)
   assert_eq(si.field_names(), ["label", "count", "history"])
   // The names `update` answers — unknowable by reflection, since update is
-  // one opaque pattern match.
-  assert_eq(si.view_handlers, ["add", "resetCount", "setLabel"])
+  // one opaque pattern match. The view's other two buttons write a property
+  // outright (`.count = default`, `.label = e.value`), so they raise no name
+  // at all and nothing has to answer for them.
+  assert_eq(si.view_handlers, ["add"])
   assert_eq(si.receives, ["resetTo"])
   assert_eq(si.init_names, ["fresh", "with-history"])
   assert_eq(si.view_names, ["main"])

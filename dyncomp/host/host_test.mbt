@@ -563,7 +563,7 @@ fn counter_manifest() -> DynManifest {
               #|  <button class="undeclared" @on.click="readUndeclared">undeclared</button>
               #|  <button class="announce" @on.click="announce">announce</button>
               #|  <button class="triple" @on.click="triple">triple</button>
-              #|  <button class="zero" @on.click="setCount 0">zero</button>
+              #|  <button class="zero" @on.click=".count = 0">zero</button>
               #|  <span class="label" @text="$label"></span>
               #|  <span class="theme" @text="*theme"></span>
               #|  <ul class="hist"><li class="h" @each=".history" @when="nonZero" @text="@value"></li></ul>
@@ -580,8 +580,8 @@ fn counter_manifest() -> DynManifest {
           plain_field("count", TyFloat),
           plain_field("history", TyList(TyFloat)),
         ],
-        // `setCount` is deliberately absent: it is the mutator the `count`
-        // field implies, and the host answers it
+        // Nothing declares a `setCount`: the zero button writes the `count`
+        // property outright, and the host answers the write
         properties: [
           {
             name: "count",
@@ -702,7 +702,7 @@ fn counter_manifest() -> DynManifest {
             html: (
               #|<div class="framed">
               #|  <span class="frame-title" @text=".title"></span>
-              #|  <button class="retitle" @on.click="setTitle 'renamed'">rename</button>
+              #|  <button class="retitle" @on.click=".title = 'renamed'">rename</button>
               #|  <div class="frame-body"><x render=".body"></div>
               #|</div>
             ),
@@ -1203,14 +1203,14 @@ test "a guest's declared schema describes, compares and projects it" {
 }
 
 ///|
-test "a guest gets the generated mutators its schema implies" {
+test "a guest's view can write one of its own properties" {
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
   guard! bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
   inspect(h.text(".count"), content="10")
-  // `@on.click="setCount 0"` in the GUEST's view: no such handler crosses to
-  // the guest — the mutator the schema implies writes through with-field
+  // `@on.click=".count = 0"` in the GUEST's view: no name crosses to the
+  // guest at all — the write goes through the property door
   h.click(".zero")
   inspect(h.text(".count"), content="0")
 }
@@ -1219,8 +1219,8 @@ test "a guest gets the generated mutators its schema implies" {
 test "inputs are read off the compiled views, not declared" {
   let (_h, bundle) = mount_with_bundle(FakeGuest::new())
   guard! bundle.schema_of("Counter") is Some(schema)
-  // every @on handler the view names, and nothing else: `setCount` is a
-  // mutator the schema implies, not a name the guest answers
+  // every @on handler the view names, and nothing else: the zero button
+  // writes `count` outright, so it raises no name to read off
   debug_inspect(
     schema.view_handlers,
     content=(
@@ -1232,7 +1232,6 @@ test "inputs are read off the compiled views, not declared" {
       #|  "readUndeclared",
       #|  "announce",
       #|  "triple",
-      #|  "setCount",
       #|  "reset",
       #|]
     ),
@@ -1355,16 +1354,16 @@ test "a guest property is public, synchronous, and copy-on-write" {
   guard! bundle.make_instance("Counter", args={ "count": Num(4) }) is Some(c)
   let before = c.to_value()
   assert_eq(before.property("count"), Num(4))
-  guard! before.set_property("count", Num(9)) is PChanged(after)
+  guard! before.set_property("count", Num(9)) is Changed(after)
   assert_eq(before.property("count"), Num(4))
   assert_eq(after.property("count"), Num(9))
-  assert_true(after.set_property("count", Num(9)) is PUnchanged)
-  assert_true(after.set_property("count", Str("bad")) is PRefused)
+  assert_true(after.set_property("count", Num(9)) is Unchanged)
+  assert_true(after.set_property("count", Str("bad")) is Refused(_))
   assert_eq(before.property("secret"), Null)
   assert_eq(before.member_at("secret", @tutuca.NullStack::{ }), Some(Num(4)))
-  assert_true(before.set_property("secret", Num(1)) is PMissing)
-  assert_true(before.set_member("secret", Num(1)) is PRefused)
-  assert_true(after.set_property("private", Num(1)) is PMissing)
+  assert_true(before.set_property("secret", Num(1)) is Missing)
+  assert_true(before.set_member("secret", Num(1)) is Refused(_))
+  assert_true(after.set_property("private", Num(1)) is Missing)
 }
 
 ///|

@@ -3,7 +3,7 @@
 // layout wrappers, factored into reusable templates.
 //
 // The interesting bit is `^handler ^arg` INDIRECTION: a macro takes the handler
-// name AND its argument as parameters, so `<x:btn-rm :handler="$removeInItemsAt"
+// name AND its argument as parameters, so `<x:btn-rm :handler="onRemoveItem"
 // :arg="@key">` expands to `@on.click="removeInItemsAt @key"`. Macro params are
 // substituted as SOURCE TEXT, so a handler name or a loop binding threads
 // straight through.
@@ -11,7 +11,7 @@
 ///|
 fn tm_checkbox_macro() -> @anode.Macro {
   {
-    defaults: { "value": ".value", "handler": "$setValue" },
+    defaults: { "value": ".value", "handler": "onValue" },
     raw_view: "<input type=\"checkbox\" class=\"checkbox\" :checked=\"^value\" @on.input=\"^handler e.value\" />",
   }
 }
@@ -19,7 +19,7 @@ fn tm_checkbox_macro() -> @anode.Macro {
 ///|
 fn tm_input_macro() -> @anode.Macro {
   {
-    defaults: { "value": ".value", "handler": "$setValue", "disabled": "false" },
+    defaults: { "value": ".value", "handler": "onValue", "disabled": "false" },
     raw_view: "<input class=\"input\" :value=\"^value\" @on.input=\"^handler e.value\" :disabled=\"^disabled\" />",
   }
 }
@@ -64,14 +64,29 @@ fn tm_item_comp() -> @component.Component {
         "main",
         raw_view=(
           #|<x:hbox>
-          #|  <x:checkbox :value=".completed" :handler="$setCompleted"></x:checkbox>
-          #|  <x:input :value=".text" :handler="$setText" :disabled=".completed"></x:input>
+          #|  <x:checkbox :value=".completed" :handler="onCompleted"></x:checkbox>
+          #|  <x:input :value=".text" :handler="onText" :disabled=".completed"></x:input>
           #|</x:hbox>
         ),
       ),
     },
     name="Item",
     init=TmItemState::{ completed: false, text: "do the thing", },
+    // Declared arms, where the view used to pass `$setCompleted` / `$setText`
+    // — generated mutators reached through the dispatch path. A `$name` and a
+    // bare name are the same dispatch, so that was the fallback wearing a
+    // sigil. A macro substitutes ONE TOKEN, so it cannot carry a property
+    // action's target; what it carries is a handler name, and the component
+    // declares what the macro asks for.
+    update=(s : TmItemState, msg, _ctx) => {
+      match msg {
+        Receive("onCompleted", [v, ..]) =>
+          Next({ ..s, completed: v.is_truthy(), })
+        Receive("onText", [v, ..]) =>
+          Next({ ..s, text: v.to_display_string(), })
+        _ => Unhandled
+      }
+    },
   )
 }
 
@@ -91,7 +106,7 @@ fn tm_items_comp(item : @component.Component) -> @component.Component {
           #|  <x:vbox class="w-full">
           #|    <div @each=".items" class="flex gap-3 justify-center items-center w-full entry">
           #|      <x render-it></x>
-          #|      <x:btn-rm :handler="$removeInItemsAt" :arg="@key"></x:btn-rm>
+          #|      <x:btn-rm :handler="onRemoveItem" :arg="@key"></x:btn-rm>
           #|    </div>
           #|  </x:vbox>
           #|</x:vbox>
@@ -102,6 +117,21 @@ fn tm_items_comp(item : @component.Component) -> @component.Component {
     init=TmItemsState::{ items: [], },
     update=(s : TmItemsState, msg, _ctx) => {
       match msg {
+        // A DECLARED arm, where the view used to pass `$removeInItemsAt` — a
+        // generated mutator reached through the dispatch path. A `$name` and a
+        // bare name are the same dispatch, so that was the fallback wearing a
+        // sigil; a macro cannot carry a property action, so the component
+        // declares what the macro asks for.
+        Receive("onRemoveItem", [Num(at), ..]) => {
+          let drop = at.to_int()
+          let kept : Array[@tutuca.Value] = []
+          for i, v in s.items {
+            if i != drop {
+              kept.push(v)
+            }
+          }
+          Next({ items: kept, })
+        }
         Receive("onAddItem", _) =>
           Next({
             items: s.items +

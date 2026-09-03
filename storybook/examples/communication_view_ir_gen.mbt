@@ -245,9 +245,14 @@ fn send_receive_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setDraft"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "draft",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
         @anode.on("keydown", @tutuca.Expr::name("submit"), modifiers=["send"]),
       ],
       [@anode.on("click", @tutuca.Expr::name("submit"))],
@@ -302,11 +307,6 @@ pub fn send_receive_component(
   update? : (SendReceiveState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SendReceiveState,
   ],
-  swap? : (SendReceiveInput) -> ((
-    SendReceiveState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -327,15 +327,6 @@ pub fn send_receive_component(
           }
         answered => answered
       }
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([ClearStatus, SetDraft, Submit] : Array[SendReceiveInput]),
-          SendReceiveInput::name,
-          f,
-        )
-      None => Map([])
     },
     slots~,
     slot_args~,
@@ -450,11 +441,6 @@ pub fn tree_item_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (TreeItemInput) -> ((
-    TreeItemState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -481,15 +467,6 @@ pub fn tree_item_component(
         bucket[k] = h
       }
       bucket
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([OnItemClick] : Array[TreeItemInput]),
-          TreeItemInput::name,
-          f,
-        )
-      None => Map([])
     },
     slots~,
     slot_args~,

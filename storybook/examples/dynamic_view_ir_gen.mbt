@@ -85,14 +85,24 @@ fn selector_entry_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setValue"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "value",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
       [
-        @anode.on("input", @tutuca.Expr::name("setLabel"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "label",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
     ],
   )
@@ -124,11 +134,6 @@ pub fn selector_entry_component(
   update? : (SelectorEntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SelectorEntryState,
   ],
-  swap? : (SelectorEntryInput) -> ((
-    SelectorEntryState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -141,15 +146,6 @@ pub fn selector_entry_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetLabel, SetValue] : Array[SelectorEntryInput]),
-          SelectorEntryInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -189,9 +185,14 @@ fn selector_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setSelectedValue"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "selectedValue",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
     ],
   )
@@ -223,11 +224,6 @@ pub fn selector_component(
   update? : (SelectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SelectorState,
   ],
-  swap? : (SelectorInput) -> ((
-    SelectorState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -240,15 +236,6 @@ pub fn selector_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetSelectedValue] : Array[SelectorInput]),
-          SelectorInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -305,9 +292,13 @@ fn entry_editor_and_selector_main_view_ir() -> @anode.View {
     [
       [@anode.on("click", @tutuca.Expr::name("onAddItem"))],
       [
-        @anode.on("click", @tutuca.Expr::name("removeInItemsAt"), args=[
-          @tutuca.Expr::bind("key"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.call_property_action("items", "removeAt", [
+            @tutuca.Expr::bind("key"),
+          ]),
+        ),
       ],
     ],
   )
@@ -339,11 +330,6 @@ pub fn entry_editor_and_selector_component(
   update? : (EntryEditorAndSelectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     EntryEditorAndSelectorState,
   ],
-  swap? : (EntryEditorAndSelectorInput) -> ((
-    EntryEditorAndSelectorState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -356,15 +342,6 @@ pub fn entry_editor_and_selector_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([OnAddItem, RemoveInItemsAt] : Array[EntryEditorAndSelectorInput]),
-          EntryEditorAndSelectorInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -399,9 +376,14 @@ fn sheet_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setTitle"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "title",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
     ],
   )
@@ -433,7 +415,6 @@ pub fn sheet_component(
   update? : (SheetState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SheetState,
   ],
-  swap? : (SheetInput) -> ((SheetState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -446,15 +427,6 @@ pub fn sheet_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetTitle] : Array[SheetInput]),
-          SheetInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,

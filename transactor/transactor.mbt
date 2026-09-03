@@ -68,17 +68,17 @@ pub fn Transactor::set_property(
   at : @tutuca.DispatchPath,
   name : String,
   value : @tutuca.Value,
-) -> @tutuca.PropertyWrite {
+) -> @tutuca.Outcome {
   let path = at.to_transaction_path().pin_keys(self.root)
-  guard path.lookup(self.root) is Some(leaf) else { return PMissing }
+  guard path.lookup(self.root) is Some(leaf) else { return Missing }
   match leaf.set_property(name, value) {
-    PMissing => PMissing
-    PUnchanged => PUnchanged
-    PRefused => PRefused
-    PChanged(next) => {
+    Missing => Missing
+    Unchanged => Unchanged
+    Refused(r) => Refused(r)
+    Changed(next) => {
       let root = path.set_value(self.root, next)
       if physical_equal(root, self.root) {
-        PUnchanged
+        Unchanged
       } else {
         self.reset_root(root)
         // A property call made outside queue draining is its own synchronous
@@ -89,7 +89,7 @@ pub fn Transactor::set_property(
             cb()
           }
         }
-        PChanged(root)
+        Changed(root)
       }
     }
   }
@@ -101,17 +101,17 @@ pub fn Transactor::set_member(
   at : @tutuca.DispatchPath,
   name : String,
   value : @tutuca.Value,
-) -> @tutuca.PropertyWrite {
+) -> @tutuca.Outcome {
   let path = at.to_transaction_path().pin_keys(self.root)
-  guard path.lookup(self.root) is Some(leaf) else { return PMissing }
+  guard path.lookup(self.root) is Some(leaf) else { return Missing }
   match leaf.set_member(name, value) {
-    PMissing => PMissing
-    PUnchanged => PUnchanged
-    PRefused => PRefused
-    PChanged(next) => {
+    Missing => Missing
+    Unchanged => Unchanged
+    Refused(r) => Refused(r)
+    Changed(next) => {
       let root = path.set_value(self.root, next)
       if physical_equal(root, self.root) {
-        PUnchanged
+        Unchanged
       } else {
         self.reset_root(root)
         if !self.draining {
@@ -119,7 +119,7 @@ pub fn Transactor::set_member(
             cb()
           }
         }
-        PChanged(root)
+        Changed(root)
       }
     }
   }
@@ -132,17 +132,17 @@ pub fn Transactor::mutate_member(
   name : String,
   operation : String,
   args : Array[@tutuca.Value],
-) -> @tutuca.PropertyWrite {
+) -> @tutuca.Outcome {
   let path = at.to_transaction_path().pin_keys(self.root)
-  guard path.lookup(self.root) is Some(leaf) else { return PMissing }
+  guard path.lookup(self.root) is Some(leaf) else { return Missing }
   match leaf.mutate_member(name, operation, args) {
-    PMissing => PMissing
-    PUnchanged => PUnchanged
-    PRefused => PRefused
-    PChanged(next) => {
+    Missing => Missing
+    Unchanged => Unchanged
+    Refused(r) => Refused(r)
+    Changed(next) => {
       let root = path.set_value(self.root, next)
       if physical_equal(root, self.root) {
-        PUnchanged
+        Unchanged
       } else {
         self.reset_root(root)
         if !self.draining {
@@ -150,7 +150,7 @@ pub fn Transactor::mutate_member(
             cb()
           }
         }
-        PChanged(root)
+        Changed(root)
       }
     }
   }
@@ -679,6 +679,19 @@ impl @tutuca.Ctx for EventContext with fn provenance(self) {
 ///|
 // `send` / `bubble` are not implemented: the trait defaults route them to the
 // two below at `path()`.
+impl @tutuca.Ctx for EventContext with fn set_member_at_path(
+  self,
+  path,
+  name,
+  v,
+) {
+  // The private-capable door, the same one a view's `.field = v` goes
+  // through: a caller with a ctx is inside the component's own dispatch, so it
+  // may write what the component's own view may write.
+  ignore(self.txn.transactor.set_member(path, name, v))
+}
+
+///|
 impl @tutuca.Ctx for EventContext with fn send_at_path(self, path, name, args) {
   let _ = self.txn.transactor.push_send(
     path,

@@ -37,9 +37,7 @@ fn contracts() -> Array[(String, String)] {
 /// The component carries its own spec source, so this reads the declaration
 /// that produced the compiled arms rather than a copy of it. A plan is `None`
 /// only for a component with no block, which BarChart is not.
-fn bar_chart_plan(
-  source? : @fuzz.Source = InternalMutators,
-) -> @fuzz.Plan raise {
+fn bar_chart_plan(source? : @fuzz.Source = Fields) -> @fuzz.Plan raise {
   guard @fuzz.Plan::of_component(bar_chart_comp(), source~) is Some(p) else {
     fail("BarChart declares a spec block, so it has a plan")
   }
@@ -152,7 +150,7 @@ test "property: no generated mutator can drive the chart through its invariant" 
         // Every generated mutator is a Receive — a mutator is not routed — so
         // an Intent here would mean the generator invented one.
         for d in script {
-          if !(d is InternalMutator(Receive(_, _))) {
+          if !(d is SetField(_, _)) {
             return false
           }
         }
@@ -228,18 +226,15 @@ test "property: an interpreted precondition predicts the compiled one" {
 test "a declined precondition says the rule's own sentence" {
   let h = @harness.mount_example(svg_bar_chart_module(), "Default")
   let p = bar_chart_plan()
-  // Nine bars, through the mutator rather than the button: `pushInValues` is
-  // generated, ungated, and the shortest way to the cap.
-  while true {
-    let before = h.render_count()
-    p.step(h, InternalMutator(Receive("pushInValues", [Num(1.0)]))) |> ignore
-    if h.render_count() == before {
-      break
-    }
-    if settled(h).get("values") is Some(List(vs)) && vs.length() >= 9 {
-      break
-    }
+  // Nine bars, WRITTEN rather than pushed one button-press at a time: a write
+  // is ungated — no `requires` stands in front of it — and it is the shortest
+  // way to the cap. It used to be nine dispatches of the generated
+  // `pushInValues`, which the fallback answered.
+  let nine : Array[@tutuca.Value] = []
+  for _ in 0..<9 {
+    nine.push(Num(1.0))
   }
+  p.step(h, SetField("values", List(nine))) |> ignore
   let refused = @harness.refusals_while(() => h.send_at_root("addBar"))
   assert_eq(refused.length(), 1)
   assert_eq(refused[0].rule, "hasRoom")

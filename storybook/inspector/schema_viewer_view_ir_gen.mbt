@@ -74,7 +74,18 @@ fn schema_viewer_main_view_ir() -> @anode.View {
         ),
       ],
     ),
-    [[@anode.on("click", @tutuca.Expr::name("toggleShowRaw"))]],
+    [
+      [
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "showRaw",
+            @tutuca.Expr::app("not", [@tutuca.Expr::field("showRaw")]),
+          ),
+        ),
+      ],
+    ],
   )
 }
 
@@ -137,11 +148,6 @@ pub fn schema_viewer_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (SchemaViewerInput) -> ((
-    SchemaViewerState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -168,15 +174,6 @@ pub fn schema_viewer_component(
         bucket[k] = h
       }
       bucket
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([ToggleShowRaw] : Array[SchemaViewerInput]),
-          SchemaViewerInput::name,
-          f,
-        )
-      None => Map([])
     },
     slots~,
     slot_args~,

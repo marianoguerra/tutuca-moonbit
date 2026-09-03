@@ -81,7 +81,16 @@ fn emoji_picker_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", @tutuca.Expr::name("toggleIsPickerVisible"))],
+      [
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "isPickerVisible",
+            @tutuca.Expr::app("not", [@tutuca.Expr::field("isPickerVisible")]),
+          ),
+        ),
+      ],
       [
         @anode.on("emoji-click", @tutuca.Expr::name("onEmojiClick"), args=[
           @tutuca.Expr::event_path(["value"]),
@@ -117,11 +126,6 @@ pub fn emoji_picker_component(
   update? : (EmojiPickerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     EmojiPickerState,
   ],
-  swap? : (EmojiPickerInput) -> ((
-    EmojiPickerState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -134,15 +138,6 @@ pub fn emoji_picker_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([OnEmojiClick, ToggleIsPickerVisible] : Array[EmojiPickerInput]),
-          EmojiPickerInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,

@@ -220,14 +220,24 @@ fn entry_edit_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setTitle"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "title",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
       [
-        @anode.on("input", @tutuca.Expr::name("setDescription"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "description",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
     ],
   )
@@ -286,7 +296,6 @@ pub fn entry_component(
   update? : (EntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     EntryState,
   ],
-  swap? : (EntryInput) -> ((EntryState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -300,15 +309,6 @@ pub fn entry_component(
     global_style~,
     update?,
     compute=entry_inline_compute(),
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetDescription, SetTitle] : Array[EntryInput]),
-          EntryInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,

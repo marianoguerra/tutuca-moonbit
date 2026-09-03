@@ -28,7 +28,7 @@ fn counter_module() -> @component.ModuleDef {
           #|  <button class="btn-error" @on.click="dec">-</button>
           #|  <div class="stat-value" @text=".count"></div>
           #|  <button class="btn-success" @on.click="inc">+</button>
-          #|  <input class="label-input" :value=".label" @on.input="setLabel e.value">
+          #|  <input class="label-input" :value=".label" @on.input=".label = e.value">
           #|</div>
         ),
       ),

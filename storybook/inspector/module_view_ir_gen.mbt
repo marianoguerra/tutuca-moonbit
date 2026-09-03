@@ -128,11 +128,6 @@ pub fn rich_sample_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (RichSampleInput) -> ((
-    RichSampleState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   loop_with? : (RichSampleLoopWith) -> ((
     RichSampleState,
     @tutuca.Value,
@@ -155,15 +150,6 @@ pub fn rich_sample_component(
         @component.build_bucket(
           ([Double, Label] : Array[RichSampleMethod]),
           RichSampleMethod::name,
-          f,
-        )
-      None => Map([])
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Inc, Reset] : Array[RichSampleInput]),
-          RichSampleInput::name,
           f,
         )
       None => Map([])
@@ -228,11 +214,6 @@ pub fn sample_card_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (SampleCardInput) -> ((
-    SampleCardState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -250,15 +231,6 @@ pub fn sample_card_component(
         @component.build_bucket(
           ([Label] : Array[SampleCardMethod]),
           SampleCardMethod::name,
-          f,
-        )
-      None => Map([])
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Bump] : Array[SampleCardInput]),
-          SampleCardInput::name,
           f,
         )
       None => Map([])

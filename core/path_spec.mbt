@@ -299,6 +299,14 @@ pub(open) trait Ctx {
   fn provenance(Self) -> DispatchProvenance = _
   fn send(Self, name : String, args : Array[Value]) -> Unit = _
   fn send_at_path(Self, path : DispatchPath, name : String, args : Array[Value]) -> Unit = _
+  /// Write a member at `path`, the way a view's `.field = v` does.
+  ///
+  /// A WRITE and not a dispatch, which is the distinction the generated-mutator
+  /// fallback used to blur: `setQuery e.value` looked like a message and was
+  /// answered by a setter nobody declared. A property action says which it is
+  /// where it is written, and this is the same door for a caller holding a ctx
+  /// — a host, a test harness — rather than a view.
+  fn set_member_at_path(Self, path : DispatchPath, name : String, v : Value) -> Unit = _
   /// Dispatch an intent along `opts.route`. The `dyn` leg starts at this
   /// ctx's PARENT, so a component never re-enters its own handler.
   fn intent(Self, name : String, args : Array[Value], opts : IntentOpts) -> Unit = _
@@ -385,6 +393,11 @@ impl Ctx with fn provenance(_self) {
 /// disagree about what "here" means.
 impl Ctx with fn send(self, name, args) {
   self.send_at_path(self.path(), name, args)
+}
+
+///|
+impl Ctx with fn set_member_at_path(_self, _path, _name, _v) {
+
 }
 
 ///|

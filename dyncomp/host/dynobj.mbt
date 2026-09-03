@@ -600,12 +600,39 @@ pub impl @tutuca.Obj for DynObj with fn member_at(self, name, _stack) {
 pub impl @tutuca.Obj for DynObj with fn set_property(self, name, value) {
   guard self.schema.properties.iter().find_first(p => p.name == name)
     is Some(property) else {
-    return PMissing
+    return Missing
   }
   if !property.public_ {
-    return PMissing
+    return Missing
   }
   self.write_member(name, value, property)
+}
+
+///|
+/// The refusal a write to a guest's member answers.
+///
+/// `Outcome::Refused` carries the reason now, where `PRefused` carried nothing
+/// and a caller had to go and look for it in the recorder. A guest's refusal
+/// has no rule to name — the guest declined and said nothing about why, which
+/// is the contract — so what this carries is the sentence the HOST can say.
+fn write_refusal(
+  asked : String,
+  why : String,
+  state : @tutuca.Value,
+) -> @tutuca.Refusal {
+  {
+    code: NoHandler,
+    asked,
+    rule: "",
+    sentence: why,
+    state,
+    path: @tutuca.Path::new(),
+  }
+}
+
+///|
+fn guest_refusal(name : String) -> @tutuca.Refusal {
+  write_refusal(name, "the guest declined the write", Null)
 }
 
 ///|
@@ -616,14 +643,16 @@ pub impl @tutuca.Obj for DynObj with fn set_member(self, name, value) {
       Some(setter) => {
         let successor = setter(self.field_box(), [value])
         if successor.identity() == (Obj(self) : @tutuca.Value).identity() {
-          PUnchanged
+          Unchanged
         } else if successor is Obj(_) {
-          PChanged(successor)
+          Changed(successor)
         } else {
-          PRefused
+          Refused(
+            write_refusal(name, "the setter did not answer an instance", value),
+          )
         }
       }
-      None => PMissing
+      None => Missing
     }
   }
   self.write_member(name, value, property)
@@ -636,17 +665,21 @@ pub impl @tutuca.Obj for DynObj with fn mutate_member(
   operation,
   args,
 ) {
-  guard self.schema.field(name) is Some(field) else { return PMissing }
+  guard self.schema.field(name) is Some(field) else { return Missing }
   guard member_mutator_name(name, operation, field.kind()) is Some(key) &&
     self.mutators.get(key) is Some(mutate) else {
-    return PMissing
+    return Missing
   }
   let successor = mutate(self.field_box(), args)
-  guard successor is Obj(_) else { return PRefused }
-  if successor.identity() == (Obj(self) : @tutuca.Value).identity() {
-    return PUnchanged
+  guard successor is Obj(_) else {
+    return Refused(
+      write_refusal(name, "the operation did not answer an instance", Obj(self)),
+    )
   }
-  PChanged(successor)
+  if successor.identity() == (Obj(self) : @tutuca.Value).identity() {
+    return Unchanged
+  }
+  Changed(successor)
 }
 
 ///|
@@ -678,17 +711,25 @@ fn DynObj::write_member(
   name : String,
   value : @tutuca.Value,
   property : @tutuca.PropertyInfo,
-) -> @tutuca.PropertyWrite {
+) -> @tutuca.Outcome {
   if !property.writable {
-    return PRefused
+    return Refused(
+      write_refusal(name, "the property is declared read-only", value),
+    )
   }
   if !property.ty.accepts(value) {
-    return PRefused
+    return Refused(
+      write_refusal(
+        name,
+        "the value is not a \{property.ty.show_source()}",
+        value,
+      ),
+    )
   }
   match self.guest.set_property(self.handle, name, value) {
-    GuestPropertyMissing => PMissing
-    GuestPropertyUnchanged => PUnchanged
-    GuestPropertyRefused => PRefused
+    GuestPropertyMissing => Missing
+    GuestPropertyUnchanged => Unchanged
+    GuestPropertyRefused => Refused(guest_refusal(name))
     GuestPropertyChanged(handle) => {
       // A declared getter is part of the same typed contract as its setter.
       // Validate the successor before it enters the host tree; a hand-written
@@ -696,17 +737,25 @@ fn DynObj::write_member(
       guard self.guest.get_property(handle, name) is Some(next_value) &&
         property.ty.accepts(next_value) else {
         self.guest.drop_instance(handle)
-        return PRefused
+        return Refused(
+          write_refusal(
+            name,
+            "the guest answered a value that is not a \{property.ty.show_source()}",
+            value,
+          ),
+        )
       }
       let candidate : @tutuca.Value = Obj(self.successor(handle))
       match self.adopt(name, candidate) {
         None => {
           self.guest.drop_instance(handle)
-          PRefused
+          Refused(
+            write_refusal(name, "the successor could not be adopted", value),
+          )
         }
         Some(next) => {
           superseded.push((self.guest, self.handle))
-          PChanged(next)
+          Changed(next)
         }
       }
     }
@@ -819,9 +868,8 @@ fn DynObj::callable_at(
 ///|
 pub impl @tutuca.Obj for DynObj with fn handler(self, bucket, name) {
   // `Receive` is not gated on the manifest: a message's name is discovered
-  // dynamically, the guest answers `Unhandled` for one it does not know, and
-  // the field-derived mutator then gets its chance. `def.receives` therefore
-  // documents rather than gates.
+  // dynamically and the guest answers `unhandled` for one it does not know.
+  // `def.receives` therefore documents rather than gates.
   //
   // `Intent` is gated, because a walk offers the intent to every hop and a
   // guest that declares none should not be entered at all.
@@ -898,17 +946,13 @@ pub impl @tutuca.Obj for DynObj with fn handler(self, bucket, name) {
           StopPropagation => ctx.stop_propagation()
         }
       }
+      // A guest that answered `unhandled` has answered: nothing claimed the
+      // name. There is no fallback to a mutator the field implies — that is
+      // what a view's `.field = v` is for, and it reaches `set_member` rather
+      // than the dispatch path. `self.mutators` stays, because a WRITE goes
+      // through it.
       if !result.handled {
-        guard bucket is Receive && self.mutators.get(name) is Some(g) else {
-          return None
-        }
-        // Both doors were already asked, inside the write itself — see
-        // `write_field`. A refused mutator answers this instance's own value,
-        // which the transactor reads as "nothing happened".
-        return match g(self.field_box(), args) {
-          Obj(_) as nv => self.adopt(name, nv)
-          _ => None
-        }
+        return None
       }
       match adopted {
         Some(_) as nv => {

@@ -100,19 +100,34 @@ fn person_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setName"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "name",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
       [
-        @anode.on("input", @tutuca.Expr::name("setEmail"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "email",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
       [
-        @anode.on("input", @tutuca.Expr::name("setActive"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "active",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
     ],
   )
@@ -144,7 +159,6 @@ pub fn person_component(
   update? : (PersonState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     PersonState,
   ],
-  swap? : (PersonInput) -> ((PersonState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -157,15 +171,6 @@ pub fn person_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetActive, SetEmail, SetName] : Array[PersonInput]),
-          PersonInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -347,9 +352,13 @@ fn naive_people_main_view_ir() -> @anode.View {
         ]),
       ],
       [
-        @anode.on("click", @tutuca.Expr::name("removeInItemsAt"), args=[
-          @tutuca.Expr::bind("key"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.call_property_action("items", "removeAt", [
+            @tutuca.Expr::bind("key"),
+          ]),
+        ),
       ],
       [@anode.on("click", @tutuca.Expr::name("prev"))],
       [@anode.on("click", @tutuca.Expr::name("next"))],
@@ -383,11 +392,6 @@ pub fn naive_people_component(
   update? : (NaivePeopleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     NaivePeopleState,
   ],
-  swap? : (NaivePeopleInput) -> ((
-    NaivePeopleState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   when? : (NaivePeopleWhen) -> ((
     NaivePeopleState,
     @tutuca.Value,
@@ -416,15 +420,6 @@ pub fn naive_people_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Next, Prev, RemoveInItemsAt, Search] : Array[NaivePeopleInput]),
-          NaivePeopleInput::name,
-          f,
-        )
-      None => Map([])
-    },
     when=match when {
       Some(f) =>
         @component.build_bucket(
@@ -556,9 +551,13 @@ fn shared_people_main_view_ir() -> @anode.View {
         ]),
       ],
       [
-        @anode.on("click", @tutuca.Expr::name("removeInItemsAt"), args=[
-          @tutuca.Expr::bind("key"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.call_property_action("items", "removeAt", [
+            @tutuca.Expr::bind("key"),
+          ]),
+        ),
       ],
       [@anode.on("click", @tutuca.Expr::name("prev"))],
       [@anode.on("click", @tutuca.Expr::name("next"))],
@@ -668,9 +667,13 @@ fn coupled_people_main_view_ir() -> @anode.View {
         ]),
       ],
       [
-        @anode.on("click", @tutuca.Expr::name("removeInItemsAt"), args=[
-          @tutuca.Expr::bind("key"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.call_property_action("items", "removeAt", [
+            @tutuca.Expr::bind("key"),
+          ]),
+        ),
       ],
       [@anode.on("click", @tutuca.Expr::name("prev"))],
       [@anode.on("click", @tutuca.Expr::name("next"))],

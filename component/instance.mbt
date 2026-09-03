@@ -19,7 +19,6 @@ priv struct TypedSpec[S] {
     String,
     (S, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
   ]
-  swap : Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?]
   when : Map[
     String,
     (S, @tutuca.Value, @tutuca.Value, @tutuca.Value, &@tutuca.Stack) -> Bool,
@@ -395,20 +394,20 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn member_at(self, name, _stack) {
 /// typed, synchronous state transition, and the same invariant/domain commit
 /// gate used by handlers decides whether its successor may stand.
 impl[S] @tutuca.Obj for TypedInstance[S] with fn set_property(self, name, value) {
-  guard self.spec.comp is Some(comp) else { return PMissing }
+  guard self.spec.comp is Some(comp) else { return Missing }
   guard comp.schema.properties.iter().find_first(p => p.name == name)
     is Some(property) else {
-    return PMissing
+    return Missing
   }
   if !property.public_ {
-    return PMissing
+    return Missing
   }
   self.write_member(name, value, property)
 }
 
 ///|
 impl[S] @tutuca.Obj for TypedInstance[S] with fn set_member(self, name, value) {
-  guard self.spec.comp is Some(comp) else { return PMissing }
+  guard self.spec.comp is Some(comp) else { return Missing }
   guard comp.schema.properties.iter().find_first(p => p.name == name)
     is Some(property) else {
     // State fields are implicit private read/write properties. Reuse the
@@ -416,19 +415,23 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn set_member(self, name, value) {
     match self.spec.generated.get(@tutuca.mutator_name("set", name)) {
       Some(setter) => {
         let successor = setter(self.field_box(), [value])
-        guard successor is Obj(_) else { return PRefused }
+        guard successor is Obj(_) else {
+          return Refused(
+            write_refusal(name, "the setter did not answer an instance", value),
+          )
+        }
         if physical_equal(successor, self.to_value()) {
-          return PUnchanged
+          return Unchanged
         }
         return match self.broken_rule(successor) {
           Some(broke) => {
             ignore(self.refuse_broken(broke, name, successor))
-            PRefused
+            Refused(broke_refusal(broke, name, successor))
           }
-          None => PChanged(successor)
+          None => Changed(successor)
         }
       }
-      None => return PMissing
+      None => return Missing
     }
   }
   self.write_member(name, value, property)
@@ -442,23 +445,31 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn mutate_member(
   args,
 ) {
   guard self.spec.comp is Some(comp) && comp.schema.field(name) is Some(field) else {
-    return PMissing
+    return Missing
   }
   guard member_mutator_name(name, operation, field.kind()) is Some(key) &&
     self.spec.generated.get(key) is Some(mutate) else {
-    return PMissing
+    return Missing
   }
   let successor = mutate(self.field_box(), args)
-  guard successor is Obj(_) else { return PRefused }
+  guard successor is Obj(_) else {
+    return Refused(
+      write_refusal(
+        name,
+        "the operation did not answer an instance",
+        self.to_value(),
+      ),
+    )
+  }
   if successor.identity() == self.to_value().identity() {
-    return PUnchanged
+    return Unchanged
   }
   match self.broken_rule(successor) {
     Some(broke) => {
       ignore(self.refuse_broken(broke, name, successor))
-      PRefused
+      Refused(broke_refusal(broke, name, successor))
     }
-    None => PChanged(successor)
+    None => Changed(successor)
   }
 }
 
@@ -491,27 +502,34 @@ fn[S] TypedInstance::write_member(
   name : String,
   value : @tutuca.Value,
   property : @tutuca.PropertyInfo,
-) -> @tutuca.PropertyWrite {
+) -> @tutuca.Outcome {
   if !property.writable {
-    return PRefused
+    return Refused(
+      write_refusal(name, "the property is declared read-only", value),
+    )
   }
   guard self.spec.set_property.get(name) is Some(setter) else {
-    return PRefused
+    return Refused(write_refusal(name, "the property has no setter", value))
   }
   match setter(self.state, value) {
-    Unhandled => PMissing
-    Unchanged => PUnchanged
+    Unhandled => Missing
+    Unchanged => Unchanged
+    // A setter is one expression over the state; it has no node to supersede
+    // and no way to spell a refusal. Both reach here only from a hand-written
+    // one, and both are honest as themselves.
+    Replace(v) => Changed(v)
+    Refused(r) => Refused(r)
     Next(next) => {
       let successor = self.with_state(next).to_value()
       if physical_equal(successor, self.to_value()) {
-        return PUnchanged
+        return Unchanged
       }
       match self.broken_rule(successor) {
         Some(broke) => {
           ignore(self.refuse_broken(broke, name, successor))
-          PRefused
+          Refused(broke_refusal(broke, name, successor))
         }
-        None => PChanged(successor)
+        None => Changed(successor)
       }
     }
   }
@@ -603,22 +621,6 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn trigger_at(self, name, stack) {
     }
   }
   self.callable_of(name, stack)
-}
-
-///|
-/// The bucket a `swap` and a generated mutator answer.
-///
-/// `Receive` is the ADDRESSED bucket, and it is the only one. It covers both
-/// `@on.click="setQuery e.value"` from the component's own view and a parent's
-/// `ctx.send("setQuery", …)` to the same component: one message, so one bucket
-/// answers it. Splitting on where the message came from would let the view's
-/// name through and turn the parent's away, though the two say the same thing.
-///
-/// `Intent` is deliberately NOT in here. A generated mutator answers a message
-/// at home and never an intent walking a route: an ancestor's setter is not an
-/// answer to a question a descendant asked.
-fn answers_at_home(bucket : @tutuca.HandlerBucket) -> Bool {
-  bucket is Receive
 }
 
 ///|
@@ -756,6 +758,65 @@ fn[S] TypedInstance::refuse_invariant(
 /// and there is no such moment here. A domain reports its FIELD and a sentence
 /// that always exists, because a relation knows what it wanted and what it
 /// got — the whole reason a `where` carries no `format`.
+/// The refusal a write answers when the write itself could not be made.
+///
+/// No rule said no: the setter answered something that is not an instance, or
+/// the property is not writable, or nothing implements it. `NoHandler` is the
+/// code every other "nothing answered this name" carries.
+fn write_refusal(
+  asked : String,
+  why : String,
+  state : @tutuca.Value,
+) -> @tutuca.Refusal {
+  {
+    code: NoHandler,
+    asked,
+    rule: "",
+    sentence: why,
+    state,
+    path: @tutuca.Path::new(),
+  }
+}
+
+///|
+/// The refusal a broken rule or domain produces, as a value.
+///
+/// Split out of `refuse_broken` because a write now ANSWERS with one:
+/// `Outcome::Refused` carries the reason, where `PRefused` carried nothing and
+/// a caller had to go and find it in the recorder.
+fn broke_refusal(
+  broke : Broke,
+  asked : String,
+  rejected : @tutuca.Value,
+) -> @tutuca.Refusal {
+  match broke {
+    // An invariant reports its NAME and no sentence: its `format` is compiled
+    // into the arm beside it, at the moment it fails, and there is no such
+    // moment here.
+    BInvariant(rule) =>
+      {
+        code: Invariant,
+        asked,
+        rule,
+        sentence: "",
+        state: rejected,
+        path: @tutuca.Path::new(),
+      }
+    BDomain(field~, sentence~) =>
+      {
+        code: OutOfRange,
+        asked,
+        // The FIELD goes where a rule's name goes: a `where` has no name, and
+        // the field is the thing a reader goes and looks at.
+        rule: field,
+        sentence,
+        state: rejected,
+        path: @tutuca.Path::new(),
+      }
+  }
+}
+
+///|
 fn[S] TypedInstance::refuse_broken(
   self : TypedInstance[S],
   broke : Broke,
@@ -786,107 +847,65 @@ fn[S] TypedInstance::refuse_broken(
 
 ///|
 impl[S] @tutuca.Obj for TypedInstance[S] with fn handler(self, bucket, name) {
-  let has_update = self.spec.update is Some(_)
-  let input_fallback = answers_at_home(bucket) &&
-    (self.spec.swap.contains(name) || self.spec.generated.contains(name))
-  if !has_update && !input_fallback {
-    return None
-  }
+  guard self.spec.update is Some(u) else { return None }
   Some(
     Handler((args, ctx) => {
-      let allow_generated = ctx.provenance() is (View | Component | Diagnostic)
-      // swap handlers are name-keyed and may replace this node with an
-      // arbitrary Value (another component's instance) — they win over the
-      // opaque update match.
-      if answers_at_home(bucket) {
-        match self.spec.swap.get(name) {
-          Some(f) =>
-            return match f(self.state, args, ctx) {
-              Some(v) => Some(v)
-              None => None
-            }
-          None => ()
-        }
+      let d : Dispatch = match bucket {
+        Receive => Receive(name, args)
+        Intent => Intent(name, args)
       }
-      match self.spec.update {
-        Some(u) => {
-          let d : Dispatch = match bucket {
-            Receive => Receive(name, args)
-            Intent => Intent(name, args)
+      match u(self.state, d, ctx) {
+        Next(s2) => {
+          let nv = self.with_state(s2).to_value()
+          // The rules the component KEEPS, around an arm the generator did
+          // not weave them into. A script-declared arm has already been
+          // checked inline — and more strictly, before its effect queue
+          // flushed — so one that broke a rule answered `Unchanged` and
+          // never reached here. What this covers is the hand-written
+          // `update~`, whose effects may already have fired: the state is
+          // rolled back, the effects are not, and that limit is real.
+          match self.broken_rule(nv) {
+            Some(broke) => Some(self.refuse_broken(broke, name, nv))
+            None => Some(nv)
           }
-          let answered = match u(self.state, d, ctx) {
-            Next(s2) => {
-              let nv = self.with_state(s2).to_value()
-              // The rules the component KEEPS, around an arm the generator did
-              // not weave them into. A script-declared arm has already been
-              // checked inline — and more strictly, before its effect queue
-              // flushed — so one that broke a rule answered `Unchanged` and
-              // never reached here. What this covers is the hand-written
-              // `update~`, whose effects may already have fired: the state is
-              // rolled back, the effects are not, and that limit is real.
-              return match self.broken_rule(nv) {
-                Some(broke) => Some(self.refuse_broken(broke, name, nv))
-                None => Some(nv)
-              }
-            }
-            // Answered, and nothing changed. The instance's own Value, which
-            // is memoized — so the transactor's `physical_equal` reads it as
-            // "nothing happened" and no generated mutator is consulted.
-            Unchanged => return Some(self.to_value())
-            Unhandled => false
+        }
+        // The arm SUPERSEDED the node — an instance of another component,
+        // most often. Not checked against this component's rules: what stands
+        // here is not this component's state any more.
+        Replace(v) => Some(v)
+        // Answered, and nothing changed. The instance's own Value, which is
+        // memoized — so the transactor's `physical_equal` reads it as
+        // "nothing happened".
+        Unchanged => Some(self.to_value())
+        Refused(r) => {
+          if @tutuca.refusing() {
+            @tutuca.refuse(r)
           }
-          // ONE offer. A view's name and a parent's `send` are the same
-          // message, so a `Receive` no arm claimed goes straight to the
-          // generated mutators rather than being offered a second time under
-          // another bucket.
-          ignore(answered)
+          Some(self.to_value())
         }
-        None => ()
-      }
-      // An addressed message falls through to the GENERATED mutators, so a
-      // view writing `setTitle 'x'` reaches the setter every field gets
-      // without the component declaring one — and so does a parent sending the
-      // same name, which is the widening `answers_at_home` names.
-      if answers_at_home(bucket) && allow_generated {
-        match self.spec.generated.get(name) {
-          Some(g) =>
-            match g(self.field_box(), args) {
-              // A GENERATED mutator, which nothing declared and therefore
-              // nothing wove a rule around. `invariant conserved` covers
-              // `setHere` exactly as it covers `push`, and it did not before:
-              // the rules used to live in the script block, where a mutator
-              // the schema generates has no declaration to attach to.
-              //
-              // A mutator raises no effects, so the abandonment here is
-              // complete — there is nothing half-done to leave behind.
-              Obj(_) as nv =>
-                return match self.broken_rule(nv) {
-                  Some(broke) => Some(self.refuse_broken(broke, name, nv))
-                  None => Some(nv)
-                }
-              _ => ()
-            }
-          None => ()
+        // Nothing claimed the name. There is no second answerer: a dispatch a
+        // component does not declare is a refusal, and saying so is the
+        // difference between a typo in a view and a button that correctly
+        // does nothing.
+        //
+        // There USED to be one — a `Receive` no arm claimed fell through to
+        // the generated mutators, so `@on.click="setQuery e.value"` reached a
+        // setter the component never declared. That is what `.query = e.value`
+        // is for, and it says the same thing where it can be read.
+        Unhandled => {
+          if @tutuca.refusing() {
+            @tutuca.refuse({
+              code: NoHandler,
+              asked: name,
+              rule: "",
+              sentence: "",
+              state: self.to_value(),
+              path: @tutuca.Path::new(),
+            })
+          }
+          None
         }
       }
-      // Nothing claimed the name: no swap, no `update` arm — `Unhandled`
-      // rather than the `Unchanged` an arm answers when it decided nothing
-      // moves — and no generated mutator. That distinction is knowable only
-      // here, where all three lookups have missed, and it is invisible
-      // upstream: `Path::update` sees the same `None` a declining handler
-      // answers. Reporting it is the difference between a typo in a view and a
-      // button that correctly does nothing.
-      if @tutuca.refusing() {
-        @tutuca.refuse({
-          code: NoHandler,
-          asked: name,
-          rule: "",
-          sentence: "",
-          state: self.to_value(),
-          path: @tutuca.Path::new(),
-        })
-      }
-      None
     }),
   )
 }

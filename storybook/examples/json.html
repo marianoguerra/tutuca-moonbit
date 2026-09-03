@@ -50,13 +50,13 @@
     @if.class=".value"
     @then="'btn btn-sm btn-soft btn-success font-mono true'"
     @else="'btn btn-sm btn-soft btn-error font-mono false'"
-    @on.click="toggleValue">
+    @on.click=".value = not .value">
     <span @show=".value">true</span>
     <span @hide=".value">false</span>
   </button>
 </template>
 <template id="JsonString">
-  <input class="input input-sm input-ghost text-green-500 font-mono json-string" :value=".value" @on.input="setValue e.value">
+  <input class="input input-sm input-ghost text-green-500 font-mono json-string" :value=".value" @on.input=".value = e.value">
 </template>
 <template id="JsonNumber">
   <input type="number" class="input input-sm input-ghost text-primary font-mono json-number" :title=".value" :value=".strValue" @on.input="setRawValue e.value">
@@ -74,14 +74,14 @@
         data-dragtype="json-list-item" data-droptarget="json-list-item"
         @on.drop="onDropOnItem @key e.dragInfo">
         <x render-it></x>
-        <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click="removeInItemsAt @key">x</button>
+        <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click=".items.removeAt @key">x</button>
       </div>
     </div>
   </section>
 </template>
 <template id="JsonObjectKeyVal">
   <div class="join gap-3 items-center justify-center json-kv">
-    <input class="input input-sm input-ghost text-green-500 font-mono json-key" :value=".key" @on.input="setKey e.value">
+    <input class="input input-sm input-ghost text-green-500 font-mono json-key" :value=".key" @on.input=".key = e.value">
     <span class="text-xs font-mono text-gray-500 colon">:</span>
     <x render=".value"></x>
   </div>
@@ -99,7 +99,7 @@
         data-dragtype="json-kv-item" data-droptarget="json-kv-item"
         @on.drop="onDropOnItem @key e.dragInfo">
         <x render-it></x>
-        <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click="removeInItemsAt @key">x</button>
+        <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click=".items.removeAt @key">x</button>
       </div>
     </div>
   </section>

@@ -320,7 +320,7 @@ impl @component.Fields for FuzzRowState with fn schema() {
     domains=[
       {
         field: "verb",
-        domain: DOneOf([Str("send"), Str("intent"), Str("set"), Str("internal")]),
+        domain: DOneOf([Str("send"), Str("intent"), Str("set"), Str("write")]),
       },
       { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
       { field: "renders", domain: DCompare(op=DGe, rhs=DLit(0)), },
@@ -432,12 +432,12 @@ pub(all) struct FuzzControlsState {
   /// address lives anyway.
   seed : String
   steps : String
-  /// `public`, `messages`, `properties` or `internal`.
+  /// `public`, `messages`, `properties` or `fields`.
   source : String
   publicClass : String
   messagesClass : String
   propertiesClass : String
-  internalClass : String
+  fieldsClass : String
   /// A run is in flight, one step per frame.
   playing : Bool
   /// The component declares a block, so there is a plan behind the knobs.
@@ -470,7 +470,7 @@ pub fn FuzzControlsState::zero() -> FuzzControlsState {
     publicClass: "",
     messagesClass: "",
     propertiesClass: "",
-    internalClass: "",
+    fieldsClass: "",
     playing: false,
     canRun: false,
     noPlanHint: "",
@@ -494,7 +494,7 @@ impl @component.Fields for FuzzControlsState with fn encode(s) {
     "publicClass": Str(s.publicClass),
     "messagesClass": Str(s.messagesClass),
     "propertiesClass": Str(s.propertiesClass),
-    "internalClass": Str(s.internalClass),
+    "fieldsClass": Str(s.fieldsClass),
     "playing": Bool(s.playing),
     "canRun": Bool(s.canRun),
     "noPlanHint": Str(s.noPlanHint),
@@ -517,9 +517,7 @@ impl @component.Fields for FuzzControlsState with fn decode(f) {
   guard f.get("propertiesClass") is Some(Str(v_propertiesClass)) else {
     return None
   }
-  guard f.get("internalClass") is Some(Str(v_internalClass)) else {
-    return None
-  }
+  guard f.get("fieldsClass") is Some(Str(v_fieldsClass)) else { return None }
   guard f.get("playing") is Some(Bool(v_playing)) else { return None }
   guard f.get("canRun") is Some(Bool(v_canRun)) else { return None }
   guard f.get("noPlanHint") is Some(Str(v_noPlanHint)) else { return None }
@@ -532,7 +530,7 @@ impl @component.Fields for FuzzControlsState with fn decode(f) {
     publicClass: v_publicClass,
     messagesClass: v_messagesClass,
     propertiesClass: v_propertiesClass,
-    internalClass: v_internalClass,
+    fieldsClass: v_fieldsClass,
     playing: v_playing,
     canRun: v_canRun,
     noPlanHint: v_noPlanHint,
@@ -729,7 +727,7 @@ pub fn FuzzControlsMsg::from_dispatch(
 impl @component.Fields for FuzzControlsState with fn schema() {
   @component.SchemaInfo::new(
     name="FuzzControls",
-    fingerprint="d970a1888f666e63",
+    fingerprint="3fc2bd37f142caaf",
     fields=[
       @component.FieldInfo::new("seed", TyText),
       @component.FieldInfo::new("steps", TyText),
@@ -737,7 +735,7 @@ impl @component.Fields for FuzzControlsState with fn schema() {
       @component.FieldInfo::new("publicClass", TyText),
       @component.FieldInfo::new("messagesClass", TyText),
       @component.FieldInfo::new("propertiesClass", TyText),
-      @component.FieldInfo::new("internalClass", TyText),
+      @component.FieldInfo::new("fieldsClass", TyText),
       @component.FieldInfo::new("playing", TyBool),
       @component.FieldInfo::new("canRun", TyBool),
       @component.FieldInfo::new("noPlanHint", TyText),
@@ -762,7 +760,7 @@ impl @component.Fields for FuzzControlsState with fn schema() {
           Str("public"),
           Str("messages"),
           Str("properties"),
-          Str("internal"),
+          Str("fields"),
         ]),
       },
     ],

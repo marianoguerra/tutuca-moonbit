@@ -13,7 +13,7 @@ fn text_editor() -> @component.Component {
     views={
       "main": @anode.View::new(
         "main",
-        raw_view="<div><input :value=\".text\" @on.input=\"setText e.value\" @on.keydown+send=\"setText 'sent'\"><p><x text=\".text\"></x></p><button @on.click+ctrl=\"setCount e.valueAsInt\">n</button></div>",
+        raw_view="<div><input :value=\".text\" @on.input=\".text = e.value\" @on.keydown+send=\".text = 'sent'\"><p><x text=\".text\"></x></p><button @on.click+ctrl=\".count = e.valueAsInt\">n</button></div>",
       ),
     },
     name="Editor",
@@ -88,8 +88,11 @@ test "checked @bind coercion skips invalid numeric edits" {
       [
         @anode.on(
           "input",
-          @tutuca.Expr::name("setCount"),
-          args=[@tutuca.Expr::event_path(["valueAsInt"])],
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "count",
+            @tutuca.Expr::event_path(["valueAsInt"]),
+          ),
           binding=BindInt(width=32, signed=true),
         ),
       ],

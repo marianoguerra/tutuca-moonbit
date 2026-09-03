@@ -82,3 +82,14 @@ pub fn PathChanges::intent(
 ) -> Unit {
   self.ctx.intent_at_path(self.build_path(), name, args, opts)
 }
+
+///|
+/// Write `name` at the built path.
+///
+/// The twin of `send`, and the distinction between them is the one the
+/// generated-mutator fallback used to blur: a dispatch ASKS a component to
+/// decide something, and a write says what a member is now. A view spells the
+/// second `.field = v`; this is the same door for a caller holding a ctx.
+pub fn PathChanges::set(self : PathChanges, name : String, v : Value) -> Unit {
+  self.ctx.set_member_at_path(self.build_path(), name, v)
+}

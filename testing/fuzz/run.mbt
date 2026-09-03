@@ -170,13 +170,14 @@ pub fn[N] Plan::step(
         h.app.transactor.push_send(at, name, args) |> ignore
       Message(Intent(name, args)) =>
         h.app.transactor.push_intent(at, name, args) |> ignore
-      InternalMutator(Receive(name, args)) =>
-        h.app.transactor.push_send(at, name, args, provenance=Diagnostic)
-        |> ignore
-      InternalMutator(Intent(name, args)) =>
-        h.app.transactor.push_intent(at, name, args) |> ignore
       SetProperty(name, value) =>
         h.app.transactor.set_property(at, name, value) |> ignore
+      // The private-capable door, the one a component's own view writes
+      // through. It used to be a DISPATCH of the generated mutator name,
+      // carried on a diagnostic provenance so that only this driver could
+      // reach the fallback — and the fallback is gone.
+      SetField(name, value) =>
+        h.app.transactor.set_member(at, name, value) |> ignore
     }
     h.app.transactor.settle() |> ignore
   })

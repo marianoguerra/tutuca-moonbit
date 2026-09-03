@@ -271,7 +271,7 @@ distinction that does not exist. `$` belongs in a value position
 **Bad — asking for the event object:**
 
 ```html
-<input @on.input="setCount event" />
+<input @on.input="countTo event" />
 ```
 
 `event`, `target` and `ctx` are **not** handler arguments in this port: a DOM
@@ -282,16 +282,16 @@ input. Nothing reports it either; the dispatch lands and does nothing.
 **Good — named arg:**
 
 ```html
-<input @on.input="setCount e.valueAsInt" />
+<input @on.input="countTo e.valueAsInt" />
 ```
 ```moonbit nocheck
 // nocheck: a fragment (a match arm or an expression), not a top-level item
-Receive("setCount", [Num(n), ..]) => Some({ ..s, count: n.to_int() })
+Receive("countTo", [Num(n), ..]) => Next({ ..s, count: n.to_int() })
 ```
 
 At test time, the "good" form is driven with one call —
 `h.type_into("input", "42")` — and unit-tested with a literal —
-`u(state, Receive("setCount", [Num(42)]), @tutuca.NullCtx::{  })` against
+`u(state, Receive("countTo", [Num(42)]), @tutuca.NullCtx::{  })` against
 the extracted update fn.
 
 The built-in named args are listed in

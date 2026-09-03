@@ -95,8 +95,6 @@ pub(all) enum RequestExampleReceive {
   LoadDataError(String)
   LoadDataUnhandled
   LoadAnotherWay
-  ResetQuery
-  SetQuery(String)
   ToggleView
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
@@ -127,8 +125,6 @@ pub fn RequestExampleReceive::from_dispatch(
       ("loadDataError", [Str(a0)]) => LoadDataError(a0)
       ("loadDataUnhandled", []) => LoadDataUnhandled
       ("loadAnotherWay", []) => LoadAnotherWay
-      ("resetQuery", []) => ResetQuery
-      ("setQuery", [Str(a0)]) => SetQuery(a0)
       ("toggleView", []) => ToggleView
       _ => {
         match name {
@@ -137,8 +133,6 @@ pub fn RequestExampleReceive::from_dispatch(
           "loadDataError" => @tutuca.bad_payload(name, "String", args)
           "loadDataUnhandled" => @tutuca.bad_payload(name, "", args)
           "loadAnotherWay" => @tutuca.bad_payload(name, "", args)
-          "resetQuery" => @tutuca.bad_payload(name, "", args)
-          "setQuery" => @tutuca.bad_payload(name, "String", args)
           "toggleView" => @tutuca.bad_payload(name, "", args)
           _ => ()
         }
@@ -159,8 +153,6 @@ pub fn RequestExampleReceive::to_dispatch(
     LoadDataError(a0) => ("loadDataError", [Str(a0)])
     LoadDataUnhandled => ("loadDataUnhandled", [])
     LoadAnotherWay => ("loadAnotherWay", [])
-    ResetQuery => ("resetQuery", [])
-    SetQuery(a0) => ("setQuery", [Str(a0)])
     ToggleView => ("toggleView", [])
     Unknown(n, args) => (n, args)
   }
@@ -191,8 +183,6 @@ pub let request_example_global_style : String = ""
 /// Every bare `@on` handler name the views reference.
 pub(all) enum RequestExampleInput {
   LoadAnotherWay
-  ResetQuery
-  SetQuery
   ToggleView
 } derive(Eq, @debug.Debug)
 
@@ -200,8 +190,6 @@ pub(all) enum RequestExampleInput {
 pub fn RequestExampleInput::name(self : RequestExampleInput) -> String {
   match self {
     LoadAnotherWay => "loadAnotherWay"
-    ResetQuery => "resetQuery"
-    SetQuery => "setQuery"
     ToggleView => "toggleView"
   }
 }
@@ -210,8 +198,6 @@ pub fn RequestExampleInput::name(self : RequestExampleInput) -> String {
 pub fn RequestExampleInput::parse(s : String) -> RequestExampleInput? {
   match s {
     "loadAnotherWay" => Some(LoadAnotherWay)
-    "resetQuery" => Some(ResetQuery)
-    "setQuery" => Some(SetQuery)
     "toggleView" => Some(ToggleView)
     _ => None
   }
@@ -230,10 +216,6 @@ pub fn RequestExampleInput::parse(s : String) -> RequestExampleInput? {
 pub(all) enum RequestExampleMsg {
   /// `@on.click="loadAnotherWay …"`
   LoadAnotherWay
-  /// `@on.keydown="resetQuery …"`
-  ResetQuery
-  /// `@on.input="setQuery …"`
-  SetQuery(String)
   /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -251,8 +233,6 @@ pub fn RequestExampleMsg::from_dispatch(
   Some(
     match (name, args) {
       ("loadAnotherWay", []) => LoadAnotherWay
-      ("resetQuery", []) => ResetQuery
-      ("setQuery", [Str(a0)]) => SetQuery(a0)
       _ => Unknown(name, args)
     },
   )
@@ -289,7 +269,7 @@ impl @component.Fields for RequestExampleState with fn schema() {
       @component.FieldInfo::new("isLoading", TyBool),
       @component.FieldInfo::new("error", TyOption(TyText)),
     ],
-    view_handlers=["loadAnotherWay", "resetQuery", "setQuery", "toggleView"],
+    view_handlers=["loadAnotherWay", "toggleView"],
     receives=["init", "loadDataOk", "loadDataError", "loadDataUnhandled"],
     methods=["notFailedWhileLoading"],
     invariants=["notFailedWhileLoading"],

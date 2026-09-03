@@ -518,6 +518,25 @@ pub fn[N] Harness::send_at_root(
 }
 
 ///|
+/// Write a member at the root — the harness twin of a view's `.field = v`.
+///
+/// Beside `send_at_root`, and the pair is the distinction the plan calls the
+/// one docs-vs-runtime contradiction: a dispatch ASKS a component to decide
+/// something and a write says what a member is now. A test that used to spell
+/// a write as `send_at_root("setCount", [Num(3)])` was leaning on a fallback
+/// that no longer exists, and the fallback is what made the two look alike.
+pub fn[N] Harness::set(
+  self : Harness[N],
+  name : String,
+  value : @tutuca.Value,
+) -> Unit {
+  let first = self.app.set_at_root(name, value)
+  if first.pending {
+    self.app.drain_batched(max_per_batch=10000, () => ()) |> ignore
+  }
+}
+
+///|
 /// Every refusal `body` produced — filtered from the runtime notice channel,
 /// scoped to one stretch of driving and switched off again afterwards.
 ///

@@ -340,11 +340,6 @@ pub fn comp_view_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (CompViewInput) -> ((
-    CompViewState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -362,15 +357,6 @@ pub fn comp_view_component(
         @component.build_bucket(
           ([ArrowText] : Array[CompViewMethod]),
           CompViewMethod::name,
-          f,
-        )
-      None => Map([])
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Toggle] : Array[CompViewInput]),
-          CompViewInput::name,
           f,
         )
       None => Map([])
@@ -563,11 +549,6 @@ pub fn comp_section_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (CompSectionInput) -> ((
-    CompSectionState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   loop_with? : (CompSectionLoopWith) -> ((
     CompSectionState,
     @tutuca.Value,
@@ -609,15 +590,6 @@ pub fn comp_section_component(
         bucket[k] = h
       }
       bucket
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([NextPage, PrevPage, Toggle] : Array[CompSectionInput]),
-          CompSectionInput::name,
-          f,
-        )
-      None => Map([])
     },
     loop_with=match loop_with {
       Some(f) =>

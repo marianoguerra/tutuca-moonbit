@@ -82,16 +82,27 @@ pub(all) enum Value {
 }
 
 ///|
-/// Result of a synchronous public property write.
+/// What a write to a member ANSWERED.
 ///
-/// `PRefused` means the property exists and is writable, but its setter or a
-/// child setter declined the transition. Refusal details travel through the
-/// existing refusal recorder, so this value remains small and composable.
-pub(all) enum PropertyWrite {
-  PMissing
-  PUnchanged
-  PRefused
-  PChanged(Value)
+/// Four answers because a write has four, and they are the same four every
+/// other refusing seam in the system names: nothing claimed it, a rule refused
+/// it, nothing changed, here is the successor.
+///
+/// It was `PropertyWrite`, whose `PRefused` carried nothing — the refusal
+/// travelled separately through the recorder, so a caller holding one had to
+/// go and look somewhere else for the reason. `Refused` carries it.
+///
+/// `PropertyWrite` is the older name and still reads for one release. The
+/// `P`-prefixed case names could not survive it: MoonBit has no alias for a
+/// constructor, and `PRefused` changed shape anyway.
+#alias(PropertyWrite)
+pub(all) enum Outcome {
+  Missing
+  Unchanged
+  /// The member exists and is writable, and its setter — or a child's, or a
+  /// rule the component keeps — declined the transition.
+  Refused(Refusal)
+  Changed(Value)
 }
 
 ///|
@@ -149,19 +160,19 @@ pub(open) trait Obj {
   /// `member`: fields are representation; properties are interface.
   fn property(Self, name : String) -> Value? = _
   /// Apply one synchronous, pure property transition.
-  fn set_property(Self, name : String, v : Value) -> PropertyWrite = _
+  fn set_property(Self, name : String, v : Value) -> Outcome = _
   /// Read a virtual member for the component's own view. Unlike
   /// `property`, this includes private properties. The stack-bearing form
   /// leaves room for computed members that resolve dynamic render bindings.
   fn member_at(Self, name : String, stack : &Stack) -> Value? = _
   /// Apply a property transition from the component's own view. This is the
   /// private-capable counterpart of `set_property`.
-  fn set_member(Self, name : String, v : Value) -> PropertyWrite = _
+  fn set_member(Self, name : String, v : Value) -> Outcome = _
   /// Apply a collection/scalar operation to a private-or-public member from
   /// the component's own view. Operation names are source-level verbs such as
   /// `push`, `removeAt`, and `toggle`; generated handler spellings never cross
   /// this boundary.
-  fn mutate_member(Self, name : String, operation : String, args : Array[Value]) -> PropertyWrite = _
+  fn mutate_member(Self, name : String, operation : String, args : Array[Value]) -> Outcome = _
   fn item(Self, key : PathKey) -> Value? = _
   fn with_item(Self, key : PathKey, v : Value) -> Value? = _
   // Custom-sequence hook (the analogue of SEQ_INFO): ordered (key, value)
@@ -261,7 +272,7 @@ impl Obj with fn property(_self, _name) {
 
 ///|
 impl Obj with fn set_property(_self, _name, _v) {
-  PMissing
+  Missing
 }
 
 ///|
@@ -279,7 +290,7 @@ impl Obj with fn set_member(self, name, v) {
 
 ///|
 impl Obj with fn mutate_member(_self, _name, _operation, _args) {
-  PMissing
+  Missing
 }
 
 ///|

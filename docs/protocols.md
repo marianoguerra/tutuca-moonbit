@@ -137,7 +137,7 @@ last good state.
 Protocols cover the component features that cross a component boundary:
 handled and expressed messages/intents, semantic views, typed reads,
 `provide`/`lookup` bindings, and component-valued fields. State fields, helper
-types, fixtures, generated mutators, contracts, and script `pred`/`compute`
+types, fixtures, contracts, and script `pred`/`compute`
 declarations remain implementation details. A stable zero-argument observation
 should be a protocol `property`; an operation with arguments or an asynchronous
 answer should be a message or intent. This keeps runtime conformance structural

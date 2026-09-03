@@ -76,12 +76,20 @@ fn dn_d_example_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setQuery"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
-        @anode.on("keydown", @tutuca.Expr::name("resetQuery"), modifiers=[
-          "cancel",
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "query",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
+        @anode.on(
+          "keydown",
+          @anode.const_null(),
+          modifiers=["cancel"],
+          action=@anode.reset_property_action("query"),
+        ),
       ],
       [
         @anode.on("drop", @tutuca.Expr::name("onDropOnItem"), args=[
@@ -120,11 +128,6 @@ pub fn dn_d_example_component(
   update? : (DnDExampleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     DnDExampleState,
   ],
-  swap? : (DnDExampleInput) -> ((
-    DnDExampleState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   when? : (DnDExampleWhen) -> ((
     DnDExampleState,
     @tutuca.Value,
@@ -144,15 +147,6 @@ pub fn dn_d_example_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([OnDropOnItem, ResetQuery, SetQuery] : Array[DnDExampleInput]),
-          DnDExampleInput::name,
-          f,
-        )
-      None => Map([])
-    },
     when=match when {
       Some(f) =>
         @component.build_bucket(

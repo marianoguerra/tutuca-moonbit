@@ -26,11 +26,11 @@ fn todo_module() -> @component.ModuleDef {
         "main",
         raw_view=(
           #|<div>
-          #|  <input class="draft" :value=".draft" @on.input="setDraft e.value">
+          #|  <input class="draft" :value=".draft" @on.input=".draft = e.value">
           #|  <button class="add" @on.click="add">add</button>
           #|  <ul><li class="todo" @each=".todos"><x text="@value"></x></li></ul>
           #|  <output class="count" @text="$total"></output>
-          #|  <input class="all" type="checkbox" :checked=".done" @on.input="setDone e.value">
+          #|  <input class="all" type="checkbox" :checked=".done" @on.input=".done = e.value">
           #|  <a class="home" href="/here">home</a>
           #|  <button class="clear" @on.click="clear">clear</button>
           #|</div>

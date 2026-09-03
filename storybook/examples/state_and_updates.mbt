@@ -35,8 +35,6 @@ fn attribute_binding_comp() -> @component.Component {
             // `Unhandled`, because this arm claimed `setRawNumber`.
             None => Unchanged
           }
-        // Served by the generated mutators for `str` and `bool`.
-        Some(SetStr(_)) | Some(SetBool(_)) => Unhandled
         Some(Unknown(_, _)) | None => Unhandled
       }
     },
@@ -99,10 +97,6 @@ fn event_modifiers_comp() -> @component.Component {
     _ctx,
   ) => {
     match EventModifiersMsg::from_dispatch(msg) {
-      // Served by the mutators generated from the state's fields: the
-      // view spells them bare now, so they arrive as Inputs, and `Unhandled`
-      // falls through to them.
-      Some(ResetQuery | SetLastSentSearch(_)) => Unhandled
       Some(OnInput(v)) => Next({ ..s, query: v, })
       Some(Unknown(_, _)) | None => Unhandled
     }

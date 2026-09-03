@@ -239,14 +239,29 @@ pub using @tutuca {type Dispatch}
 /// The same three the refusal taxonomy names: nothing claimed it, a rule
 /// refused it, nothing changed.
 pub(all) enum Update[S] {
-  /// No arm claimed this name. Try the next answerer — the generated
-  /// mutators, for an `Input`.
+  /// No arm claimed this name. Nothing else is tried — a dispatch nothing
+  /// answers is a refusal, and this is what says so.
   Unhandled
   /// This arm answered, and the state stays exactly as it is. Nothing further
   /// is tried, which is what makes a veto expressible.
   Unchanged
   /// This arm answered; here is the successor.
   Next(S)
+  /// This arm answered by SUPERSEDING the node — with an instance of another
+  /// component, most often.
+  ///
+  /// It was a bucket of its own, `swap`, keyed by name and consulted before
+  /// `update`. Nothing in the block language declares one, so it was a second
+  /// answering path that existed only to say a thing this case says: what a
+  /// handler answers with is a successor, and a successor of a different type
+  /// is still a successor.
+  Replace(@tutuca.Value)
+  /// This arm REFUSED, and here is why.
+  ///
+  /// Distinct from `Unchanged`, which is a decision that nothing moves. A
+  /// refusal is a failure with a reason, and it reaches the recorder and the
+  /// trace the same way a broken rule does.
+  Refused(@tutuca.Refusal)
 }
 
 ///|
@@ -300,7 +315,6 @@ pub struct Component {
   // answered in the swap and alter buckets rather than in `update`. The other
   // three arrays that lived here — compute_names, generated_names, has_update
   // — were recoverable from the schema or read by nothing, and are gone.
-  swap_names : Array[String]
   alter_names : Array[String]
   /// What this component DECLARES. Everything above this line is what a
   /// runtime descriptor could recover by reflection; this is the thing that
@@ -369,7 +383,6 @@ declare pub fn[S : @tutuca.Fields] component(
     String,
     (S, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
   ],
-  swap? : Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?],
   when? : Map[
     String,
     (S, @tutuca.Value, @tutuca.Value, @tutuca.Value, &@tutuca.Stack) -> Bool,

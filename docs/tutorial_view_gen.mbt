@@ -241,137 +241,12 @@ impl @component.Fields for ProfileState with fn decode(f) {
 }
 
 ///|
-/// The Receive arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum ProfileReceive {
-  SetName(String)
-  ToggleWaving
-  /// A receive the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Receive dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-///
-/// It is also REPORTED. `Unknown` answers two different questions —
-/// nobody declares this name, and this name is declared here and was
-/// handed the wrong shape — and the second one is a bug in the sender
-/// that used to be indistinguishable from silence. Every arm below that
-/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
-/// which costs nothing unless a host is listening.
-pub fn ProfileReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> ProfileReceive? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setName", [Str(a0)]) => SetName(a0)
-      ("toggleWaving", []) => ToggleWaving
-      _ => {
-        match name {
-          "setName" => @tutuca.bad_payload(name, "String", args)
-          "toggleWaving" => @tutuca.bad_payload(name, "", args)
-          _ => ()
-        }
-        Unknown(name, args)
-      }
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn ProfileReceive::to_dispatch(
-  self : ProfileReceive,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    SetName(a0) => ("setName", [Str(a0)])
-    ToggleWaving => ("toggleWaving", [])
-    Unknown(n, args) => (n, args)
-  }
-}
-
-///|
-/// Send this message to self; it arrives as a later Receive dispatch.
-///
-/// The name comes from the schema, so it cannot drift from the one
-/// `from_dispatch` decodes.
-pub fn ProfileReceive::send(self : ProfileReceive, ctx : &@tutuca.Ctx) -> Unit {
-  let (name, args) = self.to_dispatch()
-  ctx.send(name, args)
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let profile_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let profile_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum ProfileInput {
-  SetName
-  ToggleWaving
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ProfileInput::name(self : ProfileInput) -> String {
-  match self {
-    SetName => "setName"
-    ToggleWaving => "toggleWaving"
-  }
-}
-
-///|
-pub fn ProfileInput::parse(s : String) -> ProfileInput? {
-  match s {
-    "setName" => Some(SetName)
-    "toggleWaving" => Some(ToggleWaving)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to tutorial.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum ProfileMsg {
-  /// `@on.input="setName …"`
-  SetName(String)
-  /// `@on.click="toggleWaving …"`
-  ToggleWaving
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn ProfileMsg::from_dispatch(d : @component.Dispatch) -> ProfileMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setName", [Str(a0)]) => SetName(a0)
-      ("toggleWaving", []) => ToggleWaving
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -388,7 +263,6 @@ impl @component.Fields for ProfileState with fn schema() {
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("waving", TyBool),
     ],
-    view_handlers=["setName", "toggleWaving"],
     view_names=["main"],
   )
 }
@@ -437,145 +311,12 @@ impl @component.Fields for SearchState with fn decode(f) {
 }
 
 ///|
-/// The Receive arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum SearchReceive {
-  ResetDraft
-  SetDraft(String)
-  SetSent(String)
-  /// A receive the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Receive dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-///
-/// It is also REPORTED. `Unknown` answers two different questions —
-/// nobody declares this name, and this name is declared here and was
-/// handed the wrong shape — and the second one is a bug in the sender
-/// that used to be indistinguishable from silence. Every arm below that
-/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
-/// which costs nothing unless a host is listening.
-pub fn SearchReceive::from_dispatch(d : @component.Dispatch) -> SearchReceive? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("resetDraft", []) => ResetDraft
-      ("setDraft", [Str(a0)]) => SetDraft(a0)
-      ("setSent", [Str(a0)]) => SetSent(a0)
-      _ => {
-        match name {
-          "resetDraft" => @tutuca.bad_payload(name, "", args)
-          "setDraft" => @tutuca.bad_payload(name, "String", args)
-          "setSent" => @tutuca.bad_payload(name, "String", args)
-          _ => ()
-        }
-        Unknown(name, args)
-      }
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn SearchReceive::to_dispatch(
-  self : SearchReceive,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    ResetDraft => ("resetDraft", [])
-    SetDraft(a0) => ("setDraft", [Str(a0)])
-    SetSent(a0) => ("setSent", [Str(a0)])
-    Unknown(n, args) => (n, args)
-  }
-}
-
-///|
-/// Send this message to self; it arrives as a later Receive dispatch.
-///
-/// The name comes from the schema, so it cannot drift from the one
-/// `from_dispatch` decodes.
-pub fn SearchReceive::send(self : SearchReceive, ctx : &@tutuca.Ctx) -> Unit {
-  let (name, args) = self.to_dispatch()
-  ctx.send(name, args)
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let search_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let search_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum SearchInput {
-  ResetDraft
-  SetDraft
-  SetSent
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SearchInput::name(self : SearchInput) -> String {
-  match self {
-    ResetDraft => "resetDraft"
-    SetDraft => "setDraft"
-    SetSent => "setSent"
-  }
-}
-
-///|
-pub fn SearchInput::parse(s : String) -> SearchInput? {
-  match s {
-    "resetDraft" => Some(ResetDraft)
-    "setDraft" => Some(SetDraft)
-    "setSent" => Some(SetSent)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to tutorial.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum SearchMsg {
-  /// `@on.keydown="resetDraft …"`
-  ResetDraft
-  /// `@on.input="setDraft …"`
-  SetDraft(String)
-  /// `@on.keydown="setSent …"`
-  SetSent(String)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn SearchMsg::from_dispatch(d : @component.Dispatch) -> SearchMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("resetDraft", []) => ResetDraft
-      ("setDraft", [Str(a0)]) => SetDraft(a0)
-      ("setSent", [Str(a0)]) => SetSent(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -592,7 +333,6 @@ impl @component.Fields for SearchState with fn schema() {
       @component.FieldInfo::new("draft", TyText),
       @component.FieldInfo::new("sent", TyText),
     ],
-    view_handlers=["resetDraft", "setDraft", "setSent"],
     view_names=["main"],
   )
 }
@@ -641,125 +381,12 @@ impl @component.Fields for ToggleState with fn decode(f) {
 }
 
 ///|
-/// The Receive arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum ToggleReceive {
-  ToggleOn
-  /// A receive the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Receive dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-///
-/// It is also REPORTED. `Unknown` answers two different questions —
-/// nobody declares this name, and this name is declared here and was
-/// handed the wrong shape — and the second one is a bug in the sender
-/// that used to be indistinguishable from silence. Every arm below that
-/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
-/// which costs nothing unless a host is listening.
-pub fn ToggleReceive::from_dispatch(d : @component.Dispatch) -> ToggleReceive? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("toggleOn", []) => ToggleOn
-      _ => {
-        match name {
-          "toggleOn" => @tutuca.bad_payload(name, "", args)
-          _ => ()
-        }
-        Unknown(name, args)
-      }
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn ToggleReceive::to_dispatch(
-  self : ToggleReceive,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    ToggleOn => ("toggleOn", [])
-    Unknown(n, args) => (n, args)
-  }
-}
-
-///|
-/// Send this message to self; it arrives as a later Receive dispatch.
-///
-/// The name comes from the schema, so it cannot drift from the one
-/// `from_dispatch` decodes.
-pub fn ToggleReceive::send(self : ToggleReceive, ctx : &@tutuca.Ctx) -> Unit {
-  let (name, args) = self.to_dispatch()
-  ctx.send(name, args)
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let toggle_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let toggle_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum ToggleInput {
-  ToggleOn
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ToggleInput::name(self : ToggleInput) -> String {
-  match self {
-    ToggleOn => "toggleOn"
-  }
-}
-
-///|
-pub fn ToggleInput::parse(s : String) -> ToggleInput? {
-  match s {
-    "toggleOn" => Some(ToggleOn)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to tutorial.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum ToggleMsg {
-  /// `@on.click="toggleOn …"`
-  ToggleOn
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn ToggleMsg::from_dispatch(d : @component.Dispatch) -> ToggleMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("toggleOn", []) => ToggleOn
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -776,7 +403,6 @@ impl @component.Fields for ToggleState with fn schema() {
       @component.FieldInfo::new("on", TyBool),
       @component.FieldInfo::new("message", TyAny),
     ],
-    view_handlers=["toggleOn"],
     view_names=["main"],
   )
 }
@@ -1174,7 +800,6 @@ impl @component.Fields for ChatState with fn decode(f) {
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum ChatReceive {
-  SetDraft(String)
   Submit
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
@@ -1198,11 +823,9 @@ pub fn ChatReceive::from_dispatch(d : @component.Dispatch) -> ChatReceive? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
-      ("setDraft", [Str(a0)]) => SetDraft(a0)
       ("submit", []) => Submit
       _ => {
         match name {
-          "setDraft" => @tutuca.bad_payload(name, "String", args)
           "submit" => @tutuca.bad_payload(name, "", args)
           _ => ()
         }
@@ -1218,7 +841,6 @@ pub fn ChatReceive::to_dispatch(
   self : ChatReceive,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
-    SetDraft(a0) => ("setDraft", [Str(a0)])
     Submit => ("submit", [])
     Unknown(n, args) => (n, args)
   }
@@ -1245,14 +867,12 @@ pub let chat_global_style : String = ""
 ///|
 /// Every bare `@on` handler name the views reference.
 pub(all) enum ChatInput {
-  SetDraft
   Submit
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn ChatInput::name(self : ChatInput) -> String {
   match self {
-    SetDraft => "setDraft"
     Submit => "submit"
   }
 }
@@ -1260,7 +880,6 @@ pub fn ChatInput::name(self : ChatInput) -> String {
 ///|
 pub fn ChatInput::parse(s : String) -> ChatInput? {
   match s {
-    "setDraft" => Some(SetDraft)
     "submit" => Some(Submit)
     _ => None
   }
@@ -1273,8 +892,6 @@ pub fn ChatInput::parse(s : String) -> ChatInput? {
 /// handler added to tutorial.html breaks every `match` over this type
 /// until it is handled.
 pub(all) enum ChatMsg {
-  /// `@on.input="setDraft …"`
-  SetDraft(String)
   /// `@on.click="submit …"`
   Submit
   /// A dispatch the views do not declare, or a declared name
@@ -1291,7 +908,6 @@ pub fn ChatMsg::from_dispatch(d : @component.Dispatch) -> ChatMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
-      ("setDraft", [Str(a0)]) => SetDraft(a0)
       ("submit", []) => Submit
       _ => Unknown(name, args)
     },
@@ -1313,7 +929,7 @@ impl @component.Fields for ChatState with fn schema() {
       @component.FieldInfo::new("draft", TyText),
       @component.FieldInfo::new("status", TyComp(Some("Status"))),
     ],
-    view_handlers=["setDraft", "submit"],
+    view_handlers=["submit"],
     view_names=["main"],
   )
 }

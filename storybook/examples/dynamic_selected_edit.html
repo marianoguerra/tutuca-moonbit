@@ -49,4 +49,4 @@
   </div>
 </template>
 <template id="DseEntry"><span class="font-mono entry" @text=".name"></span></template>
-<template id="DseEntry:edit"><input class="input input-bordered w-full edit-name" :value=".name" @on.input="setName e.value" placeholder="Entry name"></template>
+<template id="DseEntry:edit"><input class="input input-bordered w-full edit-name" :value=".name" @on.input=".name = e.value" placeholder="Entry name"></template>

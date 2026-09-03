@@ -90,8 +90,8 @@ For a component named `Counter` the generated module declares
 `counter_component()`, the wrapper that passes them,
 `CounterInput` and `CounterMsg` (`@on` handler names, with payload types
 inferred from the argument shapes at the call sites, plus
-`CounterMsg::from_dispatch`), `CounterMethod` with `counter_compute` /
-`counter_swap` (the `$`-callables, as exhaustive matches).
+`CounterMsg::from_dispatch`), `CounterMethod` with `counter_compute` (the `$`-callables, as an exhaustive
+match).
 The package it lands in must import
 `"marianoguerra/tutuca/core" @tutuca`, `"marianoguerra/tutuca/component"` and
 `"moonbitlang/core/debug"`.
@@ -127,10 +127,10 @@ The payoff is in `update` (see `demo/counterlib/` for the worked example):
 ```mbt nocheck
 update=(s : CounterState, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
   Some(Add(d)) => ...          // `d` is a Double: `@on.click="add 1"`
-  Some(SetLabel(l)) => ...     // `l` is a String: `@on.input="setLabel e.value"`
-  Some(ResetCount) => Unhandled
   Some(Unknown(_, _)) | None => Unhandled
 }
+// `.count = default` and `.label = e.value` are writes the view performs
+// itself, so they raise no name and there is no case here for them.
 ```
 
 Adding `@on.click="del 1"` to `counter.html` and regenerating makes that match

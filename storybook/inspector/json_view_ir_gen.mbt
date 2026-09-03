@@ -633,7 +633,16 @@ fn json_array_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", @tutuca.Expr::name("toggleIsExpanded"))],
+      [
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "isExpanded",
+            @tutuca.Expr::app("not", [@tutuca.Expr::field("isExpanded")]),
+          ),
+        ),
+      ],
       [@anode.on("click", @tutuca.Expr::name("prevPage"))],
       [@anode.on("click", @tutuca.Expr::name("nextPage"))],
     ],
@@ -698,11 +707,6 @@ pub fn json_array_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (JsonArrayInput) -> ((
-    JsonArrayState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   loop_with? : (JsonArrayLoopWith) -> ((
     JsonArrayState,
     @tutuca.Value,
@@ -744,15 +748,6 @@ pub fn json_array_component(
         bucket[k] = h
       }
       bucket
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([NextPage, PrevPage, ToggleIsExpanded] : Array[JsonArrayInput]),
-          JsonArrayInput::name,
-          f,
-        )
-      None => Map([])
     },
     loop_with=match loop_with {
       Some(f) =>
@@ -880,7 +875,16 @@ fn json_object_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", @tutuca.Expr::name("toggleIsExpanded"))],
+      [
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "isExpanded",
+            @tutuca.Expr::app("not", [@tutuca.Expr::field("isExpanded")]),
+          ),
+        ),
+      ],
       [@anode.on("click", @tutuca.Expr::name("prevPage"))],
       [@anode.on("click", @tutuca.Expr::name("nextPage"))],
     ],
@@ -945,11 +949,6 @@ pub fn json_object_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (JsonObjectInput) -> ((
-    JsonObjectState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   loop_with? : (JsonObjectLoopWith) -> ((
     JsonObjectState,
     @tutuca.Value,
@@ -991,15 +990,6 @@ pub fn json_object_component(
         bucket[k] = h
       }
       bucket
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([NextPage, PrevPage, ToggleIsExpanded] : Array[JsonObjectInput]),
-          JsonObjectInput::name,
-          f,
-        )
-      None => Map([])
     },
     loop_with=match loop_with {
       Some(f) =>

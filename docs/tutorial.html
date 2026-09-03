@@ -96,9 +96,9 @@
 
 <template id="Profile">
   <section>
-    <input class="who" :value=".name" @on.input="setName e.value"
+    <input class="who" :value=".name" @on.input=".name = e.value"
       :title="$'Editing {.name}'">
-    <button class="wave" @on.click="toggleWaving">wave</button>
+    <button class="wave" @on.click=".waving = not .waving">wave</button>
     <p class="out" @text="$'Hello, {.name}!'"></p>
   </section>
 </template>
@@ -106,16 +106,16 @@
 <template id="Search">
   <section>
     <input class="q" :value=".draft"
-      @on.input="setDraft e.value"
-      @on.keydown+send="setSent e.value"
-      @on.keydown+cancel="resetDraft">
+      @on.input=".draft = e.value"
+      @on.keydown+send=".sent = e.value"
+      @on.keydown+cancel=".draft = default">
     <p class="sent" @text=".sent"></p>
   </section>
 </template>
 
 <template id="Toggle">
   <section>
-    <button class="flip" @on.click="toggleOn"
+    <button class="flip" @on.click=".on = not .on"
       @if.class=".on" @then="'flip is-on'" @else="'flip is-off'">toggle</button>
     <p class="yes" @show=".on">it is ON</p>
     <p class="no" @hide=".on">it is OFF</p>
@@ -153,7 +153,7 @@
 <template id="Chat">
   <section>
     <x render=".status"></x>
-    <input class="draft" :value=".draft" @on.input="setDraft e.value">
+    <input class="draft" :value=".draft" @on.input=".draft = e.value">
     <button class="send" @on.click="submit">send</button>
   </section>
 </template>

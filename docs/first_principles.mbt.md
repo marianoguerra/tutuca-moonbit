@@ -451,7 +451,7 @@ produces a new instance:
 test "instances are copy-on-write values, visible through Obj" {
   let greeting = fp_greeting_component(init={ name: "world", })
   let a = greeting.make(Map([]))
-  // writes go through the Obj trait (or generated mutators from views):
+  // writes go through the Obj trait (or a `.field = v` in a view):
   // they return a NEW instance value
   guard! a is Obj(ao)
   guard! ao.with_field("name", Str("reader")) is Some(b)

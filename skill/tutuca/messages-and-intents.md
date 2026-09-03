@@ -538,12 +538,13 @@ update=(s : DebugState, msg, _ctx) => match msg {
 
 (There is no `"$unknown"` sentinel behind this. Dispatch does **one**
 lookup; a typed `update` whose match ends in `_ => Unhandled` already
-*is* the catch-all, with the name statically bound. A name nothing
-handles is simply dropped.)
+*is* the catch-all, with the name statically bound.)
 
 Return `Next(new_state)` to swap the new value into the dispatch path,
-`Unchanged` for "this arm ran and nothing moves", or `Unhandled` for "not
-mine" — which is the one that falls through to a generated mutator.
+`Unchanged` for "this arm ran and nothing moves", `Replace(v)` to supersede
+this node with a different value, `Refused(r)` to turn the dispatch down and
+say why, or `Unhandled` for "not mine". A `Receive` nothing answers is refused
+with `NoHandler`: there is no setter behind the name to fall through to.
 
 ## Positional delivery across async
 

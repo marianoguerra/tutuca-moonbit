@@ -60,7 +60,6 @@ impl @component.Fields for EmojiPickerState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum EmojiPickerReceive {
   OnEmojiClick(String)
-  ToggleIsPickerVisible
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -86,11 +85,9 @@ pub fn EmojiPickerReceive::from_dispatch(
   Some(
     match (name, args) {
       ("onEmojiClick", [Str(a0)]) => OnEmojiClick(a0)
-      ("toggleIsPickerVisible", []) => ToggleIsPickerVisible
       _ => {
         match name {
           "onEmojiClick" => @tutuca.bad_payload(name, "String", args)
-          "toggleIsPickerVisible" => @tutuca.bad_payload(name, "", args)
           _ => ()
         }
         Unknown(name, args)
@@ -106,7 +103,6 @@ pub fn EmojiPickerReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     OnEmojiClick(a0) => ("onEmojiClick", [Str(a0)])
-    ToggleIsPickerVisible => ("toggleIsPickerVisible", [])
     Unknown(n, args) => (n, args)
   }
 }
@@ -136,14 +132,12 @@ pub let emoji_picker_global_style : String = ""
 /// Every bare `@on` handler name the views reference.
 pub(all) enum EmojiPickerInput {
   OnEmojiClick
-  ToggleIsPickerVisible
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn EmojiPickerInput::name(self : EmojiPickerInput) -> String {
   match self {
     OnEmojiClick => "onEmojiClick"
-    ToggleIsPickerVisible => "toggleIsPickerVisible"
   }
 }
 
@@ -151,7 +145,6 @@ pub fn EmojiPickerInput::name(self : EmojiPickerInput) -> String {
 pub fn EmojiPickerInput::parse(s : String) -> EmojiPickerInput? {
   match s {
     "onEmojiClick" => Some(OnEmojiClick)
-    "toggleIsPickerVisible" => Some(ToggleIsPickerVisible)
     _ => None
   }
 }
@@ -165,8 +158,6 @@ pub fn EmojiPickerInput::parse(s : String) -> EmojiPickerInput? {
 pub(all) enum EmojiPickerMsg {
   /// `@on.emoji-click="onEmojiClick …"`
   OnEmojiClick(String)
-  /// `@on.click="toggleIsPickerVisible …"`
-  ToggleIsPickerVisible
   /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -184,7 +175,6 @@ pub fn EmojiPickerMsg::from_dispatch(
   Some(
     match (name, args) {
       ("onEmojiClick", [Str(a0)]) => OnEmojiClick(a0)
-      ("toggleIsPickerVisible", []) => ToggleIsPickerVisible
       _ => Unknown(name, args)
     },
   )
@@ -205,7 +195,7 @@ impl @component.Fields for EmojiPickerState with fn schema() {
       @component.FieldInfo::new("current", TyAny),
       @component.FieldInfo::new("isPickerVisible", TyBool),
     ],
-    view_handlers=["onEmojiClick", "toggleIsPickerVisible"],
+    view_handlers=["onEmojiClick"],
     view_names=["main"],
   )
 }

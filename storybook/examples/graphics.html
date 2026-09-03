@@ -32,7 +32,7 @@
       <circle @each=".palette" @enrich-with="swatch"
         :cx="@cx" cy="98" r="18" :fill="@value"
         stroke-width="3" :stroke="@ring"
-        @on.click="setColor @value"></circle>
+        @on.click=".color = @value"></circle>
     </svg>
     <p class="text-sm label">Selected: <x text=".color"></x></p>
   </div>
@@ -40,9 +40,9 @@
 <template id="Quadratic">
   <div class="flex flex-col gap-3">
     <div class="flex gap-3 text-sm">
-      <label class="flex items-center gap-1">a <input type="number" class="input input-sm w-16 in-a" :value=".a" @on.input="setA e.valueAsInt"></label>
-      <label class="flex items-center gap-1">b <input type="number" class="input input-sm w-16 in-b" :value=".b" @on.input="setB e.valueAsInt"></label>
-      <label class="flex items-center gap-1">c <input type="number" class="input input-sm w-16 in-c" :value=".c" @on.input="setC e.valueAsInt"></label>
+      <label class="flex items-center gap-1">a <input type="number" class="input input-sm w-16 in-a" :value=".a" @on.input=".a = e.valueAsInt"></label>
+      <label class="flex items-center gap-1">b <input type="number" class="input input-sm w-16 in-b" :value=".b" @on.input=".b = e.valueAsInt"></label>
+      <label class="flex items-center gap-1">c <input type="number" class="input input-sm w-16 in-c" :value=".c" @on.input=".c = e.valueAsInt"></label>
     </div>
     <math display="block">
       <mn class="m-a" @text=".a"></mn>

@@ -218,11 +218,6 @@ pub fn universal_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (UniversalInput) -> ((
-    UniversalState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -240,15 +235,6 @@ pub fn universal_component(
         @component.build_bucket(
           ([Label] : Array[UniversalMethod]),
           UniversalMethod::name,
-          f,
-        )
-      None => Map([])
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Add, Dropped, Pick, Remove] : Array[UniversalInput]),
-          UniversalInput::name,
           f,
         )
       None => Map([])
@@ -386,7 +372,6 @@ pub fn stack_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  swap? : (StackInput) -> ((StackState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -404,15 +389,6 @@ pub fn stack_component(
         @component.build_bucket(
           ([IsRow, Style] : Array[StackMethod]),
           StackMethod::name,
-          f,
-        )
-      None => Map([])
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([AppendCell, InsertAt] : Array[StackInput]),
-          StackInput::name,
           f,
         )
       None => Map([])
@@ -561,7 +537,6 @@ pub fn grid_component(
     GridState,
   ],
   compute? : (GridMethod) -> ((GridState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value)?,
-  swap? : (GridInput) -> ((GridState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -579,17 +554,6 @@ pub fn grid_component(
         @component.build_bucket(
           ([Style] : Array[GridMethod]),
           GridMethod::name,
-          f,
-        )
-      None => Map([])
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [AddColAfter, AddColBefore, AddRowAfter, AddRowBefore] :
-            Array[GridInput]),
-          GridInput::name,
           f,
         )
       None => Map([])
@@ -672,7 +636,6 @@ pub fn tab_page_component(
   update? : (TabPageState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TabPageState,
   ],
-  swap? : (TabPageInput) -> ((TabPageState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -685,15 +648,6 @@ pub fn tab_page_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([CancelRename, DoneRename, SetLabel] : Array[TabPageInput]),
-          TabPageInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -875,7 +829,6 @@ pub fn tabs_component(
   update? : (TabsState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TabsState,
   ],
-  swap? : (TabsInput) -> ((TabsState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   when? : (TabsWhen) -> ((
     TabsState,
     @tutuca.Value,
@@ -903,15 +856,6 @@ pub fn tabs_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([Activate, AddTab, CloseActive] : Array[TabsInput]),
-          TabsInput::name,
-          f,
-        )
-      None => Map([])
-    },
     when=match when {
       Some(f) =>
         @component.build_bucket(
@@ -1031,9 +975,14 @@ fn textarea_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setText"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "text",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
     ],
   )
@@ -1065,11 +1014,6 @@ pub fn textarea_component(
   update? : (TextareaState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TextareaState,
   ],
-  swap? : (TextareaInput) -> ((
-    TextareaState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -1082,15 +1026,6 @@ pub fn textarea_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetText] : Array[TextareaInput]),
-          TextareaInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,

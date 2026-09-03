@@ -330,7 +330,7 @@ value slot — conditions (`@show`, `@if`), iteration (`@each`,
 `render-each`, `@when`), enrichment (`@enrich-with`, `@loop-with`), template
 expansion (`{…}`, `:attr`, `@text`) — names a field, handler, or macro
 defined on the component (or registered with the scope). Logic lives in
-`update` / `compute` / `swap` and the render buckets (`when` /
+`update` / `compute` and the render buckets (`when` /
 `enrich` / `enrich_scope` / `loop_with`) and is referenced by name; the
 template itself only routes data and events.
 
@@ -488,7 +488,8 @@ my_comp_component(
     FilterItem => Some((s, _key, value, _iter, _stack) => value.str() != "")
   },
   // enrich= / enrich_scope= / loop_with= — see iteration.md
-  // swap= — replace this node with another instance; see The handler buckets
+  // `Replace(v)` in an update arm — supersede this node with another
+  // instance; see Replacing a node with a different component
   slot_args={ // the ONE thing no type can state: a child's ctor arguments
     "child": { "label": Str("pick one") },
   },
@@ -905,7 +906,6 @@ by the first applicable layer:
 | ------ | --------- | ------- |
 | `update` | `(S, Dispatch, &Ctx) -> Update[S]` | every event, message and intent; one match over all the channels |
 | `compute` | `(S, Array[Value], &Stack) -> Value` | a `$name` in a **value** position — pure, no ctx |
-| `swap` | `(S, Array[Value], &Ctx) -> Value?` | a `Receive` that replaces this node with a different **Value** |
 | `when` | `(S, key, value, iterData, &Stack) -> Bool` | `@when` iteration filters |
 | `enrich` | `(S, binds, key, value, iterData, &Stack) -> Unit` | `@enrich-with` per-item binds |
 | `enrich_scope` | `(S, &Stack) -> Map[String, Value]` | scope-level derived binds |
@@ -916,9 +916,8 @@ take a trailing `&@tutuca.Stack`: the render position the body is being asked
 from. `stack.lookup_dynamic(name)` is what answers a `*name` inside one, and it
 is the same lookup the card runtime performs for a `*name` in a slot beside it, so a
 `pred` and the `@show` that reads it agree. A body that asks nothing of it
-names the parameter `_stack`; `gen-views` writes that for you. `swap` takes a
-`&@tutuca.Ctx` instead, because a swap answers a dispatch rather than a render,
-and `loop_with` takes neither.
+names the parameter `_stack`; `gen-views` writes that for you. `loop_with`
+takes neither.
 
 ### Two spellings, by call target
 
@@ -973,7 +972,9 @@ a test nor reuse under a parent that drives it.
 
 The `update` fn is one pattern match over all of them; the framework swaps the
 returned state into the dispatch path (`Next(s)` = the successor, `Unchanged` =
-this arm answered and nothing moved, `Unhandled` = try the next answerer). An intent's three
+this arm answered and nothing moved, `Replace(v)` = this node is superseded by
+another value entirely, `Refused(r)` = this arm turned the dispatch down and
+says why, `Unhandled` = try the next answerer). An intent's three
 answers — `<name>Ok` / `<name>Error` / `<name>Unhandled` — come back as
 ordinary `Receive` arms. The channels — plus `ctx.at()`,
 routes and legs, `forward` / `reply` / `fail`, catch-all arms, and `IntentFn`
@@ -981,51 +982,49 @@ registration — are in
 [messages-and-intents.md](./messages-and-intents.md); worked snippets in
 [patterns/coordinate-components.md](./patterns/coordinate-components.md).
 
-### Dispatch precedence for an addressed name
+### A name is answered, or it is refused
 
-A `Receive` name is offered to three things, in order:
+A `Receive` name is offered to **`update`**, and to nothing else. An arm that
+claims the name answers `Next`, `Unchanged`, `Replace` or `Refused`; an arm that
+does not answers `Unhandled`, and a name nothing answers is refused with
+`NoHandler` — it is not quietly routed somewhere the author did not write.
 
-1. **`swap`**, if it has an entry for that name — it wins over `update`;
-2. **`update`**, if its match claims the name (answers `Next` or `Unchanged`);
-3. the **generated mutator** of that name (`setX`, `pushInX`, `toggleX`, …).
+There is no fallback to a setter the field implies. A view that wants to write a
+field writes it, in the view, as a **property action**:
 
-So a view writing `setTitle 'x'` reaches the setter every field gets without the
-component declaring anything, and an `update` arm answering `Unhandled` falls
-through to it rather than swallowing the event. An arm answering `Unchanged`
-stops there — that is the difference between "not mine" and "mine, and no".
+```html
+<button @on.click=".title = 'x'">rename</button>
+<input @on.input=".query = e.value">
+<button @on.click=".isOpen = not .isOpen">toggle</button>
+<button @on.click=".count = default">reset</button>
+```
 
-The fallback covers **every** addressed name, not just a click. It keys on the
-name alone, so `@on.click="setQuery e.value"` from this component's own view and
-a parent's `ctx.send("setQuery", …)` reach the same setter — the same message
-answered the same way whichever side raised it. Worth knowing when you declare a
-field: its generated mutator is a name any parent can send, not a private
-convenience for the view.
+That is a write, and it reads as one. A name in an event position — `@on.click="rename"`
+— is a **message**, and a message needs an answerer. The two used to be the same
+thing when the name happened to be `setTitle`, which meant a typo'd handler
+silently became a field write and a real handler could be shadowed by the field
+beside it.
 
-An `Intent` is deliberately **not** offered this fallback. A generated mutator
-answers a message at home, never an intent walking up a route — an ancestor's
-setter is not an answer to a question a descendant asked.
+Writing a property from a view goes through the same door a parent's write goes
+through: the domain and the invariants both get asked, and a rejected write comes
+back as a `Refusal` (see [schema.md](./schema.md)).
 
-### What `swap` is for
+### Replacing a node with a different component
 
-`update` returns a new **state struct**, so it can only ever produce another
-instance of the same component. A `swap` handler returns a bare `Value`, which
-means it can replace the node with something else entirely — most usefully
+`update` normally returns a new **state struct**, so it can only produce another
+instance of the same component. `Replace(v)` returns a bare `Value` instead,
+which means the node is superseded by something else entirely — most usefully
 *another component's instance*:
 
 ```moonbit nocheck
-// nocheck: one bucket argument, not a compilable item
-// `@on.click="becomeEditor"` — replace this node with an Editor instance
-swap=i => match i {
-  BecomeEditor => Some((s, _args, _ctx) => Some(editor.make({ "text": Str(s.text) })))
-  _ => None
-}
+// nocheck: one update arm, not a compilable item
+// `@on.click="becomeEditor"` — supersede this node with an Editor instance
+Receive("becomeEditor", _) => Replace(editor.make({ "text": Str(s.text) }))
 ```
 
-Return `None` from the handler to leave the node alone. Reach for `swap` only for
-a genuine change of identity; a view that merely looks different wants
-`@push-view` or an `as=` view (see *Multiple Views & View Stack*). Because it is
-keyed off the `<T>Input` enum, a swap name must be an `@on` handler some view
-calls.
+Reach for `Replace` only for a genuine change of identity; a view that merely
+looks different wants `@push-view` or an `as=` view (see *Multiple Views & View
+Stack*).
 
 ### The render buckets
 

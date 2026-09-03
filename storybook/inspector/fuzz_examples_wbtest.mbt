@@ -83,8 +83,7 @@ fn drawer_module() -> @component.ModuleDef {
 /// transitions instead and this fails — which is the moment the examples stop
 /// describing the component and want rewriting.
 test "the fixture really is a component whose invariant nothing enforces" {
-  guard @fuzz.Plan::of_component(drawer_comp(), source=InternalMutators)
-    is Some(plan) else {
+  guard @fuzz.Plan::of_component(drawer_comp(), source=Fields) is Some(plan) else {
     fail("Drawer carries a spec block, so it has a plan")
   }
   // Both rules the block declares are ones `@core.Val` can answer.
@@ -102,26 +101,26 @@ test "the fixture really is a component whose invariant nothing enforces" {
 ///|
 /// The hand-built steps are shapes the driver actually produces.
 ///
-/// Not the same dispatches — a generated script is drawn, and pinning one
-/// would make this a test of the RNG. What is pinned is that every mutator
-/// name the examples use is one the runtime installs for this schema, so a row
-/// never shows a message that could not have been sent.
-test "the examples name dispatches the runtime really installs" {
-  let installed = @component.schema_mutators(drawer_comp().schema)
+/// Not the same actions — a generated script is drawn, and pinning one would
+/// make this a test of the RNG. What is pinned is that every field the examples
+/// write is one this schema declares, so a row never shows a write that could
+/// not have happened.
+test "the examples name fields the schema really declares" {
+  let declared = drawer_comp().schema.field_names()
   for step in [quiet_step(), broken_step()] {
-    guard step.dispatch is InternalMutator(Receive(name, _)) else {
-      fail("the examples' steps are mutators, and a mutator is a Receive")
+    guard step.dispatch is SetField(name, _) else {
+      fail("the examples' steps are writes")
     }
-    assert_true(installed.contains(name))
+    assert_true(declared.contains(name))
   }
   // `declined_step` is the same, and `unclaimed_step` deliberately is NOT:
   // it is the case where nothing answers the name.
-  guard declined_step().dispatch is InternalMutator(Receive(n, _)) else {
-    fail("a mutator is a Receive")
+  guard declined_step().dispatch is SetField(n, _) else {
+    fail("the examples' steps are writes")
   }
-  assert_true(installed.contains(n))
-  guard unclaimed_step().dispatch is InternalMutator(Receive(gone, _)) else {
-    fail("a mutator is a Receive")
+  assert_true(declared.contains(n))
+  guard unclaimed_step().dispatch is SetField(gone, _) else {
+    fail("the examples' steps are writes")
   }
-  assert_false(installed.contains(gone))
+  assert_false(declared.contains(gone))
 }

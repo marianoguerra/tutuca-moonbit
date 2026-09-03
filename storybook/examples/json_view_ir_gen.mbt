@@ -163,11 +163,6 @@ pub fn json_selector_component(
   update? : (JsonSelectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonSelectorState,
   ],
-  swap? : (JsonSelectorInput) -> ((
-    JsonSelectorState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -180,23 +175,6 @@ pub fn json_selector_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [
-              SetToArray,
-              SetToBool,
-              SetToNull,
-              SetToNumber,
-              SetToObject,
-              SetToString,
-            ] : Array[JsonSelectorInput]),
-          JsonSelectorInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -298,7 +276,18 @@ fn json_bool_main_view_ir() -> @anode.View {
         ),
       ],
     ),
-    [[@anode.on("click", @tutuca.Expr::name("toggleValue"))]],
+    [
+      [
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "value",
+            @tutuca.Expr::app("not", [@tutuca.Expr::field("value")]),
+          ),
+        ),
+      ],
+    ],
   )
 }
 
@@ -328,11 +317,6 @@ pub fn json_bool_component(
   update? : (JsonBoolState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonBoolState,
   ],
-  swap? : (JsonBoolInput) -> ((
-    JsonBoolState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -345,15 +329,6 @@ pub fn json_bool_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([ToggleValue] : Array[JsonBoolInput]),
-          JsonBoolInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -380,9 +355,14 @@ fn json_string_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setValue"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "value",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
     ],
   )
@@ -414,11 +394,6 @@ pub fn json_string_component(
   update? : (JsonStringState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonStringState,
   ],
-  swap? : (JsonStringInput) -> ((
-    JsonStringState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -431,15 +406,6 @@ pub fn json_string_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetValue] : Array[JsonStringInput]),
-          JsonStringInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -502,11 +468,6 @@ pub fn json_number_component(
   update? : (JsonNumberState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonNumberState,
   ],
-  swap? : (JsonNumberInput) -> ((
-    JsonNumberState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -519,15 +480,6 @@ pub fn json_number_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetRawValue] : Array[JsonNumberInput]),
-          JsonNumberInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -595,9 +547,13 @@ fn json_array_main_view_ir() -> @anode.View {
     [
       [@anode.on("click", @tutuca.Expr::name("addItem"))],
       [
-        @anode.on("click", @tutuca.Expr::name("removeInItemsAt"), args=[
-          @tutuca.Expr::bind("key"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.call_property_action("items", "removeAt", [
+            @tutuca.Expr::bind("key"),
+          ]),
+        ),
       ],
       [
         @anode.on("drop", @tutuca.Expr::name("onDropOnItem"), args=[
@@ -636,11 +592,6 @@ pub fn json_array_component(
   update? : (JsonArrayState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonArrayState,
   ],
-  swap? : (JsonArrayInput) -> ((
-    JsonArrayState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -653,15 +604,6 @@ pub fn json_array_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([AddItem, OnDropOnItem, RemoveInItemsAt] : Array[JsonArrayInput]),
-          JsonArrayInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -702,9 +644,14 @@ fn json_object_key_val_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setKey"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "key",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
     ],
   )
@@ -736,11 +683,6 @@ pub fn json_object_key_val_component(
   update? : (JsonObjectKeyValState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonObjectKeyValState,
   ],
-  swap? : (JsonObjectKeyValInput) -> ((
-    JsonObjectKeyValState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -753,15 +695,6 @@ pub fn json_object_key_val_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetKey] : Array[JsonObjectKeyValInput]),
-          JsonObjectKeyValInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,
@@ -831,9 +764,13 @@ fn json_object_main_view_ir() -> @anode.View {
     [
       [@anode.on("click", @tutuca.Expr::name("addItem"))],
       [
-        @anode.on("click", @tutuca.Expr::name("removeInItemsAt"), args=[
-          @tutuca.Expr::bind("key"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.call_property_action("items", "removeAt", [
+            @tutuca.Expr::bind("key"),
+          ]),
+        ),
       ],
       [
         @anode.on("drop", @tutuca.Expr::name("onDropOnItem"), args=[
@@ -872,11 +809,6 @@ pub fn json_object_component(
   update? : (JsonObjectState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonObjectState,
   ],
-  swap? : (JsonObjectInput) -> ((
-    JsonObjectState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -889,15 +821,6 @@ pub fn json_object_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([AddItem, OnDropOnItem, RemoveInItemsAt] : Array[JsonObjectInput]),
-          JsonObjectInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,

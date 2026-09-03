@@ -88,15 +88,15 @@ test "generated mutators: set/toggle/push/setAt/delete/len/reset" {
 ///|
 test "member actions hide generated mutator spellings" {
   let t0 = todo_comp().make(Map([]))
-  guard! t0.set_member("title", Str("named")) is PChanged(t1)
+  guard! t0.set_member("title", Str("named")) is Changed(t1)
   assert_eq(t1.field("title"), Str("named"))
-  guard! t1.mutate_member("items", "push", [Str("a")]) is PChanged(t2)
+  guard! t1.mutate_member("items", "push", [Str("a")]) is Changed(t2)
   assert_eq(t2.field("items"), List([Str("a")]))
-  guard! t2.mutate_member("items", "removeAt", [Num(0)]) is PChanged(t3)
+  guard! t2.mutate_member("items", "removeAt", [Num(0)]) is Changed(t3)
   assert_eq(t3.field("items"), List([]))
-  guard! t3.set_member("done", Bool(true)) is PChanged(t4)
+  guard! t3.set_member("done", Bool(true)) is Changed(t4)
   assert_eq(t4.field("done"), Bool(true))
-  assert_true(t4.mutate_member("items", "frobnicate", []) is PMissing)
+  assert_true(t4.mutate_member("items", "frobnicate", []) is Missing)
 }
 
 ///|
@@ -248,7 +248,7 @@ test "Components::collect_classes gathers sorted classes from compiled views" {
 }
 
 ///|
-test "update dispatches through Path::update; Input falls back to mutators" {
+test "update dispatches through Path::update; a write goes through set_member" {
   let comp = todo_comp()
   let t = comp.make({ "title": Str("a") })
   let root : @tutuca.Value = Map({ "todo": t })
@@ -262,15 +262,14 @@ test "update dispatches through Path::update; Input falls back to mutators" {
     is Some(n) &&
     n == Str("b"),
   )
-  // Input falls back to generated mutators (pre-app-loop convenience)
+  // A generated setter is reached by WRITING, never by dispatching: there is
+  // no fallback from a name nothing answers to a setter nobody declared.
+  guard! p.lookup(node) is Some(leaf)
+  guard! leaf.set_member("title", Str("via-write")) is Changed(next)
+  assert_eq(next.field("title"), Str("via-write"))
+  // …and the dispatch that used to reach it now refuses.
   let node3 = p.update(node, Receive, "setTitle", [Str("via-input")])
-  assert_true(
-    @tutuca.Path::new(steps=[FieldStep("todo"), FieldStep("title")]).lookup(
-      node3,
-    )
-    is Some(n2) &&
-    n2 == Str("via-input"),
-  )
+  assert_true(physical_equal(node3, node))
 }
 
 ///|
@@ -779,10 +778,15 @@ test "swap handlers replace the node with another component's instance" {
     },
     name="AComp",
     init=SwapAState::{ label: "a", },
-    swap={
-      "becomeB": (s : SwapAState, _args, _ctx) => {
-        Some(b.make({ "note": Str("from \{s.label}") }))
-      },
+    // `Replace` supersedes the node with another component's instance. It was
+    // a bucket of its own (`swap`), consulted before `update` and declared
+    // nowhere in the block language; it is an arm of the one match now.
+    update=(s : SwapAState, msg, _ctx) => {
+      match msg {
+        Receive("becomeB", _) =>
+          Replace(b.make({ "note": Str("from \{s.label}") }))
+        _ => Unhandled
+      }
     },
   )
   scope.register_components([a, b])
@@ -796,11 +800,9 @@ test "swap handlers replace the node with another component's instance" {
     )
     is Some(n) &&
     n is Str(note) else {
-    fail("swap did not replace the node")
+    fail("Replace did not supersede the node")
   }
   assert_eq(note, "from a")
-  // metadata surfaces the swap bucket
-  assert_true(a.swap_names.contains("becomeB"))
 }
 
 ///|
@@ -1090,16 +1092,17 @@ impl @component.Fields for SwapAState with fn schema() {
 // v2: the widening, and the lexical walk.
 
 ///|
-test "the widening: an addressed message reaches a generated mutator too" {
-  // `swap` and the generated mutators answer `Receive`, the ADDRESSED bucket,
-  // and nothing narrower. `@on.click="setTitle 'x'"` from the component's own
-  // view and a parent's `ctx.send("setTitle", …)` to the same component are the
-  // same message, so both reach the setter; gating on where the message came
-  // from would admit one and refuse the other. Both arms below assert that.
+test "a generated mutator is reached by writing, never by dispatching" {
+  // It used to be reached by both. `@on.click="setTitle 'x'"` from a
+  // component's own view and a parent's `ctx.send("setTitle", …)` were the same
+  // message, and a message no arm claimed fell through to the setter the field
+  // implies — so a `ctx.send` whose name happened to collide with a generated
+  // mutator MUTATED, and a view could write a field the component never said
+  // was writable.
   //
-  // The consequence worth knowing: a `ctx.send` whose name happens to collide
-  // with a generated mutator MUTATES. Names are the whole addressing scheme,
-  // so a parent that did not mean the setter must not use the setter's name.
+  // A write is a write now, and it says so where it is written: `.title = 'x'`
+  // in a view, `set_member` from a holder of the value. A dispatch under a name
+  // nothing answers is a refusal.
   let comp = todo_comp()
   let root : @tutuca.Value = Map({ "todo": comp.make({ "title": Str("a") }) })
   let p = @tutuca.Path::new(steps=[FieldStep("todo")])
@@ -1111,18 +1114,13 @@ test "the widening: an addressed message reaches a generated mutator too" {
     }
   }
 
+  guard! p.lookup(root) is Some(leaf)
+  guard! leaf.set_member("title", Str("written")) is Changed(next)
+  assert_eq(next.field("title"), Str("written"))
+  // Neither bucket reaches it.
+  assert_eq(title(p.update(root, Receive, "setTitle", [Str("sent")])), Str("a"))
   assert_eq(
-    title(p.update(root, Receive, "setTitle", [Str("via-input")])),
-    Str("via-input"),
-  )
-  assert_eq(
-    title(p.update(root, Receive, "setTitle", [Str("via-send")])),
-    Str("via-send"),
-  )
-  // And NOT up a route. A generated mutator answers a message at home; it is
-  // not an answer to a question a descendant asked.
-  assert_eq(
-    title(p.update(root, Intent, "setTitle", [Str("via-intent")])),
+    title(p.update(root, Intent, "setTitle", [Str("routed")])),
     Str("a"),
   )
 }
@@ -1318,8 +1316,11 @@ test "sending a read-only generated name leaves the instance alone" {
   // unchanged — physically, which is how the runtime says "nothing happened".
   let after = @tutuca.Path::new().update(v, Receive, "itemsLen", [])
   assert_true(physical_equal(after, v))
-  // …whereas a writer from the same table does move it.
-  let moved = @tutuca.Path::new().update(v, Receive, "pushInItems", [Num(4)])
+  // …and neither does a WRITER from the same table, dispatched: a generated
+  // mutator is reached by writing.
+  let sent = @tutuca.Path::new().update(v, Receive, "pushInItems", [Num(4)])
+  assert_true(physical_equal(sent, v))
+  guard! v.mutate_member("items", "push", [Num(4)]) is Changed(moved)
   assert_false(physical_equal(moved, v))
 }
 

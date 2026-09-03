@@ -35,9 +35,9 @@
 
 <template id="AttributeBinding">
   <section class="flex flex-col gap-3">
-    <input class="input s" :value=".str" @on.input="setStr e.value" :title="$'Content is {.str}'">
+    <input class="input s" :value=".str" @on.input=".str = e.value" :title="$'Content is {.str}'">
     <input class="input n" type="number" :value=".num" @on.input="setRawNumber e.value">
-    <input class="checkbox b" type="checkbox" :checked=".bool" @on.input="setBool e.value">
+    <input class="checkbox b" type="checkbox" :checked=".bool" @on.input=".bool = e.value">
     <p>String: <span class="o-str" @text=".str"></span></p>
     <p>Number: <span class="o-num" @text=".num"></span></p>
     <p>Boolean: <span class="o-bool" @text=".bool"></span></p>
@@ -48,7 +48,7 @@
     <button
       @if.class=".isActive" @then="'btn btn-success'" @else="'btn btn-ghost'"
       @if.title=".isActive" @then.title="'Click to disable'" @else.title="'Click to enable'"
-      @on.click="toggleIsActive">
+      @on.click=".isActive = not .isActive">
       <span class="on" @show=".isActive">Enabled</span>
       <span class="off" @hide=".isActive">Disabled</span>
     </button>
@@ -58,8 +58,8 @@
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"
       @on.input="onInput e.value"
-      @on.keydown+send="setLastSentSearch e.value"
-      @on.keydown+cancel="resetQuery"
+      @on.keydown+send=".lastSentSearch = e.value"
+      @on.keydown+cancel=".query = default"
       placeholder="Search Query (Enter to send, Esc to clear)">
     <p class="sent" @show="truthy? .lastSentSearch">
       Search: "<span class="sent-q" @text=".lastSentSearch"></span>"
@@ -68,7 +68,7 @@
 </template>
 <template id="ShowHide">
   <section class="flex flex-col gap-2">
-    <button class="btn btn-primary toggle-btn" @on.click="toggleIsOpen" @text="$label"></button>
+    <button class="btn btn-primary toggle-btn" @on.click=".isOpen = not .isOpen" @text="$label"></button>
     <div class="card p-3 border details" @show=".isOpen">
       <p>Details panel &mdash; only visible when <code>isOpen</code> is true.</p>
       <button class="btn btn-sm bump" @on.click="incCount">Click me</button>

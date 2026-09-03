@@ -757,9 +757,9 @@ Three doors, and they catch different things:
 
 | when | what it covers |
 | --- | --- |
-| at the field write | the field being written — `setCurrentIndex 99` is turned down and the instance is unchanged |
+| at the field write | the field being written — `.currentIndex = 99` is turned down and the instance is unchanged |
 | in the arm, before its effects flush | every field, for a handler the script block declares — the same place an `invariant`'s guard sits, so an arm that raises effects and then leaves a field out of domain sends nothing |
-| after the transition | every field, for every path — a generated mutator, a hand-written `update~` arm — including `setItems []`, which says nothing about `currentIndex` and leaves it stranded |
+| after the transition | every field, for every path — a property write, a hand-written `update~` arm — including `.items = []`, which says nothing about `currentIndex` and leaves it stranded |
 
 Any of the three **abandons** the transition and raises a `Refusal` with code
 `OUT_OF_RANGE`, carrying the **field** where a rule's refusal carries its name.
@@ -824,8 +824,8 @@ A domain is not compiled in, and cannot be — the vocabulary exists to be read
 backwards by a generator and forwards by `core/domain.mbt`, and the guest world
 has no shape for either. So the declaration LEAVES the guest: the card compiler
 writes it into the bundle manifest (`"domains"` per component) and the host
-enforces it, at the two doors the host owns — the generated mutator's field
-write, and the successor of a guest transition. The successor is checked
+enforces it, at the two doors the host owns — a property write, and the
+successor of a guest transition. The successor is checked
 **before** the guest's buffered control calls go out, so nothing is sent for a
 transition the host will not adopt.
 
@@ -864,7 +864,7 @@ of the three kinds of rule it is, and the runtime keeps all three:
     pred empty { .here is 0 }
 
     /// An INVARIANT: checked after EVERY dispatch, including the ones written
-    /// later that never mention it, and including the generated mutators.
+    /// later that never mention it, and including plain property writes.
     invariant conserved { (.here + .there) is .total }
   }
 </script>
@@ -921,7 +921,7 @@ Four things to know about the clauses themselves:
   | dispatch | when the rule is asked | effects if it fails |
   | --- | --- | --- |
   | a handler the script block declares | inline, before the effect queue flushes | never fire — the transition is whole or not at all |
-  | a generated mutator (`setHere`, `pushInItems`, …) | after the successor is built | there are none to fire |
+  | a property write (`.here = 3`, `.items.push v`) | after the successor is built | there are none to fire |
   | a hand-written MoonBit `update~` arm | after the successor is built | **may already have fired** — the state is rolled back, they are not |
 
   Only the first carries the rule's `format` sentence, because a `format` is
@@ -929,7 +929,7 @@ Four things to know about the clauses themselves:
   rule's NAME and the state that was rejected.
 
 - **An `invariant` that reads a `*name` decides nothing on the two new paths.**
-  The runtime asks it after a generated mutator or a hand-written `update~`
+  The runtime asks it after a property write or a hand-written `update~`
   arm, which is not a render position, so a dynamic binding reads null there
   and the rule answers neither true nor false. Unknown is not wrong: the
   transition goes through. Read as `$name` from a view it still works
@@ -1014,8 +1014,8 @@ assert_eq(refused[0].sentence, "Cannot publish \"draft-2\": the title is empty."
   here and the arguments did not fit what it declares). `BAD_PAYLOAD` is the
   one code whose `state` is not a state: it carries the argument list, because
   no arm ran and that is the thing to go and look at.
-- **A decline is not a refusal.** An `update` arm answering `None`, and the
-  generated mutator behind it, are the intended design and stay quiet.
+- **A decline is not a refusal.** An `update` arm answering `Unchanged` — this
+  arm ran and nothing moves — is the intended design and stays quiet.
 - One dispatch produces at most one record, and it is off until a host asks —
   a record carries the rejected state, so nothing pays for it until somebody
   wants it.

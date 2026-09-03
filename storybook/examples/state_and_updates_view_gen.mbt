@@ -67,9 +67,7 @@ impl @component.Fields for AttributeBindingState with fn decode(f) {
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum AttributeBindingReceive {
-  SetBool(Bool)
   SetRawNumber(String)
-  SetStr(String)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -94,14 +92,10 @@ pub fn AttributeBindingReceive::from_dispatch(
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
-      ("setBool", [Bool(a0)]) => SetBool(a0)
       ("setRawNumber", [Str(a0)]) => SetRawNumber(a0)
-      ("setStr", [Str(a0)]) => SetStr(a0)
       _ => {
         match name {
-          "setBool" => @tutuca.bad_payload(name, "Bool", args)
           "setRawNumber" => @tutuca.bad_payload(name, "String", args)
-          "setStr" => @tutuca.bad_payload(name, "String", args)
           _ => ()
         }
         Unknown(name, args)
@@ -116,9 +110,7 @@ pub fn AttributeBindingReceive::to_dispatch(
   self : AttributeBindingReceive,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
-    SetBool(a0) => ("setBool", [Bool(a0)])
     SetRawNumber(a0) => ("setRawNumber", [Str(a0)])
-    SetStr(a0) => ("setStr", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
 }
@@ -147,26 +139,20 @@ pub let attribute_binding_global_style : String = ""
 ///|
 /// Every bare `@on` handler name the views reference.
 pub(all) enum AttributeBindingInput {
-  SetBool
   SetRawNumber
-  SetStr
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn AttributeBindingInput::name(self : AttributeBindingInput) -> String {
   match self {
-    SetBool => "setBool"
     SetRawNumber => "setRawNumber"
-    SetStr => "setStr"
   }
 }
 
 ///|
 pub fn AttributeBindingInput::parse(s : String) -> AttributeBindingInput? {
   match s {
-    "setBool" => Some(SetBool)
     "setRawNumber" => Some(SetRawNumber)
-    "setStr" => Some(SetStr)
     _ => None
   }
 }
@@ -178,12 +164,8 @@ pub fn AttributeBindingInput::parse(s : String) -> AttributeBindingInput? {
 /// handler added to state_and_updates.html breaks every `match` over this type
 /// until it is handled.
 pub(all) enum AttributeBindingMsg {
-  /// `@on.input="setBool …"`
-  SetBool(Bool)
   /// `@on.input="setRawNumber …"`
   SetRawNumber(String)
-  /// `@on.input="setStr …"`
-  SetStr(String)
   /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -200,9 +182,7 @@ pub fn AttributeBindingMsg::from_dispatch(
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
-      ("setBool", [Bool(a0)]) => SetBool(a0)
       ("setRawNumber", [Str(a0)]) => SetRawNumber(a0)
-      ("setStr", [Str(a0)]) => SetStr(a0)
       _ => Unknown(name, args)
     },
   )
@@ -225,7 +205,7 @@ impl @component.Fields for AttributeBindingState with fn schema() {
       @component.FieldInfo::new("bool", TyBool),
       @component.FieldInfo::new("notSet", TyAny),
     ],
-    view_handlers=["setBool", "setRawNumber", "setStr"],
+    view_handlers=["setRawNumber"],
     view_names=["main"],
   )
 }
@@ -272,136 +252,12 @@ impl @component.Fields for ConditionalAttributesState with fn decode(f) {
 }
 
 ///|
-/// The Receive arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum ConditionalAttributesReceive {
-  ToggleIsActive
-  /// A receive the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Receive dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-///
-/// It is also REPORTED. `Unknown` answers two different questions —
-/// nobody declares this name, and this name is declared here and was
-/// handed the wrong shape — and the second one is a bug in the sender
-/// that used to be indistinguishable from silence. Every arm below that
-/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
-/// which costs nothing unless a host is listening.
-pub fn ConditionalAttributesReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> ConditionalAttributesReceive? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("toggleIsActive", []) => ToggleIsActive
-      _ => {
-        match name {
-          "toggleIsActive" => @tutuca.bad_payload(name, "", args)
-          _ => ()
-        }
-        Unknown(name, args)
-      }
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn ConditionalAttributesReceive::to_dispatch(
-  self : ConditionalAttributesReceive,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    ToggleIsActive => ("toggleIsActive", [])
-    Unknown(n, args) => (n, args)
-  }
-}
-
-///|
-/// Send this message to self; it arrives as a later Receive dispatch.
-///
-/// The name comes from the schema, so it cannot drift from the one
-/// `from_dispatch` decodes.
-pub fn ConditionalAttributesReceive::send(
-  self : ConditionalAttributesReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
-  let (name, args) = self.to_dispatch()
-  ctx.send(name, args)
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let conditional_attributes_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let conditional_attributes_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum ConditionalAttributesInput {
-  ToggleIsActive
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ConditionalAttributesInput::name(
-  self : ConditionalAttributesInput,
-) -> String {
-  match self {
-    ToggleIsActive => "toggleIsActive"
-  }
-}
-
-///|
-pub fn ConditionalAttributesInput::parse(
-  s : String,
-) -> ConditionalAttributesInput? {
-  match s {
-    "toggleIsActive" => Some(ToggleIsActive)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to state_and_updates.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum ConditionalAttributesMsg {
-  /// `@on.click="toggleIsActive …"`
-  ToggleIsActive
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn ConditionalAttributesMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> ConditionalAttributesMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("toggleIsActive", []) => ToggleIsActive
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -415,7 +271,6 @@ impl @component.Fields for ConditionalAttributesState with fn schema() {
     name="ConditionalAttributes",
     fingerprint="3a518a385250bb4d",
     fields=[@component.FieldInfo::new("isActive", TyBool)],
-    view_handlers=["toggleIsActive"],
     view_names=["main"],
   )
 }
@@ -471,8 +326,6 @@ impl @component.Fields for EventModifiersState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum EventModifiersReceive {
   OnInput(String)
-  ResetQuery
-  SetLastSentSearch(String)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -498,13 +351,9 @@ pub fn EventModifiersReceive::from_dispatch(
   Some(
     match (name, args) {
       ("onInput", [Str(a0)]) => OnInput(a0)
-      ("resetQuery", []) => ResetQuery
-      ("setLastSentSearch", [Str(a0)]) => SetLastSentSearch(a0)
       _ => {
         match name {
           "onInput" => @tutuca.bad_payload(name, "String", args)
-          "resetQuery" => @tutuca.bad_payload(name, "", args)
-          "setLastSentSearch" => @tutuca.bad_payload(name, "String", args)
           _ => ()
         }
         Unknown(name, args)
@@ -520,8 +369,6 @@ pub fn EventModifiersReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     OnInput(a0) => ("onInput", [Str(a0)])
-    ResetQuery => ("resetQuery", [])
-    SetLastSentSearch(a0) => ("setLastSentSearch", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
 }
@@ -551,16 +398,12 @@ pub let event_modifiers_global_style : String = ""
 /// Every bare `@on` handler name the views reference.
 pub(all) enum EventModifiersInput {
   OnInput
-  ResetQuery
-  SetLastSentSearch
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn EventModifiersInput::name(self : EventModifiersInput) -> String {
   match self {
     OnInput => "onInput"
-    ResetQuery => "resetQuery"
-    SetLastSentSearch => "setLastSentSearch"
   }
 }
 
@@ -568,8 +411,6 @@ pub fn EventModifiersInput::name(self : EventModifiersInput) -> String {
 pub fn EventModifiersInput::parse(s : String) -> EventModifiersInput? {
   match s {
     "onInput" => Some(OnInput)
-    "resetQuery" => Some(ResetQuery)
-    "setLastSentSearch" => Some(SetLastSentSearch)
     _ => None
   }
 }
@@ -583,10 +424,6 @@ pub fn EventModifiersInput::parse(s : String) -> EventModifiersInput? {
 pub(all) enum EventModifiersMsg {
   /// `@on.input="onInput …"`
   OnInput(String)
-  /// `@on.keydown="resetQuery …"`
-  ResetQuery
-  /// `@on.keydown="setLastSentSearch …"`
-  SetLastSentSearch(String)
   /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -604,8 +441,6 @@ pub fn EventModifiersMsg::from_dispatch(
   Some(
     match (name, args) {
       ("onInput", [Str(a0)]) => OnInput(a0)
-      ("resetQuery", []) => ResetQuery
-      ("setLastSentSearch", [Str(a0)]) => SetLastSentSearch(a0)
       _ => Unknown(name, args)
     },
   )
@@ -626,7 +461,7 @@ impl @component.Fields for EventModifiersState with fn schema() {
       @component.FieldInfo::new("query", TyText),
       @component.FieldInfo::new("lastSentSearch", TyAny),
     ],
-    view_handlers=["onInput", "resetQuery", "setLastSentSearch"],
+    view_handlers=["onInput"],
     view_names=["main"],
   )
 }
@@ -683,7 +518,6 @@ impl @component.Fields for ShowHideState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum ShowHideReceive {
   IncCount
-  ToggleIsOpen
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -709,11 +543,9 @@ pub fn ShowHideReceive::from_dispatch(
   Some(
     match (name, args) {
       ("incCount", []) => IncCount
-      ("toggleIsOpen", []) => ToggleIsOpen
       _ => {
         match name {
           "incCount" => @tutuca.bad_payload(name, "", args)
-          "toggleIsOpen" => @tutuca.bad_payload(name, "", args)
           _ => ()
         }
         Unknown(name, args)
@@ -729,7 +561,6 @@ pub fn ShowHideReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     IncCount => ("incCount", [])
-    ToggleIsOpen => ("toggleIsOpen", [])
     Unknown(n, args) => (n, args)
   }
 }
@@ -759,14 +590,12 @@ pub let show_hide_global_style : String = ""
 /// Every bare `@on` handler name the views reference.
 pub(all) enum ShowHideInput {
   IncCount
-  ToggleIsOpen
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn ShowHideInput::name(self : ShowHideInput) -> String {
   match self {
     IncCount => "incCount"
-    ToggleIsOpen => "toggleIsOpen"
   }
 }
 
@@ -774,7 +603,6 @@ pub fn ShowHideInput::name(self : ShowHideInput) -> String {
 pub fn ShowHideInput::parse(s : String) -> ShowHideInput? {
   match s {
     "incCount" => Some(IncCount)
-    "toggleIsOpen" => Some(ToggleIsOpen)
     _ => None
   }
 }
@@ -790,8 +618,6 @@ pub fn ShowHideInput::parse(s : String) -> ShowHideInput? {
 /// `update` is consulted only for a dispatch the block did not claim, so
 /// an arm for one of these could never run.
 pub(all) enum ShowHideMsg {
-  /// `@on.click="toggleIsOpen …"`
-  ToggleIsOpen
   /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -806,7 +632,6 @@ pub fn ShowHideMsg::from_dispatch(d : @component.Dispatch) -> ShowHideMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
-      ("toggleIsOpen", []) => ToggleIsOpen
       _ => Unknown(name, args)
     },
   )
@@ -840,7 +665,7 @@ impl @component.Fields for ShowHideState with fn schema() {
       @component.FieldInfo::new("isOpen", TyBool),
       @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
     ],
-    view_handlers=["incCount", "toggleIsOpen"],
+    view_handlers=["incCount"],
     methods=["label"],
     domains=[{ field: "count", domain: DCompare(op=DGe, rhs=DLit(0)), }],
     view_names=["main"],

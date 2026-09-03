@@ -614,13 +614,13 @@ declare pub fn Transactor::reset_root(
 /// rebuilding its parents, and swapping the root happen as one call, so a
 /// caller never observes the child successor detached from its parent tree.
 /// Missing paths/properties and refused writes leave the root untouched and
-/// are distinguished by `PropertyWrite`.
+/// are distinguished by `Outcome`.
 declare pub fn Transactor::set_property(
   self : Transactor,
   at : @tutuca.DispatchPath,
   name : String,
   value : @tutuca.Value,
-) -> @tutuca.PropertyWrite
+) -> @tutuca.Outcome
 
 ///|
 /// Apply a private-or-public property setter from the component's own view.
@@ -631,7 +631,7 @@ declare pub fn Transactor::set_member(
   at : @tutuca.DispatchPath,
   name : String,
   value : @tutuca.Value,
-) -> @tutuca.PropertyWrite
+) -> @tutuca.Outcome
 
 ///|
 /// Apply a source-level member operation from the component's own view and
@@ -643,7 +643,7 @@ declare pub fn Transactor::mutate_member(
   name : String,
   operation : String,
   args : Array[@tutuca.Value],
-) -> @tutuca.PropertyWrite
+) -> @tutuca.Outcome
 
 ///|
 /// Subscribe to a normalized record for every handler invocation — a receive,

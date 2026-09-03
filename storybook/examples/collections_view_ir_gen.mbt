@@ -83,9 +83,14 @@ fn render_with_scope_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setText"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "text",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
       ],
     ],
   )
@@ -117,11 +122,6 @@ pub fn render_with_scope_component(
   update? : (RenderWithScopeState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     RenderWithScopeState,
   ],
-  swap? : (RenderWithScopeInput) -> ((
-    RenderWithScopeState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   enrich_scope? : (RenderWithScopeEnrichScope) -> ((
     RenderWithScopeState,
     &@tutuca.Stack,
@@ -138,15 +138,6 @@ pub fn render_with_scope_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetText] : Array[RenderWithScopeInput]),
-          RenderWithScopeInput::name,
-          f,
-        )
-      None => Map([])
-    },
     enrich_scope=match enrich_scope {
       Some(f) =>
         @component.build_bucket(
@@ -201,12 +192,20 @@ fn list_filter_enrich_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setQuery"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
-        @anode.on("keydown", @tutuca.Expr::name("resetQuery"), modifiers=[
-          "cancel",
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "query",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
+        @anode.on(
+          "keydown",
+          @anode.const_null(),
+          modifiers=["cancel"],
+          action=@anode.reset_property_action("query"),
+        ),
       ],
     ],
   )
@@ -238,11 +237,6 @@ pub fn list_filter_enrich_component(
   update? : (ListFilterEnrichState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ListFilterEnrichState,
   ],
-  swap? : (ListFilterEnrichInput) -> ((
-    ListFilterEnrichState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   when? : (ListFilterEnrichWhen) -> ((
     ListFilterEnrichState,
     @tutuca.Value,
@@ -270,15 +264,6 @@ pub fn list_filter_enrich_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([ResetQuery, SetQuery] : Array[ListFilterEnrichInput]),
-          ListFilterEnrichInput::name,
-          f,
-        )
-      None => Map([])
-    },
     when=match when {
       Some(f) =>
         @component.build_bucket(
@@ -345,12 +330,20 @@ fn list_filter_enrich_with_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::name("setQuery"), args=[
-          @tutuca.Expr::event_path(["value"]),
-        ]),
-        @anode.on("keydown", @tutuca.Expr::name("resetQuery"), modifiers=[
-          "cancel",
-        ]),
+        @anode.on(
+          "input",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "query",
+            @tutuca.Expr::event_path(["value"]),
+          ),
+        ),
+        @anode.on(
+          "keydown",
+          @anode.const_null(),
+          modifiers=["cancel"],
+          action=@anode.reset_property_action("query"),
+        ),
       ],
     ],
   )
@@ -382,11 +375,6 @@ pub fn list_filter_enrich_with_component(
   update? : (ListFilterEnrichWithState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ListFilterEnrichWithState,
   ],
-  swap? : (ListFilterEnrichWithInput) -> ((
-    ListFilterEnrichWithState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   when? : (ListFilterEnrichWithWhen) -> ((
     ListFilterEnrichWithState,
     @tutuca.Value,
@@ -419,15 +407,6 @@ pub fn list_filter_enrich_with_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([ResetQuery, SetQuery] : Array[ListFilterEnrichWithInput]),
-          ListFilterEnrichWithInput::name,
-          f,
-        )
-      None => Map([])
-    },
     when=match when {
       Some(f) =>
         @component.build_bucket(

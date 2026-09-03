@@ -199,7 +199,6 @@ impl @component.Fields for SendReceiveState with fn decode(f) {
 pub(all) enum SendReceiveReceive {
   ClearDraft
   ClearStatus
-  SetDraft(String)
   Submit
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
@@ -227,13 +226,11 @@ pub fn SendReceiveReceive::from_dispatch(
     match (name, args) {
       ("clearDraft", []) => ClearDraft
       ("clearStatus", []) => ClearStatus
-      ("setDraft", [Str(a0)]) => SetDraft(a0)
       ("submit", []) => Submit
       _ => {
         match name {
           "clearDraft" => @tutuca.bad_payload(name, "", args)
           "clearStatus" => @tutuca.bad_payload(name, "", args)
-          "setDraft" => @tutuca.bad_payload(name, "String", args)
           "submit" => @tutuca.bad_payload(name, "", args)
           _ => ()
         }
@@ -251,7 +248,6 @@ pub fn SendReceiveReceive::to_dispatch(
   match self {
     ClearDraft => ("clearDraft", [])
     ClearStatus => ("clearStatus", [])
-    SetDraft(a0) => ("setDraft", [Str(a0)])
     Submit => ("submit", [])
     Unknown(n, args) => (n, args)
   }
@@ -282,7 +278,6 @@ pub let send_receive_global_style : String = ""
 /// Every bare `@on` handler name the views reference.
 pub(all) enum SendReceiveInput {
   ClearStatus
-  SetDraft
   Submit
 } derive(Eq, @debug.Debug)
 
@@ -290,7 +285,6 @@ pub(all) enum SendReceiveInput {
 pub fn SendReceiveInput::name(self : SendReceiveInput) -> String {
   match self {
     ClearStatus => "clearStatus"
-    SetDraft => "setDraft"
     Submit => "submit"
   }
 }
@@ -299,7 +293,6 @@ pub fn SendReceiveInput::name(self : SendReceiveInput) -> String {
 pub fn SendReceiveInput::parse(s : String) -> SendReceiveInput? {
   match s {
     "clearStatus" => Some(ClearStatus)
-    "setDraft" => Some(SetDraft)
     "submit" => Some(Submit)
     _ => None
   }
@@ -314,8 +307,6 @@ pub fn SendReceiveInput::parse(s : String) -> SendReceiveInput? {
 pub(all) enum SendReceiveMsg {
   /// `@on.click="clearStatus …"`
   ClearStatus
-  /// `@on.input="setDraft …"`
-  SetDraft(String)
   /// `@on.keydown, @on.click="submit …"`
   Submit
   /// A dispatch the views do not declare, or a declared name
@@ -335,7 +326,6 @@ pub fn SendReceiveMsg::from_dispatch(
   Some(
     match (name, args) {
       ("clearStatus", []) => ClearStatus
-      ("setDraft", [Str(a0)]) => SetDraft(a0)
       ("submit", []) => Submit
       _ => Unknown(name, args)
     },
@@ -357,7 +347,7 @@ impl @component.Fields for SendReceiveState with fn schema() {
       @component.FieldInfo::new("draft", TyText),
       @component.FieldInfo::new("status", TyComp(Some("Status"))),
     ],
-    view_handlers=["clearStatus", "setDraft", "submit"],
+    view_handlers=["clearStatus", "submit"],
     receives=["clearDraft"],
     view_names=["main"],
   )

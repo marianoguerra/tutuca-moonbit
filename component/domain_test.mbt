@@ -109,13 +109,13 @@ fn refusals_of(body : () -> Unit) -> Array[@tutuca.Refusal] {
 
 ///|
 test "a write inside the domain goes through" {
-  let after = send(gallery(), "setCurrentIndex", [Num(2)])
+  let after = write(gallery(), "currentIndex", Num(2))
   assert_eq(after.field("currentIndex"), Num(2))
   assert_eq(
-    send(gallery(), "setCurrentKey", [Str("k0")]).field("currentKey"),
+    write(gallery(), "currentKey", Str("k0")).field("currentKey"),
     Str("k0"),
   )
-  assert_eq(send(gallery(), "setCount", [Num(7)]).field("count"), Num(7))
+  assert_eq(write(gallery(), "count", Num(7)).field("count"), Num(7))
 }
 
 ///|
@@ -124,13 +124,13 @@ test "the three writes the fuzzer kept producing are turned down" {
   // and a negative count. Each one is a state no interaction could reach, and
   // each one used to land.
   let g = gallery()
-  assert_eq(send(g, "setCurrentIndex", [Num(99)]).field("currentIndex"), Num(0))
-  assert_eq(send(g, "setCurrentIndex", [Num(-1)]).field("currentIndex"), Num(0))
+  assert_eq(write(g, "currentIndex", Num(99)).field("currentIndex"), Num(0))
+  assert_eq(write(g, "currentIndex", Num(-1)).field("currentIndex"), Num(0))
   assert_eq(
-    send(g, "setCurrentKey", [Str("absent")]).field("currentKey"),
+    write(g, "currentKey", Str("absent")).field("currentKey"),
     Str("k0"),
   )
-  assert_eq(send(g, "setCount", [Num(-5)]).field("count"), Num(0))
+  assert_eq(write(g, "count", Num(-5)).field("count"), Num(0))
 }
 
 ///|
@@ -139,7 +139,7 @@ test "the refusal names the FIELD and says what it wanted" {
   // the field and a sentence that always exists — composed from the relation,
   // which is the whole reason a `where` needs no `format`.
   let refused = refusals_of(() => {
-    let _ = send(gallery(), "setCurrentIndex", [Num(99)])
+    let _ = write(gallery(), "currentIndex", Num(99))
   })
   assert_eq(refused.length(), 1)
   assert_eq(refused[0].code, OutOfRange)
@@ -158,9 +158,7 @@ test "the second door: a write that invalidates a DIFFERENT field" {
   // is `currentIndex: 0` over an empty list, and the after-the-transition
   // check is the one that sees it.
   let mut after : @tutuca.Value = Null
-  let refused = refusals_of(() => {
-    after = send(gallery(), "setItems", [List([])])
-  })
+  let refused = refusals_of(() => after = write(gallery(), "items", List([])))
   // Abandoned whole: the list is not emptied either.
   assert_eq(after.field("items").size(), 3)
   assert_eq(refused.length(), 1)
@@ -179,8 +177,8 @@ test "a write that keeps every relation true is unaffected by either door" {
   // The remaining item is the one `choice` names, because `items` is now the
   // subject of two relations — an index into it and the value drawn from it —
   // and this test is about neither being disturbed.
-  let g = send(gallery(), "setCurrentIndex", [Num(0)])
-  let after = send(g, "setItems", [List([Str("a")])])
+  let g = write(gallery(), "currentIndex", Num(0))
+  let after = write(g, "items", List([Str("a")]))
   assert_eq(after.field("items").size(), 1)
 }
 
@@ -309,15 +307,15 @@ test "an index has to be whole" {
 /// only positionally, while what a select field stores is the option itself.
 test "a value bounded by a sibling list" {
   // `items` holds "a", "b", "c".
-  assert_eq(send(gallery(), "setChoice", [Str("c")]).field("choice"), Str("c"))
+  assert_eq(write(gallery(), "choice", Str("c")).field("choice"), Str("c"))
   // …and one it does not hold is turned down at the write, unchanged.
-  assert_eq(send(gallery(), "setChoice", [Str("z")]).field("choice"), Str("a"))
+  assert_eq(write(gallery(), "choice", Str("z")).field("choice"), Str("a"))
 }
 
 ///|
 test "the list refusal names the list it read" {
   let refusals = refusals_of(fn() {
-    send(gallery(), "setChoice", [Str("z")]) |> ignore
+    write(gallery(), "choice", Str("z")) |> ignore
   })
   assert_eq(refusals.length(), 1)
   assert_true(refusals[0].sentence.contains("`items` does not hold"))
@@ -327,8 +325,8 @@ test "the list refusal names the list it read" {
 /// The second door, over the same relation: shrinking the OPTIONS under a
 /// choice that was fine.
 test "removing the option a choice names is caught after the transition" {
-  let picked = send(gallery(), "setChoice", [Str("c")])
-  let after = send(picked, "setItems", [List([Str("a"), Str("b")])])
+  let picked = write(gallery(), "choice", Str("c"))
+  let after = write(picked, "items", List([Str("a"), Str("b")]))
   // the write is abandoned whole: the list is what it was, and so is the choice
   assert_eq(after.field("choice"), Str("c"))
   assert_eq(after.field("items").size(), 3)

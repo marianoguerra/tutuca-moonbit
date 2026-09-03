@@ -74,7 +74,7 @@ fn fuzz_source_of(name : String) -> @fuzz.Source {
   match name {
     "messages" => Declared(BEither)
     "properties" => Properties
-    "internal" => InternalMutators
+    "fields" => Fields
     _ => Public(BEither)
   }
 }
@@ -196,7 +196,7 @@ fn draw_hint(source : String) -> String {
   let what = match source {
     "messages" => "declares no messages"
     "properties" => "declares no writable properties"
-    "internal" => "has no fields a generated mutator could write"
+    "fields" => "declares no fields to write"
     _ => "declares no messages and no writable properties"
   }
   "This story's component \{what}, so this source has nothing to draw. " +
@@ -333,7 +333,7 @@ fn[N] fuzz_step_marked(
     match session.script[next] {
       Message(Receive(n, _)) | Message(Intent(n, _)) => n
       SetProperty(n, _) => n
-      InternalMutator(Receive(n, _)) | InternalMutator(Intent(n, _)) => n
+      SetField(n, _) => n
     }
   } else {
     ""

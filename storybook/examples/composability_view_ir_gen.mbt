@@ -229,34 +229,64 @@ fn composability_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", @tutuca.Expr::name("setActiveSection"), args=[
-          @anode.const_str("todo"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "activeSection",
+            @anode.const_str("todo"),
+          ),
+        ),
       ],
       [
-        @anode.on("click", @tutuca.Expr::name("setActiveSection"), args=[
-          @anode.const_str("json"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "activeSection",
+            @anode.const_str("json"),
+          ),
+        ),
       ],
       [
-        @anode.on("click", @tutuca.Expr::name("setActiveSection"), args=[
-          @anode.const_str("tree"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "activeSection",
+            @anode.const_str("tree"),
+          ),
+        ),
       ],
       [
-        @anode.on("click", @tutuca.Expr::name("setActiveSection"), args=[
-          @anode.const_str("personalSite"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "activeSection",
+            @anode.const_str("personalSite"),
+          ),
+        ),
       ],
       [
-        @anode.on("click", @tutuca.Expr::name("setActiveSection"), args=[
-          @anode.const_str("dnd"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "activeSection",
+            @anode.const_str("dnd"),
+          ),
+        ),
       ],
       [
-        @anode.on("click", @tutuca.Expr::name("setActiveSection"), args=[
-          @anode.const_str("visualWasm"),
-        ]),
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "activeSection",
+            @anode.const_str("visualWasm"),
+          ),
+        ),
       ],
     ],
   )
@@ -288,11 +318,6 @@ pub fn composability_component(
   update? : (ComposabilityState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ComposabilityState,
   ],
-  swap? : (ComposabilityInput) -> ((
-    ComposabilityState,
-    Array[@tutuca.Value],
-    &@tutuca.Ctx,
-  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -305,15 +330,6 @@ pub fn composability_component(
     common_style~,
     global_style~,
     update?,
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          ([SetActiveSection] : Array[ComposabilityInput]),
-          ComposabilityInput::name,
-          f,
-        )
-      None => Map([])
-    },
     slots~,
     slot_args~,
     provide~,

@@ -40,7 +40,7 @@ fn link_component() -> @component.Component {
     views={
       "main": @anode.View::new(
         "main",
-        raw_view="<div><a :href=\".url\" class=\"link\" @text=\"'go'\"></a><button @on.click=\"setUrl 'javascript:alert(1)'\">x</button><button @on.click=\"setUrl 'javascript:alert(2)'\">y</button></div>",
+        raw_view="<div><a :href=\".url\" class=\"link\" @text=\"'go'\"></a><button @on.click=\".url = 'javascript:alert(1)'\">x</button><button @on.click=\".url = 'javascript:alert(2)'\">y</button></div>",
       ),
     },
     name="Linker",
@@ -300,7 +300,7 @@ fn parent_comp() -> @component.Component {
     views={
       "main": @anode.View::new(
         "main",
-        raw_view="<div><h1><x text=\".title\"></x></h1><button @on.click=\"setTitle 'z'\">b</button><x render=\".kid\"></x></div>",
+        raw_view="<div><h1><x text=\".title\"></x></h1><button @on.click=\".title = 'z'\">b</button><x render=\".kid\"></x></div>",
       ),
     },
     name="FParent",
@@ -410,7 +410,7 @@ fn md_component() -> @component.Component {
     views={
       "main": @anode.View::new(
         "main",
-        raw_view="<div><article @setinnermd=\".body\"></article><button @on.click=\"setBody '## two [x](javascript:alert(1))'\">x</button></div>",
+        raw_view="<div><article @setinnermd=\".body\"></article><button @on.click=\".body = '## two [x](javascript:alert(1))'\">x</button></div>",
       ),
     },
     name="Bodied",
@@ -609,7 +609,7 @@ fn safe_markup_component() -> @component.Component {
     views={
       "main": @anode.View::new(
         "main",
-        raw_view="<div><article @setinnerhtml=\".body\"></article><svg @setinnersvg=\".body\"></svg><button @on.click=\"setBody '<a href=\\'javascript:alert(2)\\'>later</a>'\">x</button></div>",
+        raw_view="<div><article @setinnerhtml=\".body\"></article><svg @setinnersvg=\".body\"></svg><button @on.click=\".body = '<a href=\\'javascript:alert(2)\\'>later</a>'\">x</button></div>",
       ),
     },
     name="Marked",

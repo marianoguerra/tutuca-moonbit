@@ -51,142 +51,12 @@ impl @component.Fields for SelectorEntryState with fn decode(f) {
 }
 
 ///|
-/// The Receive arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum SelectorEntryReceive {
-  SetLabel(String)
-  SetValue(String)
-  /// A receive the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Receive dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-///
-/// It is also REPORTED. `Unknown` answers two different questions —
-/// nobody declares this name, and this name is declared here and was
-/// handed the wrong shape — and the second one is a bug in the sender
-/// that used to be indistinguishable from silence. Every arm below that
-/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
-/// which costs nothing unless a host is listening.
-pub fn SelectorEntryReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> SelectorEntryReceive? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setLabel", [Str(a0)]) => SetLabel(a0)
-      ("setValue", [Str(a0)]) => SetValue(a0)
-      _ => {
-        match name {
-          "setLabel" => @tutuca.bad_payload(name, "String", args)
-          "setValue" => @tutuca.bad_payload(name, "String", args)
-          _ => ()
-        }
-        Unknown(name, args)
-      }
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn SelectorEntryReceive::to_dispatch(
-  self : SelectorEntryReceive,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    SetLabel(a0) => ("setLabel", [Str(a0)])
-    SetValue(a0) => ("setValue", [Str(a0)])
-    Unknown(n, args) => (n, args)
-  }
-}
-
-///|
-/// Send this message to self; it arrives as a later Receive dispatch.
-///
-/// The name comes from the schema, so it cannot drift from the one
-/// `from_dispatch` decodes.
-pub fn SelectorEntryReceive::send(
-  self : SelectorEntryReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
-  let (name, args) = self.to_dispatch()
-  ctx.send(name, args)
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let selector_entry_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let selector_entry_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum SelectorEntryInput {
-  SetLabel
-  SetValue
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SelectorEntryInput::name(self : SelectorEntryInput) -> String {
-  match self {
-    SetLabel => "setLabel"
-    SetValue => "setValue"
-  }
-}
-
-///|
-pub fn SelectorEntryInput::parse(s : String) -> SelectorEntryInput? {
-  match s {
-    "setLabel" => Some(SetLabel)
-    "setValue" => Some(SetValue)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to dynamic.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum SelectorEntryMsg {
-  /// `@on.input="setLabel …"`
-  SetLabel(String)
-  /// `@on.input="setValue …"`
-  SetValue(String)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn SelectorEntryMsg::from_dispatch(
-  d : @component.Dispatch,
-) -> SelectorEntryMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setLabel", [Str(a0)]) => SetLabel(a0)
-      ("setValue", [Str(a0)]) => SetValue(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -203,7 +73,6 @@ impl @component.Fields for SelectorEntryState with fn schema() {
       @component.FieldInfo::new("value", TyText),
       @component.FieldInfo::new("label", TyText),
     ],
-    view_handlers=["setLabel", "setValue"],
     view_names=["main"],
   )
 }
@@ -261,130 +130,12 @@ impl @component.Fields for SelectorState with fn decode(f) {
 }
 
 ///|
-/// The Receive arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum SelectorReceive {
-  SetSelectedValue(String)
-  /// A receive the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Receive dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-///
-/// It is also REPORTED. `Unknown` answers two different questions —
-/// nobody declares this name, and this name is declared here and was
-/// handed the wrong shape — and the second one is a bug in the sender
-/// that used to be indistinguishable from silence. Every arm below that
-/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
-/// which costs nothing unless a host is listening.
-pub fn SelectorReceive::from_dispatch(
-  d : @component.Dispatch,
-) -> SelectorReceive? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setSelectedValue", [Str(a0)]) => SetSelectedValue(a0)
-      _ => {
-        match name {
-          "setSelectedValue" => @tutuca.bad_payload(name, "String", args)
-          _ => ()
-        }
-        Unknown(name, args)
-      }
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn SelectorReceive::to_dispatch(
-  self : SelectorReceive,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    SetSelectedValue(a0) => ("setSelectedValue", [Str(a0)])
-    Unknown(n, args) => (n, args)
-  }
-}
-
-///|
-/// Send this message to self; it arrives as a later Receive dispatch.
-///
-/// The name comes from the schema, so it cannot drift from the one
-/// `from_dispatch` decodes.
-pub fn SelectorReceive::send(
-  self : SelectorReceive,
-  ctx : &@tutuca.Ctx,
-) -> Unit {
-  let (name, args) = self.to_dispatch()
-  ctx.send(name, args)
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let selector_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let selector_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum SelectorInput {
-  SetSelectedValue
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SelectorInput::name(self : SelectorInput) -> String {
-  match self {
-    SetSelectedValue => "setSelectedValue"
-  }
-}
-
-///|
-pub fn SelectorInput::parse(s : String) -> SelectorInput? {
-  match s {
-    "setSelectedValue" => Some(SetSelectedValue)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to dynamic.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum SelectorMsg {
-  /// `@on.input="setSelectedValue …"`
-  SetSelectedValue(String)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn SelectorMsg::from_dispatch(d : @component.Dispatch) -> SelectorMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setSelectedValue", [Str(a0)]) => SetSelectedValue(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -401,7 +152,6 @@ impl @component.Fields for SelectorState with fn schema() {
       @component.FieldInfo::new("items", TyList(TyComp(Some("SelectorEntry")))),
       @component.FieldInfo::new("selectedValue", TyAny),
     ],
-    view_handlers=["setSelectedValue"],
     view_names=["main"],
   )
 }
@@ -466,7 +216,6 @@ impl @component.Fields for EntryEditorAndSelectorState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum EntryEditorAndSelectorReceive {
   OnAddItem
-  RemoveInItemsAt(@tutuca.Value)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -492,11 +241,9 @@ pub fn EntryEditorAndSelectorReceive::from_dispatch(
   Some(
     match (name, args) {
       ("onAddItem", []) => OnAddItem
-      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
       _ => {
         match name {
           "onAddItem" => @tutuca.bad_payload(name, "", args)
-          "removeInItemsAt" => @tutuca.bad_payload(name, "Any", args)
           _ => ()
         }
         Unknown(name, args)
@@ -512,7 +259,6 @@ pub fn EntryEditorAndSelectorReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     OnAddItem => ("onAddItem", [])
-    RemoveInItemsAt(a0) => ("removeInItemsAt", [a0])
     Unknown(n, args) => (n, args)
   }
 }
@@ -542,7 +288,6 @@ pub let entry_editor_and_selector_global_style : String = ""
 /// Every bare `@on` handler name the views reference.
 pub(all) enum EntryEditorAndSelectorInput {
   OnAddItem
-  RemoveInItemsAt
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -551,7 +296,6 @@ pub fn EntryEditorAndSelectorInput::name(
 ) -> String {
   match self {
     OnAddItem => "onAddItem"
-    RemoveInItemsAt => "removeInItemsAt"
   }
 }
 
@@ -561,7 +305,6 @@ pub fn EntryEditorAndSelectorInput::parse(
 ) -> EntryEditorAndSelectorInput? {
   match s {
     "onAddItem" => Some(OnAddItem)
-    "removeInItemsAt" => Some(RemoveInItemsAt)
     _ => None
   }
 }
@@ -575,8 +318,6 @@ pub fn EntryEditorAndSelectorInput::parse(
 pub(all) enum EntryEditorAndSelectorMsg {
   /// `@on.click="onAddItem …"`
   OnAddItem
-  /// `@on.click="removeInItemsAt …"`
-  RemoveInItemsAt(@tutuca.Value)
   /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -594,7 +335,6 @@ pub fn EntryEditorAndSelectorMsg::from_dispatch(
   Some(
     match (name, args) {
       ("onAddItem", []) => OnAddItem
-      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
       _ => Unknown(name, args)
     },
   )
@@ -615,7 +355,7 @@ impl @component.Fields for EntryEditorAndSelectorState with fn schema() {
       @component.FieldInfo::new("items", TyList(TyComp(Some("SelectorEntry")))),
       @component.FieldInfo::new("selector", TyComp(Some("Selector"))),
     ],
-    view_handlers=["onAddItem", "removeInItemsAt"],
+    view_handlers=["onAddItem"],
     view_names=["main"],
   )
 }
@@ -662,125 +402,12 @@ impl @component.Fields for SheetState with fn decode(f) {
 }
 
 ///|
-/// The Receive arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum SheetReceive {
-  SetTitle(String)
-  /// A receive the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Receive dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-///
-/// It is also REPORTED. `Unknown` answers two different questions —
-/// nobody declares this name, and this name is declared here and was
-/// handed the wrong shape — and the second one is a bug in the sender
-/// that used to be indistinguishable from silence. Every arm below that
-/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
-/// which costs nothing unless a host is listening.
-pub fn SheetReceive::from_dispatch(d : @component.Dispatch) -> SheetReceive? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setTitle", [Str(a0)]) => SetTitle(a0)
-      _ => {
-        match name {
-          "setTitle" => @tutuca.bad_payload(name, "String", args)
-          _ => ()
-        }
-        Unknown(name, args)
-      }
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn SheetReceive::to_dispatch(
-  self : SheetReceive,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    SetTitle(a0) => ("setTitle", [Str(a0)])
-    Unknown(n, args) => (n, args)
-  }
-}
-
-///|
-/// Send this message to self; it arrives as a later Receive dispatch.
-///
-/// The name comes from the schema, so it cannot drift from the one
-/// `from_dispatch` decodes.
-pub fn SheetReceive::send(self : SheetReceive, ctx : &@tutuca.Ctx) -> Unit {
-  let (name, args) = self.to_dispatch()
-  ctx.send(name, args)
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let sheet_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let sheet_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum SheetInput {
-  SetTitle
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SheetInput::name(self : SheetInput) -> String {
-  match self {
-    SetTitle => "setTitle"
-  }
-}
-
-///|
-pub fn SheetInput::parse(s : String) -> SheetInput? {
-  match s {
-    "setTitle" => Some(SetTitle)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to dynamic.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum SheetMsg {
-  /// `@on.input="setTitle …"`
-  SetTitle(String)
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn SheetMsg::from_dispatch(d : @component.Dispatch) -> SheetMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("setTitle", [Str(a0)]) => SetTitle(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -794,7 +421,6 @@ impl @component.Fields for SheetState with fn schema() {
     name="Sheet",
     fingerprint="8f72a9bbe8472900",
     fields=[@component.FieldInfo::new("title", TyText)],
-    view_handlers=["setTitle"],
     view_names=["main"],
   )
 }
