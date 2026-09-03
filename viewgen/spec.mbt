@@ -47,7 +47,7 @@ pub(all) struct Surface {
   ///
   /// Here rather than raised because both describe code that WORKS: a rooted
   /// path to a vendor property may be deliberate, and a bare name is the
-  /// spelling, of which this repository has 522. `gen-views` prints them and
+  /// spelling, of which this repository has 522. `gen` prints them and
   /// carries on, which is the order every diagnostic that touches existing
   /// code lands in.
   hints : Array[String]

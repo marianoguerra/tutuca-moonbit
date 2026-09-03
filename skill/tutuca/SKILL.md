@@ -12,7 +12,7 @@ There are two authoring paths over that same file format:
 
 | Path | Choose it when | Build and test |
 |---|---|---|
-| **Compiled Tutuca component** | The UI needs MoonBit functions, imports, custom objects, host wiring, or a reusable `ModuleDef` | `tutuca gen-views` or `tutuca watch`, then `moon check` and `moon test` |
+| **Compiled Tutuca component** | The UI needs MoonBit functions, imports, custom objects, host wiring, or a reusable `ModuleDef` | `tutuca gen` or `tutuca watch`, then `moon check` and `moon test` |
 | **Tutucard** | The UI should remain one portable HTML file and use only the spec, script, template, style, fixture, and scene languages | The card runtime compiles it to a component wasm module in the browser; validate with the card checker and its `tutuca/test` scenes |
 
 Read [tutucard.md](./tutucard.md) first for a card. Read
@@ -103,7 +103,7 @@ references needed for the task.
 - [storybook.md](./storybook.md) — a gallery of a project's own components:
   stories projected from a module's `examples`, the sections, the tabs, the
   browser host, and `tutuca new-storybook`.
-- [cli.md](./cli.md) — installing and using `gen-views`, `watch`, CSS
+- [cli.md](./cli.md) — installing and using `gen`, `watch`, CSS
   generation, storybook serving, diagnostics, and exit codes.
 - [patterns/README.md](./patterns/README.md) — short task recipes and complete
   examples; use after choosing the architecture and language path.
@@ -114,7 +114,7 @@ For a compiled component, regenerate its view and run the project-appropriate
 targets. At minimum:
 
 ```sh
-tutuca gen-views path/to/view.html --name Component
+tutuca gen path/to/view.html --name Component
 moon check
 moon test
 moon fmt

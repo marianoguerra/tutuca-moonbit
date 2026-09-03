@@ -15,8 +15,8 @@
 //
 // The one rule it must not break is the one at the head of check_state.mbt: a
 // component absent from the index is unknown, and unknown is not wrong. That is
-// what makes a partial invocation safe — `tutuca gen-views one.html` still
-// works and simply checks less than `tutuca gen-views src/` does.
+// what makes a partial invocation safe — `tutuca gen one.html` still
+// works and simply checks less than `tutuca gen src/` does.
 
 ///|
 /// Component name -> its schema, and component name -> the views a template

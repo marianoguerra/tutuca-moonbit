@@ -253,7 +253,7 @@ pub fn broken_domain(
 ///
 /// One function and not three, because there are three places that ask it and
 /// they have to get the same answer: the runtime's post-transition door, the
-/// guard `gen-views` weaves into a generated arm, and the dynamic-component
+/// guard `gen` weaves into a generated arm, and the dynamic-component
 /// host holding a guest's successor. A domain the woven guard admitted and the
 /// runtime then refused would be a component that abandons a transition its own
 /// compiled code said was fine — which is exactly the class of bug a second
@@ -627,7 +627,7 @@ fn value_src(v : Value) -> String {
 ///|
 /// The MoonBit source of the expression that rebuilds this domain.
 ///
-/// What `gen-views` splices into a generated `SchemaInfo`, and the twin of
+/// What `gen` splices into a generated `SchemaInfo`, and the twin of
 /// `Domain::to_json` for the reader that has a compiler rather than a parser.
 /// It is a method on the domain rather than a table in the generator, for the
 /// reason `Ty::to_mbt_source` is one: the source form and the value form

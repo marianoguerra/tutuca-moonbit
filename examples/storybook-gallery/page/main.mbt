@@ -13,7 +13,7 @@ fn main {
 
 ///|
 /// One module of components. `counter_component` is generated from
-/// counter.html by `tutuca gen-views`; nothing here restates the view file.
+/// counter.html by `tutuca gen`; nothing here restates the view file.
 ///
 /// The `examples` are the stories: each names a component, the args to make it
 /// with, and optionally the view to render it under. They are also what

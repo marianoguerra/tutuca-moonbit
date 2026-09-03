@@ -38,7 +38,7 @@ fn counter_module() -> @component.ModuleDef {
     // Hand-written and complete. A fixture is not exempt: `component` takes a
     // schema because the runtime should be told a component's shape rather
     // than reconstruct it, and that holds whether the shape came from
-    // `gen-views` or from here.
+    // `gen` or from here.
     update=(s : CounterState, msg, _ctx) => {
       match msg {
         Receive("inc", _) => Next({ ..s, count: s.count + 1, })

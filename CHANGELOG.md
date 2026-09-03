@@ -47,6 +47,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   channel, because `statedef`'s lexer is private and a literal scan would
   rewrite the word in prose. It lands with the rest of the spec-block family.
 
+- **`gen-views` is `tutuca gen`.** It has not only generated views since the
+  schema landed — it writes the state struct, its zero, the codec, the
+  `SchemaInfo` and the message enums — so a command named for one of six is a
+  command whose name has to be explained.
+
+  `gen-views` still dispatches for one release, as an alias and nothing more:
+  it is out of the registry, so `help` and `agent-context` list only `gen` and
+  a "did you mean" cannot suggest the name on its way out.
+
 - **`<C>Method` is `<C>Compute`**, named for the bucket it keys.
 
 - **`init~` is `initial~`**, on the generated wrapper and on `component()`

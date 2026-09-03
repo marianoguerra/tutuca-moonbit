@@ -156,7 +156,7 @@ test "collect_view_classes sees classes inside an expanded macro" {
 /// generator does. It did not, and hardcoded "no schema" instead: `@bind`
 /// reads the field's type to pick its coercion, so every view file using one
 /// was refused here and the whole stylesheet stopped rebuilding while
-/// `gen-views` kept writing the same file without complaint.
+/// `gen` kept writing the same file without complaint.
 test "collect_view_classes builds a view against the file's schema" {
   let classes = classes_of(
     (

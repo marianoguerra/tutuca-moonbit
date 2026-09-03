@@ -12,7 +12,7 @@
 //
 // Pure like the rest of cli/: this turns SOURCE TEXT into OUTPUT TEXT. The
 // shell (cmd/tutuca) reads the file and writes the result, the same split
-// `gen-views` uses.
+// `gen` uses.
 
 ///|
 /// What to do to the trace.

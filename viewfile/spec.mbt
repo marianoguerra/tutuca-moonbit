@@ -110,7 +110,7 @@ pub(all) struct ViewFile {
   ///
   /// The ESCAPE HATCH, and read by exactly one consumer: `tutucard/wasm`
   /// compiles a card into a Wax module and this is source it splices in. The
-  /// interpreter has no Wax to run and `gen-views` has no module to put it in,
+  /// interpreter has no Wax to run and `gen` has no module to put it in,
   /// so for both of those a file carrying one is a file with a block they
   /// ignore — which is what makes this additive rather than a fourth thing
   /// every backend has to answer for.
@@ -143,7 +143,7 @@ pub(all) struct ViewFile {
   /// A fact about the file and not a failure, which is why it rides here rather
   /// than in `FileError`: the block parsed, the components are complete, and
   /// nothing downstream behaves differently. What it is for is letting the ONE
-  /// consumer that talks to an author — `gen-views` — say so, without every
+  /// consumer that talks to an author — `gen` — say so, without every
   /// other consumer of a `ViewFile` having to grow a warning channel to ignore.
   legacy_spec : Bool
 } derive(Eq, @debug.Debug)

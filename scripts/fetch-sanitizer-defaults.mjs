@@ -26,7 +26,7 @@
 // the committed file happens not to have been formatted since.
 //
 // The honest check is the `sanitizer-defaults` task: regenerate, `moon fmt`,
-// then `git diff --exit-code` — the same shape `skill-embed` and `gen-views`
+// then `git diff --exit-code` — the same shape `skill-embed` and `gen`
 // use, and the one that compares like with like.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";

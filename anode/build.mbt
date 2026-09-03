@@ -1,7 +1,7 @@
 // Builders for the AST: hyperscript-shaped constructors over the pub(all)
 // node types, with every rarely-set field as an optional argument. They add no
 // representation of their own — each one returns exactly the value the parser
-// builds for the same markup, which is what lets `tutuca gen-views` emit
+// builds for the same markup, which is what lets `tutuca gen` emit
 // `h("div", [attr("class", "x")], [text("hi")])` instead of the full struct
 // literal, and what lets a test write a tree by hand and compare it to a
 // parsed one.

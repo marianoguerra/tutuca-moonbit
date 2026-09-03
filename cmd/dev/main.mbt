@@ -143,7 +143,7 @@ const TEMPLATE_WIT : String = "dyncomp/wit/tutuca-component.wit"
 /// The gallery project `tutuca new-storybook` writes out. One hand-written
 /// tree, unlike the guest template's three sources — a gallery borrows no
 /// generated bindings, only a demo component whose view module is kept honest
-/// by the `gen-views` sweep.
+/// by the `gen` sweep.
 const STORYBOOK_TEMPLATE : String = "storybook/template"
 
 ///|

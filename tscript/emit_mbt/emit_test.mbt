@@ -266,7 +266,7 @@ test "a value body nobody asks for is not written" {
 
 ///|
 test "a zero divisor leaves through the ROLE's answer, not the transition's" {
-  // The bug this covers: `gen-views` emitted the divide-by-zero guard as
+  // The bug this covers: `gen` emitted the divide-by-zero guard as
   // `return Unchanged` everywhere, which is an `Update` constructor — so a
   // `compute` or a `pred` containing `/` produced a module that did not
   // BUILD. Division in a transition body keeps `Unchanged`; a value body
@@ -444,7 +444,7 @@ test "arithmetic goes through Double and comes back at the field's type" {
 /// needs — `receive rename(s, n) { .label = s }` wrote
 /// `let s = { ..s, label: s }`, the parameter standing where the state should
 /// have been, in a module that does not compile. The block was fine and
-/// `gen-views` reported nothing; `moonc` found it, in a file nobody reads.
+/// `gen` reported nothing; `moonc` found it, in a file nobody reads.
 ///
 /// The table is one name per generated-name FAMILY, the counted ones included:
 /// `v1`, `cur0` and `d0` come off counters, so no reserved-name list could

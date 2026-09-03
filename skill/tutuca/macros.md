@@ -78,7 +78,7 @@ fn btn_rm_macro() -> @anode.Macro {
 > **The `$` prefix only survives a RUNTIME macro.** The example above is an
 > `@anode.Macro` value, expanded when the view is compiled — by then the `$` has
 > already been resolved away. A macro declared in a view file
-> (`<template id="macro:btn-rm">`) is expanded by `gen-views` instead, which sees
+> (`<template id="macro:btn-rm">`) is expanded by `gen` instead, which sees
 > `@on.click="$removeInItemsAt"` in an event position and refuses it:
 > *"drop the `$` — in an event position a `$name` and a bare name are the SAME
 > dispatch"*. Pass the handler name bare (`:handler="removeInItemsAt"`) and it

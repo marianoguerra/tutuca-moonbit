@@ -22,7 +22,7 @@ let overview_body : String =
   #|  tutuca {-h | --help}
   #|
   #|COMMANDS
-  #|  gen-views [path...] [--name <Name>] [--out <dir|file>] [--dry-run] [--no-ir]
+  #|  gen [path...] [--name <Name>] [--out <dir|file>] [--dry-run] [--no-ir]
   #|      Compile .html files of views into companion MoonBit modules of typed
   #|      view surfaces, plus a compiled-tree module beside each. The generated
   #|      files are checked in; regenerate, never edit them. Paths follow the
@@ -45,7 +45,7 @@ let overview_body : String =
   #|      Rewrite view files from a retired spelling of the language to the
   #|      current one. A rename lands with the old spelling still parsing for
   #|      one release; this carries a tree across in between. Paths follow the
-  #|      same rule as gen-views.
+  #|      same rule as gen.
   #|
   #|      Says what would change and writes nothing without --write. Each line
   #|      is `path:offset  rule  old -> new`, where `rule` names the retirement.
@@ -98,7 +98,7 @@ let overview_body : String =
   #|  watch [path...] [--name <Name>] [--out <dir>] [--no-ir]
   #|        [--tailwind-css <file> | --margaui-css <file>]
   #|        [--css-entry <file>] [--css-classes <file>]
-  #|      Re-run gen-views on every save. Paths are .html files or directories;
+  #|      Re-run gen on every save. Paths are .html files or directories;
   #|      a directory contributes the .html files that already have a generated
   #|      sibling, so pointing it at a project root does not try to compile
   #|      index.html. Defaults to the current directory.
@@ -171,7 +171,7 @@ let overview_body : String =
   #|  missing feature — tutuca-mb compiles ahead of time, so those questions
   #|  are answered earlier, and more strictly, than a CLI could:
   #|
-  #|    - `gen-views` compiles your view files into typed MoonBit. A field that
+  #|    - `gen` compiles your view files into typed MoonBit. A field that
   #|      does not exist, or an `@on` handler nothing handles, is a BUILD
   #|      error — not a finding you have to remember to go looking for. Point
   #|      it at the whole project and the checks that need two components

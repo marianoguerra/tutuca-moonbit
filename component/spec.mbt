@@ -326,7 +326,7 @@ pub struct Component {
   mut schema : SchemaInfo
   /// The `<script type="tutuca/spec">` block this component was declared in,
   /// as SOURCE. Empty for a component that had none, and for every component
-  /// built by hand rather than by `gen-views`.
+  /// built by hand rather than by `gen`.
   ///
   /// The schema beside it is the block's PROJECTION, and the projection is
   /// lossy in the two places a generator needs: a rule reaches it as a name

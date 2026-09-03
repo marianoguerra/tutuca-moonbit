@@ -8,7 +8,7 @@
 // wrapper's own reason: the two arrive and leave together. The wrapper is what
 // composes the emitted function ahead of the author's `update~`, and a file
 // with no IR module has neither. What the types module carries instead is the
-// REFUSALS, as hints, because that path is the one `gen-views` reports
+// REFUSALS, as hints, because that path is the one `gen` reports
 // diagnostics from and a refusal is a thing the author has to read.
 
 ///|

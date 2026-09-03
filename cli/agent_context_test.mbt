@@ -44,8 +44,7 @@ test "the command list is exactly the commands that exist" {
   guard! schema() is Object(top)
   @debug.assert_eq(names_of(top), [
     "help", "feedback", "install-skill", "new-guest", "new-storybook", "storybook",
-    "gen-views", "migrate", "trace", "gen-tailwind-css", "gen-margaui-css", "watch",
-    "agent-context",
+    "gen", "migrate", "trace", "gen-tailwind-css", "gen-margaui-css", "watch", "agent-context",
   ])
 }
 
@@ -73,7 +72,7 @@ test "nothing in the schema describes a module surface" {
   // and the note says where those checks went instead
   guard! top.get("invocation") is Some(Object(inv))
   guard! inv.get("note") is Some(String(note))
-  assert_true(note.contains("gen-views"))
+  assert_true(note.contains("gen"))
   assert_true(note.contains("moon test"))
 }
 

@@ -263,7 +263,7 @@ async fn run_new_storybook(
 }
 
 ///|
-/// The shell half of `gen-views`: read the input .html, hand it to the pure
+/// The shell half of `gen`: read the input .html, hand it to the pure
 /// generator, write (or under --dry-run print) what it plans. Unlike
 /// install-skill this DOES overwrite without asking — regenerating a
 /// generated file in place is the whole workflow.
@@ -362,7 +362,7 @@ async fn run_gen_views(
 /// let the pure core decide the edits, and — only under `--write` — write the
 /// ones that changed back.
 ///
-/// The discovery rule is `gen-views`', deliberately: a migration is aimed at
+/// The discovery rule is `gen`', deliberately: a migration is aimed at
 /// the files a project treats as views, and `index.html` is not one.
 ///
 /// A file that comes back unchanged is not rewritten. Not as an optimisation —
@@ -452,7 +452,7 @@ fn from_input(inputs : Array[@cli.GenInput], written : String) -> String {
 ///
 /// The discovery rule is `watch`'s, deliberately — an explicit .html is taken at
 /// its word, a directory contributes the .html files that already have a
-/// generated sibling. A project's views are exactly the gen-views-managed ones,
+/// generated sibling. A project's views are exactly the gen-managed ones,
 /// and the rule is what keeps `index.html` from being parsed as a view.
 async fn run_gen_css(
   opts : @cli.GlobalOpts,
@@ -466,7 +466,7 @@ async fn run_gen_css(
         @cli.err(
           @cli.CODE_USAGE_MISSING_ARGUMENT,
           "no view files found under \{plan.paths.join(", ")}",
-          hint="a directory contributes the .html files that already have a <stem>_view_gen.mbt sibling; run `tutuca gen-views` first, or pass the .html paths directly",
+          hint="a directory contributes the .html files that already have a <stem>_view_gen.mbt sibling; run `tutuca gen` first, or pass the .html paths directly",
         ),
       ),
     )
@@ -693,7 +693,7 @@ async fn refresh_watch_css(
 /// .html files that already have a generated sibling. That rule is what
 /// tells a view file from a page — watching a project root should not try to
 /// compile index.html — and it means adding a view to a watched tree takes
-/// one `tutuca gen-views` before watch picks it up.
+/// one `tutuca gen` before watch picks it up.
 async fn collect_view_files(
   paths : Array[String],
   managed_only? : Bool = true,
@@ -723,7 +723,7 @@ fn skip_dir(name : String) -> Bool {
 
 ///|
 /// `managed_only` is the difference between the two questions a directory can
-/// be asked. `gen-views` and the CSS commands want the files this project
+/// be asked. `gen` and the CSS commands want the files this project
 /// GENERATES from, and a generated sibling is what says so — otherwise
 /// `index.html` is compiled as a view. `migrate` wants every file written in
 /// the language, generated sibling or not: a starter card has none and is
@@ -778,7 +778,7 @@ fn watch_roots(files : Array[String], paths : Array[String]) -> Array[String] {
     add(parent_dir(f))
   }
   // With no view files yet there is still something to watch: the paths the
-  // user named, so the first `gen-views` in that tree is picked up.
+  // user named, so the first `gen` in that tree is picked up.
   if roots.is_empty() {
     for p in paths {
       add(if @cli.is_view_path(p) { parent_dir(p) } else { p })

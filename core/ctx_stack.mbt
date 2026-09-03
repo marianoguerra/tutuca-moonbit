@@ -19,7 +19,7 @@
 /// parameters, so `*name` is the only stack question it emits.
 ///
 /// `pub(all)`, because the code that CONSTRUCTS one is generated into somebody
-/// else's package: `gen-views` weaves `@tutuca.CtxStack(ctx)` into a handler
+/// else's package: `gen` weaves `@tutuca.CtxStack(ctx)` into a handler
 /// arm whose `invariant` calls a `pred`, and a plain `pub struct` is read-only
 /// outside the package that declares it — so that arm did not compile, with
 /// nothing said at generation time and a `moon check` error afterwards. The

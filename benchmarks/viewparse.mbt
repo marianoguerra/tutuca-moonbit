@@ -1,4 +1,4 @@
-// The view-pipeline workload, split into the stages `tutuca gen-views` runs so
+// The view-pipeline workload, split into the stages `tutuca gen` runs so
 // a profile can be attributed to one of them, over either corpus (see
 // corpus_gen.mbt): the same nodes as 108 small views, or as one enormous one.
 //

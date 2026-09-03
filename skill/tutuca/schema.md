@@ -5,13 +5,13 @@ Read this file when declaring or changing what a component IS: the
 mutators a field kind generates, handle/express surfaces, slots, named initial
 states, and the `pred`s and `invariant`s the component keeps.
 
-The spec is the source of truth for a component's state. `gen-views` reads it
+The spec is the source of truth for a component's state. `gen` reads it
 and writes the MoonBit state struct, the codec, the descriptor and the typed
 message enums; nothing you write restates it. Change a field here, regenerate,
 and every read of it in every view and handler is re-checked.
 
 **The block used to be called `tutuca/state`.** That name still parses and
-`gen-views` reports it once per file, because a card in the field is one file
+`gen` reports it once per file, because a card in the field is one file
 someone else's page loads. Rename the `type=` and nothing else changes.
 
 ## The two blocks
@@ -348,7 +348,7 @@ raw outbound name is quoted (`send 'focusRow' 3`); an operation declared in
 `express` is unquoted (`intent saveRows`). The generator makes the UpperCamel
 MoonBit variant (`BoardReceive::FocusRow`) from it — the capital belongs to
 the generated code, not to what you write. An UpperCamel declaration still
-parses, but `gen-views` reports it as a `message-case` warning.
+parses, but `gen` reports it as a `message-case` warning.
 
 `message` is what something `send`s to this component **by address**; `intent`
 is what reaches it because a walk routed here — a descendant's `ask dyn`, or
@@ -526,7 +526,7 @@ arithmetic, and a bare parameter — see
 `equals?` and `falsy?` are retired: `is` says the first and `not` says the
 second, and one meaning keeps one spelling. Both still parse — a compiled
 dyncomp bundle carries its view markup as a string and the host parses it at
-load time, so a spelling cannot simply be deleted — and `gen-views` hints
+load time, so a spelling cannot simply be deleted — and `gen` hints
 where one is left.
 
 ## Changing a collection
@@ -564,9 +564,9 @@ The receiver is written directly (`.songs.push`, `.songs.setAt`,
 | map `Map[String, V]` | `setAt k v`, `deleteAt k` |
 
 **Use those spellings.** A few aliases parse — `removeAt`, `delete`, `set`,
-`clear` — and `gen-views` compiles some of them, but the **card compiler**
+`clear` — and `gen` compiles some of them, but the **card compiler**
 implements the canonical names only and refuses the rest as unsupported. A
-handler that compiles as a card and is refused by `gen-views`, or the other way
+handler that compiles as a card and is refused by `gen`, or the other way
 round, may simply be using a non-canonical spelling.
 
 An index out of range is a **no-op**, not a crash: `setAt`/`deleteAt` past the
@@ -648,7 +648,7 @@ backend limits below before reaching for it.
 ### What the ahead-of-time backend refuses
 
 A card compiles the block directly to its component wasm module and supports
-the cases below; the ahead-of-time `gen-views` emitter targets MoonBit and has
+the cases below; the ahead-of-time `gen` emitter targets MoonBit and has
 these limits. It **refuses the arm** rather than miscompiling it — it prints
 `<Comp>: <name> stays in MoonBit — <why> (script-refusal)`, drops the name
 from what the block answers, and leaves it in your `update` match to write in
@@ -903,7 +903,7 @@ redirect `@tutuca.warn_hook` to collect those in a test or route them to an
 error pane.
 
 Both backends keep them identically — the card compiler emits the rule into the
-component module, while `gen-views` emits a `guard` in the generated MoonBit
+component module, while `gen` emits a `guard` in the generated MoonBit
 arm, ahead of the effect queue's flush.
 
 Four things to know about the clauses themselves:
@@ -943,7 +943,7 @@ Four things to know about the clauses themselves:
 
 - **The declared initial states are checked at build time.** Every
   `tutuca/fixtures` fixture is asserted against every invariant by a test
-  `gen-views` writes into the generated module — a rule that does not hold in
+  `gen` writes into the generated module — a rule that does not hold in
   the state the component starts in is broken before anything happens. The
   schema's zero is deliberately not checked: a wrapper is normally called with
   `initial~`, which the generator cannot see.
@@ -1029,7 +1029,7 @@ file, so it needs a view file even when it has no views. Such a file emits the
 state half only, and no view surface.
 
 The same applies per component: one file may give templates to some and declare
-state alone for others. `gen-views` reports the latter as
+state alone for others. `gen` reports the latter as
 `state-without-views (hint)` rather than an error, since it is also what a
 mistyped component name looks like.
 
@@ -1148,7 +1148,7 @@ which is the shape to copy.
 
 - [core.md](./core.md#component-skeleton) — what you write beside the generated
   state: the handler buckets.
-- [cli.md](./cli.md#gen-views--ahead-of-time-views) — running `gen-views`, and
+- [cli.md](./cli.md#gen--ahead-of-time-views) — running `gen`, and
   every diagnostic it can report.
 - [patterns/todo-list.md](./patterns/todo-list.md) — a schema, its views and its
   handlers as one worked pair.

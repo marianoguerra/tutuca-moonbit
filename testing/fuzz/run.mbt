@@ -31,7 +31,7 @@ pub(all) struct Step {
   /// The differential half, and the reason a run reads the block rather than
   /// trusting the component: on one side `@tscript.parse_bool` lowers the
   /// rule's source to a `@core.Val` and `Val::eval` answers it over the state
-  /// as it stood; on the other is the guard `gen-views` compiled from the same
+  /// as it stood; on the other is the guard `gen` compiled from the same
   /// line, whose verdict arrives as a `Refusal` carrying the rule's name. They
   /// agree, or one of them is wrong about the component's own contract — and
   /// the two only diverge on the states nobody thought to write down.

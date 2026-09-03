@@ -47,7 +47,7 @@ return `keys` from `@loop-with` instead — see
 [filter-and-paginate.md](filter-and-paginate.md).
 
 **When it stays MoonBit.** A row that is a child component *instance* is
-filtered by reading a path into it (`@value.completed`), and `gen-views` does
+filtered by reading a path into it (`@value.completed`), and `gen` does
 not compile a path into a binding yet — it prints `stays in MoonBit` and the
 name falls through to the `when` bucket, whose entries take
 `(state, key, value, iter_data) -> Bool` ([the handler

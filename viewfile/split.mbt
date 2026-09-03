@@ -38,7 +38,7 @@ const SPEC_TYPE = "tutuca/spec"
 /// Kept parsing rather than cut, because a view file is a FORMAT and not just
 /// this repo's input: a card is one file that someone else's page loads, and
 /// breaking every one of them in the field to rename a string is a cost the
-/// rename does not earn. A file that writes it still splits, and `gen-views`
+/// rename does not earn. A file that writes it still splits, and `gen`
 /// says so once per file.
 const LEGACY_SPEC_TYPE = "tutuca/state"
 
@@ -79,14 +79,14 @@ const SCRIPT_TYPE = "tutuca/script"
 /// The `type=` that marks a `<script>` as hand-written Wax — the ESCAPE HATCH.
 ///
 /// The ahead-of-time path has had one for as long as it has refused anything:
-/// a handler `gen-views` cannot compile comes back by name as an `update~`
+/// a handler `gen` cannot compile comes back by name as an `update~`
 /// argument, and you write it in MoonBit. The compiled path refused by name
 /// too and handed back nothing at all, which is the difference this block
 /// closes — a card whose handler the generator turns away can answer it in the
 /// language the module is built out of.
 ///
 /// Lifted here and read by NOBODY but `tutucard/wasm`. It is inert everywhere
-/// else: the interpreter has no Wax to run and `gen-views` has no wasm to put
+/// else: the interpreter has no Wax to run and `gen` has no wasm to put
 /// it in, so a file carrying one is a file with a block those two ignore.
 ///
 /// A `<script>` for the third time and for the same reason: Wax is full of
@@ -103,7 +103,7 @@ const WAX_TYPE = "tutuca/wax"
 ///
 /// What it says is the card's tests. Whether anything runs them is a property
 /// of the consumer rather than of the file: `tutucard` drives a scene on the
-/// in-memory DOM and `gen-views` ignores the block entirely — exactly as it
+/// in-memory DOM and `gen` ignores the block entirely — exactly as it
 /// ignores `tutuca/wax` — which is what makes this additive rather than a
 /// fifth thing every backend has to answer for.
 const TEST_TYPE = "tutuca/test"

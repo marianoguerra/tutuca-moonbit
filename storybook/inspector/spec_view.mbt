@@ -284,20 +284,20 @@ fn spec_absent_hint(comp : @component.Component?) -> String {
     return "This story's instance does not resolve to a registered component, so there is no declaration to read."
   }
   guard c.spec == "" else { return "" }
-  "\{c.name} carries no <script type=\"tutuca/spec\"> block — it was written by hand rather than compiled by gen-views — so there is nothing declared to show. The Fuzz tab has nothing to generate from either."
+  "\{c.name} carries no <script type=\"tutuca/spec\"> block — it was written by hand rather than compiled by gen — so there is nothing declared to show. The Fuzz tab has nothing to generate from either."
 }
 
 ///|
 /// What a reader of a shipped block should know about it before they trust
 /// what is missing from it.
 ///
-/// `gen-views` strips the prose on its way into the binary — a block is
+/// `gen` strips the prose on its way into the binary — a block is
 /// carried so `@statedef.parse_state` can read it back, and no parser reads a
 /// `///`. So a declaration whose author documented every field shows none of
 /// it here, and that is worth saying rather than leaving as a puzzle. Empty
 /// for a block nobody stripped: one parsed at run time, from a dyncomp guest
 /// or the playground, reaches its component whole.
-pub let spec_docs_note : String = "gen-views ships this block without its doc comments — a block is carried to be re-parsed, and no parser reads prose. The full text is in the .html file."
+pub let spec_docs_note : String = "gen ships this block without its doc comments — a block is carried to be re-parsed, and no parser reads prose. The full text is in the .html file."
 
 ///|
 /// A note about the block, or "" when it needs none.
@@ -332,7 +332,7 @@ pub fn Inspector::spec_panel(
       c.spec,
       name=c.schema.name,
     ) catch {
-      // A block that no longer parses is a `gen-views` failure that has already
+      // A block that no longer parses is a `gen` failure that has already
       // been reported where the author will see it. Said plainly here rather
       // than swallowed, because the alternative is an empty pane that looks
       // like the gallery is broken.
@@ -387,7 +387,7 @@ pub fn Inspector::spec_source_panel(
 /// A declaration exercising every row this panel can draw.
 ///
 /// Written out rather than taken from a compiled component, because the
-/// interesting half of a block is the half `gen-views` does not ship: prose
+/// interesting half of a block is the half `gen` does not ship: prose
 /// goes on the way into a binary, and no example in this package declares a
 /// rule or a named type. This is what a block looks like when it reaches the
 /// runtime WHOLE — a dyncomp guest's, the playground's — and it is the only

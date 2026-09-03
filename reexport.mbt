@@ -31,7 +31,7 @@ pub using @core {type IntentOpts, type IntentCall, type IntentAnswer, type Leg}
 
 // The contract reporters and the channel they report through.
 //
-// Not a convenience: a GENERATED module names them. `gen-views` compiles a
+// Not a convenience: a GENERATED module names them. `gen` compiles a
 // `requires` / `ensures` / `invariant` into a guard that calls
 // `@tutuca.precondition_failed(…)`, and in the playground `@tutuca` IS this
 // facade — so a card with a contract compiled everywhere except the one place
@@ -44,7 +44,7 @@ pub using @core {type IntentOpts, type IntentCall, type IntentAnswer, type Leg}
 
 // The DOMAIN vocabulary, for the same reason and with the same failure mode as
 // the contract reporters below: a generated arm names `@tutuca.FieldDomain` in
-// the signature of the helper `gen-views` writes beside it, and calls
+// the signature of the helper `gen` writes beside it, and calls
 // `@tutuca.first_broken_domain` to ask its question.
 //
 // The CONSTRUCTORS are deliberately not here, and cannot be: an enum

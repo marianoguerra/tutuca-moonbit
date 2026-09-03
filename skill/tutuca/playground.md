@@ -12,7 +12,7 @@ card runtime; see [tutucard.md](./tutucard.md).
 
 ## Same generator, same names
 
-A playground runs the **same view generator** `tutuca gen-views` does,
+A playground runs the **same view generator** `tutuca gen` does,
 in the browser, on every run — so every generated name documented in
 [cli.md](./cli.md) applies verbatim. Naming derives from the template /
 component names in the view source:
@@ -55,7 +55,7 @@ live in an editor pane.
 
 ## Verifying without `moon`
 
-The repo loop (`gen-views` → `moon check` → `moon test`,
+The repo loop (`gen` → `moon check` → `moon test`,
 [core.md](./core.md) *Verifying changes*) collapses here to one step:
 **recompile and read the diagnostics**. The same errors surface — an
 unknown `.field` fails view generation, an unhandled `@on` name makes

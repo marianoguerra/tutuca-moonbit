@@ -202,7 +202,7 @@ render-time read of an event that is not happening.
 
 ## Generated `Msg` payload types
 
-When the views are generated (`gen-views`), each `@on` name becomes a case of the
+When the views are generated (`gen`), each `@on` name becomes a case of the
 `<Comp>Msg` enum, and the payload type of each argument is inferred from what is
 **written at the call site**:
 

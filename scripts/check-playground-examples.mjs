@@ -4,7 +4,7 @@
 // includes them, so without this check they rot silently when the library API
 // moves (it happened: see "drop deprecated Map::new in examples").
 //
-// An example's views live in its .html, exactly as `tutuca gen-views` expects.
+// An example's views live in its .html, exactly as `tutuca gen` expects.
 // The browser generates that module on the fly (the View tab), so this check
 // runs the SAME generator — viewgen/ compiled to JS — and drops its output
 // into the package as extra files, the way compiler.worker.js does. An

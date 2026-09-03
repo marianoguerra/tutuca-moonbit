@@ -7,7 +7,7 @@
 // Run it after any change to dyncomp/wit/tutuca-component.wit or a toolchain
 // bump, then `git diff` — the trees are checked in, so the diff IS the review.
 // `cmd/dev -- gen-guest-bindings` wraps this and follows it with the drift
-// check, the same shape as the `gen-views` task.
+// check, the same shape as the `gen` task.
 //
 // Four things have to happen for "regenerate, then diff" to mean anything:
 //
@@ -15,7 +15,7 @@
 //      the extensionless `moon.mod` / `moon.pkg` (hand-maintained: they carry
 //      the `control` import and the warning suppressions). Drop the .json
 //      twins rather than let `moon fmt` migrate them over the real ones.
-//   2. `moon fmt` owns the layout, exactly as it does for `gen-views` output.
+//   2. `moon fmt` owns the layout, exactly as it does for `gen` output.
 //      It is also what turns the raw shim list into `///|` blocks, which is
 //      why it runs BEFORE the sort below.
 //   3. wit-bindgen emits the `ffi.mbt` export shims in HASH ORDER, which

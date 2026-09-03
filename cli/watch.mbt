@@ -1,6 +1,6 @@
 // `tutuca watch` — regenerate view modules as the .html files change.
 //
-// Authoring a view is an edit/compile loop, and `gen-views` makes it a
+// Authoring a view is an edit/compile loop, and `gen` makes it a
 // three-step one: edit the view, remember to regenerate, then build. Watch
 // removes the middle step, so the generated modules are simply always current
 // and the MoonBit compiler is the thing that tells you what broke.
@@ -48,7 +48,7 @@ let watch_help : String =
   #|  --name applies only when watching a single file; a file that names its
   #|  own components with `id="Comp:view"` never needs it.
   #|
-  #|  --out, --name and --no-ir mean what they do for `gen-views`.
+  #|  --out, --name and --no-ir mean what they do for `gen`.
   #|
   #|  --tailwind-css / --margaui-css also rewrite that stylesheet after every
   #|  settled batch, so a new class in a view is styled by the time you reload.
@@ -157,7 +157,7 @@ pub fn is_view_path(path : String) -> Bool {
 
 ///|
 /// The generated module a view file produces, given `--out`. Shared with
-/// `gen-views` so watch and one-shot generation cannot disagree about where
+/// `gen` so watch and one-shot generation cannot disagree about where
 /// a file lands.
 pub fn watch_target(path : String, out : String?) -> String {
   let (dir, stem) = split_path(path)
@@ -174,7 +174,7 @@ pub fn watch_target(path : String, out : String?) -> String {
 
 ///|
 /// The component name for a watched file: `--name`, else the basename
-/// capitalized, matching `gen-views`.
+/// capitalized, matching `gen`.
 pub fn watch_name(path : String, name : String?) -> String {
   match name {
     Some(n) => n
@@ -186,7 +186,7 @@ pub fn watch_name(path : String, name : String?) -> String {
 }
 
 ///|
-/// Does this .html file look like one gen-views manages? The rule is the
+/// Does this .html file look like one gen manages? The rule is the
 /// presence of its generated sibling, which is what a directory scan uses to
 /// tell a view file from a page.
 pub fn watch_sibling(path : String) -> String {

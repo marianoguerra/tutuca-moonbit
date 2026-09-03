@@ -537,7 +537,7 @@ fn Checker::node(
 /// BLOCK should be checked against — from one compile of the templates.
 ///
 /// The two things a caller that holds views and a block both needs.
-/// `gen-views` gets them as a side effect of emitting, because
+/// `gen` gets them as a side effect of emitting, because
 /// `emit_component` compiles every view anyway. A CARD compiles none: its
 /// block was checked against a surface that says "I have no views"
 /// (`knows_views: false`), which is the honest answer for a caller holding a

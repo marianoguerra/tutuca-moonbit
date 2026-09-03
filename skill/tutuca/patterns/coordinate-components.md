@@ -128,7 +128,7 @@ explicit third parameter:
 
 ```moonbit nocheck
 // nocheck: bucket arguments, not compilable items
-// 1. `sendAt` — the block spells it and a card runs it, but `gen-views` does
+// 1. `sendAt` — the block spells it and a card runs it, but `gen` does
 //    not emit a position yet, so an addressed send is a MoonBit arm today.
 update=(s : ChatState, msg, ctx) => match msg {
   Receive("submit", _) => {

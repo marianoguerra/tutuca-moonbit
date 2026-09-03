@@ -28,14 +28,14 @@ links to.
 
 After editing a tutuca module, run these checks before declaring the
 edit done. This is an ahead-of-time port, so the first two are the
-compiler. The view rules still run, inside `gen-views`; what does not
+compiler. The view rules still run, inside `gen`; what does not
 exist is a separate `tutuca lint` command to invoke them with.
 
 1. **Regenerate the views, if you edited an `.html`** — the generator is
    the view checker: a view that would emit a parse issue fails
    generation instead of shipping.
 
-        tutuca gen-views src/button.html --name Button
+        tutuca gen src/button.html --name Button
         tutuca watch src/                 # …or leave this running
 
 2. **Type-check** — this is the lint step. The generated module gives
@@ -146,7 +146,7 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
 ## Bootstrap
 
 A component is declared in an `.html` view file — its state, its templates,
-its styles — and `tutuca gen-views` compiles that into a MoonBit module beside
+its styles — and `tutuca gen` compiles that into a MoonBit module beside
 it. What you write is the code no generator can: the handlers.
 
 `counter.html`:
@@ -182,7 +182,7 @@ pub fn counter_module() -> @component.ModuleDef {
 }
 ```
 
-Then regenerate (`tutuca gen-views counter.html --name Counter`) and run
+Then regenerate (`tutuca gen counter.html --name Counter`) and run
 `moon fmt`, so the checked-in pair stays reproducible.
 
 Adding `@on.click="del"` to the view and regenerating makes that match
@@ -378,7 +378,7 @@ around it — so read the value in the view and pass it in.
 > **Retired spellings.** `equals? a b` is now `a is b`, and `falsy? x` is
 > `not (truthy? x)`. Both still parse — a compiled dyncomp bundle carries its
 > view markup as a string and the host parses it at load time — and
-> `gen-views` hints where one is left.
+> `gen` hints where one is left.
 
 | Prefix   | Means                                     | Example               |
 | -------- | ----------------------------------------- | --------------------- |
@@ -395,7 +395,7 @@ around it — so read the value in the view and pass it in.
 | `pred? .x` | an expression in a conditional slot | `empty? .items`, `.view is 'detail'`, `not .open` |
 
 `.x` and `$x` are not interchangeable: `.x` reads a property, while `$x`
-calls a method. `gen-views` reports a mismatch and names the prefix to use.
+calls a method. `gen` reports a mismatch and names the prefix to use.
 
 A bare `name` (no prefix) in `@on.<event>="<handler> <arg> <arg>..."`
 resolves by slot:
@@ -454,7 +454,7 @@ escape the double quotes (`"<p :class=\"'flex gap-3'\">x</p>"`). Prefer
 ## Component Skeleton
 
 What you write is the handlers; everything else the view file states. The
-wrapper `gen-views` emits is typed on the state struct, so lambda parameters
+wrapper `gen` emits is typed on the state struct, so lambda parameters
 need no annotation:
 
 ```moonbit nocheck
@@ -546,7 +546,7 @@ arguments it is built with — see [schema.md](./schema.md#slots).
 ## Fields
 
 **The schema is the fields.** Names, types and kinds are declared in the view
-file's `<script type="tutuca/spec">` block; `gen-views` writes the struct, and
+file's `<script type="tutuca/spec">` block; `gen` writes the struct, and
 every handler body is compiler-checked against it — `s.cuont` is a compile
 error, not a silently-Null render.
 
@@ -708,7 +708,7 @@ first**: several of these become build errors that way. The usual suspects:
 
 - **Unparseable attribute value** → the attribute is silently dropped. A bare
   multi-word value isn't a string — quote it (`:label="'two words'"`) or make it
-  a template (`:label="$'{.a} {.b}'"`). `gen-views` rejects this as
+  a template (`:label="$'{.a} {.b}'"`). `gen` rejects this as
   `BAD_VALUE` rather than generating a module for it.
 - **camelCase attribute on a custom element** → setter no-op (see the lowercasing
   note above). Use kebab-case attributes. Not detectable — the HTML parser
@@ -734,7 +734,7 @@ first**: several of these become build errors that way. The usual suspects:
 The handler **name** is written bare — a leading `$` is refused in an event
 position. Its **arguments** carry a sigil that says where the value comes from:
 `e.…` reads the DOM event, `.field` reads state, `@bind` reads a binding. (A bare
-argument name says none of the three, so `gen-views` refuses it and names them.)
+argument name says none of the three, so `gen` refuses it and names them.)
 Written args arrive in the handler's `args` array in template order, so an arm
 pattern-matches them directly
 (`Receive("search", [Str(q), ..]) => ...`). With generated views each `@on` name
@@ -795,7 +795,7 @@ in **[events.md](./events.md)**. Two things worth knowing before you get there:
 
 A branch is an **expression**, so a literal class list needs its quotes:
 `@then="'btn btn-primary'"`, never `@then="btn btn-primary"`. An unquoted one
-fails `gen-views` with `bad value '…' in directive 'then'`.
+fails `gen` with `bad value '…' in directive 'then'`.
 
 Note: `@show` / `@hide` **omit the node from the output** when the
 condition says hide — they do not merely toggle CSS visibility.
@@ -829,7 +829,7 @@ pagination and the `@loop-with` → `loop_with` return shape, and the
 A component's views come in through `views=` (a
 `Map[String, @anode.View]`), keyed by name — `"main"` is the one rendered by
 default. Author them in an `.html` file and generate the map with
-`tutuca gen-views` (see [cli.md](./cli.md)). A view whose SOURCE only exists at
+`tutuca gen` (see [cli.md](./cli.md)). A view whose SOURCE only exists at
 run time — a guest bundle, markup a MoonBit function assembles — uses
 `@anode.View::new("main", raw_view="…")`, which builds the same `@anode.View`;
 its component still declares a schema and a codec like any other. `as` selects
@@ -897,7 +897,7 @@ by the first applicable layer:
    never both claim one handler.
 3. a **bucket entry**, for what neither of those says: building a child
    component instance, `@loop-with`, a fold over a whole sequence, a payload
-   unpacked out of an `Any` — and anything `gen-views` prints a
+   unpacked out of an `Any` — and anything `gen` prints a
    `script-refusal` for. The block's own reference, and the list of what the
    ahead-of-time backend refuses, are in
    [schema.md](./schema.md#what-the-ahead-of-time-backend-refuses).
@@ -916,7 +916,7 @@ take a trailing `&@tutuca.Stack`: the render position the body is being asked
 from. `stack.lookup_dynamic(name)` is what answers a `*name` inside one, and it
 is the same lookup the card runtime performs for a `*name` in a slot beside it, so a
 `pred` and the `@show` that reads it agree. A body that asks nothing of it
-names the parameter `_stack`; `gen-views` writes that for you. `loop_with`
+names the parameter `_stack`; `gen` writes that for you. `loop_with`
 takes neither.
 
 ### Two spellings, by call target
@@ -1263,7 +1263,7 @@ its examples never reach the storybook or a harness test.
 - [testing.md](./testing.md) — `moon test` blocks and the `@harness`
   mount/drive/read API.
 - [cli.md](./cli.md) — the embedded CLI: commands, flags, exit codes, and
-  every diagnostic `gen-views` can report.
+  every diagnostic `gen` can report.
 - [playground.md](./playground.md) — authoring in an in-browser playground:
   same generated names, the view+code pair convention, verifying without
   `moon`.

@@ -141,7 +141,7 @@ call `compile_sync` after mount.
 
 ## Compile at build time (the CLI)
 
-If your views are ahead-of-time compiled (`gen-views`), you do not need to
+If your views are ahead-of-time compiled (`gen`), you do not need to
 compile in the browser at all — the CLI runs the same collection over the view
 **files** and writes a stylesheet:
 

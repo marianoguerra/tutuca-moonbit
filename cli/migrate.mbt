@@ -3,7 +3,7 @@
 //
 // Pure like the rest of cli/: this half takes SOURCE TEXT and answers what the
 // shell should write and what it should print. The shell reads and writes the
-// files, the same split `gen-views` uses.
+// files, the same split `gen` uses.
 //
 // The default is to say what WOULD change and write nothing. A tool that
 // rewrites a tree by default is one people run once, by accident, on a repo
@@ -38,7 +38,7 @@ pub(all) struct MigratePlan {
 ///|
 /// One file in, its migration out.
 pub fn migrate_one(path : String, source : String) -> MigrateFile {
-  // The same fallback name `gen-views` derives, and for the same reason: a
+  // The same fallback name `gen` derives, and for the same reason: a
   // file whose `state {}` block is unnamed answers for the component the file
   // is named after, and the splitter needs to be told which that is.
   let (_, name) = gen_views_target(path)
@@ -158,7 +158,7 @@ let migrate_help : String =
   #|  one. A rename lands with the old spelling still parsing for one release;
   #|  this is what carries a tree across in between.
   #|
-  #|  Paths are .html files or directories, following gen-views' rule: a
+  #|  Paths are .html files or directories, following gen' rule: a
   #|  directory contributes the .html files that already have a generated
   #|  sibling, so pointing this at a project root does not rewrite index.html.
   #|

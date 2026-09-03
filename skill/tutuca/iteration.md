@@ -117,7 +117,7 @@ fields optional:
   `@enrich-with`. Defaults to `Map({ "seq": seq })` when omitted. Inside
   the loop a binding may read one **binding member** directly
   (`@value.title`) — if an enrich handler only copies members of the
-  loop value, `gen-views` hints to drop it and read the members instead.
+  loop value, `gen` hints to drop it and read the members instead.
 - **`start`, `end`** (as `Int`) — a positional slice of the iteration,
   with JS `Array.prototype.slice` semantics: `end` is exclusive,
   negatives count from the end (`end=-3` drops the last 3), absent

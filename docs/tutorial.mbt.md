@@ -13,9 +13,9 @@ The examples here build each view inline with `@anode.View::new(raw_view="…")`
 and match dispatches as raw `Input(name, args)` strings. This is the shortest
 form to read on one screen, and the escape hatch for dynamic views. For real
 components, use **ahead-of-time views**: put the template in an `.html` file
-and run `tutuca gen-views`. The tool compiles the file and generates a typed
+and run `tutuca gen`. The tool compiles the file and generates a typed
 `<Comp>Msg`. A misspelled or unhandled `@on` handler then gives a *compile
-error*, not a silent no-op. See the "Views (`views~` + `gen-views`)"
+error*, not a silent no-op. See the "Views (`views~` + `gen`)"
 section of the [README](../README.mbt.md), `demo/counterlib/` for the worked
 example, and the playground's View tab.
 
@@ -61,7 +61,7 @@ Event attributes may instead contain a direct property action:
 
 A component is a **view file** plus whatever that file cannot state. The file
 holds three blocks: the state schema, the behaviour, and the templates.
-`tutuca gen-views` turns all three into `counter_component`. That value
+`tutuca gen` turns all three into `counter_component`. That value
 already carries the name, the compiled views, the styles, the codec, the
 schema, and the compiled handlers:
 
@@ -91,11 +91,11 @@ The MoonBit side of the counter then needs no more code:
 ///|
 test "the generated counter is a complete component" {
   // Views call update by bare name: @on.click="dec". Both names are answered
-  // in the file's `tutuca/script` block, which `gen-views` compiles and
+  // in the file's `tutuca/script` block, which `gen` compiles and
   // composes AHEAD of the `update~` this does not pass.
   //
   // Write a handler that block cannot compile — one that walks a path, or
-  // builds a child component — and `gen-views` says which one, by name. That
+  // builds a child component — and `gen` says which one, by name. That
   // one comes back here as an `update~`, and the rest stay where they are.
   counter_component() |> ignore
 }

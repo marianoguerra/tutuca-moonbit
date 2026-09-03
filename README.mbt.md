@@ -37,21 +37,21 @@ and formal `spec.mbt`. From the bottom up:
 | **Demos & docs** | `demo/`, `playground/`, `storybook/`, `tutucard/`, `guests/` | 51 ported examples (`storybook/examples/`), browser/wasm demo hosts, an in-browser playground, the compiler-free card playground, a compiled storybook gallery, and eleven sample `tutuca:component` guests (ten MoonBit, one Rust — the list is `guests/guests.mjs`). |
 
 The `tutuca` CLI does the work that happens outside the compiler:
-`gen-views`, `watch`, `storybook`, `install-skill`, `feedback`,
+`gen`, `watch`, `storybook`, `install-skill`, `feedback`,
 `agent-context` and `help`. It does not inspect, document, lint or render
 components — this is an ahead-of-time port, so those questions belong to
-`gen-views` (which makes a bad field reference or an unhandled `@on` handler a
+`gen` (which makes a bad field reference or an unhandled `@on` handler a
 *build* error), to `moon check`, and to `moon test` over
 `testing/harness`. There is no module path and no way to point the binary at
 one.
 
-## Views (`views~` + `gen-views`)
+## Views (`views~` + `gen`)
 
 `component(...)` takes its views as `views~ : Map[String,
 @anode.View]` — a view is a built `@anode.View`, never a raw string. There is
 one component shape, and two ways to arrive at it.
 
-**Ahead of time**, with `tutuca gen-views`: the view file states the component,
+**Ahead of time**, with `tutuca gen`: the view file states the component,
 and the generated module hands `component()` its name, views, styles, schema
 and codec. This is the default and what the rest of this section describes.
 
@@ -73,7 +73,7 @@ into a companion MoonBit module, so the view's vocabulary stops being strings
 the compiler cannot see:
 
 ```sh
-moon run --target native cmd/tutuca -- gen-views demo/counterlib/counter.html --name Counter
+moon run --target native cmd/tutuca -- gen demo/counterlib/counter.html --name Counter
 # -> demo/counterlib/counter_view_gen.mbt      (the view vocabulary as types)
 # -> demo/counterlib/counter_view_ir_gen.mbt   (the compiled views + the wrapper)
 # both checked in; regenerate, never edit
@@ -171,7 +171,7 @@ macros belong in the view file rather than being registered from MoonBit:
 
 ### The compiled tree
 
-`gen-views` also emits `<stem>_view_ir_gen.mbt`: the `@anode.ANode` tree and
+`gen` also emits `<stem>_view_ir_gen.mbt`: the `@anode.ANode` tree and
 event table each view parses into, as MoonBit code, so the template parser
 never runs at startup. A component that declares a schema gets one more thing
 there — `counter_component`, a wrapper over `component()` with everything the
@@ -232,7 +232,7 @@ Regenerate through the task, not the CLI — `moon fmt` owns the layout of the
 generated pair:
 
 ```sh
-moon run --target native cmd/dev -- gen-views    # generate + fmt
+moon run --target native cmd/dev -- gen    # generate + fmt
 git diff --exit-code                             # drift check
 ```
 
@@ -258,7 +258,7 @@ runs the same generator in the browser. Its left pane has three tabs:
 |---|---|
 | **Component** | the MoonBit you write |
 | **View** | the `.html` its views live in (name the component with `<!-- name: Counter -->`) |
-| **Generated** | read-only: what `gen-views` makes of the View tab, updating as you type |
+| **Generated** | read-only: what `gen` makes of the View tab, updating as you type |
 
 The generated modules are compiled as extra files of *your* package, so the
 Component tab names `counter_views()` / `CounterMsg`

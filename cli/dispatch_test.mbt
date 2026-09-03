@@ -22,7 +22,7 @@ test "the overview explains where the compile-time checks are" {
   assert_false(text.contains("<module-path>"))
   assert_false(text.contains("--module"))
   assert_true(text.contains("WHERE THE CHECKS ARE"))
-  assert_true(text.contains("gen-views"))
+  assert_true(text.contains("gen"))
   assert_true(text.contains("moon test"))
 }
 

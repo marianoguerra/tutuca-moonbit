@@ -127,7 +127,7 @@ organize by `moon test` block names and files.
 ## What to test
 
 Run tests when the change is observable behavior — handlers, coercion,
-interaction flows. For pure template/styling tweaks, `gen-views` plus
+interaction flows. For pure template/styling tweaks, `gen` plus
 `moon check` already prove the view compiles; mount it in the storybook if
 you want to look at it.
 
@@ -334,7 +334,7 @@ test "counter: immutability — one render per interaction" {
 
 ## Testing a CARD: `<script type="tutuca/test">`
 
-Everything above is the ahead-of-time path: a view file, `gen-views`, a
+Everything above is the ahead-of-time path: a view file, `gen`, a
 `ModuleDef`, and `moon test` over `@harness`. A **card** is the other
 thing a `.html` file can be — one file the browser compiles to a
 `tutuca:component@0.12.0` wasm module with no MoonBit toolchain on the
@@ -343,8 +343,8 @@ so a card declares its tests as a **fifth block**, in JSON, beside its
 schema and its handlers.
 
 Use this when the file is a card. Use `moon test` + `@harness` when it
-is a view file compiled by `gen-views`. The block is inert on the
-ahead-of-time path — `gen-views` ignores it, exactly as it ignores
+is a view file compiled by `gen`. The block is inert on the
+ahead-of-time path — `gen` ignores it, exactly as it ignores
 `<script type="tutuca/wax">` — so a file carrying one is a file with a
 block that path skips.
 
@@ -771,5 +771,5 @@ nothing to wait with.
   *Component Skeleton*.
 - [messages-and-intents.md](./messages-and-intents.md) — the `Receive` /
   `Intent` arms, routes and legs, the three answers, catch-all arms.
-- [cli.md](./cli.md) — the embedded CLI (`gen-views` / `watch`) that
+- [cli.md](./cli.md) — the embedded CLI (`gen` / `watch`) that
   pairs with `moon test` in the verification recipe.

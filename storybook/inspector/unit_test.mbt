@@ -511,7 +511,7 @@ test "the summary is the declaration, not a reconstruction" {
 /// fixture.
 ///
 /// The two tests above pin what the summary says; this one pins that a
-/// component compiled by `gen-views` still SUPPLIES it. That is the property
+/// component compiled by `gen` still SUPPLIES it. That is the property
 /// every deletion in the generator has to preserve and the one a snapshot of
 /// the emitter cannot see: the inspector and the state editor are generated
 /// from this descriptor rather than written per component, so a channel that

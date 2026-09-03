@@ -4,7 +4,7 @@
 // and no module: an agent that reads this sees exactly what the binary does.
 // What it does NOT list is as informative — nothing here inspects, documents,
 // lints or renders components, because in an ahead-of-time port those are
-// answered by `gen-views` (typed views, so a bad reference is a build error)
+// answered by `gen` (typed views, so a bad reference is a build error)
 // and by `moon test`. `note` says so, so an agent doesn't go looking.
 
 ///|
@@ -12,7 +12,7 @@
 /// An agent that cached version 6 would not know the CLI can scaffold a
 /// `tutuca:component` guest at all, which is exactly what a version is for.
 ///
-/// 6: `gen-views` takes `[path...]` rather than one `file`, matching the CSS
+/// 6: `gen` takes `[path...]` rather than one `file`, matching the CSS
 /// commands and `watch`. The batch is what the cross-component checks can see,
 /// so the positional's arity is part of the contract, not a convenience —
 /// hence a version bump rather than a silent widening.
@@ -97,7 +97,7 @@ pub fn agent_context_text() -> String {
     "version": VERSION.to_json(),
     "invocation": {
       "synopsis": "tutuca <command> [flags]",
-      "note": "tutuca-mb compiles ahead of time, so this CLI does not inspect, document, lint or render components. `gen-views` compiles a view file into typed MoonBit, which makes a bad field reference or an unhandled @on handler a BUILD error; component behaviour is checked by `moon test` over the marianoguerra/tutuca/testing/harness package. There is no module path and no module concept.",
+      "note": "tutuca-mb compiles ahead of time, so this CLI does not inspect, document, lint or render components. `gen` compiles a view file into typed MoonBit, which makes a bad field reference or an unhandled @on handler a BUILD error; component behaviour is checked by `moon test` over the marianoguerra/tutuca/testing/harness package. There is no module path and no module concept.",
     },
     "globalFlags": Json::array(global_flags_schema().map(flag_to_json)),
     "exitCodes": Json::array(

@@ -27,7 +27,7 @@ backends: **wasm-gc** (the default), **js** (the real-DOM adapter) and
 ```
 
 ```moonbit
-// `tutuca gen-views` made CounterState and counter_component out of the three
+// `tutuca gen` made CounterState and counter_component out of the three
 // blocks above, checked `.count` against the schema in both the view and the
 // handler, and compiled `inc` into the update the wrapper already passes. The
 // name, the views, the styles, the codec and the schema are not arguments —
@@ -79,7 +79,7 @@ As a library:
 moon add marianoguerra/tutuca
 ```
 
-The CLI (`gen-views`, `watch`, `gen-*-css`, `storybook`, `new-storybook`,
+The CLI (`gen`, `watch`, `gen-*-css`, `storybook`, `new-storybook`,
 `install-skill`, `new-guest`) is the `cmd/tutuca` package, and `moon install` names the binary
 after that package's last segment:
 

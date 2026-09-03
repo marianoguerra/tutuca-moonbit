@@ -185,7 +185,7 @@ trace, fuzz and all.
 
 Not because it is unfinished, but because it is *ours*: 52 demos with a curated
 `name -> section` table and a `name -> (title, description)` table, plus the
-fixture set the `gen-views` sweep and `benchmarks` run over. A consumer needs
+fixture set the `gen` sweep and `benchmarks` run over. A consumer needs
 none of it, and the projection means nobody has to borrow a story set to get a
 gallery.
 

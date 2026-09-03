@@ -18,7 +18,7 @@ priv struct TillState {
 }
 
 ///|
-/// The block this component was DECLARED in, as `gen-views` would carry it.
+/// The block this component was DECLARED in, as `gen` would carry it.
 ///
 /// A hand-written component passes `spec~` itself; a generated one gets it
 /// from the const `emit_spec_source` writes. Either way it is the same string
@@ -79,7 +79,7 @@ fn till_module(enforced? : Bool = true) -> @component.ModuleDef {
         _ => Unhandled
       }
     },
-    // The rules, as methods. This is the half `gen-views` writes from the
+    // The rules, as methods. This is the half `gen` writes from the
     // block — `bar_chart_compute_neverEmpty` in `svg_more_view_ir_gen.mbt` is
     // the generated shape of exactly this — and it is what puts something
     // behind the names the schema lists.

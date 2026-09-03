@@ -2,7 +2,7 @@
 // `agent-context` schema.
 //
 // One command set. tutuca-mb compiles ahead of time, so there is nothing here
-// that inspects a user's components: `gen-views` makes their views typed
+// that inspects a user's components: `gen` makes their views typed
 // MoonBit at build time (a bad field or an unhandled handler is a compile
 // error) and `moon test` runs their behaviour. What is left is the work that
 // really does happen outside the compiler.
@@ -233,8 +233,8 @@ let commands : Array[CommandSpec] = [
   // Needs no module: it reads an .html file and writes a .mbt file, so it
   // works before the component that will use the generated types exists.
   {
-    name: "gen-views",
-    describe: "Compile .html files of views into MoonBit modules of typed view surfaces.",
+    name: "gen",
+    describe: "Compile a view file into the MoonBit module its views, state and messages are typed by.",
     flags: [
       flag(
         "name",
@@ -287,7 +287,7 @@ let commands : Array[CommandSpec] = [
         "path",
         required=true,
         description="View files or directories to rewrite.",
-        note="A directory contributes the .html files that already have a generated sibling, the same rule `gen-views` and `watch` follow.",
+        note="A directory contributes the .html files that already have a generated sibling, the same rule `gen` and `watch` follow.",
       ),
     ],
   },
@@ -350,7 +350,7 @@ let commands : Array[CommandSpec] = [
     flags: css_flags,
     positionals: [css_positional],
   },
-  // The authoring loop for views: `gen-views` on every save (watch.mbt).
+  // The authoring loop for views: `gen` on every save (watch.mbt).
   {
     name: "watch",
     describe: "Watch view files and regenerate their MoonBit modules on change.",

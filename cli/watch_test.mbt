@@ -15,7 +15,7 @@ test "watch defaults to the current directory" {
 }
 
 ///|
-test "watch takes files and directories, and the gen-views flags" {
+test "watch takes files and directories, and the gen flags" {
   assert_true(
     plan_watch(["src", "views/counter.html", "--no-ir", "--out=gen"])
     is Watch(
@@ -56,9 +56,9 @@ test "only .html files are worth reacting to" {
 }
 
 ///|
-test "watch and gen-views agree on output paths and names" {
+test "watch and gen agree on output paths and names" {
   // Same file, same answer: a drift here would have watch write somewhere
-  // `gen-views` never looks.
+  // `gen` never looks.
   assert_eq(
     @cli.watch_target("demo/counterlib/counter.html", None),
     "demo/counterlib/counter_view_gen.mbt",
@@ -67,7 +67,7 @@ test "watch and gen-views agree on output paths and names" {
   assert_eq(@cli.watch_target("a/b.html", Some("g/x.mbt")), "g/x.mbt")
   assert_eq(@cli.watch_name("views/todo-list.html", None), "TodoList")
   assert_eq(@cli.watch_name("views/todo-list.html", Some("Todos")), "Todos")
-  // The sibling that marks a file as one gen-views manages.
+  // The sibling that marks a file as one gen manages.
   assert_eq(@cli.watch_sibling("a/b.html"), "a/b_view_gen.mbt")
   let plan = match plan_watch(["a/b.html"]) {
     Watch(_, plan~) => plan

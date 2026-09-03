@@ -67,7 +67,7 @@
   &lt;button @on.click="inc" @text=".count"&gt;&lt;/button&gt;
 &lt;/template&gt;
 
-// counter.mbt — `tutuca gen-views` generated CounterState and
+// counter.mbt — `tutuca gen` generated CounterState and
 // counter_component from the three blocks above, checked `.count` against the
 // schema, and compiled `inc` into the update the wrapper already passes.
 // A whole counter, and nothing left to say about it.
@@ -88,7 +88,7 @@ let counter = counter_component()</code></pre>
           Each editor has three tabs. <strong>Component</strong> shows the
           MoonBit code of the example. <strong>View</strong> shows the
           <code>.html</code> file with its views. <strong>Generated</strong>
-          shows what <code>tutuca gen-views</code> makes from that view: the
+          shows what <code>tutuca gen</code> makes from that view: the
           compiled view tree and a typed message enum, compiled as part of the
           same package. You can edit the View tab. The Generated tab then
           changes also. Add an <code>@on</code> handler in the view and answer
@@ -130,7 +130,7 @@ let counter = counter_component()</code></pre>
           Every handler must use the language in the
           <code>tutuca/script</code> block. You keep everything else, including
           the checks. The diagnostics below the preview are the same ones
-          <code>tutuca gen-views</code> reports. They have the same line and
+          <code>tutuca gen</code> reports. They have the same line and
           column numbers.
         </p>
         <p>

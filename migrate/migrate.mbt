@@ -43,7 +43,7 @@ pub fn migrate_file(
   // would be aimed at the wrong text.
   //
   // `name` is the fallback component name, and it is passed for the same
-  // reason `gen-views` passes it: a file whose single `state {}` block is
+  // reason `gen` passes it: a file whose single `state {}` block is
   // unnamed answers for the component the FILE is named after, and without it
   // a `handle Counter` beside it reads as naming a state block that is not
   // there.

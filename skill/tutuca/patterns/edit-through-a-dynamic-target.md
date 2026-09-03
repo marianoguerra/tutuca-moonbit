@@ -58,6 +58,6 @@ owner and any other view of the same value update in lock-step. A `provide` can
 point at a seq-access (`.items[.selectedKey]`) to expose "the selected item".
 
 Every component needs a `main` view even when you only ever render it `as="edit"`
-— `gen-views` refuses a component without one. This is the **edit** counterpart
+— `gen` refuses a component without one. This is the **edit** counterpart
 of [Share state across the tree](share-state-across-the-tree.md); the full
 `provide`/`lookup` reference is in [advanced.md](../advanced.md#dynamic-bindings).

@@ -67,7 +67,7 @@ fn new_component(
   spec? : String = "",
 ) -> Component {
   // Views arrive already built — either compiled ahead of time by
-  // `tutuca gen-views` (View::from_ir) or parsed from source by
+  // `tutuca gen` (View::from_ir) or parsed from source by
   // @anode.View::new; both are @anode.View, and Component::compile finishes
   // whichever needs it. Each carries its own per-view style.
   let vs : Map[String, @anode.View] = Map([])
@@ -105,7 +105,7 @@ fn new_component(
 /// PLAIN struct — no derives — whose fields become the component's fields,
 /// compiler-checked inside every handler. `encode`/`decode` convert it to and
 /// from the fields map the render and path layers read, and `schema` states
-/// what it declares; all three are required, and `gen-views` writes them.
+/// what it declares; all three are required, and `gen` writes them.
 /// Buckets:
 /// - update: ALL effectful dispatches in one pattern match over Dispatch
 ///   (Receive/Intent), returning the new state (None = no
@@ -159,7 +159,7 @@ pub fn[S : @tutuca.Fields] component(
   // The three facts only the author knows — the declared schema and the
   // conversion to and from the fields map — arrive as ONE trait implemented on
   // the state type rather than as three parameters threaded through every call
-  // site. `gen-views` writes the impl; a hand-written state writes three short
+  // site. `gen` writes the impl; a hand-written state writes three short
   // methods, which is the same code in a place that cannot drift from the type
   // it describes.
   let schema = S::schema()

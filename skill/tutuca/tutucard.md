@@ -270,14 +270,14 @@ you add or review scenes; it is the authoritative field and verb reference.
 ## Moving between paths
 
 To graduate a card to a compiled Tutuca component, keep the state, script,
-templates, fixtures, and styles; add `gen-views`, the MoonBit component/module
+templates, fixtures, and styles; add `gen`, the MoonBit component/module
 wiring, and harness tests. The ahead-of-time emitter reports each script arm it
 cannot compile as a named refusal, leaving that behavior for MoonBit instead of
 dropping it.
 
 To make a compiled component portable as a card, first remove dependencies on
 MoonBit-only handlers and host wiring. Do not assume a successful
-`gen-views` build proves the card backend accepts the same surface; check and
+`gen` build proves the card backend accepts the same surface; check and
 run the card itself.
 
 ## Related references

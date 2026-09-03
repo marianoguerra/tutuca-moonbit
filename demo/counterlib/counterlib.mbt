@@ -5,7 +5,7 @@
 // `<script type="tutuca/spec">` block and the views in its templates. They
 // compile ahead of time into counter_view_gen.mbt by
 //
-//   moon run --target native cmd/tutuca -- gen-views demo/counterlib/counter.html --name Counter
+//   moon run --target native cmd/tutuca -- gen demo/counterlib/counter.html --name Counter
 //
 // so neither the handler names nor the field names below are matched as
 // strings. Adding a field to the schema adds it to CounterState, and a view
@@ -24,7 +24,7 @@
 /// The whole component, in one argument.
 ///
 /// `add` and `resetTo` are in the file's `<script type="tutuca/script">`
-/// block, and `gen-views` compiles them into `counter_inline_update`, which
+/// block, and `gen` compiles them into `counter_inline_update`, which
 /// the wrapper composes ahead of `update~`. `setLabel` and `resetCount` were
 /// never written here either — they fall through to the mutators the schema's
 /// fields generate.
@@ -56,7 +56,7 @@ pub fn module_def() -> @component.ModuleDef {
 
 ///|
 /// The state and the views now come from one schema, so the field reads
-/// cannot disagree with the struct — `gen-views` fails outright rather than
+/// cannot disagree with the struct — `gen` fails outright rather than
 /// letting a missing field render as null. What is worth pinning is that the
 /// schema gives each field the kind the runtime will act on, which the old
 /// `FieldSpec::of_default` had to guess from the seed value.

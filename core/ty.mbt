@@ -314,7 +314,7 @@ pub fn Ty::is_renderable(self : Ty) -> Bool {
 ///|
 /// The MoonBit source of the expression that rebuilds this type.
 ///
-/// What `gen-views` splices into a generated `SchemaInfo`. It is a method on
+/// What `gen` splices into a generated `SchemaInfo`. It is a method on
 /// the type rather than a table in the generator, and that is the whole point
 /// of there being one `Ty`: the source form and the value form cannot describe
 /// different shapes if one of them IS the shape.

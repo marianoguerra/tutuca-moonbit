@@ -4,7 +4,7 @@
 ///|
 /// A component's generators, and the rules they are held to.
 ///
-/// Built from `Component::spec` — the block SOURCE, which `gen-views` carries
+/// Built from `Component::spec` — the block SOURCE, which `gen` carries
 /// into the compiled module — rather than from the schema beside it. The
 /// schema is the block's projection and the projection is lossy in the two
 /// places that matter here: a rule reaches `SchemaInfo` as a name with no
@@ -83,7 +83,7 @@ pub(all) enum Action {
 /// The generators for `comp`, or None when it carries no spec block.
 ///
 /// None is the ordinary answer for a hand-written component and for anything
-/// `gen-views` did not build — there is no failure here, only nothing to
+/// `gen` did not build — there is no failure here, only nothing to
 /// generate from.
 pub fn Plan::of_component(
   comp : @component.Component,
@@ -100,7 +100,7 @@ pub fn Plan::of_component(
   // reported "declares no spec block" for a component that declares one.
   let defs = @statedef.parse_state(comp.spec, name=comp.schema.name) catch {
     // A block that no longer parses is not a plan and not an error a fuzz run
-    // can act on. It is a `gen-views` failure that has already been reported
+    // can act on. It is a `gen` failure that has already been reported
     // somewhere the author will see it.
     _ => return None
   }

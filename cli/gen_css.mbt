@@ -7,7 +7,7 @@
 //
 // Pure like the rest of cli/: this half parses the flags and turns SOURCE TEXT
 // into a class set. The shell (cmd/tutuca) walks the tree, reads the files, calls
-// the compiler and writes the CSS — the same split gen-views uses.
+// the compiler and writes the CSS — the same split gen uses.
 
 ///|
 let gen_tailwind_css_help : String =
@@ -140,7 +140,7 @@ pub fn collect_view_classes(
       for comp in file.components {
         // The schema, paired the way the generator pairs it. Building without
         // it is not a shortcut: `@bind` reads the field's type to pick its
-        // coercion, so a view file gen-views compiles happily would be refused
+        // coercion, so a view file gen compiles happily would be refused
         // here and the whole stylesheet would stop rebuilding.
         //
         // The fallback is "" on both sides — `split_file` above is called

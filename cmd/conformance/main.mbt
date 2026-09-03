@@ -8,7 +8,7 @@
 /// answers one name once. A `receive` case keeps its name, because the schema
 /// is what declares those and there is exactly one.
 ///
-/// Two files come out: the `.html` (which `gen-views` then compiles) and a
+/// Two files come out: the `.html` (which `gen` then compiles) and a
 /// table pairing each case index with the NAME it was emitted under, which is
 /// the one thing a test cannot work out for itself once the rename has
 /// happened.

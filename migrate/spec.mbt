@@ -61,7 +61,7 @@ pub suberror MigrateError {
 /// Rewrite one file's source, and say what was rewritten.
 ///
 /// `name` is the component a file's unnamed `state {}` block answers for, the
-/// same fallback `gen-views` derives from the basename.
+/// same fallback `gen` derives from the basename.
 ///
 /// The file must SPLIT — the blocks have to be findable — but it need not
 /// otherwise be valid: a card whose script block has a syntax error still gets

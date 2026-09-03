@@ -28,7 +28,7 @@ You can browse and install extra skills here:
   block by block independently.
 
 - Files named `*_gen.mbt` are GENERATED and checked in; never hand-edit one.
-  Change its source and rerun the task that produces it (`gen-views` for a
+  Change its source and rerun the task that produces it (`gen` for a
   `*_view_gen.mbt` from its `.html`; `skill-embed` for
   `cli/skill_assets_gen.mbt` from `skill/tutuca/`). Each generating task ends
   in `moon fmt`, so what is checked in is already what fmt produces and a
@@ -106,10 +106,10 @@ binary inside the `_build` they delete.
 | `build`    | `moon build` for wasm-gc, native CLI, and js                     |
 | `coverage` | `moon coverage analyze`                                           |
 | `setup`    | `npm install` (happy-dom for js tests) + enable the git hooks    |
-| `ci`       | `gen-views` + `skill-embed` drift checks, then `check`, the example/skill/guest checks, `test` and `build` |
+| `ci`       | `gen` + `skill-embed` drift checks, then `check`, the example/skill/guest checks, `test` and `build` |
 | `dist`     | build all targets and assemble a self-contained runnable `dist/` |
-| `gen-views` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); formats after generating, then drift-checks the generated modules — a stale one type-checks and tests green, so this is what catches it |
-| `gen-conformance` | project `tscript/conformance`'s corpus into `tscript/conformance/mbt/corpus.html`, then run `gen-views` over it — the MoonBit backend cannot read the corpus directly, since its answers only exist once `moonc` has compiled them. Run after ADDING a case; `ci` re-runs and drift-checks the compiled half on its own |
+| `gen` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); formats after generating, then drift-checks the generated modules — a stale one type-checks and tests green, so this is what catches it |
+| `gen-conformance` | project `tscript/conformance`'s corpus into `tscript/conformance/mbt/corpus.html`, then run `gen` over it — the MoonBit backend cannot read the corpus directly, since its answers only exist once `moonc` has compiled them. Run after ADDING a case; `ci` re-runs and drift-checks the compiled half on its own |
 | `gen-guest-bindings` | regenerate the checked-in MoonBit guest bindings (every guest in `guests/guests.mjs`) from the ONE WIT (`dyncomp/wit/tutuca-component.wit`), copy in the ONE SDK (`guests/sdk.mbt`), then drift-check them |
 | `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first), format, then drift-check the CONTENT against a snapshot taken before regenerating — in `ci`, because the embed ships inside the binary and a skill edited without re-embedding is invisible until somebody installs it and reads the wrong thing |
 | `check-guest-list` | hold `dev/tasks.mbt`'s guest list against `guests/guests.mjs`. Plain node, so unlike the guest BUILD it runs in `ci` |
@@ -261,7 +261,7 @@ Two more generated-from-upstream files live elsewhere and follow the same rule:
   default configuration, from the **machine-readable `builtins/` in the spec
   repo** at the commit pinned in `scripts/fetch-sanitizer-defaults.mjs`.
   Regenerate and verify with the `sanitizer-defaults` task, which does what
-  `gen-views` does — regenerate, `moon fmt`, then `git diff --exit-code`.
+  `gen` does — regenerate, `moon fmt`, then `git diff --exit-code`.
   (`skill-embed` no longer works this way: it snapshots the file first and
   diffs the CONTENT, so it passes on a skill edit that has been re-embedded but
   not yet committed. The git form fails that case, which made `ci` unrunnable
@@ -386,7 +386,7 @@ plain `moon test "..." { ... }` blocks:
   `@harness`'s own verbs. It reaches a page as `__tutucard.drive` (the ninth
   entry point, beside `check` / `compile` / `mountCompiled`) and `driveCard` in
   `tutucard/web/card-wasm.js`; the playground's Tests pane and
-  `tutucard/build/run-tests.mjs` are the two callers. `gen-views` ignores the
+  `tutucard/build/run-tests.mjs` are the two callers. `gen` ignores the
   block, exactly as it ignores `tutuca/wax`.
 - A card's `refused` is usually EMPTY, and that is the contract rather than a
   gap: `dyncomp/host/dynobj.mbt`'s `handler` never gates a `Receive`, so a
@@ -442,7 +442,7 @@ plain `moon test "..." { ... }` blocks:
   invariant both a FILTER on a generator and a PROPERTY a driven component is
   held to. It also makes a differential test cheap:
   `storybook/examples/svg_more_property_test.mbt` asks each precondition here
-  and checks the answer against the `Refusal` the arm `gen-views` compiled from
+  and checks the answer against the `Refusal` the arm `gen` compiled from
   the same line actually raised. Bound worth knowing: `Val` is what a SLOT
   holds, so the slot vocabulary is what lowers — there is no arithmetic, and
   `invariant conserved { (.here + .there) is .total }` lands in

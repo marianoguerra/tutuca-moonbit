@@ -354,7 +354,7 @@ test "spec viewer: the block's arms, the story's own expanded" {
   assert_eq(h.find_all(".spec-msg").length(), 0)
   h.click(".comp-section", nth=2)
   @debug.assert_eq(h.texts(".spec-msg-name"), ["ping", "onData"])
-  // `gen-views` shipped this block without its prose, and the pane says so
+  // `gen` shipped this block without its prose, and the pane says so
   // rather than leaving a reader to wonder where the file's comments went.
   assert_eq(h.find_all(".spec-doc-block").length(), 0)
   assert_true(h.text(".spec-note").contains("without its doc comments"))
@@ -364,7 +364,7 @@ test "spec viewer: the block's arms, the story's own expanded" {
 }
 
 ///|
-/// The half of a block that `gen-views` does not ship, over a block that
+/// The half of a block that `gen` does not ship, over a block that
 /// reached the runtime whole: the prose, the rules, and the named types.
 ///
 /// The rules are the ones that matter. A rule reaches `SchemaInfo` as a bare

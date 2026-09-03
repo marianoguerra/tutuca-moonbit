@@ -214,7 +214,7 @@ pub fn StateDef::field_of(
 ///
 /// The TWIN of `lint/closest_name.mbt`, and the two must answer the same way
 /// for the same pair — a suggestion that depends on whether the typo reached
-/// `gen-views` or the linter is a suggestion nobody can trust. They are two
+/// `gen` or the linter is a suggestion nobody can trust. They are two
 /// implementations rather than one because `statedef` imports nothing but the
 /// stdlib on purpose (see the note on `ty_info_source`), so there is no
 /// package both can reach without either inventing a leaf for twenty lines or

@@ -38,7 +38,7 @@ test "plan resolves a base task to Run steps" {
 ///|
 test "plan expands the ci composite into its member tasks' steps" {
   let ci = @dev.plan("ci").unwrap_or([])
-  let expected = @dev.plan("gen-views").unwrap_or([]) +
+  let expected = @dev.plan("gen").unwrap_or([]) +
     @dev.plan("skill-embed").unwrap_or([]) +
     @dev.plan("storybook-template-embed").unwrap_or([]) +
     @dev.plan("check").unwrap_or([]) +
@@ -55,20 +55,20 @@ test "plan expands the ci composite into its member tasks' steps" {
 }
 
 ///|
-/// `gen-views` regenerating is only a guarantee if CI also checks that what it
+/// `gen` regenerating is only a guarantee if CI also checks that what it
 /// regenerated is what is checked in — the step that makes the whole ahead-of-
 /// time story enforceable rather than conventional. Pinned here because it is
 /// the last command, and appending anything after it would silently disarm it.
-test "gen-views ends in a drift check over the generated modules" {
-  let steps = @dev.plan("gen-views").unwrap_or([])
+test "gen ends in a drift check over the generated modules" {
+  let steps = @dev.plan("gen").unwrap_or([])
   guard steps[steps.length() - 1] is Run(cmd) else {
-    fail("last gen-views step is not a command")
+    fail("last gen step is not a command")
   }
   // A CONTENT comparison — the modules as they stood before this run against
   // the same modules after — rather than a `git diff` against `HEAD`. The two
   // answer different questions and agree only on a clean tree: a `.html` edited
   // and regenerated is a consistent pair with neither half committed, which the
-  // git form failed and which is exactly when `gen-views` gets run.
+  // git form failed and which is exactly when `gen` gets run.
   assert_eq(cmd.prog, "diff")
   assert_eq(cmd.args, ["_build/view_drift.before", "_build/view_drift.after"])
   // …and the "after" reading is taken immediately before it, or the comparison
@@ -81,9 +81,7 @@ test "gen-views ends in a drift check over the generated modules" {
   )
   // The "before" reading is the FIRST step: taken after any generator ran, it
   // would read the regenerated modules and the check could never fail.
-  guard steps[0] is Run(first) else {
-    fail("first gen-views step is not a command")
-  }
+  guard steps[0] is Run(first) else { fail("first gen step is not a command") }
   assert_true(
     first.args.length() == 2 && first.args[1].has_suffix("view_drift.before"),
   )

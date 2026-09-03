@@ -1,5 +1,5 @@
 // The builders are only useful if they are the parser's own output spelled
-// out: `tutuca gen-views` emits calls to them for a tree it got from the
+// out: `tutuca gen` emits calls to them for a tree it got from the
 // parser, and the renderer must not be able to tell the two apart. So the
 // test is the equality itself — parse a view, write the same view with the
 // builders, compare the values.

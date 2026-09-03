@@ -1,4 +1,4 @@
-// `tutuca gen-views` — ahead-of-time view compilation. An .html file holding
+// `tutuca gen` — ahead-of-time view compilation. An .html file holding
 // one or more views becomes a companion MoonBit module of typed view
 // surfaces, so handler names, argument shapes, view names and element ids
 // stop being strings the compiler cannot see.
@@ -181,7 +181,7 @@ fn diagnostic_line(where_ : String, f : @lint.Finding) -> String {
 
 ///|
 let gen_views_help : String =
-  #|tutuca gen-views [path...] [--name <Name>] [--out <dir-or-file>] [--dry-run]
+  #|tutuca gen [path...] [--name <Name>] [--out <dir-or-file>] [--dry-run]
   #|
   #|  Compiles the views in each path into a MoonBit module of typed view
   #|  surfaces, written next to the component that uses them.
@@ -281,10 +281,10 @@ fn join_path(dir : String, file : String) -> String {
 }
 
 ///|
-/// Parse gen-views' own args. Finishes purely on help and usage errors;
+/// Parse gen's own args. Finishes purely on help and usage errors;
 /// otherwise hands the shell the input path to read and what to do with it.
 fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome {
-  let parsed = match parse_flags(args, command_spec("gen-views")) {
+  let parsed = match parse_flags(args, command_spec("gen")) {
     Ok(p) => p
     Err(e) => return Done(error_emit(opts, e))
   }
@@ -302,8 +302,8 @@ fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome {
         opts,
         err(
           CODE_USAGE_MISSING_ARGUMENT,
-          "gen-views requires an input .html file or a directory",
-          hint="`tutuca gen-views path/to/counter.html --name Counter`, or `tutuca gen-views src/`",
+          "gen requires an input .html file or a directory",
+          hint="`tutuca gen path/to/counter.html --name Counter`, or `tutuca gen src/`",
         ),
       ),
     )

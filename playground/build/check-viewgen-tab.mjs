@@ -5,7 +5,7 @@
 // compiler.worker.js does.
 //
 // This is the piece a headless test cannot otherwise reach: that the module
-// `tutuca gen-views` emits actually compiles inside the playground's package,
+// `tutuca gen` emits actually compiles inside the playground's package,
 // where there is no moon.pkg to declare imports and `@tutuca` is the
 // module-root facade rather than core/.
 //

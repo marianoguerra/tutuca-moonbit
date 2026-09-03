@@ -277,7 +277,7 @@ pub fn compile(
     }
     // The SPEC block's rules, as declarations, ahead of the block's own.
     //
-    // The same synthesis `gen-views` runs, from the same function, because the
+    // The same synthesis `gen` runs, from the same function, because the
     // two backends have to keep the same rules: a card that enforced a
     // different `invariant` from the generated component of the same file
     // would be two answers to one question.

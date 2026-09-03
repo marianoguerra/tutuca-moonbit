@@ -13,9 +13,9 @@ test "the two global flags" {
 
 ///|
 test "globals can appear anywhere; positionals keep order" {
-  let (opts, rest) = @cli.extract_globals(["gen-views", "--json", "a.html"])
+  let (opts, rest) = @cli.extract_globals(["gen", "--json", "a.html"])
   assert_true(opts.json)
-  @debug.assert_eq(rest, ["gen-views", "a.html"])
+  @debug.assert_eq(rest, ["gen", "a.html"])
 }
 
 ///|

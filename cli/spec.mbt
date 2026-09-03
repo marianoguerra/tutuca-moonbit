@@ -2,7 +2,7 @@
 // plus `declare` stubs; implementations live in separate files.
 //
 // What this CLI is, and is not. tutuca-mb compiles ahead of time, so anything
-// that can be known about a component is known to the COMPILER: `gen-views`
+// that can be known about a component is known to the COMPILER: `gen`
 // turns a view file into typed MoonBit — a misspelled field or an unhandled
 // `@on` handler is a build error — and component behaviour is checked by
 // `moon test` over the `testing/harness` package. The CLI therefore does not
@@ -116,7 +116,7 @@ pub(all) enum Outcome {
   /// (migrate.mbt). The core decides every edit; the shell reads the files and,
   /// under `--write`, writes them back.
   ///
-  /// Roots rather than one file for the same reason `gen-views` takes them: a
+  /// Roots rather than one file for the same reason `gen` takes them: a
   /// rename crosses a tree, and a migration run file by file is one somebody
   /// stops halfway.
   Migrate(GlobalOpts, roots~ : Array[String], write~ : Bool)
@@ -163,7 +163,7 @@ pub(all) struct CssPlan {
 declare pub fn plan(argv : Array[String]) -> Outcome
 
 ///|
-/// Parse `gen-views` arguments: finishes purely on help and usage errors,
+/// Parse `gen` arguments: finishes purely on help and usage errors,
 /// otherwise returns a GenViews outcome for the shell to carry out.
 declare fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome
 
@@ -172,7 +172,7 @@ declare fn run_migrate(args : Array[String], opts : GlobalOpts) -> Outcome
 
 ///|
 /// Compile view source into the generated MoonBit module (viewgen/), the
-/// pure half of `gen-views`. Also runs the view-only lint rules, whose
+/// pure half of `gen`. Also runs the view-only lint rules, whose
 /// findings come back in `GenPlan.diagnostics`.
 declare pub fn gen_views(
   source : String,
@@ -183,7 +183,7 @@ declare pub fn gen_views(
 ) -> Result[GenPlan, ErrShape]
 
 ///|
-/// One view file on its way through `gen-views`: where it came from, where its
+/// One view file on its way through `gen`: where it came from, where its
 /// module goes, what component it names, and its text. The shell fills these in
 /// — it is the half that knows the filesystem — and `gen_views_all` turns the
 /// batch into one plan.
@@ -270,14 +270,14 @@ declare pub fn is_view_path(path : String) -> Bool
 
 ///|
 /// Where a watched view file's generated module lands, and under what
-/// component name — shared with `gen-views` so the two cannot disagree.
+/// component name — shared with `gen` so the two cannot disagree.
 declare pub fn watch_target(path : String, out : String?) -> String
 
 ///|
 declare pub fn watch_name(path : String, name : String?) -> String
 
 ///|
-/// The generated sibling whose presence marks an .html as gen-views-managed.
+/// The generated sibling whose presence marks an .html as gen-managed.
 declare pub fn watch_sibling(path : String) -> String
 
 ///|

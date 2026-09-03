@@ -448,7 +448,7 @@ declare fn maybe_fragment(childs : Array[ANode]) -> ANode
 // ---------------------------------------------------------------------------
 // Builders (build.mbt): hyperscript-shaped constructors over the types above,
 // with the rarely-set fields as optional arguments. Each one returns the value
-// the parser builds for the same markup — they are what `tutuca gen-views`
+// the parser builds for the same markup — they are what `tutuca gen`
 // emits, and what a hand-written view or test should use.
 
 ///|
@@ -761,7 +761,7 @@ declare pub fn events_of(
 ) -> Array[NodeEvents]
 
 ///|
-/// A view whose tree was compiled ahead of time (`tutuca gen-views`). Stamps
+/// A view whose tree was compiled ahead of time (`tutuca gen`). Stamps
 /// data-vid and runs the constant-subtree optimization; `compile` then only
 /// stamps the adopting component's data-cid.
 declare pub fn View::from_ir(

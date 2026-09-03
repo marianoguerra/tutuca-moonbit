@@ -68,7 +68,7 @@ test "the safe directives are not raw html" {
 
 ///|
 /// The builders produce exactly what the parser produces, which is what lets
-/// `tutuca gen-views` emit a compiled view that behaves like a parsed one.
+/// `tutuca gen` emit a compiled view that behaves like a parsed one.
 test "the builders round-trip with the parser" {
   guard! @anode.h(
       "article",

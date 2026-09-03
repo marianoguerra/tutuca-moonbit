@@ -13,8 +13,8 @@ fn emit_of(o : @cli.Outcome) -> @cli.Emit {
 test "a flag that extends a real one is unknown, not a bad value" {
   for
     probe in [
-      (["gen-views", "a.html", "--output", "x"], "--output"),
-      (["gen-views", "a.html", "--namely", "X"], "--namely"),
+      (["gen", "a.html", "--output", "x"], "--output"),
+      (["gen", "a.html", "--namely", "X"], "--namely"),
       (["gen-margaui-css", "--entrypoint", "x.css"], "--entrypoint"),
       (["watch", "--css-classesx", "f"], "--css-classesx"),
     ] {
@@ -33,7 +33,7 @@ test "a flag that extends a real one is unknown, not a bad value" {
 test "an unknown flag suggests a real one, for every command that has flags" {
   for
     probe in [
-      (["gen-views", "a.html", "--nam"], "--name"),
+      (["gen", "a.html", "--nam"], "--name"),
       (["storybook", "--prot", "80"], "--port"),
       (["install-skill", "--forc"], "--force"),
       (["new-guest", "clock", "--dr"], "--dir"),
@@ -48,8 +48,8 @@ test "an unknown flag suggests a real one, for every command that has flags" {
 ///|
 /// Both spellings, for every string flag, in every command.
 test "a string flag takes its value inline or as the next argument" {
-  let split = @cli.plan(["gen-views", "a.html", "--name", "Counter"])
-  let inline = @cli.plan(["gen-views", "a.html", "--name=Counter"])
+  let split = @cli.plan(["gen", "a.html", "--name", "Counter"])
+  let inline = @cli.plan(["gen", "a.html", "--name=Counter"])
   assert_true(split is GenViews(_, name=Some("Counter"), ..))
   assert_true(inline is GenViews(_, name=Some("Counter"), ..))
   let short = @cli.plan(["gen-margaui-css", "-o", "app.css"])
@@ -61,7 +61,7 @@ test "a string flag takes its value inline or as the next argument" {
 /// publishes — so `--dry-run=false` is a mistake worth naming rather than a
 /// switch that silently stays on.
 test "a boolean flag takes no value" {
-  let e = emit_of(@cli.plan(["gen-views", "a.html", "--dry-run=false"]))
+  let e = emit_of(@cli.plan(["gen", "a.html", "--dry-run=false"]))
   assert_eq(e.exit_code, 1)
   assert_true(e.err.contains("takes no value"))
 }
@@ -70,7 +70,7 @@ test "a boolean flag takes no value" {
 /// `--` is how a path beginning with a dash gets passed at all.
 test "everything after -- is a positional" {
   assert_true(
-    @cli.plan(["gen-views", "--", "--weird.html"])
+    @cli.plan(["gen", "--", "--weird.html"])
     is GenViews(_, roots=["--weird.html"], ..),
   )
 }

@@ -10,7 +10,7 @@
     /// An invariant that CALLS a pred rather than restating it — the shape
     /// that used to generate code no compiler would take: the guard woven into
     /// a handler arm constructs a `@tutuca.CtxStack(ctx)` to call the pred
-    /// with, and that type was read-only outside `core`, so `gen-views`
+    /// with, and that type was read-only outside `core`, so `gen`
     /// reported nothing and `moon check` failed afterwards. This file is where
     /// that stays fixed: the demo is compiled by `check`, and the arm below is
     /// the one the guard lands in.

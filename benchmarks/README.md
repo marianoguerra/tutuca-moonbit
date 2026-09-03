@@ -68,7 +68,7 @@ in one — currently none are.
 
 ## The stages
 
-Four per corpus, matching what `tutuca gen-views` does:
+Four per corpus, matching what `tutuca gen` does:
 
 | Stage     | What it runs                                                   |
 |-----------|----------------------------------------------------------------|

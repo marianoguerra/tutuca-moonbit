@@ -8,7 +8,7 @@ pub struct Bundle {
   guest : &Guest
   manifest : DynManifest
   /// What the linter said about this bundle's views, as
-  /// `CODE (level) Comp/view: message` lines (the shape `gen-views` prints).
+  /// `CODE (level) Comp/view: message` lines (the shape `gen` prints).
   ///
   /// A guest's views are the one part of a component that arrives as SOURCE at
   /// runtime, so they are the one part no build step ever checked. The lint
@@ -410,7 +410,7 @@ pub fn register_bundle(
 
 ///|
 /// One finding as a printable line, in the `CODE (level) where: message` shape
-/// `gen-views` uses. Shared by every screening pass so a bundle's diagnostics
+/// `gen` uses. Shared by every screening pass so a bundle's diagnostics
 /// read as one list rather than as one list per rule that produced it.
 fn diagnostic_line(
   into : Array[String],
@@ -553,7 +553,7 @@ fn screen_method_names(
 ///|
 /// Everything the host checks about one guest view before it will render it.
 ///
-/// Two lint passes, which `gen-views` also runs and which only ADVISE (they
+/// Two lint passes, which `gen` also runs and which only ADVISE (they
 /// land in `into` as printable lines): the structural HTML linter, and the
 /// parse-issue / deprecation / bare-directive rules. Then one rule that
 /// REFUSES, over the same shadow tree.

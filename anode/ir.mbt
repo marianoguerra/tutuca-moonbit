@@ -1,4 +1,4 @@
-// Loading an ahead-of-time compiled view (viewgen / `tutuca gen-views`).
+// Loading an ahead-of-time compiled view (viewgen / `tutuca gen`).
 //
 // The generator emits the ANode tree and the NodeEvents table as MoonBit
 // literals; this is the seam that turns them back into the pair the renderer

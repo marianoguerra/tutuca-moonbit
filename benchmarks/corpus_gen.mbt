@@ -1143,7 +1143,7 @@ pub let all_views : String =
   #|<!-- playground/site/examples/counter.html (SiteCounter) -->
   #|
   #|<script type="tutuca/script" for="SiteCounter">
-  #|  /// The behaviour, in the same file as the state and the view. `gen-views`
+  #|  /// The behaviour, in the same file as the state and the view. `gen`
   #|  /// compiles this block into MoonBit and the component composes it ahead of
   #|  /// the `update~` you pass — so a counter needs no `update~` at all.
   #|  receive inc {

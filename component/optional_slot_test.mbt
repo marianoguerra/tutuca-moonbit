@@ -24,7 +24,7 @@ impl @component.Fields for ParentState with fn schema() {
 
 ///|
 impl @component.Fields for ParentState with fn encode(s) {
-  // Exactly what `gen-views` writes for an option: the key is ABSENT when the
+  // Exactly what `gen` writes for an option: the key is ABSENT when the
   // value is None, which is the shape that made the old `s_fields` wrong.
   let out : Map[String, @tutuca.Value] = { "label": Str(s.label) }
   match s.kid {

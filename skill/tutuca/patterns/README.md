@@ -19,7 +19,7 @@ the two reasons it is:
   (`item.make`), `@loop-with` (the one render bucket with no declaration
   kind), a fold over a whole sequence, and a payload unpacked out of an `Any`.
 
-`gen-views` never silently ignores a block: an arm it cannot compile prints
+`gen` never silently ignores a block: an arm it cannot compile prints
 `<Comp>: <name> stays in MoonBit — <why> (script-refusal)` and falls through to
 your `update` match. Generated mutators (`setX`, `toggleX`, `pushInX`,
 `removeInXAt`) are answered by the runtime and are never part of that split —

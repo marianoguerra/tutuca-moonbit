@@ -13,7 +13,7 @@ faster".
 
 Every entry leaves output unchanged. For the view pipeline that means the
 workload checksums (`viewparse_bench_test.mbt` pins them) plus `cmd/dev --
-gen-views` followed by `git diff --exit-code`; for the runtime it means the full
+gen` followed by `git diff --exit-code`; for the runtime it means the full
 test suite (890 default / 890 native / 8 js browser), a good
 number of which are DOM snapshots.
 
@@ -479,7 +479,7 @@ Four things the split says, worth keeping for whoever reintroduces caching:
    `REUSE_FUEL`/`reuse_equal`, `with_field`/`with_item` returning the untouched
    container — stays, and `component/identity_test.mbt` still pins it.
 
-Output unchanged: 890 default / 890 native / 8 js green, `gen-views` drift-clean
+Output unchanged: 890 default / 890 native / 8 js green, `gen` drift-clean
 (the markers were minted at load time and never reached a `*_view_gen.mbt`).
 
 ## 9. The render-site cache back, keyed on a fingerprint — updates −30% to −56%
@@ -581,7 +581,7 @@ Where the remaining headroom is:
   for a site whose recent history is all misses is the same idea with a
   different signal, and the `hit`/`miss` counters are already there.
 
-Output unchanged: 903 default / 903 native / 8 js green, `gen-views`
+Output unchanged: 903 default / 903 native / 8 js green, `gen`
 drift-clean. The DOM snapshots are the proof the cache never returns stale.
 
 # The view pipeline, revisited
@@ -613,7 +613,7 @@ result:
 The generation-only drop is much larger than both the confidence intervals
 (±1.6% / ±4.7% after) and the movement in stages the change cannot affect.
 Output stayed byte-identical: the compatibility test compares both emitted
-modules, their pinned benchmark checksums pass, and `gen-views` is drift-clean.
+modules, their pinned benchmark checksums pass, and `gen` is drift-clean.
 
 # The runtime, revisited
 

@@ -22,16 +22,16 @@ questions a run-time CLI would answer are answered earlier, and more strictly:
 
 | You want to know | Where it is answered |
 | ---------------- | -------------------- |
-| does this view reference a field that exists? | `gen-views` — the `<script type="tutuca/spec">` schema declares the fields, and an unknown `.field` fails generation, inside a loop as well as at the root — including a loop over CHILD components, whose fields are checked against that child's schema |
-| does the component this view renders have the view `as=` names? | `gen-views` over the whole project (`tutuca gen-views src/`) — a miss silently falls back to that component's `main` view at run time, and only a run that can see both components can say so. Reported as a hint, because a slot declared as the bare `component` marker takes its component from `component()`'s `slots~` — MoonBit the generator cannot see |
-| does this `@show` decide anything? | `gen-views` — a list or a record is always truthy, so `@show=".items"` never hides; it fails generation and names `empty? .items` as the fix |
-| is this `id=` unique? | `gen-views` — an `id` inside an `@each` is stamped on every item, which only the compiled tree can see |
-| is every `@on` handler handled? | `gen-views` + `moon check` — `update` matches a generated `CounterMsg`, so an unhandled handler is a **build error** |
+| does this view reference a field that exists? | `gen` — the `<script type="tutuca/spec">` schema declares the fields, and an unknown `.field` fails generation, inside a loop as well as at the root — including a loop over CHILD components, whose fields are checked against that child's schema |
+| does the component this view renders have the view `as=` names? | `gen` over the whole project (`tutuca gen src/`) — a miss silently falls back to that component's `main` view at run time, and only a run that can see both components can say so. Reported as a hint, because a slot declared as the bare `component` marker takes its component from `component()`'s `slots~` — MoonBit the generator cannot see |
+| does this `@show` decide anything? | `gen` — a list or a record is always truthy, so `@show=".items"` never hides; it fails generation and names `empty? .items` as the fix |
+| is this `id=` unique? | `gen` — an `id` inside an `@each` is stamped on every item, which only the compiled tree can see |
+| is every `@on` handler handled? | `gen` + `moon check` — `update` matches a generated `CounterMsg`, so an unhandled handler is a **build error** |
 | does the handler compile against the state? | `moon check` — state is a plain struct; `s.cuont` does not compile |
 | does the component behave? | `moon test` over `@harness` — mount it, fire real events, read the DOM back → [testing.md](./testing.md) |
 | what does it look like? | a gallery of your own components: `tutuca new-storybook`, then `node build.mjs && tutuca storybook dist` → [storybook.md](./storybook.md) |
 
-So the post-edit loop is `gen-views` (or leave `tutuca watch` running) →
+So the post-edit loop is `gen` (or leave `tutuca watch` running) →
 `moon check` → `moon test`. If you find yourself wanting a CLI command to
 inspect a component, the answer is a `moon test` block.
 
@@ -39,8 +39,8 @@ inspect a component, the answer is a `moon test` block.
 
 | Command                  | Purpose                                                                                                                |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| `gen-views [path...]`  | Compile `.html` files of views into companion MoonBit modules of typed view surfaces. Paths are files or directories (a directory contributes the `.html` files that already have a generated sibling). Flags: `--name <Name>`, `--out <dir-or-file>`, `--dry-run`, `--no-ir`. See below |
-| `migrate [path...]`      | Rewrite view files from a retired spelling of the language to the current one. Says what would change and writes nothing without `--write`. Paths follow `gen-views`' rule. See below |
+| `gen [path...]`  | Compile `.html` files of views into companion MoonBit modules of typed view surfaces. Paths are files or directories (a directory contributes the `.html` files that already have a generated sibling). Flags: `--name <Name>`, `--out <dir-or-file>`, `--dry-run`, `--no-ir`. See below |
+| `migrate [path...]`      | Rewrite view files from a retired spelling of the language to the current one. Says what would change and writes nothing without `--write`. Paths follow `gen`' rule. See below |
 | `gen-tailwind-css [path...]` | Compile the classes a project's views use into CSS, against stock Tailwind. Flags: `-o/--out <file>`, `--entry <file>`, `--classes <file>`, `--print-classes`, `--polyfills <0..3>`. See below |
 | `gen-margaui-css [path...]` | The same, against Tailwind **+ margaui**'s component layers (`btn`, `card`, `stat`, …) |
 | `watch [path...]`        | Regenerate view modules on every save. Paths are `.html` files or directories (which contribute the `.html` files that already have a generated sibling). Flags: `--name`, `--out`, `--no-ir`, and `--tailwind-css`/`--margaui-css` (+ `--css-entry`, `--css-classes`) to keep a stylesheet current too |
@@ -52,16 +52,16 @@ inspect a component, the answer is a `moon test` block.
 | `agent-context`          | Print a versioned JSON schema of every command, flag, exit code and error code |
 | `help [cmd]`             | Show usage; `help <command>` for per-command detail                                                                    |
 
-### `gen-views` — ahead-of-time views
+### `gen` — ahead-of-time views
 
 Optional. Keeps a component's views in an `.html` file instead of a MoonBit
 string literal, and turns the view's vocabulary into types:
 
 ```sh
-tutuca gen-views demo/counterlib/counter.html --name Counter
+tutuca gen demo/counterlib/counter.html --name Counter
 # -> demo/counterlib/counter_view_gen.mbt   (checked in; regenerate, never edit)
 
-tutuca gen-views src/            # the whole project, in one invocation
+tutuca gen src/            # the whole project, in one invocation
 ```
 
 **Pass the whole project when you have one.** Two checks need more than one
@@ -77,7 +77,7 @@ component's schema, and they see exactly the paths you passed:
   the **Todo** component's schema rather than skipped.
 
 A component outside the paths you passed is unknown, and unknown is never
-reported as wrong — so `tutuca gen-views one.html` still works and simply
+reported as wrong — so `tutuca gen one.html` still works and simply
 checks less. `--name` and an `--out` ending in `.mbt` each name ONE thing, so
 both are refused with more than one path.
 
@@ -177,13 +177,13 @@ mutators each kind generates, message buckets, slots, declared `$`-callables,
 schema-only files and `tutuca/fixtures` fixtures — is
 [schema.md](./schema.md).
 
-`gen-views` checks every `.field` read in every view against it, loop bodies and
+`gen` checks every `.field` read in every view against it, loop bodies and
 child components included, and a read of a name the schema lacks fails
 generation.
 
-### `gen-views` diagnostics
+### `gen` diagnostics
 
-Every check `gen-views` runs reports on one of two channels, and both are worth
+Every check `gen` runs reports on one of two channels, and both are worth
 recognizing on sight.
 
 **Generation errors** stop the run and name the fix. Beyond the unknown-field and
@@ -199,7 +199,7 @@ unknown-handler errors above:
 `CODE (level) <Component>/<view>: message` — for example
 `HTML_TAG_NOT_ALLOWED_IN_PARENT (error) Counter/main: <div> is not allowed in <tr>`.
 Levels are `error`, `warning` and `hint`. The linter is real and it runs **inside
-`gen-views`**; what does not exist is a separate `tutuca lint` command to invoke
+`gen`**; what does not exist is a separate `tutuca lint` command to invoke
 it with.
 
 The codes fall into four families:
@@ -247,11 +247,11 @@ There is **no** `tutuca-lint-ignore` pragma and no per-line suppression.
 
 ### The drift check
 
-`gen-views` output is checked in, and a stale `*_view_gen.mbt` **type-checks and
+`gen` output is checked in, and a stale `*_view_gen.mbt` **type-checks and
 tests green** while no longer describing the `.html` beside it. So regenerating
 is not optional bookkeeping: it is the only thing that ties the two together.
-Run `gen-views` (or leave `watch` running) after every view edit, and have CI
-re-run it and fail on any difference — `tutuca gen-views src/` followed by
+Run `gen` (or leave `watch` running) after every view edit, and have CI
+re-run it and fail on any difference — `tutuca gen src/` followed by
 `git diff --exit-code` is the whole check.
 
 ### `migrate` — carrying a tree across a rename
@@ -346,7 +346,7 @@ stylesheet in place; the next save fixes it.
   (see [testing.md](./testing.md)). The exit-4 code from the JS CLI is
   gone with it.
 - **`tutuca lint` does not exist** as a command. The rules still run, inside
-  `gen-views` (above). What genuinely went away is the part of the JS linter
+  `gen` (above). What genuinely went away is the part of the JS linter
   that needed a live component — undefined fields, unimplemented `$`-methods,
   bad handler names — because those are type errors in the generated module now.
 - **`tutuca storybook` serves a pre-built gallery, not scanned `*.dev.js`.**
@@ -396,7 +396,7 @@ Stable error codes (`@cli.error_codes` / the `CODE_*` constants):
 | `ERR_USAGE_BAD_FLAG_VALUE`    | flag rejected the value (e.g. wrong type)     |
 | `ERR_USAGE_MUTUALLY_EXCLUSIVE`| conflicting flags                             |
 | `ERR_USAGE_MISSING_ARGUMENT`  | required positional/stdin missing             |
-| `ERR_VIEW_GEN_FAILED`         | gen-views could not compile the view file     |
+| `ERR_VIEW_GEN_FAILED`         | gen could not compile the view file     |
 | `ERR_SKILL_ASSETS_MISSING`    | bundled skill assets not found                |
 | `ERR_SKILL_TARGET_EXISTS`     | install-skill target exists; use `--force`    |
 | `ERR_GUEST_NAME_INVALID`      | new-guest name is not kebab-case, or ends in `-test` (which would make the source a MoonBit test file) |
@@ -408,7 +408,7 @@ Stable error codes (`@cli.error_codes` / the `CODE_*` constants):
 
 ```sh
 # The authoring loop
-tutuca gen-views src/counter.html --name Counter
+tutuca gen src/counter.html --name Counter
 tutuca watch src/                 # …or leave this running instead
 
 # Verification is the compiler and the test runner, not the CLI
@@ -429,7 +429,7 @@ moment instead of reconstructing it later.
 
 ```sh
 tutuca feedback "HTML_TAG_NOT_ALLOWED_IN_PARENT didn't say which parent it meant"
-echo "gen-views --out swallowed my file when I passed two paths" | tutuca feedback
+echo "gen --out swallowed my file when I passed two paths" | tutuca feedback
 tutuca feedback < notes.txt
 ```
 

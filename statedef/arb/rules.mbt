@@ -8,7 +8,7 @@
 //
 // That there are two ways to reach a rule's answer is the point rather than a
 // duplication. The card compiler emits the rule into a wasm module and
-// `gen-views` emits a `guard` into a generated MoonBit arm; this is a THIRD
+// `gen` emits a `guard` into a generated MoonBit arm; this is a THIRD
 // reading of the same declaration, and a property that runs all three against
 // one state is a differential test of the two that ship.
 

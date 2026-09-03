@@ -155,7 +155,7 @@ own events, `send`/`receive`,
   (a `_margauiClasses` decoy view) in [margaui.md](./margaui.md) "Pitfall:
   assembled class names are invisible to the scanner".
 
-- **Do close the loop after every change** with `gen-views` → `moon check` →
+- **Do close the loop after every change** with `gen` → `moon check` →
   `moon test`. → [core.md](./core.md) "Verifying changes"
 
 ## Smells & refactors

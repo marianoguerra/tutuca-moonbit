@@ -58,7 +58,7 @@ stories.map(s => if s.id == "counter-counter-seeded" { { ..s, init: true } } els
 Write the view file, then generate its MoonBit module:
 
 ```sh
-tutuca gen-views page/my_thing.html
+tutuca gen page/my_thing.html
 ```
 
 The generated `page/my_thing_view_gen.mbt` is checked in and never hand-edited;

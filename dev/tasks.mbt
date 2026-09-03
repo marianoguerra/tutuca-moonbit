@@ -178,7 +178,7 @@ pub fn tasks() -> Array[Task] {
       commands: build_commands(),
     },
     {
-      name: "gen-views",
+      name: "gen",
       about: "regenerate the checked-in *_view_gen.mbt from their .html sources",
       commands: gen_views_commands(),
     },
@@ -208,7 +208,7 @@ pub fn tasks() -> Array[Task] {
         },
         // The generator emits one `#|` line per source line, which `moon fmt`
         // leaves alone but the surrounding module needs formatting like any
-        // other generated file (same reason gen-views formats).
+        // other generated file (same reason gen formats).
         moon("fmt", ["fmt"]),
       ],
     },
@@ -297,7 +297,7 @@ pub fn tasks() -> Array[Task] {
       // bare `node scripts/…` in two docs.
       //
       // Regenerate → fmt → drift-check, the same shape `skill-embed` and
-      // `gen-views` use, rather than the script's own `--check`. That flag
+      // `gen` use, rather than the script's own `--check`. That flag
       // compares the generator's RAW output against the committed file, which
       // `moon fmt` has since reformatted — so it reported "stale" on a file
       // whose content was byte-identical. Formatting first is what makes the
@@ -567,10 +567,10 @@ pub fn tasks() -> Array[Task] {
 ///|
 /// The corpus, projected and then compiled.
 ///
-/// Two steps because the second is `gen-views`: the corpus is DATA and the
+/// Two steps because the second is `gen`: the corpus is DATA and the
 /// wasm backend reads it as JSON, but the MoonBit backend's answers only exist
 /// once `moonc` has compiled them — so the corpus becomes a view file and
-/// takes the ordinary path from there. `gen-views` already lists corpus.html,
+/// takes the ordinary path from there. `gen` already lists corpus.html,
 /// so `ci` re-runs and drift-checks the second half on its own; this task is
 /// what to run after ADDING a case.
 fn gen_conformance_commands() -> Array[Command] {
@@ -596,7 +596,7 @@ fn gen_conformance_commands() -> Array[Command] {
 /// A rename lands, everything stays green, and the old word is still in forty
 /// files a year later.
 ///
-/// The roots are `gen-views`' plus the two trees that are view files with no
+/// The roots are `gen`' plus the two trees that are view files with no
 /// generated sibling — the starter cards, which are what a stranger reads
 /// first, and the card compiler's own examples.
 fn migrate_check_commands() -> Array[Command] {
@@ -686,9 +686,7 @@ fn gen_views_commands() -> Array[Command] {
   let commands = [view_drift_snapshot(VIEW_DRIFT_BEFORE)]
   for entry in files {
     let (path, name) = entry
-    let args = [
-      "run", "--target", "native", "cmd/tutuca", "--", "gen-views", path,
-    ]
+    let args = ["run", "--target", "native", "cmd/tutuca", "--", "gen", path]
     match name {
       Some(n) => {
         args.push("--name")
@@ -696,11 +694,11 @@ fn gen_views_commands() -> Array[Command] {
       }
       None => ()
     }
-    commands.push(moon("gen-views · " + path, args))
+    commands.push(moon("gen · " + path, args))
   }
   commands.push(moon("fmt", ["fmt"]))
   // The drift check: regenerating is only a guarantee if the checked-in modules
-  // are what regenerating produces. This is what makes `gen-views` safe to put
+  // are what regenerating produces. This is what makes `gen` safe to put
   // in CI — a stale generated module type-checks and tests green, so nothing
   // else catches it.
   //
@@ -772,7 +770,7 @@ fn view_drift_snapshot(to : String) -> Command {
 ///|
 /// Regenerate BOTH MoonBit guest binding trees from the one WIT
 /// (dyncomp/wit/tutuca-component.wit), then prove the checked-in output is
-/// reproducible. Same shape as `gen-views`: the generator normalizes and
+/// reproducible. Same shape as `gen`: the generator normalizes and
 /// formats, so a clean `git diff` is the whole check. The Rust guest reads
 /// the same WIT through its `generate!` macro and needs no checked-in
 /// bindings. See guests/gen-bindings.mjs for why normalization is needed
@@ -864,7 +862,7 @@ fn composites() -> Array[(String, String, Array[String])] {
   // this build-smoke is their regression guard. It also codegens the js/native
   // demo hosts, none of which have their own tests.
   [
-    // `gen-views` runs FIRST, and for its drift check rather than its output:
+    // `gen` runs FIRST, and for its drift check rather than its output:
     // every `*_view_gen.mbt` is checked in and compiled as an ordinary source,
     // so a stale one type-checks and tests green while no longer describing the
     // .html beside it. Catching that before `check` also means the rest of CI
@@ -874,13 +872,13 @@ fn composites() -> Array[(String, String, Array[String])] {
     // `cli/skill_assets_gen.mbt` is checked in, compiles whatever it
     // holds, and ships inside the binary — so a skill doc edited without
     // re-embedding is invisible until somebody runs `tutuca install-skill` and
-    // reads the wrong thing. It runs AFTER `gen-views`, because that task ends
+    // reads the wrong thing. It runs AFTER `gen`, because that task ends
     // in `moon fmt` over everything.
     (
       "ci",
-      "gen-views drift + skill-embed drift + migrate drift + check + the example/skill/guest checks + test + build (build-smokes every backend & demo)",
+      "gen drift + skill-embed drift + migrate drift + check + the example/skill/guest checks + test + build (build-smokes every backend & demo)",
       [
-        "gen-views", "skill-embed", "storybook-template-embed", "check", "check-examples",
+        "gen", "skill-embed", "storybook-template-embed", "check", "check-examples",
         "check-skill", "check-guest-list", "check-guest-template", "check-storybook-template",
         // After `check`, because it runs the native CLI and so needs it to
         // build; before `test`, because a repo written in a retired spelling is
@@ -1275,8 +1273,8 @@ pub fn dyncomp_storybook_steps() -> Array[Step] {
 pub fn skill_embed_steps() -> Array[Step] {
   // The generator emits one tuple per file on one line and `moon fmt` reflows
   // them, so without this the checked-in module is whatever `skill-embed` left
-  // and the next `gen-views` (which formats everything) rewrites it — a 140-line
-  // diff nobody asked for, on a file nobody edited. Same reason gen-views ends
+  // and the next `gen` (which formats everything) rewrites it — a 140-line
+  // diff nobody asked for, on a file nobody edited. Same reason gen ends
   // this way.
   [
     // Snapshot FIRST, so the check below can compare the file against what

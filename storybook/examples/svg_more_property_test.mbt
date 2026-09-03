@@ -4,16 +4,16 @@
 // presses somebody wrote down. This asserts what it does with any sequence of
 // messages at all — and the messages are not written down anywhere either:
 // they are read off `<script type="tutuca/spec">`, the same declaration
-// `gen-views` compiled, through `statedef/arb`.
+// `gen` compiled, through `statedef/arb`.
 //
 // Why THIS component. It is the one in the corpus that declares all three
 // kinds of rule — two `pred`s used as preconditions and an `invariant` — and
 // every one of their bodies is in the vocabulary `@core.Val` can evaluate. So
 // the rules can be read here, in the test, and held against the compiled arms
-// `gen-views` emitted from the same source. Two readings of one declaration
+// `gen` emitted from the same source. Two readings of one declaration
 // that have to agree is a differential test, and it costs one function call.
 //
-// The spec source is not copied here any more. `gen-views` carries the block
+// The spec source is not copied here any more. `gen` carries the block
 // into the generated module (`bar_chart_spec_source`) and the component holds
 // it, so `@fuzz.Plan::of_component` reads the declaration the component was
 // actually built from — on any backend, with no filesystem. The constant this
@@ -103,7 +103,7 @@ fn settled(h : @harness.Harness[@memdom.MemNode]) -> Map[String, @tutuca.Value] 
 /// What this used to assert was that a hand-copied constant still matched the
 /// shipping component — a test that existed only because the copy did. The
 /// copy is gone, so the claim moves to the two things that can still be wrong:
-/// that `gen-views` actually carried the block through, and that every rule in
+/// that `gen` actually carried the block through, and that every rule in
 /// it is one `@core.Val` can answer, so nothing below is quietly skipped.
 test "the component carries the block it was declared in" {
   let p = bar_chart_plan()
@@ -173,7 +173,7 @@ test "property: no generated mutator can drive the chart through its invariant" 
 /// This is the differential test, and it is worth being explicit about what
 /// the two sides are. On the left, `@tscript.parse_bool` lowers
 /// `(len .values) < 9` to a `@core.Val` and `Val::eval` walks it over the
-/// state as it stands. On the right is the `guard` `gen-views` compiled from
+/// state as it stands. On the right is the `guard` `gen` compiled from
 /// that same line into the generated MoonBit arm, whose verdict reaches here
 /// as a `Refusal` with `code: Precondition` and the rule's name on it.
 ///
