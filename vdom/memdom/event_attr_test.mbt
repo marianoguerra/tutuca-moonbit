@@ -5,7 +5,7 @@
 // pin the OTHER path: a view (or a guest bundle) that writes the content
 // attribute directly, and what `set_prop` then does with it.
 //
-// `anode/sanitize` refuses the name at registration, but only for a dyncomp
+// `anode/sanitize` refuses the name at registration, but only for a loaded
 // guest — `Policy::check_view` has one call site. A plain tutuca app runs no
 // static pass, so vdom's routing is the whole of its behaviour here. See
 // docs/sanitizer.md, "Order of work".

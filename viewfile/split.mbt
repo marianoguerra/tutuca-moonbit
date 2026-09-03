@@ -76,24 +76,6 @@ fn is_fixtures_type(ty : String?) -> Bool {
 const SCRIPT_TYPE = "tutuca/script"
 
 ///|
-/// The `type=` that marks a `<script>` as hand-written Wax — the ESCAPE HATCH.
-///
-/// The ahead-of-time path has had one for as long as it has refused anything:
-/// a handler `gen` cannot compile comes back by name as an `update~`
-/// argument, and you write it in MoonBit. The compiled path refused by name
-/// too and handed back nothing at all, which is the difference this block
-/// closes — a card whose handler the generator turns away can answer it in the
-/// language the module is built out of.
-///
-/// Lifted here and read by NOBODY but `tutucard/wasm`. It is inert everywhere
-/// else: the interpreter has no Wax to run and `gen` has no wasm to put
-/// it in, so a file carrying one is a file with a block those two ignore.
-///
-/// A `<script>` for the third time and for the same reason: Wax is full of
-/// `<`, `>` and `&`, none of which would survive being read as markup.
-const WAX_TYPE = "tutuca/wax"
-
-///|
 /// The `type=` that marks a `<script>` as the file's scenes.
 ///
 /// JSON, the way the init block is, and for the same two reasons: a block a
@@ -103,9 +85,8 @@ const WAX_TYPE = "tutuca/wax"
 ///
 /// What it says is the card's tests. Whether anything runs them is a property
 /// of the consumer rather than of the file: `tutucard` drives a scene on the
-/// in-memory DOM and `gen` ignores the block entirely — exactly as it
-/// ignores `tutuca/wax` — which is what makes this additive rather than a
-/// fifth thing every backend has to answer for.
+/// in-memory DOM and `gen` ignores the block entirely, which is what makes
+/// this additive rather than a fifth thing every backend has to answer for.
 const TEST_TYPE = "tutuca/test"
 
 ///|
@@ -344,7 +325,6 @@ pub fn split_file(
   let mut init_src : (String, Int)? = None
   let mut test_src : (String, Int)? = None
   let script_srcs : Array[(String, String, Int)] = []
-  let wax_srcs : Array[(String, String, Int)] = []
   let mut at_eof = false
   while !at_eof {
     let before = tok.get_position().offset
@@ -415,19 +395,6 @@ pub fn split_file(
           // The escape hatch. Lifted exactly as the handlers are, and for the
           // same reason: what it says can only be judged by a backend that has
           // the module in front of it, and only one backend has one.
-          "script" if attr_of(attrs, "type") is Some(WAX_TYPE) => {
-            let content_at = after
-            let (text, end_) = read_raw(tok, "script")
-            let for_comp = match attr_of(attrs, "for") {
-              Some(c) => c
-              None => ""
-            }
-            if wax_srcs.iter().any(t => t.0 == for_comp) {
-              raise DuplicateWaxBlock(for_comp)
-            }
-            wax_srcs.push((for_comp, text, content_at))
-            styles.push({ start: before, end_, text: "", kind: SLifted, })
-          }
           // The scenes. Parsed here, the way the init block is, because a
           // scene block IS self-contained: JSON in, `Scene`s out, and the only
           // thing this adds is the line map that puts a mistake on the file
@@ -496,7 +463,6 @@ pub fn split_file(
   let scripts = script_blocks(chars, script_srcs)
   // The same shape, and deliberately the same function: an escape block is a
   // script block that happens to be in another language.
-  let wax = script_blocks(chars, wax_srcs)
   // No templates at all: the file IS one unnamed component's main view —
   // unless nothing is left once the schema is lifted out, which is a
   // SCHEMA-ONLY file. Those exist so a component whose views are built at
@@ -511,7 +477,6 @@ pub fn split_file(
         state,
         init,
         scripts,
-        wax,
         tests,
         root: "",
         legacy_spec,
@@ -537,7 +502,6 @@ pub fn split_file(
       state,
       init,
       scripts,
-      wax,
       tests,
       root: "",
       legacy_spec,
@@ -677,7 +641,6 @@ pub fn split_file(
     state,
     init,
     scripts,
-    wax,
     tests,
     root: root_marked.unwrap_or(""),
     legacy_spec,
@@ -836,25 +799,6 @@ pub fn ViewFile::script_for(self : ViewFile, comp : String) -> Block? {
   }
   if self.scripts.length() == 1 && self.scripts[0].comp == "" {
     return Some(self.scripts[0].block)
-  }
-  None
-}
-
-///|
-/// The hand-written Wax for one component, or None when the file writes none.
-///
-/// The same rule `script_for` follows, down to the bare-block case: an escape
-/// block is a script block in another language, so it is looked up the same way
-/// or the two would disagree about which component an unqualified block is
-/// about.
-pub fn ViewFile::wax_for(self : ViewFile, comp : String) -> Block? {
-  for s in self.wax {
-    if s.comp == comp {
-      return Some(s.block)
-    }
-  }
-  if self.wax.length() == 1 && self.wax[0].comp == "" {
-    return Some(self.wax[0].block)
   }
   None
 }

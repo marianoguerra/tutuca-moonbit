@@ -17,7 +17,7 @@
 //
 // What it cannot compile it REFUSES, by name, with the reason. The design
 // reserves roughly 15% of the corpus for MoonBit — `walk_path`, request
-// options, node-replacing `swap`, dyncomp lifecycle — and a backend that
+// options, node-replacing `swap`, component lifecycle — and a backend that
 // guessed at those would be worse than one that says which handler to write by
 // hand.
 import {

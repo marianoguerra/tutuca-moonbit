@@ -17,7 +17,7 @@
 // The two halves stay distinct, and the distinction is the point:
 // `dom_props_gen.mbt` is FETCHED from the specifications and says what exists;
 // `event_paths.mbt` is ARGUED and says what may be reached. Neither may answer
-// the other's question. See `dyncomp/SECURITY.md` §9.
+// the other's question. See `tgc/SECURITY.md` §7.
 import {
   "moonbitlang/core/debug",
 }

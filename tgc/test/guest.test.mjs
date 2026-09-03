@@ -1,6 +1,6 @@
 // The playground's guest bridge, driven with no page.
 //
-// `tutucard/web/card-tgc.js` installs the surface `cardguest.mbt` calls —
+// `tutucard/web/card.js` installs the surface `cardguest.mbt` calls —
 // `create`, `getField`, `dispatch`, `renderCall`, `withField` — over a `tgc`
 // module. A browser is where it runs; this is where it is CHECKED, because a
 // bridge only a page can exercise is a bridge nobody exercises.
@@ -11,7 +11,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { loadTgcGuest } from "../../tutucard/web/card-tgc.js";
+import { loadGuest } from "../../tutucard/web/card.js";
 
 const out = join(process.cwd(), "_build/tgc");
 mkdirSync(out, { recursive: true });
@@ -57,7 +57,7 @@ async function mount() {
   run(["cmd/tgc", "--", "card", cardPath, join(out, "guest-card.wasm")]);
   const bytes = readFileSync(join(out, "guest-card.wasm"));
   const key = `k${Math.random()}`;
-  await loadTgcGuest(bytes, key, { runtime });
+  await loadGuest(bytes, key, { runtime });
   return globalThis.__cardguest[key];
 }
 

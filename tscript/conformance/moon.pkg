@@ -1,7 +1,7 @@
 // The conformance corpus: what tutuca script MEANS, as data.
 //
 // One AST, TWO backends: the MoonBit emitter (`tscript/emit_mbt`) and the wasm
-// compiler (`tutucard/wasm`). There were three, and the third — an interpreter
+// compiler (`tgc/emit`). There were three, and the third — an interpreter
 // that ran a card where it stood — has been removed now that the compiler
 // covers what it did. A language with two implementations and no shared corpus
 // does not have one semantics, it has two, and the difference shows up as a
@@ -9,8 +9,8 @@
 //
 // So the cases are DATA and nothing here runs them. Each backend writes an
 // adapter — the emitter generates a module and drives it through `@harness`,
-// the compiler compiles each case into a card and drives it through the host's
-// own `abi.mjs` — and a case that one backend passes and another does not is
+// the compiler compiles each case into a card and drives the instantiated
+// module from node — and a case that one backend passes and another does not is
 // the thing the corpus exists to catch.
 //
 // LOSING the interpreter cost the corpus something worth naming: it was the

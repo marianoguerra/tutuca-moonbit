@@ -1,8 +1,8 @@
 # Sanitizing an anode view
 
-The design, and what became of it. It exists because `dyncomp/` compiles view
+The design, and what became of it. It exists because `tgc/host` compiles view
 text it did not write into the host's own page, and because
-`dyncomp/SECURITY.md` §3 promises a port of the [WHATWG Sanitizer
+`tgc/SECURITY.md` §7 promises a port of the [WHATWG Sanitizer
 API](https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#sanitizer)
 without saying what "port" means for a tree that is half description and half
 expression. This says it. Most of it is now built — `anode/sanitize` and
@@ -61,7 +61,7 @@ all.
 
 ## Pass 1 — the static pass, `anode/sanitize`
 
-**Implemented.** A leaf package over `anode`. `dyncomp/policy` imports it for the
+**Implemented.** A leaf package over `anode`. `tgc/policy` imports it for the
 refusal; `lint` can import it later for an advisory; nothing imports them.
 
 ### The config
@@ -221,7 +221,7 @@ an ordering constraint on the pass, so the property holds wherever the pass runs
 
 ### Where it runs — and why not over the expansion
 
-`Policy::check_view` runs over the **shadow parse** (`dyncomp/host/bundle.mbt`,
+`Policy::check_view` runs over the **shadow parse** (`tgc/host/bundle.mbt`,
 `screen_view`): a throwaway tree in a throwaway `ParseContext`, before anything
 is registered. That timing is right and the sanitizer should keep it. But it
 means the tree is *unexpanded*: `MacroCall.node` is `None` until
@@ -254,7 +254,7 @@ Then expansion composes two already-checked trees and needs no third pass.
 The second was reachable: `<x:card><div @dangerouslysetinnerhtml=".payload"></div></x:card>`
 passed `check_view` with no refusal. (It only *renders* if the host registered a
 macro named `card` whose body places the slot, so it was contingent, not
-unconditional — see `dyncomp/SECURITY.md` §3. `sanitize_test.mbt` pins both the
+unconditional — see `tgc/SECURITY.md` §7. `sanitize_test.mbt` pins both the
 old predicate's answer and the new walk's.)
 
 The sanitizer has its own walk rather than a fix to `for_each_child`, because
@@ -272,7 +272,7 @@ predicate stays in `anode` for other callers, still with its blind spot.
 The spec sanitizes by removal. This pass does not:
 
 - for a guest bundle, removal is worse than refusal — the component silently
-  renders wrong, and its author gets nothing to read. `dyncomp`'s policy
+  renders wrong, and its author gets nothing to read. `tgc`'s policy
   already made this call — a bundle that needs what a host withholds is
   refused whole rather than loaded drawing half of itself — and it is the same
   argument;
@@ -568,7 +568,7 @@ directives:
   `<animateTransform>` and `<set>` assign the attribute named by
   `attributeName` in the browser, *after* `check` has read the tree and after
   the render-time filter has read the built nodes — so the `href` anything
-  checked is not the `href` that navigates. `dyncomp/policy` already refused all
+  checked is not the `href` that navigates. `tgc/policy` already refused all
   four for an untrusted guest; the baseline did not, and a plain app has no
   Pass 1 at all. They are in `unsafe_elements` now.
 - **Namespaced attributes had a spelling nothing else knew.** The parser
@@ -759,7 +759,7 @@ settled it.
 
 What the name half above did not need, and this does: **something has to have
 checked those constants.** `Policy::check_view` has one call site
-(`dyncomp/host/bundle.mbt`), so Pass 1 runs for a dyncomp guest and nobody else.
+(`tgc/host/bundle.mbt`), so Pass 1 runs for a guest module and nobody else.
 For a plain app "constant" means "nothing ever looked at it", and skipping a
 constant would hand back the literal `javascript:` URL and the literal `onclick`
 that installing the filter by default removed. So this one is not free the way
@@ -814,7 +814,7 @@ app.add_filter(my_rule)        // a rule of my own, BEHIND the built-in chain
   will never see one — it is behind the defense, not beside it.)
 
 **What this does NOT claim.** It is not "a policy may only get stricter": a
-dyncomp host installs `filter_for(policy.sanitizer)` for a policy that may
+host installs `filter_for(policy.sanitizer)` for a policy that may
 PERMIT raw markup, which is a widening, and refusing it would break the one
 caller the seam was built for. The monotone property is narrower and is the one
 that matters: *the built-in chain always runs, and anything a host adds can only

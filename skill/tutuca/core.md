@@ -376,7 +376,7 @@ the other way, a `<script type="tutuca/script">` block cannot write either one
 around it — so read the value in the view and pass it in.
 
 > **Retired spellings.** `equals? a b` is now `a is b`, and `falsy? x` is
-> `not (truthy? x)`. Both still parse — a compiled dyncomp bundle carries its
+> `not (truthy? x)`. Both still parse — a compiled loaded module carries its
 > view markup as a string and the host parses it at load time — and
 > `gen` hints where one is left.
 
@@ -1130,7 +1130,7 @@ host that wants less says which elements it will have, with a `SanitizerConfig`
 through `App::set_sanitizer`, the same way it does for every other node in the
 tree.
 
-One exception, in `dyncomp`: an **untrusted** guest may not use any of the three
+One exception, in `tgc`: an **untrusted** guest may not use any of the three
 runtime-markup directives. That refusal is not about XSS — the sanitizer handles
 that — but about egress: an `<img src>` the sanitizer is perfectly happy with is
 still a request to an origin the guest chose, from the host's page.

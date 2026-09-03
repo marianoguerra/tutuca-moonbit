@@ -134,7 +134,7 @@ pub let export_serve : String = "tgc.serve"
 ///
 /// A module's import section is its COMPLETE authority list — a `tgc` module
 /// declares no memory and no table, so there is nothing else to reach through —
-/// which is the property `dyncomp/SECURITY.md` already relies on, made total.
+/// which is the property `tgc/SECURITY.md` relies on, made total.
 pub let import_namespace : String = "tut"
 
 ///|

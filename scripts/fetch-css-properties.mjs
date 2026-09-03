@@ -8,7 +8,7 @@
 // `<bg-layer>#`, which contains `<bg-image>`, which is `<image> | none`, which
 // is `<url> | <gradient>`, which is `<url()> | <src()>`. Nobody can hold that
 // in their head, and the hand-written list this replaces
-// (`dyncomp/policy/view_authority.mbt`) had seven misses, including the
+// (`tgc/policy/view_authority.mbt`) had seven misses, including the
 // `background` shorthand itself.
 //
 // So the facts come from the specs and the POLICY stays in MoonBit. This script
@@ -332,7 +332,7 @@ ${setLiteral(
 /// \`background\` → \`<bg-layer>#\` → \`<bg-image>\` → \`<image>\` → \`<url>\`.
 ///
 /// It is strictly larger than the hand-written list it replaces
-/// (\`untrusted_sink_attr\` in \`dyncomp/policy/view_authority.mbt\`), and the
+/// (\`untrusted_sink_attr\` in \`tgc/policy/view_authority.mbt\`), and the
 /// difference is the argument for generating it.`,
   url,
 )}

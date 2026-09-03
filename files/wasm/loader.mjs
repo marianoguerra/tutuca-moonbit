@@ -47,7 +47,7 @@ export function createFilesImports(getExports) {
     // The read, answered later through the page's `on_file_text` export.
     //
     // `takeDroppedFile` is the app bridge's own table — the same one
-    // `@on.drop="load e.value"` fills and `dyncomp`'s bundle loader reads —
+    // `@on.drop="load e.value"` fills and `tgc`'s bundle loader reads —
     // because a File cannot cross into wasm-gc and an integer can.
     read_text: (fileId, reqId) => {
       const file = takeDroppedFile(fileId);

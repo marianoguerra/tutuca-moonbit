@@ -508,7 +508,7 @@ fn check_event_arg(
       // own code: any path resolves at run time (the OPEN profile), and an
       // author who wanted `e.target.form.action` could have written the same
       // read in JS. What the list still governs is guest-supplied views, and
-      // THAT is where the step is refused — a dyncomp host holds its policy's
+      // THAT is where the step is refused — a host holds its policy's
       // `event_paths` profile to the allowlist and refuses the bundle at
       // registration, naming this same step. So the generator advises rather
       // than gates: it names the step, the six that survive the safe profile,

@@ -15,7 +15,7 @@
 // consumer who adds marianoguerra/tutuca and builds for wasm-gc needs it, and
 // cannot reach anything under demo/. The dynamic-component half — `tcomp` and
 // `tkv`, the bundle unpacker, the guest arena — is in
-// `dyncomp/host/wasm/loader.mjs` beside the packages that declare those, and
+// `tgc/host/loader.mjs` beside the packages that declare those, and
 // is linked through `makeExtra`; a page that never loads a bundle then carries
 // none of it.
 //
@@ -160,7 +160,7 @@ export function createTdomImports(getExports) {
 
 // Fetch + instantiate a wasm-gc tutuca module. `makeExtra` (optional) receives
 // a getExports thunk and returns extra import namespaces — `tcomp` and `tkv`
-// from `dyncomp/host/wasm/loader.mjs`, or anything else a host links in — that
+// from `tgc/host/loader.mjs`, or anything else a host links in — that
 // need to call back into the instantiated module.
 export async function instantiate(wasmUrl, makeExtra) {
   let exports = null;

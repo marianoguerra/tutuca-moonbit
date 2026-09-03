@@ -99,7 +99,7 @@ fn has_raw_html_attr(attrs : Attrs) -> Bool {
 /// the directive's VALUE is an expression: what it will hold is not knowable
 /// until render, so the only decision a caller can make ahead of time is
 /// whether to allow the construct at all. That is what a host compiling
-/// markup it did not write has to ask — see `dyncomp/SECURITY.md`.
+/// markup it did not write has to ask — see `tgc/SECURITY.md`.
 pub fn ANode::has_raw_html(self : ANode) -> Bool {
   if self is Dom(d) && has_raw_html_attr(d.attrs) {
     return true

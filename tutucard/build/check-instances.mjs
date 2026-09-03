@@ -2,7 +2,7 @@
 //
 // A guest instance is immutable, so every transition that answers a successor
 // makes its predecessor garbage — which is every interaction. The host has a
-// collector for that (`dyncomp/host/dynobj.mbt`, `install_gc`) and it was
+// collector for that (`tgc/host/dynobj.mbt`, `install_gc`) and it was
 // handing the doomed handles to a card guest whose `drop_instance` did
 // nothing, on the grounds that the table goes with the module. True, and never
 // the whole story: a card left open on a page grew forever.
@@ -35,7 +35,7 @@ try {
 (0, eval)(bundle);
 
 const { driveCard } = await import(
-  pathToFileURL(join(OUT, "card-wasm.js")).href
+  pathToFileURL(join(OUT, "card.js")).href
 );
 const CARD = readFileSync(
   join(REPO, "tutucard", "wasm", "examples", "Todos.html"),

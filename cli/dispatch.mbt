@@ -25,7 +25,6 @@ pub fn plan(argv : Array[String]) -> Outcome {
     "agent-context" =>
       return Done({ out: agent_context_text(), err: "", exit_code: 0, })
     "install-skill" => return run_install_skill(command_args, opts)
-    "new-guest" => return run_new_guest(command_args, opts)
     "new-storybook" => return run_new_storybook(command_args, opts)
     "storybook" => return run_storybook(command_args, opts)
     // `gen` is the retired name. It has not only generated views since

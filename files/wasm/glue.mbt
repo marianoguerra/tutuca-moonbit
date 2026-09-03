@@ -8,7 +8,7 @@
 /// The read is why there is an export at all. A closure cannot cross into JS
 /// on wasm-gc, so the continuation cannot go with the request — it stays here,
 /// in a table, under a number that does go, and the page hands the number back
-/// with the text. That is the same shape `dyncomp`'s bundle loader uses for
+/// with the text. That is the same shape `tgc`'s bundle loader uses for
 /// the same reason, and it is the only shape available.
 
 ///|

@@ -165,7 +165,7 @@ pub fn Sanitizer::new(cfg : SanitizerConfig) -> Sanitizer raise InvalidConfig {
 ///
 /// The `<style>` ELEMENT is dropped by both, and stays dropped: a stylesheet is
 /// selectors and at-rules as well as declarations, and only the declaration
-/// half is built. `dyncomp/SECURITY.md` §4 has the rest.
+/// half is built. `tgc/SECURITY.md` §7 has the rest.
 ///
 /// ## Why an overlay and not a config
 ///
@@ -365,7 +365,7 @@ pub fn Sanitizer::attribute_allowed(
 /// One thing in a tree this sanitizer would not keep.
 ///
 /// Structured rather than a message, because the wording belongs to the
-/// caller: `dyncomp/policy` turns one of these into a `Refusal`, a linter would
+/// caller: `tgc/policy` turns one of these into a `Refusal`, a linter would
 /// turn the same one into an advisory line, and the two want different words
 /// for it.
 pub(all) enum Violation {
@@ -406,7 +406,7 @@ pub fn Violation::to_string(self : Violation) -> String {
 ///
 /// It REPORTS rather than strips, for two reasons. A bundle whose view is
 /// silently trimmed renders wrong and its author gets nothing to read, which is
-/// the argument `dyncomp`'s policy makes everywhere: refuse whole, loudly,
+/// the argument `tgc`'s policy makes everywhere: refuse whole, loudly,
 /// rather than degrade. And the tree is
 /// shared and mutable — a `MacroCall`'s slots alias what the expansion will
 /// contain — so a stripping pass has an aliasing problem this one does not.

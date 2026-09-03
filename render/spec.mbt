@@ -46,7 +46,7 @@ pub(all) struct RenderStack {
   event : DomEvent?
   /// Which rule an `e.<path>` handler argument resolves under — see
   /// `@eventpath.EventPathProfile`. Open (the default) for an app rendering
-  /// its own views; the dyncomp host hands its apps `Safe`, which is what
+  /// its own views; the host hands its apps `Safe`, which is what
   /// makes the resolver refuse past the allowlist even though nothing at the
   /// call site did.
   event_paths : @eventpath.EventPathProfile

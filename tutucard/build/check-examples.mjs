@@ -60,9 +60,9 @@ const cards = [
 ];
 
 // The host half of the payload, imported from the assembled folder so this
-// runs the same `card-wasm.js` the page loads rather than a copy of it.
+// runs the same `card.js` the page loads rather than a copy of it.
 const { loadGuest } = await import(
-  pathToFileURL(join(OUT, "card-wasm.js")).href
+  pathToFileURL(join(OUT, "card.js")).href
 );
 
 /** The base64 the compiler answers with, as the bytes `loadGuest` takes. */
@@ -88,7 +88,7 @@ for (const ex of cards) {
   // Mounting is compiling now, so a card that checks and does not compile is a
   // card this page cannot show — which is exactly what this file exists to
   // catch before a reader does.
-  const build = JSON.parse(globalThis.__tutucard.compile(ex.source, "Card", true));
+  const build = JSON.parse(globalThis.__tutucard.compile(ex.source, "Card"));
   if (!build.ok) {
     console.error(`✗ ${ex.name}: does not compile — ${build.error}`);
     failed++;
@@ -105,13 +105,12 @@ for (const ex of cards) {
   //
   // The third gate, and the one the first two cannot stand in for: a card's
   // import section is decided by the effects it performs, so `intent lex
-  // 'loadQuote'` puts `tutuca:component/control#intent` in a module that
-  // checks and compiles perfectly — and `abi.mjs` binds imports BY NAME, so a
-  // host missing that key throws at instantiation rather than dropping the
-  // effect. Which is how step 7 of the tutorial shipped as a card that
-  // compiled and would not mount.
+  // 'loadQuote'` puts `tut.intent` in a module that checks and compiles
+  // perfectly — and imports bind BY NAME, so a runtime missing that export
+  // throws at instantiation rather than dropping the effect. Which is how step
+  // 7 of the tutorial shipped as a card that compiled and would not mount.
   try {
-    await loadGuest(bytes(build.wasm), build.descriptor, "check");
+    await loadGuest(bytes(build.wasm), "check");
   } catch (e) {
     console.error(`✗ ${ex.name}: does not instantiate — ${e.message}`);
     failed++;

@@ -11,8 +11,8 @@
 // This is deliberately NOT part of `check_collected`: the collector sees
 // attribute parses, and events are not among them — they register on the
 // ParseContext itself, so the caller hands them over beside it (the CLI does;
-// the dyncomp host does NOT, because there the same walk is a refusal under
-// the policy, in `dyncomp/policy`, and doubling it here would print both).
+// the host does NOT, because there the same walk is a refusal under
+// the policy, in `tgc/policy`, and doubling it here would print both).
 
 ///|
 /// Every `e.<path>` handler argument these events carry that steps off the

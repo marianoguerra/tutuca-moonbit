@@ -102,6 +102,18 @@ fn prepare(
             raise BadScript(["\{def.component}: line \{b.line}: \{e.message()}"])
         }
     }
+    // The SPEC block's rules, as declarations, ahead of the block's own.
+    //
+    // The same synthesis `gen` runs, from the same function, because the two
+    // backends have to keep the same rules: a card that enforced a different
+    // `invariant` from the generated component of the same file would be two
+    // answers to one question.
+    //
+    // A rule whose body this backend cannot read is dropped rather than
+    // raised: `check_card` has already reported it with a position in the
+    // file, and a card that renders is what this function exists to produce.
+    let (spec_rules, _) = @check.rule_decls(def, decls)
+    let decls = spec_rules + decls
     // Through `component_name`, and with the FILE's root as the fallback.
     //
     // A view set is named by the prefix on its template ids —
@@ -248,7 +260,7 @@ fn build(
 /// import section is meant to be a TRUE statement about what a card does, and
 /// this one over-claims. Narrowing it means walking the lowered bodies for the
 /// names they actually reached, which is the same analysis
-/// `tutucard/wasm`'s `lower_scalar` / `lower_values` split does. Until then a
+/// a `lower_scalar` / `lower_values` split would. Until then a
 /// host reading this section learns what a card COULD do rather than what it
 /// does, and `tgc/SPEC.md` says so.
 fn emit_imports(src : Src, body : String) -> Unit {
@@ -458,7 +470,7 @@ fn line_count(s : String) -> Int {
 /// The manifest, as an ordinary VALUE.
 ///
 /// One manifest, and the module carries it. There used to be two — the module's
-/// own `tgc.describe` and a second in `dyncomp/host`'s shape emitted beside it —
+/// own `tgc.describe` and a second in `tgc/host`'s shape emitted beside it —
 /// because `describe` did not name the views and a host needs them. Two
 /// descriptions of one component is two things that can disagree, and the one
 /// on disk was the one that could arrive without the other.
@@ -467,7 +479,7 @@ fn line_count(s : String) -> Int {
 /// `value_expr`. The JSON a host parses is `to_json()` of the same value, read
 /// back out of `tgc.describe` at load — a projection rather than a second copy.
 ///
-/// The KEYS are `dyncomp/host`'s, because that is the host that reads them and
+/// The KEYS are `tgc/host`'s, because that is the host that reads them and
 /// a shape is worth more than a preference.
 fn manifest_value(
   comps : Array[Comp],
@@ -520,12 +532,15 @@ fn manifest_value(
 /// One component's half of it — and the whole of what an INSTANCE says about
 /// itself, which is why `<C>_desc()` is this same value.
 fn component_value(c : Comp, refusals : Array[Refusal]) -> @tutuca.Value {
+  let names_of = (kinds : Array[@tscript.DeclKind]) => {
+    c.decls
+    .filter(d => {
+      kinds.contains(d.kind) && !refusals.iter().any(r => r.name == d.name)
+    })
+    .map(d => @tutuca.Value::Str(d.name))
+  }
   let lowered = (kind : @tscript.DeclKind) => {
-    @tutuca.Value::List(
-      c.decls
-      .filter(d => d.kind == kind && !refusals.iter().any(r => r.name == d.name))
-      .map(d => @tutuca.Value::Str(d.name)),
-    )
+    @tutuca.Value::List(names_of([kind]))
   }
   let strs = (xs : Array[String]) => {
     @tutuca.Value::List(xs.map(x => @tutuca.Value::Str(x)))
@@ -562,7 +577,6 @@ fn component_value(c : Comp, refusals : Array[Refusal]) -> @tutuca.Value {
       })
     }),
   )
-  out["types"] = List([])
   out["domains"] = @tutuca.Value::from_json(
     @tutuca.domains_to_json(c.def.field_domains()),
   )
@@ -576,8 +590,12 @@ fn component_value(c : Comp, refusals : Array[Refusal]) -> @tutuca.Value {
   out["viewBindings"] = List([])
   out["provideBindings"] = List([])
   out["lookupBindings"] = List([])
-  out["methods"] = lowered(DCompute)
-  out["whens"] = lowered(DPred)
+  // A `pred` is BOTH: read as `$name` it answers its own expression, and
+  // reached through `@when` it answers that value's truthiness. One
+  // declaration, two lists — a host that found it in only one of them would
+  // draw `@show="$positive"` as an unread name.
+  out["methods"] = List(names_of([DCompute, DPred, DInvariant]))
+  out["whens"] = List(names_of([DPred, DInvariant]))
   out["enriches"] = lowered(DEnrich)
   out["bindWiths"] = lowered(DBindWith)
   out["serves"] = List([])

@@ -55,7 +55,7 @@ pub fn mount(
 /// The verbs, over an app somebody else mounted.
 ///
 /// `mount` is the answer for a `ModuleDef`, which is what an ahead-of-time
-/// build produces. It is not the only way an app comes to exist: a dyncomp
+/// build produces. It is not the only way an app comes to exist: a loaded
 /// BUNDLE is registered into a scope and its root instance is made from the
 /// manifest, and a card compiled in a browser is exactly that — so a driver
 /// for one has an `App[MemNode]` in hand and no `ModuleDef` anywhere.

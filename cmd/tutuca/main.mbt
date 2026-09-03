@@ -176,7 +176,7 @@ async fn run_install_skill(
 /// every path and every byte, placeholders and all, so this is the whole of the
 /// shell half of a scaffolding command.
 ///
-/// Shared by `new-guest` and `new-storybook`, which differ only in what they
+/// Used by `new-storybook`, and shaped so a second scaffold could share it: what
 /// print. The refusal is on the FIRST collision rather than afterwards:
 /// scaffolding into a directory someone has been working in is the one way
 /// these commands can destroy work.
@@ -216,28 +216,6 @@ async fn write_tree(
         ),
       )
   }
-}
-
-///|
-/// Write the scaffolded guest tree (the shell half of `new-guest`).
-async fn run_new_guest(
-  opts : @cli.GlobalOpts,
-  plan : @cli.GuestScaffoldPlan,
-) -> Unit noraise {
-  let target = plan.dir
-  write_tree(
-    opts,
-    target,
-    plan.files,
-    force=plan.force,
-    exists_emit=() => @cli.new_guest_target_exists(opts, target),
-    what="guest",
-  )
-  emit_and_exit({
-    out: @cli.new_guest_success(plan.name, target),
-    err: "",
-    exit_code: 0,
-  })
 }
 
 ///|
@@ -940,7 +918,6 @@ async fn main {
     Done(emit) => emit_and_exit(emit)
     Feedback(opts, message~) => run_feedback(opts, message)
     InstallSkill(opts, plan~) => run_install_skill(opts, plan)
-    NewGuest(opts, plan~) => run_new_guest(opts, plan)
     NewStorybook(opts, plan~) => run_new_storybook(opts, plan)
     ServeStorybook(opts, dir~, port~, out~) =>
       run_serve_storybook(opts, dir, port, out)

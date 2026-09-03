@@ -4,7 +4,7 @@
 /// Two invariants live here. The first is the one this test moved from
 /// `markup` with: `Policy::with_sanitizer(raw_markup: true)` is only a safe
 /// thing to offer because permitting the construct also installs the filter
-/// that checks it — the permission is decided in `dyncomp/policy`, a leaf over
+/// that checks it — the permission is decided in `tgc/policy`, a leaf over
 /// anode that has no business knowing about vdom, and `filter_for` is the only
 /// place the two are named together.
 ///

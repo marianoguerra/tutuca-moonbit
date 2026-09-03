@@ -479,7 +479,7 @@ How can a `Value` *contain* an instance? Through the **`Obj` trait** —
 `core` defines the protocol (`member`, `with_member`, `handler`,
 `eq`, …) and `Value::Obj(&Obj)` stores any implementor. The typed-state
 instance implements it (encoding the struct to a fields map for the render
-and path seams, decoding it back for the handlers), and so does `dyncomp`'s
+and path seams, decoding it back for the handlers), and so does `tgc`'s
 host object for WebAssembly guest components — the value tree cannot tell
 the difference. `core` never learns what a component is.
 
@@ -690,7 +690,7 @@ and each has more than one real implementor:
 | Trait | Contract | Implementors |
 |---|---|---|
 | `Stack` | name resolution for `eval` | `RenderStack`, `NullStack`, your test doubles |
-| `Obj` | "acts like a component instance" | the typed-state instance, dyncomp's wasm-guest host object |
+| `Obj` | "acts like a component instance" | the typed-state instance, `tgc/host`'s wasm-module host object |
 | `Ctx` | a handler's effects | the transactor's ctx, `NullCtx` |
 | `DomNode`/`DomWalk` | a DOM | `memdom`, `browser`, `wasm` |
 

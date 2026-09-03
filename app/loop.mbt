@@ -33,7 +33,7 @@ pub struct App[N] {
   mut sanitizer : @sanitize.Sanitizer
   /// Which rule an `e.<path>` handler argument resolves under — see
   /// `@eventpath.EventPathProfile`. Open by default: an app's views are its
-  /// author's own code. A host rendering guest-supplied views (the dyncomp
+  /// author's own code. A host rendering guest-supplied views (the `tgc`
   /// bridge does) sets `Safe`, and every dispatch's rebuilt stacks carry it.
   mut event_paths : @eventpath.EventPathProfile
   /// Rules a host added, run after the built-in chain in the order they were
@@ -327,7 +327,7 @@ fn[N : @vdom.DomWalk] App::render_now(self : App[N]) -> Unit {
 /// ## When it applies
 ///
 /// From the next render. Not retroactive: a value already in the DOM stays
-/// until something re-renders over it, for the same reason a dyncomp policy
+/// until something re-renders over it, for the same reason a host policy
 /// applies at load — retracting what is already on the page is dropping it, not
 /// filtering it.
 pub fn[N] App::set_sanitizer(
@@ -347,7 +347,7 @@ pub fn[N] App::set_sanitizer(
 /// JS was never anybody's to gate. `Safe` holds every traversed step of every
 /// handler-arg path to `@eventpath`'s allowlist — a path that goes past it
 /// answers `Null`, exactly as ALL paths did before profiles existed. It is
-/// what a host that renders guest-supplied views sets; the dyncomp bridge
+/// what a host that renders guest-supplied views sets; the guest bridge
 /// applies its policy's answer in `set_app`, so a page never has to.
 ///
 /// Like `set_sanitizer`, this is not retroactive: it governs dispatches, and

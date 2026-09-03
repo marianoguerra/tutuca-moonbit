@@ -52,16 +52,16 @@ component — is REFUSED by name, with the reason, and comes back as an
   — the two ways a component is reached: a message is addressed and stops at
   one component, an intent is routed and walks until something answers.
 - **[docs/dynamic-components.md](docs/dynamic-components.md)** — the part that
-  is *not* decided before the program runs: a WebAssembly component fetched at
+  is *not* decided before the program runs: a WebAssembly module fetched at
   runtime, from someone you have no reason to trust, mounted into a page that
-  is already running. How to host them, and `tutuca new-guest` to write one.
+  is already running. How to host one, and how to write one.
 - **[docs/playground-wasm.md](docs/playground-wasm.md)** — how the in-browser
   playground compiles and runs on both backends: the string ABI, the
   worker-per-target rule, and how to verify a change to either.
-- **[docs/generative-dyncomps-in-the-browser-design.md](docs/generative-dyncomps-in-the-browser-design.md)**
-  — a design for building a bundle client-side, with no server and no native
-  toolchain. A plan rather than a description of shipped behaviour; it says so
-  at the top.
+- **[tgc/SPEC.md](tgc/SPEC.md)** — the component format itself: the frozen rec
+  group, the freeze rule, the op space, the exports, and the CBOR and JSON
+  encodings. **[tgc/SECURITY.md](tgc/SECURITY.md)** is what a loaded module can
+  and cannot do, tested rather than asserted.
 - **[docs/storybook.md](docs/storybook.md)** — the gallery as a library: how a
   project gets one over its own components, why stories are a projection of a
   module's `examples`, and what stays behind in this repo.
@@ -80,7 +80,7 @@ moon add marianoguerra/tutuca
 ```
 
 The CLI (`gen`, `watch`, `gen-*-css`, `storybook`, `new-storybook`,
-`install-skill`, `new-guest`) is the `cmd/tutuca` package, and `moon install` names the binary
+`install-skill`, `new-storybook`) is the `cmd/tutuca` package, and `moon install` names the binary
 after that package's last segment:
 
 ```sh

@@ -431,7 +431,7 @@ declare pub fn[E, H] build_bucket(
 ///
 /// `schema` is required here for the same reason it is on `component`: being
 /// hand-written is not being under-described. A `fields: []` schema is the
-/// right answer when the instances really are opaque (the dyncomp contract),
+/// right answer when the instances really are opaque (the guest contract),
 /// and it still carries the handler channels the caller knows about.
 declare pub fn Component::for_type(
   name~ : String,

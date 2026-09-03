@@ -3,7 +3,7 @@
 //
 // `@sanitize` settles names at registration and is the better place to do it —
 // it is cheaper and it can tell the author. But `Policy::check_view` has one
-// call site (`dyncomp/host/bundle.mbt`), so that pass runs for a dyncomp guest
+// call site (`tgc/host/bundle.mbt`), so that pass runs for a guest module
 // and for nobody else. A plain tutuca app has no static pass at all, and this
 // is the only place its `on*` names are ever looked at.
 //

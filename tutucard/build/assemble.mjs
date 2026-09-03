@@ -5,12 +5,10 @@
 // per-target `.mi`/`.core` closure and a manifest telling the shell how to
 // drive `buildPackage`/`linkCore`, because it compiles MoonBit in the browser.
 //
-// A card is parsed and mounted, so what ships is the runtime and the page — AND
-// a compiler, which is new. `tutucard/wasm` turns the same card into a
-// `tutuca:component@0.12.0` core wasm module, and it is a MoonBit library in
-// this bundle rather than a payload fetched beside it: `marianoguerra/wax` plus
-// the Wax standard library it vendors, which is why `abi.mjs` and
-// `card-wasm.js` are copied too.
+// A card is compiled and mounted, so what ships is the runtime and the page —
+// AND a compiler. `tgc/emit` turns the same card into a core wasm module, and
+// it is a MoonBit library in this bundle rather than a payload fetched beside
+// it: `marianoguerra/wax` plus the Wax standard library it vendors.
 //
 // The two built things are the compilers a card can ask for, and neither is
 // new: `margaui.wasm` is the wasm-gc build of `@css.compile_margaui` the other
@@ -47,30 +45,13 @@ const WEB_FILES = [
   "card-embed.js",
   // …except the class compiler, which both the shell and the element import.
   "margaui.js",
-  // The compiler's half of the page: the guest bridge over `abi.mjs` and the
-  // `.tutuca.tar.gz` packer. Imported lazily by `shell.js` — a reader who
-  // never downloads a bundle never fetches it.
-  "card-wasm.js",
-  // The OTHER backend's half: instantiate a `tgc` module and install the same
-  // guest surface, so the page mounts one through the host it already has.
-  // Imported lazily too — a reader who never switches backend never fetches it.
-  "card-tgc.js",
+  // Instantiate a compiled module and install the guest surface the host
+  // mounts through. Imported lazily by `shell.js`.
+  "card.js",
 ];
 
 /**
- * The host's own canonical ABI, COPIED rather than reimplemented.
- *
- * `card-wasm.js` instantiates a compiled card through it, which is what makes
- * "this page produced a real `tutuca:component` guest" a claim about the
- * artifact rather than about the playground. If this file ever needs editing to
- * make the page work, the generator is wrong and not this copy.
- */
-function copyAbi(out) {
-  cpSync(join(REPO, "dyncomp", "host", "wasm", "abi.mjs"), join(out, "abi.mjs"));
-}
-
-/**
- * The `tgc` value bridge, COPIED for the same reason `abi.mjs` is.
+ * The value bridge, COPIED rather than reimplemented.
  *
  * `tgc/host/values.mjs` is the one spelling of `core.Value`'s JSON on the wasm
  * side, shared by this page and by `tgc/test`. A second hand-kept copy is a
@@ -82,7 +63,7 @@ function copyAbi(out) {
  */
 function copyTgcValues(out) {
   cpSync(join(REPO, "tgc", "host", "values.mjs"), join(out, "tgc-values.mjs"));
-  const card = join(out, "card-tgc.js");
+  const card = join(out, "card.js");
   writeFileSync(
     card,
     readFileSync(card, "utf8").replace(
@@ -171,7 +152,6 @@ async function assemble() {
   for (const name of WEB_FILES) {
     cpSync(join(WEB, name), join(OUT, name));
   }
-  copyAbi(OUT);
   copyTgcValues(OUT);
   const bundle = join(
     REPO,

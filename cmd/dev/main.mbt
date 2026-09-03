@@ -118,44 +118,15 @@ async fn gen_skill_assets(src_dir : String, to : String) -> Int noraise {
 }
 
 ///|
-/// Where the guest template's three sources live, and where each lands in the
-/// tree `new-guest` writes out.
-///
-/// The bindings and the SDK are BORROWED from `guests/counter` rather than kept
-/// as a sixth copy: that guest is regenerated from the WIT, drift-checked, built
-/// by `guests`, and driven by `dyncomp/test` — so a template taken from it
-/// cannot quietly rot the way a hand-maintained one would. Its own component
-/// source and README are dropped; `guests/template/` supplies replacements that
-/// carry placeholders.
-const TEMPLATE_GUEST : String = "guests/counter"
-
-///|
-const TEMPLATE_OVERLAY : String = "guests/template"
-
-///|
-/// The ONE WIT, read at embed time. It is deliberately NOT copied into
-/// `guests/template/wit/`: `.gitignore` allows exactly `dyncomp/wit/*.wit`, and
-/// a second checked-in copy is the drift this repo has gone out of its way to
-/// make impossible.
-const TEMPLATE_WIT : String = "dyncomp/wit/tutuca-component.wit"
-
-///|
-/// The gallery project `tutuca new-storybook` writes out. One hand-written
-/// tree, unlike the guest template's three sources — a gallery borrows no
-/// generated bindings, only a demo component whose view module is kept honest
-/// by the `gen` sweep.
+/// The gallery project `tutuca new-storybook` writes out: one hand-written
+/// tree, whose demo component's view module is kept honest by the `gen` sweep.
 const STORYBOOK_TEMPLATE : String = "storybook/template"
-
-///|
-/// The author's component source, inside the generated guest package — the one
-/// place a `declare` can be implemented and a method on `Instance` defined.
-const TEMPLATE_GUEST_PKG : String = "gen/interface/tutuca/component/guest"
 
 ///|
 /// Lexicographic path order. `String::compare` orders by LENGTH first, which is
 /// deterministic — enough for a reproducible embed — but lists a directory tree
-/// in an order nobody can follow, and `new-guest --dry-run` prints this list to
-/// a person. Compare character by character instead.
+/// in an order nobody can follow, and `new-storybook --dry-run` prints this
+/// list to a person. Compare character by character instead.
 fn path_before(a : String, b : String) -> Int {
   let n = if a.length() < b.length() { a.length() } else { b.length() }
   for i in 0..<n {
@@ -164,45 +135,6 @@ fn path_before(a : String, b : String) -> Int {
     }
   }
   a.length() - b.length()
-}
-
-///|
-/// Build output inside the borrowed guest tree. `guests/counter` is a working
-/// guest, so it has been built, and `_build/`/`dist/` hold wasm — bytes that
-/// are not text, let alone text worth shipping to someone starting a new guest.
-fn is_build_output(rel : String) -> Bool {
-  rel.has_prefix("_build/") ||
-  rel.has_prefix("dist/") ||
-  rel.has_prefix("target/")
-}
-
-///|
-/// What the borrowed guest tree does NOT contribute: its build output, and the
-/// files the overlay replaces with placeholder-carrying versions.
-fn skip_from_guest(rel : String) -> Bool {
-  let own_source = TEMPLATE_GUEST_PKG + "/counter.mbt"
-  rel == "README.md" ||
-  rel == "manifest.json" ||
-  rel.has_prefix("views/") ||
-  rel == own_source ||
-  is_build_output(rel)
-}
-
-///|
-/// Where an overlay file lands. `.tmpl` marks a file that carries placeholders
-/// and therefore cannot compile in place; `dot.gitignore` is spelled without
-/// the dot so it does not act on `guests/template/` itself.
-fn overlay_dest(rel : String) -> String {
-  match rel {
-    "component.mbt.tmpl" => "\{TEMPLATE_GUEST_PKG}/{{name_ident}}.mbt"
-    "dot.gitignore" => ".gitignore"
-    _ =>
-      if rel.has_suffix(".tmpl") {
-        rel[0:rel.length() - 5].to_owned()
-      } else {
-        rel
-      }
-  }
 }
 
 ///|
@@ -220,6 +152,16 @@ fn storybook_dest(rel : String) -> String {
         rel
       }
   }
+}
+
+///|
+/// Build output inside the template tree: `_build/`, `dist/` and `target/` hold
+/// bytes that are not text, let alone text worth shipping to someone starting a
+/// new project.
+fn is_build_output(rel : String) -> Bool {
+  rel.has_prefix("_build/") ||
+  rel.has_prefix("dist/") ||
+  rel.has_prefix("target/")
 }
 
 ///|
@@ -260,47 +202,6 @@ async fn gen_storybook_template(to : String) -> Int noraise {
 }
 
 ///|
-/// Assemble the guest template from its three sources and write the generated
-/// module to `to`. Paths are sorted so two runs on the same tree agree.
-async fn gen_guest_template(to : String) -> Int noraise {
-  try {
-    let files : Array[(String, String)] = []
-    // 1. the checked-in bindings + SDK, minus what the overlay replaces
-    for rel in walk_rel(TEMPLATE_GUEST, "") {
-      if skip_from_guest(rel) {
-        continue
-      }
-      files.push((rel, @fs.read_file("\{TEMPLATE_GUEST}/\{rel}").text()))
-    }
-    // 2. the contract, at the path build.mjs embeds from
-    files.push(("wit/tutuca-component.wit", @fs.read_file(TEMPLATE_WIT).text()))
-    // 3. the hand-written overlay
-    for rel in walk_rel(TEMPLATE_OVERLAY, "") {
-      files.push(
-        (overlay_dest(rel), @fs.read_file("\{TEMPLATE_OVERLAY}/\{rel}").text()),
-      )
-    }
-    if files.is_empty() {
-      err("  ✗ no guest template files found\n")
-      return 1
-    }
-    files.sort_by(fn(a, b) { path_before(a.0, b.0) })
-    @fs.write_file(
-      to,
-      @tasks.guest_template_source(files),
-      create_mode=CreateOrTruncate,
-    )
-    out("  \{files.length()} files embedded\n")
-    0
-  } catch {
-    e => {
-      err("  ✗ guest-template-embed -> \{to}: \{e}\n")
-      1
-    }
-  }
-}
-
-///|
 /// Run one step; returns the process/op exit code (0 = ok).
 async fn run_step(step : @tasks.Step) -> Int noraise {
   match step {
@@ -329,10 +230,6 @@ async fn run_step(step : @tasks.Step) -> Int noraise {
     GenStorybookTemplate(to~) => {
       out("• storybook-template-embed -> \{to}\n")
       gen_storybook_template(to)
-    }
-    GenGuestTemplate(to~) => {
-      out("› guest-template-embed -> \{to}\n")
-      gen_guest_template(to)
     }
   }
 }

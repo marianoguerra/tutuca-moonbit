@@ -46,11 +46,10 @@ before opening a PR.
 - Make sure `... -- ci` passes.
 - Some files are generated and committed on purpose — regenerate them rather
   than hand-editing: `cli/skill_assets_gen.mbt` (`... -- skill-embed`, from
-  `skill/tutuca/`), `cli/guest_template_gen.mbt` (`... -- guest-template-embed`,
-  from `guests/counter` + `dyncomp/wit` + `guests/template`), the guest trees
-  under `guests/*` (`... -- gen-guest-bindings`, from `dyncomp/wit` +
-  `guests/sdk.mbt` — the canonical SDK, never a copy), and the
-  `pkg.generated.mbti` interfaces (`moon info`).
+  `skill/tutuca/`), `cli/storybook_template_gen.mbt`
+  (`... -- storybook-template-embed`, from `storybook/template`),
+  `tgc/rt/rt_src_gen.mbt` (`node tgc/rt/embed.mjs`, from `tgc/rt/rt.wax`), and
+  the `pkg.generated.mbti` interfaces (`moon info`).
 
 ## Releasing to mooncakes.io
 
@@ -92,7 +91,7 @@ So the order is fixed and is not a preference:
 
 ```sh
 # ...after `moon publish` has landed the new version
-cd examples/dyncomp-dice && node build.mjs   # per example
+cd examples/storybook-gallery && node build.mjs   # per example
 ```
 
 Then open each example's page and drive it. Announce after that, not before.
@@ -106,9 +105,9 @@ commit that migrates its source.
 ### What ships
 
 `options(exclude: ...)` in `moon.mod` keeps the tarball to the library
-packages, `dyncomp/`, the storybook, the CLI and `docs/`. The demo, playground
-and guest trees, the `dev`/`cmd/dev` task runner, `scripts/`, `skill/` and
-`package.json` are repo-only.
+packages, `tgc/`, the storybook, the CLI and `docs/`. The demo and playground
+trees, the `dev`/`cmd/dev` task runner, `scripts/`, `skill/` and `package.json`
+are repo-only.
 
 `storybook/` ships except for `storybook/examples` and `storybook/template`.
 The model, the gallery shell, the panel layer and the two browser halves are how
@@ -126,23 +125,21 @@ and the end-to-end check is still unpacking `_build/publish/*.zip` into an empty
 directory and running `moon check` / `moon test` there, which is what a consumer
 sees.
 
-`dyncomp/` ships: it is the universal core, and without it a consumer can host
-no dynamic component at all — no contract, no loader, no catalog, no universal
-UI. Two consequences worth knowing when you edit around it:
+`tgc/` ships: it is the component format, and without it a consumer can host no
+dynamic component at all — no preamble, no runtime module, no card compiler, no
+host, no policy. Two consequences worth knowing when you edit around it:
 
-- **`dyncomp/test` is the one part excluded.** Its `*.test.mjs` drive real
-  guest bundles out of `guests/*/dist/js`, which no tarball has. Run them from
-  the repo (`node --test 'dyncomp/test/*.test.mjs'` — the glob, quoted so node
-  expands it; `--test` stopped accepting a bare directory).
-- **The wasm-gc JS shims live beside their packages, not beside a page.**
-  `app/wasm/loader.mjs` is the `jscore` + `tdom` import contract that
-  `app/wasm` and `vdom/wasm` declare; `dyncomp/host/wasm/loader.mjs` is the
-  `tcomp` + `tkv` half, linked through the first one's `makeExtra` hook. They
-  are not `.mbt`, but they are the only way a consumer's wasm-gc page can
-  instantiate anything, so they ship — and a page that loads no bundles links
-  only the first. `dev/tasks.mbt` copies them beside each demo page in `dist/`
-  as `app-loader.mjs` / `dyncomp-loader.mjs`, repointing the cross-import;
-  in the repo and in the tarball the relative path resolves as written.
+- **`tgc/proto` and `tgc/test` are excluded.** They are the composition proof:
+  hand-written modules in WAT and Wax, and the node harnesses that instantiate
+  them together against one import object. Evidence about the format rather than
+  part of it, and the harnesses build from `_build`, which no tarball has. Run
+  them from the repo with `node --test tgc/test/*.test.mjs`.
+- **`tgc/rt` ships, and it is a `.wax` file.** A page that hosts a component
+  needs the runtime module and cannot fetch it from this repository's `_build`,
+  so the source is embedded (`tgc/rt/rt_src_gen.mbt`) and `tgc/emit`'s
+  `compile_runtime` builds it on demand. Same rule as `app/wasm/loader.mjs`,
+  which is not `.mbt` either but is the only way a consumer's wasm-gc page can
+  instantiate anything.
 
 ## Releasing the playground to npm
 

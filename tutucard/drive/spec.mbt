@@ -80,12 +80,12 @@ pub const ACTIVITY_CAP : Int = 200
 /// hold. Empty by default, because a host component has no such channel: it
 /// raises a structured `Refusal` instead, and that is what `refused` reads.
 declare pub fn run(
-  guest : &@dyncomp.Guest,
-  manifest : @dyncomp.DynManifest,
+  guest : &@host.Guest,
+  manifest : @host.DynManifest,
   scenes : Array[@scenedef.Scene],
   root? : String,
   take_log? : () -> Array[String],
-  on_bundle? : (@dyncomp.Bundle) -> Unit,
+  on_bundle? : (@host.Module) -> Unit,
   on_app? : (@app.App[@memdom.MemNode]) -> Unit,
 ) -> Array[SceneResult]
 
@@ -112,17 +112,17 @@ declare pub fn[N : @vdom.DomWalk] seed(
 ///|
 /// One component's named fixture, by name. None when neither is declared.
 declare pub fn fixture_of(
-  bundle : @dyncomp.Bundle,
+  module : @host.Module,
   comp : String,
   name : String,
-) -> @dyncomp.DynInitDef?
+) -> @host.DynInitDef?
 
 ///|
 /// A fixture's own steps and intent answers, as the scene vocabulary they were
 /// validated as. They cross the manifest as JSON — a wire format passes through
 /// what it does not interpret — so this is where they become steps again.
 declare pub fn fixture_drive(
-  f : @dyncomp.DynInitDef,
+  f : @host.DynInitDef,
 ) -> (Array[@scenedef.Step], Map[String, @tutuca.IntentAnswer])
 
 ///|

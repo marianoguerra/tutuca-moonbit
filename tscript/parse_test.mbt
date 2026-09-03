@@ -237,7 +237,7 @@ test "the builtin vocabulary is a table a caller can enumerate" {
 
 ///|
 test "a retired name still answers, and says what to write instead" {
-  // A compiled dyncomp bundle carries its view markup as a STRING inside the
+  // A compiled loaded module carries its view markup as a STRING inside the
   // wasm, and the host parses it at load time. Deleting a spelling would break
   // a bundle nobody can recompile, so the two that `is` and `not` replaced are
   // still rows — just not rows a suggestion ever offers.

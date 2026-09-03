@@ -141,7 +141,7 @@ test "the URL sinks no level admits" {
 
 ///|
 /// What the generated table found that the hand-written list in
-/// `dyncomp/policy/view_authority.mbt` does not have.
+/// `tgc/policy/view_authority.mbt` does not have.
 ///
 /// That list is the one this work exists to replace, and it is worth stating
 /// what it cost to write by hand. `untrusted_sink_attr` names fourteen CSS

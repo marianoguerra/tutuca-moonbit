@@ -123,7 +123,7 @@ fn enc(
         kind="component instance",
         why="an instance by value needs the module that made it and the bytes " +
           "it persists; a value codec has neither. Project it through the host " +
-          "first (dyncomp/persist writes exactly those three things)",
+          "first (tgc/persist writes exactly those three things)",
         at~,
       )
   }

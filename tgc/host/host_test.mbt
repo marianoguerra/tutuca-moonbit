@@ -1,0 +1,3042 @@
+///| Blackbox tests: mount a guest module (via an in-process FakeGuest) into
+/// a live app on memdom and drive it through the stock pipeline — render
+/// reads fields lazily, clicks dispatch through the synthesized component's
+/// compiled views, successors re-render, control messages drain via &Ctx,
+/// requests round-trip, nested guest children dispatch through two DynObj
+/// levels, and superseded guest handles are collected.
+
+///|
+priv struct FakeGuest {
+  counters : Map[Int, Double]
+  /// every value this counter has held, so a view can `@each` over it with a
+  /// `@when` filter the GUEST answers
+  histories : Map[Int, Array[Double]]
+  pairs : Map[Int, (Int, Int)]
+  /// `Framed` instances, by handle. Its OTHER field — the placeholder — is not
+  /// here and cannot be: the guest never sees what fills it.
+  titles : Map[Int, String]
+  /// `Rack` instances, by handle, holding the HANDLES of the cells they were
+  /// given. Its `holds` is a bare `component` the host keeps, so the guest has
+  /// no state for that one; its `cells` are whatever crossed, which for an
+  /// instance of this module is a token — so the guest keeps the tokens and
+  /// answers reads through `wrap_instance`, exactly as the wasm bridge does.
+  racks : Map[Int, Array[Int]]
+  next : Ref[Int]
+  module : Ref[Module?]
+  /// requests the module served, in order (the guest-served request test)
+  served : Array[String]
+}
+
+///|
+fn FakeGuest::new() -> FakeGuest {
+  {
+    counters: Map([]),
+    histories: Map([]),
+    pairs: Map([]),
+    titles: Map([]),
+    racks: Map([]),
+    next: { val: 0, },
+    module: { val: None, },
+    served: [],
+  }
+}
+
+///|
+fn FakeGuest::alloc(
+  self : FakeGuest,
+  count : Double,
+  history? : Array[Double] = [],
+) -> Int {
+  let h = self.next.val
+  self.next.val = h + 1
+  self.counters[h] = count
+  self.histories[h] = history
+  h
+}
+
+///|
+/// A successor of `handle` at `count`, keeping the history and appending the
+/// value being left behind (mirrors the real counter guest).
+fn FakeGuest::next_of(self : FakeGuest, handle : Int, count : Double) -> Int {
+  let history = self.histories.get(handle).unwrap_or([]).copy()
+  history.push(self.counters.get(handle).unwrap())
+  self.alloc(count, history~)
+}
+
+///|
+fn FakeGuest::alloc_pair(self : FakeGuest, left : Int, right : Int) -> Int {
+  let h = self.next.val
+  self.next.val = h + 1
+  self.pairs[h] = (left, right)
+  h
+}
+
+///|
+fn FakeGuest::wrap_child(self : FakeGuest, handle : Int) -> @tutuca.Value {
+  // mirrors the wasm bridge: resolve through the registered module
+  self.module.val.unwrap().wrap_instance("Counter", handle).unwrap()
+}
+
+///|
+/// The same, for a `Rack` in another `Rack`'s cells.
+fn FakeGuest::wrap_rack(self : FakeGuest, handle : Int) -> @tutuca.Value {
+  self.module.val.unwrap().wrap_instance("Rack", handle).unwrap()
+}
+
+///|
+fn child_handle(v : @tutuca.Value) -> Int? {
+  match v {
+    Obj(o) =>
+      match o.field(handle_field) {
+        Some(Num(n)) => Some(n.to_int())
+        _ => None
+      }
+    _ => None
+  }
+}
+
+///|
+impl Guest for FakeGuest with fn create(self, component, args) {
+  match component {
+    "Pair" => self.alloc_pair(self.alloc(1.0), self.alloc(100.0))
+    "Framed" => {
+      let h = self.next.val
+      self.next.val = h + 1
+      self.titles[h] = match args.get("title") {
+        Some(Str(t)) => t
+        _ => "untitled"
+      }
+      h
+    }
+    "Rack" => {
+      let h = self.next.val
+      self.next.val = h + 1
+      let cells : Array[Int] = []
+      if args.get("cells") is Some(List(items)) {
+        for item in items {
+          if child_handle(item) is Some(token) {
+            cells.push(token)
+          }
+        }
+      }
+      self.racks[h] = cells
+      h
+    }
+    _ => {
+      let count = match args.get("count") {
+        Some(Num(n)) => n
+        _ => 0.0
+      }
+      self.alloc(count)
+    }
+  }
+}
+
+///|
+impl Guest for FakeGuest with fn get_field(self, handle, name) {
+  // A Framed answers its title and nothing else. Asked for `body` it says
+  // None — which it never is, because the host answers that one itself.
+  if self.racks.get(handle) is Some(cells) {
+    // `holds` is the host's and never reaches here. `cells` is the guest's,
+    // and comes back the way a nested child always does: re-wrapped from its
+    // token, which is the read `wrap_instance` exists for.
+    return if name == "cells" {
+      Some(List(cells.map(token => self.wrap_rack(token))))
+    } else {
+      None
+    }
+  }
+  if self.titles.get(handle) is Some(title) {
+    return if name == "title" { Some(Str(title)) } else { None }
+  }
+  match self.pairs.get(handle) {
+    Some((l, r)) =>
+      match name {
+        "left" => Some(self.wrap_child(l))
+        "right" => Some(self.wrap_child(r))
+        _ => None
+      }
+    None =>
+      match name {
+        "count" => Some(Num(self.counters.get(handle).unwrap()))
+        "history" =>
+          Some(
+            List(
+              self.histories
+              .get(handle)
+              .unwrap_or([])
+              .map(n => (Num(n) : @tutuca.Value)),
+            ),
+          )
+        _ => None
+      }
+  }
+}
+
+///|
+impl Guest for FakeGuest with fn get_property(self, handle, name) {
+  match name {
+    "count" | "secret" =>
+      self.counters.get(handle).map(n => (Num(n) : @tutuca.Value))
+    _ => None
+  }
+}
+
+///|
+impl Guest for FakeGuest with fn set_property(self, handle, name, value) {
+  match (name, value) {
+    ("count", Num(n)) => {
+      let count = self.counters.get(handle).unwrap()
+      if n == count {
+        GuestPropertyUnchanged
+      } else {
+        GuestPropertyChanged(self.next_of(handle, n))
+      }
+    }
+    ("count", _) => GuestPropertyRefused
+    _ => GuestPropertyMissing
+  }
+}
+
+///|
+impl Guest for FakeGuest with fn handle_dispatch(
+  self,
+  handle,
+  bucket,
+  name,
+  args,
+  bindings,
+) {
+  // the Pair's own buckets: it answers its children's intents and addresses
+  // them by relative path
+  if self.pairs.get(handle) is Some((l, r)) {
+    return match (bucket, name) {
+      // a child announced itself: swap the two, and end the walk so the intent
+      // does not reach the host shell above
+      (Intent, "counted") =>
+        {
+          handled: true,
+          next: Some(self.alloc_pair(r, l)),
+          msgs: [StopPropagation],
+        }
+      // reach INTO the subtree: `.left` is the child the left field holds
+      (Receive, "resetLeft") =>
+        {
+          handled: true,
+          next: None,
+          msgs: [SendAt([FieldStep("left")], "setTo", [Num(0)])],
+        }
+      _ => { handled: false, next: None, msgs: [], }
+    }
+  }
+  if self.racks.contains(handle) {
+    return match (bucket, name) {
+      // Reach into the HOLE: `.holds` is a field the guest cannot read and
+      // does not own, and the path is resolved by the host — which is the
+      // whole reason this can work at all.
+      (Receive, "bumpHeld") =>
+        {
+          handled: true,
+          next: None,
+          msgs: [SendAt([FieldStep("holds")], "bump", [])],
+        }
+      _ => { handled: false, next: None, msgs: [], }
+    }
+  }
+  if self.titles.contains(handle) {
+    return { handled: false, next: None, msgs: [], }
+  }
+  let count = self.counters.get(handle).unwrap()
+  match (bucket, name) {
+    (Receive, "inc") =>
+      {
+        handled: true,
+        next: Some(self.next_of(handle, count + 1.0)),
+        msgs: [],
+      }
+    (Receive, "dec") =>
+      {
+        handled: true,
+        next: Some(self.next_of(handle, count - 1.0)),
+        msgs: [],
+      }
+    // the answer comes back at "doubled" with just the value (on_ok_name)
+    (Receive, "double") =>
+      {
+        handled: true,
+        next: None,
+        msgs: [
+          Intent(
+            "double",
+            [Num(count)],
+            @tutuca.IntentOpts::new(route=[Lex], on_ok_name="doubled"),
+          ),
+        ],
+      }
+    (Receive, "doubled") =>
+      match args {
+        [Num(n), ..] =>
+          { handled: true, next: Some(self.next_of(handle, n)), msgs: [], }
+        _ => { handled: true, next: None, msgs: [], }
+      }
+    // an intent the BUNDLE serves on its own scope (see serve_intent), not
+    // one the host answers
+    (Receive, "triple") =>
+      {
+        handled: true,
+        next: None,
+        msgs: [
+          Intent(
+            "triple",
+            [Num(count)],
+            @tutuca.IntentOpts::new(route=[Lex], on_ok_name="tripled"),
+          ),
+        ],
+      }
+    (Receive, "tripled") =>
+      match args {
+        [Num(n), ..] =>
+          { handled: true, next: Some(self.next_of(handle, n)), msgs: [], }
+        _ => { handled: true, next: None, msgs: [], }
+      }
+    (Receive, "notify") =>
+      {
+        handled: true,
+        next: None,
+        msgs: [
+          Intent(
+            "counterChanged",
+            [Str("changed!")],
+            @tutuca.IntentOpts::new(route=[Dyn]),
+          ),
+        ],
+      }
+    // A HANDLER reading a dynamic binding: the host resolved the declared
+    // lookups before entering, so this is a map read rather than a call back
+    // across the boundary. Announced up so a test can see what it got.
+    (Receive, "readTheme") =>
+      {
+        handled: true,
+        next: None,
+        msgs: [
+          Intent(
+            "counterChanged",
+            [bindings.get("theme").unwrap_or(Null)],
+            @tutuca.IntentOpts::new(route=[Dyn]),
+          ),
+        ],
+      }
+    // A name the manifest declares no lookup for: the host resolved nothing
+    // for it, so there is nothing here to read.
+    (Receive, "readUndeclared") =>
+      {
+        handled: true,
+        next: None,
+        msgs: [
+          Intent(
+            "counterChanged",
+            [
+              match bindings.get("nosuch") {
+                Some(v) => v
+                None => Str("absent")
+              },
+            ],
+            @tutuca.IntentOpts::new(route=[Dyn]),
+          ),
+        ],
+      }
+    // Answering the sender of a message under a name this handler picked.
+    (Receive, "ping") =>
+      {
+        handled: true,
+        next: None,
+        msgs: [SendReply("pong", [Str("from-guest")])],
+      }
+    // walks up to whatever is above: a Pair parent, or the host shell
+    (Receive, "announce") =>
+      {
+        handled: true,
+        next: None,
+        msgs: [
+          Intent("counted", [Num(count)], @tutuca.IntentOpts::new(route=[Dyn])),
+        ],
+      }
+    (Receive, "reset") =>
+      { handled: true, next: Some(self.next_of(handle, 0.0)), msgs: [], }
+    (Receive, "setTo") =>
+      match args {
+        [Num(n), ..] =>
+          { handled: true, next: Some(self.next_of(handle, n)), msgs: [], }
+        _ => { handled: true, next: None, msgs: [], }
+      }
+    _ => { handled: false, next: None, msgs: [], }
+  }
+}
+
+///|
+/// The module's own service: its components reach it before the host's.
+impl Guest for FakeGuest with fn serve_intent(self, name, args) {
+  self.served.push(name)
+  match (name, args) {
+    ("triple", [Num(n), ..]) => Ok(Num(n * 3.0))
+    _ => Err(Str("no such service: \{name}"))
+  }
+}
+
+///|
+impl Guest for FakeGuest with fn render_call(
+  self,
+  handle,
+  _category,
+  name,
+  args,
+  bindings,
+) {
+  match name {
+    "label" => Str("count is \{self.counters.get(handle).unwrap()}")
+    // A value body reading a dynamic binding — the render-time twin of
+    // `readTheme` in `dispatch` above. Before `call_method` carried bindings a
+    // card's `pred` compiled `control.lookup` and read nil here, silently.
+    "themeLabel" => bindings.get("theme").unwrap_or(Null)
+    // The same question about a name the manifest declares no lookup for.
+    "undeclaredLabel" => bindings.get("nosuch").unwrap_or(Str("(absent)"))
+    // a `@when` filter: called with (key, item, iter-data), answers a boolean
+    "nonZero" =>
+      match args {
+        [_, Num(v), ..] => Bool(v != 0.0)
+        _ => Bool(true)
+      }
+    _ => Null
+  }
+}
+
+///|
+impl Guest for FakeGuest with fn with_field(self, handle, name, v) {
+  if self.titles.get(handle) is Some(_) {
+    return match (name, v) {
+      ("title", Str(t)) => {
+        let h = self.next.val
+        self.next.val = h + 1
+        self.titles[h] = t
+        Some(h)
+      }
+      _ => None
+    }
+  }
+  match self.pairs.get(handle) {
+    Some((l, r)) =>
+      // nested-child write-through: the new child arrives as a DynObj value
+      match (name, child_handle(v)) {
+        ("left", Some(h)) => Some(self.alloc_pair(h, r))
+        ("right", Some(h)) => Some(self.alloc_pair(l, h))
+        _ => None
+      }
+    None =>
+      match (name, v) {
+        ("count", Num(n)) => Some(self.next_of(handle, n))
+        _ => None
+      }
+  }
+}
+
+///|
+/// Bytes only this guest reads: "count|h1,h2,…", which is deliberately NOT
+/// JSON and not the declared-field shape — a host that could parse it would
+/// prove nothing about the opaque half of the contract.
+///
+/// A Pair persists nothing, so the two paths are both exercised: its children
+/// are instances, and the host rebuilds it from the fields instead.
+///
+/// A Framed persists its title and NOT its `body`, because it cannot: the
+/// placeholder is the host's field and the guest was never told about it. That
+/// is what makes it the case worth having here — a guest that comes back
+/// whole through its own bytes, with a hole the host has to carry itself.
+impl Guest for FakeGuest with fn persist(self, handle) {
+  guard self.pairs.get(handle) is None else { return b"" }
+  if self.titles.get(handle) is Some(title) {
+    return @utf8.encode("title|\{title}")
+  }
+  guard self.counters.get(handle) is Some(count) else { return b"" }
+  let history = self.histories
+    .get(handle)
+    .unwrap_or([])
+    .map(n => n.to_int().to_string())
+    .join(",")
+  @utf8.encode("\{count.to_int()}|\{history}")
+}
+
+///|
+impl Guest for FakeGuest with fn restore(self, component, state) {
+  if component == "Framed" {
+    let text = @utf8.decode(state[:]) catch { _ => return None }
+    guard text.has_prefix("title|") else { return None }
+    let h = self.next.val
+    self.next.val = h + 1
+    self.titles[h] = text[6:].to_owned()
+    return Some(h)
+  }
+  guard component == "Counter" else { return None }
+  let text = @utf8.decode(state[:]) catch { _ => return None }
+  let parts = text.split("|").map(v => v.to_owned()).collect()
+  guard parts.length() == 2 else { return None }
+  let count = @string.parse_double(parts[0]) catch { _ => return None }
+  let history : Array[Double] = []
+  for p in parts[1].split(",") {
+    if p.length() > 0 {
+      history.push(@string.parse_double(p.to_owned()) catch { _ => 0.0 })
+    }
+  }
+  Some(self.alloc(count, history~))
+}
+
+///|
+impl Guest for FakeGuest with fn drop_instance(self, handle) {
+  self.counters.remove(handle) |> ignore
+  self.histories.remove(handle) |> ignore
+  self.pairs.remove(handle) |> ignore
+}
+
+///|
+/// A field with no v3 metadata. Most of this fixture is about how the contract
+/// BEHAVES, and spelling three blanks per field there would bury it; the
+/// documented and constrained shapes are exercised in the parsing tests below.
+fn plain_field(name : String, ty : @tutuca.Ty) -> DynFieldDef {
+  { name, ty, doc: "", required: false, default: None, domains: [], }
+}
+
+///|
+/// The policy these tests register under.
+///
+/// They are about the MECHANICS — dispatch, identity, migration, schemas — and
+/// the fixture ships a scoped stylesheet, which the default (untrusted) policy
+/// refuses. Saying so once here keeps that decision visible instead of making
+/// every test look like it needed a permission it did not.
+fn vouched() -> @policy.Policy {
+  @policy.Policy::granted()
+}
+
+///|
+fn counter_manifest() -> DynManifest {
+  {
+    api_version: 10,
+    module_name: "counterlib",
+    doc: "Sample counters, for exercising the contract.",
+    version: "0.1.0",
+    homepage: "",
+    authors: [],
+    config: [],
+    macros: [],
+    components: [
+      {
+        name: "Counter",
+        doc: "A number with buttons to change it.",
+        keywords: ["counter", "number", "tally"],
+        category: "input",
+        message_docs: { "inc": "Add one.", "counted": "The count changed." },
+        views: [
+          {
+            name: "main",
+            html: (
+              #|<div class="counter">
+              #|  <button class="dec" @on.click="dec">-</button>
+              #|  <span class="count" @text=".count"></span>
+              #|  <span class="secret" @text=".secret"></span>
+              #|  <button class="inc" @on.click="inc">+</button>
+              #|  <button class="double" @on.click="double">double</button>
+              #|  <button class="notify" @on.click="notify">notify</button>
+              #|  <button class="undeclared" @on.click="readUndeclared">undeclared</button>
+              #|  <button class="announce" @on.click="announce">announce</button>
+              #|  <button class="triple" @on.click="triple">triple</button>
+              #|  <button class="zero" @on.click=".count = 0">zero</button>
+              #|  <span class="label" @text="$label"></span>
+              #|  <span class="theme" @text="*theme"></span>
+              #|  <ul class="hist"><li class="h" @each=".history" @when="nonZero" @text="@value"></li></ul>
+              #|  <input class="kbd" @on.keydown+cancel="reset">
+              #|</div>
+            ),
+          },
+        ],
+        fields: [
+          plain_field("count", TyFloat),
+          plain_field("history", TyList(TyFloat)),
+        ],
+        // Nothing declares a `setCount`: the zero button writes the `count`
+        // property outright, and the host answers the write
+        properties: [
+          {
+            name: "count",
+            ty: TyFloat,
+            public_: true,
+            writable: true,
+            doc: "The public count.",
+          },
+          {
+            name: "secret",
+            ty: TyFloat,
+            public_: false,
+            writable: false,
+            doc: "A private derived view member.",
+          },
+        ],
+        domains: [],
+        receives: ["init", "setTo"],
+        intents: [],
+        express_messages: [],
+        express_intents: [],
+        implements: [],
+        protocols: [],
+        property_bindings: [],
+        view_bindings: [],
+        provide_bindings: [],
+        lookup_bindings: [],
+        methods: ["label", "themeLabel", "undeclaredLabel"],
+        whens: ["nonZero"],
+        enriches: [],
+        bind_withs: [],
+        serves: [],
+        // The module publishes its own Counter as a TYPE, so a host component
+        // below it builds THIS one rather than whatever `Counter` is
+        // registered elsewhere.
+        provide: [("Counter", "self")],
+        lookup: [("theme", "'unthemed'")],
+        // a named initial state a host can offer instead of a bare instance
+        inits: [
+          {
+            name: "with-history",
+            args: { "count": Num(3) },
+            doc: "Starts at three.",
+            view: "",
+            tags: [],
+            default_: false,
+            drive_json: "",
+            intents_json: "",
+          },
+        ],
+        style: ".counter { color: red; }",
+      },
+      {
+        name: "Pair",
+        doc: "Two counters side by side.",
+        keywords: [],
+        category: "",
+        message_docs: Map([]),
+        views: [
+          {
+            name: "main",
+            html: (
+              #|<div class="pair">
+              #|  <button class="resetleft" @on.click="resetLeft">reset left</button>
+              #|  <div class="left"><x render=".left"></div>
+              #|  <div class="right"><x render=".right"></div>
+              #|</div>
+            ),
+          },
+        ],
+        fields: [
+          plain_field("left", TyComp(Some("Counter"))),
+          plain_field("right", TyComp(Some("Counter"))),
+        ],
+        // NOTE for the placeholder tests below: `left`/`right` name `Counter`,
+        // which is a component of THIS module, so they are the guest's own
+        // nested children and the host must not fill them. `Framed` is the
+        // other case.
+        // `resetLeft` is ALSO the generated mutator name for a `left` field;
+        // saying so here is what makes it the guest's
+        properties: [],
+        domains: [],
+        receives: [],
+        intents: ["counted"],
+        express_messages: [],
+        express_intents: [],
+        implements: [],
+        protocols: [],
+        property_bindings: [],
+        view_bindings: [],
+        provide_bindings: [],
+        lookup_bindings: [],
+        methods: [],
+        whens: [],
+        enriches: [],
+        bind_withs: [],
+        // the module serves this one itself; the host never sees the name
+        serves: ["triple"],
+        provide: [],
+        lookup: [],
+        inits: [],
+        style: "",
+      },
+      // A guest with a HOLE in its own layout: `body` names `Filler`, which is
+      // a component of the HOST's module and not of this module, so the guest
+      // can neither build it nor hold it — it declares the field, renders it,
+      // and the host fills it.
+      {
+        name: "Framed",
+        doc: "A frame around something the host provides.",
+        keywords: [],
+        category: "",
+        message_docs: Map([]),
+        views: [
+          {
+            name: "main",
+            html: (
+              #|<div class="framed">
+              #|  <span class="frame-title" @text=".title"></span>
+              #|  <button class="retitle" @on.click=".title = 'renamed'">rename</button>
+              #|  <div class="frame-body"><x render=".body"></div>
+              #|</div>
+            ),
+          },
+        ],
+        fields: [
+          plain_field("title", TyText),
+          plain_field("body", TyComp(Some("Filler"))),
+        ],
+        properties: [],
+        domains: [],
+        receives: [],
+        intents: [],
+        express_messages: [],
+        express_intents: [],
+        implements: [],
+        protocols: [],
+        property_bindings: [],
+        view_bindings: [],
+        provide_bindings: [],
+        lookup_bindings: [],
+        methods: [],
+        whens: [],
+        enriches: [],
+        bind_withs: [],
+        serves: [],
+        provide: [],
+        lookup: [],
+        inits: [],
+        style: "",
+      },
+      // A guest with a hole that names NOTHING: `holds` is a bare `component`
+      // and `cells` a list of them. There is nothing for the host to build
+      // there — which is the difference from `Framed` — and everything for it
+      // to hold, because what a caller puts in one is as likely to be a
+      // component no guest could hand over as one of its own.
+      {
+        name: "Rack",
+        doc: "A hole that names nothing, and a row of them.",
+        keywords: [],
+        category: "",
+        message_docs: Map([]),
+        views: [
+          {
+            name: "main",
+            html: (
+              #|<div class="rack">
+              #|  <button class="rack-poke" @on.click="bumpHeld">poke</button>
+              #|  <div class="rack-one"><x render=".holds"></div>
+              #|  <div class="rack-cells"><x render-each=".cells"></div>
+              #|</div>
+            ),
+          },
+        ],
+        fields: [
+          plain_field("holds", TyComp(None)),
+          plain_field("cells", TyList(TyComp(None))),
+        ],
+        properties: [],
+        domains: [],
+        receives: ["bumpHeld"],
+        intents: [],
+        express_messages: [],
+        express_intents: [],
+        implements: [],
+        protocols: [],
+        property_bindings: [],
+        view_bindings: [],
+        provide_bindings: [],
+        lookup_bindings: [],
+        methods: [],
+        whens: [],
+        enriches: [],
+        bind_withs: [],
+        serves: [],
+        provide: [],
+        lookup: [],
+        inits: [],
+        style: "",
+      },
+    ],
+  }
+}
+
+///|
+/// A host shell with a slot for the guest instance, a note fed by the
+/// guest's bubbled control message, and nothing else.
+fn shell_module() -> @component.ModuleDef {
+  let shell = @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="shell">
+          #|  <span class="note" @text=".note"></span>
+          #|  <ul class="seq"><li class="s" @each=".slot" @text="@value"></li></ul>
+          #|  <x render=".slot">
+          #|</div>
+        ),
+      ),
+    },
+    name="Shell",
+    initial=TestShellState::{ slot: Null, note: "", },
+    // A HOST component publishing to its subtree, which includes whatever
+    // module gets mounted into `.slot`. The guest reads it as `*theme` — see
+    // the manifest's `lookup` — and nothing about that crosses the guest ABI.
+    provide={ "theme": ".note" },
+    update=(s : TestShellState, msg, ctx) => {
+      match msg {
+        Receive("setSlot", [v, ..]) => Next({ ..s, slot: v, })
+        // Shell is the SENDER here, so the guest's reply has a position to
+        // reach.
+        Receive("poke", _) => {
+          ctx.at().field("slot").send("ping", [])
+          Unchanged
+        }
+        Receive("pong", [Str(who)]) => Next({ ..s, note: "pong:\{who}", })
+        Intent("counterChanged", [v, ..]) => Next({ ..s, note: v.str(), })
+        // only reached when nothing below stopped the bubble
+        Intent("counted", [v, ..]) =>
+          Next({ ..s, note: "counted \{v.to_display_string()}", })
+        _ => Unhandled
+      }
+    },
+  )
+  @component.ModuleDef::new(name="shelltest", components=[shell, filler_comp()])
+}
+
+///|
+priv struct TestShellState {
+  slot : @tutuca.Value
+  note : String
+}
+
+///|
+/// A HOST component a guest can name but never build: it belongs to the host's
+/// module, so `control.make-instance` (same-module by contract) cannot reach
+/// it and no WIT `value` can carry it back. It stands in for the universal
+/// component a guest asks for when it wants a hole in its own layout.
+///
+/// It holds state so the tests can prove the interesting half: that what a
+/// person does inside a placeholder survives the guest around it changing.
+priv struct FillerState {
+  note : String
+}
+
+///|
+impl @component.Fields for FillerState with fn schema() {
+  @component.SchemaInfo::new(
+    name="Filler",
+    fingerprint="filler-1",
+    fields=[@component.FieldInfo::new("note", TyText)],
+    view_handlers=["bump"],
+  )
+}
+
+///|
+impl @component.Fields for FillerState with fn encode(s) {
+  { "note": Str(s.note) }
+}
+
+///|
+impl @component.Fields for FillerState with fn decode(f) {
+  guard f.get("note") is Some(Str(note)) else { return None }
+  Some({ note, })
+}
+
+///|
+fn filler_comp() -> @component.Component {
+  @component.component(
+    name="Filler",
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="filler"><span class="filler-note" @text=".note"></span><button class="filler-bump" @on.click="bump">bump</button></div>
+        ),
+      ),
+    },
+    initial=FillerState::{ note: "fresh", },
+    update=(s, msg, _ctx) => {
+      match msg {
+        Receive("bump", _) => Next({ note: s.note + "!", })
+        _ => Unhandled
+      }
+    },
+  )
+}
+
+///|
+fn mount_with_bundle(fake : FakeGuest) -> (@harness.MemHarness, Module) raise {
+  let h = @harness.mount(shell_module(), "Shell")
+  // what a host does after mounting: sweep superseded guest handles at the end
+  // of every drained cascade (see install_gc)
+  install_gc(h.app.transactor)
+  let module = register_module(
+    h.app.scope,
+    fake,
+    counter_manifest(),
+    policy=vouched(),
+  )
+  fake.module.val = Some(module)
+  (h, module)
+}
+
+///|
+test "module mounts into a live app and dispatches through stock machinery" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  inspect(h.find_all(".counter").length(), content="0")
+  guard! module.make_instance("Counter", args={ "count": Num(10) })
+    is Some(inst0)
+
+  // seeding the instance is a plain state change
+  h.send_at_root("setSlot", args=[inst0.to_value()])
+  inspect(h.text(".count"), content="10")
+  inspect(h.text(".label"), content="count is 10")
+
+  // input dispatch: guest returns a successor handle -> new DynObj -> render;
+  // the cascade drains, the render reads the successor, and the sweep drops
+  // the handle it replaced
+  h.click(".inc")
+  inspect(h.text(".count"), content="11")
+  assert_true(fake.counters.get(inst0.handle()) is None)
+  inspect(superseded_count(), content="0")
+  h.click(".dec")
+  inspect(h.text(".count"), content="10")
+
+  // control drain: guest Emit -> ctx.bubble -> shell's bubble handler
+  inspect(h.text(".note"), content="")
+  h.click(".notify")
+  inspect(h.text(".note"), content="changed!")
+  inspect(h.text(".count"), content="10")
+
+  // eager collection leaves only the live instance behind
+  collect_superseded()
+  inspect(superseded_count(), content="0")
+  assert_true(fake.counters.length() == 1)
+}
+
+///|
+test "a guest successor keeps its origin and moves its revision" {
+  // A guest instance is replaced by a NEW DynObj around a new handle on every
+  // dispatch, so without carrying the bucket forward each update would look
+  // like a brand-new component to the render cache and never hit.
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Counter", args={ "count": Num(10) }) is Some(a)
+  guard! module.make_instance("Counter", args={ "count": Num(10) }) is Some(b)
+  // Two live guest instances of one component are two handles, so they spread
+  // across buckets even though their state is identical.
+  guard! a.to_value().identity() is Some(id_a)
+  guard! b.to_value().identity() is Some(id_b)
+  assert_not_eq(id_a.to_hex(), id_b.to_hex())
+  assert_eq(id_a.rev, 0)
+  h.send_at_root("setSlot", args=[a.to_value()])
+  h.click(".inc")
+  inspect(h.text(".count"), content="11")
+  guard! h.app.root_value().field("slot").identity() is Some(after)
+  assert_eq(after.to_hex(), id_a.to_hex())
+  assert_eq(after.rev, 1)
+  collect_superseded()
+}
+
+///|
+test "a guest `request` round-trips through a host IntentFn" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  h.app.scope.register_intent_handlers({
+    "double": [
+      IntentFn((call, answer) => {
+        match call.args {
+          [Num(n)] => answer(Ok(Num(n * 2.0)))
+          _ => answer(Failed(Str("bad args")))
+        }
+      }),
+    ],
+  })
+  guard! module.make_instance("Counter", args={ "count": Num(21) }) is Some(c)
+  h.send_at_root("setSlot", args=[c.to_value()])
+  inspect(h.text(".count"), content="21")
+  // the guest's `request` becomes an `intent lex` at the host, and the answer
+  // comes back as an ordinary message named by `on_ok_name` — which the guest
+  // hears in its `receive` bucket and answers with the doubled successor
+  h.click(".double")
+  inspect(h.text(".count"), content="42")
+}
+
+///|
+test "nested guest children render and dispatch through two DynObj levels" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Pair") is Some(pair)
+  h.send_at_root("setSlot", args=[pair.to_value()])
+
+  // both children render with their own counts
+  debug_inspect(h.texts(".count"), content="[\"1\", \"100\"]")
+
+  // clicking the LEFT child's + dispatches to the child leaf; the spine
+  // rebuild writes through the Pair via the handle protocol field
+  h.click(".inc") // first .inc in document order = left
+  debug_inspect(h.texts(".count"), content="[\"2\", \"100\"]")
+  h.click(".inc", nth=1) // right child
+  debug_inspect(h.texts(".count"), content="[\"2\", \"101\"]")
+  // pair successors were created for each write-through
+  assert_true(fake.pairs.length() >= 1)
+}
+
+///|
+test "event modifiers in guest views dispatch through stock parsing" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Counter", args={ "count": Num(5) }) is Some(c)
+  h.send_at_root("setSlot", args=[c.to_value()])
+  inspect(h.text(".count"), content="5")
+  // @on.keydown+cancel="reset" — the modifier gates on Escape (host-side
+  // modifier semantics apply to guest views for free); Enter is filtered
+  h.key_down(".kbd", "Enter")
+  inspect(h.text(".count"), content="5")
+  h.key_down(".kbd", "Escape")
+  inspect(h.text(".count"), content="0")
+}
+
+///|
+test "migrate_instance rebuilds state from the JSON projection" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (_h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Counter", args={ "count": Num(10) }) is Some(a)
+  guard! module.migrate_instance(a.to_value(), "Counter") is Some(b)
+  assert_true(a.handle() != b.handle())
+  assert_true(fake.counters.get(b.handle()) is Some(10.0))
+  // non-guest values don't migrate
+  assert_true(module.migrate_instance(Str("nope"), "Counter") is None)
+}
+
+///|
+/// The guest's own bytes come back as the guest's own state — including the
+/// half the declared fields do not name. Here that is the history: the fake
+/// writes it into its bytes and the constructor ignores an unknown arg, so an
+/// instance whose history survives could only have come back through the
+/// guest.
+test "a snapshot restores through the guest's own bytes" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (_h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Counter", args={ "count": Num(7) }) is Some(a)
+  let a = a.with_persist_id("notes/1")
+  // one update later: the successor keeps the id and gains a history entry
+  guard! a.with_field("count", Num(8)) is Some(bumped)
+  guard! module.snapshot(bumped) is Some(snap)
+  assert_eq(snap.module_, "counterlib")
+  assert_eq(snap.component, "Counter")
+  assert_eq(snap.id, "notes/1")
+  assert_true(snap.has_state())
+  guard! module.restore(snap) is Some(back)
+  assert_eq(fake.counters.get(back.handle()).unwrap(), 8.0)
+  // the history is the proof: it rode in the guest's bytes
+  @debug.assert_eq(fake.histories.get(back.handle()).unwrap(), [7.0])
+  // and it comes back under the same name, so saving it again lands on the
+  // same key rather than accumulating one instance per reload
+  assert_eq(back.persist_id().unwrap(), "notes/1")
+}
+
+///|
+/// A component that persists NOTHING still survives, through the projection
+/// the host can make on its own. The Pair is the case: its state is two child
+/// instances, its `persist` is empty, and it comes back rebuilt by its
+/// constructor.
+test "a component that does not persist restores from its declared fields" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (_h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Pair") is Some(p)
+  guard! module.snapshot(p.to_value()) is Some(snap)
+  assert_false(snap.has_state())
+  // minted rather than blank: every instance has a name, and it says what it
+  // is an instance of
+  assert_true(snap.id.has_prefix("counterlib/Pair#"))
+  guard! module.restore(snap) is Some(back)
+  assert_true(back.handle() != p.handle())
+  assert_true(fake.pairs.get(back.handle()) is Some(_))
+}
+
+///|
+/// Bytes the guest refuses fall back to the same projection, which is what
+/// makes changing a persisted format survivable: the state the guest could no
+/// longer read is lost and the declared fields are not.
+test "a guest refusing its own bytes falls back to the fields" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (_h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Counter", args={ "count": Num(3) }) is Some(a)
+  guard! module.snapshot(a.to_value()) is Some(snap)
+  let stale = { ..snap, state: @utf8.encode("from a format ago"), }
+  guard! module.restore(stale) is Some(back)
+  assert_eq(fake.counters.get(back.handle()).unwrap(), 3.0)
+}
+
+///|
+/// The round trip a page actually makes: through a store, as text.
+test "a snapshot survives a store round trip" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (_h, module) = mount_with_bundle(fake)
+  let store = @persist.MemStore::new()
+  guard! module.make_instance("Counter", args={ "count": Num(41) }) is Some(a)
+  let a = a.with_persist_id("counter/main")
+  guard! module.snapshot(a.to_value()) is Some(snap)
+  assert_true(@persist.save(store, snap))
+  @debug.assert_eq(@persist.saved_ids(store), ["counter/main"])
+  guard! @persist.load(store, "counter/main") is Some(read_back)
+  assert_eq(read_back, snap)
+  guard! module.restore(read_back) is Some(back)
+  assert_eq(fake.counters.get(back.handle()).unwrap(), 41.0)
+  @persist.forget(store, "counter/main")
+  assert_true(@persist.load(store, "counter/main") is None)
+}
+
+///|
+/// An instance nobody named is not stored, rather than stored somewhere it
+/// will never be looked for.
+test "an unnamed instance is not saved" {
+  let store = @persist.MemStore::new()
+  let anonymous : @persist.Snapshot = {
+    module_: "counterlib",
+    component: "Counter",
+    id: "",
+    state: b"",
+    fields: Json::object({}),
+  }
+  assert_false(@persist.save(store, anonymous))
+  assert_eq(store.size(), 0)
+}
+
+///|
+test "styles of synthesized components join the app's compiled styles" {
+  let fake = FakeGuest::new()
+  let (h, _) = mount_with_bundle(fake)
+  assert_true(h.styles().contains(".counter { color: red; }"))
+}
+
+///|
+test "event_names reflects a module registered after boot" {
+  let h = @harness.mount(shell_module(), "Shell")
+  // The host module has no keydown handler; the guest's counter view adds one
+  // (`@on.keydown+cancel="reset"`). Not `click` — the host's own `Filler`, the
+  // component a guest's placeholder names, has a button.
+  assert_false(h.app.event_names().contains("keydown"))
+  let _ = register_module(
+    h.app.scope,
+    FakeGuest::new(),
+    counter_manifest(),
+    policy=vouched(),
+  )
+  assert_true(h.app.event_names().contains("keydown"))
+}
+
+///|
+test "a guest's declared schema describes, compares and projects it" {
+  let fake = FakeGuest::new()
+  let (_h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Counter", args={ "count": Num(7) }) is Some(a)
+  guard! module.make_instance("Counter", args={ "count": Num(7) }) is Some(b)
+  guard! module.make_instance("Counter", args={ "count": Num(8) }) is Some(c)
+  guard! a.to_value() is Obj(oa)
+  guard! b.to_value() is Obj(ob)
+  guard! c.to_value() is Obj(oc)
+  // structural equality over the DECLARED fields — the guest implements none
+  assert_true(oa.eq(ob))
+  assert_false(oa.eq(oc))
+  // the JSON projection walks the same fields (no guest `to-json`)
+  inspect(
+    a.to_value().to_json().stringify(),
+    content="{\"count\":7,\"history\":[]}",
+  )
+  // ...and so does the debug rendering
+  inspect(oa.debug(), content="Counter{count: RNum(7), history: RList([])}")
+}
+
+///|
+test "a guest's view can write one of its own properties" {
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Counter", args={ "count": Num(10) }) is Some(c)
+  h.send_at_root("setSlot", args=[c.to_value()])
+  inspect(h.text(".count"), content="10")
+  // `@on.click=".count = 0"` in the GUEST's view: no name crosses to the
+  // guest at all — the write goes through the property door
+  h.click(".zero")
+  inspect(h.text(".count"), content="0")
+}
+
+///|
+test "inputs are read off the compiled views, not declared" {
+  let (_h, module) = mount_with_bundle(FakeGuest::new())
+  guard! module.schema_of("Counter") is Some(schema)
+  // every @on handler the view names, and nothing else: the zero button
+  // writes `count` outright, so it raises no name to read off
+  debug_inspect(
+    schema.view_handlers,
+    content=(
+      #|[
+      #|  "dec",
+      #|  "inc",
+      #|  "double",
+      #|  "notify",
+      #|  "readUndeclared",
+      #|  "announce",
+      #|  "triple",
+      #|  "reset",
+      #|]
+    ),
+  )
+  debug_inspect(schema.field_names(), content="[\"count\", \"history\"]")
+}
+
+///|
+test "a guest child's bubble reaches a guest PARENT, which can stop it" {
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Pair") is Some(pair)
+  h.send_at_root("setSlot", args=[pair.to_value()])
+  debug_inspect(h.texts(".count"), content="[\"1\", \"100\"]")
+  // the left child emits "counted"; the Pair declares that bubble and hears it
+  // one level up, swapping the two children...
+  h.click(".announce")
+  debug_inspect(h.texts(".count"), content="[\"100\", \"1\"]")
+  // ...and its stop_propagation keeps the bubble from reaching the host shell
+  inspect(h.text(".note"), content="")
+}
+
+///|
+test "a bubble no guest stops still reaches the host" {
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Counter", args={ "count": Num(3) }) is Some(c)
+  h.send_at_root("setSlot", args=[c.to_value()])
+  // no Pair in between: the same emit walks all the way up to the shell
+  h.click(".announce")
+  inspect(h.text(".note"), content="counted 3")
+}
+
+///|
+test "a guest addresses its own subtree by relative path" {
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Pair") is Some(pair)
+  h.send_at_root("setSlot", args=[pair.to_value()])
+  debug_inspect(h.texts(".count"), content="[\"1\", \"100\"]")
+  // `send-at [field("left")] "setTo" [0]`: the left CHILD's receive handler runs
+  h.click(".resetleft")
+  debug_inspect(h.texts(".count"), content="[\"0\", \"100\"]")
+}
+
+///|
+test "request opts route the response to the name the guest asked for" {
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  h.app.scope.register_intent_handlers({
+    "double": [
+      IntentFn((call, answer) => {
+        match call.args {
+          [Num(n)] => answer(Ok(Num(n * 2.0)))
+          _ => answer(Failed(Str("bad args")))
+        }
+      }),
+    ],
+  })
+  guard! module.make_instance("Counter", args={ "count": Num(21) }) is Some(c)
+  h.send_at_root("setSlot", args=[c.to_value()])
+  // the guest requested with on_ok_name="doubled", so the response dispatches
+  // "doubled" with just the value — not "double" with [result, error]
+  h.click(".double")
+  inspect(h.text(".count"), content="42")
+}
+
+///|
+test "a module serves its own requests, ahead of the host's" {
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  // a host handler of the SAME name, which the guest's must win over
+  h.app.scope.register_intent_handlers({
+    "triple": [
+      IntentFn((call, answer) => {
+        match call.args {
+          [Num(n)] => answer(Ok(Num(n * 100.0)))
+          _ => answer(Failed(Str("bad args")))
+        }
+      }),
+    ],
+  })
+  guard! module.make_instance("Counter", args={ "count": Num(5) }) is Some(c)
+  h.send_at_root("setSlot", args=[c.to_value()])
+  h.click(".triple")
+  // 5 * 3 (the module's own handler), not 5 * 100 (the host's)
+  inspect(h.text(".count"), content="15")
+  debug_inspect(fake.served, content="[\"triple\"]")
+}
+
+///|
+test "a guest answers a view's @when filter" {
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Counter", args={ "count": Num(0) }) is Some(c)
+  h.send_at_root("setSlot", args=[c.to_value()])
+  // history is empty
+  debug_inspect(h.texts("li.h"), content="[]")
+  h.click(".inc") // history [0]
+  h.click(".inc") // history [0, 1]
+  h.click(".inc") // history [0, 1, 2]
+  // `@when="nonZero"` reaches the guest's `when` with (key, item, iter)
+  // and its answer filters the iteration: the leading 0 is gone
+  debug_inspect(h.texts("li.h"), content="[\"1\", \"2\"]")
+}
+
+///|
+test "component_names lists the manifest's components in order" {
+  let (_, module) = mount_with_bundle(FakeGuest::new())
+  debug_inspect(
+    module.component_names(),
+    content="[\"Counter\", \"Pair\", \"Framed\", \"Rack\"]",
+  )
+}
+
+///|
+test "a guest property is public, synchronous, and copy-on-write" {
+  let fake = FakeGuest::new()
+  let (_, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Counter", args={ "count": Num(4) }) is Some(c)
+  let before = c.to_value()
+  assert_eq(before.property("count"), Num(4))
+  guard! before.set_property("count", Num(9)) is Changed(after)
+  assert_eq(before.property("count"), Num(4))
+  assert_eq(after.property("count"), Num(9))
+  assert_true(after.set_property("count", Num(9)) is Unchanged)
+  assert_true(after.set_property("count", Str("bad")) is Refused(_))
+  assert_eq(before.property("secret"), Null)
+  assert_eq(before.member_at("secret", @tutuca.NullStack::{ }), Some(Num(4)))
+  assert_true(before.set_property("secret", Num(1)) is Missing)
+  assert_true(before.set_member("secret", Num(1)) is Refused(_))
+  assert_true(after.set_property("private", Num(1)) is Missing)
+}
+
+///|
+test "manifest parses a type written as the type it is" {
+  // The wire form: a member's `ty` IS the type, nested where it nests. A list
+  // says what it is a list OF, which the flat table had a field for and the
+  // writer never filled.
+  let json =
+    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "counterlib", "components": [
+    #|  {"name": "Counter",
+    #|   "views": [{"name": "main", "html": "<div>{.count}</div>"}],
+    #|   "fields": [{"name": "count", "ty": {"k": "int", "width": 8, "signed": false}},
+    #|              {"name": "history", "ty": {"k": "list", "of": {"k": "text"}}},
+    #|              {"name": "pick", "ty": {"k": "option", "of": {"k": "flags", "name": "Vis", "members": ["On", "Off"]}}},
+    #|              {"name": "mystery", "ty": {"k": "no-such-kind"}}],
+    #|   "properties": [{"name": "count", "ty": {"k": "float"}, "writable": true, "public": true}],
+    #|   "receives": [], "intents": [], "methods": [], "style": ""}]}
+  let m = DynManifest::from_json_string(json)
+  debug_inspect(
+    m.components[0].field_infos().map(f => "\{f.name}:\{f.ty.show_source()}"),
+    content=(
+      #|[
+      #|  "count:UInt8",
+      #|  "history:Array[String]",
+      #|  "pick:Set[Vis]?",
+      #|  "mystery:Any",
+      #|]
+    ),
+  )
+  // A closed set carries its membership, which is the one thing about it only
+  // the schema knows.
+  guard! m.components[0].fields[2].ty is TyOption(inner)
+  debug_inspect(inner.members(), content="[\"On\", \"Off\"]")
+}
+
+///|
+/// The OLD wire form, kept for one release.
+///
+/// A member's type crosses as the tree it is (`@tutuca.Ty::to_json`), so a
+/// compound says what it holds — which the flat index table it replaced never
+/// managed: nothing ever filled its `elem`, so every list read back as "of
+/// anything".
+test "manifest parses from the bridge's JSON projection" {
+  let json =
+    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "counterlib", "components": [
+    #|  {"name": "Counter",
+    #|   "views": [{"name": "main", "html": "<div>{.count}</div>"}],
+    #|   "fields": [{"name": "count", "ty": {"k": "int"}},
+    #|              {"name": "history", "ty": {"k": "list", "of": {"k": "int"}}}],
+    #|   "properties": [{"name": "count", "ty": {"k": "int"}, "writable": true, "public": true}],
+    #|   "receives": ["init", "double"], "intents": [],
+    #|   "methods": ["label"], "style": ""}]}
+  let m = DynManifest::from_json_string(json)
+  inspect(m.module_name, content="counterlib")
+  inspect(m.components[0].views[0].html, content="<div>{.count}</div>")
+  let fields = m.components[0].field_infos()
+  debug_inspect(
+    fields.map(f => "\{f.name}:\{f.ty.show_source()}"),
+    content="[\"count:Int\", \"history:Array[Int]\"]",
+  )
+  debug_inspect(m.components[0].methods, content="[\"label\"]")
+}
+
+///|
+/// The default policy is the untrusted one, and `register_module` enforces it
+/// before it parses anything. Two refusals, end to end, from the same
+/// fixture the rest of the suite registers under a vouched policy.
+test "the default policy refuses CSS and a bomb" {
+  let h = @harness.mount(shell_module(), "Shell")
+  let base = counter_manifest()
+  let refused = (m : DynManifest) => {
+    let mut ok = true
+    // no `policy=`: this is what a page gets when it just drops a module on
+    try register_module(h.app.scope, FakeGuest::new(), m) |> ignore catch {
+      _ => ok = false
+    }
+    !ok
+  }
+  // the fixture ships a scoped stylesheet, and an untrusted module may not
+  assert_true(refused(base))
+  // ...the same module without it is fine, which is what every sample guest
+  // already does — the strict default costs nothing real
+  let styleless : DynManifest = {
+    ..base,
+    module_name: "styleless",
+    components: base.components.map(c => ({ ..c, style: "", } : DynComponentDef)),
+  }
+  assert_false(refused(styleless))
+  // and a manifest too large to parse before rendering anything
+  let many : Array[DynComponentDef] = []
+  for i in 0..<200 {
+    many.push({ ..styleless.components[0], name: "C\{i}", })
+  }
+  assert_true(refused({ ..styleless, module_name: "huge", components: many, }))
+}
+
+///|
+/// Hold the policy decision at the registration seam too: this is where a
+/// parsed guest view either joins the shared app registry or disappears.
+test "untrusted registration blocks DOM egress but keeps custom elements" {
+  let register_view = (html : String) => {
+    let h = @harness.mount(shell_module(), "Shell")
+    let base = counter_manifest()
+    let manifest : DynManifest = {
+      ..base,
+      module_name: "view-policy",
+      components: [
+        { ..base.components[0], style: "", views: [{ name: "main", html, }], },
+      ],
+    }
+    let mut ok = true
+    try
+      register_module(h.app.scope, FakeGuest::new(), manifest) |> ignore
+    catch {
+      _ => ok = false
+    }
+    ok
+  }
+  assert_false(register_view("<a :href=\".count\">leave</a>"))
+  assert_false(register_view("<div @setinnermd=\".count\"></div>"))
+  assert_true(
+    register_view("<x-picker :items=\".history\" mode=\"compact\"></x-picker>"),
+  )
+}
+
+///|
+/// The same seam, with the external-URL allowance. A page allows the origins
+/// it means to allow, and the module's own views are what get held against
+/// them.
+test "allowing external URLs lets a registered guest view name a pinned image" {
+  let register_view = (html : String, policy : @policy.Policy) => {
+    let h = @harness.mount(shell_module(), "Shell")
+    let base = counter_manifest()
+    let manifest : DynManifest = {
+      ..base,
+      module_name: "avatar-policy",
+      components: [
+        { ..base.components[0], style: "", views: [{ name: "main", html, }], },
+      ],
+    }
+    let mut ok = true
+    try
+      register_module(h.app.scope, FakeGuest::new(), manifest, policy~)
+      |> ignore
+    catch {
+      _ => ok = false
+    }
+    ok
+  }
+  let strict = @policy.Policy::untrusted()
+  let cdn = strict.allowing_external_urls(["https://cdn.example"])
+  let pinned = "<img :src=\"$'https://cdn.example/a/{.count}.png'\" />"
+  // The picture the report asked for: allowed once a page has said which CDN,
+  // and refused by the same page for any other origin or a computed one.
+  assert_true(register_view(pinned, cdn))
+  assert_false(register_view(pinned, strict))
+  assert_false(register_view("<img :src=\".count\" />", cdn))
+  assert_false(
+    register_view("<img src=\"https://elsewhere.test/a.png\" />", cdn),
+  )
+}
+
+///|
+/// The one view construct a host cannot inspect before it runs, and therefore
+/// the one it refuses. Note WHERE the refusal lands: nothing of a refused
+/// module reaches the shared component registry, so its markup never
+/// contributes an event name or a CSS class to the page that turned it down.
+test "a guest view that sets markup directly is refused" {
+  let h = @harness.mount(shell_module(), "Shell")
+  let base = counter_manifest()
+  let m : DynManifest = {
+    ..base,
+    module_name: "sneakylib",
+    components: [
+      {
+        ..base.components[0],
+        name: "Sneaky",
+        views: [
+          {
+            name: "main",
+            html: "<div class=\"sneaky-marker\" @dangerouslysetinnerhtml=\".payload\"></div>",
+          },
+        ],
+      },
+    ],
+  }
+  let register = (man : DynManifest) => {
+    let mut ok = true
+    try
+      register_module(h.app.scope, FakeGuest::new(), man, policy=vouched())
+      |> ignore
+    catch {
+      // `register_module` also propagates the compiler's MacroError, so its
+      // raise type is the open one and the payload cannot be matched out here.
+      // What the test is for is the DECISION, not its wording.
+      _ => ok = false
+    }
+    ok
+  }
+  assert_false(register(m))
+  // Nothing of the refused module reached the shared registry — which is what
+  // `collect_classes` and `compile_styles` walk, so a turned-down module does
+  // not shape the page's stylesheet either.
+  assert_false(h.app.scope.comps.collect_classes().contains("sneaky-marker"))
+  // The same module without the one construct is fine: it is the directive
+  // that is refused, not the guest.
+  let ok_m : DynManifest = {
+    ..m,
+    module_name: "tidylib",
+    components: [
+      {
+        ..m.components[0],
+        views: [{ name: "main", html: "<div class=\"tidy-marker\"></div>", }],
+      },
+    ],
+  }
+  assert_true(register(ok_m))
+  assert_true(h.app.scope.comps.collect_classes().contains("tidy-marker"))
+}
+
+///|
+/// The metadata fields are the ones nothing downstream fails without — which
+/// is exactly why they need a test of their own. A field's `doc` and
+/// `constraint` are the two facts neither the type nor the views can supply,
+/// and they are what the catalog ranks on and the generated form validates
+/// with.
+test "catalog metadata parses: docs and constraints" {
+  let json =
+    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "formlib",
+    #| "doc": "Form controls.", "version": "1.2.0", "authors": ["ana"],
+    #| "components": [
+    #|  {"name": "Signup", "doc": "Collects an address.",
+    #|   "keywords": ["form", "email"], "category": "input",
+    #|   "messageDocs": [{"name": "submit", "doc": "Send it."}, {"doc": "orphan"}],
+    #|   "views": [{"name": "main", "html": "<div></div>"}],
+    #|   "fields": [{"name": "email", "ty": {"k": "text"}, "doc": "Where to write.",
+    #|               "required": true,
+    #|               "constraint": {"maxLen": 254, "format": "email",
+    #|                              "enumJson": "", "defaultJson": "\"a@b.c\"",
+    #|                              "pattern": ""}}],
+    #|   "properties": [],
+    #|   "receives": [], "intents": [], "methods": [],
+    #|   "inits": [{"name": "blank", "argsJson": "{}", "doc": "Nothing filled in."}],
+    #|   "style": ""}]}
+  let m = DynManifest::from_json_string(json)
+  inspect(m.doc, content="Form controls.")
+  inspect(m.version, content="1.2.0")
+  let c = m.components[0]
+  inspect(c.doc, content="Collects an address.")
+  inspect(c.category, content="input")
+  debug_inspect(c.keywords, content="[\"form\", \"email\"]")
+  // message-docs become a lookup; the entry naming nothing is dropped rather
+  // than keyed on ""
+  debug_inspect(
+    c.message_docs,
+    content=(
+      #|{ "submit": "Send it." }
+    ),
+  )
+  inspect(c.inits[0].doc, content="Nothing filled in.")
+  let f = c.fields[0]
+  inspect(f.doc, content="Where to write.")
+  assert_true(f.required)
+  // The old `constraint` record, read into domains: seven of its eight members
+  // said what a `Domain` already says, and `default` — which was never a bound
+  // — is a field of its own now.
+  debug_inspect(
+    f.domains,
+    content=(
+      #|[DLen(DCompare(op=DLe, rhs=DLit(254))), DFormat("email")]
+    ),
+  )
+  debug_inspect(
+    f.default,
+    content=(
+      #|Some(RStr("a@b.c"))
+    ),
+  )
+}
+
+///|
+/// A guest that says nothing about itself still registers. Every v3 addition
+/// is optional in practice, because a module with nothing to say drops it and a
+/// hand-written manifest should not have to spell out blanks.
+test "a manifest with no catalog metadata still parses" {
+  let json =
+    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "bare", "components": [
+    #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
+    #|   "fields": [], "properties": [],
+    #|   "receives": [], "intents": [], "methods": [],
+    #|   "style": ""}]}
+  let m = DynManifest::from_json_string(json)
+  inspect(m.doc, content="")
+  inspect(m.components[0].category, content="")
+  debug_inspect(m.components[0].message_docs, content="{}")
+}
+
+///|
+/// A member whose `ty` is missing or in a shape this host does not recognize
+/// reads as `any` — the honest "cannot say" — rather than taking the module
+/// down. A manifest crossed a boundary; refusing a whole module over one
+/// member's type would be the wrong trade.
+test "an unreadable member type reads as `any`" {
+  let json =
+    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "m", "components": [
+    #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
+    #|   "fields": [{"name": "known", "ty": {"k": "text"}}, {"name": "gone"}],
+    #|   "properties": [],
+    #|   "receives": [], "intents": [], "methods": [],
+    #|   "style": ""}]}
+  let m = DynManifest::from_json_string(json)
+  let fields = m.components[0].field_infos()
+  inspect(fields[0].ty.show_source(), content="String")
+  inspect(fields[1].ty.show_source(), content="Any")
+}
+
+///|
+test "manifest with wrong api version is rejected" {
+  let bad =
+    #|{"manifestVersion": 3, "apiVersion": 1, "moduleName": "x", "components": []}
+  let mut failed = false
+  let _ = DynManifest::from_json_string(bad) catch {
+    _ => {
+      failed = true
+      {
+        api_version: 0,
+        module_name: "",
+        doc: "",
+        version: "",
+        homepage: "",
+        authors: [],
+        config: [],
+        macros: [],
+        components: [],
+      }
+    }
+  }
+  assert_true(failed)
+}
+
+///|
+test "old manifest shapes and implicit property surfaces are rejected" {
+  let old =
+    #|{"manifestVersion": 1, "apiVersion": 10, "moduleName": "x", "components": []}
+  let implicit =
+    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "x", "components": [
+    #| {"name": "C", "views": [], "fields": [], "style": ""}
+    #|]}
+  let mut refused = 0
+  for text in [old, implicit] {
+    try DynManifest::from_json_string(text) |> ignore catch {
+      _ => refused = refused + 1
+    }
+  }
+  assert_eq(refused, 2)
+}
+
+///|
+impl @component.Fields for TestShellState with fn encode(s) {
+  { "slot": s.slot, "note": Str(s.note) }
+}
+
+///|
+impl @component.Fields for TestShellState with fn decode(f) {
+  let v_slot = f.get("slot").unwrap_or(Null)
+  guard f.get("note") is Some(Str(v_note)) else { return None }
+  Some({ slot: v_slot, note: v_note, })
+}
+
+///|
+impl @component.Fields for TestShellState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="test_shell_state", fields=[
+    @component.FieldInfo::new("slot", TyAny),
+    @component.FieldInfo::new("note", TyText),
+  ])
+}
+
+///|
+test "a module's views are linted at load" {
+  let bad : DynManifest = {
+    api_version: 10,
+    module_name: "sloppylib",
+    doc: "",
+    version: "",
+    homepage: "",
+    authors: [],
+    config: [],
+    macros: [],
+    components: [
+      {
+        name: "Sloppy",
+        doc: "",
+        keywords: [],
+        category: "",
+        message_docs: Map([]),
+        // an unclosed <div> and a `.field` in a handler position: two things
+        // no build step ever checked for a guest, because its views arrive at
+        // RUNTIME
+        views: [
+          { name: "main", html: "<div><span @on.click=\".nope\">hi</div>", },
+        ],
+        fields: [],
+        properties: [],
+        domains: [],
+        receives: [],
+        intents: [],
+        express_messages: [],
+        express_intents: [],
+        implements: [],
+        protocols: [],
+        property_bindings: [],
+        view_bindings: [],
+        provide_bindings: [],
+        lookup_bindings: [],
+        methods: [],
+        whens: [],
+        enriches: [],
+        bind_withs: [],
+        serves: [],
+        provide: [],
+        lookup: [],
+        inits: [],
+        style: "",
+      },
+    ],
+  }
+  let h = @harness.mount(shell_module(), "Shell")
+  let module = register_module(
+    h.app.scope,
+    FakeGuest::new(),
+    bad,
+    policy=vouched(),
+  )
+  let lines = module.diagnostics()
+  assert_true(lines.length() > 0)
+  // every line names the component and view it is about
+  for line in lines {
+    assert_true(line.contains("Sloppy/main"))
+  }
+  // ...and a clean module says nothing
+  let (_h2, ok) = mount_with_bundle(FakeGuest::new())
+  debug_inspect(ok.diagnostics(), content="[]")
+}
+
+///|
+/// The failure this catches renders as NOTHING: a `$name` the manifest forgot
+/// to declare never reaches a fixed render operation, evaluates to Null, and an attribute
+/// bound to Null is omitted — so the guest author sees an element quietly
+/// missing its class and the guest itself is never told it was asked.
+test "a `$method` the manifest never declared is reported at load" {
+  let sloppy : DynManifest = {
+    api_version: 10,
+    module_name: "statlib",
+    doc: "",
+    version: "",
+    homepage: "",
+    authors: [],
+    config: [],
+    macros: [],
+    components: [
+      {
+        name: "Stat",
+        doc: "",
+        keywords: [],
+        category: "",
+        message_docs: Map([]),
+        views: [
+          {
+            name: "main",
+            html: (
+              #|<div :style="$boxStyle" :class="$valueClass">
+              #|  <button @on.click="$setCount 0">zero</button>
+              #|  <button @on.click="$bumpIt">bump</button>
+              #|  <span @text="$'{.count} / {$boxStyl}'"></span>
+              #|</div>
+            ),
+          },
+        ],
+        fields: [plain_field("count", TyFloat)],
+        properties: [],
+        domains: [],
+        receives: [],
+        intents: [],
+        express_messages: [],
+        express_intents: [],
+        implements: [],
+        protocols: [],
+        property_bindings: [],
+        view_bindings: [],
+        provide_bindings: [],
+        lookup_bindings: [],
+        // `$setCount` is absent on purpose: it is the mutator the `count` field
+        // implies, so the host answers it and it must NOT be reported as an
+        // undeclared method. Both `@on` sites are separately refused as
+        // METHOD_IN_EVENT — a `$name` there is the same dispatch a bare name
+        // is, so the sigil is turned away wherever a view arrives from.
+        methods: ["boxStyle"],
+        whens: [],
+        enriches: [],
+        bind_withs: [],
+        serves: [],
+        provide: [],
+        lookup: [],
+        inits: [],
+        style: "",
+      },
+    ],
+  }
+  let h = @harness.mount(shell_module(), "Shell")
+  let module = register_module(
+    h.app.scope,
+    FakeGuest::new(),
+    sloppy,
+    policy=vouched(),
+  )
+  inspect(
+    module.diagnostics().join("\n"),
+    content=(
+      #|UNDECLARED_METHOD (warning) Stat/main: '$bumpIt' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods
+      #|UNDECLARED_METHOD (warning) Stat/main: '$boxStyl' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods — did you mean '$boxStyle'?
+      #|UNDECLARED_METHOD (warning) Stat/main: '$valueClass' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods
+      #|METHOD_IN_EVENT (error) module statlib: 'Stat' writes `@on.click="$setCount"`: a `$name` in an event position is refused. A handler name and a `$name` are the same dispatch, so the sigil claims a distinction that does not exist — write `setCount` bare
+      #|METHOD_IN_EVENT (error) module statlib: 'Stat' writes `@on.click="$bumpIt"`: a `$name` in an event position is refused. A handler name and a `$name` are the same dispatch, so the sigil claims a distinction that does not exist — write `bumpIt` bare
+    ),
+  )
+}
+
+///|
+test "a component's named initial states are offered by name" {
+  let fake = FakeGuest::new()
+  let (_h, module) = mount_with_bundle(fake)
+  debug_inspect(module.init_names("Counter"), content="[\"with-history\"]")
+  debug_inspect(module.init_names("Pair"), content="[]")
+  guard! module.make_init("Counter", "with-history") is Some(c)
+  assert_true(fake.counters.get(c.handle()) is Some(3.0))
+  // the schema carries them too, so a descriptor reader sees them
+  guard! module.schema_of("Counter") is Some(schema)
+  debug_inspect(schema.init_names, content="[\"with-history\"]")
+  // an unknown fixture is not a bare instance: the caller decides
+  assert_true(module.make_init("Counter", "nope") is None)
+}
+
+///|
+/// The placeholder half of the contract: a guest declaring a field whose type
+/// names a component from ANOTHER module gets it filled by the host, and never
+/// touches it.
+///
+/// This is the whole mechanism behind "a component with internal layout can
+/// offer a hole for a person to fill". It has to work this way round because
+/// the boundary allows nothing else: a WIT `value` has no case that can carry
+/// a host component, so the guest cannot be handed one. It names the field,
+/// renders it, and the host does the rest.
+test "a foreign placeholder is filled by the host and never reaches the guest" {
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Framed", args={ "title": Str("panel") })
+    is Some(framed)
+  h.send_at_root("setSlot", args=[framed.to_value()])
+  // The guest's own field, answered by the guest.
+  assert_eq(h.text(".frame-title"), "panel")
+  // The hole, filled with the component the field NAMED and rendered by the
+  // guest's own view through `<x render=".body">`.
+  assert_eq(h.text(".filler-note"), "fresh")
+  // The guest was never told about it: asked for `body` it answers nothing,
+  // and the host answered anyway.
+  assert_true(Guest::get_field(fake, framed.handle(), "body") is None)
+}
+
+///|
+test "what a person puts in a placeholder survives the guest around it changing" {
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Framed", args={ "title": Str("panel") })
+    is Some(framed)
+  h.send_at_root("setSlot", args=[framed.to_value()])
+  // Use what is in the hole.
+  h.click(".filler-bump")
+  h.click(".filler-bump")
+  assert_eq(h.text(".filler-note"), "fresh!!")
+  // Now change the GUEST, which mints a successor handle. A successor is the
+  // same logical instance one update later, so what the host is holding for it
+  // has to come across — otherwise every keystroke in the guest would reset
+  // whatever a person built inside it.
+  h.click(".retitle")
+  assert_eq(h.text(".frame-title"), "renamed")
+  assert_eq(h.text(".filler-note"), "fresh!!")
+}
+
+///|
+test "a same-module child is the guest's own, and the host does not fill it" {
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  // `Pair { left: Counter, right: Counter }` names components of its OWN
+  // module. Those are nested children the guest made and owns — filling them
+  // here would shadow the guest's values with host-built ones, and the two
+  // cases are told apart by exactly that: same-module is the guest's, foreign
+  // is a hole.
+  guard! module.make_instance("Pair") is Some(pair)
+  h.send_at_root("setSlot", args=[pair.to_value()])
+  // The guest's own children, with the guest's own values.
+  assert_eq(h.texts(".count"), ["1", "100"])
+  assert_true(Guest::get_field(fake, pair.handle(), "left") is Some(_))
+}
+
+///|
+/// `child_json` is what a value looks like on its way INTO a guest, and the
+/// claim under test is the recursion: a nested child inside a LIST has to cross
+/// as its handle, not as a copy of its fields under a name that no longer
+/// refers to it.
+///
+/// This is the write half of nesting. A guest whose children sit in a list — a
+/// message holding reactions, a channel holding threads — has a child return a
+/// successor, and the host writes the parent's WHOLE LIST back with the new
+/// instance in it.
+test "child_json encodes a nested guest instance at any depth" {
+  let fake = FakeGuest::new()
+  let (_, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Counter", args={ "count": Num(1) }) is Some(a)
+  guard! module.make_instance("Counter", args={ "count": Num(2) }) is Some(b)
+  let marker = (h : Int) => "{\"$dyn\":{\"handle\":\{h}}}"
+
+  // the case that always worked: a scalar `comp` field
+  inspect(child_json(a.to_value()).stringify(), content=marker(a.handle()))
+
+  // a list of them — what a parent's list field is written back as
+  inspect(
+    child_json(List([a.to_value(), Num(7), b.to_value()])).stringify(),
+    content="[\{marker(a.handle())},7,\{marker(b.handle())}]",
+  )
+
+  // and inside a map, and inside a list inside a map
+  inspect(
+    child_json(Map({ "who": a.to_value(), "all": List([b.to_value()]) })).stringify(),
+    content="{\"who\":\{marker(a.handle())},\"all\":[\{marker(b.handle())}]}",
+  )
+
+  // anything that is not a guest instance is untouched
+  inspect(
+    child_json(List([Str("x"), Bool(true), Null])).stringify(),
+    content="[\"x\",true,null]",
+  )
+}
+
+///|
+/// A bound the field's type cannot carry is named at load.
+///
+/// The manifest's constraint record spells "unstated" two ways — `null` or an
+/// absent key for the four bounds, `""` for the strings beside them — and four
+/// of the six keys are safe to write blank. Writing the record out in full,
+/// which is what copying a sample guest's manifest teaches, therefore states
+/// bounds nobody meant, and they fail quietly in three different ways. The
+/// unambiguous ones are worth saying out loud: a bound that cannot apply to the
+/// type was not a decision.
+test "a bound the type cannot carry is a load-time hint" {
+  let h = @harness.mount(shell_module(), "Shell")
+  let manifest : DynManifest = {
+    ..counter_manifest(),
+    components: [
+      {
+        ..counter_manifest().components[0],
+        fields: [
+          // a magnitude on text: dropped when validating (`v is Num`) and
+          // dropped from the schema, so it does nothing but mislead a reader
+          {
+            name: "label",
+            ty: TyText,
+            doc: "",
+            required: false,
+            default: None,
+            domains: [
+              DCompare(op=DGe, rhs=DLit(0)),
+              DCompare(op=DLe, rhs=DLit(0)),
+            ],
+          },
+          // a length on a number, likewise
+          {
+            name: "count",
+            ty: TyFloat,
+            doc: "",
+            required: false,
+            default: None,
+            domains: [DLen(DCompare(op=DLe, rhs=DLit(0)))],
+          },
+        ],
+      },
+    ],
+  }
+  let module = register_module(
+    h.app.scope,
+    FakeGuest::new(),
+    manifest,
+    policy=vouched(),
+  )
+  let said = module.diagnostics().filter(d => d.has_prefix("INERT_CONSTRAINT"))
+  assert_eq(said.length(), 3)
+  assert_true(said[0].contains("Counter.label") && said[0].contains("'min'"))
+  assert_true(said[1].contains("Counter.label") && said[1].contains("'max'"))
+  assert_true(said[2].contains("Counter.count") && said[2].contains("'maxLen'"))
+  // it says what to write instead, because the spelling is the whole trap
+  assert_true(said[0].contains("`null`"))
+
+  // …and a bound the type CAN carry is not mentioned: `maxLen` on text is a
+  // real bound, including a zero, and second-guessing one is not this pass's
+  // job.
+  let fine : DynManifest = {
+    ..manifest,
+    components: [
+      {
+        ..manifest.components[0],
+        fields: [
+          {
+            name: "label",
+            ty: TyText,
+            doc: "",
+            required: false,
+            default: None,
+            domains: [DLen(DCompare(op=DLe, rhs=DLit(0)))],
+          },
+        ],
+      },
+    ],
+  }
+  let quiet = register_module(
+    h.app.scope,
+    FakeGuest::new(),
+    fine,
+    policy=vouched(),
+  )
+  assert_eq(
+    quiet.diagnostics().filter(d => d.has_prefix("INERT_CONSTRAINT")).length(),
+    0,
+  )
+}
+
+///|
+/// A mastodon-shaped module: one config-origin variable, one view that spends
+/// it, and a module name the caller varies so the `by_name` hot-swap does not
+/// eat the previous registration mid-test.
+fn config_manifest(module_name : String) -> DynManifest {
+  let base = counter_manifest()
+  {
+    ..base,
+    module_name,
+    config: [
+      {
+        name: "mediaOrigin",
+        ty: TyOrigin,
+        default_: "https://files.mastodon.social/",
+        doc: "where the pictures are",
+      },
+      {
+        name: "instanceName",
+        ty: TyText,
+        default_: "mastodon.social",
+        doc: "the server, as a person writes it",
+      },
+    ],
+    components: [
+      {
+        ..base.components[0],
+        style: "",
+        views: [
+          {
+            name: "main",
+            html: "<img :src=\"$'{$$mediaOrigin}avatars/{.count}.png'\" />",
+          },
+        ],
+      },
+    ],
+  }
+}
+
+///|
+/// The whole point: one module, two instances, two servers, no rebuild.
+test "a config origin lets one module serve two instances" {
+  let h = @harness.mount(shell_module(), "Shell")
+  let hachyderm = @policy.Policy::untrusted().with_config([
+    ("mediaOrigin", @policy.origin("https://files.hachyderm.io")),
+    ("instanceName", @policy.text("hachyderm.io")),
+  ])
+  let masto = @policy.Policy::untrusted().with_config([
+    ("mediaOrigin", @policy.origin("https://files.mastodon.social")),
+    ("instanceName", @policy.text("mastodon.social")),
+  ])
+  let a = register_module(
+    h.app.scope,
+    FakeGuest::new(),
+    config_manifest("reader"),
+    policy=hachyderm,
+  )
+  let b = register_module(
+    h.app.scope,
+    FakeGuest::new(),
+    config_manifest("reader"),
+    policy=masto,
+  )
+  // Same module name, same code, different identity — which is what makes the
+  // two survivable side by side rather than one evicting the other.
+  assert_eq(a.module_name(), b.module_name())
+  assert_not_eq(a.key(), b.key())
+  // The guest reads its whole table; the text variable is in it too.
+  debug_inspect(
+    a.config().get("mediaOrigin"),
+    content=(
+      #|Some("https://files.hachyderm.io/")
+    ),
+  )
+  debug_inspect(
+    a.config().get("instanceName"),
+    content=(
+      #|Some("hachyderm.io")
+    ),
+  )
+  debug_inspect(
+    b.config().get("mediaOrigin"),
+    content=(
+      #|Some("https://files.mastodon.social/")
+    ),
+  )
+  // Registering the same module with the SAME config is the same registration,
+  // which is what keeps hot-swap meaning what it always meant.
+  let again = register_module(
+    h.app.scope,
+    FakeGuest::new(),
+    config_manifest("reader"),
+    policy=hachyderm,
+  )
+  assert_eq(a.key(), again.key())
+}
+
+///|
+/// The trap this design has: `register_module` parses each view TWICE — once
+/// into the tree that renders (`View::new`) and once into a throwaway tree the
+/// policy screens (`screen_view`). If only one of them resolved `$$name`, the
+/// check would be about a document nobody displays.
+///
+/// Held from both sides, because each failure looks like success from the
+/// other: screening an unresolved tree refuses a module that is fine, and
+/// screening a resolved tree while rendering an unresolved one passes a module
+/// nothing checked.
+test "the screened tree and the rendered tree resolve config the same way" {
+  let register = (module_name : String, policy : @policy.Policy) => {
+    let h = @harness.mount(shell_module(), "Shell")
+    let mut ok = true
+    try
+      register_module(
+        h.app.scope,
+        FakeGuest::new(),
+        config_manifest(module_name),
+        policy~,
+      )
+      |> ignore
+    catch {
+      _ => ok = false
+    }
+    ok
+  }
+  // Bound: the screen resolves the origin, finds it pinned, and lets it
+  // through. If the screen parsed without the config this would be false.
+  assert_true(
+    register(
+      "screen-bound",
+      @policy.Policy::untrusted().with_config([
+        ("mediaOrigin", @policy.origin("https://files.hachyderm.io")),
+      ]),
+    ),
+  )
+  // Unbound: the screen sees a template with a hole where the origin goes and
+  // refuses. If the screen were skipping the check this would be true, and a
+  // view that renders nothing useful would have registered silently.
+  assert_false(register("screen-unbound", @policy.Policy::untrusted()))
+}
+
+///|
+/// Binding is granting — but only what was bound, and only when the host was
+/// the one who bound it.
+test "a manifest's own origin default is not a grant" {
+  let h = @harness.mount(shell_module(), "Shell")
+  // The manifest defaults to files.mastodon.social. A host that bound nothing
+  // has granted nothing, so the view cannot spend it.
+  let refused = try {
+    register_module(
+      h.app.scope,
+      FakeGuest::new(),
+      config_manifest("default-only"),
+    )
+    |> ignore
+    false
+  } catch {
+    _ => true
+  }
+  assert_true(refused)
+  // ...until the host says, in as many words, that it ships these modules and
+  // their defaults are its own decision.
+  let trusting = @policy.Policy::untrusted().trusting_manifest_config()
+  let b = register_module(
+    h.app.scope,
+    FakeGuest::new(),
+    config_manifest("default-trusted"),
+    policy=trusting,
+  )
+  debug_inspect(
+    b.config().get("mediaOrigin"),
+    content=(
+      #|Some("https://files.mastodon.social/")
+    ),
+  )
+}
+
+///|
+/// The type is stated by both parties, and a disagreement is the case that
+/// makes the redundancy worth it: without it a manifest could declare `origin`
+/// for a variable a host bound as prose and turn a string into a network grant.
+test "a config type the host and the manifest disagree about refuses" {
+  let h = @harness.mount(shell_module(), "Shell")
+  // The host bound `mediaOrigin` as ordinary text; the manifest calls it an
+  // origin. Nothing here is a valid module.
+  let mismatched = @policy.Policy::untrusted().with_config([
+    ("mediaOrigin", @policy.text("https://files.hachyderm.io/")),
+  ])
+  let why = try {
+    register_module(
+      h.app.scope,
+      FakeGuest::new(),
+      config_manifest("mismatch"),
+      policy=mismatched,
+    )
+    |> ignore
+    ""
+  } catch {
+    e => e.message()
+  }
+  debug_inspect(
+    why,
+    content=(
+      #|"module refused: config 'mediaOrigin' is declared 'origin' and this host bound it as 'text'"
+    ),
+  )
+}
+
+///|
+/// A shared policy is the normal case — one page, one decision, many modules —
+/// so a name this module does not declare is worth SAYING and not worth
+/// refusing over. The other reason to see it is a typo.
+test "a bound name the module does not declare is a diagnostic" {
+  let h = @harness.mount(shell_module(), "Shell")
+  let base = counter_manifest()
+  // No `config` section at all — the ordinary module, sharing the page's one
+  // policy with the one module that does read a variable.
+  let plain : DynManifest = {
+    ..base,
+    module_name: "no-config-here",
+    components: [{ ..base.components[0], style: "", }],
+  }
+  let b = register_module(
+    h.app.scope,
+    FakeGuest::new(),
+    plain,
+    policy=@policy.Policy::untrusted().with_config([
+      ("mediaOrigin", @policy.origin("https://files.hachyderm.io")),
+    ]),
+  )
+  assert_true(
+    b
+    .diagnostics()
+    .any(d => {
+      d.contains(
+        "this host bound 'mediaOrigin', which this module does not declare",
+      )
+    }),
+  )
+}
+
+///|
+/// A guest reads a dynamic binding a HOST ancestor published.
+///
+/// The claim worth pinning: nothing about this crosses the guest ABI. The
+/// manifest carries the `lookup` as source text, `register_module` hands it to
+/// the synthesized `Component`, and the host's render stack resolves `*theme`
+/// against the frame `Shell` pushed — the same path a host component's `*name`
+/// takes. The guest is not asked, and does not know.
+test "a guest reads a value a host ancestor provides" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  h.send_at_root("setSlot", args=[inst.to_value()])
+  // Shell's `note` starts empty, so the binding is there and holds "".
+  inspect(h.text(".theme"), content="")
+  // An intent that changes what Shell publishes re-renders the guest's read of
+  // it, because a provide is evaluated on every entry rather than captured.
+  h.click(".notify")
+  inspect(h.text(".note"), content="changed!")
+  inspect(h.text(".theme"), content="changed!")
+}
+
+///|
+/// With no producer above it, the declared default is what the guest reads.
+///
+/// Registered but unmounted, so nothing has pushed a frame: this is the
+/// "nobody provides it" case, and a card that names a value nothing supplies
+/// should still render rather than show a hole.
+test "a guest with no provider above it reads its declared default" {
+  collect_superseded()
+  let h = @harness.mount(no_provide_shell(), "Bare")
+  install_gc(h.app.transactor)
+  let fake = FakeGuest::new()
+  let module = register_module(
+    h.app.scope,
+    fake,
+    counter_manifest(),
+    policy=vouched(),
+  )
+  fake.module.val = Some(module)
+  guard! module.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  h.send_at_root("setSlot", args=[inst.to_value()])
+  inspect(h.text(".theme"), content="unthemed")
+}
+
+///|
+/// A shell that publishes nothing, for the default case above.
+fn no_provide_shell() -> @component.ModuleDef {
+  let bare = @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div class=\"bare\"><x render=\".slot\"></x></div>",
+      ),
+    },
+    name="Bare",
+    initial=TestShellState::{ slot: Null, note: "", },
+    update=(s : TestShellState, msg, _ctx) => {
+      match msg {
+        Receive("setSlot", [v, ..]) => Next({ ..s, slot: v, })
+        _ => Unhandled
+      }
+    },
+  )
+  @component.ModuleDef::new(name="baretest", components=[bare])
+}
+
+///|
+/// A module publishes its own component as a TYPE, and something below it
+/// builds one.
+///
+/// `Component::make` on a guest component is not a hole any more: it goes
+/// through `Module::make_instance`, so the instance a `provide {Counter:
+/// "self"}` promises is one the guest actually created and still owns.
+test "a guest component published as a type can be built" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  // Through the BUNDLE's own scope, which is where a module's components live:
+  // `register_module` enters a child scope, so the app's scope cannot see them
+  // and a host component reaches one only along the `dyn` leg, from inside the
+  // guest's subtree, exactly as the publish intends.
+  guard! module.scope.lookup_component("Counter") is Some(comp)
+  let inst = comp.make({ "count": Num(7) })
+  // A real guest instance, not the `Null` a `for_type` component used to yield.
+  assert_true(inst is Obj(_))
+  h.send_at_root("setSlot", args=[inst])
+  inspect(h.text(".count"), content="7")
+  // And it is the SAME module's: driving it reaches the guest that made it.
+  h.click(".inc")
+  inspect(h.text(".count"), content="8")
+}
+
+///|
+/// A guest HANDLER reads a dynamic binding an ancestor published.
+///
+/// The view half already worked — a `*theme` in a guest's template resolves
+/// against the frame the host pushed. This is the other half: the host
+/// resolves the component's DECLARED lookups before entering the guest and
+/// hands them in, because everything else a guest asks of the host is an
+/// effect applied after the call, and a value a handler is using cannot wait
+/// for that.
+test "a guest handler reads a declared lookup" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  h.send_at_root("setSlot", args=[inst.to_value()])
+  // Shell's `note` — which is what it provides as `theme` — starts empty.
+  h.click(".notify")
+  inspect(h.text(".note"), content="changed!")
+  // The handler now reads what the ancestor publishes, at this position.
+  h.send_at_root("setSlot", args=[inst.to_value()])
+  h.click(".notify")
+  h.send_at_root("readTheme", args=[])
+  inspect(h.text(".theme"), content="changed!")
+}
+
+///|
+/// A stack that answers one dynamic name, so a test can tell "the host handed
+/// the render position over" from "it handed over nothing".
+priv struct OneBinding {
+  name : String
+  value : @tutuca.Value
+}
+
+///|
+impl @tutuca.Stack for OneBinding with fn lookup_dynamic(self, name) {
+  if name == self.name {
+    self.value
+  } else {
+    Null
+  }
+}
+
+///|
+/// A guest VALUE BODY reads a dynamic binding too.
+///
+/// The handler half above resolves the declared lookups from `ctx.lookup`
+/// before entering the guest. This is the render half, and it was missing:
+/// `call-method` carried no bindings, so a card's `compute`, `pred`, `@when`
+/// or `enrich` compiled `control.lookup` and read nil — silently, with the
+/// same body working in a MoonBit component. The two halves ask the same
+/// question of the two environments a `*name` has ever meant.
+test "a guest value body reads a declared lookup" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (_, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  guard! inst.to_value() is Obj(o)
+  let stack : &@tutuca.Stack = OneBinding::{
+    name: "theme",
+    value: Str("dark"),
+  }
+  guard! o.method_at("themeLabel", stack) is Some(Fn(f))
+  assert_true(f([Null]) is Str("dark"))
+  // A name the manifest declares no lookup for is not resolved and not sent,
+  // so the guest sees it absent rather than null — the same distinction the
+  // handler half draws.
+  guard! o.method_at("undeclaredLabel", stack) is Some(Fn(g))
+  assert_true(g([Null]) is Str("(absent)"))
+  // And asked with no render position at all — a `$compute` read off a bare
+  // Value, outside any render — the binding is absent rather than guessed.
+  guard! o.field("themeLabel") is Some(Fn(bare))
+  assert_true(bare([Null]) is Null)
+}
+
+///|
+/// A name the manifest declares no lookup for is not in the map.
+///
+/// The set of names is what the component DECLARED, so an undeclared read is
+/// absent rather than null — which is the same distinction the checker draws
+/// when it refuses a `*name` nothing declares.
+test "a guest handler reads nothing for an undeclared name" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  h.send_at_root("setSlot", args=[inst.to_value()])
+  h.click(".undeclared")
+  inspect(h.text(".note"), content="absent")
+}
+
+///|
+/// A guest answers the sender of a message, under a name it picked.
+test "a guest replies to whoever sent it a message" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  h.send_at_root("setSlot", args=[inst.to_value()])
+  // Shell sends, the guest replies, and the reply lands in Shell's `receive`
+  // bucket like any other message.
+  h.send_at_root("poke", args=[])
+  inspect(h.text(".note"), content="pong:from-guest")
+}
+
+///|
+/// The manifest, with one component given a declared domain.
+///
+/// Built from the counter's rather than beside it, because what is being
+/// tested is the ENFORCEMENT and not the module: a second fixture would drift
+/// from this one and the drift would look like a domain that stopped working.
+fn bounded_counter_manifest(
+  domains : Array[@tutuca.FieldDomain],
+) -> DynManifest {
+  let base = counter_manifest()
+  {
+    ..base,
+    components: base.components.map(c => {
+      if c.name == "Counter" {
+        { ..c, domains, }
+      } else {
+        c
+      }
+    }),
+  }
+}
+
+///|
+fn mount_with_domains(
+  fake : FakeGuest,
+  domains : Array[@tutuca.FieldDomain],
+) -> (@harness.MemHarness, Module) raise {
+  let h = @harness.mount(shell_module(), "Shell")
+  install_gc(h.app.transactor)
+  let module = register_module(
+    h.app.scope,
+    fake,
+    bounded_counter_manifest(domains),
+    policy=vouched(),
+  )
+  fake.module.val = Some(module)
+  (h, module)
+}
+
+///|
+/// A guest keeps its own rules; the HOST keeps its declared domains.
+///
+/// This is the whole point of carrying `where` clauses in the manifest. A
+/// `pred` and an `invariant` are compiled into the guest module and the guest
+/// declines its own transition. A domain is not compilable there — the
+/// vocabulary is read BACKWARDS by a generator and forwards by
+/// `core/domain.mbt`, and the guest world has no shape for either — so the
+/// declaration travels out and this side enforces it.
+///
+/// Both doors, because neither catches what the other does.
+test "a guest's declared domain is enforced at both of the host's doors" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_domains(fake, [
+    { field: "count", domain: DBetween(lo=DLit(5), hi=DLit(12)), },
+  ])
+  guard! module.make_instance("Counter", args={ "count": Num(10) })
+    is Some(inst0)
+  h.send_at_root("setSlot", args=[inst0.to_value()])
+  inspect(h.text(".count"), content="10")
+
+  // THE FIRST DOOR: the field write itself. `setCount 0` is a generated
+  // mutator the host answers over `with_member`, and the guest is never
+  // asked — so if this door did not exist there would be nothing between the
+  // click and a state the declaration forbids.
+  h.click(".zero")
+  inspect(h.text(".count"), content="10")
+
+  // THE SECOND DOOR: a GUEST transition's successor. `inc` is the guest's own
+  // handler, it ran, and it produced a state the host will not adopt.
+  h.click(".inc")
+  inspect(h.text(".count"), content="11")
+  h.click(".inc")
+  inspect(h.text(".count"), content="12")
+  h.click(".inc")
+  inspect(h.text(".count"), content="12")
+  // …and the instance that stands is the one that was there, so the next
+  // legal move still works.
+  h.click(".dec")
+  inspect(h.text(".count"), content="11")
+}
+
+///|
+/// The refusal a host can READ, with the sentence composed from the values.
+test "a refused guest write reaches the refusal channel" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_domains(fake, [
+    { field: "count", domain: DBetween(lo=DLit(5), hi=DLit(12)), },
+  ])
+  guard! module.make_instance("Counter", args={ "count": Num(10) })
+    is Some(inst0)
+  h.send_at_root("setSlot", args=[inst0.to_value()])
+  let refused = @harness.refusals_while(() => h.click(".zero"))
+  assert_eq(refused.length(), 1)
+  assert_eq(refused[0].code, OutOfRange)
+  // A `where` carries the FIELD where a rule carries its name, and the
+  // sentence is composed rather than authored — which is why no clause has a
+  // `format` to write.
+  assert_eq(refused[0].rule, "count")
+  assert_eq(
+    refused[0].sentence,
+    "`count` is 0, and it must be between 5 and 12",
+  )
+  // A legal move is not a refusal.
+  assert_eq(@harness.refusals_while(() => h.click(".dec")).length(), 0)
+}
+
+///|
+/// A domain the host cannot read enforces nothing, and blocks nothing.
+///
+/// The compatibility claim, from the other end: `domains_of_json` drops a
+/// relation it has never heard of, so a module built against a later
+/// vocabulary still mounts and still works — it is simply not held to the
+/// clause this host could not understand.
+test "a component with no readable domain is unconstrained" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_domains(fake, [])
+  guard! module.make_instance("Counter", args={ "count": Num(10) })
+    is Some(inst0)
+  h.send_at_root("setSlot", args=[inst0.to_value()])
+  h.click(".zero")
+  inspect(h.text(".count"), content="0")
+}
+
+///|
+/// A refused transition drops the SUCCESSOR, and keeps the instance that
+/// stands alive.
+///
+/// The half of a refusal that has nothing to do with the rule. A guest
+/// instance is a handle the host owns, the sweep drops every handle nothing
+/// holds any more, and "nothing holds it any more" is decided by which of the
+/// two the host adopted. Get that backwards and the domain check works
+/// perfectly and collects the live instance — a component that reads its own
+/// fields through a handle the guest has already freed.
+test "a refused transition frees the successor and keeps the live handle" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_domains(fake, [
+    { field: "count", domain: DBetween(lo=DLit(5), hi=DLit(12)), },
+  ])
+  guard! module.make_instance("Counter", args={ "count": Num(12) })
+    is Some(inst0)
+  h.send_at_root("setSlot", args=[inst0.to_value()])
+  inspect(h.text(".count"), content="12")
+  // The guest ran and minted a handle for 13; the host will not adopt it.
+  h.click(".inc")
+  collect_superseded()
+  // One instance left, which is the one that stands — the successor was
+  // collected rather than leaked, and the live handle was not.
+  assert_true(fake.counters.length() == 1)
+  // …and reading it still crosses the bridge, which is the assertion that
+  // would fail if the sweep had taken the wrong one.
+  inspect(h.text(".count"), content="12")
+  h.click(".dec")
+  inspect(h.text(".count"), content="11")
+}
+
+///|
+/// The same ownership question on the MUTATOR path, where the host does the
+/// guest write itself.
+test "a refused mutator frees the successor and keeps the live handle" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_domains(fake, [
+    { field: "count", domain: DBetween(lo=DLit(5), hi=DLit(12)), },
+  ])
+  guard! module.make_instance("Counter", args={ "count": Num(10) })
+    is Some(inst0)
+  h.send_at_root("setSlot", args=[inst0.to_value()])
+  // `setCount 0` is turned down at the FIRST door, before the guest is
+  // entered — so there is no successor to free and nothing to get wrong.
+  h.click(".zero")
+  collect_superseded()
+  assert_true(fake.counters.length() == 1)
+  inspect(h.text(".count"), content="10")
+}
+
+///|
+/// The other half of a snapshot: what a person put in the guest's HOLE.
+///
+/// A placeholder is the host's field — the guest is never told about it and
+/// cannot write it — so it is not in the bytes the guest persists. It is in
+/// the projection beside them, tagged, which is what lets a restore build it
+/// back rather than dropping in a fresh one.
+test "what a person put in a placeholder survives a snapshot" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! h.app.scope.lookup_component("Filler") is Some(filler)
+  guard! module.make_instance("Framed", args={
+      "title": Str("panel"),
+      "body": filler.make({ "note": Str("mine") }),
+    })
+    is Some(framed)
+  assert_eq(framed.to_value().field("body").field("note"), Str("mine"))
+  guard! module.snapshot(framed.to_value()) is Some(snap)
+  // The guest kept its own state, and the hole is not part of it.
+  assert_true(snap.has_state())
+  // Restored through the scope the placeholder's component is registered in —
+  // the same one `make_instance` fills a fresh placeholder from.
+  guard! module.restore(snap, src=h.app.scope) is Some(back)
+  assert_eq(back.to_value().field("title"), Str("panel"))
+  assert_eq(back.to_value().field("body").field("note"), Str("mine"))
+}
+
+///|
+/// Without a resolver the hole comes back as the fresh instance
+/// `fill_placeholders` puts there — no worse than before, and never a plain
+/// Map wearing the field's name.
+test "a restore with nothing to resolve the hole fills it fresh" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! h.app.scope.lookup_component("Filler") is Some(filler)
+  guard! module.make_instance("Framed", args={
+      "title": Str("panel"),
+      "body": filler.make({ "note": Str("mine") }),
+    })
+    is Some(framed)
+  guard! module.snapshot(framed.to_value()) is Some(snap)
+  guard! module.restore(snap) is Some(back)
+  assert_eq(back.to_value().field("body").field("note"), Str("fresh"))
+}
+
+///|
+/// A `ty-comp` field naming one of the module's OWN components is a nested
+/// child the guest makes and owns. A restore does not rebuild it host-side,
+/// even when the source could: the guest's constructor is what fills it, and
+/// two instances for one field is what refusing avoids.
+test "a restore leaves a same-module child to the guest" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Pair") is Some(pair)
+  guard! module.snapshot(pair.to_value()) is Some(snap)
+  let before = fake.counters.length()
+  guard! module.restore(snap, src=h.app.scope) is Some(back)
+  // Two, and only two: the pair the guest built for itself.
+  assert_eq(fake.counters.length(), before + 2)
+  assert_eq(back.to_value().field("left").field("count"), Num(1))
+}
+
+///|
+/// A protocol's property list, in both spellings a manifest can carry.
+///
+/// The objects are what the card compiler emits and what this host wants: the
+/// member's declared type, as the tree it is. The bare names are what a
+/// manifest written by hand —
+/// or by a compiler that had only the member list — can say, and they read as
+/// `TyAny` rather than taking the module down: a member list that names its
+/// members correctly is not a broken manifest.
+test "a protocol's properties parse as objects or as bare names" {
+  let json =
+    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "holderlib", "components": [
+    #|  {"name": "Hole",
+    #|   "views": [{"name": "main", "html": "<div></div>"}],
+    #|   "fields": [], "properties": [],
+    #|   "protocols": [
+    #|     {"id": "x/Holder@1", "handleMessages": ["hold"], "handleIntents": [],
+    #|      "expressMessages": [], "expressIntents": [],
+    #|      "properties": [{"name": "filled", "ty": {"k": "bool"}, "writable": true, "public": true}],
+    #|      "views": [], "provides": [], "lookups": []},
+    #|     {"id": "x/Named@1", "handleMessages": [], "handleIntents": [],
+    #|      "expressMessages": [], "expressIntents": [],
+    #|      "properties": ["title"],
+    #|      "views": [], "provides": [], "lookups": []}],
+    #|   "receives": [], "intents": [], "methods": [], "style": ""}]}
+  let m = DynManifest::from_json_string(json)
+  let comp = m.components[0]
+  let typed = comp.protocols[0].properties[0]
+  assert_eq(typed.name, "filled")
+  assert_eq(typed.writable, true)
+  let named = comp.protocols[1].properties[0]
+  assert_eq(named.name, "title")
+  // Public by definition: a protocol member is what the protocol promises.
+  assert_true(named.public_)
+  // And the whole point of carrying the type: the registered schema hands a
+  // host the member's TYPE. A name alone says what it is called and nothing
+  // more, which is `any`.
+  let h = @harness.mount(shell_module(), "Shell")
+  let module = register_module(
+    h.app.scope,
+    FakeGuest::new(),
+    m,
+    policy=vouched(),
+  )
+  guard! module.schema_of("Hole") is Some(schema)
+  @debug.assert_eq(
+    schema.protocols.map(p => {
+      p.properties.map(x => "\{x.name}:\{x.ty.show_source()}")
+    }),
+    [["filled:Bool"], ["title:Any"]],
+  )
+}
+
+///|
+/// A hole that names NOTHING still holds what the host puts in it.
+///
+/// `Framed`'s `body` names `Filler`, so the host knows what to build there.
+/// `Rack`'s `holds` is a bare `component`: it says "some component" and there
+/// is nothing to build — but a caller can still pass one, and that is the
+/// whole shape of a holder. What crosses to a guest cannot carry a host
+/// component (`child_json` has nothing to write but its FIELDS, which come
+/// back as a Map with the shape of a component and none of its behaviour), so
+/// the host keeps it and answers reads itself.
+test "a bare component field holds what the host puts in it" {
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! h.app.scope.lookup_component("Filler") is Some(filler)
+  guard! module.make_instance("Rack", args={
+      "holds": filler.make({ "note": Str("mine") }),
+    })
+    is Some(rack)
+  // An instance, not a Map wearing its fields.
+  assert_eq(rack.to_value().field("holds").field("note"), Str("mine"))
+  // And it RENDERS: `<x render=".holds">` draws the component itself.
+  h.send_at_root("setSlot", args=[rack.to_value()])
+  assert_eq(h.text(".filler-note"), "mine")
+}
+
+///|
+/// The same, for a row of them. A container whose cells the host supplied is a
+/// container the host owns.
+test "a list of bare component fields holds what the host puts in it" {
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! h.app.scope.lookup_component("Filler") is Some(filler)
+  guard! module.make_instance("Rack", args={
+      "cells": List([
+        filler.make({ "note": Str("one") }),
+        filler.make({ "note": Str("two") }),
+      ]),
+    })
+    is Some(rack)
+  // Held as a list of instances, not as a list of their fields.
+  guard! rack.to_value().field("cells") is List(cells)
+  @debug.assert_eq(cells.map(c => c.field("note").to_display_string()), [
+    "one", "two",
+  ])
+  h.send_at_root("setSlot", args=[rack.to_value()])
+  @debug.assert_eq(h.texts(".filler-note"), ["one", "two"])
+}
+
+///|
+/// And what the guest CAN hold is left where it is.
+///
+/// An instance of this module crosses as a token the guest keeps and reads
+/// back through `wrap_instance`; taking that one over would put the host in
+/// charge of a child the guest makes and manages. The discriminator is the
+/// VALUE, not the field: same field, same declared type, different answer.
+///
+/// The fake's constructor ignores the arg, which is what makes this visible —
+/// a host that had claimed the field would answer with it anyway.
+test "a same-module instance in a bare component field stays the guest's" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (_h, module) = mount_with_bundle(fake)
+  guard! module.make_instance("Counter", args={ "count": Num(4) }) is Some(mine)
+  guard! module.make_instance("Rack", args={ "holds": mine.to_value() })
+    is Some(rack)
+  assert_eq(rack.to_value().field("holds"), Null)
+}
+
+///|
+/// A guest can MESSAGE what it cannot hold.
+///
+/// It never gets the instance — `.holds` is answered from `owned`, on the
+/// host's side of the boundary — but a message does not need the instance. It
+/// needs an ADDRESS, and `sendAt` carries a path the HOST resolves against the
+/// tree, where the hole's contents are. So a card can reach into a hole it
+/// cannot read, which is what makes a holder a component and not a decoration.
+///
+/// What it still cannot do is traverse: `.holds.note` is not readable, the
+/// value cannot be passed around, and a path whose key is reread from live
+/// state is refused by the card compiler for unrelated reasons.
+test "a guest can address a message into a hole it does not own" {
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! h.app.scope.lookup_component("Filler") is Some(filler)
+  guard! module.make_instance("Rack", args={
+      "holds": filler.make({ "note": Str("x") }),
+    })
+    is Some(rack)
+  h.send_at_root("setSlot", args=[rack.to_value()])
+  assert_eq(h.text(".filler-note"), "x")
+  // The guest answers this by asking the HOST to deliver `bump` at `.holds`.
+  h.click(".rack-poke")
+  assert_eq(h.text(".filler-note"), "x!")
+}
+
+///|
+/// A holder nested in a container LOSES what the host put in it. Known gap,
+/// asserted so it cannot change unnoticed.
+///
+/// `Module::wrap_instance` rebuilds a nested child on every read and passes no
+/// `owned` — deliberately, because filling placeholders there would build a
+/// fresh one per read and throw away the last. The cost is this: a slot the
+/// HOST holds does not survive the rebuild, so a holder is only a holder while
+/// something addresses it directly.
+///
+/// It bites the composed-tree case one level down — `Grid > Hole > a drawn
+/// card` — where the Grid and the Hole are the same module's and the card is
+/// not. Same-module nesting all the way down is fine: those are tokens, and
+/// tokens are what survives.
+///
+/// The fix is a host-side table keyed by guest token (see
+/// which is more than a re-keying: a write into a
+/// nested slot mints a successor the parent guest never hears about. When it
+/// lands, this test flips to the value and the gap entry goes.
+test "a holder nested in a container loses what the host put in it" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (_h, module) = mount_with_bundle(fake)
+  guard! _h.app.scope.lookup_component("Filler") is Some(filler)
+  guard! module.make_instance("Rack", args={
+      "holds": filler.make({ "note": Str("deep") }),
+    })
+    is Some(inner)
+  // Held here, before it goes anywhere.
+  assert_eq(inner.to_value().field("holds").field("note"), Str("deep"))
+  // Now put that holder in a container of the SAME module, which means it
+  // crosses as a token and comes back through `wrap_instance`.
+  guard! module.make_instance("Rack", args={ "cells": List([inner.to_value()]) })
+    is Some(outer)
+  guard! outer.to_value().field("cells") is List(cells)
+  assert_eq(cells.length(), 1)
+  // The cell itself came back — it is the guest's, and a token survives.
+  assert_eq(cells[0].schema().unwrap().name, "Rack")
+  // What the host was holding inside it did not.
+  assert_eq(cells[0].field("holds"), Null)
+}
+
+///|
+/// WHO KEEPS A SLOT — the whole decision, as a table.
+///
+/// The rule this pins is the one that used to be written in three places with
+/// three different scopes, which is how the same question grew four different
+/// answers and cost three releases in a day. Each of those bugs is one row
+/// here.
+///
+/// Read the table, not the code: a change to `slot_owner` shows up as a diff
+/// in the answers, and any row that moves is a decision somebody has to have
+/// made on purpose.
+///
+/// `Counter` is this module's own; `Filler` is the host's. A "guest value" is
+/// an instance of this module, which crosses as a token; a "host value" is a
+/// host component, which cannot cross at all.
+///
+/// Two rows in it are worth knowing rather than guessing at:
+///
+///  - `comp[foreign] + guest value -> HOST holds`. A slot declared to hold a
+///    named foreign component, handed one of ours instead, is the caller
+///    passing the wrong thing; the host keeps what it was given rather than
+///    silently building over it. Long-standing behaviour, and this is where it
+///    is now written down.
+///  - `list[foreign] + nothing -> guest`. A list slot builds no default,
+///    because there is no count to build one FROM. That is the difference
+///    between a list and the scalar above it, not an oversight.
+test "who keeps a slot, for every spelling and every value" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, module) = mount_with_bundle(fake)
+  guard! h.app.scope.lookup_component("Filler") is Some(filler)
+  let host_value = filler.make({ "note": Str("host") })
+  guard! module.make_instance("Counter", args={ "count": Num(1) })
+    is Some(guest_obj)
+  let guest_value = guest_obj.to_value()
+  let spellings : Array[(String, @tutuca.TyInfo)] = [
+    ("comp[ours]", TyComp(Some("Counter"))),
+    ("comp[foreign]", TyComp(Some("Filler"))),
+    ("comp[bare]", TyComp(None)),
+    ("comp[protocols]", TyCompProtocols(["x/P@1"])),
+    ("list[bare]", TyList(TyComp(None))),
+    ("list[foreign]", TyList(TyComp(Some("Filler")))),
+    ("text", TyText),
+  ]
+  let givens : Array[(String, @tutuca.Value?)] = [
+    ("nothing", None),
+    ("host value", Some(host_value)),
+    ("guest value", Some(guest_value)),
+    ("list of host", Some(@tutuca.Value::List([host_value]))),
+    ("list of guest", Some(@tutuca.Value::List([guest_value]))),
+  ]
+  let rows : Array[String] = []
+  for spelling in spellings {
+    for given in givens {
+      let answer = match
+        slot_owner(spelling.1, given.1, declared_here=n => {
+          module.def_of(n) is Some(_)
+        }) {
+        Guest => "guest"
+        HostHolds(_) => "HOST holds"
+        HostBuilds(name) => "HOST builds \{name}"
+      }
+      rows.push("\{spelling.0} + \{given.0} -> \{answer}")
+    }
+  }
+  inspect(
+    rows.join("\n"),
+    content=(
+      #|comp[ours] + nothing -> guest
+      #|comp[ours] + host value -> guest
+      #|comp[ours] + guest value -> guest
+      #|comp[ours] + list of host -> guest
+      #|comp[ours] + list of guest -> guest
+      #|comp[foreign] + nothing -> HOST builds Filler
+      #|comp[foreign] + host value -> HOST holds
+      #|comp[foreign] + guest value -> HOST holds
+      #|comp[foreign] + list of host -> HOST builds Filler
+      #|comp[foreign] + list of guest -> HOST builds Filler
+      #|comp[bare] + nothing -> guest
+      #|comp[bare] + host value -> HOST holds
+      #|comp[bare] + guest value -> guest
+      #|comp[bare] + list of host -> guest
+      #|comp[bare] + list of guest -> guest
+      #|comp[protocols] + nothing -> guest
+      #|comp[protocols] + host value -> HOST holds
+      #|comp[protocols] + guest value -> guest
+      #|comp[protocols] + list of host -> guest
+      #|comp[protocols] + list of guest -> guest
+      #|list[bare] + nothing -> guest
+      #|list[bare] + host value -> guest
+      #|list[bare] + guest value -> guest
+      #|list[bare] + list of host -> HOST holds
+      #|list[bare] + list of guest -> guest
+      #|list[foreign] + nothing -> guest
+      #|list[foreign] + host value -> guest
+      #|list[foreign] + guest value -> guest
+      #|list[foreign] + list of host -> HOST holds
+      #|list[foreign] + list of guest -> guest
+      #|text + nothing -> guest
+      #|text + host value -> guest
+      #|text + guest value -> guest
+      #|text + list of host -> guest
+      #|text + list of guest -> guest
+    ),
+  )
+}

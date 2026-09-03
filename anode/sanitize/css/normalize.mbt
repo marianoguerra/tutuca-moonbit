@@ -34,7 +34,7 @@
 //
 // (A scoped STYLESHEET could not do this: Tailwind emits `.bg-\[\#fff\]`, and a
 // selector legitimately carries escapes. That is one of the reasons the
-// stylesheet half is not built here — see `dyncomp/SECURITY.md` §4.)
+// stylesheet half is not built here — see `tgc/SECURITY.md` §7.)
 //
 // **NUL is its EOF sentinel.** `peek_char` returns U+0000 both for "the byte
 // here is a NUL" and for "there is no byte here", so an embedded NUL is

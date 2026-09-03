@@ -102,14 +102,6 @@ serve PORT="8000":
 playground:
     {{dev}} playground
 
-# build the wasm-component guest bundles (dyncomp demos)
-guests:
-    {{dev}} guests
-
-# regenerate the guests' MoonBit bindings from dyncomp/wit, then drift-check
-gen-guest-bindings:
-    {{dev}} gen-guest-bindings
-
 # dry-run package the module for mooncakes.io
 package:
     moon package

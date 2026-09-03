@@ -10,9 +10,8 @@
 //
 // The tree is embedded in this binary (storybook_template_gen.mbt, regenerated
 // by `moon run --target native cmd/dev -- storybook-template-embed`), so
-// scaffolding needs no network. Like `new-guest` it runs nothing: cmd/tutuca
-// spawns no subprocesses, so `moon build` and `node build.mjs` are the user's
-// to run.
+// scaffolding needs no network, and it runs nothing: cmd/tutuca spawns no
+// subprocesses, so `moon build` and `node build.mjs` are the user's to run.
 
 ///|
 /// What the shell should write: `files` are (path-relative-to-`dir`, contents)
@@ -207,4 +206,34 @@ pub fn new_storybook_success(name : String, dir : String) -> String {
   "A story is an example on a ModuleDef: add one to `examples=[...]` and it\n" +
   "shows up in the gallery — and in `@harness.mount_example` — with no list to\n" +
   "edit. Start in page/main.mbt; see README.md in the new directory.\n"
+}
+
+///|
+/// `temp-conv` -> `TempConv`: the struct and component name.
+fn pascal_case(name : String) -> String {
+  let sb = StringBuilder()
+  let mut upper = true
+  for c in name {
+    if c == '-' {
+      upper = true
+    } else if upper {
+      sb.write_char(c.to_ascii_uppercase())
+      upper = false
+    } else {
+      sb.write_char(c)
+    }
+  }
+  sb.to_string()
+}
+
+///|
+/// `temp-conv` -> `temp_conv`: the file stem and function prefix. A MoonBit
+/// identifier cannot hold a hyphen, and a file named with one cannot be a
+/// module path either.
+fn snake_case(name : String) -> String {
+  let sb = StringBuilder()
+  for c in name {
+    sb.write_char(if c == '-' { '_' } else { c })
+  }
+  sb.to_string()
 }

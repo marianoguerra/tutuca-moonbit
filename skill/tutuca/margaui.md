@@ -128,7 +128,7 @@ offline. The moving parts:
   @wglue.inject_style(doc, "margaui-css", css)   // app/wasm inject_style
   ```
 
-  and re-runs it from the exported `refresh_margaui()` after a dyncomp bundle
+  and re-runs it from the exported `refresh_margaui()` after a loaded module
   registers new classes. No `globalThis.__tutuca_classes`, no page-side compile.
 
 The adapted entry differs from margaui's own `entry.css` in two ways: the bare
@@ -193,7 +193,7 @@ let css = @css.compile_margaui(app.scope.comps.collect_classes())
 ```
 
 Export a `refresh_margaui()` that re-runs the same two lines, and call it from
-the loader after a dyncomp bundle registers new classes.
+the loader after a loaded module registers new classes.
 
 **js target**: same shape with `app/browser`'s `@glue.inject_style`. If the
 compile must run in the page instead of the module (e.g. an in-browser

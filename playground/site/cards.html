@@ -36,8 +36,8 @@
          element is a module, and a module runs after a classic one, so the
          order below is the whole of the wiring. The card COMPILER is inside
          that runtime — no MoonBit toolchain, no worker, no payload fetched
-         beside the page — and the element imports `card-wasm.js` (and the
-         host ABI it instantiates through) when the first card mounts. -->
+         beside the page — and the element imports `card.js` (and the value
+         bridge it instantiates through) when the first card mounts. -->
     <script src="./site/tutucard.js"></script>
     <script type="module" src="./site/card-embed.js"></script>
   </head>
@@ -66,10 +66,9 @@
         <p class="lede">
           A <strong>card</strong> is a tutuca view file: a state schema, a
           script block, and one or more templates. The page compiles the card.
-          It compiled the first example below into a
-          <code>tutuca:component</code> WebAssembly module and instantiated it
-          where it stands: no MoonBit toolchain, no worker, no build step, and
-          no server.
+          It compiled the first example below into a WebAssembly module and
+          instantiated it where it stands: no MoonBit toolchain, no worker, no
+          build step, and no server.
         </p>
         <p>
           This is the same framework as the rest of this site, with a
@@ -88,12 +87,10 @@
 &lt;script type="tutuca/script"&gt;  handlers, derived values
 &lt;template&gt;                     the views</code></pre>
         <p>
-          A file may carry three more, and no example here does:
-          <code>tutuca/fixtures</code> (named starting states, each one a fixture a
-          host can mount), <code>tutuca/test</code> (scenes that drive the card
-          and assert against the DOM), and <code>tutuca/wax</code> (the escape
-          hatch: a handler written in the language the module is built out of).
-          A page decides whether to honour the last one, and this one does not.
+          A file may carry two more, and no example here does:
+          <code>tutuca/fixtures</code> (named starting states, each one a
+          fixture a host can mount) and <code>tutuca/test</code> (scenes that
+          drive the card and assert against the DOM).
         </p>
         <p>
           Every example below is one such file. Each one is complete and
@@ -694,10 +691,8 @@ str x       lower s     upper s     trim s</code></pre>
             <code>gen-views</code> refuses a handler it cannot compile
             <em>by name</em> and hands it back as an <code>update~</code>
             argument you write yourself. A card has nowhere to write that
-            argument. Its one escape hatch is a
-            <code>&lt;script type="tutuca/wax"&gt;</code> block, written in the
-            language the module is built out of — and a page decides whether to
-            honour one at all.
+            argument: what the compiler refuses is left out of the module, and
+            the host treats that handler's name as unhandled.
           </li>
         </ul>
         <p>
@@ -724,10 +719,10 @@ str x       lower s     upper s     trim s</code></pre>
         </p>
         <h3>Keep going</h3>
         <ul>
-          <li><a href="./tutucard/">The card playground</a> — the same compiler with more panels: the state tree, the dispatch log, the card's <code>tutuca/test</code> scenes run against an in-memory DOM, the compiled module as Wax and WAT, and a structured editor that shows one block of the file at a time.</li>
+          <li><a href="./tutucard/">The card playground</a> — the same compiler with more panels: the state tree, the dispatch log, the card's <code>tutuca/test</code> scenes run against an in-memory DOM, the compiled module as Wax, and a structured editor that shows one block of the file at a time.</li>
           <li><a href="./">The landing page</a> — the same framework with the compiler included. It compiles MoonBit in your browser.</li>
           <li><a href="./storybook/">Storybook</a> — every ported example, compiled ahead of time, with a Lint panel per story.</li>
-          <li><a href="https://github.com/marianoguerra/tutuca-moonbit">Source</a> — the card compiler is <code>tutucard/wasm/</code>, the language is <code>tscript/</code>.</li>
+          <li><a href="https://github.com/marianoguerra/tutuca-moonbit">Source</a> — the card compiler is <code>tgc/emit/</code>, the format is <code>tgc/SPEC.md</code>, the language is <code>tscript/</code>.</li>
         </ul>
       </section>
     </main>

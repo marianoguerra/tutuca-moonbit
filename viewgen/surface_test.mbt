@@ -325,7 +325,7 @@ test "an operator is transparent to the surface walk" {
 
 ///|
 test "a retired spelling still compiles, and hints once" {
-  // Soft retirement: a compiled dyncomp bundle carries its view markup as a
+  // Soft retirement: a compiled loaded module carries its view markup as a
   // STRING inside the wasm and the host parses it at load time, so a spelling
   // cannot simply be deleted. It parses, it works, and the hint is the only
   // thing that tells an author it moved.

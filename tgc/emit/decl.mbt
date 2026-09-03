@@ -34,7 +34,7 @@ fn emit_decls(src : Src, c : Comp) -> Unit {
       body.line("if \{t} == null { return tg_null(); }")
       body.line(t)
       src.line(
-        "fn \{c.id}_format_\{mangle(d.name)}(f: &tg_vals, args: &tg_vals) -> &?tg_val {",
+        "fn \{c.id}_format_\{mangle(d.name)}(f: &tg_vals, args: &tg_vals, dyn: &?tg_val) -> &?tg_val {",
       )
       src.buf.write_string(body.text())
       src.line("}")
@@ -224,20 +224,23 @@ fn decl_head(c : Comp, d : @tscript.Decl) -> String {
   let n = mangle(d.name)
   match d.kind {
     DReceive =>
-      "fn \{c.id}_receive_\{n}(f: &tg_vals, args: &tg_vals) -> &?tg_vals {"
+      "fn \{c.id}_receive_\{n}(f: &tg_vals, args: &tg_vals, dyn: &?tg_val) -> &?tg_vals {"
     DAnswer =>
-      "fn \{c.id}_answer_\{n}(f: &tg_vals, args: &tg_vals) -> &?tg_vals {"
-    DSet => "fn \{c.id}_set_\{n}(f: &tg_vals, args: &tg_vals) -> &?tg_vals {"
+      "fn \{c.id}_answer_\{n}(f: &tg_vals, args: &tg_vals, dyn: &?tg_val) -> &?tg_vals {"
+    DSet =>
+      "fn \{c.id}_set_\{n}(f: &tg_vals, args: &tg_vals, dyn: &?tg_val) -> &?tg_vals {"
     DCompute =>
-      "fn \{c.id}_compute_\{n}(f: &tg_vals, args: &tg_vals) -> &?tg_val {"
-    DGet => "fn \{c.id}_get_\{n}(f: &tg_vals, args: &tg_vals) -> &?tg_val {"
-    DPred => "fn \{c.id}_pred_\{n}(f: &tg_vals, args: &tg_vals) -> &?tg_val {"
+      "fn \{c.id}_compute_\{n}(f: &tg_vals, args: &tg_vals, dyn: &?tg_val) -> &?tg_val {"
+    DGet =>
+      "fn \{c.id}_get_\{n}(f: &tg_vals, args: &tg_vals, dyn: &?tg_val) -> &?tg_val {"
+    DPred =>
+      "fn \{c.id}_pred_\{n}(f: &tg_vals, args: &tg_vals, dyn: &?tg_val) -> &?tg_val {"
     DInvariant =>
-      "fn \{c.id}_invariant_\{n}(f: &tg_vals, args: &tg_vals) -> &?tg_val {"
+      "fn \{c.id}_invariant_\{n}(f: &tg_vals, args: &tg_vals, dyn: &?tg_val) -> &?tg_val {"
     DEnrich =>
-      "fn \{c.id}_enrich_\{n}(f: &tg_vals, args: &tg_vals) -> &?tg_val {"
+      "fn \{c.id}_enrich_\{n}(f: &tg_vals, args: &tg_vals, dyn: &?tg_val) -> &?tg_val {"
     DBindWith =>
-      "fn \{c.id}_bindwith_\{n}(f: &tg_vals, args: &tg_vals) -> &?tg_val {"
+      "fn \{c.id}_bindwith_\{n}(f: &tg_vals, args: &tg_vals, dyn: &?tg_val) -> &?tg_val {"
     // Unreachable: every kind is above. Wax needs the arm; the reader does not.
   }
 }
@@ -383,14 +386,14 @@ fn emit_rule_guard(
 ) -> Unit {
   let t = ctx.temp()
   src.line(
-    "let \{t} = \{ctx.comp.id}_\{callable_suffix(kind)}_\{mangle(name)}(f, args);",
+    "let \{t} = \{ctx.comp.id}_\{callable_suffix(kind)}_\{mangle(name)}(f, args, dyn);",
   )
   src.line("if \{t} == null { return null; }")
   src.open("if tg_truthy(\{t}) == 0 {")
   if ctx.formats.contains(name) {
     let sentence = ctx.temp()
     src.line(
-      "let \{sentence} = \{ctx.comp.id}_format_\{mangle(name)}(f, args);",
+      "let \{sentence} = \{ctx.comp.id}_format_\{mangle(name)}(f, args, dyn);",
     )
     src.open("if \{sentence} == null {")
     src.line("eff_log(\{wax_str(line)});")
@@ -450,6 +453,39 @@ fn emit_call(src : Src, c : Comp) -> Unit {
   src.close("}")
   src.blank()
 
+  // A property declared `pub count: Int { get .count set .count }` is BACKED
+  // BY A FIELD: the spec block says where it lives, and no `set count` is
+  // written in the script because there is nothing to write. So the accessor
+  // is synthesized here, from the declaration, rather than looked up among the
+  // script's own arms — and only when the script wrote none, because an
+  // explicit `set` is the author overriding the backing.
+  let field_backed = (pick : (@statedef.PropertyDef) -> String?) => {
+    let out : Array[(String, String)] = []
+    for prop in c.def.properties {
+      guard pick(prop) is Some(src_) else { continue }
+      guard src_.has_prefix(".") else { continue }
+      out.push((prop.name, src_[1:].to_string()))
+    }
+    out
+  }
+  let backed_set = field_backed(prop => prop.setter).filter(pair => {
+    !c.decls.iter().any(d => d.kind is DSet && d.name == pair.0)
+  })
+  if backed_set.length() > 0 {
+    src.open("if op == \{op_code(@abi.Op::OpSetProperty)} {")
+    for pair in backed_set {
+      let (prop, field) = pair
+      src.open("if str_eq(name, \{wax_str(prop)}) != 0 {")
+      src.line("let i = \{c.id}_slot(\{wax_str(field)});")
+      src.line("if i <s 0 { return null; }")
+      src.line("let f = \{c.id}_copy(st);")
+      src.line("f[i] = v;")
+      src.line("return tg_comp(\{c.id}_inst(self.desc, f));")
+      src.close("}")
+    }
+    src.close("}")
+    src.blank()
+  }
   for
     pair in [
       (@abi.Op::OpHandleMessage, @tscript.DeclKind::DReceive),
@@ -471,14 +507,34 @@ fn emit_call(src : Src, c : Comp) -> Unit {
       if kind is DSet {
         src.line("let a = [tg_vals| null; 1];")
         src.line("a[0] = v;")
-        src.line("let next = \{c.id}_\{prefix}_\{mangle(d.name)}(f, a);")
+        // A property write is the one op whose fifth slot already carries a
+        // value, so there is nowhere for the bindings to ride and a `*name`
+        // in a `set` body reads null. The checker says so; nothing here can.
+        src.line("let next = \{c.id}_\{prefix}_\{mangle(d.name)}(f, a, null);")
       } else {
-        src.line("let next = \{c.id}_\{prefix}_\{mangle(d.name)}(f, args);")
+        src.line("let next = \{c.id}_\{prefix}_\{mangle(d.name)}(f, args, v);")
       }
       // Null is "it did not happen": a rule declined, or an operation had no
       // answer. The host hears no successor and the state does not change.
       src.line("if next == null { return null; }")
       src.line("return tg_comp(\{c.id}_inst(self.desc, next!));")
+      src.close("}")
+    }
+    src.close("}")
+    src.blank()
+  }
+
+  let backed_get = field_backed(prop => prop.getter).filter(pair => {
+    !c.decls.iter().any(d => d.kind is DGet && d.name == pair.0)
+  })
+  if backed_get.length() > 0 {
+    src.open("if op == \{op_code(@abi.Op::OpGetProperty)} {")
+    for pair in backed_get {
+      let (prop, field) = pair
+      src.open("if str_eq(name, \{wax_str(prop)}) != 0 {")
+      src.line("let i = \{c.id}_slot(\{wax_str(field)});")
+      src.line("if i <s 0 { return null; }")
+      src.line("return st.fields[i];")
       src.close("}")
     }
     src.close("}")
@@ -505,7 +561,7 @@ fn emit_call(src : Src, c : Comp) -> Unit {
     src.open("if op == \{op_code(op)} {")
     for d in arms {
       let prefix = callable_prefix(d.kind)
-      let call = "\{c.id}_\{prefix}_\{mangle(d.name)}(st.fields, args)"
+      let call = "\{c.id}_\{prefix}_\{mangle(d.name)}(st.fields, args, v)"
       // A `pred` read as a METHOD answers its own expression; the same pred
       // reached through `@when` answers that value's TRUTHINESS. Truthiness is
       // applied by whoever asked, so a backend that boxed it into the pred

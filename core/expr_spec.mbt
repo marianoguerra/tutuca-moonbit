@@ -68,7 +68,7 @@ pub(all) enum UnOp {
 /// it prints as text and reads as text — and the one bit that still has to
 /// survive is whose source it was. That bit is what decides whether the
 /// enclosing template counts as a hand-written literal, and therefore whether
-/// it may pin a URL origin (`dyncomp/policy/external_url.mbt`).
+/// it may pin a URL origin (`tgc/policy/external_url.mbt`).
 pub(all) enum TplPart {
   TText(text~ : String, from_macro~ : Bool)
   TExpr(Expr)
@@ -142,7 +142,7 @@ pub(all) enum Expr {
   /// A literal. `from_macro` is set when a `^name` macro var resolved to this
   /// constant, which makes an enclosing template non-literal — and is the one
   /// bit that decides whether a constant may pin a URL origin
-  /// (`dyncomp/policy/external_url.mbt`).
+  /// (`tgc/policy/external_url.mbt`).
   ELit(lit~ : Lit, from_macro~ : Bool, span~ : Span)
   /// `$'text {expr} more'` — alternating literal text and interpolations.
   ETpl(parts~ : Array[TplPart], span~ : Span)

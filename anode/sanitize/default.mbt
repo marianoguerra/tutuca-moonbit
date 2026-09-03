@@ -34,7 +34,7 @@
 /// one in the source, and the one that navigates is the one SMIL wrote. There
 /// is no value here to inspect and no later point to inspect it at, which
 /// leaves refusing the ELEMENT as the only decision available — the same shape
-/// of argument `dyncomp/policy` already made when it put these four in
+/// of argument `tgc/policy` already made when it put these four in
 /// `untrusted_sink_element`. They are in the baseline rather than in that list
 /// alone because a plain app has no Pass 1 at all, and reaches the same markup
 /// through `@setinnerhtml`, `@setinnersvg` and markdown's HTML blocks.

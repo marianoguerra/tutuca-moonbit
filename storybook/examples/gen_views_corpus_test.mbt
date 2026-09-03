@@ -72,7 +72,6 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
       state: [],
       init: [],
       scripts: [],
-      wax: [],
       tests: [],
       root: "",
       legacy_spec: false,

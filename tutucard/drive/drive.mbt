@@ -2,12 +2,12 @@
 
 ///|
 pub fn run(
-  guest : &@dyncomp.Guest,
-  manifest : @dyncomp.DynManifest,
+  guest : &@host.Guest,
+  manifest : @host.DynManifest,
   scenes : Array[@scenedef.Scene],
   root? : String = "",
   take_log? : () -> Array[String] = () => [],
-  on_bundle? : (@dyncomp.Bundle) -> Unit = _b => (),
+  on_bundle? : (@host.Module) -> Unit = _b => (),
   on_app? : (@app.App[@memdom.MemNode]) -> Unit = _a => (),
 ) -> Array[SceneResult] {
   scenes.map(s => run_one(guest, manifest, s, root, take_log, on_bundle, on_app))
@@ -22,12 +22,12 @@ pub fn run(
 /// depend on whether the third ran, which is the kind of test that passes
 /// alone and fails in a suite.
 fn run_one(
-  guest : &@dyncomp.Guest,
-  manifest : @dyncomp.DynManifest,
+  guest : &@host.Guest,
+  manifest : @host.DynManifest,
   scene : @scenedef.Scene,
   root : String,
   take_log : () -> Array[String],
-  on_bundle : (@dyncomp.Bundle) -> Unit,
+  on_bundle : (@host.Module) -> Unit,
   on_app : (@app.App[@memdom.MemNode]) -> Unit,
 ) -> SceneResult {
   let failed = (why : String) => SceneResult::{
@@ -44,7 +44,7 @@ fn run_one(
     error: why,
   }
   let scope = @component.ComponentStack::new()
-  let bundle = @dyncomp.register_bundle(
+  let module = @host.register_module(
     scope,
     guest,
     manifest,
@@ -52,14 +52,14 @@ fn run_one(
   ) catch {
     e => return failed(e.message())
   }
-  // A guest that has to know which bundle it was registered as is told here.
+  // A guest that has to know which module it was registered as is told here.
   // A scene registers its OWN, so a guest still holding the previous scene's
-  // would wrap this scene's child tokens through a bundle left behind.
-  on_bundle(bundle)
+  // would wrap this scene's child tokens through a module left behind.
+  on_bundle(module)
   // The component: the scene's own, then the caller's root, then the first the
   // manifest declares — which is the first `<template>` in the file, and the
   // only answer a card with one component has.
-  let names = bundle.component_names()
+  let names = module.component_names()
   let comp = if scene.component != "" {
     scene.component
   } else if root != "" {
@@ -81,14 +81,14 @@ fn run_one(
       names.map(n => "`" + n + "`").join(", "),
     )
   }
-  let args = start_args(bundle, comp, scene) catch {
+  let args = start_args(module, comp, scene) catch {
     e => return failed(e.message())
   }
   // A fixture may carry its own steps and its own intent answers. The scene's
   // win where both name one: the scene is the more specific statement, and a
   // fixture is a starting point rather than a script the scene is inside.
   let (pre, fixture_intents) = match
-    (if scene.init == "" { None } else { fixture_of(bundle, comp, scene.init) }) {
+    (if scene.init == "" { None } else { fixture_of(module, comp, scene.init) }) {
     Some(f) => fixture_drive(f)
     None => ([], Map([]))
   }
@@ -100,7 +100,7 @@ fn run_one(
     answers[name] = a
   }
   scope.register_intent_handlers(intent_handlers(answers))
-  guard bundle.make_instance(comp, args~) is Some(inst) else {
+  guard module.make_instance(comp, args~) is Some(inst) else {
     return failed("the guest would not create a `" + comp + "`")
   }
   let (doc, container) = @harness.new_mount()
@@ -110,7 +110,7 @@ fn run_one(
     container,
     @vdom.RenderOpts::new(doc),
   ) catch {
-    _ => return failed("the bundle's views did not compile into an app")
+    _ => return failed("the module's views did not compile into an app")
   }
   let activity : Array[Json] = []
   app.transactor.observe(r => {
@@ -123,10 +123,10 @@ fn run_one(
   // successor, which is every interaction a scene drives — so a scene of fifty
   // steps leaves fifty dead handles behind without this. It is the host's job
   // whoever the host is, and a driver is one.
-  @dyncomp.install_gc(app.transactor)
+  @host.install_gc(app.transactor)
   // …and whatever else the caller wants to hang on this app. The card driver
   // installs a reachability sweep here, which needs the root and therefore the
-  // app rather than the bundle.
+  // app rather than the module.
   on_app(app)
   app.start()
   let h = @harness.Harness::over(app, container)
@@ -211,11 +211,11 @@ pub fn drive_scene(
 /// reach a guest's constructor, and a card's `init` handler runs against
 /// whatever it was built with.
 pub fn fixture_of(
-  bundle : @dyncomp.Bundle,
+  module : @host.Module,
   comp : String,
   name : String,
-) -> @dyncomp.DynInitDef? {
-  for def in bundle.manifest().components {
+) -> @host.DynInitDef? {
+  for def in module.manifest().components {
     if def.name == comp {
       for i in def.inits {
         if i.name == name {
@@ -234,7 +234,7 @@ pub fn fixture_of(
 /// not interpret — so this is where they become steps again. A fixture that
 /// declares none is an empty list, which is what most are.
 pub fn fixture_drive(
-  f : @dyncomp.DynInitDef,
+  f : @host.DynInitDef,
 ) -> (Array[@scenedef.Step], Map[String, @tutuca.IntentAnswer]) {
   let steps = if f.drive_json == "" {
     []
@@ -258,14 +258,14 @@ pub fn fixture_drive(
 
 ///|
 fn start_args(
-  bundle : @dyncomp.Bundle,
+  module : @host.Module,
   comp : String,
   scene : @scenedef.Scene,
 ) -> Map[String, @tutuca.Value] raise MountError {
   let args : Map[String, @tutuca.Value] = Map([])
   if scene.init != "" {
     let mut found = false
-    for def in bundle.manifest().components {
+    for def in module.manifest().components {
       if def.name == comp {
         for i in def.inits {
           if i.name == scene.init {

@@ -32,7 +32,7 @@ import {
   // declaration list, and round-tripping is the whole point. Apache-2.0, where
   // this module is MIT.
   "mizchi/css@0.7.3",
-  // The Wax compiler, for `tutucard/wasm` — the card-to-core-wasm backend.
+  // The Wax compiler, for `tgc/emit` — the card-to-core-wasm backend.
   // Dependency-free itself, and MoonBit links per package, so a consumer who
   // never compiles a card pays the fetch and nothing else.
   "marianoguerra/wax@0.2.0",
@@ -60,18 +60,14 @@ import {
 // no shipping package may import an excluded one, in a `for "test"` block
 // either — test files are in the tarball too.
 //
-// `dyncomp/` SHIPS. It is the universal core — the `tutuca:component` contract,
-// the host that loads a bundle from anywhere, the policy that decides what one
-// may do, the catalog, the JSON Schema projection, and the universal UI over
-// all of it — and a consumer who cannot reach it cannot host a dynamic
-// component at all. It imports nothing that was not already published, and
-// `docs/`, which ships, links into it.
+// `tgc/` SHIPS. It is the component format — the frozen preamble, the value
+// codecs, the runtime module, the card compiler, and the host that loads a
+// module from anywhere and decides what it may do — and a consumer who cannot
+// reach it cannot host a dynamic component at all. It imports nothing that was
+// not already published, and `docs/`, which ships, links into it.
 //
-// The one part that stays behind is `dyncomp/test`: its `*.test.mjs` drive real
-// guest bundles out of `guests/*/dist/js`, a path that exists in this repo and
-// in no tarball. The wasm-gc JS import shims (`app/wasm/loader.mjs`,
-// `dyncomp/host/wasm/loader.mjs`) DO ship: they are the import contract of
-// packages that ship.
+// The wasm-gc JS import shim `app/wasm/loader.mjs` ships too: it is the import
+// contract of packages that ship.
 
 // `examples/` is the reverse of everything else in this list: not a part of the
 // project that does not belong in the tarball, but CONSUMERS of the tarball
@@ -84,33 +80,25 @@ options(
   exclude: [
     "benchmarks",
     "examples",
-    "guests",
     "playground",
     "demo",
-    "dyncomp/test",
     "skill",
     "scripts",
     "dev",
     "cmd/dev",
     "cmd/css-bundle",
-    // `cmd/cardwasm`, `cmd/card-corpus` and `cmd/conformance` are dev shells
-    // over shipping packages (`tutucard/wasm`, `tscript`): the compilers are
-    // the feature, and a terminal front end for them is not.
-    // `tutucard/wasm/test` stays behind for the reason `dyncomp/test` does —
-    // it drives node against real modules.
-    "cmd/cardwasm",
-    // `cmd/tgc` is the toolchain shell for the wasm-GC component format
-    // (`tgc/`): it prints the canonical preamble and compiles a `.wax` module
-    // that carries it. A dev shell over a shipping package, the same as the
-    // three above — `tgc/abi` and `tgc/value` ship, a terminal front end for
-    // them does not.
+    // `cmd/tgc` is the toolchain shell for the component format: it prints the
+    // canonical preamble and compiles a `.wax` module that carries it. A dev
+    // shell over shipping packages — the compilers are the feature, and a
+    // terminal front end for them is not. `cmd/tgc-corpus` is the same kind of
+    // thing for the conformance table: it projects `tscript/conformance` into
+    // compiled modules so node can drive them, because a compiled card can only
+    // be RUN from node. `cmd/conformance` is the third.
     "cmd/tgc",
-    // `cmd/tgc-corpus` is the same kind of thing for the conformance table: it
-    // projects `tscript/conformance` into compiled modules so node can drive
-    // them, because a compiled card can only be RUN from node.
     "cmd/tgc-corpus",
-    // `tgc/proto` and `tgc/test` are the composition proof: three hand-written
-    // and hand-compiled modules and the node harness that instantiates them
+    "cmd/conformance",
+    // `tgc/proto` and `tgc/test` are the composition proof: hand-written and
+    // hand-compiled modules and the node harnesses that instantiate them
     // together. Evidence about the format rather than part of it.
     //
     // `tgc/rt` SHIPS, because a page that hosts a component needs the runtime
@@ -118,9 +106,6 @@ options(
     // embedded and `tgc/emit`'s `compile_runtime` builds it.
     "tgc/proto",
     "tgc/test",
-    "cmd/card-corpus",
-    "cmd/conformance",
-    "tutucard/wasm/test",
     // this repo's own stories and view fixtures; the gallery itself ships
     "storybook/examples",
     // the scaffold `tutuca new-storybook` writes out. It is already IN the

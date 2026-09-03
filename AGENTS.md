@@ -34,34 +34,19 @@ You can browse and install extra skills here:
   in `moon fmt`, so what is checked in is already what fmt produces and a
   later `moon fmt` leaves it alone — run the task, not the CLI directly.
 
-- `dyncomp/` has three documents, and they divide as: `DESIGN.md` is the
-  contract and how it maps onto tutuca; `SECURITY.md` is what a loaded bundle
-  can and cannot do, with the file/line evidence for each claim; and
-  `ARCHITECTURE.md` is the plan for the universal UI and the agent runtime on
-  top. The agent tool surface has no document.
-  Changing the WIT means checking `SECURITY.md`'s "What to check when changing
-  this".
-
-- The guest binding trees under `guests/*` — every name in `guests/guests.mjs`
-  — are generated and checked in the same way, by `gen-guest-bindings`, from
-  the ONE WIT in the repo (`dyncomp/wit/tutuca-component.wit` — no guest keeps a copy,
-  and the Rust guest's `generate!` macro reads it too). `wit-bindgen`'s raw
-  output has to be normalized before it can be checked in meaningfully: it
-  emits its FFI shims in HASH order, which differs between two runs on the
-  same input. `guests/gen-bindings.mjs` sorts them (MoonBit `///|` blocks are
-  order-irrelevant) and drops the `moon.pkg.json` twins of the hand-maintained
-  package files, which is what makes the drift check honest. It also copies
-  `guests/sdk.mbt` — the ONE guest SDK, for the same reason there is one WIT —
-  into every guest tree, and writes one formatted copy back, since the canonical
-  is in no moon module and `moon fmt` would never reach it. The one handwritten
-  file left in those trees is the component source (`counter.mbt`, `todo.mbt`,
-  …); its name is one wit-bindgen never emits, so regeneration leaves it alone.
+- `tgc/` has two documents: `SPEC.md` is the format — the frozen rec group, the
+  freeze rule, the op space, the exports, the encodings — and `SECURITY.md` is
+  what a loaded module can and cannot do, with the evidence for each claim.
+  **The rec group in `tgc/abi/preamble.mbt` is frozen**: a group's identity
+  depends on the whole group, so touching it breaks every module ever built.
+  Extension goes through `tg_ext` and the `i32` op space. Changing anything in
+  `tgc/` means checking `SECURITY.md`'s "What to check when changing this".
 
 - `examples/*` are not packages of this module and not demos. Each is a
   CONSUMER: its own `moon.mod` depending on the PUBLISHED `marianoguerra/tutuca`
   fetched from mooncakes like anyone else's. They are excluded from publish,
   `moon check` / `moon fmt` / `cmd/dev -- ci` never reach them (a nested
-  `moon.mod` stops discovery, the same way `guests/*` do), and each has its own
+  `moon.mod` stops discovery), and each has its own
   `build.mjs` that is the only way to build it. **An example must never gain a
   path dependency, a `../` out of its own directory, or a step that runs
   anything from this repo** — the one thing they prove is that a release is
@@ -70,12 +55,11 @@ You can browse and install extra skills here:
   is "the" example, and a new one should be able to cover a different seam
   without renaming anything.
 
-  `examples/dyncomp-dice` is the first: the universal dynamic-component host
-  plus one locally-authored guest. It exercises precisely what `moon check`
-  cannot — that the two wasm-gc JS loaders survive `moon publish`, that the
-  relative import between them is repointable once they land beside a page, and
-  that `tutuca new-guest` emits a tree that actually builds. Run the examples
-  after a release, before announcing one.
+  `examples/storybook-gallery` is the one that exists: a gallery scaffolded by
+  `tutuca new-storybook`, built against the published package. It exercises
+  precisely what `moon check` cannot — that the wasm-gc JS loader survives
+  `moon publish`, and that the scaffold emits a tree that actually builds. Run
+  the examples after a release, before announcing one.
 
 ## Tooling
 
@@ -106,23 +90,17 @@ binary inside the `_build` they delete.
 | `build`    | `moon build` for wasm-gc, native CLI, and js                     |
 | `coverage` | `moon coverage analyze`                                           |
 | `setup`    | `npm install` (happy-dom for js tests) + enable the git hooks    |
-| `ci`       | `gen` + `skill-embed` drift checks, then `check`, the example/skill/guest checks, `test` and `build` |
+| `ci`       | `gen` + `skill-embed` drift checks, then `check`, the example/skill checks, `test` and `build` |
 | `dist`     | build all targets and assemble a self-contained runnable `dist/` |
 | `gen` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); formats after generating, then drift-checks the generated modules — a stale one type-checks and tests green, so this is what catches it |
 | `gen-conformance` | project `tscript/conformance`'s corpus into `tscript/conformance/mbt/corpus.html`, then run `gen` over it — the MoonBit backend cannot read the corpus directly, since its answers only exist once `moonc` has compiled them. Run after ADDING a case; `ci` re-runs and drift-checks the compiled half on its own |
-| `gen-guest-bindings` | regenerate the checked-in MoonBit guest bindings (every guest in `guests/guests.mjs`) from the ONE WIT (`dyncomp/wit/tutuca-component.wit`), copy in the ONE SDK (`guests/sdk.mbt`), then drift-check them |
 | `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first), format, then drift-check the CONTENT against a snapshot taken before regenerating — in `ci`, because the embed ships inside the binary and a skill edited without re-embedding is invisible until somebody installs it and reads the wrong thing |
-| `check-guest-list` | hold `dev/tasks.mbt`'s guest list against `guests/guests.mjs`. Plain node, so unlike the guest BUILD it runs in `ci` |
-| `guest-harness` | build every guest bundle, then run the node harnesses in `dyncomp/test/` over them — the only runtime coverage the guest ABI and the table codec have. Not in `ci`: needs wasm-tools + jco |
 | `sanitizer-defaults` | regenerate `anode/sanitize/spec_default_gen.mbt` from the pinned WHATWG spec commit, format, then drift-check (needs network) |
 | `dom-props` | regenerate `eventpath/dom_props_gen.mbt` from the browser specs' machine-extracted IDL (`w3c/webref`, pinned in `scripts/fetch-dom-props.mjs`), format, then drift-check (needs network). The type oracle an `e.<path>` is checked against — does this event interface have this property, and what is its type. Same rule as the sanitizer baseline and for the same reason: **never hand-transcribe it** |
-| `dyncomp-storybook` | assemble `dist/dyncomp-storybook/` — the gallery of every component every loaded bundle declares, once per named `init` — with every sample bundle beside it. Out of `dist` for the same reason `universal` is: the guests need wasm-tools + jco |
-| `guest-template-embed` | regenerate `cli/guest_template_gen.mbt` — the guest tree `tutuca new-guest` writes out — from `guests/counter` (bindings + SDK) + `dyncomp/wit` (the contract) + `guests/template` (the overlay that carries the `{{name}}` placeholders); `dist` runs it beside `skill-embed` |
-| `check-guest-template` | scaffold a guest with that embed and `moon check --deny-warn` it; part of `ci`, and the only coverage `new-guest` has (CI never builds a real guest — `guests` needs wasm-tools and jco) |
 | `check-skill` | compile-check the MoonBit snippets in `skill/tutuca/` and check every one against the `.mbti` files for names that no longer exist; part of `ci` |
 | `css-bundle` | regenerate `css/{tailwind,margaui}_bundle_gen.mbt` from the pinned `tailwindcss` npm release + a margaui clone (needs network); see "Styling" below |
 | `npm-pack` | stage + `npm pack` the playground's two npm packages from an assembled `dist/` (manifests in `playground/npm/`); packs only — publishing is manual, see CONTRIBUTING.md |
-| `tutucard-playground` | assemble `dist/tutucard/` — the CARD playground, which ships no MoonBit compiler: a card is compiled to wasm by `tutucard/wasm` and the module is instantiated in the page, so the payload is that compiler, the Wax front end it stands on, and the page — plus the two things a card can ASK for, each fetched lazily by the page that wants it: `margaui.wasm` (the class compiler the starter cards' `btn`/`card`/`badge` need, scoped to the preview — `web/margaui.js`) and `editor.bundle.js` (the shared CodeMirror: the page upgrades its own textareas to it once the first card is mounted, `?editor=plain` keeps the textareas, and an `<mb-card codemirror>` upgrades its own). Ends by CHECKING and COMPILING every card through the real entry points — the starter cards, which are JS strings no MoonBit test can reach, and the landing site's `playground/site/cards/*.html`, which are in no moon package — and by holding `web/regions.js` — the offset arithmetic the structured view edits through — to its contract |
+| `tutucard-playground` | assemble `dist/tutucard/` — the CARD playground, which ships no MoonBit compiler: a card is compiled to wasm by `tgc/emit` and the module is instantiated in the page, so the payload is that compiler, the Wax front end it stands on, and the page — plus the two things a card can ASK for, each fetched lazily by the page that wants it: `margaui.wasm` (the class compiler the starter cards' `btn`/`card`/`badge` need, scoped to the preview — `web/margaui.js`) and `editor.bundle.js` (the shared CodeMirror: the page upgrades its own textareas to it once the first card is mounted, `?editor=plain` keeps the textareas, and an `<mb-card codemirror>` upgrades its own). Ends by CHECKING and COMPILING every card through the real entry points — the starter cards, which are JS strings no MoonBit test can reach, and the landing site's `playground/site/cards/*.html`, which are in no moon package — and by holding `web/regions.js` — the offset arithmetic the structured view edits through — to its contract |
 
 While editing views, `tutuca watch [path…]` regenerates them on every save
 (mizchi/fswatch; native only, since the watcher is the shell's job). It
@@ -194,13 +172,6 @@ which is why `dist` assembles the card runtime before the site. It copies
 thing a card DOES compile, its class names into CSS, and only when an element
 asks), and `dist/cli/tutuca` (the native CLI binary).
 
-The landing page also links `./universal/` and `./dyncomp-storybook/`, and
-`dist` builds **neither**: both need the component toolchain (wasm-tools + jco)
-that the guest bundles require, which is why they are their own tasks. Run
-`universal` and `dyncomp-storybook` after `dist` to fill them in — the Pages
-workflow does exactly that, and `assemble-site.mjs` warns for each one missing
-rather than leaving a dead link to be found by clicking it.
-
 The wasm pages need a browser with
 the JS String Builtins proposal, e.g. Chrome. Serve dist with any static file
 server: `cd dist && python3 -m http.server` — or `dist/cli/tutuca storybook`
@@ -211,34 +182,18 @@ The wasm demos are driven by the `vdom/wasm` + `app/wasm` packages (the wasm-gc
 twins of `vdom/browser` + `app/browser`): the DOM is reached from wasm-gc
 through mizchi/js's `@core.Any` plus a small `tdom` FFI, and — since MoonBit
 closures can't cross into JS on wasm-gc — JS calls the exported `on_event` on
-each DOM event instead of receiving a closure. `demo/counter_wasm`,
-`demo/universal_wasm`, `demo/storybook_wasm` and `demo/dyncomp_storybook_wasm`
-are the wasm-gc hosts
-(`demo/counter_wasm` is the twin of the js `demo/counter`; `storybook_wasm`
-is the same ~45-line shape over the published `storybook/ui/wasm` — an export
-list and this repo's story set, nothing else — and
-`universal_wasm` hosts the dyncomp guest bundles — though almost nothing is left
-in it, since the host itself is the published `dyncomp/ui/wasm` and the page is
-the ~90 lines that call `mount` and re-export the entry points, an export list
-being per-package `link` config that cannot come from a dependency;
-`dyncomp_storybook_wasm` is that same shape over `dyncomp/storybook/wasm`).
-Both host packages stand on `dyncomp/shell`, which is the floor under any page
-that hosts bundles — the loader bar, `make_instance`, the margaui refresh. It is
-deliberately not in `dyncomp/host/wasm`: the bridge should not have to depend on
-a CSS compiler and a view parser to answer `get-field`.
+each DOM event instead of receiving a closure. `demo/counter_wasm` and
+`demo/storybook_wasm` are the wasm-gc hosts (`demo/counter_wasm` is the twin of
+the js `demo/counter`; `storybook_wasm` is the same ~45-line shape over the
+published `storybook/ui/wasm` — an export list and this repo's story set,
+nothing else, an export list being per-package `link` config that cannot come
+from a dependency).
 
-The two dyncomp pages are not variants of one thing, and the difference is what
-each is FOR. `universal_wasm` is a blank page a person builds on, so it starts
-empty and hides its sample buttons behind `?test`; `dyncomp_storybook_wasm` is a
-gallery, so it fetches every sample at mount and draws one card per component
-per named `init`. A storybook that opens empty and asks you to press a button
-first is a storybook with an extra step; a blank page that opens with seven
-buttons naming archives nobody has heard of is the wrong first impression the
-other way. margaui styling is compiled
+margaui styling is compiled
 in MoonBit: the host's `mount()` hands `collect_classes()` to `css`'s
 `compile_margaui` (the `marianoguerra/tailwindcss` port + embedded stylesheet
 bundles) and injects the resulting `<style id="margaui-css">`, re-running it from
-the exported `refresh_margaui()` after a dyncomp bundle loads. No CDN build and
+the exported `refresh_margaui()` after a module loads. No CDN build and
 no `globalThis` class hand-off. The in-browser playground uses the same compiler
 shipped to wasm-gc (`playground/margaui_wasm` → `margaui.wasm`, release + wasm-opt).
 
@@ -383,47 +338,37 @@ plain `moon test "..." { ... }` blocks:
   so its error messages are `moon test`-able), `viewfile` lifts and validates it
   at split time so a mistake lands on the line of the `.html`, and
   `tutucard/drive/` mounts the card on memdom and runs the steps through
-  `@harness`'s own verbs. It reaches a page as `__tutucard.drive` (the ninth
-  entry point, beside `check` / `compile` / `mountCompiled`) and `driveCard` in
-  `tutucard/web/card-wasm.js`; the playground's Tests pane and
-  `tutucard/build/run-tests.mjs` are the two callers. `gen` ignores the
-  block, exactly as it ignores `tutuca/wax`.
+  `@harness`'s own verbs. It reaches a page as `__tutucard.drive` (beside
+  `check` / `compile` / `mountCompiled`) and `driveCard` in
+  `tutucard/web/card.js`; the playground's Tests pane and
+  `tutucard/build/run-tests.mjs` are the two callers. `gen` ignores the block.
 - A card's `refused` is usually EMPTY, and that is the contract rather than a
-  gap: `dyncomp/host/dynobj.mbt`'s `handler` never gates a `Receive`, so a
+  gap: `tgc/host/dynobj.mbt`'s `handler` never gates a `Receive`, so a
   guest answers `unhandled` and the host has nothing to refuse. What a compiled
   card says instead is `control.log` — a `requires` / `ensures` / `invariant`
   that did not hold, carrying the rule's own `format` sentence — which
-  `card-wasm.js` keeps as well as prints and a scene reads with `expect: log`.
+  `card.js` keeps as well as prints and a scene reads with `expect: log`.
   Reach for `refused` when driving a MODULE and `log` when driving a CARD.
 - **A card may declare more than one component.** One `state` each in the one
   state block, one `<script ... for="Comp">` each,
-  `<template id="Comp:main">`. Inside the module a component is an index: its
-  slot in `tc_types`, its arm of the constructor, its arm of `handle-event` —
-  and an instance says which it is through `jv_record_definition`, a pointer
-  compare against the record type it was built from. Generated names are
-  qualified (`cm_Row_caption`) only when the file declares several, so every
-  card that ever compiled still compiles byte-identically. The ROOT is the
-  first component in the file, or the one whose `<template>` carries
-  `data-root`; the manifest lists it first, because a host takes the head.
-  A card may also CARRY a child: `values.value`'s `%instance(u64)` is lowered
-  and lifted as `jv_i64`, which is free because the runtime builds `jv_f64` and
-  nothing else, and it is a scalar on the wire so a card with children and no
-  collections still imports no value arena. `card-wasm.js` turns a token into
-  the `{"$dyn": {handle, comp}}` marker `loader.mjs` already used, and
-  `CardGuest::json_to_value` wraps it through the bundle.
-- A card BUILDS one with `new <Component>` naming a sibling: the target holds an
-  argument map and the marker `cur_comp`, `cur.f = v` accumulates into it, and
-  the child is made at the first READ of `cur` through `control.make-instance`
-  — which only such a card imports, and which carries the optional
-  `runtime/make_child.wax`. Reading or writing THROUGH a child slot is refused
-  at compile time (`refuse_into_child`), because the instance is the host's and
-  the guest holds only a token. `tutucard/wasm/examples/Todos.html` is the
-  worked TodoMVC, with scenes that drive it.
-- **Instances are collected, both halves.** `install_gc` drops the handle a
-  successor replaced — which is every interaction, since a guest instance is
-  immutable. A row that is REMOVED is superseded by nothing, so that collector
-  cannot see it; `install_sweep` walks the root and retains what it finds.
-  `tutucard/build/check-instances.mjs` pins both.
+  `<template id="Comp:main">`. Each becomes its own state struct, its own
+  `tg_vt`, and its own arm of `tgc.make`; generated names are qualified
+  (`cm_Row_caption`) only when the file declares several, so a one-component
+  card compiles the same either way. The ROOT is the first component in the
+  file, or the one whose `<template>` carries `data-root`; the manifest lists it
+  first, because a host takes the head.
+- A card BUILDS a sibling with `new <Component>`: `cur.f = v` accumulates an
+  argument map and the child is made at the first READ of `cur`, as a
+  `tg_comp` wrapping a real `tg_inst`. There is no host hop and no token — the
+  instance is an ordinary GC struct in the parent's own state — which is the
+  difference the format was written for, and the reason reading THROUGH a
+  child is a call rather than a compile-time refusal.
+- **Instances the HOST holds are collected, both halves.** A module's own
+  children are the engine's to collect; what needs help is the handle table the
+  `&Guest` bridge keeps. `install_gc` drops the handle a successor replaced —
+  which is every interaction, since an instance is immutable — and a row that is
+  REMOVED is superseded by nothing, so `install_sweep` walks the root and
+  retains what it finds. `tutucard/build/check-instances.mjs` pins both.
 - **Property tests derive their generators from the spec block, not from a
   MoonBit type.** `derive(Arbitrary)` has nothing to derive over here — a
   component's shape is a `<script type="tutuca/spec">` block, not a type — so

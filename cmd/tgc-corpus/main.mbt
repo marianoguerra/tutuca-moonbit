@@ -66,7 +66,7 @@ fn main raise {
   )
 
   // The OTHER table: seventeen-odd rows about what a block SAID rather than
-  // what the state became. `tutucard/wasm`'s worst gap lived here — `enrich`
+  // what the state became. The backend this replaced had its worst gap here — `enrich`
   // and `bindWith` were absent from its generator entirely, which no
   // transition case was asking about.
   let vrows : Array[Json] = []

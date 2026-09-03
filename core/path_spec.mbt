@@ -40,7 +40,7 @@ pub(all) enum HandlerBucket {
 /// same two, so there is nothing to translate — what this pins is the ORDER,
 /// which is the WIT variant's case order and cannot be changed without
 /// changing the contract. It lives here, beside the enum, because it used to
-/// live in `dyncomp/host/guest.mbt` while `guests/sdk.mbt` and
+/// live in `tgc/host/guest.mbt` while `guests/sdk.mbt` and
 /// `internal/abi/layout.mbt` carried the same two numbers separately.
 pub fn HandlerBucket::ordinal(self : HandlerBucket) -> Int {
   match self {
@@ -261,7 +261,7 @@ declare pub fn IntentOpts::new(
 /// What a static intent handler is handed.
 ///
 /// `from` is the sender's position. A host reads it to decide whether the
-/// sender may ask — which is what `dyncomp/SECURITY.md` §5 says it cannot do
+/// sender may ask — which is what `tgc/SECURITY.md` §7 says it cannot do
 /// today — and the walk needs it anyway to route the answer, so the handler
 /// gets it for free.
 ///

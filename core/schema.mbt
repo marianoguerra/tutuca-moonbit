@@ -175,7 +175,7 @@ pub fn SchemaInfo::field_names(self : SchemaInfo) -> Array[String] {
 ///|
 /// A structural fingerprint of a schema that arrives at RUNTIME, for a caller
 /// with no generated one to carry: the dynamic-component host, which receives a
-/// guest's declared shape over the `tutuca:component` boundary and needs the
+/// guest's declared shape over the module boundary and needs the
 /// same thing `<v>_schema_fingerprint` gives a compiled component — a value
 /// that changes when the shape does, and not otherwise (it seeds the render
 /// cache's bucket, and says when stored state can no longer be read back).

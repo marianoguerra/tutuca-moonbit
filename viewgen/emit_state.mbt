@@ -7,7 +7,7 @@
 // Everything here is emitted `priv`. Generated and hand-written .mbt files
 // share a package, so the update function reaches the type without it
 // entering pkg.generated.mbti — a component's state is nobody else's
-// business. `pub` on demand is Stage 5's problem (dyncomp guests cross a
+// business. `pub` on demand is Stage 5's problem (guest modules cross a
 // package boundary), not this file's.
 
 ///|
@@ -241,7 +241,7 @@ fn emit_state_struct(
   for f in carried {
     // A field's own doc, which the block can finally carry. `FieldDef.doc` was
     // permanently `None` under WIT, and that absence is why
-    // `dyncomp/registry/descriptor.mbt` keeps a `field_docs` table OUTSIDE the
+    // `tgc/host.mbt` keeps a `field_docs` table OUTSIDE the
     // schema: a guest had per-field docs and a host component could not.
     match f.doc {
       Some(d) =>

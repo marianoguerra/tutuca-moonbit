@@ -230,9 +230,9 @@ let builtin_table : Map[String, Builtin] = {
 
   // -- Retired ---------------------------------------------------------------
   //
-  // Still here, and still answering, because a compiled dyncomp bundle carries
+  // Still here, and still answering, because a compiled loaded module carries
   // its view markup as a STRING inside the wasm and the host parses it at load
-  // time (`dyncomp/host/manifest.mbt`). Deleting a spelling would break a
+  // time (`tgc/host/manifest.mbt`). Deleting a spelling would break a
   // bundle nobody can recompile. `retired` is what points an author at the
   // one that stays; these go at the next apiVersion.
   "equals?": {

@@ -1,6 +1,6 @@
 // Handing the viewer a file, and reading one they chose.
 //
-// A LEAF, like dyncomp/persist: what a file transfer IS is worth reasoning
+// A LEAF, like tgc/persist: what a file transfer IS is worth reasoning
 // about without a browser in hand, so this is the seam and an in-memory
 // implementation, and `files/wasm` is the four FFI calls that make the same
 // trait talk to a real page.

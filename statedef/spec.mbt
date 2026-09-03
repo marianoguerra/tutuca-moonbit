@@ -45,7 +45,7 @@ pub(all) struct FieldDef {
   /// `#[…]` attributes, in source order, unresolved.
   ///
   /// Unresolved on purpose: `statedef` knows a field carries `min = 0` and
-  /// has no opinion about what a minimum MEANS. `dyncomp/jsonschema` does,
+  /// has no opinion about what a minimum MEANS. `tgc/host` does,
   /// and a parser that validated them would be the second place that decides
   /// which bounds exist.
   attrs : Array[(String, AttrValue)]

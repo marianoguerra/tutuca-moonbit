@@ -359,7 +359,7 @@ class MbCard extends HTMLElement {
     }
     const gen = (this._gen = (this._gen ?? 0) + 1);
     const source = this.text();
-    const { mountCard } = await import("./card-wasm.js");
+    const { mountCard } = await import("./card.js");
     const report = await mountCard(
       this.previewId,
       source,

@@ -538,7 +538,7 @@ test "Computed admits layout and relaxes the keyword table" {
 ///
 /// This is the entry point that widens what an SVG payload may carry: `fill`
 /// and `stroke` are refused BY NAME for an untrusted guest today
-/// (`dyncomp/policy/view_authority.mbt`) because a dynamic value could have
+/// (`tgc/policy/view_authority.mbt`) because a dynamic value could have
 /// been a `url()`. With a value rule there is nothing to guess.
 test "one value at a time, for a presentation attribute" {
   inspect(shown(payload().value("fill", "#1da1f2")), content="#1da1f2")

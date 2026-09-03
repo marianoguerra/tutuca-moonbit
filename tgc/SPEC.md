@@ -1,16 +1,17 @@
 # `tgc/1` — a WebAssembly component format on core wasm + GC
 
-**Status: prototype.** Everything below is implemented and tested
-(`tgc/abi`, `tgc/value`, `tgc/test/compose.test.mjs`). Nothing below is
-compatible with `tutuca:component@0.12.0`, and compatibility is not a goal —
-see [`../docs/dynamic-components.md`](../docs/dynamic-components.md) for what
-this replaces and why.
+Everything below is implemented and tested (`tgc/abi`, `tgc/value`,
+`tgc/emit`, `tgc/test/`). It replaces a Component Model format, and
+compatibility with that is not a goal — see
+[`../docs/dynamic-components.md`](../docs/dynamic-components.md) for the
+practical route in, and [`SECURITY.md`](SECURITY.md) for what a loaded module
+can and cannot do.
 
 ## 1. What this is, in one paragraph
 
 A component is **one core WebAssembly module** using the GC proposal and
-nothing else: no component model, no WIT, no `jco`, no `wasm-tools component`,
-no archive, no linear memory, no table. Modules built at different times by
+nothing else: no component model, no WIT, no archive, no linear memory, no
+table. Modules built at different times by
 different people with different toolchains instantiate together and compose
 into one tree. They agree because they carry the same **type preamble** —
 and wasm GC canonicalizes a recursion group *structurally*, so carrying it is
@@ -138,7 +139,7 @@ that has never heard of this repository produce one.
 
 Everything a module may reach comes from the namespace **`tut`**. A module
 declares no memory and no table, so its import section is its *complete*
-authority list — the property `dyncomp/SECURITY.md` relies on today, made
+authority list — the property `tgc/SECURITY.md` relies on today, made
 total. `tgc/test` asserts it for every prototype module.
 
 And it DISCRIMINATES: `tgc/emit` writes the body first and then imports what the
@@ -231,8 +232,8 @@ has. `tscript/conformance` pins both.
 
 ## 10. What the card compiler compiles
 
-`tgc/emit` is the third backend over `tscript`'s one AST, beside
-`tscript/emit_mbt` and the `tutucard/wasm` it replaces, and it is held to
+`tgc/emit` is one of two backends over `tscript`'s one AST, beside
+`tscript/emit_mbt`, and it is held to
 `tscript/conformance` — **48 of 48**, both tables (`tgc/test/conformance.test.mjs`).
 
 Every declared field is one slot in a `tg_vals`, whatever its type. A
@@ -310,8 +311,7 @@ worth naming because none of them showed up in the corpus:
 
 - **Number formatting.** The integer part is exact and up to six fractional
   digits are written with trailing zeros trimmed, so `0.1 + 0.2` reads as `0.3`.
-  At or beyond 2^63 a number reads as `Infinity`. `tutucard/wasm` made the same
-  trade; this inherits it.
+  At or beyond 2^63 a number reads as `Infinity`.
 - **Number parsing** is the same trade in reverse: sign, digits, fraction,
   exponent, and nothing else. The mantissa accumulates by multiplication rather
   than rounding correctly, so a long decimal can land an ulp out. The spellings
@@ -321,10 +321,11 @@ worth naming because none of them showed up in the corpus:
 
 ## 11. What is not here yet
 
-- **The host.** No `&Obj` wrapper, no renderer, no dispatch, no policy. The
-  security argument in `dyncomp/SECURITY.md` has to be re-made against this
-  import surface before anything untrusted is loaded through it.
-- **The playground mounts through `dyncomp/host`**, via the same
-  `__cardguest` surface the old backend installs. There is still no `tgc`-native
-  host — no `&Obj` wrapper written against `tg_inst`, no policy re-argued
-  against this import surface.
+- **A `tgc`-native `&Obj`.** The host mounts a module through `tgc/host`, which
+  wraps it as an ordinary `&Obj` over the `__cardguest` JSON surface. Nothing
+  downstream can tell that from a compiled-in component, which is why it works
+  — but it means a value crossing into the host is re-spelled as JSON rather
+  than handed over as the `tg_val` it already is. A wrapper written directly
+  against `tg_inst` is the next thing.
+- **Worker isolation.** `tgc/SECURITY.md` §7 leaves a runaway call open, and
+  nothing here closes it.

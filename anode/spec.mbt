@@ -421,7 +421,7 @@ declare pub fn ANode::has_raw_html(self : ANode) -> Bool
 /// template or a predicate's arguments.
 ///
 /// Purely syntactic: it says what the template NAMES, not what answers. A layer
-/// that knows which names a component declares (the dyncomp host does, from its
+/// that knows which names a component declares (the host does, from its
 /// manifest) is what turns that into a diagnostic. Call on COMPILED views, so a
 /// macro's body is walked as its expansion.
 ///

@@ -525,7 +525,7 @@ arithmetic, and a bare parameter — see
 
 `equals?` and `falsy?` are retired: `is` says the first and `not` says the
 second, and one meaning keeps one spelling. Both still parse — a compiled
-dyncomp bundle carries its view markup as a string and the host parses it at
+loaded module carries its view markup as a string and the host parses it at
 load time, so a spelling cannot simply be deleted — and `gen` hints
 where one is left.
 
@@ -1141,7 +1141,7 @@ That arrives in `Bundle::diagnostics()` at load, and a bound the type cannot
 carry never reaches the emitted JSON Schema — so an agent generating arguments
 is not told a timestamp has a maximum of zero.
 
-`tutuca new-guest` writes `"constraint": null` for a field with nothing to say,
+A generator writes `"constraint": null` for a field with nothing to say,
 which is the shape to copy.
 
 ## See also

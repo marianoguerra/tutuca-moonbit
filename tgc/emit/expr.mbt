@@ -116,16 +116,21 @@ fn emit_expr(ctx : Ctx, src : Src, e : @tutuca.Expr) -> String raise Refused {
     EIf(cond~, then_~, else_~, ..) =>
       emit_branch(ctx, src, cond, () => then_, () => else_)
     // A handler is handed no render row, so `@binding` has nothing to mean
-    // here; `$method` and `*dyn` are answered by the render stack and a
-    // compiled handler runs after one.
+    // here; `$method` is answered by the render stack and a compiled handler
+    // runs after one.
     EMethod(name~, ..) =>
       raise Refused(
         "`$\{name}` is answered by the render stack, and a handler runs after one",
       )
-    EDyn(name~, ..) =>
-      raise Refused(
-        "`*\{name}` is a dynamic lookup, which this backend does not carry yet",
-      )
+    // A `*name` is NOT a render read, even though it looks like one. The host
+    // resolves this component's declared lookups before it calls in — for a
+    // dispatch and for a render call alike — and hands the map over in the
+    // call's fifth slot, so this is a lookup in a map that is already here.
+    //
+    // The exception is a property SET, whose fifth slot carries the value
+    // being written; `dyn` is null there and this reads null, which is what
+    // "nothing above provides one" answers anyway.
+    EDyn(name~, ..) => "member(dyn, \{wax_str(name)})"
     EEventPath(segments~, ..) =>
       raise Refused(
         "`e.\{segments.join(".")}` is DOM event data, named in the view and passed as an argument",
@@ -205,13 +210,21 @@ fn emit_name(
           "`\{name}` is a \{@tscript.kind_word(kind)}, which is not something a value position can call",
         )
       }
-      let parts = ["f", "args"]
+      // A callable reads its arguments out of a `tg_vals`, so a call with
+      // arguments BUILDS one rather than spreading them: the callee's shape is
+      // fixed by the vtable and cannot vary per call site. `dyn` rides through
+      // unchanged — a `*name` read inside a callee is the same lookup the
+      // caller resolved.
+      let vals : Array[String] = []
       for a in args {
-        parts.push(emit_expr(ctx, src, a))
+        vals.push(emit_expr(ctx, src, a))
       }
-      "\{ctx.comp.id}_\{callable_suffix(kind)}_\{mangle(name)}(" +
-      parts.join(", ") +
-      ")"
+      let arg_list = if vals.is_empty() {
+        "args"
+      } else {
+        vals_array(src, ctx, vals, 0)
+      }
+      "\{ctx.comp.id}_\{callable_suffix(kind)}_\{mangle(name)}(f, \{arg_list}, dyn)"
     }
     // The checker has already rejected a name that resolves to nothing, so
     // reaching here means it resolved to something this backend has not

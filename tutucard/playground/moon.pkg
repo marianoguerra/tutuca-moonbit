@@ -3,9 +3,9 @@
 // The payload here is the whole story. The existing `playground/` ships a
 // 5.5 MB `moonc` worker, a prebuilt `.mi`/`.core` bundle per target, and a
 // toolchain pin asserted at assemble time — because it compiles the user's
-// MoonBit in the browser. A card needs none of that: `tutucard/wasm` turns the
-// source into a `tutuca:component@0.9.0` core wasm module, and that compiler is
-// a MoonBit LIBRARY in this bundle rather than a payload fetched beside it.
+// MoonBit in the browser. A card needs none of that: `tgc/emit` turns the
+// source into a core wasm module, and that compiler is a MoonBit LIBRARY in
+// this bundle rather than a payload fetched beside it.
 //
 // COMPILING used to be the second answer to a card and interpreting was the
 // first: the page parsed a card, mounted it where it stood, and showed what the
@@ -16,7 +16,7 @@
 //
 // The edit loop is therefore check → compile → instantiate → mount, and the
 // third step is the only one that is not a synchronous call: it lives in
-// `web/card-wasm.js` as `mountCard`, because `WebAssembly.compile` answers a
+// `web/card-tgc.js` as `mountTgcCard`, because `WebAssembly.compile` answers a
 // promise. What is left on this side is `check(source)` — the diagnostics, as
 // JSON, with real columns, which nothing in a view file could report until
 // `tscript` carried spans — and `mountCompiled`, which takes a module the page
@@ -26,11 +26,7 @@ import {
   "marianoguerra/tutuca/transactor",
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
-  "marianoguerra/tutuca/tutucard/wasm",
-  // The OTHER backend: core wasm plus GC, no component model. Beside the one
-  // above rather than replacing it while the host half is being built — this
-  // page can generate and download a `tgc` module today, and `tgcguest.mbt` is
-  // what mounts one.
+  // The card compiler: core wasm plus GC, no component model, no archive.
   "marianoguerra/tutuca/tgc/emit" @tgc,
   // Driving a card rather than showing one: the same bundle, mounted on the
   // in-memory DOM. Backend-agnostic, so what it proves is provable with no
@@ -42,11 +38,11 @@ import {
   // in-memory one, which is what keeps "click the third row" one thing.
   "marianoguerra/tutuca/testing/harness",
   "marianoguerra/tutuca/viewfile",
-  // What the compiled card is mounted AS: an ordinary dyncomp bundle. The
+  // What the compiled card is mounted AS: an ordinary loaded module. The
   // `&Guest` over the instantiated module is `cardguest.mbt`, and `policy` is
   // what this page will accept from one.
-  "marianoguerra/tutuca/dyncomp/host" @dyncomp,
-  "marianoguerra/tutuca/dyncomp/policy",
+  "marianoguerra/tutuca/tgc/host",
+  "marianoguerra/tutuca/tgc/policy",
   "moonbitlang/core/encoding/base64",
   "marianoguerra/tutuca/app/browser" @glue,
   "marianoguerra/tutuca/vdom/browser" @bdom,

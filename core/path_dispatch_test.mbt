@@ -144,7 +144,7 @@ test "root and bubbling predicates include saved frames" {
 ///|
 test "the bucket ordinals ARE the wire's case order" {
   // A numbering rather than a vocabulary, and the one thing about it that is a
-  // contract: `tutuca:component`'s dispatch variant lists `receive` first and
+  // contract: the guest dispatch variant lists `receive` first and
   // `intent` second, and a guest compiled against that order is a binary
   // nothing here can recompile. It was written down three times — here, in the
   // host's guest bridge, and in the card compiler's ABI constants — and a

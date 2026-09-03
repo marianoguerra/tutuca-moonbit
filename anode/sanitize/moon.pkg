@@ -2,14 +2,14 @@
 //
 // A LEAF over anode: it inspects a parsed view and answers what a caller
 // should refuse. It holds no policy, no bundle and no renderer, which is what
-// lets `dyncomp/policy` (the refusal), `lint` (an advisory) and `render` (the
+// lets `tgc/policy` (the refusal), `lint` (an advisory) and `render` (the
 // runtime half) each depend on it without depending on each other.
 //
-// See docs/sanitizer.md for the design and dyncomp/SECURITY.md §3 for why.
+// See docs/sanitizer.md for the design and tgc/SECURITY.md §7 for why.
 import {
   "marianoguerra/tutuca/anode",
   // The CSS value validator. Its own package, and a leaf over a tokenizer
-  // rather than over anode, so `vdom/filter` and `dyncomp/policy` can each
+  // rather than over anode, so `vdom/filter` and `tgc/policy` can each
   // reach it without going through this one. What it costs here is the
   // tokenizer, which every consumer of a sanitizer that renders markup it did
   // not write wants anyway — see `Sanitizer::css`.

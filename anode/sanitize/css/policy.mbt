@@ -86,7 +86,7 @@ pub(all) struct CssPolicy {
   ///
   /// True for a page's own tree and false for anything else. `Policy::check_style`
   /// and `Component::compile_style` are the other half of this, and are still
-  /// the string-concatenation they always were — `dyncomp/SECURITY.md` §4.
+  /// the string-concatenation they always were — `tgc/SECURITY.md` §7.
   stylesheet : Bool
 } derive(Eq, Debug)
 
@@ -122,7 +122,7 @@ pub fn CssPolicy::app() -> CssPolicy {
 /// Why one declaration did not survive.
 ///
 /// Structured rather than a message, for the reason `Violation` is: `@filter`
-/// turns one into a `Dropped` a host drains, `dyncomp/policy` would turn the
+/// turns one into a `Dropped` a host drains, `tgc/policy` would turn the
 /// same one into a `Refusal`, and the wording belongs to whoever is speaking.
 pub(all) enum CssReason {
   /// The tokenizer, the normalization phase, or the declaration splitter said

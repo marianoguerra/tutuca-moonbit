@@ -349,13 +349,13 @@ fn[S] make_typed(
 ///
 /// `schema` is REQUIRED, exactly as it is for a typed-state component. Being
 /// hand-written is not being under-described: a caller here knows what its
-/// instances answer to — a dyncomp guest's manifest lists its handlers, the
+/// instances answer to — a guest module's manifest lists its handlers, the
 /// storybook shell computes its own field set — and the descriptor is where
 /// that goes. Without it the inspector had nothing to show for these
 /// components and the runtime had nothing to be told.
 ///
 /// A `fields: []` schema is a fine answer when the instances really are
-/// opaque, which is the dyncomp contract: only views and handlers cross the
+/// opaque, which is the guest contract: only views and handlers cross the
 /// boundary, and saying so beats leaving the whole descriptor blank.
 pub fn Component::for_type(
   name~ : String,
@@ -382,7 +382,7 @@ pub fn Component::for_type(
   // Without this a `for_type` component cannot be INSTANTIATED, only adopted:
   // `make_fn` defaults to answering Null, and the field is package-private, so
   // a holder of foreign instances had nowhere to say how one is built. The
-  // dyncomp host worked around it with a `Bundle::make_instance` of its own,
+  // host worked around it with a `Bundle::make_instance` of its own,
   // which meant an app root could never simply be a guest. A card needs the
   // ordinary path, so the parameter is the ordinary answer.
   match make {

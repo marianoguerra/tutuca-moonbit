@@ -160,7 +160,7 @@ test "component inspector: sections toggle one by one and all at once" {
 /// A view compiled ahead of time carries no source: `View::from_ir` has a tree
 /// and an event table, and the template it came from stays in the .html file
 /// rather than being shipped in the binary to be printed. The panel says so
-/// instead of expanding an empty block. A view PARSED at run time (a dyncomp
+/// instead of expanding an empty block. A view PARSED at run time (a loaded
 /// guest, the playground) still has its source and still shows it.
 test "component inspector: an AOT view expands to a note, not empty source" {
   let h = @harness.mount_example(

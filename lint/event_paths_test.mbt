@@ -2,7 +2,7 @@
 //
 // The rule advises — the paths it names still resolve under the open profile
 // an author's own views run under. The REFUSAL half of this vocabulary lives
-// in `dyncomp/policy`, which walks the same events and refuses instead.
+// in `tgc/policy`, which walks the same events and refuses instead.
 
 ///|
 test "an off-list traversal step is reported, naming step and site" {

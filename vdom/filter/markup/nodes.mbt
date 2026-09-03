@@ -124,7 +124,7 @@ fn vdom_ns(ns : @html5.Namespace) -> @vdom.Ns? {
 /// call would make — and it is wrong for us in two ways.
 ///
 /// It is a hole. `@filter.url_attrs` knows `xlink:href`, and so does
-/// `untrusted_sink_attr` in `dyncomp/policy`, because that is the only spelling
+/// `untrusted_sink_attr` in `tgc/policy`, because that is the only spelling
 /// a VIEW can write. Neither knows `xlink href`, so
 /// `<a xlink:href="javascript:…">` inside a payload walked straight past the
 /// URL rule. That predates the safe directives — it is reachable through

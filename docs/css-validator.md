@@ -2,7 +2,7 @@
 
 `anode/sanitize/css` reads a declaration list, refuses everything it does not
 understand, and **re-emits what is left canonically**. This is what
-`dyncomp/SECURITY.md` §4 has been promising, and it is the answer to the one
+`tgc/SECURITY.md` §7 has been promising, and it is the answer to the one
 question the WHATWG Sanitizer API declines to have an opinion about: attribute
 VALUES. Its vocabulary is names, and `url(…)` and `position:fixed` both live in
 a value.
@@ -17,7 +17,7 @@ Before this, CSS was closed by refusing:
 - `Sanitizer::without_css()` dropped the `style` attribute everywhere and the
   `<style>` element in both namespaces. `SafeMarkupFilter::new` applied it on the
   way in, so `@setinnerhtml` and `@setinnersvg` payloads carried no CSS at all.
-- `dyncomp/policy/view_authority.mbt` refused `fill`, `stroke`, `clip-path`,
+- `tgc/policy/view_authority.mbt` refused `fill`, `stroke`, `clip-path`,
   `mask`, `filter`, `marker-*`, `cursor`, `list-style*`, `background-image` and
   `style` **by name** for an untrusted guest, with the comment "CSS accepts
   `url(...)` in each of these SVG/HTML presentation sinks". A constant
@@ -255,7 +255,7 @@ Nobody can hold the expansion in their head: `background` → `<bg-layer>#` →
 | `@setinnerhtml` / `@setinnersvg` (`SafeMarkupFilter`) | `payload()` | was `without_css()` — a blunt drop of both names |
 | `@setinnermd` (`MdFilter`, via `filter_for`) | `payload()` | was un-narrowed, with a second sanitizer inside `Build` for HTML blocks |
 | `@dangerouslysetinnerhtml` (`MarkupFilter`) | the host's | unchanged; the host's sanitizer decides, as it always did |
-| an untrusted dyncomp guest (`check_view`) | `payload()` | a CONSTANT `style` or presentation attribute is now read instead of refused by name |
+| an untrusted guest module (`check_view`) | `payload()` | a CONSTANT `style` or presentation attribute is now read instead of refused by name |
 | an app's own tree | opt-in `@filter.CssFilter` | new, and NOT in `Baseline` — see below |
 
 `Sanitizer::attribute_value(name, value, screen?)` is the one call that routes

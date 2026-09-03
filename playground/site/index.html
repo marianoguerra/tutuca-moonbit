@@ -117,8 +117,8 @@ let counter = counter_component()</code></pre>
           The examples above compile MoonBit in your browser, and that costs a
           5.5 MB payload. This example does not. A <strong>card</strong> is the
           same view file: schema, script, and templates. The page compiles the
-          card itself — into a <code>tutuca:component</code> WebAssembly module
-          it then instantiates — and that compiler is part of the runtime
+          card itself — into a WebAssembly module it then instantiates — and
+          that compiler is part of the runtime
           already on this page. Thus the card compiles and mounts in
           milliseconds. Edit the card. It mounts again while you type. There is
           no run step.
@@ -398,8 +398,7 @@ let counter = counter_component()</code></pre>
           <li><a href="./playground/">Full playground</a> — a larger editor with inspectors for state and activity</li>
           <li><a href="./storybook/">Storybook</a> — the compiled gallery of every ported docs example, with a Lint panel for each story</li>
           <li><a href="./counter/">Counter demo (js)</a> · <a href="./counter-wasm/">(WebAssembly)</a></li>
-          <li><a href="./universal/">Universal wasm loader</a> — drag a single <code>.tutuca.tar.gz</code> bundle onto the page. The page unpacks the bundle in the browser and mounts its wasm components. No build step is necessary. Components written in MoonBit <em>and</em> Rust render in the same way. Write one with <code>tutuca new-guest &lt;name&gt;</code>. The contract and the host are in the published package (see <a href="https://github.com/marianoguerra/tutuca-moonbit/blob/main/docs/dynamic-components.md">docs/dynamic-components.md</a>).</li>
-          <li><a href="./dyncomp-storybook/">Dyncomp storybook</a> — a gallery of the loaded bundles, not a blank page. It fetches the samples at mount and shows every component of every sample, once per named initial state.</li>
+          <li><a href="./tutucard/">Card playground</a> — write a component in one file and watch it compile to a WebAssembly module and mount, in the page, with no toolchain. The module is one file that carries its own manifest; the format and the host are in the published package (see <a href="https://github.com/marianoguerra/tutuca-moonbit/blob/main/docs/dynamic-components.md">docs/dynamic-components.md</a>).</li>
           <li><code>./cli/tutuca --help</code> — the native command-line tool</li>
         </ul>
       </section>

@@ -284,7 +284,7 @@ test "markdown is not a violation, under any config" {
 /// `for_each_child` reaches neither them nor the unexpanded body — so
 /// `has_raw_html`, which is built on it, returns false for this tree and
 /// `Policy::check_view` raises no refusal. That is the hole this walk closes;
-/// see dyncomp/SECURITY.md §3.
+/// see tgc/SECURITY.md §7.
 test "a macro call's slots are part of the caller's own view" {
   let tree = parsed(
     "<x:card><div @dangerouslysetinnerhtml=\".payload\"></div></x:card>",

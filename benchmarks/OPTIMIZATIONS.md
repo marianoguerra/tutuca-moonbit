@@ -821,7 +821,7 @@ In the update path (the biggest numbers on the board):
   Pass 1 distinguishes a `Const` from a `Val` expression, so a view whose
   sink-set attributes are ALL constant has nothing left for the filter to decide
   — but only if something CHECKED those constants, and `Policy::check_view` has
-  one call site (`dyncomp/host/bundle.mbt`). A plain app has no static pass, so
+  one call site (`tgc/host/bundle.mbt`). A plain app has no static pass, so
   for it "constant" means "unvalidated", and skipping constants would put a
   literal `href="javascript:…"` back on the page. So this one is not a pure
   optimization the way #13 was: it needs either a compile-time pass that checks

@@ -50,7 +50,8 @@ test("a component holds another module's instance in its own state", () => {
 
 test("a parent reads a field THROUGH a child", () => {
   // "a guest holds bridge handles, not pointers, so a parent cannot inspect its
-  // own children" — dyncomp/DESIGN.md. Here it is one `call_ref`.
+  // own children" was the old format's standing limitation. Here it is one
+  // `call_ref`.
   const dash = dashboardOf(counterOf(3, "Left"), clockOf());
   assert.deepEqual(host.get(dash, "labels"), ["Left", "Clock"]);
   assert.equal(host.get(dash, "total"), 3n + CLOCK_SECS);

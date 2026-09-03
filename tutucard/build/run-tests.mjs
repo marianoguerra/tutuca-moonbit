@@ -43,14 +43,14 @@ if (!globalThis.__tutucard) {
 
 const { EXAMPLES } = await import(pathToFileURL(join(OUT, "examples.js")).href);
 const { driveCard } = await import(
-  pathToFileURL(join(OUT, "card-wasm.js")).href
+  pathToFileURL(join(OUT, "card.js")).href
 );
 
 // The same two sets `check-examples.mjs` reads, and for the same reason: the
 // starter cards are JS strings in a file no MoonBit test can reach, and the
 // landing site's are `.html` files in no moon package.
 const SITE_CARDS = join(REPO, "playground", "site", "cards");
-const WASM_EXAMPLES = join(REPO, "tutucard", "wasm", "examples");
+const CARD_EXAMPLES = join(REPO, "tutucard", "examples");
 const htmlIn = (dir, label) =>
   readdirSync(dir)
     .filter((f) => f.endsWith(".html"))
@@ -62,7 +62,7 @@ const htmlIn = (dir, label) =>
 const cards = [
   ...EXAMPLES.map((e) => ({ name: e.name, source: e.source })),
   ...htmlIn(SITE_CARDS, "site/cards"),
-  ...htmlIn(WASM_EXAMPLES, "wasm/examples"),
+  ...htmlIn(CARD_EXAMPLES, "examples"),
 ];
 
 let failed = 0;
@@ -74,7 +74,7 @@ for (const card of cards) {
   // compiling it to find that out would cost a wasm module per card.
   if (!card.source.includes('type="tutuca/test"')) continue;
 
-  const report = await driveCard(card.source, "Card", { allowWax: true });
+  const report = await driveCard(card.source, "Card");
   if (report.ok === false && report.scenes === undefined) {
     console.error(`✗ ${card.name}: ${report.error ?? "did not compile"}`);
     failed++;

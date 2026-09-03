@@ -13,7 +13,9 @@ Read [`SPEC.md`](SPEC.md) for the format. This page is the tree.
 | `value/` | the canonical value host-side, plus CBOR and JSON both ways |
 | `rt/` | `tutuca-rt` — the shared function vocabulary, as a module |
 | `emit/` | card → `tgc` module. The third backend over `tscript`'s one AST. |
-| `host/` | `values.mjs` — `core.Value` JSON ↔ `tg_val`, the one copy |
+| `host/` | the host side: the `&Obj` wrapper, the manifest, `register_module`, and `values.mjs` — `core.Value` JSON ↔ `tg_val`, the one copy |
+| `policy/` | what a host will accept from a module it did not write |
+| `persist/` | a component that has to outlive the page |
 | `proto/` | three components, produced three different ways |
 | `test/` | the proofs |
 
@@ -23,17 +25,21 @@ Read [`SPEC.md`](SPEC.md) for the format. This page is the tree.
 node --test tgc/test/compose.test.mjs
 ```
 
-Fourteen assertions, each one a thing `tutuca:component@0.12.0` cannot do, with
-the reason named in the comment beside it. The three that matter most:
+Sixteen assertions, most of them a thing the Component Model format this
+replaced could not do, with the reason named in the comment beside it. The four
+that matter most:
 
 - a component **holds another module's instance in its own state** and reads a
-  field **through** it — the current format refuses this when the card compiles,
-  because "a guest holds bridge handles, not pointers";
-- a module is **re-entered while a call into it is active** — the Component
-  Model forbids exactly this;
+  field **through** it — one `call_ref`, no host hop and no token table;
+- a module is **re-entered while a call into it is active**, and copy on write
+  keeps that from becoming a cycle: writing into A answers a NEW A, so the
+  write that would close the ring is the write that leaves it open;
 - a module whose preamble was **spelled differently by a different toolchain**
   composes, and one with **one extra type inside the frozen group** is refused
-  at link rather than by a cast that traps three calls later.
+  at link rather than by a cast that traps three calls later;
+- a **mutable array handed IN** stays a channel into the module's state — the
+  one ordinary way to build a real cycle, and the engine's stack ends it with a
+  trap. See [`SECURITY.md`](SECURITY.md) §3a.
 
 ## The corpus
 
@@ -44,26 +50,26 @@ node --test tgc/test/conformance.test.mjs
 `tscript/conformance` is the language's semantics as data, and `tgc/emit` is the
 third implementation of them. **48 of 48**, both tables — the thirty
 transitions, and the seventeen rows about what a block *said* rather than what
-the state became. That second table is where `tutucard/wasm`'s worst gap lived
-and it was invisible: `enrich` and `bindWith` appeared nowhere in its generator,
-so a card using them compiled with no refusal to show for it and quietly lost
-its bindings. No transition case was asking.
+the state became. That second table is where the backend this replaced had its
+worst gap, and it was invisible: `enrich` and `bindWith` appeared nowhere in
+that generator, so a card using them compiled with no refusal to show for it and
+quietly lost its bindings. No transition case was asking.
 
 A backend not driven by the corpus is a backend with its own semantics.
 
 ## In the card playground
 
-The playground compiles, mounts and downloads a `tgc` module beside the one the
-old backend makes. Pick the backend in the header; the source does not change,
-only what compiles it.
+The playground checks, compiles, mounts and downloads a module, in the page,
+with no toolchain.
 
-Mounting reuses the whole existing host. `tutucard/web/card-tgc.js` installs the
-same `__cardguest[key]` surface `card-wasm.js` does, so `cardguest.mbt` mounts a
-`tgc` module unchanged and the views, renderer, dispatch and transactor above it
-are the ones that were already there. **That reuse is the claim, not a
-shortcut**: what the format replaced is the guest boundary and nothing above it.
+Mounting reuses the whole existing host. `tutucard/web/card.js` installs the
+`__cardguest[key]` surface, `cardguest.mbt` implements `&Guest` over it, and the
+views, renderer, dispatch and transactor above that are unchanged. **That reuse
+is the claim, not a shortcut**: what the format replaced is the guest boundary
+and nothing above it.
 
-Two things are simpler on that boundary, and both are the format:
+Two things are simpler on that boundary than in the format this replaced, and
+both are the format:
 
 - **there is no arena** — a compound value crossed the old one as a `u64` handle
   into a host table valid for one call, because WIT has no recursive types.

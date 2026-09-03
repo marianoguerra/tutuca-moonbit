@@ -27,11 +27,6 @@ pub enum Step {
   // walk `src_dir`, read every file, and write the generated
   // skill_assets_source(...) MoonBit module to `to` (skill-embed codegen).
   GenSkillAssets(src_dir~ : String, to~ : String)
-  // assemble a `tutuca:component` guest tree from its three sources and write
-  // the generated guest_template_source(...) MoonBit module to `to`. Not a
-  // GenSkillAssets with a different src_dir: the sources are three, and two of
-  // them are remapped on the way in (see cmd/dev's gen_guest_template).
-  GenGuestTemplate(to~ : String)
   // walk storybook/template/, remap the .tmpl names, and write the generated
   // storybook_template_source(...) MoonBit module to `to`. Its own step rather
   // than a GenSkillAssets because the names are remapped on the way in — a
@@ -115,7 +110,7 @@ const COUNTER_JS = "_build/js/debug/build/demo/counter/counter.js"
 ///|
 // dist ships the RELEASE wasm (the debug build is ~4x larger: 18 MB vs ~4.8 MB
 // for storybook), then shrinks it further with wasm-opt (see wasm_opt / the
-// `moon build … --release` steps in dist_steps / universal_steps).
+// `moon build … --release` steps in dist_steps).
 const COUNTER_WASM = "_build/wasm-gc/release/build/demo/counter_wasm/counter_wasm.wasm"
 
 ///|
@@ -186,11 +181,6 @@ pub fn tasks() -> Array[Task] {
       name: "gen-conformance",
       about: "project the conformance corpus into the view file the MoonBit backend is compiled from",
       commands: gen_conformance_commands(),
-    },
-    {
-      name: "gen-guest-bindings",
-      about: "regenerate the checked-in guest bindings from dyncomp/wit, then drift-check them",
-      commands: gen_guest_bindings_commands(),
     },
     {
       name: "migrate-check",
@@ -273,28 +263,11 @@ pub fn tasks() -> Array[Task] {
       ],
     },
     {
-      name: "guest-harness",
-      about: "build the guest bundles, then run the node harnesses over them (needs wasm-tools + jco)",
-      // The only RUNTIME coverage the guest ABI, the table codec and the
-      // bluesky/slack/rust guests have — eight node test files whose only
-      // invocation instruction was a sentence in CONTRIBUTING.md. It cannot be
-      // in `ci` (building a guest needs wasm-tools and jco, which CI has not
-      // got), but it can at least be one command like everything else.
-      commands: [
-        guest_list_check(),
-        {
-          label: "build · every guest bundle (see the `guests` task)",
-          prog: "node",
-          args: ["scripts/run-guest-harnesses.mjs"],
-        },
-      ],
-    },
-    {
       name: "sanitizer-defaults",
       about: "regenerate anode/sanitize/spec_default_gen.mbt from the WHATWG spec's built-in config, then drift-check (needs network)",
-      // The one generated-from-upstream file with no task: the CSS bundles have
-      // `css-bundle` and the guest bindings have their own, while this was a
-      // bare `node scripts/…` in two docs.
+      // The one generated-from-upstream file with no task: the CSS bundles
+      // have `css-bundle`, while this was a bare `node scripts/…` in two
+      // docs.
       //
       // Regenerate → fmt → drift-check, the same shape `skill-embed` and
       // `gen` use, rather than the script's own `--check`. That flag
@@ -373,22 +346,13 @@ pub fn tasks() -> Array[Task] {
       ],
     },
     {
-      name: "check-guest-list",
-      about: "hold dev/tasks.mbt's guest list against guests/guests.mjs",
-      // `guests` runs this too, but it belongs in `ci` on its own: the guest
-      // build needs wasm-tools + jco and so can never be in CI, which is
-      // exactly how `table` stayed unbuilt. This check is plain node.
-      commands: [guest_list_check()],
-    },
-    {
       name: "check-storybook-template",
       about: "scaffold a gallery with the embedded template and check its shape (structural: it depends on a PUBLISHED tutuca, so ci cannot compile it)",
       commands: [
-        // The guest template can be compiled in `ci` because the tree it writes
-        // depends on no module at all. This one depends on the published
-        // `marianoguerra/tutuca` — which will not contain the packages the
-        // scaffold imports until the release that adds them — so the compile
-        // check belongs to `examples/`, after a release. What is checkable here
+        // The scaffold depends on the published `marianoguerra/tutuca` —
+        // which will not contain the packages it imports until the release
+        // that adds them — so the compile check belongs to `examples/`, after
+        // a release. What is checkable here
         // is the shape: no placeholder left unsubstituted, the export list and
         // the page's `pub fn`s agreeing, and every file index.html asks for
         // being one build.mjs writes.
@@ -418,27 +382,6 @@ pub fn tasks() -> Array[Task] {
           label: "check · MODULE_VERSION matches moon.mod",
           prog: "node",
           args: ["scripts/check-module-version.mjs"],
-        },
-      ],
-    },
-    {
-      name: "check-guest-template",
-      about: "scaffold a guest with the embedded template and compile it (the only coverage `tutuca new-guest` has)",
-      commands: [
-        // The template is what someone writing their first tutuca:component
-        // guest reads, and nothing else compiles it: `ci` never builds a guest
-        // (`guests` needs wasm-tools and jco), and the tree is assembled from
-        // three sources with placeholders substituted at write time, so all
-        // three can be fine and the result still not compile. Both steps are
-        // needed because the template lives in the binary: regenerate the
-        // embed, rebuild, then run what a stranger would get.
-        moon("build · native CLI (with the guest template embedded)", [
-          "build", "--target", "native", "cmd/tutuca",
-        ]),
-        {
-          label: "check · scaffolded guest compiles",
-          prog: "node",
-          args: ["scripts/check-guest-template.mjs"],
         },
       ],
     },
@@ -606,8 +549,7 @@ fn migrate_check_commands() -> Array[Command] {
       prog: "moon",
       args: [
         "run", "--target", "native", "cmd/tutuca", "--", "migrate", "storybook",
-        "docs", "demo", "dyncomp", "playground/site/cards", "tutucard/wasm/examples",
-        "tscript/conformance/mbt",
+        "docs", "demo", "playground/site/cards", "tscript/conformance/mbt",
       ],
     },
   ]
@@ -627,10 +569,6 @@ fn gen_views_commands() -> Array[Command] {
   let files : Array[(String, String?)] = [
     ("demo/counterlib/counter.html", Some("Counter")),
     ("tscript/conformance/mbt/corpus.html", Some("Corpus")),
-    ("dyncomp/shell/loader_bar.html", Some("LoaderBar")),
-    ("dyncomp/ui/app.html", Some("UniversalApp")),
-    ("dyncomp/ui/std/std.html", None),
-    ("dyncomp/storybook/storybook.html", Some("DyncompStorybook")),
     ("storybook/inspector/activity.html", None),
     ("storybook/inspector/json.html", None),
     ("storybook/inspector/component_inspector.html", None),
@@ -710,7 +648,7 @@ fn gen_views_commands() -> Array[Command] {
   // half is committed — the git form failed the whole of `ci` on correct work,
   // which made `ci` unrunnable during exactly the kind of change it guards.
   // (`skill-embed` had the same defect and is fixed the same way; the
-  // guest-binding and fetched-upstream checks still have it.)
+  // fetched-upstream checks still have it.)
   //
   // Scoped to the generated modules by pathspec rather than run over the whole
   // tree, because the `moon fmt` above formats every source: an unrelated file
@@ -768,31 +706,6 @@ fn view_drift_snapshot(to : String) -> Command {
 }
 
 ///|
-/// Regenerate BOTH MoonBit guest binding trees from the one WIT
-/// (dyncomp/wit/tutuca-component.wit), then prove the checked-in output is
-/// reproducible. Same shape as `gen`: the generator normalizes and
-/// formats, so a clean `git diff` is the whole check. The Rust guest reads
-/// the same WIT through its `generate!` macro and needs no checked-in
-/// bindings. See guests/gen-bindings.mjs for why normalization is needed
-/// (wit-bindgen emits its FFI shims in hash order).
-fn gen_guest_bindings_commands() -> Array[Command] {
-  [
-    {
-      label: "wit-bindgen · every MoonBit guest, from dyncomp/wit + guests/sdk.mbt",
-      prog: "node",
-      args: ["guests/gen-bindings.mjs"],
-    },
-    {
-      label: "drift check · guests/ + dice are reproducible from the WIT",
-      prog: "git",
-      args: [
-        "diff", "--exit-code", "--", "guests", "examples/dyncomp-dice/dice",
-      ],
-    },
-  ]
-}
-
-///|
 fn build_commands() -> Array[Command] {
   [
     moon("build · wasm-gc", ["build", "--target", "wasm-gc"]),
@@ -824,24 +737,8 @@ fn assembled() -> Array[(String, String, () -> Array[Step])] {
       "skill-embed", "regenerate cli/skill_assets_gen.mbt from skill/tutuca/", skill_embed_steps,
     ),
     (
-      "guest-template-embed", "regenerate cli/guest_template_gen.mbt (the tree `tutuca new-guest` writes) from guests/counter + dyncomp/wit + guests/template",
-      guest_template_embed_steps,
-    ),
-    (
       "storybook-template-embed", "regenerate cli/storybook_template_gen.mbt (the gallery project `tutuca new-storybook` writes) from storybook/template",
       storybook_template_embed_steps,
-    ),
-    (
-      "universal", "assemble the drag-and-drop universal wasm demo + a sample .tutuca.tar.gz into dist/universal",
-      universal_steps,
-    ),
-    (
-      "dyncomp-storybook", "assemble the dyncomp storybook + every sample .tutuca.tar.gz into dist/dyncomp-storybook",
-      dyncomp_storybook_steps,
-    ),
-    (
-      "guests", "build every guest bundle (wit-bindgen output → component → ESM); needs wasm-tools + jco",
-      guest_build_steps,
     ),
     (
       "css-bundle", "regenerate css/{tailwind,margaui}_bundle_gen.mbt from the pinned tailwind npm release + margaui clone (needs network)",
@@ -876,10 +773,10 @@ fn composites() -> Array[(String, String, Array[String])] {
     // in `moon fmt` over everything.
     (
       "ci",
-      "gen drift + skill-embed drift + migrate drift + check + the example/skill/guest checks + test + build (build-smokes every backend & demo)",
+      "gen drift + skill-embed drift + migrate drift + check + the example/skill checks + test + build (build-smokes every backend & demo)",
       [
         "gen", "skill-embed", "storybook-template-embed", "check", "check-examples",
-        "check-skill", "check-guest-list", "check-guest-template", "check-storybook-template",
+        "check-skill", "check-storybook-template",
         // After `check`, because it runs the native CLI and so needs it to
         // build; before `test`, because a repo written in a retired spelling is
         // a fact about the sources rather than about any test.
@@ -898,9 +795,6 @@ fn dist_steps() -> Array[Step] {
   // refresh the CLI's embedded assets before the native build — both of them,
   // since both are written out by a command in the binary being built
   for step in skill_embed_steps() {
-    steps.push(step)
-  }
-  for step in guest_template_embed_steps() {
     steps.push(step)
   }
   for step in storybook_template_embed_steps() {
@@ -953,9 +847,7 @@ fn dist_steps() -> Array[Step] {
     Copy(from=STORYBOOK_WASM, to="\{DIST}/storybook/storybook_wasm.wasm"),
   )
   steps.push(Run(wasm_opt("\{DIST}/storybook/storybook_wasm.wasm")))
-  // the storybook host imports the dynamic-component bridge (tcomp namespace),
-  // so it ships that loader plus the counter guest bundle its Dynamic pane
-  // loads at runtime
+  // the storybook host page loads its own loader beside the wasm
   steps.push(
     Copy(
       from="demo/storybook_wasm/loader.mjs",
@@ -968,8 +860,8 @@ fn dist_steps() -> Array[Step] {
   // The Trace tab's Download and Load. `@panelsw.all` names `files/wasm`, so
   // the gallery's wasm declares the `tfiles` import and a page without this
   // file does not instantiate at all. Rewritten on the way, for the reason
-  // `dyncomp-loader.mjs` is: it imports the app loader by a repo-relative
-  // path, and in dist the two land flat beside the page.
+  // it imports the app loader by a repo-relative path, and in dist the two
+  // land flat beside the page.
   steps.push(
     WriteRewritten(
       from="files/wasm/loader.mjs",
@@ -1064,210 +956,6 @@ pub fn plan(name : String) -> Array[Step]? {
 }
 
 ///|
-/// Every guest bundle, in one list.
-///
-/// ONE list. The justfile is a thin wrapper over the `guests` task below, and
-/// `guests/guests.mjs` still owns which names `build-guest.mjs` accepts,
-/// because that is a fact about the script rather than about the build.
-///
-/// The Rust one is separate: same WIT, but it builds through cargo rather than
-/// moon, so it keeps its own script.
-fn moonbit_guests() -> Array[String] {
-  [
-    "counter", "table", "todo", "todomvc", "calculator", "tictactoe", "bluesky",
-    "mastodon", "slack", "dice",
-  ]
-}
-
-///|
-/// Where a guest's tree is, relative to the repo root.
-///
-/// The mirror of `guestDir` in `guests/guests.mjs`, and it exists for the one
-/// guest that is not under `guests/`: the die that `examples/dyncomp-dice`
-/// ships. That example is a CONSUMER of the published package — no path
-/// dependency anywhere under it, deliberately — but its guest implements this
-/// repo's WIT, and being out of the way is exactly how it came to sit at
-/// `tutuca:component@0.5.0` through two package bumps while everything else
-/// moved. Building and packing it here is what keeps it honest.
-fn guest_src_dir(name : String) -> String {
-  if name == "dice" {
-    "examples/dyncomp-dice/dice"
-  } else {
-    "guests/\{name}"
-  }
-}
-
-///|
-const RUST_GUEST = "rust-tempconv"
-
-///|
-/// Hold the list above against `guests/guests.mjs`, which owns the names
-/// `build-guest.mjs` accepts.
-///
-/// The two lists cannot become one: this package is I/O-free by design, so it
-/// cannot read the other. They can be made to disagree loudly instead. Pure
-/// node, so unlike the guest build itself it costs nothing and runs in `ci`.
-fn guest_list_check() -> Command {
-  {
-    label: "check · guest list matches guests/guests.mjs",
-    prog: "node",
-    args: ["scripts/check-guest-list.mjs", ..moonbit_guests()],
-  }
-}
-
-///|
-/// Build every guest bundle: wit-bindgen output → component → ESM.
-pub fn guest_build_steps() -> Array[Step] {
-  let out : Array[Step] = [Run(guest_list_check())]
-  for name in moonbit_guests() {
-    out.push(
-      Run({
-        label: "build · \{name} guest bundle (wit-bindgen output → component → ESM)",
-        prog: "node",
-        args: ["guests/build-guest.mjs", name],
-      }),
-    )
-  }
-  // the Rust guest — a polyglot sample, same WIT, authored in Rust (needs
-  // cargo + the wasm32-unknown-unknown target)
-  out.push(
-    Run({
-      label: "build · \{RUST_GUEST} guest bundle (cargo → component → ESM)",
-      prog: "node",
-      args: ["guests/\{RUST_GUEST}/build.mjs"],
-    }),
-  )
-  out
-}
-
-///|
-/// Pack each guest's core wasm + static assets into one droppable
-/// `.tutuca.tar.gz`, into a page's examples/.
-///
-/// `into` is a parameter rather than a constant because two pages want the same
-/// archives beside them — the universal host, where they are things to place,
-/// and the dyncomp storybook, where they are the story set. Packing twice into
-/// one directory and symlinking would tie the two pages' assembly together for
-/// no gain; they are a few hundred KB.
-pub fn guest_pack_steps(into~ : String) -> Array[Step] {
-  let out : Array[Step] = []
-  for name in [..moonbit_guests(), RUST_GUEST] {
-    out.push(
-      Run({
-        label: "pack · \{name} bundle → \{into}/\{name}.tutuca.tar.gz",
-        prog: "node",
-        args: [
-          "scripts/pack-bundle.mjs",
-          "\{guest_src_dir(name)}/dist/js",
-          "\{into}/\{name}.tutuca.tar.gz",
-        ],
-      }),
-    )
-  }
-  out
-}
-
-///|
-const UNIVERSAL_WASM = "_build/wasm-gc/release/build/demo/universal_wasm/universal_wasm.wasm"
-
-///|
-/// Assemble the universal wasm-component demo into dist/universal: the wasm-gc
-/// drop-shell app, its loader, and sample single-file bundles
-/// (examples/*.tutuca.tar.gz) to drop on the page or load by URL. Kept out of
-/// `dist` — the guest bundles need the component toolchain (wasm-tools +
-/// @bytecodealliance/jco; see guests/counter/README.md). This is the ONE page
-/// that hosts runtime-loaded bundles.
-pub fn universal_steps() -> Array[Step] {
-  dyncomp_page_steps(
-    label="universal demo",
-    demo="demo/universal_wasm",
-    wasm=UNIVERSAL_WASM,
-    into="universal",
-  )
-}
-
-///|
-/// Assemble one bundle-hosting page into `dist/<into>/`.
-///
-/// The two such pages differ in what they SHOW — a blank host to build on
-/// versus a gallery that fetches everything at mount — and in nothing about
-/// how they are assembled: same release build, same guest bundles, same four
-/// loader files with the same repointing, same packed archives beside them.
-/// That was eleven steps written out twice, which is eleven chances for the
-/// pages to be assembled differently for no reason anybody chose.
-fn dyncomp_page_steps(
-  label~ : String,
-  demo~ : String,
-  wasm~ : String,
-  into~ : String,
-) -> Array[Step] {
-  let dir = "\{DIST}/\{into}"
-  // The .wasm keeps the demo package's own name beside the page, which is what
-  // that page's index.html and loader already fetch.
-  let wasm_name = wasm.split("/").last().unwrap_or(wasm).to_owned()
-  [
-    Run(
-      moon("build · wasm-gc \{label} (release)", [
-        "build", "--target", "wasm-gc", "--release", demo,
-      ]),
-    ),
-    ..guest_build_steps(),
-    Mkdir(dir),
-    Mkdir("\{dir}/examples"),
-    Copy(from=wasm, to="\{dir}/\{wasm_name}"),
-    Run(wasm_opt("\{dir}/\{wasm_name}")),
-    Copy(from="\{demo}/loader.mjs", to="\{dir}/loader.mjs"),
-    Copy(from="app/wasm/loader.mjs", to="\{dir}/app-loader.mjs"),
-    // The dyncomp bridge imports the app one. In the repo (and in the published
-    // tarball, where both sit under marianoguerra/tutuca) that relative path
-    // resolves; in dist the two land flat beside the page, so repoint it — the
-    // same repointing the demo pages' <script src> gets.
-    WriteRewritten(
-      from="dyncomp/host/wasm/loader.mjs",
-      to="\{dir}/dyncomp-loader.mjs",
-      old_src="../../../app/wasm/loader.mjs",
-      new_src="./app-loader.mjs",
-    ),
-    // The THIRD file, and the one easiest to forget: `dyncomp-loader.mjs`
-    // `import()`s it lazily, only when an archive is actually being unpacked —
-    // so a page missing it mounts, draws, and fails on the first bundle with a
-    // message about a module nobody mentioned. It is the canonical ABI, which
-    // moved host-side in 0.12.0 (dyncomp/host/wasm/abi.mjs), and it has no
-    // imports of its own, so it is copied verbatim.
-    Copy(from="dyncomp/host/wasm/abi.mjs", to="\{dir}/abi.mjs"),
-    Copy(from="\{demo}/index.html", to="\{dir}/index.html"),
-    // pack each guest's core wasm + static assets into one droppable archive
-    ..guest_pack_steps(into="\{dir}/examples"),
-  ]
-}
-
-///|
-const DYNCOMP_STORYBOOK_WASM = "_build/wasm-gc/release/build/demo/dyncomp_storybook_wasm/dyncomp_storybook_wasm.wasm"
-
-///|
-/// Assemble the dyncomp storybook into dist/dyncomp-storybook: the wasm-gc
-/// gallery, its two loaders, and every sample bundle beside it — which this
-/// page FETCHES at mount rather than offering as buttons to press, because a
-/// gallery that opens empty is a gallery with an extra step.
-///
-/// Kept out of `dist` for the same reason `universal` is: the guest bundles
-/// need the component toolchain (wasm-tools + @bytecodealliance/jco), which CI
-/// does not have.
-///
-/// This is the second page that hosts runtime-loaded bundles, and the split
-/// between them is what each one is FOR: the universal host is a blank page a
-/// person builds on, and this shows everything a bundle declares without
-/// anybody building anything.
-pub fn dyncomp_storybook_steps() -> Array[Step] {
-  dyncomp_page_steps(
-    label="dyncomp storybook",
-    demo="demo/dyncomp_storybook_wasm",
-    wasm=DYNCOMP_STORYBOOK_WASM,
-    into="dyncomp-storybook",
-  )
-}
-
-///|
 /// Regenerate the CLI's embedded skill assets from skill/tutuca/. Run after
 /// editing the skill docs, before building the native CLI.
 pub fn skill_embed_steps() -> Array[Step] {
@@ -1332,19 +1020,6 @@ const STORYBOOK_EMBED : String = "cli/storybook_template_gen.mbt"
 
 ///|
 const STORYBOOK_EMBED_WAS : String = "_build/storybook_template_gen.mbt.was"
-
-///|
-/// Regenerate the CLI's embedded guest template — the tree `tutuca new-guest`
-/// writes out. Run after editing `guests/template/`, the WIT, or anything under
-/// `guests/counter` that the template borrows; `dist` runs it, and
-/// `check-guest-template` is what proves the result still compiles.
-///
-/// Ends in `moon fmt` for the same reason `skill-embed` does: the generator
-/// writes one tuple per file on one line, and the next task that formats
-/// everything would otherwise rewrite a file nobody edited.
-pub fn guest_template_embed_steps() -> Array[Step] {
-  [GenGuestTemplate(to="cli/guest_template_gen.mbt"), Run(moon("fmt", ["fmt"]))]
-}
 
 ///|
 /// Regenerate the CLI's embedded storybook template — the gallery project

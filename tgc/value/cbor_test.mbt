@@ -162,7 +162,7 @@ test "an instance is refused, and says what would carry one" {
     e => e.message()
   }
   assert_true(got.contains("component instance"), msg=got)
-  assert_true(got.contains("dyncomp/persist"), msg=got)
+  assert_true(got.contains("tgc/persist"), msg=got)
 }
 
 ///|

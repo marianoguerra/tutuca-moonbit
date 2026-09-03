@@ -1,25 +1,19 @@
-// The compiled card, mounted — the other half of the boundary `card-wasm.js`
-// holds.
+// The compiled card, mounted — the other half of the boundary `card.js` holds.
 //
-// The page next door compiles a card to a `tutuca:component@0.12.0` core module
-// and hands you the archive. That proves the BYTES are right. It does not prove
-// the module runs, and until something instantiated one and asked it for a
-// field, "this page produced a real guest" was a claim about a download.
+// The page next door compiles a card to a core wasm module and hands you the
+// file. That proves the BYTES are right. It does not prove the module runs, and
+// until something instantiated one and asked it for a field, "this page
+// produced a real component" was a claim about a download.
 //
-// So: `card-wasm.js` instantiates the module through the host's own `abi.mjs`
-// and installs five calls on `globalThis.__cardguest`; this implements
-// `dyncomp`'s `&Guest` over them, registers the manifest as an ordinary bundle
-// and mounts an instance. Nothing here is card-specific once the module is
-// running — `register_bundle` is the same call the universal host makes, and
-// what it registers is what a `.tutuca.tar.gz` dropped on that page would be.
+// So: `card.js` instantiates the module against the shared runtime and installs
+// a handful of calls on `globalThis.__cardguest`; this implements `&Guest` over
+// them, registers the module's own manifest and mounts an instance. Nothing
+// here is card-specific once the module is running — `register_module` is the
+// same call any host makes over a module it was handed.
 //
-// It is the js-target twin of `dyncomp/host/wasm/glue.mbt`, minus everything a
-// compiled card cannot reach: no bundle table (this page holds one card), no
-// load lifecycle (the page already has the bytes), no `$dyn` child markers (the
-// generator emits no `make-instance`, so a guest value is never another
-// instance). `abi.mjs` screens the module's IMPORT SECTION against the
-// contract, so a card importing anything outside it is refused before any of
-// this runs.
+// The module declares no memory and no table, so its IMPORT SECTION is its
+// complete authority list: a card that imports something the runtime does not
+// export fails to instantiate, before any of this runs. See `tgc/SECURITY.md`.
 
 ///|
 /// Whether a compiled card has been instantiated on this page.
@@ -125,9 +119,9 @@ extern "js" fn cardguest_with_field(
 /// because `Value::to_json` has no form for an `Obj` and writes the object's
 /// FIELDS instead — a copy of an instance's state under a name that no longer
 /// refers to it. What has to cross is the handle. See the twin in
-/// `dyncomp/host/wasm/glue.mbt`.
+/// `tgc/host/glue.mbt`.
 fn list_json(args : Array[@tutuca.Value]) -> String {
-  Json::array(args.map(v => @dyncomp.child_json(v))).stringify()
+  Json::array(args.map(v => @host.child_json(v))).stringify()
 }
 
 ///|
@@ -135,7 +129,7 @@ fn list_json(args : Array[@tutuca.Value]) -> String {
 fn fields_json(args : Map[String, @tutuca.Value]) -> String {
   let obj : Map[String, Json] = Map([])
   for name, v in args {
-    obj[name] = @dyncomp.child_json(v)
+    obj[name] = @host.child_json(v)
   }
   Json::object(obj).stringify()
 }
@@ -153,17 +147,17 @@ fn bucket_int(bucket : @tutuca.HandlerBucket) -> Int {
 ///
 /// The key is the MOUNT POINT's element id: a page with two `<mb-card>` embeds
 /// has two modules with two instance tables, so a guest has to say which one it
-/// means, exactly as `WasmGuest` carries a bundle id.
+/// means, exactly as `WasmGuest` carries a module id.
 struct CardGuest {
   key : String
-  /// The bundle this guest was registered as, once it has been.
+  /// The module this guest was registered as, once it has been.
   ///
-  /// Set after `register_bundle` and before the first instance is made, which
+  /// Set after `register_module` and before the first instance is made, which
   /// is the only order that works: a child token arriving from the guest is a
-  /// handle and a component NAME, and only the bundle knows how to wrap that
+  /// handle and a component NAME, and only the module knows how to wrap that
   /// pair as a `DynObj` the render stack will place. A guest that has not been
   /// registered yet cannot receive one, because nothing has called it.
-  registered : Ref[@dyncomp.Bundle?]
+  registered : Ref[@host.Module?]
 }
 
 ///|
@@ -171,7 +165,7 @@ struct CardGuest {
 /// for — at ANY depth, lists and maps included.
 ///
 /// `{"$dyn": {"handle": n, "comp": s}}` is the shape both hosts write, so this
-/// is `dyncomp/host/wasm/glue.mbt`'s `json_to_value` with a different bundle
+/// is `tgc/host/glue.mbt`'s `json_to_value` with a different module
 /// behind it. The generator emits `make-instance`, so a guest value can be
 /// another instance.
 fn CardGuest::json_to_value(self : CardGuest, j : Json) -> @tutuca.Value {
@@ -188,8 +182,8 @@ fn CardGuest::json_to_value(self : CardGuest, j : Json) -> @tutuca.Value {
             _ => return Null
           }
           match self.registered.val {
-            Some(bundle) =>
-              match bundle.wrap_instance(comp, handle) {
+            Some(module) =>
+              match module.wrap_instance(comp, handle) {
                 Some(v) => v
                 None => Null
               }
@@ -217,12 +211,12 @@ fn CardGuest::value_of(self : CardGuest, s : String) -> @tutuca.Value {
 }
 
 ///|
-impl @dyncomp.Guest for CardGuest with fn create(self, component, args) {
+impl @host.Guest for CardGuest with fn create(self, component, args) {
   cardguest_create(self.key, component, fields_json(args))
 }
 
 ///|
-impl @dyncomp.Guest for CardGuest with fn get_field(self, handle, name) {
+impl @host.Guest for CardGuest with fn get_field(self, handle, name) {
   let raw = cardguest_get_field(self.key, handle, name)
   if raw == "" {
     None
@@ -232,7 +226,7 @@ impl @dyncomp.Guest for CardGuest with fn get_field(self, handle, name) {
 }
 
 ///|
-impl @dyncomp.Guest for CardGuest with fn handle_dispatch(
+impl @host.Guest for CardGuest with fn handle_dispatch(
   self,
   handle,
   bucket,
@@ -248,11 +242,7 @@ impl @dyncomp.Guest for CardGuest with fn handle_dispatch(
     list_json(args),
     bindings_json(bindings),
   )
-  let empty : @dyncomp.DispatchResult = {
-    handled: false,
-    next: None,
-    msgs: [],
-  }
+  let empty : @host.DispatchResult = { handled: false, next: None, msgs: [], }
   let j = @json.parse(raw) catch { _ => return empty }
   guard j is Object(o) else { return empty }
   let handled = o.get("handled") is Some(True)
@@ -260,11 +250,11 @@ impl @dyncomp.Guest for CardGuest with fn handle_dispatch(
     Some(Number(n, ..)) => Some(n.to_int())
     _ => None
   }
-  // `intent-at` is the one the generator still cannot emit, so `card-wasm.js`
+  // `intent-at` is the one the generator still cannot emit, so `card.js`
   // binds that import to nothing and it never reaches this list. An intent's
   // `opts` DOES cross, because the route is the one part of it a card writes
   // at the call site.
-  let msgs : Array[@dyncomp.ControlMsg] = []
+  let msgs : Array[@host.ControlMsg] = []
   match o.get("msgs") {
     Some(Array(items)) =>
       for item in items {
@@ -326,7 +316,7 @@ impl @dyncomp.Guest for CardGuest with fn handle_dispatch(
 }
 
 ///|
-/// The one value a `reply` or a `fail` carries, as `card-wasm.js` sends it.
+/// The one value a `reply` or a `fail` carries, as `card.js` sends it.
 fn value_field(m : Map[String, Json], key : String) -> @tutuca.Value {
   match m.get(key) {
     Some(j) => @tutuca.Value::from_json(j)
@@ -337,7 +327,7 @@ fn value_field(m : Map[String, Json], key : String) -> @tutuca.Value {
 ///|
 /// An intent's routing (WIT `intent-opts`), as the bridge's JSON.
 ///
-/// The twin of `dyncomp/host/wasm/glue.mbt`'s, and a copy for the same reason
+/// The twin of `tgc/host/glue.mbt`'s, and a copy for the same reason
 /// `path_step` is one: that one is the wasm-gc host's and this page is the js
 /// one, and what they share is the JSON rather than the code.
 ///
@@ -382,10 +372,10 @@ fn intent_opts(j : Json?) -> @tutuca.IntentOpts {
 }
 
 ///|
-/// One relative path step of a `sendAt`, as `card-wasm.js` spells it:
+/// One relative path step of a `sendAt`, as `card.js` spells it:
 /// `{"field": "left"}`, `{"item": ["seq", "k"]}` or `{"at": ["seq", 3]}`.
 ///
-/// The twin of `dyncomp/host/wasm/glue.mbt`'s, and deliberately a copy rather
+/// The twin of `tgc/host/glue.mbt`'s, and deliberately a copy rather
 /// than a shared function: that one is the wasm-gc host's and this page is the
 /// js one, and the thing they share is the JSON rather than the code. Three
 /// cases is a small enough thing to say twice; the spelling is what has to
@@ -426,7 +416,7 @@ fn path_steps(j : Json?) -> Array[@tutuca.Step] {
 }
 
 ///|
-impl @dyncomp.Guest for CardGuest with fn render_call(
+impl @host.Guest for CardGuest with fn render_call(
   self,
   handle,
   category,
@@ -447,7 +437,7 @@ impl @dyncomp.Guest for CardGuest with fn render_call(
 }
 
 ///|
-impl @dyncomp.Guest for CardGuest with fn get_property(self, handle, name) {
+impl @host.Guest for CardGuest with fn get_property(self, handle, name) {
   let raw = cardguest_get_property(self.key, handle, name)
   if raw == "" {
     None
@@ -457,17 +447,12 @@ impl @dyncomp.Guest for CardGuest with fn get_property(self, handle, name) {
 }
 
 ///|
-impl @dyncomp.Guest for CardGuest with fn set_property(
-  self,
-  handle,
-  name,
-  value,
-) {
+impl @host.Guest for CardGuest with fn set_property(self, handle, name, value) {
   let raw = cardguest_set_property(
     self.key,
     handle,
     name,
-    @dyncomp.child_json(value).stringify(),
+    @host.child_json(value).stringify(),
   )
   let parsed = @json.parse(raw) catch { _ => return GuestPropertyMissing }
   match parsed {
@@ -487,12 +472,12 @@ impl @dyncomp.Guest for CardGuest with fn set_property(
 }
 
 ///|
-impl @dyncomp.Guest for CardGuest with fn with_field(self, handle, name, v) {
+impl @host.Guest for CardGuest with fn with_field(self, handle, name, v) {
   let next = cardguest_with_field(
     self.key,
     handle,
     name,
-    @dyncomp.child_json(v).stringify(),
+    @host.child_json(v).stringify(),
   )
   if next < 0 {
     None
@@ -505,7 +490,7 @@ impl @dyncomp.Guest for CardGuest with fn with_field(self, handle, name, v) {
 /// A card declares no `requests`, so there is no name this could answer to.
 /// Refusing by name is the honest reply, and it is what the host does with any
 /// request nobody claimed.
-impl @dyncomp.Guest for CardGuest with fn serve_intent(_self, name, _args) {
+impl @host.Guest for CardGuest with fn serve_intent(_self, name, _args) {
   Err(
     Str("a compiled card answers no requests, and this one asked for '\{name}'"),
   )
@@ -516,12 +501,12 @@ impl @dyncomp.Guest for CardGuest with fn serve_intent(_self, name, _args) {
 /// over and none to take back. Empty bytes are what a guest that does not
 /// persist answers, and `None` is the guest refusing them — which is what the
 /// host expects from one that never wrote any.
-impl @dyncomp.Guest for CardGuest with fn persist(_self, _handle) {
+impl @host.Guest for CardGuest with fn persist(_self, _handle) {
   b""
 }
 
 ///|
-impl @dyncomp.Guest for CardGuest with fn restore(_self, _component, _state) {
+impl @host.Guest for CardGuest with fn restore(_self, _component, _state) {
   None
 }
 
@@ -531,7 +516,7 @@ impl @dyncomp.Guest for CardGuest with fn restore(_self, _component, _state) {
 /// A card is copy-on-write, so EVERY keystroke supersedes a handle: the host's
 /// GC collects them and hands them to a guest that must drop them, or a card
 /// left open grows a table entry per interaction.
-impl @dyncomp.Guest for CardGuest with fn drop_instance(self, handle) {
+impl @host.Guest for CardGuest with fn drop_instance(self, handle) {
   cardguest_drop(self.key, handle)
 }
 
@@ -541,7 +526,7 @@ impl @dyncomp.Guest for CardGuest with fn drop_instance(self, handle) {
 ///
 /// A LIST rather than one set, because `globalThis.__cardguest[key]` is ONE
 /// instance table and more than one app can be reading it: the page mounts the
-/// card, and then `drive` mounts the SAME bundle again — once per scene, on the
+/// card, and then `drive` mounts the SAME module again — once per scene, on the
 /// in-memory DOM — under the same key, because the key names the module and
 /// there is only one of those. A sweep that kept what the app that raised it
 /// could reach and nothing else would collect every instance the others hold,
@@ -619,12 +604,12 @@ fn install_sweep(
 /// anything — it is just gone, and nothing was watching the place it left.
 ///
 /// So the other half is reachability, which the host can answer because it
-/// holds the root: walk the tree, keep what is found. A card is one bundle with
+/// holds the root: walk the tree, keep what is found. A card is one module with
 /// one table, which is what makes a sweep affordable here and not in general.
 fn live_handles(v : @tutuca.Value, out : Array[Int]) -> Unit {
   match v {
     Obj(o) => {
-      match o.field(@dyncomp.handle_field) {
+      match o.field(@host.handle_field) {
         Some(Num(h)) => {
           let handle = h.to_int()
           // A cycle cannot happen — a child is made before its parent holds it
@@ -667,15 +652,15 @@ fn live_handles(v : @tutuca.Value, out : Array[Int]) -> Unit {
 /// What this page will accept from a compiled card.
 ///
 /// `granted` rather than `untrusted`, and the difference is one thing: an
-/// untrusted bundle may carry no `<style>` block, and most cards on this page
-/// have one. That rule is right where it is — a host taking an archive from
+/// untrusted module may carry no `<style>` block, and most cards on this page
+/// have one. That rule is right where it is — a host taking a module from
 /// somewhere has no reason to let it write CSS — and wrong here, because the
-/// bundle was compiled from the source in the editor two panes away. The reader
+/// module was compiled from the source in the editor two panes away. The reader
 /// wrote it; there is nobody else to vouch.
 ///
 /// What it does NOT widen is what the module can do, because that was settled
-/// before this ran: `abi.mjs` checks the module's import section against the
-/// contract, so a card importing anything outside it is refused at
+/// before this ran: a module's import section is its complete authority list,
+/// so a card importing anything the runtime does not export is refused at
 /// instantiation whatever this says.
 fn card_policy() -> @policy.Policy {
   @policy.Policy::granted()
@@ -710,14 +695,14 @@ fn mount_failed(msg : String) -> String {
 }
 
 ///|
-/// Register the instantiated card as a dyncomp bundle and mount an instance
+/// Register the instantiated card as a module and mount an instance
 /// into the element with this id.
 ///
 /// The page calls `loadGuest` first — that is what puts the module behind
 /// `globalThis.__cardguest` — and passes the manifest the SAME compile
 /// produced. They travel together on purpose: a manifest's field list is the
 /// order `get-field` answers in, so a manifest paired with a different module is
-/// a bundle whose halves disagree.
+/// a module whose halves disagree.
 ///
 /// The instance is the app's ROOT rather than a child of some host component,
 /// which is what `App::new` taking a value makes possible. There is nothing for
@@ -754,39 +739,39 @@ pub fn mount_compiled(
   let scope = @component.ComponentStack::new()
   let slot = slot_of(id)
   let policy = card_policy()
-  // The guest is built BEFORE it is registered and told about the bundle
-  // afterwards, which is the only order available: `register_bundle` takes the
-  // guest, and the guest needs the bundle to wrap a child token. Nothing can
+  // The guest is built BEFORE it is registered and told about the module
+  // afterwards, which is the only order available: `register_module` takes the
+  // guest, and the guest needs the module to wrap a child token. Nothing can
   // call the guest in between.
   let guest = CardGuest::{ key: id, registered: Ref(None), }
-  let bundle = try {
-    let manifest = @dyncomp.DynManifest::from_json_string(manifest_json)
-    @dyncomp.register_bundle(scope, guest, manifest, policy~)
+  let module = try {
+    let manifest = @host.DynManifest::from_json_string(manifest_json)
+    @host.register_module(scope, guest, manifest, policy~)
   } catch {
     // Registration has one failure mode from a page's point of view — the
-    // bundle was refused — and one thing worth showing: why. The reasons are a
+    // module was refused — and one thing worth showing: why. The reasons are a
     // person's to act on, so they reach the page rather than collapsing into a
     // sentence about mounting.
     e => return mount_failed(e.message())
   }
-  guest.registered.val = Some(bundle)
-  guard bundle.component_names() is [component, ..] else {
+  guest.registered.val = Some(module)
+  guard module.component_names() is [component, ..] else {
     return mount_failed("the manifest declares no component to mount")
   }
   // "" is not "no fixture": it is "nothing was named", and a card that marked
   // one has already said what to show then.
-  let want = if init == "" { bundle.default_init(component) } else { init }
+  let want = if init == "" { module.default_init(component) } else { init }
   let fixture = if want == "" {
     None
   } else {
-    match @drive.fixture_of(bundle, component, want) {
+    match @drive.fixture_of(module, component, want) {
       Some(f) => Some(f)
       // Named and missing, which is a different thing from unnamed. The
       // sentence is `tutucard/drive`'s, because a page and a scene reporting
       // the same miss two different ways is how a reader learns to distrust
       // one of them.
       None => {
-        let names = bundle.init_names(component)
+        let names = module.init_names(component)
         return mount_failed(
           "no `tutuca/fixtures` fixture called `" +
           want +
@@ -815,14 +800,14 @@ pub fn mount_compiled(
     None => ([], Map([]))
   }
   scope.register_intent_handlers(@drive.intent_handlers(answers))
-  // …and the page's own behind them, in the scope OUTSIDE the bundle's. The
+  // …and the page's own behind them, in the scope OUTSIDE the module's. The
   // `lex` leg walks child -> parent, so a compiled card's `intent lex 'rows'`
-  // is offered to its bundle's own handlers first — it registers none — and
+  // is offered to its module's own handlers first — it registers none — and
   // then to these.
   scope.register_intent_handlers(playground_intents(slot, slot.gen))
   let made = match fixture {
-    Some(f) => bundle.make_instance(component, args=f.args)
-    None => bundle.make_instance(component)
+    Some(f) => module.make_instance(component, args=f.args)
+    None => module.make_instance(component)
   }
   guard made is Some(inst) else {
     return mount_failed("the guest would not create a '\{component}'")
@@ -840,13 +825,13 @@ pub fn mount_compiled(
     @bdom.opts_for(doc),
     view~,
   ) catch {
-    _ => return mount_failed("the bundle's views did not compile into an app")
+    _ => return mount_failed("the module's views did not compile into an app")
   }
   // The policy decides what a view may NAME; the same sanitizer makes the
   // render-time chain enforce it, so a policy is not half-applied by being
   // checked at registration and forgotten at render.
   app.set_sanitizer(policy.sanitizer)
-  @dyncomp.install_gc(app.transactor)
+  @host.install_gc(app.transactor)
   // …and the sweep, after it. `install_gc` drops what a successor replaced;
   // this drops what nothing points at any more. Subscribers run in
   // subscription order, so by the time this reads the root the superseded ones
@@ -892,10 +877,10 @@ pub fn mount_compiled(
   Json::object({
     "ok": Json::boolean(true),
     "component": Json::string(component),
-    "module": Json::string(bundle.module_name()),
+    "module": Json::string(module.module_name()),
     // A guest's views went through no build step, so these findings are the
     // only feedback its author gets.
-    "diagnostics": Json::array(bundle.diagnostics().map(Json::string)),
+    "diagnostics": Json::array(module.diagnostics().map(Json::string)),
   }).stringify()
 }
 
@@ -905,7 +890,7 @@ pub fn mount_compiled(
 /// The other thing a compiled card is good for, and the one a page cannot do:
 /// `mount_compiled` puts a card on a SCREEN, which proves it renders and
 /// proves nothing about what it does when pressed. This mounts the same
-/// bundle on the in-memory DOM instead, runs the block's steps through the
+/// module on the in-memory DOM instead, runs the block's steps through the
 /// same transactor, and hands back the rendered HTML — so a card can be
 /// checked by something with no page at all, which is what a build step and an
 /// agent both are.
@@ -917,7 +902,7 @@ pub fn mount_compiled(
 ///
 /// The manifest travels from the SAME compile the module came from, for the
 /// reason `mount_compiled` gives: a manifest's field list is the order
-/// `get-field` answers in, so one paired with a different module is a bundle
+/// `get-field` answers in, so one paired with a different module is a module
 /// whose halves disagree.
 pub fn drive(
   key : String,
@@ -938,7 +923,7 @@ pub fn drive(
     }
     file.tests
   }
-  let manifest = @dyncomp.DynManifest::from_json_string(manifest_json) catch {
+  let manifest = @host.DynManifest::from_json_string(manifest_json) catch {
     e => return drive_failed(e.message())
   }
   let guest = CardGuest::{ key, registered: Ref(None), }

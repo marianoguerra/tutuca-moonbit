@@ -4,7 +4,7 @@
 // A LEAF. It imports `mizchi/css/token` and core, and nothing of tutuca's — not
 // even `anode`, which is the parent of the directory it sits in. That is
 // deliberate: `anode/sanitize` needs it for the `style` attribute, `vdom/filter`
-// needs it for the same attribute at render time, and `dyncomp/policy` needs it
+// needs it for the same attribute at render time, and `tgc/policy` needs it
 // for a guest's presentation attributes. None of those three imports the other
 // two, so a validator that reached for any of them could only be used by one.
 //

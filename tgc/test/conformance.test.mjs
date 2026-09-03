@@ -121,7 +121,7 @@ test("the corpus is not empty", () => {
 // ── the OTHER table ─────────────────────────────────────────────────────────
 //
 // Seventeen rows about what a block SAID rather than what the state became.
-// `tutucard/wasm`'s worst gap lived here and was INVISIBLE: `enrich` and
+// The backend this replaced had its worst gap here, and it was INVISIBLE: `enrich` and
 // `bindWith` appeared nowhere in its generator, so a card using them compiled
 // with no refusal to show for it and quietly lost its bindings. No transition
 // case was asking.

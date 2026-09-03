@@ -494,7 +494,7 @@ test "setinnersvg reads a style attribute and still refuses an svg style element
 /// `fill` and `stroke` are not ordinary attributes: they set the CSS property
 /// of the same name, with the same grammar, so `fill="url(…)"` is a fetch and
 /// `fill="red"` is a colour. Before there was a value rule the only way to tell
-/// them apart was not to try — `dyncomp/policy/view_authority.mbt` refuses both
+/// them apart was not to try — `tgc/policy/view_authority.mbt` refuses both
 /// by NAME for an untrusted guest, on the grounds that a dynamic value could
 /// have been either.
 ///

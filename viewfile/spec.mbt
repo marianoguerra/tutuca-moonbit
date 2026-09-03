@@ -105,16 +105,6 @@ pub(all) struct ViewFile {
   /// The `<script type="tutuca/script">` blocks, unparsed, in file order.
   /// Empty for every file that predates the language.
   scripts : Array[ScriptBlock]
-  /// The `<script type="tutuca/wax">` blocks — hand-written Wax, unparsed, in
-  /// file order.
-  ///
-  /// The ESCAPE HATCH, and read by exactly one consumer: `tutucard/wasm`
-  /// compiles a card into a Wax module and this is source it splices in. The
-  /// interpreter has no Wax to run and `gen` has no module to put it in,
-  /// so for both of those a file carrying one is a file with a block they
-  /// ignore — which is what makes this additive rather than a fourth thing
-  /// every backend has to answer for.
-  wax : Array[ScriptBlock]
   /// The `<script type="tutuca/test">` scenes, parsed, in block order.
   ///
   /// Parsed here rather than handed back raw, and that puts it on the state
@@ -184,11 +174,6 @@ pub suberror FileError {
   /// Two `<script type="tutuca/script">` blocks answer for the same component
   /// — the name is the `for=` attribute, or "" for an unqualified block.
   DuplicateScriptBlock(String)
-  /// Two `<script type="tutuca/wax">` blocks answer for the same component.
-  /// Same rule as the script block and for the same reason: a component's
-  /// escapes are one body of source, and two would have to be concatenated in
-  /// an order the file does not state.
-  DuplicateWaxBlock(String)
   /// The spec block does not describe a component. `line` is the line in
   /// the HTML file, not in the block, because that is the file the author has
   /// open.

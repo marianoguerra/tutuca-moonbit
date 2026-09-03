@@ -1,5 +1,0 @@
-# Build output. `node build.mjs` regenerates both from source.
-_build/
-dist/
-node_modules/
-*.tutuca.tar.gz

@@ -1,6 +1,6 @@
 # What a `tgc` module can and cannot do
 
-The premise is the same one `dyncomp/SECURITY.md` set out: a component can be
+The premise: a component can be
 fetched from anywhere and mounted into a running app, and that is only worth
 building if it is possible to say precisely what such a component may do.
 
@@ -166,7 +166,7 @@ format carries rather than a call it offers.
 
 None of these were ever about the wasm contract. A module's views are **data** —
 HTML the host compiles with its own parser — so a module never touches the DOM,
-and `dyncomp/policy` decides what a view may reach: unsafe names, direct network
+and `tgc/policy` decides what a view may reach: unsafe names, direct network
 sinks, raw markup, guest-authored utility CSS and URL-bearing macro arguments
 are refused for an untrusted module; `<img src>` and `<a href>` reopen only for
 an origin settled before render.
@@ -175,9 +175,9 @@ Two rows the older document left **open** are still open, for the same reasons:
 
 - **`control.intent` → host handlers** needs caller-aware authorization. The
   plumbing exists (`IntentCall.from`) and no host uses it.
-- **A hung or runaway call** needs worker isolation. §4 narrows this — a
-  re-entrant cycle traps on stack exhaustion rather than hanging — but a module
-  that loops does not.
+- **A hung or runaway call** needs worker isolation. §4 narrows this — copy on
+  write keeps a reference cycle from forming, and the one way to build one
+  traps rather than hanging — but a module that loops does not.
 
 ## What to check when changing this
 

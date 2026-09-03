@@ -21,7 +21,6 @@ pub suberror FileError {
   UnclosedTemplate(String)
   DuplicateStateBlock
   DuplicateScriptBlock(String)
-  DuplicateWaxBlock(String)
   BadStateBlock(line~ : Int, message~ : String)
   BadInitBlock(line~ : Int, message~ : String)
   TwoRoots(String, String)
@@ -61,14 +60,12 @@ pub(all) struct ViewFile {
   state_block : Block?
   init : Array[(String, @statedef.InitState)]
   scripts : Array[ScriptBlock]
-  wax : Array[ScriptBlock]
   tests : Array[@scenedef.Scene]
   root : String
   legacy_spec : Bool
 } derive(Eq, @debug.Debug)
 pub fn ViewFile::script_for(Self, String) -> Block?
 pub fn ViewFile::state_of(Self, String, fallback~ : String) -> @statedef.StateDef?
-pub fn ViewFile::wax_for(Self, String) -> Block?
 
 pub(all) struct ViewSet {
   name : String

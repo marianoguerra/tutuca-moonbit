@@ -1,0 +1,19 @@
+// Storing a component so it survives the page.
+//
+// A LEAF, like tgc/policy and tgc/host: what a stored component
+// looks like and where it goes are worth reasoning about without a bundle in
+// hand, and `host` depends on this rather than the other way round. Nothing
+// here knows how to talk to a guest — `host` does that and hands over bytes.
+// Check: moon check tgc/persist
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "moonbitlang/core/json",
+  // A snapshot's guest bytes ride inside JSON, and a KV store holds text.
+  // base64 is what makes those two facts compatible.
+  "moonbitlang/core/encoding/base64",
+}
+
+import {
+  "moonbitlang/core/test",
+  "moonbitlang/core/debug",
+} for "test"

@@ -4,7 +4,7 @@
 // These types lived in the component package, which put them out of reach of
 // everything that only has a `Value` — the inspector needed a `Components`
 // registry to name an instance's own fields, `Value::to_json` had nothing to
-// walk, and a dyncomp guest was described as `fields: []`. They mention only
+// walk, and a guest module was described as `fields: []`. They mention only
 // `Value`, so living here costs nothing and is what lets `Obj::schema`
 // exist at all. The component package re-exports them (`pub using`) so
 // `@component.SchemaInfo` keeps resolving.

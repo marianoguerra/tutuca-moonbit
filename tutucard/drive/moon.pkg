@@ -1,7 +1,7 @@
 // Driving a card, headless.
 //
-// A card is mounted by registering its compiled module as an ordinary dyncomp
-// bundle and making an instance the root of an app. `tutucard/playground`
+// A card is mounted by registering its compiled module and making an instance
+// the root of an app. `tutucard/playground`
 // already does that, against a real page. This does the same against the
 // in-memory DOM — which is the whole difference, and the reason it is here
 // rather than in that package: memdom runs on every backend, so a scene needs
@@ -24,8 +24,8 @@ import {
   "marianoguerra/tutuca/vdom/memdom",
   "marianoguerra/tutuca/scenedef",
   "marianoguerra/tutuca/testing/harness",
-  "marianoguerra/tutuca/dyncomp/host" @dyncomp,
-  "marianoguerra/tutuca/dyncomp/policy",
+  "marianoguerra/tutuca/tgc/host",
+  "marianoguerra/tutuca/tgc/policy",
   "moonbitlang/core/json",
   "moonbitlang/core/debug",
 }

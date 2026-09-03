@@ -1,5 +1,5 @@
 // View::collect_method_names — what a template CALLS with `$name` (spec.mbt).
-// The dyncomp host compares this against a bundle's declared `methods`, which
+// The host compares this against a bundle's declared `methods`, which
 // is the only thing standing between a forgotten declaration and an attribute
 // that silently renders as nothing.
 

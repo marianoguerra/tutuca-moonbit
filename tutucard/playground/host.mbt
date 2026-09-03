@@ -72,12 +72,12 @@ fn slot_of(id : String) -> Slot {
 /// `drive` is the other thing to do with a compiled card, and the one no page
 /// is needed for: `mountCompiled` puts it on a screen, which proves it renders
 /// and proves nothing about what it does when pressed. `drive` mounts the same
-/// bundle on the IN-MEMORY DOM, runs the card's `<script type="tutuca/test">`
+/// module on the IN-MEMORY DOM, runs the card's `<script type="tutuca/test">`
 /// scenes through the same transactor, and answers the rendered HTML — so the
-/// same bundle that serves this page also answers to `node`, which is what a
+/// same module that serves this page also answers to `node`, which is what a
 /// build step and an agent both are.
 ///
-/// `resetSweep` is the one entry point a PAGE never calls: `card-wasm.js` calls
+/// `resetSweep` is the one entry point a PAGE never calls: `card-tgc.js` calls
 /// it when it installs a new instance table under a key, because the collector
 /// records what each app on that key could reach and those records are handles
 /// into the table that just went away.
@@ -85,12 +85,12 @@ fn slot_of(id : String) -> Slot {
 /// `compile` and `mountCompiled` are the two halves of showing a card: a card
 /// is mounted by compiling it and instantiating the module. Instantiation is
 /// `WebAssembly`, which answers a promise, so the sequence lives in
-/// `web/card-wasm.js` as `mountCard` — the one thing on this boundary that
+/// `web/card-tgc.js` as `mountTgcCard` — the one thing on this boundary that
 /// could not be a synchronous MoonBit call.
 pub fn install() -> Unit {
   publish(
     (source, name) => check(source, name),
-    (source, name, allow_wax) => compile(source, name, allow_wax),
+    (source, name) => compile(source, name),
     () => state_json(),
     () => classes_json(),
     () => activity_json(),
@@ -99,23 +99,22 @@ pub fn install() -> Unit {
     (id, manifest, init) => mount_compiled(id, manifest, init),
     (key, manifest, source, scenes) => drive(key, manifest, source, scenes),
     key => forget_sweep_roots(key),
-    (source, name) => compile_tgc(source, name),
     () => runtime_wasm(),
   )
 }
 
 ///|
-/// The same card, through the OTHER backend.
+/// Compile a card to a `tgc` module.
 ///
 /// `tgc/emit` compiles to a core wasm module using the GC proposal and nothing
 /// else — no component model, no WIT, no archive, no linear memory — and the
 /// module carries its own manifest, so what comes back here is one file rather
 /// than a file plus a sidecar. See `tgc/SPEC.md`.
 ///
-/// It is beside `compile` rather than replacing it while the host half is being
-/// built: this page can already GENERATE and DOWNLOAD a `tgc` module, and
-/// mounting one goes through `tgcguest.mbt`.
-pub fn compile_tgc(source : String, name : String) -> String {
+/// The wasm crosses as base64 because a MoonBit extern cannot hand JavaScript a
+/// byte array, and the page has to hold the real bytes: it instantiates them,
+/// and the download button hands you the same file.
+pub fn compile(source : String, name : String) -> String {
   let out = @tgc.compile(source, name~) catch {
     e =>
       return Json::object({
@@ -125,12 +124,6 @@ pub fn compile_tgc(source : String, name : String) -> String {
   }
   Json::object({
     "ok": Json::boolean(true),
-    // Which compiler made this, so a page holding a build knows which loader
-    // can instantiate it. A `tgc` module imports `tut`, and the other
-    // backend's loader screens its import section against
-    // `tutuca:component` — so handing one to the wrong loader is a refusal,
-    // not a mystery.
-    "backend": Json::string("tgc"),
     "component": Json::string(out.component),
     "components": Json::array(out.components.map(Json::string)),
     "wasm": Json::string(@base64.encode(out.wasm)),
@@ -174,7 +167,7 @@ pub fn runtime_wasm() -> String {
 ///|
 extern "js" fn publish(
   check : (String, String) -> String,
-  compile : (String, String, Bool) -> String,
+  compile : (String, String) -> String,
   state : () -> String,
   classes : () -> String,
   activity : () -> String,
@@ -183,10 +176,9 @@ extern "js" fn publish(
   mount_compiled : (String, String, String) -> String,
   drive : (String, String, String, String) -> String,
   reset_sweep : (String) -> Unit,
-  compile_tgc : (String, String) -> String,
   runtime_wasm : () -> String,
 ) -> Unit =
-  #|(check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive, resetSweep, compileTgc, runtimeWasm) => { globalThis.__tutucard = { check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive, resetSweep, compileTgc, runtimeWasm } }
+  #|(check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive, resetSweep, runtimeWasm) => { globalThis.__tutucard = { check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive, resetSweep, runtimeWasm } }
 
 ///|
 /// Tear a card down and forget its mount point.
@@ -217,11 +209,11 @@ pub fn unmount_at(id : String) -> Unit {
 ///
 /// MOUNTING is not here any more, and cannot be: a card is mounted by compiling
 /// it and instantiating the module, and instantiation is `WebAssembly` — which
-/// answers a promise. So the three steps live in `web/card-wasm.js` as
-/// `mountCard`, and what is left on this side is the half that needs no page
+/// answers a promise. So the three steps live in `web/card-tgc.js` as
+/// `mountTgcCard`, and what is left on this side is the half that needs no page
 /// (`check`) and the half that needs a module already running (`mountCompiled`).
 pub fn check(source : String, name : String) -> String {
-  let out = @wasm.check_card(source, name~) catch {
+  let out = @tgc.check_card(source, name~) catch {
     e =>
       return Json::object({
         "ok": Json::boolean(false),
@@ -417,60 +409,3 @@ fn classes_of(app : @app.App[@bdom.BrowserNode]?) -> String {
 
 // ---------------------------------------------------------------------------
 // the compiler
-
-///|
-/// Compile a card to a `tutuca:component@0.12.0` core wasm module.
-///
-/// The same card the page is already interpreting, put through the OTHER
-/// backend — so the two answers sit side by side and a difference between them
-/// is visible rather than theoretical. `tutucard/wasm` does the work; this only
-/// shapes it for a page.
-///
-/// The wasm crosses as base64 because a MoonBit extern cannot hand JavaScript a
-/// byte array, and the page has to hold the real bytes: it instantiates them
-/// through `abi.mjs` and packs them into the archive the download button hands
-/// you.
-pub fn compile(source : String, name : String, allow_wax : Bool) -> String {
-  let out = @wasm.compile(source, name~, allow_wax~) catch {
-    e =>
-      return Json::object({
-        "ok": Json::boolean(false),
-        "error": Json::string(e.message()),
-      }).stringify()
-  }
-  Json::object({
-    "ok": Json::boolean(true),
-    "component": Json::string(out.component),
-    "wasm": Json::string(@base64.encode(out.wasm)),
-    "size": Json::number(out.wasm.length().to_double()),
-    "wax": Json::string(out.wax),
-    "wat": Json::string(out.wat),
-    "manifest": out.manifest,
-    "descriptor": out.descriptor,
-    "fields": Json::array(out.fields.map(Json::string)),
-    "refusals": Json::array(
-      out.refusals.map(r => {
-        Json::object({
-          "kind": Json::string(r.kind),
-          "name": Json::string(r.name),
-          "reason": Json::string(r.reason),
-          "line": Json::number(r.line.to_double()),
-        })
-      }),
-    ),
-    // The other half of the refusal panel: what the card ANSWERED in Wax, and
-    // for a name it also declared, the reason the block language turned it
-    // away. A refusal and the escape that answers it are one story.
-    "escapes": Json::array(
-      out.escapes.map(e => {
-        Json::object({
-          "kind": Json::string(e.kind),
-          "name": Json::string(e.name),
-          "fn": Json::string(e.fn_name),
-          "declared": Json::boolean(e.declared),
-          "replaced": Json::string(e.replaced),
-        })
-      }),
-    ),
-  }).stringify()
-}

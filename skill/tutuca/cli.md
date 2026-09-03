@@ -47,7 +47,6 @@ inspect a component, the answer is a `moon test` block.
 | `storybook [dir]`        | Serve (or copy with `--out <dir>`) a pre-built gallery bundle over HTTP — a directory with an `index.html` and a `.wasm` beside it. Flags: `--port <n>` (default 4321, falling back to a free port), `--out <dir>`. A static file server; the gallery itself is a wasm page built from the project's own modules |
 | `new-storybook <name>`   | Scaffold that page: a gallery of your own components, one story per example a module declares. Writes the wasm export list, `index.html` and `build.mjs` — the parts a library cannot supply. Flags: `--dir <path>`, `--dry-run`, `--force`. Needs moon + node. See [storybook.md](./storybook.md) |
 | `install-skill`          | Copy this skill into `.claude/skills/` — the assets are compiled into the binary. Flags: `--user`/`--project`, `--dot-agents`, `--dry-run`, `--force` |
-| `new-guest <name>`       | Scaffold a `tutuca:component` guest — a wasm component a running app can load. The whole tree (WIT, generated bindings, SDK, a working component, build scripts) is compiled into the binary. Flags: `--dir <path>`, `--dry-run`, `--force`. Needs moon + wasm-tools + node, not wit-bindgen |
 | `feedback [message]`     | Append a feedback note (positional or stdin) to `~/.tutuca/feedback.jsonl`                                             |
 | `agent-context`          | Print a versioned JSON schema of every command, flag, exit code and error code |
 | `help [cmd]`             | Show usage; `help <command>` for per-command detail                                                                    |
@@ -399,9 +398,6 @@ Stable error codes (`@cli.error_codes` / the `CODE_*` constants):
 | `ERR_VIEW_GEN_FAILED`         | gen could not compile the view file     |
 | `ERR_SKILL_ASSETS_MISSING`    | bundled skill assets not found                |
 | `ERR_SKILL_TARGET_EXISTS`     | install-skill target exists; use `--force`    |
-| `ERR_GUEST_NAME_INVALID`      | new-guest name is not kebab-case, or ends in `-test` (which would make the source a MoonBit test file) |
-| `ERR_GUEST_TEMPLATE_MISSING`  | no guest template embedded in this binary     |
-| `ERR_GUEST_TARGET_EXISTS`     | new-guest target exists; use `--force`        |
 | `ERR_INTERNAL`                | a command crashed                             |
 
 ## Examples

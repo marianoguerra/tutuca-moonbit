@@ -586,7 +586,7 @@ pub fn Value::field_names(self : Value) -> Array[String] {
 ///
 /// What every consumer that wanted to SHOW an instance had been faking: the
 /// inspector read the names off a `Components` registry, the example builder
-/// took them as a parameter, the dyncomp host parsed them out of a JSON
+/// took them as a parameter, the host parsed them out of a JSON
 /// projection.
 pub fn Value::snapshot(self : Value) -> Map[String, Value] {
   let out : Map[String, Value] = Map([])

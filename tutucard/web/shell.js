@@ -35,9 +35,7 @@ const els = {
   preview: $("preview"),
   wasmSize: $("wasm-size"),
   download: $("download"),
-  downloadTgc: $("download-tgc"),
   downloadRt: $("download-rt"),
-  backend: $("backend"),
   load: $("load"),
   loaded: $("loaded"),
   loadedNote: $("loaded-note"),
@@ -352,12 +350,6 @@ function drawActivity() {
  * what tells a late answer from a live one, and dropping a stale one is what
  * stops the older card from being the one left on the page.
  */
-// The escape hatch is on in THIS page and off by default in the library, and
-// the difference is the whole point of it being a parameter: a playground is a
-// tool you point at your own card, so the code in it is yours. A page that
-// mounts cards it did not write should pass false.
-const ALLOW_WAX = true;
-
 let reloadGen = 0;
 
 async function reload() {
@@ -369,15 +361,12 @@ async function reload() {
   const gen = ++reloadGen;
   const src = source();
   const name = componentName(src);
-  // TWO BACKENDS, ONE SOURCE. The card does not change; what compiles it does.
-  // `tgc` is core wasm plus the GC proposal — no component model, no archive —
-  // and it mounts through the same host, because what the format replaced is
-  // the guest boundary and nothing above it.
-  const report = els.backend?.value === "tgc"
-    ? await (await import("./card-tgc.js")).mountTgcCard("preview", src, name, {})
-    : await (await import("./card-wasm.js")).mountCard("preview", src, name, {
-        allowWax: ALLOW_WAX,
-      });
+  const report = await (await import("./card.js")).mountCard(
+    "preview",
+    src,
+    name,
+    {},
+  );
   if (gen !== reloadGen) return;
   let issues;
   if (!report.ok) {
@@ -547,25 +536,11 @@ async function drawExamples(report) {
     return;
   }
   const shown = inits.slice(0, EXAMPLE_CAP);
-  // The SAME backend the preview mounted with. A gallery that instantiated the
-  // module through the other one refuses it — `abi.mjs` screens the import
-  // section against `tutuca:component`, and a `tgc` module imports `tut`, which
-  // is exactly the refusal it is for.
-  const viaTgc = report.backend === "tgc";
-  const { b64ToBytes } = await import("./card-wasm.js");
+  const { b64ToBytes, loadGuest } = await import("./card.js");
   const bytes = b64ToBytes(report.build.wasm);
-  const loadInto = viaTgc
-    ? async (id) => {
-        const { loadTgcGuest } = await import("./card-tgc.js");
-        await loadTgcGuest(bytes, id);
-      }
-    : await (async () => {
-        const { compileGuest, loadGuest } = await import("./card-wasm.js");
-        const module_ = await compileGuest(bytes);
-        return async (id) => {
-          await loadGuest(null, report.build.descriptor, id, { module: module_ });
-        };
-      })();
+  const loadInto = async (id) => {
+    await loadGuest(bytes, id);
+  };
   for (const init of shown) {
     const id = exampleId(init.name);
     const box = exampleBox(id, init);
@@ -903,7 +878,7 @@ function setMode(mode) {
  *
  * `preview` is the module this page compiled and mounted; `mounted` is the same
  * bytes instantiated through the host's own ABI and registered as an ordinary
- * dyncomp bundle. Tabs rather than two panes because they answer the same
+ * loaded module. Tabs rather than two panes because they answer the same
  * question about the same card — a reader compares them, and comparing is
  * switching rather than looking twice.
  *
@@ -940,16 +915,11 @@ function setPart(part) {
 // the other backend
 //
 // The card above is INTERPRETED. The same source also goes through
-// `tutucard/wasm`, which compiles it to a `tutuca:component@0.12.0` core wasm
-// module — in this page, with no server and no toolchain — and the panel shows
-// what came out. Two answers to one card, side by side, so a difference between
-// them is visible rather than theoretical.
+// `tgc/emit`, which compiles it to a core wasm module — in this page, with no
+// server and no toolchain — and the panel shows what came out.
 
 /** The last successful compile, held for the download button. */
 let lastBuild = null;
-
-/** Which output pane is showing. Wax by default: it is what the generator SAID. */
-let outTab = "wax";
 
 function drawRefusals(refusals) {
   els.refusals.replaceChildren();
@@ -967,7 +937,7 @@ function drawRefusals(refusals) {
 }
 
 function drawCompiled() {
-  els.compiled.textContent = lastBuild ? lastBuild[outTab] : "";
+  els.compiled.textContent = lastBuild ? lastBuild.wax : "";
 }
 
 /**
@@ -996,10 +966,7 @@ function showBuild(report) {
   els.compiled.classList.remove("bad");
   lastBuild = report;
   els.wasmSize.textContent = `${(report.size / 1024).toFixed(1)} KB · ${report.fields.length} field${report.fields.length === 1 ? "" : "s"}`;
-  // The ARCHIVE is the other backend's shape — `tutuca.json` plus a core
-  // module plus the views. A `tgc` module carries its own manifest, so there is
-  // nothing to pack and the button would be offering a file that means nothing.
-  els.download.disabled = report.backend === "tgc";
+  els.download.disabled = false;
   els.load.disabled = false;
   drawRefusals(report.refusals);
   drawCompiled();
@@ -1009,16 +976,16 @@ function showBuild(report) {
 // ---------------------------------------------------------------------------
 // ...and the module RUNNING
 //
-// The download proves the bytes. This runs them. `card-wasm.js` instantiates
-// the module through the host's own `abi.mjs` and installs it as
-// `globalThis.__cardguest`; `mountCompiled` implements dyncomp's `&Guest` over
-// those five calls, registers the manifest as an ordinary bundle and mounts an
-// instance into the pane below (`tutucard/playground/cardguest.mbt`).
+// The download proves the bytes. This runs them. `card.js` instantiates the
+// module against the shared runtime and installs it as `globalThis.__cardguest`;
+// `mountCompiled` implements `&Guest` over those calls, registers the module's
+// own manifest and mounts an instance into the pane below
+// (`tutucard/playground/cardguest.mbt`).
 //
 // Nothing on either side of that is card-specific once the module exists —
-// `register_bundle` is the call the universal host makes over a dropped
-// archive — which is the claim this button turns into something a reader can
-// check by pressing it.
+// `register_module` is the call any host makes over a module it was handed —
+// which is the claim this button turns into something a reader can check by
+// pressing it.
 
 /** Whether a compiled card is mounted, so a later build can mark it behind. */
 let mounted = false;
@@ -1069,24 +1036,13 @@ async function loadAndMount() {
   els.loadedIssues.replaceChildren();
   let report;
   try {
-    // Imported lazily, with the packer beside it: a reader who never presses
-    // this never fetches the guest bridge or the ABI it stands on.
-    const { b64ToBytes } = await import("./card-wasm.js");
-    // The manifest travels with the module it was compiled WITH. Its field list
-    // is the order `get-field` answers in, so a manifest paired with any other
-    // build would be a bundle whose halves disagree — and so would a module
-    // instantiated through the other backend's loader, which is why this asks
-    // which one made it rather than assuming.
+    // Imported lazily: a reader who never presses this never fetches the guest
+    // bridge or the runtime it stands on.
     //
     // Keyed by "loaded", which is this pane's own mount point: the preview
-    // above is a compiled card too now, and the two must not share a module.
-    if (lastBuild.backend === "tgc") {
-      const { loadTgcGuest } = await import("./card-tgc.js");
-      await loadTgcGuest(b64ToBytes(lastBuild.wasm), "loaded");
-    } else {
-      const { loadGuest } = await import("./card-wasm.js");
-      await loadGuest(b64ToBytes(lastBuild.wasm), lastBuild.descriptor, "loaded");
-    }
+    // above is a compiled card too, and the two must not share a module.
+    const { b64ToBytes, loadGuest } = await import("./card.js");
+    await loadGuest(b64ToBytes(lastBuild.wasm), "loaded");
     report = JSON.parse(
       globalThis.__tutucard.mountCompiled(
         "loaded",
@@ -1095,8 +1051,8 @@ async function loadAndMount() {
       ),
     );
   } catch (e) {
-    // A throw is `abi.mjs` refusing the module — most often for an import
-    // its import section asks for that is outside the contract.
+    // A throw is the engine refusing the module — most often for an import its
+    // import section asks for that the runtime does not export.
     report = { ok: false, error: String(e) };
   }
   if (!report.ok) {
@@ -1122,45 +1078,15 @@ for (const b of document.querySelectorAll("[data-show]")) {
   b.addEventListener("click", () => setShow(b.dataset.show));
 }
 
-for (const b of document.querySelectorAll("[data-out]")) {
-  b.addEventListener("click", () => {
-    outTab = b.dataset.out;
-    for (const other of document.querySelectorAll("[data-out]")) {
-      const on = other === b;
-      other.classList.toggle("on", on);
-      other.setAttribute("aria-selected", String(on));
-    }
-    drawCompiled();
-  });
-}
-
+// ONE FILE. There is no archive to build, because the module carries its own
+// manifest (`tgc.describe`) — which is what lets a toolchain that has never
+// heard of this page produce one.
 els.download.addEventListener("click", async () => {
-  if (!lastBuild) return;
-  // The packer is `card-wasm.js`'s, and the archive is the ordinary shape:
-  // `tutuca.json` plus one core wasm, and no executable JavaScript in it.
-  // Imported lazily so a reader who never downloads never fetches it.
-  const { packBundle, b64ToBytes } = await import("./card-wasm.js");
-  const blob = await packBundle(lastBuild, b64ToBytes(lastBuild.wasm));
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `${lastBuild.component.toLowerCase()}.tutuca.tar.gz`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-});
-
-// The `tgc` module, saved. ONE FILE — no archive to build, because the module
-// carries its own manifest, which is what lets a toolchain that has never heard
-// of this page produce one.
-//
-// It compiles rather than reusing `lastBuild`: that is the OTHER backend's
-// build, and handing somebody a file labelled `tgc` that came out of the
-// component-model compiler would be the worst kind of wrong.
-els.downloadTgc?.addEventListener("click", async () => {
-  const { downloadTgcModule } = await import("./card-tgc.js");
+  const { downloadModule } = await import("./card.js");
   const src = source();
-  const report = downloadTgcModule(src, componentName(src));
+  const report = downloadModule(src, componentName(src));
   if (!report.ok) {
-    els.status.textContent = "cannot compile for tgc";
+    els.status.textContent = "cannot compile";
     els.status.className = "status bad";
   }
 });
@@ -1169,17 +1095,13 @@ els.downloadTgc?.addEventListener("click", async () => {
 // which is the point of it — so a page that hosts several components fetches
 // this once and instantiates it once.
 els.downloadRt?.addEventListener("click", async () => {
-  const { downloadRuntime } = await import("./card-tgc.js");
+  const { downloadRuntime } = await import("./card.js");
   const report = await downloadRuntime();
   if (!report.ok) {
     els.status.textContent = "cannot build the runtime";
     els.status.className = "status bad";
   }
 });
-
-// Switching backend remounts the same source through the other compiler, so
-// what differs on screen is the backend and nothing else.
-els.backend?.addEventListener("change", () => reload());
 
 /** A structured edit, spliced back into the one string that is the card. */
 function onPartInput() {

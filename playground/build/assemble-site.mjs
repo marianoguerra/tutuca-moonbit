@@ -16,7 +16,7 @@
 //   dist/site/embed.js        ← the <mb-playground> custom element
 //   dist/site/examples/*.mbt  ← the editable example sources
 //   dist/site/card-embed.js   ← the <mb-card> custom element (+ regions.js)
-//   dist/site/card-wasm.js    ← what it imports to mount (+ abi.mjs)
+//   dist/site/card.js         ← what it imports to mount (+ tgc-values.mjs)
 //   dist/site/tutucard.js     ← the card runtime, which is the whole payload
 //   dist/site/margaui.{js,wasm} ← the class compiler <mb-card margaui> fetches
 //   dist/site/editor.bundle.js ← the CodeMirror <mb-card codemirror> fetches
@@ -24,7 +24,7 @@
 //
 // Prereq: assemble.mjs and tutucard/build/assemble.mjs have run. Run:
 //   node playground/build/assemble-site.mjs
-import { existsSync, mkdirSync, rmSync, readdirSync, readFileSync, cpSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, readdirSync, readFileSync, writeFileSync, cpSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -54,7 +54,7 @@ cpSync(join(SITE, "examples"), join(outSite, "examples"), { recursive: true });
 // The card half: the element, the modules it imports, the runtime, and the
 // cards themselves.
 //
-// `card-wasm.js` and `abi.mjs` are the mount path, and they are here because
+// `card.js` and `tgc-values.mjs` are the mount path, and they are here because
 // `reload()` `import()`s the first LAZILY — so a copy list that forgot them
 // assembled, deployed, and 404'd only when a reader looked at a card. Nothing
 // in this file is a build artifact: assembling the site alone leaves every
@@ -63,11 +63,18 @@ cpSync(join(SITE, "examples"), join(outSite, "examples"), { recursive: true });
 cpSync(join(CARDWEB, "card-embed.js"), join(outSite, "card-embed.js"));
 cpSync(join(CARDWEB, "regions.js"), join(outSite, "regions.js"));
 cpSync(join(CARDWEB, "margaui.js"), join(outSite, "margaui.js"));
-cpSync(join(CARDWEB, "card-wasm.js"), join(outSite, "card-wasm.js"));
-// The host's own canonical ABI, from the one place it is written — the same
-// source `tutucard/build/assemble.mjs` copies it from, and for the same
-// reason: `card-wasm.js` instantiates a compiled card through it.
-cpSync(join(REPO, "dyncomp", "host", "wasm", "abi.mjs"), join(outSite, "abi.mjs"));
+cpSync(join(CARDWEB, "card.js"), join(outSite, "card.js"));
+// The value bridge, from the one place it is written — the same source
+// `tutucard/build/assemble.mjs` copies it from, and rewritten the same way,
+// because `card.js` imports it by a repo-relative path that is flat here.
+cpSync(join(REPO, "tgc", "host", "values.mjs"), join(outSite, "tgc-values.mjs"));
+writeFileSync(
+  join(outSite, "card.js"),
+  readFileSync(join(outSite, "card.js"), "utf8").replace(
+    "../../tgc/host/values.mjs",
+    "./tgc-values.mjs",
+  ),
+);
 cpSync(join(SITE, "cards"), join(outSite, "cards"), { recursive: true });
 // Two artifacts of the card build rather than of this one: the runtime every
 // embed needs, and the margaui compiler an `<mb-card margaui>` fetches when it
@@ -92,23 +99,8 @@ for (const [name, why] of FROM_CARD_BUILD) {
   }
 }
 
-// The page links ./universal/ and ./dyncomp-storybook/, and neither is built by
-// `dist`: both need the component toolchain (wasm-tools + jco) that CI does not
-// have, so they are their own tasks. Say which task, rather than leaving a dead
-// link to be found by clicking it.
-for (const [dir, task] of [
-  ["universal", "universal"],
-  ["dyncomp-storybook", "dyncomp-storybook"],
-]) {
-  if (!existsSync(join(DIST, dir))) {
-    console.warn(
-      `  note: dist/${dir}/ is missing — the page links it; run the ${task} task to build it`,
-    );
-  }
-}
-
 // Every relative specifier in what we just copied must resolve INSIDE
-// dist/site/. This exists because `card-wasm.js` was missing from the list
+// dist/site/. This exists because `card.js` was missing from the list
 // above for as long as it took someone to open a card on the deployed site:
 // `card-embed.js` imports it lazily, so the build was clean, the page loaded,
 // and the 404 waited in `reload()`. A copy list cannot be checked by reading

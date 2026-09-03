@@ -1,7 +1,7 @@
 ///| The event-handler rule, and `Baseline` composing it with the URL rule.
 ///
 /// This is a NAME rule, unlike everything in `url_test.mbt`. It lives at render
-/// time only because the pass that settles names runs for dyncomp guests and
+/// time only because the pass that settles names runs for guest modules and
 /// nobody else — see the header of `handler.mbt`.
 
 ///|

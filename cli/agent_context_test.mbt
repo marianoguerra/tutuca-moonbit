@@ -28,11 +28,11 @@ test "schema top-level shape" {
     "errorCodes", "commands",
   ])
   guard! top.get("schemaVersion") is Some(Number(v, ..))
-  assert_eq(v, 7)
+  assert_eq(v, 8)
   @debug.assert_eq(top.get("cli"), Some(Json::string("tutuca")))
   @debug.assert_eq(top.get("version"), Some(Json::string(@cli.VERSION)))
   guard! top.get("errorCodes") is Some(Array(codes))
-  assert_eq(codes.length(), 15)
+  assert_eq(codes.length(), 12)
   guard! top.get("globalFlags") is Some(Array(flags))
   assert_eq(flags.length(), 2)
   guard! top.get("exitCodes") is Some(Array(exits))
@@ -43,8 +43,8 @@ test "schema top-level shape" {
 test "the command list is exactly the commands that exist" {
   guard! schema() is Object(top)
   @debug.assert_eq(names_of(top), [
-    "help", "feedback", "install-skill", "new-guest", "new-storybook", "storybook",
-    "gen", "migrate", "trace", "gen-tailwind-css", "gen-margaui-css", "watch", "agent-context",
+    "help", "feedback", "install-skill", "new-storybook", "storybook", "gen", "migrate",
+    "trace", "gen-tailwind-css", "gen-margaui-css", "watch", "agent-context",
   ])
 }
 

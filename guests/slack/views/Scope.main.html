@@ -1,8 +1,0 @@
-<div class="scope rounded-box bg-base-200 px-3 py-2 flex flex-col gap-1 text-xs opacity-70" @show="$hasAny" :title="$summary">
-  <div class="scope-label uppercase tracking-widest opacity-60">What this answer covers</div>
-  <div class="scope-kinds" @text="$kindsLabel"></div>
-  <div class="scope-scanned" @show="$hasScanned" @text="$scannedLabel"></div>
-  <div class="scope-dms" @show="$hasDmNote" @text="$dmLabel"></div>
-  <div class="scope-truncated font-medium" @show=".truncated" @text="$truncatedLabel"></div>
-  <div class="scope-note" @show="truthy? .note" @text=".note"></div>
-</div>

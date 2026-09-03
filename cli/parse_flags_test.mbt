@@ -36,7 +36,7 @@ test "an unknown flag suggests a real one, for every command that has flags" {
       (["gen", "a.html", "--nam"], "--name"),
       (["storybook", "--prot", "80"], "--port"),
       (["install-skill", "--forc"], "--force"),
-      (["new-guest", "clock", "--dr"], "--dir"),
+      (["new-storybook", "app", "--dr"], "--dir"),
     ] {
     let (argv, want) = probe
     let e = emit_of(@cli.plan(argv))

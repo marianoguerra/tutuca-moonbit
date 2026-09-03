@@ -5,7 +5,7 @@
 //
 // Scope: this package RUNS no component-model rules (field/method/provide
 // checks need the component layer). It still owns their vocabulary —
-// `UndeclaredMethod` and `InertConstraint` are raised by the dyncomp host,
+// `UndeclaredMethod` and `InertConstraint` are raised by the host,
 // which has the manifest in hand, and named/worded here so one finding does not
 // print in a second format. Findings are plain data; formatting is the caller's
 // job.
@@ -50,12 +50,12 @@ pub(all) enum LintCode {
   /// An `e.<path>` handler argument traverses a step off the event-path
   /// allowlist (`e.target.form.action`). A HINT for an author's own views —
   /// the path resolves under the open profile — because the same step is
-  /// REFUSED for guest-supplied views: a dyncomp host running the safe
+  /// REFUSED for guest-supplied views: a host running the safe
   /// profile refuses the bundle at registration naming this step. See
   /// `@eventpath.EventPathProfile`.
   EventPathUnsafeStep
   /// A declared bound the field's type cannot carry — a `max-len` on a number,
-  /// a `min`/`max` on text. Raised by the dyncomp host at load.
+  /// a `min`/`max` on text. Raised by the host at load.
   InertConstraint
   HtmlTagNameHasUppercase
   HtmlSvgTagWillLowercase

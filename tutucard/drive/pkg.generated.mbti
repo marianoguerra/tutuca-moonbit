@@ -4,9 +4,9 @@ package "marianoguerra/tutuca/tutucard/drive"
 import {
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/core",
-  "marianoguerra/tutuca/dyncomp/host",
   "marianoguerra/tutuca/scenedef",
   "marianoguerra/tutuca/testing/harness",
+  "marianoguerra/tutuca/tgc/host",
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/memdom",
   "moonbitlang/core/debug",
@@ -21,13 +21,13 @@ pub fn drive_scene(@harness.Harness[@memdom.MemNode], @scenedef.Scene, take_log?
 
 pub fn fixture_drive(@host.DynInitDef) -> (Array[@scenedef.Step], Map[String, @core.IntentAnswer])
 
-pub fn fixture_of(@host.Bundle, String, String) -> @host.DynInitDef?
+pub fn fixture_of(@host.Module, String, String) -> @host.DynInitDef?
 
 pub fn intent_handlers(Map[String, @core.IntentAnswer]) -> Map[String, Array[@core.IntentFn]]
 
 pub fn report_json(Array[SceneResult]) -> Json
 
-pub fn run(&@host.Guest, @host.DynManifest, Array[@scenedef.Scene], root? : String, take_log? : () -> Array[String], on_bundle? : (@host.Bundle) -> Unit, on_app? : (@app.App[@memdom.MemNode]) -> Unit) -> Array[SceneResult]
+pub fn run(&@host.Guest, @host.DynManifest, Array[@scenedef.Scene], root? : String, take_log? : () -> Array[String], on_bundle? : (@host.Module) -> Unit, on_app? : (@app.App[@memdom.MemNode]) -> Unit) -> Array[SceneResult]
 
 pub fn[N : @vdom.DomWalk] seed(@harness.Harness[N], Array[@scenedef.Step]) -> Unit raise
 

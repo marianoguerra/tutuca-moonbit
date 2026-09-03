@@ -9,7 +9,7 @@
 // Someone writing their own template could have written the same read in JS,
 // so holding their paths to this list is ceremony, not safety. `Safe` holds
 // every traversed step to the list below; it is what a host that compiles
-// guest-supplied views runs (`dyncomp/policy` carries it on `Policy`, refuses
+// guest-supplied views runs (`tgc/policy` carries it on `Policy`, refuses
 // an off-list path at registration, and hands the same profile to the app so
 // the runtime resolver enforces it too).
 //
@@ -38,10 +38,10 @@
 // does not stop it, because the leaf IS representable. Every step is checked,
 // or the list does nothing.
 //
-// A view is data the host compiles, including a view a dyncomp guest supplied
-// (`dyncomp/DESIGN.md`, principle 2), so anything reachable here is ambient
+// A view is data the host compiles, including a view a guest module supplied
+// (`tgc/SECURITY.md` §6), so anything reachable here is ambient
 // authority no guest declared — which is what principle 4 of that document
-// forbids. See `dyncomp/SECURITY.md` §9.
+// forbids. See `tgc/SECURITY.md` §7.
 
 ///|
 /// Which rule governs an `e.<path>`.
@@ -50,7 +50,7 @@
 /// author's own code, so any path resolves and an off-list step is reported as
 /// a lint hint rather than refused. `Safe` is what a host that compiles
 /// guest-supplied views runs — every traversed step is held to
-/// `event_object_steps`, at registration by `dyncomp/policy` and again at run
+/// `event_object_steps`, at registration by `tgc/policy` and again at run
 /// time by the resolver that carries this profile.
 pub(all) enum EventPathProfile {
   /// Any path may resolve; the list below only ADVISES.

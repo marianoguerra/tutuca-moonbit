@@ -44,8 +44,6 @@ test "plan expands the ci composite into its member tasks' steps" {
     @dev.plan("check").unwrap_or([]) +
     @dev.plan("check-examples").unwrap_or([]) +
     @dev.plan("check-skill").unwrap_or([]) +
-    @dev.plan("check-guest-list").unwrap_or([]) +
-    @dev.plan("check-guest-template").unwrap_or([]) +
     @dev.plan("check-storybook-template").unwrap_or([]) +
     @dev.plan("migrate-check").unwrap_or([]) +
     @dev.plan("check-publish-graph").unwrap_or([]) +
@@ -113,7 +111,6 @@ test "dist plan builds all targets then assembles dist/" {
     at
   }
   let embed = first_of(fn(s) { s is GenSkillAssets(_) })
-  let template = first_of(fn(s) { s is GenGuestTemplate(_) })
   let first_build = first_of(fn(s) {
     match s {
       Run(cmd) =>
@@ -122,9 +119,7 @@ test "dist plan builds all targets then assembles dist/" {
     }
   })
   assert_true(embed >= 0)
-  assert_true(template >= 0)
   assert_true(first_build > embed)
-  assert_true(first_build > template)
   // Four target builds: wasm-gc, native cli, js, and the js playground host.
   let builds = steps
     .iter()
@@ -182,55 +177,9 @@ test "help_text lists every task name" {
   }
   for
     name in [
-      "ci", "dist", "skill-embed", "guest-template-embed", "storybook-template-embed",
-      "universal", "dyncomp-storybook", "guests", "css-bundle",
+      "ci", "dist", "skill-embed", "storybook-template-embed", "css-bundle",
     ] {
     assert_true(@dev.plan(name) is Some(_))
     assert_true(help.contains(name))
-  }
-}
-
-///|
-/// The two bundle-hosting pages are assembled by ONE function, so this pins
-/// what varies (the directory, the demo package, the .wasm name) and what must
-/// not (the four loader files, the repointing, the packed archives beside the
-/// page). A page missing `abi.mjs` mounts, draws, and fails on the first
-/// bundle with a message about a module nobody mentioned — the failure the
-/// comment in `dyncomp_page_steps` is about.
-test "both dyncomp pages are assembled the same way, into their own directory" {
-  let pages = [
-    ("universal", "universal_wasm.wasm", @dev.universal_steps()),
-    (
-      "dyncomp-storybook",
-      "dyncomp_storybook_wasm.wasm",
-      @dev.dyncomp_storybook_steps(),
-    ),
-  ]
-  for page in pages {
-    let (into, wasm_name, steps) = page
-    let dests : Array[String] = []
-    for st in steps {
-      match st {
-        Copy(from=_, to~) => dests.push(to)
-        WriteRewritten(from=_, to~, old_src=_, new_src=_) => dests.push(to)
-        _ => ()
-      }
-    }
-    for
-      name in [
-        "loader.mjs", "app-loader.mjs", "dyncomp-loader.mjs", "abi.mjs", "index.html",
-        wasm_name,
-      ] {
-      assert_true(dests.contains("dist/\{into}/\{name}"))
-    }
-    // nothing lands in the OTHER page's directory
-    let other = if into == "universal" {
-      "dyncomp-storybook"
-    } else {
-      "universal"
-    }
-    for d in dests {
-      assert_false(d.has_prefix("dist/\{other}/"))
-    }
   }
 }

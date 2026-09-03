@@ -173,7 +173,7 @@ hint (`EVENT_PATH_UNSAFE_STEP`) naming the step: `ownerDocument`, `parentNode`,
 `parentElement`, `children`, `form`, `view`, `window`. Each leads out of the
 event and into the page. Your own views may read them — you could have written
 the same read in JS — but **a permitted root is not a permitted path** for
-guest-supplied ones: a view is data the host compiles, including one a dyncomp
+guest-supplied ones: a view is data the host compiles, including one a loaded
 guest supplied, so a host running the safe event-path profile refuses such a
 bundle at registration, naming this same step. If a guest component needs
 something a path must not take, it dispatches an intent and the host answers.

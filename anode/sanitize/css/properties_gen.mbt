@@ -216,7 +216,7 @@ pub let css_properties : @set.Set[String] = @set.Set::from_array([
 /// `background` → `<bg-layer>#` → `<bg-image>` → `<image>` → `<url>`.
 ///
 /// It is strictly larger than the hand-written list it replaces
-/// (`untrusted_sink_attr` in `dyncomp/policy/view_authority.mbt`), and the
+/// (`untrusted_sink_attr` in `tgc/policy/view_authority.mbt`), and the
 /// difference is the argument for generating it.
 pub let url_properties : @set.Set[String] = @set.Set::from_array([
   "backdrop-filter", "background", "background-image", "background-tbd", "bookmark-label",

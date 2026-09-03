@@ -11,9 +11,9 @@ target-agnostic logic and the browser demos), **js** (the real-DOM adapter, via
 Live demos, playground and storybook:
 <https://marianoguerra.github.io/tutuca-moonbit/> — source:
 <https://github.com/marianoguerra/tutuca-moonbit>. The published mooncakes
-package carries the library packages, the universal core (`dyncomp/`) and the
-CLI; the storybook, the demo and playground hosts and the sample guests live in
-the repo only (see `exclude` in `moon.mod`).
+package carries the library packages, the component format (`tgc/`) and the
+CLI; the storybook's own stories, the demo and playground hosts live in the repo
+only (see `exclude` in `moon.mod`).
 
 ## What's in it
 
@@ -23,7 +23,7 @@ and formal `spec.mbt`. From the bottom up:
 | Layer | Package(s) | What it does |
 |---|---|---|
 | **Value language** | `core/` — `marianoguerra/tutuca/core` (`value_*.mbt`, `path_*.mbt`) | The value model and its evaluation, plus the reactive path/dispatch system (COW spine rebuild, handler dispatch, change sets). `core` never PARSES anything — one package by necessity, since `value_*` and `path_*` form a dependency cycle. |
-| **Expression language** | `tscript/` (+ `check/`, `emit_mbt/`, `conformance/`) | Reading the surface tutuca writes: the slot expressions in a view (`.field`, `$method`, `@value`) and the block language of `<script type="tutuca/script">`. Tokenizer, parser, checker, and a MoonBit emitter for the ahead-of-time path. There was an interpreter here too, for the card runtime; `tutucard/wasm` compiles a card now, so a card is mounted by instantiating a module rather than by running one where it stands. Above `core` rather than inside it, for the reason in the cell above. |
+| **Expression language** | `tscript/` (+ `check/`, `emit_mbt/`, `conformance/`) | Reading the surface tutuca writes: the slot expressions in a view (`.field`, `$method`, `@value`) and the block language of `<script type="tutuca/script">`. Tokenizer, parser, checker, and a MoonBit emitter for the ahead-of-time path. There was an interpreter here too, for the card runtime; `tgc/emit` compiles a card now, so a card is mounted by instantiating a module rather than by running one where it stands. Above `core` rather than inside it, for the reason in the cell above. |
 | **Templates** | `anode/` (+ `anode/sanitize`) | Parses the HTML-ish view syntax into an AST: attributes, directives, `x-` ops, macros, whitespace handling, optimization. `sanitize` is the WHATWG Sanitizer API config model, applied statically to a view's literal names. |
 | **Virtual DOM** | `vdom/` (+ `vdom/memdom`, `vdom/browser`, `vdom/wasm`) | Builds and incrementally morphs a VDOM against any DOM implementing the `DomNode` trait. |
 | **Render-time filters** | `vdom/filter/` (+ `url/`, `handler/`, `markup/`, `markdown/`), `markdown/`, `sinks/` | The half a static pass cannot decide: an attribute VALUE is only known once state has produced it. URL schemes, `on*` handlers, sanitized raw markup, and Markdown rendered straight into vdom nodes. `markdown/` is a CommonMark+GFM parser vendored from mizchi/markdown.mbt — see `markdown/UPSTREAM.md`. `sinks/` holds one four-bit type and imports nothing: which of these rules an element's attribute NAMES could concern, which `render` decides off the tree so the rules can skip what cannot concern them. |
@@ -32,9 +32,8 @@ and formal `spec.mbt`. From the bottom up:
 | **Styling** | `css/` | The one place stylesheets live: a Tailwind port plus embedded Tailwind and margaui bundles, so a host compiles its collected class names to CSS with no Node, no CDN and no checkout. |
 | **Tooling** | `lint/`, `storybook/inspector/`, `statedef/`, `viewfile/`, `viewgen/`, `cli/` | The linter (parse-issue rules + a WHATWG-tokenizer structural HTML linter), a schema inspector, the state schema language, the view-file splitter, the ahead-of-time view compiler, and the native `tutuca` CLI. |
 | **Testing** | `testing/harness` | A reusable harness to mount and drive a `ModuleDef` on the in-memory DOM. |
-| **Universal core** | `dyncomp/` — `wit/` (the `tutuca:component` contract), `host/` (+ `host/wasm`), `policy/`, `registry/`, `jsonschema/`, `persist/` (+ `persist/wasm`) | Loading a WebAssembly component from anywhere into a *running* app: the contract it implements, the host that wraps it as an ordinary `&Obj`, what a bundle from a stranger is allowed to do, the searchable catalog of everything loaded, and the schema ⇄ JSON Schema projection both a form and an agent's tool read. See [`dyncomp/DESIGN.md`](dyncomp/DESIGN.md). |
-| **Universal UI** | `dyncomp/ui/` (+ `dyncomp/ui/std`, `dyncomp/ui/wasm`) | The page a person arranges out of that catalog. The component tree IS the layout — `Universal`, `Stack`, `Grid`, `Tabs` are ordinary tutuca components, and a loaded guest is decorated exactly like a standard one. The editor is backend-agnostic, so `moon test` drives the whole thing on the in-memory DOM; `ui/wasm` is the half that cannot be — the bundle bridge, the session store, and `mount()`. See [`docs/dynamic-components.md`](docs/dynamic-components.md). |
-| **Demos & docs** | `demo/`, `playground/`, `storybook/`, `tutucard/`, `guests/` | 51 ported examples (`storybook/examples/`), browser/wasm demo hosts, an in-browser playground, the compiler-free card playground, a compiled storybook gallery, and eleven sample `tutuca:component` guests (ten MoonBit, one Rust — the list is `guests/guests.mjs`). |
+| **Component format** | `tgc/` — `abi/` (the frozen preamble), `rt/` (the runtime module), `value/` (CBOR + `$`-tagged JSON), `emit/` (the card compiler), `host/`, `policy/`, `persist/` | Loading a WebAssembly module from anywhere into a *running* app. Core wasm plus the GC proposal and nothing else: one file that carries its own manifest, and an instance a component can hold in its own state. See [`tgc/SPEC.md`](tgc/SPEC.md) and [`tgc/SECURITY.md`](tgc/SECURITY.md). |
+| **Demos & docs** | `demo/`, `playground/`, `storybook/`, `tutucard/` | 51 ported examples (`storybook/examples/`), browser/wasm demo hosts, an in-browser playground, the compiler-free card playground, and a compiled storybook gallery. |
 
 The `tutuca` CLI does the work that happens outside the compiler:
 `gen`, `watch`, `storybook`, `install-skill`, `feedback`,
@@ -56,7 +55,7 @@ and the generated module hands `component()` its name, views, styles, schema
 and codec. This is the default and what the rest of this section describes.
 
 **Late-bound**, with `@anode.View::new("main", raw_view="…")`, for a view whose
-SOURCE only exists at run time: a dyncomp guest bundle arriving over the wire,
+SOURCE only exists at run time: a guest module bundle arriving over the wire,
 a macro body a MoonBit function builds per call, markup assembled from a value
 the program computes. Being late is not being under-described — such a
 component still declares its schema and its codec, because `component()`

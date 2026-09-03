@@ -292,7 +292,7 @@ fn parse_str_tpl(s : String, ctx : ParseCtx, span : Span) -> @tutuca.Val {
         // One that did not parse becomes an explicit NULL, which is the only
         // safe shape for a hole. It evaluates to the empty string, which is
         // what a hole always did; and it is not TEXT, which matters more —
-        // `pinned_prefix` (`dyncomp/policy/external_url.mbt`) concatenates the
+        // `pinned_prefix` (`tgc/policy/external_url.mbt`) concatenates the
         // literal head of a template to decide whether it pins an origin, and
         // a hole that vanished would let `$'https://{$$unbound}.evil/'` read as
         // a literal `https://.evil/`. The parse issue was already recorded.
@@ -340,7 +340,7 @@ fn parse_str_tpl(s : String, ctx : ParseCtx, span : Span) -> @tutuca.Val {
 /// A constant result is marked `from_macro` so an enclosing template is not
 /// mistaken for a hand-written placeholderless literal — and, more to the
 /// point, so it cannot pin a URL origin: the caller is the guest, and the
-/// origin rule was only ever about the host (`dyncomp/policy/external_url.mbt`).
+/// origin rule was only ever about the host (`tgc/policy/external_url.mbt`).
 ///
 /// The expansion is required to be exactly ONE token. That is what makes a
 /// `^name` usable where an operand goes: a single token cannot regroup the
@@ -466,7 +466,7 @@ fn parse_expression(s : String, ctx : ParseCtx) -> @tutuca.Val? {
   // operand goes cannot change the grouping around it; and `from_macro` rides
   // on the `Const` itself rather than on the shape above it, so an operator
   // over one does not lose the mark that decides whether it may pin a URL
-  // origin (`dyncomp/policy/external_url.mbt`).
+  // origin (`tgc/policy/external_url.mbt`).
   let e = parse_expr_source(s) catch {
     err => {
       ctx.issue(

@@ -336,17 +336,15 @@ test "counter: immutability — one render per interaction" {
 
 Everything above is the ahead-of-time path: a view file, `gen`, a
 `ModuleDef`, and `moon test` over `@harness`. A **card** is the other
-thing a `.html` file can be — one file the browser compiles to a
-`tutuca:component@0.12.0` wasm module with no MoonBit toolchain on the
-page. There is no `moon test` there and no MoonBit to write a test in,
+thing a `.html` file can be — one file the browser compiles to a wasm
+module with no MoonBit toolchain on the page. There is no `moon test` there and no MoonBit to write a test in,
 so a card declares its tests as a **fifth block**, in JSON, beside its
 schema and its handlers.
 
 Use this when the file is a card. Use `moon test` + `@harness` when it
 is a view file compiled by `gen`. The block is inert on the
-ahead-of-time path — `gen` ignores it, exactly as it ignores
-`<script type="tutuca/wax">` — so a file carrying one is a file with a
-block that path skips.
+ahead-of-time path — `gen` ignores it — so a file carrying one is a file
+with a block that path skips.
 
 ### The block
 
@@ -672,14 +670,14 @@ recompile and lists what disagreed, step by step. It drives the module
 already on the page, so it is neither a second compile nor a disturbance
 to the card in the preview beside it.
 
-**Headless**, through the card runtime's own `card-wasm.js` — no
+**Headless**, through the card runtime's own `card.js` — no
 browser, no server, no `moon`:
 
 ```js
 import { readFileSync } from "node:fs";
 // The card runtime is a classic script that installs globalThis.__tutucard.
 (0, eval)(readFileSync("tutucard.js", "utf8"));
-const { driveCard } = await import("./card-wasm.js");
+const { driveCard } = await import("./card.js");
 
 const report = await driveCard(readFileSync("counter.html", "utf8"), "Counter");
 for (const [name, scene] of Object.entries(report.scenes)) {

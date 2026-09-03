@@ -4,7 +4,7 @@
 ///|
 /// One finding. Collected rather than raised: a type error does not cascade
 /// the way a syntax error does, and an author fixing one field at a time
-/// because the checker stops at the first is the thing `dyncomp`'s `coerce`
+/// because the checker stops at the first is the thing `tgc`'s `coerce`
 /// already refuses to do to a caller.
 pub(all) struct Finding {
   /// A short machine-readable label, so a host can filter and a test can

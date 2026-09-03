@@ -295,7 +295,7 @@ fn spec_absent_hint(comp : @component.Component?) -> String {
 /// carried so `@statedef.parse_state` can read it back, and no parser reads a
 /// `///`. So a declaration whose author documented every field shows none of
 /// it here, and that is worth saying rather than leaving as a puzzle. Empty
-/// for a block nobody stripped: one parsed at run time, from a dyncomp guest
+/// for a block nobody stripped: one parsed at run time, from a guest module
 /// or the playground, reaches its component whole.
 pub let spec_docs_note : String = "gen ships this block without its doc comments — a block is carried to be re-parsed, and no parser reads prose. The full text is in the .html file."
 
@@ -390,7 +390,7 @@ pub fn Inspector::spec_source_panel(
 /// interesting half of a block is the half `gen` does not ship: prose
 /// goes on the way into a binary, and no example in this package declares a
 /// rule or a named type. This is what a block looks like when it reaches the
-/// runtime WHOLE — a dyncomp guest's, the playground's — and it is the only
+/// runtime WHOLE — a guest module's, the playground's — and it is the only
 /// fixture in which the doc rows and the rule rows have anything to show.
 pub let spec_sample_source : String =
   #|  /// One box.

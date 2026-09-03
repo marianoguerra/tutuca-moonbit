@@ -1,7 +1,7 @@
 # Tutucard — Single-file Tutuca components
 
 Read this first when the deliverable is a **card**: one HTML file that a page
-can check, compile to a `tutuca:component` wasm module, instantiate, and mount
+can check, compile to a wasm module, instantiate, and mount
 without shipping the MoonBit compiler.
 
 A card and an ahead-of-time Tutuca component use the same view, state, and
@@ -89,7 +89,9 @@ Their handler language covers:
 - `new` plus `cur` for declared records and sibling component instances.
 
 This is compiled behavior, not an interpreter fallback. The browser compiles
-the checked card to a core wasm component and the Tutuca host mounts it.
+the checked card to a core wasm module — GC types, no component model, no
+archive — and the Tutuca host mounts it. The module carries its own manifest,
+so the `.wasm` is the whole distribution.
 
 ## Limits and refusals
 
@@ -109,44 +111,14 @@ Current language boundaries that matter when authoring are:
 - collection mutations use the canonical `push`, `insertAt`, `setAt`,
   `deleteAt`, `add`, `remove`, and `toggle` names; parsed aliases such as
   `clear`, `delete`, `set`, and `removeAt` have no backend behavior;
-- a child component is an opaque instance token, so a card may carry, render,
-  and message one of its OWN components but cannot traverse into its fields;
-- a component from OUTSIDE the card — the host's own, or another bundle's —
-  cannot live in card state at all: nothing the guest ABI can carry holds one.
-  A field declared as a bare `component` (or by protocol) is held by the HOST
-  instead, so a card can be a holder: pass an instance in and `<x render>`
-  draws it, and a list of them draws all of them. The card never holds the
-  instance — reading such a field tells it only that something is there — but
-  it can still `sendAt` a literal path into the hole, because a message needs
-  an address and the HOST resolves the path. What stays out of reach is
-  reading through it: `.slot.field` is not traversable from card code.
+- a field declared as a bare `component` (or by protocol) is a slot the HOST
+  fills: pass an instance in and `<x render>` draws it, and a list of them
+  draws all of them. A card can `sendAt` a literal path into such a slot,
+  because a message needs an address and the host resolves the path.
 
 The ahead-of-time MoonBit emitter has a different refusal set. When the same
 file must work on both paths, validate both; see
 [schema.md](./schema.md#what-the-ahead-of-time-backend-refuses).
-
-## Wax escape hatch
-
-A trusted host may opt into a card's `tutuca/wax` block to implement a refused
-or otherwise inexpressible declaration in the language the module itself uses.
-This is an advanced escape, not the default authoring surface:
-
-- `allowWax` / `allow_wax` is **off by default** and belongs to the host, not
-  the card;
-- bind a declaration by defining `card_<role>_<name>` (qualified with the
-  component name in a multi-component card); other functions are helpers;
-- use the playground's WAX output to copy the generated calling idioms and
-  field accessors instead of inventing ABI operations;
-- the safety screen accepts functions but refuses imports, memories, data,
-  exports, start functions, globals, tables, and runtime-reserved names, so an
-  escape cannot add authority;
-- an escape is opaque to dependency analysis and therefore widens the card's
-  generated import surface to the documented helper vocabulary even when it
-  uses only part of it.
-
-Prefer moving to the compiled MoonBit path when hand-written Wax becomes more
-than a narrow bridge. Pass `allowWax: true` to `mountCard` or `driveCard` only
-when the host explicitly trusts and intends to enable the block.
 
 ## Multiple components and children
 
@@ -190,9 +162,8 @@ receive add {
 ```
 
 `new Todo` opens the sibling's argument map; writes to `cur` fill it; the
-first read of `cur` materializes one child instance. A card carries only the
-child token. It cannot read or write through that child, such as
-`.items[0].text`; dispatch a message to the child instead.
+first read of `cur` materializes one child instance — a real instance in the
+parent's own state, not a token.
 
 ## State, startup, and fixtures
 
