@@ -5,38 +5,7 @@
 ///|
 pub fn source() -> String {
   let src =
-    #|// tutuca-rt — the shared function vocabulary, as a MODULE rather than as a host
-    #|// object.
-    #|//
-    #|// Types are shared by the preamble, which needs no runtime at all. This is the
-    #|// OTHER half of the mechanism: a function whose signature mentions preamble
-    #|// types, exported from one module and imported by another, whose import link is
-    #|// therefore a structural type check over the frozen group. A module built
-    #|// against an older runtime links against a newer one for exactly as long as the
-    #|// group is unchanged, and that is a property worth a test rather than a
-    #|// paragraph.
-    #|//
-    #|// It is written in Wax and compiled by `cmd/tgc`, the same route a generated
-    #|// component takes. Nothing in here is privileged.
-    #|//
-    #|// ── One number, on purpose ──────────────────────────────────────────────────
-    #|//
-    #|// The format has two (`tg_num`, `tg_int`); the tutuca LANGUAGE has one, and
-    #|// every arithmetic function below answers a `tg_num`. That is not the runtime
-    #|// being lossy: `core.Value` has exactly one number, `tscript/conformance` pins
-    #|// the results as doubles, and a card whose `+` sometimes answered an integer
-    #|// would be a second semantics. `tg_int` is for a value that came from CBOR, or
-    #|// from a module that is not a card.
-    #|//
-    #|// ── Nothing answers a plausible wrong thing ─────────────────────────────────
-    #|//
-    #|// An operation with no answer for its arguments returns NULL, and a compiled
-    #|// handler abandons the transition on it. `len true` is not zero and `min` of a
-    #|// string and a number is not the string; both are "the transition did not
-    #|// happen", which a card author can see. This is the conformance corpus's rule
-    #|// and the one place a runtime is most tempted to be helpful.
     #|
-    #|// ── the two calls that are the whole of composition ─────────────────────────
     #|
     #|#[export = "get_field"]
     #|fn rt_get_field(inst: &tg_inst, name: &tg_bytes) -> &?tg_val {
@@ -49,17 +18,10 @@ pub fn source() -> String {
     #|    inst.vt.call(inst, op, name, args, v)
     #|}
     #|
-    #|// Take one instance's vtable and point it at another instance's state.
-    #|//
-    #|// It exists to be caught. `state` is `&?eq` and each module casts it back to
-    #|// its own concrete type, so this traps — opacity enforced by the engine rather
-    #|// than by a handle table nobody may forge.
     #|#[export = "cross_get"]
     #|fn rt_cross_get(vt_from: &tg_inst, target: &tg_inst, name: &tg_bytes) -> &?tg_val {
     #|    vt_from.vt.get(target, name)
     #|}
-    #|
-    #|// ── text ────────────────────────────────────────────────────────────────────
     #|
     #|#[export = "str_eq"]
     #|fn tg_str_eq(a: &tg_bytes, b: &tg_bytes) -> i32 {
@@ -67,8 +29,6 @@ pub fn source() -> String {
     #|    if n != b.length() { return 0; }
     #|    let i: i32 = 0;
     #|    while i <s n {
-    #|        // Packed i8 fields read out signed or unsigned on demand; either is
-    #|        // fine for equality as long as both sides pick the same one.
     #|        if (a[i] as i32_u) != (b[i] as i32_u) { return 0; }
     #|        i += 1;
     #|    }
@@ -88,8 +48,6 @@ pub fn source() -> String {
     #|    if tg_empty_bytes == null { tg_empty_bytes = [tg_bytes| 0; 0]; }
     #|    tg_empty_bytes!
     #|}
-    #|
-    #|// ── constructors ────────────────────────────────────────────────────────────
     #|
     #|let tg_the_null: &?tg_val = null;
     #|
@@ -176,8 +134,6 @@ pub fn source() -> String {
     #|    tg_no_args_v!
     #|}
     #|
-    #|// ── accessors (the JS-facing half, and the emitter's) ───────────────────────
-    #|
     #|#[export = "kind_of"]
     #|fn tg_kind(v: &tg_val) -> i32 { v.kind }
     #|
@@ -247,13 +203,6 @@ pub fn source() -> String {
     #|#[export = "bytes_set"]
     #|fn tg_bytes_set(b: &tg_bytes, i: i32, x: i32) { b[i] = x; }
     #|
-    #|// ── truthiness ──────────────────────────────────────────────────────────────
-    #|//
-    #|// Two of them, and the difference is deliberate rather than an accident of
-    #|// history: plain truthiness is `Value::is_truthy` and treats a non-empty-or-not
-    #|// collection as present, while the shape predicate `truthy?` treats an EMPTY
-    #|// collection as falsy. `core/value_builtin.mbt` keeps both for the same reason.
-    #|
     #|fn tg_size(v: &tg_val) -> i32 {
     #|    if v.kind == 7 { return (v as &tg_list).count; }
     #|    if v.kind == 8 { return (v as &tg_map).count; }
@@ -270,7 +219,6 @@ pub fn source() -> String {
     #|    if x.kind == 2 {
     #|        let n = (x as &tg_num).value;
     #|        if n == 0.0 { return 0; }
-    #|        // NaN is not truthy, and `n != n` is the only test that says so.
     #|        if n != n { return 0; }
     #|        return 1;
     #|    }
@@ -279,7 +227,6 @@ pub fn source() -> String {
     #|    1
     #|}
     #|
-    #|// `truthy?` / `falsy?` — an empty collection is falsy here and is not above.
     #|#[export = "pred_truthy"]
     #|fn tg_pred_truthy(v: &?tg_val) -> i32 {
     #|    if v == null { return 0; }
@@ -288,11 +235,6 @@ pub fn source() -> String {
     #|    if n >=s 0 { if n == 0 { return 0; } return 1; }
     #|    tg_truthy(v)
     #|}
-    #|
-    #|// ── equality ────────────────────────────────────────────────────────────────
-    #|//
-    #|// Structural, so two lists with equal contents are equal — `Eq for Value`, and
-    #|// the compiled handler must not disagree with the interpreter about it.
     #|
     #|#[export = "val_eq"]
     #|fn tg_val_eq(a: &?tg_val, b: &?tg_val) -> i32 {
@@ -339,8 +281,6 @@ pub fn source() -> String {
     #|        }
     #|        return 1;
     #|    }
-    #|    // A component compares by IDENTITY, which is what drives change detection:
-    #|    // a successor is a new instance and must not equal its predecessor.
     #|    if x.kind == 10 {
     #|        if (x as &tg_comp).value.id == (y as &tg_comp).value.id { return 1; }
     #|        return 0;
@@ -357,21 +297,6 @@ pub fn source() -> String {
     #|    -1
     #|}
     #|
-    #|// ── numbers ─────────────────────────────────────────────────────────────────
-    #|//
-    #|// A card has ONE number, and every operation below answers a `tg_num`. The
-    #|// format's `tg_int` is for a value that came from CBOR or from a module that is
-    #|// not a card; a card that sometimes answered an integer would be a second
-    #|// semantics for `+`.
-    #|//
-    #|// NOTHING HERE ANSWERS A PLAUSIBLE WRONG THING. An operation with no answer for
-    #|// its arguments returns null and the compiled handler abandons the transition.
-    #|// `len true` is not zero; `min` of a string and a number is not the string.
-    #|// "The transition did not happen" is something a card author can see, and
-    #|// `false` is not.
-    #|
-    #|// Read a value as a double, or say it is not one. The `ok` flag is out of band
-    #|// because every double is a valid answer and there is no spare one to mean no.
     #|let tg_num_ok: i32 = 0;
     #|
     #|fn tg_as_double(v: &?tg_val) -> f64 {
@@ -427,7 +352,6 @@ pub fn source() -> String {
     #|    tg_num(x / y)
     #|}
     #|
-    #|// Truncated toward zero, which is what a double remainder is.
     #|#[export = "op_mod"]
     #|fn tg_op_mod(a: &?tg_val, b: &?tg_val) -> &?tg_val {
     #|    let x = tg_as_double(a);
@@ -446,8 +370,6 @@ pub fn source() -> String {
     #|    tg_num(0.0 - x)
     #|}
     #|
-    #|// The ordering four. A non-number has no place in an order, so they answer
-    #|// nothing rather than reading it as zero.
     #|#[export = "op_lt"]
     #|fn tg_op_lt(a: &?tg_val, b: &?tg_val) -> &?tg_val {
     #|    if tg_two_doubles(a, b) == 0 { return null; }
@@ -484,11 +406,6 @@ pub fn source() -> String {
     #|    tg_bool(0)
     #|}
     #|
-    #|// `is` is STRUCTURAL, and it PROPAGATES. The distinction the format drew
-    #|// between `ref.null` and `kind 0` pays for itself exactly here: a null VALUE is
-    #|// a thing to compare (`.note is null` is a real question), while a missing
-    #|// ANSWER — `len true` — has nothing to compare and abandons the transition
-    #|// rather than quietly answering `false`.
     #|#[export = "op_is"]
     #|fn tg_op_is(a: &?tg_val, b: &?tg_val) -> &?tg_val {
     #|    if a == null { return null; }
@@ -504,8 +421,6 @@ pub fn source() -> String {
     #|    tg_bool(1)
     #|}
     #|
-    #|// An Int field truncates at its assignment sites, which is where the
-    #|// interpreter does it too.
     #|#[export = "trunc"]
     #|fn tg_trunc(v: &?tg_val) -> &?tg_val {
     #|    let x = tg_as_double(v);
@@ -513,12 +428,6 @@ pub fn source() -> String {
     #|    tg_num((x as i64_s) as f64_s)
     #|}
     #|
-    #|// ── display ─────────────────────────────────────────────────────────────────
-    #|//
-    #|// What `str` answers and what a `$'…'` template splices. Total: every value has
-    #|// a display string, which is what separates it from the reading builtins below.
-    #|
-    #|// Writes a non-negative `n` at `at`, answers the next free index.
     #|fn tg_digits(n: i64, out: &tg_bytes, at: i32) -> i32 {
     #|    if n == (0 as i64) { out[at] = 48; return at + 1; }
     #|    let tmp = [tg_bytes| 0; 20];
@@ -537,11 +446,6 @@ pub fn source() -> String {
     #|    at + len
     #|}
     #|
-    #|// Not a shortest-round-trip formatter, and this is the one place where that
-    #|// matters: the integer part is exact and up to six fractional digits are
-    #|// written with trailing zeros trimmed, so `0.1 + 0.2` reads as `0.3`. Anything
-    #|// at or beyond 2^63 reads as `Infinity`. `tutucard/wasm` made the same trade
-    #|// and its deviations list says so; this inherits the trade and the disclosure.
     #|fn tg_num_text(n: f64) -> &tg_bytes {
     #|    if n != n { return "NaN"; }
     #|    let neg: i32 = 0;
@@ -607,11 +511,6 @@ pub fn source() -> String {
     #|#[export = "concat"]
     #|fn tg_concat(a: &tg_bytes, b: &tg_bytes) -> &tg_bytes { tg_bytes_concat(a, b) }
     #|
-    #|// ── the reading builtins ────────────────────────────────────────────────────
-    #|//
-    #|// Sixteen names, and the vocabulary is CLOSED — `tscript/script_builtin.mbt`
-    #|// says so and means it. Nothing an author writes joins this set.
-    #|
     #|#[export = "b_empty"]
     #|fn tg_b_empty(v: &?tg_val) -> &?tg_val {
     #|    if v == null { return null; }
@@ -656,7 +555,6 @@ pub fn source() -> String {
     #|    tg_num(n as f64_s)
     #|}
     #|
-    #|// A KEY in a set or a map, a VALUE in a list.
     #|#[export = "b_has"]
     #|fn tg_b_has(coll: &?tg_val, x: &?tg_val) -> &?tg_val {
     #|    if coll == null { return null; }
@@ -724,8 +622,6 @@ pub fn source() -> String {
     #|    tg_num(y)
     #|}
     #|
-    #|// An empty range answers `lo`: an empty list makes `hi` -1, and a negative
-    #|// index is not an honest result.
     #|#[export = "b_clamp"]
     #|fn tg_b_clamp(v: &?tg_val, lo: &?tg_val, hi: &?tg_val) -> &?tg_val {
     #|    let x = tg_as_double(v);
@@ -752,8 +648,6 @@ pub fn source() -> String {
     #|    let x = v!;
     #|    if x.kind == 2 { return x; }
     #|    if x.kind == 3 { return tg_num((x as &tg_int).value as f64_s); }
-    #|    // `num` and `int` read a STRING as well as a number, which is what the
-    #|    // corpus says. Anything else has no answer at all.
     #|    if x.kind == 4 { return tg_parse_num((x as &tg_str).value); }
     #|    null
     #|}
@@ -765,11 +659,6 @@ pub fn source() -> String {
     #|    tg_num((tg_as_double(n) as i64_s) as f64_s)
     #|}
     #|
-    #|// An optional sign, digits, an optional fraction, an optional exponent, and
-    #|// nothing else — no hex float, no `inf`, no `nan`, none of which a card can
-    #|// write. The mantissa accumulates by multiplication rather than rounding
-    #|// correctly, so a long decimal can land an ulp from a correctly-rounded reader.
-    #|// The spellings a card writes by hand are exact.
     #|fn tg_parse_num(s: &tg_bytes) -> &?tg_val {
     #|    let n = s.length();
     #|    if n == 0 { return null; }
@@ -839,8 +728,6 @@ pub fn source() -> String {
     #|    tg_num(acc)
     #|}
     #|
-    #|// ASCII only. A case fold that claimed to know Turkish would be a bigger
-    #|// promise than this makes.
     #|fn tg_case(v: &?tg_val, upper: i32) -> &?tg_val {
     #|    if v == null { return null; }
     #|    if v!.kind != 4 { return null; }
@@ -898,18 +785,6 @@ pub fn source() -> String {
     #|    tg_str(out)
     #|}
     #|
-    #|// ── collections ─────────────────────────────────────────────────────────────
-    #|//
-    #|// Every one of these answers a NEW collection. Copy on write is the language's
-    #|// model rather than an imitation of it: a handler's successor shares every part
-    #|// of its predecessor it did not change, and a predecessor nobody kept is
-    #|// collected.
-    #|//
-    #|// The canonical seven are `push`, `insertAt`, `setAt`, `deleteAt`, `add`,
-    #|// `remove` and `toggle`. `tscript` parses four more spellings — `clear`,
-    #|// `delete`, `set`, `removeAt` — that NO backend has ever implemented, so there
-    #|// is no behaviour here to leave out.
-    #|
     #|fn tg_list_of(v: &?tg_val) -> &?tg_list {
     #|    if v == null { return null; }
     #|    if v!.kind != 7 { return null; }
@@ -942,8 +817,6 @@ pub fn source() -> String {
     #|    tg_list(out)
     #|}
     #|
-    #|// Out of range is refused rather than clamped: an index a card computed wrong
-    #|// is a bug, and putting the item somewhere plausible hides it.
     #|#[export = "coll_insert_at"]
     #|fn tg_coll_insert_at(v: &?tg_val, at: &?tg_val, x: &?tg_val) -> &?tg_val {
     #|    let l = tg_list_of(v);
@@ -1017,9 +890,6 @@ pub fn source() -> String {
     #|    out
     #|}
     #|
-    #|// A map keyed by the DISPLAY string, which is the key a generated mutator looks
-    #|// up. Re-assigning a key keeps its PLACE — the map is insertion ordered and a
-    #|// view looping over it renders in that order.
     #|#[export = "map_put"]
     #|fn tg_map_put(v: &?tg_val, key: &?tg_val, x: &?tg_val) -> &?tg_val {
     #|    let m = tg_map_of(v);
@@ -1060,8 +930,6 @@ pub fn source() -> String {
     #|    tg_map(out)
     #|}
     #|
-    #|// A Set is a Map whose values nobody reads: `core.Value` has no set, and
-    #|// `Set[String]` decodes to `Map`. The member is the key.
     #|#[export = "coll_add"]
     #|fn tg_coll_add(v: &?tg_val, x: &?tg_val) -> &?tg_val {
     #|    tg_map_put(v, x, tg_bool(1))
@@ -1078,11 +946,6 @@ pub fn source() -> String {
     #|    tg_map_put(v, x, tg_bool(1))
     #|}
     #|
-    #|// ── reading into a collection ───────────────────────────────────────────────
-    #|
-    #|// `.field[k]` — an index into a list, a key into a map. Which one is decided by
-    #|// the COLLECTION rather than by the key, because `.rows[k]` and `.panes[k]` are
-    #|// the same syntax.
     #|#[export = "item"]
     #|fn tg_item(coll: &?tg_val, key: &?tg_val) -> &?tg_val {
     #|    if coll == null { return null; }
@@ -1105,8 +968,6 @@ pub fn source() -> String {
     #|    null
     #|}
     #|
-    #|// `.field.member` — a named member of a map-shaped value. A record is a map,
-    #|// which is what `struct Label { text: String }` decodes to.
     #|#[export = "member"]
     #|fn tg_member(v: &?tg_val, name: &tg_bytes) -> &?tg_val {
     #|    let m = tg_map_of(v);
@@ -1129,16 +990,12 @@ pub fn source() -> String {
     #|    null
     #|}
     #|
-    #|// ── what the generated modules reach for ────────────────────────────────────
-    #|
     #|#[export = "entry_of"]
     #|fn tg_entry_of(key: &tg_bytes, value: &?tg_val) -> &tg_entry {
     #|    let e: &tg_entry = { key, value };
     #|    e
     #|}
     #|
-    #|// A construction argument, or the declared zero. A host that hands a component
-    #|// nothing has asked for its initial state, which is a thing a component knows.
     #|#[export = "arg"]
     #|fn tg_arg(args: &?tg_val, key: &tg_bytes, zero: &?tg_val) -> &?tg_val {
     #|    let m = tg_map_of(args);
@@ -1148,9 +1005,6 @@ pub fn source() -> String {
     #|    m!.entries[at]!.value
     #|}
     #|
-    #|// One positional argument of a dispatch, or the null VALUE for one the sender
-    #|// did not send. Null-the-value rather than no-answer: a handler declared with
-    #|// two parameters and called with one has a second parameter, and it is null.
     #|#[export = "arg_at"]
     #|fn tg_arg_at(args: &tg_vals, i: i32) -> &?tg_val {
     #|    if i <s 0 { return tg_null(); }

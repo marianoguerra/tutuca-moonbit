@@ -60,13 +60,20 @@ fn split(source : String, name : String) -> @viewfile.ViewFile raise GenError {
 }
 
 ///|
-fn comp_of(def : @statedef.StateDef, decls : Array[@tscript.Decl]) -> Comp {
+fn comp_of(
+  def : @statedef.StateDef,
+  decls : Array[@tscript.Decl],
+  views? : Array[@viewfile.RawView] = [],
+  common_style? : String = "",
+) -> Comp {
   {
     def,
     name: def.component,
     id: mangle(def.component),
     fields: def.fields,
     decls,
+    views,
+    common_style,
     refusals: [],
   }
 }
@@ -89,8 +96,10 @@ fn prepare(
             raise BadScript(["\{def.component}: line \{b.line}: \{e.message()}"])
         }
     }
-    let c = comp_of(def, decls)
-    comps.push(c)
+    let set = file.components.filter(v => v.name == def.component)
+    let views = if set.length() > 0 { set[0].views } else { [] }
+    let style = if set.length() > 0 { set[0].common_style } else { "" }
+    comps.push(comp_of(def, decls, views~, common_style=style))
   }
   // The root is the first declared component unless a template says otherwise.
   comps.sort_by_key(c => if c.name == file.root { 0 } else { 1 })
@@ -282,8 +291,13 @@ let runtime_imports : Array[(String, String, String)] = [
 fn compile_wax(wax : String) -> Bytes raise GenError {
   let preamble = @abi.preamble_wax()
   let source = preamble + "\n" + wax
+  // The stage NAME rather than the rendered error. `Show for CompileError`
+  // renders the span, which walks the source — and a source carrying the
+  // preamble's box-drawing comments walks it through a UTF-16 pair decoder
+  // that a `#|`-embedded string trips. Naming the stage says the same useful
+  // thing without reading the text back.
   let result = @wax.compile_string(source, fname="card.wax") catch {
-    e => raise BadModule(["\{e}"])
+    _ => raise BadModule(["the wax compiler stopped"])
   }
   match result {
     Ok(bytes) => bytes
@@ -312,32 +326,110 @@ fn line_count(s : String) -> Int {
 }
 
 ///|
-/// The manifest as JSON — a PROJECTION for tooling. The module carries its own
-/// (`tgc.describe`) and that one is authoritative.
+/// The manifest a HOST reads, in `dyncomp/host`'s shape.
+///
+/// Two manifests, and the difference is worth naming rather than hiding. The
+/// MODULE carries its own (`tgc.describe`, an ordinary value) and that one is
+/// authoritative — it is what lets a `tgc` module be one file with no sidecar,
+/// which is half the point of the format. This one is the same facts in the
+/// shape `dyncomp/host` already parses, so a page can mount a `tgc` card
+/// through the host it already has instead of waiting for a new one.
+///
+/// It carries the VIEWS, which `tgc.describe` does not yet. That is the gap
+/// this exists across: a module that named its own views would need no
+/// manifest at all.
 fn manifest_json(
   comps : Array[Comp],
   name : String,
   refusals : Array[Refusal],
 ) -> Json {
-  let out : Array[Json] = []
+  let lowered = (c : Comp, kind : @tscript.DeclKind) => {
+    let out = []
+    for d in c.decls {
+      if d.kind == kind && !refusals.iter().any(r => r.name == d.name) {
+        out.push(Json::string(d.name))
+      }
+    }
+    Json::array(out)
+  }
+  let component_defs : Array[Json] = []
   for c in comps {
     let fields : Array[Json] = []
     for f in c.fields {
-      fields.push({ "name": Json::string(f.name), "type": f.ty.to_json() })
+      fields.push({
+        "name": Json::string(f.name),
+        "ty": f.ty.to_json(),
+        "doc": Json::string(f.doc.unwrap_or("")),
+        "required": Json::boolean(f.attr_required()),
+      })
     }
-    out.push({
+    let properties : Array[Json] = []
+    for prop in c.def.properties {
+      properties.push({
+        "name": Json::string(prop.name),
+        "ty": prop.ty.to_json(),
+        "public": Json::boolean(prop.public_),
+        "writable": Json::boolean(prop.writable),
+        "doc": Json::string(prop.doc.unwrap_or("")),
+      })
+    }
+    let views : Array[Json] = []
+    for v in c.views {
+      views.push({
+        "name": Json::string(v.name),
+        "html": Json::string(v.source),
+      })
+    }
+    component_defs.push({
       "name": Json::string(c.name),
+      "doc": Json::string(c.def.doc.unwrap_or("")),
+      "keywords": Json::array([]),
+      "category": Json::string(""),
+      "messageDocs": Json::array([]),
+      "views": Json::array(views),
       "fields": Json::array(fields),
+      "properties": Json::array(properties),
+      "types": Json::array([]),
+      "domains": @tutuca.domains_to_json(c.def.field_domains()),
+      "receives": lowered(c, DReceive),
+      "intents": lowered(c, DAnswer),
+      "expressMessages": Json::array(
+        c.def.express_message.map(m => Json::string(m.name)),
+      ),
+      "expressIntents": Json::array(
+        c.def.express_intent.map(m => Json::string(m.name)),
+      ),
       "implements": Json::array(c.def.implements.map(Json::string)),
-      "receives": Json::array(answered(c, DReceive).map(Json::string)),
-      "intents": Json::array(answered(c, DAnswer).map(Json::string)),
-      "methods": Json::array(answered(c, DCompute).map(Json::string)),
+      "protocols": Json::array([]),
+      "propertyBindings": Json::array([]),
+      "viewBindings": Json::array([]),
+      "provideBindings": Json::array([]),
+      "lookupBindings": Json::array([]),
+      "methods": lowered(c, DCompute),
+      "whens": lowered(c, DPred),
+      "enriches": lowered(c, DEnrich),
+      "bindWiths": lowered(c, DBindWith),
+      "serves": Json::array([]),
+      "provide": Json::array([]),
+      "lookup": Json::array([]),
+      "inits": Json::array([]),
+      "style": Json::string(c.common_style),
     })
   }
   {
-    "abi": Json::number(@abi.ABI_VERSION.to_double()),
-    "module": Json::string(name),
-    "components": Json::array(out),
+    "manifestVersion": Json::number(3),
+    "apiVersion": Json::number(10),
+    "moduleName": Json::string(name),
+    "doc": Json::string(""),
+    "version": Json::string("0.1.0"),
+    "homepage": Json::string(""),
+    "authors": Json::array([]),
+    "stringEncoding": Json::string("utf8"),
+    "config": Json::array([]),
+    "macros": Json::array([]),
+    "components": Json::array(component_defs),
+    // Not part of the host's shape; carried so a playground can show them
+    // beside what did compile. A host ignores what it does not read.
     "refusals": Json::array(
       refusals.map(r => {
         "component": Json::string(r.comp),
@@ -346,5 +438,31 @@ fn manifest_json(
         "reason": Json::string(r.reason),
       }),
     ),
+  }
+}
+
+///|
+/// The runtime module — `tut`, the shared function vocabulary.
+///
+/// Not through `compile_wax`, and the difference is worth naming rather than
+/// leaving for somebody to trip over. `compile_wax` maps a diagnostic's line
+/// back to the CARD's line, which means holding the preamble to count it and
+/// rendering every message. The runtime is not a card: it is a fixed input that
+/// either compiles or is a bug in this package, so there is no card line to map
+/// to and nothing a card author could act on.
+pub fn compile_runtime() -> Bytes raise GenError {
+  let source = @abi.preamble_wax() + "\n" + @rt.source()
+  let result = @wax.compile_string(source, fname="tutuca-rt.wax") catch {
+    _ => raise BadModule(["the wax compiler stopped on the runtime"])
+  }
+  match result {
+    Ok(bytes) => bytes
+    Err(_) =>
+      raise BadModule([
+        "the embedded runtime does not compile — `rt_src_gen.mbt` is stale " +
+        "against `rt.wax`, or `rt.wax` itself is broken. Rerun " +
+        "`node tgc/rt/embed.mjs`, then compile `rt.wax` with `tgc build` for " +
+        "the diagnostics this deliberately does not carry",
+      ])
   }
 }

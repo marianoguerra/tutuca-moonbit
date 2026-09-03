@@ -58,20 +58,20 @@ fn tagged_value(tag : String, m : Map[String, Json]) -> Value {
   let payload = m.get("v").unwrap_or(Json::null())
   match (tag, payload) {
     ("int", String(text)) =>
-      match (try? @string.parse_int64(text)) {
-        Ok(i) => Int(i)
-        Err(_) => plain_object(m)
+      Int(@string.parse_int64(text)) catch {
+        _ => plain_object(m)
       }
     ("int", Number(n, ..)) => Int(n.to_int64())
     ("bin", String(text)) =>
-      match (try? @base64.decode(text[:])) {
-        Ok(b) => Bin(b)
-        Err(_) => plain_object(m)
+      Bin(@base64.decode(text[:])) catch {
+        _ => plain_object(m)
       }
     ("instant", String(text)) =>
-      match (try? instant_of_rfc3339(text)) {
-        Ok((secs, nanos)) => Instant(secs~, nanos~)
-        Err(_) => plain_object(m)
+      try {
+        let (secs, nanos) = instant_of_rfc3339(text)
+        Instant(secs~, nanos~)
+      } catch {
+        _ => plain_object(m)
       }
     // The escape, read back: whatever is inside is an ordinary map, including
     // one whose own keys start with the discriminator.

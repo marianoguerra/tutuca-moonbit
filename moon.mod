@@ -111,12 +111,13 @@ options(
     "cmd/tgc-corpus",
     // `tgc/proto` and `tgc/test` are the composition proof: three hand-written
     // and hand-compiled modules and the node harness that instantiates them
-    // together. They are evidence about the format rather than part of it, and
-    // `tgc/rt` travels with them — a consumer who wants the runtime module
-    // wants it built for their own page, not this repo's `_build`.
+    // together. Evidence about the format rather than part of it.
+    //
+    // `tgc/rt` SHIPS, because a page that hosts a component needs the runtime
+    // module and cannot fetch it from this repository's `_build`. Its `.wax` is
+    // embedded and `tgc/emit`'s `compile_runtime` builds it.
     "tgc/proto",
     "tgc/test",
-    "tgc/rt",
     "cmd/card-corpus",
     "cmd/conformance",
     "tutucard/wasm/test",

@@ -20,6 +20,10 @@ priv struct Comp {
   /// Declared fields, in declaration order. The index IS the slot.
   fields : Array[@statedef.FieldDef]
   decls : Array[@tscript.Decl]
+  /// The card's templates, carried through so the manifest can name them. A
+  /// component with no view has nothing to mount.
+  views : Array[@viewfile.RawView]
+  common_style : String
   refusals : Array[Refusal]
 }
 

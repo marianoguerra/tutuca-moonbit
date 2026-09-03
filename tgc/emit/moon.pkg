@@ -19,6 +19,7 @@ import {
   "marianoguerra/tutuca/tscript/check",
   "marianoguerra/tutuca/viewfile",
   "marianoguerra/tutuca/tgc/abi",
+  "marianoguerra/tutuca/tgc/rt",
   "marianoguerra/wax",
   "marianoguerra/wax/message",
   "moonbitlang/core/debug",

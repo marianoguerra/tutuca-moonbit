@@ -10,8 +10,25 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const wax = readFileSync(join(here, "rt.wax"), "utf8");
-const lines = wax.split("\n").map((l) => `  #|${l}`).join("\n");
+// COMMENTS ARE DROPPED, and not only for size. `rt.wax` is the authoritative
+// copy and the one a person reads; this is a build artifact, and its comments
+// are the same words twice. It also keeps the embedded copy ASCII, which the
+// Wax front end needs here in a way it does not need from a file — see the
+// note in `moon.pkg`.
+const source = readFileSync(join(here, "rt.wax"), "utf8");
+const kept = source
+  .split("\n")
+  .filter((l) => !l.trim().startsWith("//"))
+  .join("\n")
+  .replace(/\n{3,}/g, "\n\n");
+const nonAscii = [...kept].filter((c) => c.codePointAt(0) > 127);
+if (nonAscii.length) {
+  throw new Error(
+    `rt.wax has non-ASCII outside a comment (${JSON.stringify(nonAscii.join(""))}); ` +
+      "the embedded copy has to be ASCII",
+  );
+}
+const lines = kept.split("\n").map((l) => `  #|${l}`).join("\n");
 
 writeFileSync(
   join(here, "rt_src_gen.mbt"),
@@ -27,4 +44,4 @@ ${lines}
 }
 `,
 );
-console.log(`rt_src_gen.mbt: ${wax.split("\n").length} lines embedded`);
+console.log(`rt_src_gen.mbt: ${kept.split("\n").length} lines embedded (comments dropped)`);

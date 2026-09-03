@@ -27,6 +27,21 @@
           structured
         </button>
       </div>
+      <!-- Which compiler makes the module this page mounts.
+           They are two answers to the same question, which is why they are one
+           control rather than two pages: `component model` is
+           `tutuca:component@0.12.0` through jco-shaped bindings, and `wasm-gc`
+           is `tgc` — core wasm plus the GC proposal, no component model, no
+           archive, one file that carries its own manifest. Switching remounts
+           the same source through the other one, so what differs on screen is
+           the backend and nothing else. -->
+      <label class="examples">
+        <span>backend</span>
+        <select id="backend">
+          <option value="cm">component model</option>
+          <option value="tgc">wasm-gc (tgc)</option>
+        </select>
+      </label>
       <span id="status" class="status">…</span>
     </header>
 
@@ -156,6 +171,17 @@
                   aria-selected="false">wat</button>
           <button id="download" class="tab download" disabled>
             download .tutuca.tar.gz
+          </button>
+          <!-- ONE FILE, and that is the difference rather than a saving. The
+               archive beside this is a manifest, the views and a core module in
+               a tar; a `tgc` module carries its own manifest, so there is
+               nothing to pack and nothing that can arrive without its other
+               half. -->
+          <button id="download-tgc" class="tab download">
+            download .wasm (tgc)
+          </button>
+          <button id="download-rt" class="tab download" title="the shared function vocabulary, one per page">
+            download tutuca-rt.wasm
           </button>
           <button id="load" class="tab action" disabled>
             load &amp; mount

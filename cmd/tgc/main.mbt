@@ -18,6 +18,20 @@ fn main raise {
       }
     }
     "build" => build(rest)
+    "card" => card(rest)
+    // The runtime, from its EMBEDDED source rather than from `rt.wax`. It is
+    // the route a page takes, so it is the route worth being able to run.
+    "runtime" => {
+      let outp = if rest.length() >= 2 { rest[1] } else { "tutuca-rt.wasm" }
+      let bytes = @emit.compile_runtime() catch {
+        e => {
+          println("rejected: \{e.message()}")
+          return
+        }
+      }
+      @fs.write_bytes_to_file(outp, bytes)
+      println("\{outp}: \{bytes.length()} bytes")
+    }
     other => {
       println("unknown command \{other}")
       usage()
@@ -78,6 +92,53 @@ fn build(rest : ArrayView[String]) -> Unit raise {
 }
 
 ///|
+/// Compile a card, the way the playground does.
+///
+/// It exists so a node test can drive the guest bridge without a browser: a
+/// bridge only a page can exercise is a bridge nobody exercises.
+fn card(rest : ArrayView[String]) -> Unit raise {
+  guard rest.length() >= 3 else {
+    println("usage: tgc card <card.html> <out.wasm>")
+    return
+  }
+  let source = @fs.read_file_to_string(rest[1]) catch {
+    _ => {
+      println("cannot read \{rest[1]}")
+      return
+    }
+  }
+  let out = @emit.compile(source, name=stem_of(rest[1])) catch {
+    e => {
+      println("rejected: \{e.message()}")
+      return
+    }
+  }
+  @fs.write_bytes_to_file(rest[2], out.wasm)
+  @fs.write_string_to_file(rest[2] + ".wax", out.wax)
+  @fs.write_string_to_file(
+    rest[2] + ".manifest.json",
+    out.manifest.stringify(indent=2),
+  )
+  println("\{rest[2]}: \{out.wasm.length()} bytes, \{out.component}")
+  for r in out.refusals {
+    println("  refused \{r.kind} \{r.name}: \{r.reason}")
+  }
+}
+
+///|
+fn stem_of(path : String) -> String {
+  let parts = path.split("/")
+  let mut last = path
+  for p in parts {
+    last = p.to_string()
+  }
+  match last.split(".").to_array() {
+    [head, ..] => head.to_string()
+    _ => last
+  }
+}
+
+///|
 fn count_lines(s : String) -> Int {
   let mut n = 0
   for c in s {
@@ -93,4 +154,6 @@ fn usage() -> Unit {
   println("usage:")
   println("  tgc preamble [--wax|--wat]   print the canonical type section")
   println("  tgc build <in.wax> <out.wasm>")
+  println("  tgc card <card.html> <out.wasm>")
+  println("  tgc runtime [out.wasm]        compile the embedded runtime")
 }

@@ -291,5 +291,11 @@ a statement that abandons is discarded with the transition.
   import surface before anything untrusted is loaded through it.
 - **`core.Value` has not grown its new arms**, so `tgc/value` is still a mirror
   rather than the value itself.
-- **Views.** A card's templates are parsed and checked but not carried into the
-  module's manifest yet.
+- **Views live in the manifest, not in `tgc.describe`.** `tgc/emit` emits a
+  second manifest in `dyncomp/host`'s shape so a page can mount a card through
+  the host it already has. A module that named its own views would need no
+  second manifest at all, and that is the gap this crosses.
+- **The playground mounts through `dyncomp/host`**, via the same
+  `__cardguest` surface the old backend installs. There is still no `tgc`-native
+  host — no `&Obj` wrapper written against `tg_inst`, no policy re-argued
+  against this import surface.

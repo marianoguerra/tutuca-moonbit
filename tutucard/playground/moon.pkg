@@ -27,6 +27,11 @@ import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/tutucard/wasm",
+  // The OTHER backend: core wasm plus GC, no component model. Beside the one
+  // above rather than replacing it while the host half is being built — this
+  // page can generate and download a `tgc` module today, and `tgcguest.mbt` is
+  // what mounts one.
+  "marianoguerra/tutuca/tgc/emit" @tgc,
   // Driving a card rather than showing one: the same bundle, mounted on the
   // in-memory DOM. Backend-agnostic, so what it proves is provable with no
   // page — which is the whole point of it being reachable from here.

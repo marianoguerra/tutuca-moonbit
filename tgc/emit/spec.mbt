@@ -103,3 +103,16 @@ declare pub fn compile_decls(
   name~ : String,
   root~ : String,
 ) -> Compiled raise GenError
+
+///|
+/// Compile the runtime module — `tut`, the shared function vocabulary.
+///
+/// A page that hosts `tgc` components needs it, and fetching it out of this
+/// repository's `_build` is exactly what a consumer cannot do. It is the same
+/// route a card takes: the same compiler, the same preamble prepended, so a
+/// runtime built here and a component built anywhere else share types without
+/// either having been told about the other.
+///
+/// Compiling it costs the same as compiling a card. A page that mounts several
+/// should do it once.
+declare pub fn compile_runtime() -> Bytes raise GenError

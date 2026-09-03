@@ -13,6 +13,7 @@ Read [`SPEC.md`](SPEC.md) for the format. This page is the tree.
 | `value/` | the canonical value host-side, plus CBOR and JSON both ways |
 | `rt/` | `tutuca-rt` — the shared function vocabulary, as a module |
 | `emit/` | card → `tgc` module. The third backend over `tscript`'s one AST. |
+| `host/` | `values.mjs` — `core.Value` JSON ↔ `tg_val`, the one copy |
 | `proto/` | three components, produced three different ways |
 | `test/` | the proofs |
 
@@ -49,6 +50,35 @@ so a card using them compiled with no refusal to show for it and quietly lost
 its bindings. No transition case was asking.
 
 A backend not driven by the corpus is a backend with its own semantics.
+
+## In the card playground
+
+The playground compiles, mounts and downloads a `tgc` module beside the one the
+old backend makes. Pick the backend in the header; the source does not change,
+only what compiles it.
+
+Mounting reuses the whole existing host. `tutucard/web/card-tgc.js` installs the
+same `__cardguest[key]` surface `card-wasm.js` does, so `cardguest.mbt` mounts a
+`tgc` module unchanged and the views, renderer, dispatch and transactor above it
+are the ones that were already there. **That reuse is the claim, not a
+shortcut**: what the format replaced is the guest boundary and nothing above it.
+
+Two things are simpler on that boundary, and both are the format:
+
+- **there is no arena** — a compound value crossed the old one as a `u64` handle
+  into a host table valid for one call, because WIT has no recursive types.
+  Here a value is a reference;
+- **there is nothing to sweep** — an instance is a GC struct and the engine
+  collects it. The handle map exists only because MoonBit's js target passes
+  integers across the seam.
+
+The download is **one file**. There is no archive to build and no manifest to
+ship beside it, which is what lets a toolchain that has never heard of this page
+produce one. The runtime downloads separately, because `tut` is shared — one per
+page, not one per card.
+
+`node --test tgc/test/guest.test.mjs` drives that bridge with no browser. A
+bridge only a page can exercise is a bridge nobody exercises.
 
 ## Three routes, on purpose
 

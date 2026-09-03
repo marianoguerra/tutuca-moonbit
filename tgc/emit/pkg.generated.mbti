@@ -15,6 +15,8 @@ pub fn compile(String, name~ : String) -> Compiled raise GenError
 
 pub fn compile_decls(Array[@statedef.StateDef], Map[String, Array[@tscript.Decl]], name~ : String, root~ : String) -> Compiled raise GenError
 
+pub fn compile_runtime() -> Bytes raise GenError
+
 // Errors
 pub suberror GenError {
   BadCard(String)

@@ -12,6 +12,8 @@
 // of one route would not test it.
 import {
   "marianoguerra/tutuca/tgc/abi",
+  "marianoguerra/tutuca/tgc/emit",
+  "marianoguerra/tutuca/tgc/rt",
   "marianoguerra/wax",
   "marianoguerra/wax/diagnostic",
   "marianoguerra/wax/message",

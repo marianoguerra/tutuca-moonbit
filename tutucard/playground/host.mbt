@@ -99,7 +99,70 @@ pub fn install() -> Unit {
     (id, manifest, init) => mount_compiled(id, manifest, init),
     (key, manifest, source, scenes) => drive(key, manifest, source, scenes),
     key => forget_sweep_roots(key),
+    (source, name) => compile_tgc(source, name),
+    () => runtime_wasm(),
   )
+}
+
+///|
+/// The same card, through the OTHER backend.
+///
+/// `tgc/emit` compiles to a core wasm module using the GC proposal and nothing
+/// else — no component model, no WIT, no archive, no linear memory — and the
+/// module carries its own manifest, so what comes back here is one file rather
+/// than a file plus a sidecar. See `tgc/SPEC.md`.
+///
+/// It is beside `compile` rather than replacing it while the host half is being
+/// built: this page can already GENERATE and DOWNLOAD a `tgc` module, and
+/// mounting one goes through `tgcguest.mbt`.
+pub fn compile_tgc(source : String, name : String) -> String {
+  let out = @tgc.compile(source, name~) catch {
+    e =>
+      return Json::object({
+        "ok": Json::boolean(false),
+        "error": Json::string(e.message()),
+      }).stringify()
+  }
+  Json::object({
+    "ok": Json::boolean(true),
+    "component": Json::string(out.component),
+    "components": Json::array(out.components.map(Json::string)),
+    "wasm": Json::string(@base64.encode(out.wasm)),
+    "size": Json::number(out.wasm.length().to_double()),
+    "wax": Json::string(out.wax),
+    "manifest": out.manifest,
+    "fields": Json::array(out.fields.map(Json::string)),
+    "refusals": Json::array(
+      out.refusals.map(r => {
+        Json::object({
+          "kind": Json::string(r.kind),
+          "name": Json::string(r.name),
+          "reason": Json::string(r.reason),
+          "line": Json::number(r.line.to_double()),
+        })
+      }),
+    ),
+  }).stringify()
+}
+
+///|
+/// The runtime module, base64.
+///
+/// One per page rather than one per card: `tut` is shared, which is the point
+/// of it. The page caches what this answers.
+pub fn runtime_wasm() -> String {
+  let bytes = @tgc.compile_runtime() catch {
+    e =>
+      return Json::object({
+        "ok": Json::boolean(false),
+        "error": Json::string(e.message()),
+      }).stringify()
+  }
+  Json::object({
+    "ok": Json::boolean(true),
+    "wasm": Json::string(@base64.encode(bytes)),
+    "size": Json::number(bytes.length().to_double()),
+  }).stringify()
 }
 
 ///|
@@ -114,8 +177,10 @@ extern "js" fn publish(
   mount_compiled : (String, String, String) -> String,
   drive : (String, String, String, String) -> String,
   reset_sweep : (String) -> Unit,
+  compile_tgc : (String, String) -> String,
+  runtime_wasm : () -> String,
 ) -> Unit =
-  #|(check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive, resetSweep) => { globalThis.__tutucard = { check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive, resetSweep } }
+  #|(check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive, resetSweep, compileTgc, runtimeWasm) => { globalThis.__tutucard = { check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive, resetSweep, compileTgc, runtimeWasm } }
 
 ///|
 /// Tear a card down and forget its mount point.

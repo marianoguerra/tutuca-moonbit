@@ -46,7 +46,6 @@ test "malformed timestamps are refused" {
       "accepted"
     } catch {
       BadInstant(_) => "refused"
-      e => "wrong error: \{e}"
     }
     assert_eq(got, "refused", msg="for \{bad}")
   }

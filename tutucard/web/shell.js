@@ -35,6 +35,9 @@ const els = {
   preview: $("preview"),
   wasmSize: $("wasm-size"),
   download: $("download"),
+  downloadTgc: $("download-tgc"),
+  downloadRt: $("download-rt"),
+  backend: $("backend"),
   load: $("load"),
   loaded: $("loaded"),
   loadedNote: $("loaded-note"),
@@ -365,10 +368,16 @@ async function reload() {
   clearTimeout(timer);
   const gen = ++reloadGen;
   const src = source();
-  const { mountCard } = await import("./card-wasm.js");
-  const report = await mountCard("preview", src, componentName(src), {
-    allowWax: ALLOW_WAX,
-  });
+  const name = componentName(src);
+  // TWO BACKENDS, ONE SOURCE. The card does not change; what compiles it does.
+  // `tgc` is core wasm plus the GC proposal — no component model, no archive —
+  // and it mounts through the same host, because what the format replaced is
+  // the guest boundary and nothing above it.
+  const report = els.backend?.value === "tgc"
+    ? await (await import("./card-tgc.js")).mountTgcCard("preview", src, name, {})
+    : await (await import("./card-wasm.js")).mountCard("preview", src, name, {
+        allowWax: ALLOW_WAX,
+      });
   if (gen !== reloadGen) return;
   let issues;
   if (!report.ok) {
@@ -1115,6 +1124,39 @@ els.download.addEventListener("click", async () => {
   a.click();
   URL.revokeObjectURL(a.href);
 });
+
+// The `tgc` module, saved. ONE FILE — no archive to build, because the module
+// carries its own manifest, which is what lets a toolchain that has never heard
+// of this page produce one.
+//
+// It compiles rather than reusing `lastBuild`: that is the OTHER backend's
+// build, and handing somebody a file labelled `tgc` that came out of the
+// component-model compiler would be the worst kind of wrong.
+els.downloadTgc?.addEventListener("click", async () => {
+  const { downloadTgcModule } = await import("./card-tgc.js");
+  const src = source();
+  const report = downloadTgcModule(src, componentName(src));
+  if (!report.ok) {
+    els.status.textContent = "cannot compile for tgc";
+    els.status.className = "status bad";
+  }
+});
+
+// The runtime, saved. One per PAGE rather than one per card — `tut` is shared,
+// which is the point of it — so a page that hosts several components fetches
+// this once and instantiates it once.
+els.downloadRt?.addEventListener("click", async () => {
+  const { downloadRuntime } = await import("./card-tgc.js");
+  const report = await downloadRuntime();
+  if (!report.ok) {
+    els.status.textContent = "cannot build the runtime";
+    els.status.className = "status bad";
+  }
+});
+
+// Switching backend remounts the same source through the other compiler, so
+// what differs on screen is the backend and nothing else.
+els.backend?.addEventListener("change", () => reload());
 
 /** A structured edit, spliced back into the one string that is the card. */
 function onPartInput() {
