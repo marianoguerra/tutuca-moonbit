@@ -6,6 +6,37 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **`tutuca migrate` — rewriting a tree from one spelling of the language to
+  the next.** Phase 2 of the vocabulary work renames several keyword families,
+  and each rename lands with the old spelling still parsing for one release.
+  This is what carries a tree across in between, and it lands BEFORE the first
+  rename rather than after it, because a migration written afterwards is one
+  nobody's files ever went through.
+
+  ```
+  tutuca migrate src/            # say what would change
+  tutuca migrate src/ --write    # apply it
+  ```
+
+  Each line is `path:offset  rule  old -> new`, where `rule` names the
+  retirement. Every edit replaces a **span of the original text**: comments,
+  blank lines and alignment come back exactly as the author left them, because
+  nothing here re-serialises a declaration — which is the shape that reformats
+  a file it only meant to rename a word in. Two rules claiming the same span,
+  or one whose `from` is not what the file holds, stops that file rather than
+  writing the damage. Running it twice is running it once.
+
+  The first rule is a rename that already happened: `<script
+  type="tutuca/state">` is `<script type="tutuca/spec">`. It is also the best
+  evidence for why the tool is worth having — a retired spelling does not fail
+  a build, so two places in this repo went on reading for `tutuca/state` long
+  after nothing wrote it, and neither failed anything.
+
+  `cmd/dev -- migrate-check` runs it over the whole view tree and asserts it
+  finds nothing; `ci` includes it.
+
 ### Changed
 
 - **One `Origin`, where there were three enums saying who.** `DispatchProvenance`

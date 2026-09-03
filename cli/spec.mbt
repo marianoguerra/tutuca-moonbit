@@ -112,6 +112,14 @@ pub(all) enum Outcome {
     dry_run~ : Bool,
     ir~ : Bool
   )
+  /// Rewrite files from one spelling of the language to the next
+  /// (migrate.mbt). The core decides every edit; the shell reads the files and,
+  /// under `--write`, writes them back.
+  ///
+  /// Roots rather than one file for the same reason `gen-views` takes them: a
+  /// rename crosses a tree, and a migration run file by file is one somebody
+  /// stops halfway.
+  Migrate(GlobalOpts, roots~ : Array[String], write~ : Bool)
   /// Regenerate view modules as their .html files change. The core decides
   /// what to watch; the shell owns the watcher and the filesystem.
   Watch(GlobalOpts, plan~ : WatchPlan)
@@ -158,6 +166,9 @@ declare pub fn plan(argv : Array[String]) -> Outcome
 /// Parse `gen-views` arguments: finishes purely on help and usage errors,
 /// otherwise returns a GenViews outcome for the shell to carry out.
 declare fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome
+
+///|
+declare fn run_migrate(args : Array[String], opts : GlobalOpts) -> Outcome
 
 ///|
 /// Compile view source into the generated MoonBit module (viewgen/), the

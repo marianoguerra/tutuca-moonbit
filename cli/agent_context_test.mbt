@@ -44,7 +44,8 @@ test "the command list is exactly the commands that exist" {
   guard! schema() is Object(top)
   @debug.assert_eq(names_of(top), [
     "help", "feedback", "install-skill", "new-guest", "new-storybook", "storybook",
-    "gen-views", "trace", "gen-tailwind-css", "gen-margaui-css", "watch", "agent-context",
+    "gen-views", "migrate", "trace", "gen-tailwind-css", "gen-margaui-css", "watch",
+    "agent-context",
   ])
 }
 

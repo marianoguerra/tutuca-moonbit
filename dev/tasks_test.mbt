@@ -47,6 +47,7 @@ test "plan expands the ci composite into its member tasks' steps" {
     @dev.plan("check-guest-list").unwrap_or([]) +
     @dev.plan("check-guest-template").unwrap_or([]) +
     @dev.plan("check-storybook-template").unwrap_or([]) +
+    @dev.plan("migrate-check").unwrap_or([]) +
     @dev.plan("check-publish-graph").unwrap_or([]) +
     @dev.plan("test").unwrap_or([]) +
     @dev.plan("build").unwrap_or([])

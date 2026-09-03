@@ -97,6 +97,12 @@ pub fn iso8601_utc(UInt64) -> String
 
 pub fn lex_compare(String, String) -> Int
 
+pub fn migrate_all(Array[(String, String)]) -> MigratePlan
+
+pub fn migrate_emit(GlobalOpts, MigratePlan, Bool) -> Emit
+
+pub fn migrate_one(String, String) -> MigrateFile
+
 pub fn new_guest_success(String, String) -> String
 
 pub fn new_guest_target_exists(GlobalOpts, String) -> Emit
@@ -213,6 +219,19 @@ pub(all) struct GuestScaffoldPlan {
   files : Array[(String, String)]
 } derive(Eq, @debug.Debug)
 
+pub(all) struct MigrateFile {
+  path : String
+  out : String?
+  lines : Array[String]
+  problem : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct MigratePlan {
+  files : Array[MigrateFile]
+  changed : Int
+  refused : Int
+} derive(Eq, @debug.Debug)
+
 pub(all) enum Outcome {
   Done(Emit)
   Feedback(GlobalOpts, message~ : String?)
@@ -221,6 +240,7 @@ pub(all) enum Outcome {
   NewStorybook(GlobalOpts, plan~ : StorybookScaffoldPlan)
   ServeStorybook(GlobalOpts, dir~ : String, port~ : Int, out~ : String?)
   GenViews(GlobalOpts, roots~ : Array[String], out~ : String?, name~ : String?, dry_run~ : Bool, ir~ : Bool)
+  Migrate(GlobalOpts, roots~ : Array[String], write~ : Bool)
   Watch(GlobalOpts, plan~ : WatchPlan)
   GenCss(GlobalOpts, plan~ : CssPlan)
   Trace(GlobalOpts, plan~ : TracePlan)

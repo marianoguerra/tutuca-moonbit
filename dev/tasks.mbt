@@ -193,6 +193,11 @@ pub fn tasks() -> Array[Task] {
       commands: gen_guest_bindings_commands(),
     },
     {
+      name: "migrate-check",
+      about: "prove `tutuca migrate` would leave this repo alone — i.e. every view file is in the current spelling",
+      commands: migrate_check_commands(),
+    },
+    {
       name: "bench-views",
       about: "regenerate the benchmark view corpus (all_views.html, one_big_view.html, corpus_gen.mbt)",
       commands: [
@@ -578,6 +583,37 @@ fn gen_conformance_commands() -> Array[Command] {
 }
 
 ///|
+/// `tutuca migrate` over the whole view tree, asserting it finds nothing.
+///
+/// The drift check for a MIGRATION, and it asks a different question from the
+/// generated-module one below. That one asks whether a generated file matches
+/// its source; this asks whether the repo's own sources are written in the
+/// spelling the language currently has.
+///
+/// Worth having for the reason the benchmark corpus and the card playground
+/// both proved: a retired spelling does not fail a build. It sits in a file
+/// that parses, and the code reading for it drifts away underneath in silence.
+/// A rename lands, everything stays green, and the old word is still in forty
+/// files a year later.
+///
+/// The roots are `gen-views`' plus the two trees that are view files with no
+/// generated sibling — the starter cards, which are what a stranger reads
+/// first, and the card compiler's own examples.
+fn migrate_check_commands() -> Array[Command] {
+  [
+    {
+      label: "migrate check · every view file is in the current spelling",
+      prog: "moon",
+      args: [
+        "run", "--target", "native", "cmd/tutuca", "--", "migrate", "storybook",
+        "docs", "demo", "dyncomp", "playground/site/cards", "tutucard/wasm/examples",
+        "tscript/conformance/mbt",
+      ],
+    },
+  ]
+}
+
+///|
 /// One entry per repo-owned view file. Run after editing an .html view; it ends
 /// in its own `git diff --exit-code`, which is what lets `ci` include it to
 /// catch a generated module that has drifted from its source. A file whose
@@ -842,11 +878,14 @@ fn composites() -> Array[(String, String, Array[String])] {
     // in `moon fmt` over everything.
     (
       "ci",
-      "gen-views drift + skill-embed drift + check + the example/skill/guest checks + test + build (build-smokes every backend & demo)",
+      "gen-views drift + skill-embed drift + migrate drift + check + the example/skill/guest checks + test + build (build-smokes every backend & demo)",
       [
         "gen-views", "skill-embed", "storybook-template-embed", "check", "check-examples",
         "check-skill", "check-guest-list", "check-guest-template", "check-storybook-template",
-        "check-publish-graph", "test", "build",
+        // After `check`, because it runs the native CLI and so needs it to
+        // build; before `test`, because a repo written in a retired spelling is
+        // a fact about the sources rather than about any test.
+         "migrate-check", "check-publish-graph", "test", "build",
       ],
     ),
   ]

@@ -41,6 +41,19 @@ let overview_body : String =
   #|        --dry-run print the generated modules instead of writing them
   #|        --no-ir   skip the companion <stem>_view_ir_gen.mbt
   #|
+  #|  migrate [path...] [--write]
+  #|      Rewrite view files from a retired spelling of the language to the
+  #|      current one. A rename lands with the old spelling still parsing for
+  #|      one release; this carries a tree across in between. Paths follow the
+  #|      same rule as gen-views.
+  #|
+  #|      Says what would change and writes nothing without --write. Each line
+  #|      is `path:offset  rule  old -> new`, where `rule` names the retirement.
+  #|      Every edit replaces a span of the original text, so comments, blank
+  #|      lines and alignment come back untouched — nothing here re-serialises a
+  #|      declaration. Running it twice is running it once.
+  #|        --write   apply the edits (without it nothing on disk is touched)
+  #|
   #|  gen-tailwind-css [path...] [-o <file>] [--entry <file>] [--classes <file>]
   #|                   [--print-classes] [--polyfills <0..3>]
   #|  gen-margaui-css  [path...] (same flags)

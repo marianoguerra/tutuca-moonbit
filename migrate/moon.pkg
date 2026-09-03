@@ -1,0 +1,29 @@
+// Rewriting a file from one spelling of the language to the next.
+//
+// The tool exists so that a rename is a MIGRATION and not a break: a family
+// of keywords changes, the old spelling keeps parsing for one release, and
+// this is what carries the repo — and everybody else's files — across in
+// between. It lands before the first rename rather than after it, because a
+// migration written after the fact is one nobody's files ever went through.
+//
+// Pure and target-agnostic like `viewfile` and `statedef`: source text in,
+// rewritten source and the edits that produced it out, never touching the
+// filesystem. The CLI does the I/O.
+//
+// It never re-serialises an AST. Every edit is a (span, replacement) pair
+// taken from a lexer's own spans and applied to the ORIGINAL text, so a file
+// that goes through comes back with its comments, its blank lines and its
+// alignment exactly where the author left them. `Decl::to_source` would
+// normalise all three away, which is why it is not used here.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/viewfile",
+  "moonbitlang/core/debug",
+}
+
+// The golden corpus is every view file and card in the repo, read from disk —
+// so the test needs the filesystem and the CLI's own path walk, which is why
+// it lives beside the CLI rather than here. What is here is the contract.
+import {
+  "moonbitlang/core/debug",
+} for "test"

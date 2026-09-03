@@ -358,6 +358,76 @@ async fn run_gen_views(
 }
 
 ///|
+/// The shell half of `tutuca migrate`: read every view file under the roots,
+/// let the pure core decide the edits, and — only under `--write` — write the
+/// ones that changed back.
+///
+/// The discovery rule is `gen-views`', deliberately: a migration is aimed at
+/// the files a project treats as views, and `index.html` is not one.
+///
+/// A file that comes back unchanged is not rewritten. Not as an optimisation —
+/// writing identical bytes would touch every mtime in the tree, and every
+/// watcher, formatter and build cache downstream would act as though the whole
+/// project had moved.
+async fn run_migrate(
+  opts : @cli.GlobalOpts,
+  roots : Array[String],
+  write : Bool,
+) -> Unit noraise {
+  let paths = collect_view_files(roots)
+  if paths.is_empty() {
+    emit_and_exit(
+      @cli.error_emit(
+        opts,
+        @cli.err(
+          @cli.CODE_USAGE_MISSING_ARGUMENT,
+          "no view files under \{roots.join(", ")}",
+          hint="a directory contributes the .html files that already have a generated sibling; pass the .html path directly otherwise",
+        ),
+      ),
+    )
+    return
+  }
+  let inputs : Array[(String, String)] = []
+  for path in paths {
+    let source = @fs.read_file(path).text() catch {
+      e => {
+        emit_and_exit(
+          @cli.error_emit(
+            opts,
+            @cli.err(@cli.CODE_INTERNAL, "cannot read \{path}: \{e}"),
+          ),
+        )
+        return
+      }
+    }
+    inputs.push((path, source))
+  }
+  let plan = @cli.migrate_all(inputs)
+  if write {
+    for i in 0..<plan.files.length() {
+      let f = plan.files[i]
+      guard f.out is Some(out) else { continue }
+      if out == inputs[i].1 {
+        continue
+      }
+      @fs.write_file(f.path, out, create_mode=CreateOrTruncate) catch {
+        e => {
+          emit_and_exit(
+            @cli.error_emit(
+              opts,
+              @cli.err(@cli.CODE_INTERNAL, "cannot write \{f.path}: \{e}"),
+            ),
+          )
+          return
+        }
+      }
+    }
+  }
+  emit_and_exit(@cli.migrate_emit(opts, plan, write))
+}
+
+///|
 /// Which input a written file came from, for the "generated X from Y" line.
 /// Both of a file's modules are derived from its target, so the mapping is the
 /// same rule that produced the paths rather than a second guess at them.
@@ -853,6 +923,7 @@ async fn main {
       run_serve_storybook(opts, dir, port, out)
     GenViews(opts, roots~, out~, name~, dry_run~, ir~) =>
       run_gen_views(opts, roots, out, name, dry_run, ir)
+    Migrate(opts, roots~, write~) => run_migrate(opts, roots, write)
     Watch(opts, plan~) => run_watch(opts, plan)
     GenCss(opts, plan~) => run_gen_css(opts, plan)
     Trace(opts, plan~) => run_trace(opts, plan)

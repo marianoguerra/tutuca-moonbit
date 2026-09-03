@@ -16,6 +16,9 @@ import {
   // but the file
   "marianoguerra/tutuca/trace",
   "marianoguerra/tutuca/viewfile",
+  // `tutuca migrate`: rewriting a file from one spelling to the next, which
+  // needs nothing but the file either.
+  "marianoguerra/tutuca/migrate",
   "moonbitlang/core/string",
 }
 
