@@ -111,6 +111,30 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Every starter card in the card playground was refused, and the scenes
+  behind them never ran.** `tutucard/wasm/check.mbt` passed the checker the
+  spec block's rules lifted alongside the script block's own declarations —
+  something only the EMITTER needs — so every `pred` and `invariant` in a spec
+  block was reported as `RULE_IN_BOTH` against itself, under a span belonging
+  to a different block that the reporter then rebased into this one. Seven
+  cards did not load; the twenty-five scenes they declare were never reached.
+
+  Behind that: the starter cards in `tutucard/web/examples.js` still dispatched
+  generated mutator names (`setLabel e.value`, `resetCount`, `toggleIsOpen`),
+  which no longer answer. They write their properties now, the way every other
+  view in the repo does.
+
+- **The card playground's structured editor could not find any card's spec
+  block.** `tutucard/web/regions.js` matched `<script type="tutuca/state">`, a
+  spelling this repo no longer writes — the same retired word the benchmark
+  corpus builder was matching. It accepts both now, and the region is `spec`
+  rather than `state`.
+
+- **`tutucard/wasm/examples/Guarded.html` had its `pred` cut in half.** The
+  rule's body ended up ten lines away, inside the script block and after the
+  handler, left there by the sed that moved the rule layer into the spec block.
+  The card had not parsed since.
+
 - **The benchmark view corpus kept every schema block it was supposed to
   strip.** `benchmarks/build.mjs` matched `tutuca/state`, a spelling the repo
   no longer writes, so `all_views.html` concatenated 36 schema blocks into one

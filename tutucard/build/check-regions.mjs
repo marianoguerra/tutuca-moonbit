@@ -47,7 +47,7 @@ const CARD = [
 ].join("\n");
 
 const p = R.parts(CARD);
-check("the state block is sliced exactly", p.state.text, "\n  state Counter { n: Int }\n");
+check("the spec block is sliced exactly", p.spec.text, "\n  state Counter { n: Int }\n");
 check("the script block is sliced exactly", p.script.text, "\n  receive bump { .n += 1 }\n");
 // The examples tab edits this one, and the Examples pane mounts what it names.
 check(
@@ -146,7 +146,7 @@ check("a card with no script block has none", R.parts(BARE).script, null);
 // pair has to compose to the identity on an untouched pane — a projection that
 // rewrites the card just by being LOOKED at is worse than an indented pane.
 check("a pane starts at column zero", R.dedented(p.views[1].text), "<b>row</b>");
-check("…with no line the tags left behind", R.dedented(p.state.text), "state Counter { n: Int }");
+check("…with no line the tags left behind", R.dedented(p.spec.text), "state Counter { n: Int }");
 check(
   "an untouched pane splices back the same characters",
   R.reindented(p.views[1].text, R.dedented(p.views[1].text)),

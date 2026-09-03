@@ -711,7 +711,7 @@ function scheduleReload() {
 /** The region the structured view is currently editing, or null. */
 function currentRegion() {
   const p = parts(source());
-  if (ui.part === "state") return p.state;
+  if (ui.part === "state") return p.spec;
   if (ui.part === "script") return p.script;
   if (ui.part === "tests") return p.tests;
   if (ui.part === "examples") return p.init;

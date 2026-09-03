@@ -21,7 +21,7 @@
 /**
  * The card's parts.
  *
- * `state` and `script` are null when the card has no such block — which is
+ * `spec` and `script` are null when the card has no such block — which is
  * legitimate, and which the structured view shows as an empty pane rather than
  * hiding, because "there is no script yet" is what an author is about to fix.
  *
@@ -32,7 +32,7 @@
  * `macro`.
  *
  * `tests` is the `<script type="tutuca/test">` block: what the card claims it
- * does, as scenes. One per file like `state` and `script`, and null when the
+ * does, as scenes. One per file like `spec` and `script`, and null when the
  * card declares none — which is most cards, and which the pane shows as empty
  * rather than hiding, for the reason the script pane does.
  *
@@ -43,7 +43,7 @@
  * only in the raw view.
  *
  * @typedef {{
- *   state: Region | null,
+ *   spec: Region | null,
  *   script: Region | null,
  *   tests: Region | null,
  *   init: Region | null,
@@ -70,9 +70,13 @@ function element(source, openRe, closeTag) {
  * @returns {Parts}
  */
 export function parts(source) {
-  const state = element(
+  // Both spellings, because the loader accepts both: `tutuca/spec` is what a
+  // card writes now, and `tutuca/state` still parses for one release. This
+  // matched only the retired one for as long as the rename has existed, so the
+  // structured view could not find ANY current card's block.
+  const spec = element(
     source,
-    /<script\s+type="tutuca\/state"\s*>/g,
+    /<script\s+type="tutuca\/(?:spec|state)"\s*>/g,
     "</script>",
   );
   const script = element(
@@ -140,7 +144,7 @@ export function parts(source) {
   }
 
   return {
-    state: state && strip(state),
+    spec: spec && strip(spec),
     script: script && strip(script),
     tests: tests && strip(tests),
     init: init && strip(init),

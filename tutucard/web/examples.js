@@ -142,11 +142,11 @@ export const EXAMPLES = [
       <div class="join">
         <button class="btn btn-sm join-item" @on.click="add 1">+1</button>
         <button class="btn btn-sm join-item" @on.click="add -1">-1</button>
-        <button class="btn btn-sm join-item btn-ghost" @on.click="resetCount">reset</button>
+        <button class="btn btn-sm join-item btn-ghost" @on.click=".count = default">reset</button>
       </div>
       <label class="flex gap-2 items-center">
         <span class="opacity-70">label</span>
-        <input class="input input-sm w-full" :value=".label" @on.input="setLabel e.value">
+        <input class="input input-sm w-full" :value=".label" @on.input=".label = e.value">
       </label>
       <ul class="flex gap-1 flex-wrap">
         <li class="badge badge-sm badge-neutral" @each=".history"><x text="@value"></x></li>
@@ -348,7 +348,7 @@ export const EXAMPLES = [
       <h2 class="card-title">Todos</h2>
       <div class="flex gap-2 items-center">
         <input class="input input-sm w-full draft" placeholder="what needs doing"
-               :value=".draft" @on.input="setDraft e.value"
+               :value=".draft" @on.input=".draft = e.value"
                @on.keydown+send="addItem">
         <button class="btn btn-sm btn-primary add" @on.click="addItem">add</button>
       </div>
@@ -368,7 +368,7 @@ export const EXAMPLES = [
     <span class="w-full label" @hide=".editing" @text="$label"
           @on.dblclick="startEdit"></span>
     <input class="input input-xs w-full edit" @show=".editing"
-           :value=".draft" @on.input="setDraft e.value"
+           :value=".draft" @on.input=".draft = e.value"
            @on.keydown+send="commitEdit" @on.keydown+cancel="cancelEdit">
     <button class="btn btn-xs btn-soft btn-error btn-circle remove"
             @on.click="requestRemove">&times;</button>
@@ -452,7 +452,7 @@ export const EXAMPLES = [
     <div class="card-body gap-3">
       <div class="flex gap-2 items-center">
         <input class="input input-sm w-full" placeholder="filter"
-               :value=".query" @on.input="setQuery e.value">
+               :value=".query" @on.input=".query = e.value">
         <span class="badge badge-sm badge-neutral"><x text="$caption"></x></span>
       </div>
       <ul class="flex flex-col gap-1">
@@ -721,7 +721,7 @@ export const EXAMPLES = [
       </ul>
       <div class="flex gap-2 items-center">
         <input class="input input-sm w-full" placeholder="say something"
-               :value=".query" @on.input="setQuery e.value"
+               :value=".query" @on.input=".query = e.value"
                @on.keydown+send="echoQuery">
         <button class="btn btn-sm" @on.click="echoQuery">echo it</button>
       </div>
@@ -867,13 +867,13 @@ export const EXAMPLES = [
       <div role="tablist" class="tabs tabs-border">
         <button role="tab"
           @if.class=".tab is 'overview'" @then="'tab tab-active'" @else="'tab'"
-          @on.click="setTab 'overview'">Overview</button>
+          @on.click=".tab = 'overview'">Overview</button>
         <button role="tab"
           @if.class=".tab is 'features'" @then="'tab tab-active'" @else="'tab'"
-          @on.click="setTab 'features'">Features</button>
+          @on.click=".tab = 'features'">Features</button>
         <button role="tab"
           @if.class=".tab is 'pricing'" @then="'tab tab-active'" @else="'tab'"
-          @on.click="setTab 'pricing'">Pricing</button>
+          @on.click=".tab = 'pricing'">Pricing</button>
       </div>
       <div class="p-3" @show=".tab is 'overview'">
         <h4>Overview</h4><p>A short summary of what this product does.</p>
@@ -952,7 +952,7 @@ export const EXAMPLES = [
 <template id="ShowHide">
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-2">
-      <button class="btn btn-primary" @on.click="toggleIsOpen" @text="$label"></button>
+      <button class="btn btn-primary" @on.click=".isOpen = not .isOpen" @text="$label"></button>
       <div class="p-3" @show=".isOpen">
         <p>Details panel — only visible when <code>isOpen</code> is true.</p>
         <button class="btn btn-sm" @on.click="incCount">Click me</button>
@@ -1008,15 +1008,15 @@ export const EXAMPLES = [
 <template id="AttributeBinding">
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
-      <input class="input input-sm" :value=".str" @on.input="setStr e.value"
+      <input class="input input-sm" :value=".str" @on.input=".str = e.value"
              :title="$'Content is {.str}'">
       <!-- \`valueAsInt\` rather than a handler that parses the string: the
            argument names are where a card does its conversions. -->
       <input class="input input-sm" type="number" :value=".num"
-             @on.input="setNum e.valueAsInt">
+             @on.input=".num = e.valueAsInt">
       <label class="flex gap-2 items-center">
         <input class="checkbox checkbox-sm" type="checkbox" :checked=".bool"
-               @on.input="setBool e.value">
+               @on.input=".bool = e.value">
         bool
       </label>
       <p>String: <span @text=".str"></span></p>
@@ -1080,9 +1080,9 @@ export const EXAMPLES = [
            schema generated. The modifiers are guards — +send is Enter,
            +cancel is Escape. -->
       <input type="search" class="input input-sm" :value=".query"
-        @on.input="setQuery e.value"
-        @on.keydown+send="setLastSentSearch e.value"
-        @on.keydown+cancel="resetQuery"
+        @on.input=".query = e.value"
+        @on.keydown+send=".lastSentSearch = e.value"
+        @on.keydown+cancel=".query = default"
         placeholder="Search (Enter to send, Esc to clear)">
       <p @show="truthy? .lastSentSearch">
         Search: "<span class="sent" @text=".lastSentSearch"></span>"
@@ -1220,7 +1220,7 @@ export const EXAMPLES = [
 <template id="RenderWithScope">
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
-      <input class="input input-sm" :value=".text" @on.input="setText e.value">
+      <input class="input input-sm" :value=".text" @on.input=".text = e.value">
       <div @enrich-with="info">
         <p>Text: <span @text=".text"></span></p>
         <p>Len: <span class="len" @text="@len"></span></p>
@@ -1395,7 +1395,7 @@ export const EXAMPLES = [
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <input type="search" class="input input-sm" :value=".query"
-        @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
+        @on.input=".query = e.value" @on.keydown+cancel=".query = default"
         placeholder="Filter entries">
       <ul class="flex flex-col gap-1">
         <li @each=".items" @when="filterItem" @enrich-with="enrichItem">
@@ -1506,7 +1506,7 @@ export const EXAMPLES = [
 <template id="MdPreview">
   <div class="flex gap-3 items-stretch">
     <textarea class="textarea flex-1 font-mono text-xs" spellcheck="false"
-      :value=".source" @on.input="setSource e.value"></textarea>
+      :value=".source" @on.input=".source = e.value"></textarea>
     <!-- Markdown, rendered straight into the vdom by the render-time filter —
          no handler, no library on the page. -->
     <div class="flex-1 p-3 bg-base-100 rounded overflow-auto"
@@ -1597,7 +1597,7 @@ export const EXAMPLES = [
       <!-- The escape hatch, named so nobody reaches for it by accident. -->
       <div class="p-2 bg-base-100 rounded" @dangerouslysetinnerhtml=".content"></div>
       <textarea class="textarea font-mono text-xs" :value=".content"
-        @on.input="setContent e.value"></textarea>
+        @on.input=".content = e.value"></textarea>
     </div>
   </div>
 </template>
@@ -1650,7 +1650,7 @@ export const EXAMPLES = [
         @if.class=".isActive" @then="'btn btn-success'" @else="'btn btn-ghost'"
         @if.title=".isActive" @then.title="'Click to disable'"
         @else.title="'Click to enable'"
-        @on.click="toggleIsActive">
+        @on.click=".isActive = not .isActive">
         <span @show=".isActive">Enabled</span>
         <span @hide=".isActive">Disabled</span>
       </button>
@@ -1718,7 +1718,7 @@ export const EXAMPLES = [
       </p>
       <p class="common">styled by the file's common block</p>
       <p class="styled-global">styled by the global block</p>
-      <button class="btn btn-sm" @on.click="toggleLoud" @text="$label"></button>
+      <button class="btn btn-sm" @on.click=".loud = not .loud" @text="$label"></button>
     </div>
   </div>
 </template>
@@ -1807,7 +1807,7 @@ export const EXAMPLES = [
         <circle @each=".palette" @enrich-with="swatch"
           :cx="@cx" cy="98" r="18" :fill="@value"
           stroke-width="3" :stroke="@ring"
-          @on.click="setColor @value"></circle>
+          @on.click=".color = @value"></circle>
       </svg>
       <p class="text-sm">Selected: <x text=".color"></x></p>
     </div>
@@ -1890,13 +1890,13 @@ export const EXAMPLES = [
       <div class="flex gap-3 text-sm">
         <label class="flex items-center gap-1">a
           <input type="number" class="input input-sm w-16" :value=".a"
-                 @on.input="setA e.valueAsInt"></label>
+                 @on.input=".a = e.valueAsInt"></label>
         <label class="flex items-center gap-1">b
           <input type="number" class="input input-sm w-16" :value=".b"
-                 @on.input="setB e.valueAsInt"></label>
+                 @on.input=".b = e.valueAsInt"></label>
         <label class="flex items-center gap-1">c
           <input type="number" class="input input-sm w-16" :value=".c"
-                 @on.input="setC e.valueAsInt"></label>
+                 @on.input=".c = e.valueAsInt"></label>
       </div>
       <!-- MathML, namespaced by the subtree it sits in — no directive needed. -->
       <math display="block">
@@ -2016,7 +2016,7 @@ export const EXAMPLES = [
       <h2 class="card-title" @text=".title"></h2>
       <div class="flex gap-2 items-center">
         <input class="input input-sm w-full draft" placeholder="add a label"
-               :value=".draft" @on.input="setDraft e.value"
+               :value=".draft" @on.input=".draft = e.value"
                @on.keydown+send="addLabel">
         <button class="btn btn-sm btn-primary" @on.click="addLabel">add</button>
       </div>
@@ -2440,7 +2440,7 @@ export const EXAMPLES = [
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <input type="search" class="input input-sm" :value=".query"
-             @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
+             @on.input=".query = e.value" @on.keydown+cancel=".query = default"
              placeholder="Filter entries">
       <!-- data-dragtype on the source and data-droptarget on the target pair
            a draggable with where it may land; both are on the same row here,

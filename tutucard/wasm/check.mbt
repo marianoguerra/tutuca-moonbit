@@ -153,10 +153,14 @@ pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
     // A card with views and no block has been checked as far as it goes: there
     // is nothing to check the surface against.
     guard block is Some(b) else { continue }
-    // The spec block's rules ride with the block's own, exactly as they do in
-    // `compile`, so what is CHECKED here is what is compiled there.
-    let (spec_rules, _) = @check.rule_decls(def, decls)
-    for f in @check.check(spec_rules + decls, def, surface~) {
+    // The block's OWN declarations, and not the spec block's rules lifted
+    // alongside them. `check` reads `def.rules` itself, so lifting them in
+    // added nothing — and cost twice: every spec-block rule was reported as
+    // `RULE_IN_BOTH` against itself, under a span belonging to a different
+    // block, which the rebasing below then turned into a line number in this
+    // one. `compile` passes the block's own decls here for the same reason;
+    // the lifted list it builds is for the EMITTER, which does need the bodies.
+    for f in @check.check(decls, def, surface~) {
       // The checker's warnings are listed here rather than dropped — this is
       // the reporting face, and a warning is worth showing. `compile.mbt` is
       // the one that decides what stops a build, and it skips them.
