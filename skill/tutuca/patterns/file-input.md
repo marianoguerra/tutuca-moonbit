@@ -60,7 +60,7 @@ not in the metadata. To read them, use `@files.FileService` — `read_text(id~,
 then~)` takes the `id` a dropped or picked file's descriptor carries and
 answers the text through a continuation; see
 [tracing.md](../tracing.md#files). Feed the result back in through an
-`intent lex` or `app.send_at_root`. Flatten
+`ask lex` or `app.send_at_root`. Flatten
 what you need into fields so the view can bind each piece (`type` is a
 MoonBit keyword, so the struct field is `type_` with a `rename` in the
 derive); gate the summary on a `hasFile` flag with `@show`/`@hide`.

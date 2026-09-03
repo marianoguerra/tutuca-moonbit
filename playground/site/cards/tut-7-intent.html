@@ -39,12 +39,12 @@
 
 <script type="tutuca/script">
   receive init {
-    intent lex 'loadQuote'
+    ask lex 'loadQuote'
     .busy = true
   }
 
   receive retry {
-    intent lex 'loadQuote'
+    ask lex 'loadQuote'
     .busy = true
     .error = ''
     .tries += 1

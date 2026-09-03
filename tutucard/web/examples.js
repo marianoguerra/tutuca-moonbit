@@ -40,7 +40,7 @@
 //
 // `todo` is the one card with TWO components: the list and the row, a child
 // built at runtime with `new`, and a row that asks the list to drop it with
-// `intent dyn` rather than being handed a callback. `nested-state` is the
+// `ask dyn` rather than being handed a callback. `nested-state` is the
 // other half of what `new` is for — a list of plain RECORDS, where `new Label`
 // puts the type's zero at `@cur` and the statements under it fill it in.
 //
@@ -192,7 +192,7 @@ export const EXAMPLES = [
   }
 
   /// What a row asks of whoever is above it. \`receive\` is what something
-  /// sends here BY ADDRESS; \`intent\` is what reached here because a walk
+  /// sends here BY ADDRESS; \`ask\` is what reached here because a walk
   /// routed it. Declaring the bucket is the whole of the wiring — nothing
   /// registers a callback and no row holds a reference to the list.
   handle Todo { intent { removeItem(String) } }
@@ -219,7 +219,7 @@ export const EXAMPLES = [
   /// The other end of the row's \`intent dyn\`. An \`intent\` arm that changes
   /// state and does not \`reply\` is an OBSERVER and the walk goes on; this one
   /// is the last hop anyway, so there is nothing left to observe it.
-  intent removeItem(id) { .items.deleteAt id }
+  answer removeItem(id) { .items.deleteAt id }
 
   compute caption { $'{(len .items)} item(s)' }
   compute anyItems { not (empty? .items) }
@@ -248,10 +248,15 @@ export const EXAMPLES = [
 
   /// The row does not know the list's shape, or that there IS a list. It names
   /// the JOB and lets the route find who does it: \`dyn\` walks the dispatch
-  /// path starting at the sender's PARENT — an intent is never offered to the
+  /// path starting at the sender's PARENT — a walk is never offered to the
   /// component that raised it — and the first hop with a \`removeItem\` arm
-  /// answers. Nothing here would change if the row were nested three deep.
-  receive requestRemove { intent dyn 'removeItem' .id }
+  /// acts on it. Nothing here would change if the row were nested three deep.
+  ///
+  /// \`notify\` and not \`ask\`, because the row wants nothing back: it is
+  /// announcing that it should go, and whoever owns the list decides what that
+  /// means. An \`ask\` with no answer arms would run identically and read as
+  /// though someone forgot to write them.
+  receive requestRemove { notify dyn 'removeItem' .id }
 
   compute label { if .done { $'{.text} (done)' } else { .text } }
 </script>
@@ -574,7 +579,7 @@ export const EXAMPLES = [
 </script>
 
 <script type="tutuca/script">
-  /// \`intent\` hands a NAME to a ROUTE, and whatever is on that route answers
+  /// \`ask\` hands a NAME to a ROUTE, and whatever is on that route answers
   /// whenever it can. \`lex\` is the leg that searches the handlers registered
   /// on the host — what v1 of this framework spelled \`request\`, before the
   /// verb stopped deciding which scope answers.
@@ -586,12 +591,12 @@ export const EXAMPLES = [
   /// playground can honestly offer; a page with a real fetch registers the
   /// same names against it and the card does not change.
   receive init {
-    intent lex 'rows'
+    ask lex 'rows'
     .busy = true
   }
 
   receive reload {
-    intent lex 'rows'
+    ask lex 'rows'
     .busy = true
     .error = ''
   }
@@ -599,7 +604,7 @@ export const EXAMPLES = [
   /// Whatever follows the name is the PAYLOAD. \`echo\` answers with the first
   /// thing it was handed, so what comes back is what went out.
   receive echoQuery {
-    intent lex 'echo' .query
+    ask lex 'echo' .query
     .busy = true
   }
 
@@ -607,7 +612,7 @@ export const EXAMPLES = [
   /// walk runs out and nobody answered. Not a crash, and — the part v1 could
   /// not say — not a failure either.
   receive breakIt {
-    intent lex 'nothingAnswersThis'
+    ask lex 'nothingAnswersThis'
     .busy = true
     .error = ''
   }

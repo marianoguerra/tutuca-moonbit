@@ -23,7 +23,7 @@ Walk these top-down whenever you add or reshape a component:
 3. **How do these components talk?** Pick the narrowest channel that reaches the
    owner — see the ladder below.
 4. **Where does the outside world cross the boundary?** Outbound I/O goes through
-   `intent lex`; inbound external events go through
+   `ask lex`; inbound external events go through
    `app.send_at_root` to the root. Keep the logic inside tutuca on both sides.
 
 ## Communication decision ladder
@@ -48,15 +48,15 @@ the ladder when the one above can't express it:
   MoonBit; bare `send` targets self). See
   [messages-and-intents.md](./messages-and-intents.md) "When to send".
 - **An ancestor owns aggregate state** (a log, a selection, a total) →
-  **`intent dyn`**, which walks up toward the root; the first ancestor whose
+  **`ask dyn`**, which walks up toward the root; the first ancestor whose
   `intent` handler replies ends the walk, and ancestors that only *record* it
   are observers. See
   [messages-and-intents.md](./messages-and-intents.md) "Intents — routes and legs".
 - **The work is async or host-side** (fetch, timer, storage, an external API) →
-  **`intent lex`**, which walks the scope-registered `IntentFn`s and routes the
+  **`ask lex`**, which walks the scope-registered `IntentFn`s and routes the
   answer back as `<name>Ok` / `<name>Failed` / `<name>Unhandled`. See
   [messages-and-intents.md](./messages-and-intents.md) "The three outcomes".
-- **You don't know who should answer** → **a bare `intent`**, which takes the
+- **You don't know who should answer** → **a bare `ask`**, which takes the
   default `dyn lex` route: the ancestors, then the scope.
 - **An external event pushes *into* the app** (WebSocket, `postMessage`, …) →
   **`app.send_at_root`**, which lands the inbound event on the root. See
@@ -67,7 +67,7 @@ the ladder when the one above can't express it:
 
 A compact worked version of the first four (a `Receive` arm for the component's
 own events, `send`/`receive`,
-`intent dyn`, `intent lex`) lives in
+`ask dyn`, `ask lex`) lives in
 [patterns/coordinate-components.md](./patterns/coordinate-components.md).
 
 ## Do's & Don'ts
@@ -114,7 +114,7 @@ own events, `send`/`receive`,
   channels"
 
 - **Do keep logic inside the tutuca app when integrating with the outside world.**
-  Route outbound work through `intent lex` and inbound external
+  Route outbound work through `ask lex` and inbound external
   events through `app.send_at_root` to the root (which forwards deeper with
   `ctx.at()`), so handlers stay the single owner of state changes. **Don't
   overwrite the root state out of band or `addEventListener` outside the model** —

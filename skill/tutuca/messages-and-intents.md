@@ -19,7 +19,7 @@ arm of the **same `update` match** in MoonBit:
 | ----------------------------------------------------- | ------------------- | --------------------- |
 | DOM event (`@on.click`, `@on.input`, …)               | `receive <name>`    | `Receive(name, args)` |
 | `send 'name' …` / `sendAt &.child 'name' …`           | `receive <name>`    | `Receive(name, args)` |
-| `intent 'name' …` — walks a route                     | `intent <name>`     | `Intent(name, args)`  |
+| `ask 'name' …` — walks a route                     | `answer <name>`     | `Intent(name, args)`  |
 
 The first two rows are one bucket, and there is no keyword or arm that
 separates them: a view is addressed at the component it belongs to, which is
@@ -135,11 +135,24 @@ a list telling item 3 to enter edit mode, a "Reload" button reusing the
 when a direct expression in the same body would do — and don't send when
 you don't know who should answer. That is what an intent is for.
 
-## Intents — routes and legs
+## Intents — `ask`, `notify`, routes and legs
 
-`intent 'name' args…` dispatches a request the sender does not address.
+`ask 'name' args…` dispatches a request the sender does not address.
 The runtime walks a **route** and offers the intent to each hop in turn;
 the first hop that answers ends the walk.
+
+`notify 'name' args…` is the same walk with **no answer channel**: an
+announcement that something happened, which any ancestor on the route may
+act on — updating its own state, sending a message, whatever it decides —
+and none of them answers. Reach for it whenever you want nothing back.
+
+The distinction is worth a word because it is invisible otherwise. An
+`ask` is a request exactly when its sender declares answer arms, so an
+`ask` whose author meant a notification and an `ask` whose author forgot
+the arms are the same line of code, and which one it is lives somewhere
+else in the file. `notify` says it where it is written — and a
+`<name>Ok` arm beside a name only ever notified is reported
+(`ANSWERS_A_NOTIFY`), because it is an arm that can never fire.
 
 A route is a list of **legs**, and there are two:
 
@@ -151,21 +164,21 @@ A route is a list of **legs**, and there are two:
 Written with no legs at all, an intent takes the default route
 `dyn lex`: try the ancestors, then the registered handlers. That default
 is written down in exactly one place (`@tutuca.IntentOpts::new`), so
-"what does a bare `intent` do" has one answer and no second copy.
+"what does a bare `ask` do" has one answer and no second copy.
 
 ```html
 <script type="tutuca/script">
   receive go {
-    intent 'saveDraft' .name        // dyn lex — ancestors, then the scope
-    intent dyn 'picked' .page       // ancestors only
-    intent lex 'loadRows'           // the registered scopes only
-    intent lex dyn 'saveDraft' .name // legs run in the order written
+    ask 'saveDraft' .name        // dyn lex — ancestors, then the scope
+    ask dyn 'picked' .page       // ancestors only
+    ask lex 'loadRows'           // the registered scopes only
+    ask lex dyn 'saveDraft' .name // legs run in the order written
   }
 </script>
 ```
 
-The `dyn` leg starts at the sender's **parent**, not at the sender: an
-intent is never offered to the component that raised it. (A component
+The `dyn` leg starts at the sender's **parent**, not at the sender: a
+walk is never offered to the component that raised it. (A component
 that wanted to handle it itself would just have written the body inline.)
 
 Walks are depth-bounded — `@transactor.INTENT_DEPTH` hops, after which the
@@ -173,19 +186,21 @@ runtime refuses with `RefusalCode::IntentDepth` rather than looping.
 
 ## Answering an intent
 
-A component answers an intent with an `intent <name>` handler. Inside it:
+A component answers an intent with an `answer <name>` handler. Inside it:
 
 - `reply <value>` — answer with a result. **Ends the walk.**
 - `fail <value>` — answer with an error. **Ends the walk.**
-- `forward` — hand the intent on to the next hop (see below).
+- `forward` — hand the walk on to the next hop (see below).
 - `drop` — end the walk **answering nothing**: the question is dropped.
 - ...or none of the above: the body runs, changes state, and the walk
   goes on. A handler that does not reply is an **observer**.
 
-> **Retired spellings.** `stop` is now `drop`, and `sendReply` is now `reply`.
-> Both old words still parse in this release and are reported as
-> `RETIRED_KEYWORD` warnings; `tutuca migrate --write` rewrites them. They stop
-> parsing in the next release.
+> **Retired spellings.** `stop` is now `drop`; `sendReply` is now `reply`;
+> the `intent` DECLARATION is now `answer` and the `intent` EFFECT is now
+> `ask`; and a `forward` in a `receive` body is now a bare `ask`. Every old
+> word still parses in this release and is reported as a `RETIRED_KEYWORD`
+> warning; `tutuca migrate --write` rewrites them. They stop parsing in the
+> next release.
 
 ```html
 <script type="tutuca/spec">
@@ -198,13 +213,13 @@ A component answers an intent with an `intent <name>` handler. Inside it:
 
 <script type="tutuca/script">
   /// Answered where it arrives.
-  intent saveDraft(text) {
+  answer saveDraft(text) {
     .count += 1
     reply .count
   }
 
   /// An observer: it records the intent and lets it keep walking.
-  intent picked(k) {
+  answer picked(k) {
     .page = k
   }
 </script>
@@ -269,7 +284,7 @@ reads the schema's `receive` list and fills the intent's opts in.
   /// message sent beside a transition that did not happen is the one outcome
   /// nobody can reason about afterwards.
   receive init {
-    intent lex 'loadData'
+    ask lex 'loadData'
     .isLoading = true
   }
 </script>
@@ -325,15 +340,19 @@ sending a notification and hears nothing at all.
 the same field for one release, and a script block's `receive <name>Error` arm
 is still wired to the failure — what changed is the word the runtime derives.
 
-## `forward` — one operation, two sides
+## Asking the question you were handed — a bare `ask`, and `forward`
 
-`forward` is the same word from both ends of a walk, and which one you
-get depends on which bucket you are in:
+Two operations, and they used to share a word. Both re-dispatch a
+question already in hand rather than naming a new one; which one you get
+depends on whether a walk is running yet.
 
-- **In an `intent` body** it *amends the hop*: the walk goes on to the
-  next hop, optionally with new arguments or a narrowed route.
-- **In a `receive` body** it *starts a walk*: the message that arrived
-  becomes an intent, keeping its name and payload.
+- **A bare `ask` in a `receive` body** *starts* a walk: the message that
+  arrived becomes the intent, keeping its name and payload.
+- **`forward` in an `answer` body** *continues* one: the walk goes on to
+  the next hop, optionally with new arguments or a narrowed route.
+
+Writing either in the wrong body is reported. `forward` in a `receive`
+still parses this release, as the retired spelling of the bare `ask`.
 
 The arms below are ALTERNATIVES, not one block — several spell `saveDraft`
 to show one route each, and a real block declares a name once per bucket.
@@ -341,30 +360,36 @@ to show one route each, and a real block declares a name once per bucket.
 ```html
 <script type="tutuca/script">
   /// A receive that turns a message into an intent — same name, same args.
-  receive saveDraft(text) { forward }              // default route: dyn lex
-  receive picked(k)       { forward dyn }          // ancestors only
-  receive saveDraft(text) { forward lex }          // the scope only
-  receive saveDraft(text) { forward lex dyn }      // legs in the order written
+  receive saveDraft(text) { ask }              // default route: dyn lex
+  receive picked(k)       { ask dyn }          // ancestors only
+  receive saveDraft(text) { ask lex }          // the scope only
+  receive saveDraft(text) { ask lex dyn }      // legs in the order written
 
   /// Amend the arguments; the name and the route are kept.
-  receive saveDraft(text) { forward .name }
+  receive saveDraft(text) { ask .name }
 
   /// Run first, then hand it on.
   receive saveDraft(text) {
     .count += 1
-    forward
+    ask
   }
 
-  /// The intent side: record it, then let the walk continue.
-  intent picked(k) {
+  /// The answering side: record it, then let the walk continue.
+  answer picked(k) {
     .page = k
     forward
   }
 </script>
 ```
 
-From MoonBit: `ctx.forward(args?, opts?)` — pass `None` for either to
-keep what arrived.
+`ask 'name' …` names a NEW question; `ask .name` amends the one that
+arrived. There is no ambiguity between them, because a message name has
+to be a literal or a declared protocol operation — a first argument that
+is neither cannot be naming anything.
+
+From MoonBit both are `ctx.forward(args?, opts?)` — one host call, and
+where it was written is what says which. Pass `None` for either argument
+to keep what arrived.
 
 ## Registering intent handlers — the `lex` leg
 
@@ -500,7 +525,7 @@ side-effect-only work like persisting state:
 ```html
 <script type="tutuca/script">
   receive applyFilter(value) {
-    intent lex 'persistState' 'sectionFilter' value
+    ask lex 'persistState' 'sectionFilter' value
     .filter = value
   }
 </script>

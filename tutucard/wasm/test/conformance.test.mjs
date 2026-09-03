@@ -209,7 +209,7 @@ async function build(c, i, source) {
         // which a card only ever writes the route; `reply` and `fail` carry
         // ONE value and no name, because the walk addresses them.
         intent: (name, args, opts) =>
-          effects.push({ kind: "intent", name, args, route: routeWords(opts) }),
+          effects.push({ kind: "ask", name, args, route: routeWords(opts) }),
         forward: (args, opts) =>
           effects.push({ kind: "forward", name: "", args, route: routeWords(opts) }),
         reply: (v) => effects.push({ kind: "reply", name: "", args: [v] }),

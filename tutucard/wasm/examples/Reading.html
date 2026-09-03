@@ -45,7 +45,7 @@
 
   /// Ask the scope to look `raw` up. The answer comes back later.
   receive lookup {
-    intent lex 'rows' .raw
+    ask lex 'rows' .raw
   }
 
   /// …as an ordinary message, in the same `receive` bucket everything else

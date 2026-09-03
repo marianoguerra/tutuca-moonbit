@@ -84,7 +84,7 @@ component may initiate.
 send 'refresh'                 // deliberately raw name
 send refreshed                 // this component's implicit protocol
 send Lifecycle::resumed        // named protocol, canonicalized on the wire
-intent Lifecycle::wantsAttention 'editor'
+ask Lifecycle::wantsAttention 'editor'
 ```
 
 Quoted names remain the dynamic escape hatch. Unquoted names are checked

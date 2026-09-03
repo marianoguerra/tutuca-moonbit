@@ -71,7 +71,7 @@ task.
 
 ## Component communication
 
-- [Coordinate components](coordinate-components.md) — `send`/`receive`, `intent dyn`, async `intent lex`.
+- [Coordinate components](coordinate-components.md) — `send`/`receive`, `ask dyn`, async `ask lex`.
 
 ## Examples & catalog
 

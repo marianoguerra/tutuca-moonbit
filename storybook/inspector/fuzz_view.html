@@ -213,44 +213,44 @@
   /// that no longer describes the rows underneath it.
   receive setSeed(s) {
     .seed = s
-    intent lex 'fuzzConfig' s .steps .source
+    ask lex 'fuzzConfig' s .steps .source
   }
 
   receive setSteps(n) {
     .steps = n
-    intent lex 'fuzzConfig' .seed n .source
+    ask lex 'fuzzConfig' .seed n .source
   }
 
   receive setSource(s) {
     .source = s
-    intent lex 'fuzzConfig' .seed .steps s
+    ask lex 'fuzzConfig' .seed .steps s
   }
 
   /// Draw a script and run it whole, with no yield. What a profiler wants: one
   /// flame chart over settle + render + morph, with no scheduler noise in it.
   receive burst {
-    intent lex 'fuzzBurst'
+    ask lex 'fuzzBurst'
   }
 
   /// One dispatch per frame. What a person wants: the component visibly
   /// mutating, and a DevTools recording in which layout and paint actually
   /// land between steps.
   receive play {
-    intent lex 'fuzzPlay'
+    ask lex 'fuzzPlay'
   }
 
   receive stop {
-    intent lex 'fuzzStop'
+    ask lex 'fuzzStop'
   }
 
   /// One dispatch, now.
   receive step {
-    intent lex 'fuzzStep'
+    ask lex 'fuzzStep'
   }
 
   /// Back to the story's initial state, script and all.
   receive reset {
-    intent lex 'fuzzReset'
+    ask lex 'fuzzReset'
   }
 </script>
 
@@ -267,7 +267,7 @@
   /// the host, because shrinking remounts the component many times and a
   /// component cannot mount another.
   receive shrink {
-    intent lex 'fuzzShrink'
+    ask lex 'fuzzShrink'
   }
 </script>
 

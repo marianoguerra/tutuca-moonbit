@@ -88,7 +88,9 @@ pub fn Leg::from(self : Int) -> Leg {
 /// carries its own payload, so no arm has to discriminate a combined one.
 ///
 /// A sender expects an answer if and only if it names one of these. That is
-/// what makes an intent a request rather than a notification, and nothing
+/// what makes an intent a request rather than a notification — which a card
+/// says at the call site, with `ask` for the first and `notify` for the
+/// second — and nothing
 /// declares it separately.
 pub(all) struct IntentOpts {
   route : Array[Leg]
@@ -438,6 +440,11 @@ pub fn intent_at(
 ///|
 /// Pass the message being handled on as an intent, or — while handling an
 /// intent — continue its walk after this position.
+///
+/// One host call, two things a card writes: a bare `ask` in a `receive` body
+/// starts the walk, and `forward` in an `answer` body continues one. The
+/// host cannot tell them apart and does not need to — where it came from is
+/// what says which, and that is on the guest's side of the line.
 ///
 /// The answer target does not move: a handler further up answers whoever
 /// dispatched, not whoever forwarded. That, and not having to rebuild the

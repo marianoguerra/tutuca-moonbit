@@ -43,35 +43,35 @@
     .count = n
   }
 
-  /// case 3: forward with no legs takes the default route
+  /// case 3: a bare ask with no legs takes the default route
   receive case3(text) {
-    forward
+    ask
   }
 
-  /// case 4: forward dyn walks the ancestors only
+  /// case 4: a bare ask dyn walks the ancestors only
   receive case4(k) {
-    forward dyn
+    ask dyn
   }
 
-  /// case 5: forward lex walks the registered handlers only
+  /// case 5: a bare ask lex walks the registered handlers only
   receive case5(text) {
-    forward lex
+    ask lex
   }
 
-  /// case 6: forward lex dyn walks the legs in the order written
+  /// case 6: a bare ask lex dyn walks the legs in the order written
   receive case6(text) {
-    forward lex dyn
+    ask lex dyn
   }
 
-  /// case 7: forward amends the arguments and keeps the name and the route
+  /// case 7: a bare ask amends the arguments and keeps the name and the route
   receive case7(text) {
-    forward .name
+    ask .name
   }
 
-  /// case 8: a handler may run and then forward
+  /// case 8: a handler may run and then ask
   receive case8(text) {
     .count += 1
-    forward
+    ask
   }
 
   /// case 9: a bare value fills a nullable field
@@ -85,24 +85,24 @@
     .note = null
   }
 
-  /// case 11: an intent with no legs takes the default route
+  /// case 11: an ask with no legs takes the default route
   receive case11 {
-    intent 'saveDraft' .name
+    ask 'saveDraft' .name
   }
 
-  /// case 12: intent dyn is what v1 spelled bubble
+  /// case 12: ask dyn is what v1 spelled bubble
   receive case12(k) {
-    intent dyn 'picked' k
+    ask dyn 'picked' k
   }
 
-  /// case 13: intent lex is what v1 spelled request
+  /// case 13: ask lex is what v1 spelled request
   receive case13 {
-    intent lex 'loadRows' .name
+    ask lex 'loadRows' .name
   }
 
-  /// case 14: intent lex dyn reverses the legs
+  /// case 14: ask lex dyn reverses the legs
   receive case14 {
-    intent lex dyn 'saveDraft' .name
+    ask lex dyn 'saveDraft' .name
   }
 
   /// case 15: a reply to a message names itself
@@ -119,42 +119,42 @@
 
   /// case 17: effects come out in order, with the state
   receive case17 {
-    intent lex 'loadRows'
+    ask lex 'loadRows'
     .ok = true
     send 'flash' .name
     drop
   }
 
   /// case 18: an intent answered where it arrives
-  intent case18(text) {
+  answer case18(text) {
     .count += 1
     reply .count
   }
 
   /// case 19: fail answers with an error and ends the walk
-  intent case19(text) {
+  answer case19(text) {
     fail 'disk full'
   }
 
   /// case 20: a handler that does not reply is an observer
-  intent case20(k) {
+  answer case20(k) {
     .page = k
   }
 
   /// case 21: an intent handler may run and then continue the walk
-  intent case21(k) {
+  answer case21(k) {
     .page = k
     forward
   }
 
   /// case 22: a body may queue two replies, and both come out of it
-  intent case22(text) {
+  answer case22(text) {
     reply 1
     reply 2
   }
 
   /// case 23: drop ends the walk before any reply, and answers nothing
-  intent case23(text) {
+  answer case23(text) {
     .count += 1
     drop
   }
@@ -162,7 +162,7 @@
   pred hasSome { .count > 0 }
 
   /// case 24: a requires that does not hold takes the reply with it
-  intent case24(text) requires hasSome {
+  answer case24(text) requires hasSome {
     .count += 1
     reply .count
   }
@@ -170,7 +170,7 @@
   pred small { .count > 5 }
 
   /// case 25: an ensures that does not hold takes the reply with it
-  intent case25(text) ensures small {
+  answer case25(text) ensures small {
     .count += 1
     reply .count
   }

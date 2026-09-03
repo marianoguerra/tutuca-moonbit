@@ -58,14 +58,14 @@ not happen is the one outcome nobody can reason about afterwards.
 
   /// The ancestor that answers. The first `intent` arm that REPLIES ends the
   /// walk; one that only records it is an observer.
-  intent itemSelected(label) { .log.insertAt 0 label }
+  answer itemSelected(label) { .log.insertAt 0 label }
 </script>
 
 <script type="tutuca/script" for="Feed">
   /// `lex` walks the IntentFns registered on the SCOPE, not the tree. A bare
   /// `intent` takes `dyn lex`: try the ancestors, then the scope.
   receive init {
-    intent lex 'loadData'
+    ask lex 'loadData'
     .isLoading = true
   }
 

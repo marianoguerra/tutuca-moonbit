@@ -52,7 +52,7 @@ Effects distinguish three cases:
 send 'refresh'                  // raw/dynamic
 send refreshed                  // implicit component protocol
 send Lifecycle::resumed         // imported protocol
-intent Lifecycle::wantsAttention 'editor'
+ask Lifecycle::wantsAttention 'editor'
 ```
 
 Use protocols as component constraints with

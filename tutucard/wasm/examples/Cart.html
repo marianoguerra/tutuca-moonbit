@@ -60,7 +60,7 @@
 
   /// Tell the parent about this line, once it has an item.
   receive checkout requires hasItem {
-    intent dyn 'lineReady' .item (.qty * .price)
+    ask dyn 'lineReady' .item (.qty * .price)
     .sent = true
     drop
   }

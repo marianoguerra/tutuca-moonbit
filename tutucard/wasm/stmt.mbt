@@ -592,6 +592,7 @@ fn effect_list() -> String {
 fn effect_arity_why(name : String, min_args : Int, kind : String) -> String {
   match name {
     "fail" => "`fail` needs the value it answers with"
+    "notify" => "`notify` needs the name of what happened"
     // `reply` is on both lines, because which one it is depends on where it is
     // written: in an `intent` body the walk names it and the argument is the
     // value; in a `receive` body the replier names it and the argument is the
@@ -602,7 +603,7 @@ fn effect_arity_why(name : String, min_args : Int, kind : String) -> String {
       } else {
         "`reply` needs a message name"
       }
-    "send" | "intent" => "`" + name + "` needs a message name"
+    "send" | "ask" => "`" + name + "` needs a message name"
     _ =>
       "`" + name + "` needs at least " + min_args.to_string() + " argument(s)"
   }
@@ -665,7 +666,11 @@ fn ECtx::effect(
       ]),
     ]
   }
-  if name == "forward" {
+  // `forward`, and the bare `ask` that replaced the `forward`-in-a-receive:
+  // both re-dispatch the question already in hand, and the host tells them
+  // apart by where they came from rather than by a second effect code.
+  if name == "forward" ||
+    (name == "ask" && !@tscript.ask_names_a_question(args)) {
     self.g.uses_control = true
     self.g.uses_routed_effects = true
     let pl = self.g.fresh("pl")

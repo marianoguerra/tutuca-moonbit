@@ -14,7 +14,8 @@
 /// is the corpus's own vocabulary and not one implementation's. The printed
 /// form is still available, derived rather than stored — see `printed`.
 pub(all) struct CaseEffect {
-  /// One of `send`, `sendAt`, `intent`, `forward`, `reply`, `fail` or `drop` —
+  /// One of `send`, `sendAt`, `ask`, `notify`, `forward`, `reply`, `fail` or
+  /// `drop` —
   /// the words the BLOCK is written in, so `printed` reconstructs the line
   /// that produced this.
   ///
@@ -24,14 +25,15 @@ pub(all) struct CaseEffect {
   /// maps whichever call fired to this one word; the arguments say which it
   /// was, exactly as the source does.
   kind : String
-  /// The message name. Empty for `drop`, and for `forward` and `fail`, which
-  /// carry none — a `forward` re-dispatches the name that arrived, and a
+  /// The message name. Empty for `drop`, for `fail`, and for a `forward` or a
+  /// bare `ask`, which carry none — those re-dispatch the question already in
+  /// hand, and a
   /// failure is addressed by the walk rather than by a name. Empty for an
   /// intent-body `reply` too, for the same reason.
   name : String
   args : Array[@tutuca.Value]
-  /// The route, for the two effects that have one: `intent` and `forward`.
-  /// Written RESOLVED — a bare `intent 'save'` records `dyn lex` — because the
+  /// The route, for the effects that have one: `ask`, `notify` and `forward`.
+  /// Written RESOLVED — a bare `ask 'save'` records `dyn lex` — because the
   /// default route is exactly the kind of thing two backends can agree to
   /// disagree about while every case with an explicit route passes. Empty for
   /// every other effect.
@@ -595,50 +597,57 @@ pub fn cases() -> Array[Case] {
       args=[Num(4)],
       after=Some(with_fields({ "count": Num(4) })),
     ),
-    // -- forward: the bridge -----------------------------------------------
+    // -- a bare ask: the bridge ---------------------------------------------
+    //
+    // The recorded kind is still `forward`, because that is the RUNTIME call
+    // (`ctx.forward`) — the message that arrived becomes the question, which
+    // is exactly what forwarding means. What changed is the word a block
+    // writes: `forward` in a `receive` body used to mean this and `forward` in
+    // an intent body meant "hand on the walk that is running", two operations
+    // under one word.
     recv_case(
-      "forward with no legs takes the default route",
-      "receive saveDraft(text) { forward }",
+      "a bare ask with no legs takes the default route",
+      "receive saveDraft(text) { ask }",
       "saveDraft",
       args=[Str("hi")],
       after=Some(counter_state()),
       effects=[effect("forward", route="dyn lex")],
     ),
     recv_case(
-      "forward dyn walks the ancestors only",
-      "receive picked(k) { forward dyn }",
+      "a bare ask dyn walks the ancestors only",
+      "receive picked(k) { ask dyn }",
       "picked",
       args=[Num(3)],
       after=Some(counter_state()),
       effects=[effect("forward", route="dyn")],
     ),
     recv_case(
-      "forward lex walks the registered handlers only",
-      "receive saveDraft(text) { forward lex }",
+      "a bare ask lex walks the registered handlers only",
+      "receive saveDraft(text) { ask lex }",
       "saveDraft",
       args=[Str("hi")],
       after=Some(counter_state()),
       effects=[effect("forward", route="lex")],
     ),
     recv_case(
-      "forward lex dyn walks the legs in the order written",
-      "receive saveDraft(text) { forward lex dyn }",
+      "a bare ask lex dyn walks the legs in the order written",
+      "receive saveDraft(text) { ask lex dyn }",
       "saveDraft",
       args=[Str("hi")],
       after=Some(counter_state()),
       effects=[effect("forward", route="lex dyn")],
     ),
     recv_case(
-      "forward amends the arguments and keeps the name and the route",
-      "receive saveDraft(text) { forward .name }",
+      "a bare ask amends the arguments and keeps the name and the route",
+      "receive saveDraft(text) { ask .name }",
       "saveDraft",
       args=[Str("hi")],
       after=Some(counter_state()),
       effects=[effect("forward", args=[Str("ada")], route="dyn lex")],
     ),
     recv_case(
-      "a handler may run and then forward",
-      "receive saveDraft(text) {\n  .count += 1\n  forward\n}",
+      "a handler may run and then ask",
+      "receive saveDraft(text) {\n  .count += 1\n  ask\n}",
       "saveDraft",
       args=[Str("hi")],
       after=Some(with_fields({ "count": Num(1) })),
@@ -669,38 +678,36 @@ pub fn cases() -> Array[Case] {
     ),
     // -- intent: the routed dispatch ---------------------------------------
     recv_case(
-      "an intent with no legs takes the default route",
-      "receive go { intent 'saveDraft' .name }",
+      "an ask with no legs takes the default route",
+      "receive go { ask 'saveDraft' .name }",
       "go",
       after=Some(counter_state()),
       effects=[
-        effect("intent", name="saveDraft", args=[Str("ada")], route="dyn lex"),
+        effect("ask", name="saveDraft", args=[Str("ada")], route="dyn lex"),
       ],
     ),
     recv_case(
-      "intent dyn is what v1 spelled bubble",
-      "receive go(k) { intent dyn 'picked' k }",
+      "ask dyn is what v1 spelled bubble",
+      "receive go(k) { ask dyn 'picked' k }",
       "go",
       args=[Num(3)],
       after=Some(counter_state()),
-      effects=[effect("intent", name="picked", args=[Num(3)], route="dyn")],
+      effects=[effect("ask", name="picked", args=[Num(3)], route="dyn")],
     ),
     recv_case(
-      "intent lex is what v1 spelled request",
-      "receive go { intent lex 'loadRows' .name }",
+      "ask lex is what v1 spelled request",
+      "receive go { ask lex 'loadRows' .name }",
+      "go",
+      after=Some(counter_state()),
+      effects=[effect("ask", name="loadRows", args=[Str("ada")], route="lex")],
+    ),
+    recv_case(
+      "ask lex dyn reverses the legs",
+      "receive go { ask lex dyn 'saveDraft' .name }",
       "go",
       after=Some(counter_state()),
       effects=[
-        effect("intent", name="loadRows", args=[Str("ada")], route="lex"),
-      ],
-    ),
-    recv_case(
-      "intent lex dyn reverses the legs",
-      "receive go { intent lex dyn 'saveDraft' .name }",
-      "go",
-      after=Some(counter_state()),
-      effects=[
-        effect("intent", name="saveDraft", args=[Str("ada")], route="lex dyn"),
+        effect("ask", name="saveDraft", args=[Str("ada")], route="lex dyn"),
       ],
     ),
     recv_case(
@@ -725,11 +732,11 @@ pub fn cases() -> Array[Case] {
     ),
     recv_case(
       "effects come out in order, with the state",
-      "receive go {\n  intent lex 'loadRows'\n  .ok = true\n  send 'flash' .name\n  drop\n}",
+      "receive go {\n  ask lex 'loadRows'\n  .ok = true\n  send 'flash' .name\n  drop\n}",
       "go",
       after=Some(with_fields({ "ok": Bool(true) })),
       effects=[
-        effect("intent", name="loadRows", route="lex"),
+        effect("ask", name="loadRows", route="lex"),
         effect("send", name="flash", args=[Str("ada")]),
         effect("drop"),
       ],
@@ -737,7 +744,7 @@ pub fn cases() -> Array[Case] {
     // -- answering an intent ------------------------------------------------
     intent_case(
       "an intent answered where it arrives",
-      "intent saveDraft(text) {\n  .count += 1\n  reply .count\n}",
+      "answer saveDraft(text) {\n  .count += 1\n  reply .count\n}",
       "saveDraft",
       args=[Str("hi")],
       after=Some(with_fields({ "count": Num(1) })),
@@ -745,7 +752,7 @@ pub fn cases() -> Array[Case] {
     ),
     intent_case(
       "fail answers with an error and ends the walk",
-      "intent saveDraft(text) { fail 'disk full' }",
+      "answer saveDraft(text) { fail 'disk full' }",
       "saveDraft",
       args=[Str("hi")],
       after=Some(counter_state()),
@@ -756,14 +763,14 @@ pub fn cases() -> Array[Case] {
     // this row is half of. The other half is the transactor's.
     intent_case(
       "a handler that does not reply is an observer",
-      "intent picked(k) { .page = k }",
+      "answer picked(k) { .page = k }",
       "picked",
       args=[Num(2)],
       after=Some(with_fields({ "page": Num(2) })),
     ),
     intent_case(
       "an intent handler may run and then continue the walk",
-      "intent picked(k) {\n  .page = k\n  forward\n}",
+      "answer picked(k) {\n  .page = k\n  forward\n}",
       "picked",
       args=[Num(2)],
       after=Some(with_fields({ "page": Num(2) })),
@@ -775,7 +782,7 @@ pub fn cases() -> Array[Case] {
     // why it is pinned there and not here.
     intent_case(
       "a body may queue two replies, and both come out of it",
-      "intent saveDraft(text) {\n  reply 1\n  reply 2\n}",
+      "answer saveDraft(text) {\n  reply 1\n  reply 2\n}",
       "saveDraft",
       args=[Str("hi")],
       after=Some(counter_state()),
@@ -783,7 +790,7 @@ pub fn cases() -> Array[Case] {
     ),
     intent_case(
       "drop ends the walk before any reply, and answers nothing",
-      "intent saveDraft(text) {\n  .count += 1\n  drop\n}",
+      "answer saveDraft(text) {\n  .count += 1\n  drop\n}",
       "saveDraft",
       args=[Str("hi")],
       after=Some(with_fields({ "count": Num(1) })),

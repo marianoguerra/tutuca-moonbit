@@ -234,7 +234,7 @@ pub fn emit(
   for d in decls {
     let bucket = match d.kind {
       DReceive => "Receive"
-      DIntent => "Intent"
+      DAnswer => "Intent"
       // A `compute`, a `pred`, an `enrich`: not a transition, so not this
       // function's business. They are compiled below, into one function each,
       // because what answers them is a different bucket rather than nothing.
@@ -1138,7 +1138,7 @@ fn decl_any(d : @tscript.Decl, ask : (@tutuca.Expr) -> Bool) -> Bool {
 /// comparing strings of its own.
 fn E::declared_msg(self : E, d : @tscript.Decl) -> @statedef.MsgDef? {
   let cases = match d.kind {
-    DIntent => self.def.intent
+    DAnswer => self.def.intent
     _ => self.def.receive
   }
   for m in cases {
@@ -1173,7 +1173,7 @@ fn E::param_types(
   surface : @check.Surface,
 ) -> Array[@statedef.StateTy?] {
   match d.kind {
-    DReceive | DIntent => {
+    DReceive | DAnswer => {
       if self.declared_msg(d) is Some(m) {
         return m.payload.map(t => Some(t))
       }
@@ -1718,7 +1718,7 @@ fn E::effect(
     // same thing — answer whoever asked — but nobody declared arms for it, so
     // the first argument is the name and it falls through to the naming
     // effects below.
-    "reply" if self.decl_kind is DIntent => {
+    "reply" if self.decl_kind is DAnswer => {
       let v = self.as_value(args[0])
       return "\{pad}effects.push(() => ctx.reply(\{v}))\n"
     }
@@ -1726,7 +1726,11 @@ fn E::effect(
       let v = self.as_value(args[0])
       return "\{pad}effects.push(() => ctx.fail(\{v}))\n"
     }
-    "forward" => {
+    // A bare `ask` in a `receive` body IS the old `forward`-in-a-receive: the
+    // message that arrived becomes the question. A named one falls through to
+    // the naming effects below.
+    "forward" | "ask" if name == "forward" ||
+      !@tscript.ask_names_a_question(args) => {
       // Amended arguments, or the ones that arrived. A route the forwarder
       // wrote, or the one the walk is already on.
       let amended = if args.is_empty() {
@@ -1770,8 +1774,15 @@ fn E::effect(
     // not — so the name has to come from here.
     "reply" =>
       "\{pad}effects.push(() => ctx.send_reply(\{quote(msg)}, \{payload}))\n"
-    "intent" =>
+    "ask" =>
       "\{pad}effects.push(() => ctx.intent(\{quote(msg)}, \{payload}, \{intent_opts(route, Some(self.outcomes(msg)))}))\n"
+    // A notification has no answer channel, so no outcome names are wired —
+    // not "none were declared", but none can be. That is the whole difference
+    // from `ask`, and it is why this is a word rather than a convention: an
+    // `ask` whose sender happens to declare no arms reads identically to one
+    // whose sender forgot, and a `notify` cannot be either.
+    "notify" =>
+      "\{pad}effects.push(() => ctx.intent(\{quote(msg)}, \{payload}, \{intent_opts(route, None)}))\n"
     _ =>
       raise Cannot(
         "`\{name}` addresses a position, which this backend does not emit yet — write the handler in MoonBit",

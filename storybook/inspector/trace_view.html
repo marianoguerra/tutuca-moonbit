@@ -342,7 +342,7 @@
   /// what makes a click on the page mean "pick this" is a document listener,
   /// and a component cannot install one.
   receive toggleSelecting {
-    intent lex 'traceSelect'
+    ask lex 'traceSelect'
   }
 
   /// Which pane is showing.
@@ -355,7 +355,7 @@
   /// the click landed on, rather than a round trip later.
   receive setTab(t) {
     .tab = t
-    intent lex 'traceSetTab' t
+    ask lex 'traceSetTab' t
   }
 
   /// `draft` has no arm of its own: `@bind` synthesises the mutator that
@@ -368,27 +368,27 @@
   /// handed a rendering of one and never the thing itself — so every verb that
   /// acts on it is a message to whoever holds it.
   receive exportTrace {
-    intent lex 'traceExport'
+    ask lex 'traceExport'
   }
 
   receive importDraft {
-    intent lex 'traceImport' .draft
+    ask lex 'traceImport' .draft
   }
 
   receive cutToPlace {
-    intent lex 'traceRelocate'
+    ask lex 'traceRelocate'
   }
 
   receive replayStep {
-    intent lex 'traceReplayStep'
+    ask lex 'traceReplayStep'
   }
 
   receive replayRun {
-    intent lex 'traceReplayRun'
+    ask lex 'traceReplayRun'
   }
 
   receive replayReset {
-    intent lex 'traceReplayReset'
+    ask lex 'traceReplayReset'
   }
 </script>
 
@@ -400,7 +400,7 @@
   /// the list would never be reached. At the host, because choosing a place is
   /// only worth anything to the thing that holds the recording.
   receive pickPlace(p) {
-    intent lex 'tracePick' p
+    ask lex 'tracePick' p
   }
 </script>
 
@@ -451,15 +451,15 @@
   /// scope — which is exactly where a host puts one.
   receive startRecording {
     .picking = false
-    intent lex 'traceStart' .scope
+    ask lex 'traceStart' .scope
   }
 
   receive stopRecording {
-    intent lex 'traceStop'
+    ask lex 'traceStop'
   }
 
   receive clearRecording {
-    intent lex 'traceDiscard'
+    ask lex 'traceDiscard'
   }
 </script>
 

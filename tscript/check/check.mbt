@@ -34,6 +34,15 @@ priv struct C {
   mut decl_kind : @tscript.DeclKind
   /// What `new` last put in `@cur`, on this path through the body.
   mut target : Target
+  /// The names raised by `notify`, and the names raised by `ask`, over the
+  /// whole block.
+  ///
+  /// Kept apart so the check at the end can be about a name that is ONLY ever
+  /// notified. A block that both asks and notifies the same name has an answer
+  /// channel for it — one call site is a notification and the other is a
+  /// question, which is unusual but not wrong.
+  notified : Map[String, @tutuca.Span]
+  asked : Map[String, Unit]
 }
 
 ///|
@@ -104,6 +113,8 @@ pub fn check_rules(def : @statedef.StateDef) -> Array[Finding] {
     binds_assignable: false,
     decl_kind: DPred,
     target: TUnset,
+    notified: Map([]),
+    asked: Map([]),
   }
   for r in def.rules {
     c.decl_name = r.name
@@ -264,11 +275,14 @@ pub fn check(
     binds_assignable: false,
     decl_kind: DReceive,
     target: TUnset,
+    notified: Map([]),
+    asked: Map([]),
   }
   for d in decls {
     c.decl(d)
   }
   c.view_names(decls)
+  c.notified_names(decls)
   // Retirements first: they are about the WORDS the block is written with, and
   // a reader fixing a spelling wants to see that before a finding about what
   // the spelling means.
@@ -290,6 +304,40 @@ pub fn check(
 /// name being DECLARED and not about what the body does with it. An `intent`
 /// declaration does not count — an intent is not a message, and a view raises
 /// messages.
+/// `ANSWERS_A_NOTIFY`: an answer arm for a name nothing ever asks.
+///
+/// `notify` is a question with no answer channel — the point of the word is
+/// that a reader sees it at the CALL SITE, where `ask` with no declared arms
+/// and `ask` whose arms someone forgot read identically. The cost of that
+/// promise is this check: a `<n>Ok` beside a `notify 'n'` is an arm that can
+/// never fire, and a promise nothing enforces is a comment.
+///
+/// A warning, because the arm is inert rather than wrong, and because the
+/// author may be mid-edit between the two words.
+fn C::notified_names(self : C, decls : Array[@tscript.Decl]) -> Unit {
+  let answers : Set[String] = Set([])
+  for d in decls {
+    if d.kind is DReceive {
+      answers.add(d.name)
+    }
+  }
+  for name, span in self.notified {
+    if self.asked.contains(name) {
+      continue
+    }
+    for suffix in ["Ok", "Failed", "Unhandled"] {
+      if answers.contains(name + suffix) {
+        self.say(
+          "ANSWERS_A_NOTIFY",
+          "`receive \{name}\{suffix}` answers a question, and `notify '\{name}'` asks none — a notification has no answer channel, so this arm never fires. Write `ask '\{name}'` if an answer was meant",
+          span,
+        )
+      }
+    }
+  }
+}
+
+///|
 fn C::view_names(self : C, decls : Array[@tscript.Decl]) -> Unit {
   let declared : Set[String] = Set([])
   for d in decls {
@@ -360,7 +408,7 @@ fn C::decl(self : C, d : @tscript.Decl) -> Unit {
   // that disagreed joined to opaque long before this saw them. `msg_params`
   // answers both, because one bucket now holds both.
   match d.kind {
-    DReceive | DIntent => self.msg_params(d)
+    DReceive | DAnswer => self.msg_params(d)
     DSet =>
       match self.def.properties.iter().find_first(p => p.name == d.name) {
         Some(p) => self.params["value"] = Some(p.ty)
@@ -519,7 +567,7 @@ fn C::format(self : C, d : @tscript.Decl) -> Unit {
 /// Bind a message handler's parameters from the schema's declared payload.
 fn C::msg_params(self : C, d : @tscript.Decl) -> Unit {
   let (cases, bucket) = match d.kind {
-    DIntent => (self.def.intent, "intent")
+    DAnswer => (self.def.intent, "intent")
     _ => (self.def.receive, "receive")
   }
   let found = cases.filter(m => m.name == d.name)
@@ -603,6 +651,8 @@ fn C::msg_params(self : C, d : @tscript.Decl) -> Unit {
 /// The list is short and worth being explicit about, because the answer used
 /// to be "everything except `stop`" and v2 makes that wrong three ways over.
 fn names_a_message(effect : String, kind : @tscript.DeclKind) -> Bool {
+  // A bare `ask` names nothing: the question is the message that arrived.
+  // Handled at the call site, which knows the argument count.
   // `reply` is the one that depends on where it is written. In a `receive`
   // body the replier names the reply, so its first argument is a message name
   // like `send`'s; in an `intent` body the walk addresses and names it, and
@@ -610,7 +660,7 @@ fn names_a_message(effect : String, kind : @tscript.DeclKind) -> Bool {
   if effect == "reply" {
     return kind is DReceive
   }
-  effect is ("send" | "sendAt" | "bubble" | "request" | "intent")
+  effect is ("send" | "sendAt" | "ask" | "notify")
 }
 
 ///|
@@ -628,7 +678,7 @@ fn names_a_message(effect : String, kind : @tscript.DeclKind) -> Bool {
 fn C::effect_placement(self : C, effect : String, span : @tutuca.Span) -> Unit {
   match effect {
     "fail" =>
-      if !(self.decl_kind is DIntent) {
+      if !(self.decl_kind is DAnswer) {
         self.say(
           "NOT_A_HANDLER",
           "`fail` ends the walk an intent is on, and `\{@tscript.kind_word(self.decl_kind)} \{self.decl_name}` is not on one — to turn a message down, answer the sender with a `reply` that says so",
@@ -636,23 +686,57 @@ fn C::effect_placement(self : C, effect : String, span : @tutuca.Span) -> Unit {
         )
       }
     "reply" =>
-      if !(self.decl_kind is (DReceive | DIntent)) {
+      if !(self.decl_kind is (DReceive | DAnswer)) {
         self.say(
           "NOT_A_HANDLER",
           "`reply` answers whoever asked, and `\{@tscript.kind_word(self.decl_kind)} \{self.decl_name}` was not asked anything",
           span,
         )
       }
+    // `forward` no longer means two things by position: it hands on the walk
+    // that is RUNNING, which only an `answer` body is on. Starting one from
+    // the message that arrived is a bare `ask`, checked below.
     "forward" =>
-      if !(self.decl_kind is (DReceive | DIntent)) {
+      if !(self.decl_kind is DAnswer) {
         self.say(
           "NOT_A_HANDLER",
-          "`forward` passes on the message this body is handling, and `\{@tscript.kind_word(self.decl_kind)} \{self.decl_name}` is not handling one",
+          "`forward` hands on the walk this body is answering, and `\{@tscript.kind_word(self.decl_kind)} \{self.decl_name}` is not on one — to turn a message into an intent, write a bare `ask`",
           span,
         )
       }
     _ => ()
   }
+}
+
+///|
+/// `NOT_A_HANDLER`: a bare `ask` asks the question that ARRIVED, so there has
+/// to be one.
+///
+/// `ask 'name' args` raises a new intent and is legal in any transition. `ask`
+/// with no name re-dispatches the message this body is handling, which only a
+/// `receive` body has. In an `answer` body the walk is already running and the
+/// word for handing it on is `forward`.
+fn C::bare_ask(
+  self : C,
+  name : String,
+  args : Array[@tutuca.Expr],
+  span : @tutuca.Span,
+) -> Unit {
+  if name != "ask" ||
+    @tscript.ask_names_a_question(args) ||
+    self.decl_kind is DReceive {
+    return
+  }
+  self.say(
+    "NOT_A_HANDLER",
+    "a bare `ask` asks the question this body was handed, and `\{@tscript.kind_word(self.decl_kind)} \{self.decl_name}` was handed none" +
+    (if self.decl_kind is DAnswer {
+      " — the walk here is already running, and `forward` hands it on"
+    } else {
+      " — name what to ask: `ask 'saveDraft' .text`"
+    }),
+    span,
+  )
 }
 
 ///|
@@ -737,6 +821,17 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
         }
       }
       self.effect_placement(name, span)
+      self.bare_ask(name, args, span)
+      if name is ("ask" | "notify") &&
+        args.get(0) is Some(ELit(lit=LStr(n), ..)) {
+        if name == "notify" {
+          if !self.notified.contains(n) {
+            self.notified[n] = span
+          }
+        } else {
+          self.asked[n] = ()
+        }
+      }
       // The first argument of a NAMING effect is a message, and a name that is
       // not a literal cannot be checked against anything — nor routed by the
       // generator, which needs it at generation time.
@@ -745,7 +840,10 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
       // `forward` re-dispatches the one that arrived, and `reply` and `fail`
       // are addressed by the walk. Asking them would report `reply 1` as a
       // dynamic message name.
-      if names_a_message(name, self.decl_kind) {
+      // An `ask` that is not naming a question is amending the one that
+      // arrived, so there is no name to hold to the literal rule.
+      if names_a_message(name, self.decl_kind) &&
+        (name != "ask" || @tscript.ask_names_a_question(args)) {
         let name_at = message_arg.unwrap()
         if args.get(name_at) is Some(a0) {
           match a0 {
@@ -759,7 +857,10 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
                     span,
                   )
                 Some(wire_name) => {
-                  let declared = if name == "intent" {
+                  // The two express surfaces, by CHANNEL: `ask` and `notify`
+                  // both raise an intent, and `send` / `sendAt` / a `receive`
+                  // body's `reply` all address a message.
+                  let declared = if name is ("ask" | "notify") {
                     self.def.express_intent
                   } else {
                     self.def.express_message

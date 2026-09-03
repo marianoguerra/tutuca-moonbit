@@ -23,6 +23,13 @@
 priv struct P {
   toks : Array[ScriptToken]
   mut at : Int
+  /// Which declaration's body is being parsed.
+  ///
+  /// One question turns on it, and it is the one this family exists to settle:
+  /// a `forward` in a `receive` body starts a walk and a `forward` in an
+  /// `answer` body continues one. Those are two operations, so they are two
+  /// words now — and the parser is where the position is known.
+  mut decl_kind : DeclKind
   /// Retired spellings met on the way, in source order.
   ///
   /// A side channel rather than a field on the statement, because the AST is
@@ -168,7 +175,7 @@ pub fn collection_method(name : String) -> Int? {
 /// restating it — an effect only one of them knows about is a language with
 /// two semantics.
 pub fn effect_names() -> Array[String] {
-  ["send", "sendAt", "intent", "forward", "reply", "fail", "drop"]
+  ["send", "sendAt", "ask", "notify", "forward", "reply", "fail", "drop"]
 }
 
 ///|
@@ -179,10 +186,17 @@ pub fn effect_names() -> Array[String] {
 /// backend below sees ONE vocabulary and no `match` on an effect has to carry
 /// two arms for a word. `@tutuca.retired(KeywordName, …)` is what says so to
 /// the author, once, in the checker.
-pub fn current_effect(name : String) -> String {
+pub fn current_effect(name : String, kind : DeclKind) -> String {
   match name {
     "stop" => "drop"
     "sendReply" => "reply"
+    "intent" => "ask"
+    // `forward` used to mean two things by position, which is the collision
+    // this family removes. In a `receive` body it STARTED a walk from the
+    // message that arrived — that is asking, with the question already in
+    // hand, so it is a bare `ask`. In an `answer` body it hands the walk that
+    // is already running to the next hop, and there it keeps its name.
+    "forward" => if kind is DReceive { "ask" } else { "forward" }
     _ => name
   }
 }
@@ -195,6 +209,13 @@ pub fn effect_min_arity(name : String) -> Int? {
   // is built.
   match name {
     "drop" | "stop" => Some(0)
+    // Bare in a `receive` body — the question is the message that arrived —
+    // and named everywhere else. The checker is what says which body a bare
+    // one is legal in; the arity table cannot, and should not try.
+    "ask" => Some(0)
+    // Never bare: a notification names what happened. There is no "notify the
+    // thing that arrived", because a message already reached who it named.
+    "notify" => Some(1)
     // A name plus whatever the message carries.
     "send" => Some(1)
     "sendReply" => Some(1)
@@ -215,13 +236,33 @@ pub fn effect_min_arity(name : String) -> Int? {
 }
 
 ///|
+/// Whether an `ask` is naming a QUESTION or amending the one already in hand.
+///
+/// The one ambiguity merging `forward` into `ask` creates, and it is settled
+/// by a rule that was already there: a message name has to be a literal or a
+/// declared protocol operation, because a name that is not one cannot be
+/// checked against anything nor routed by the generator. So `ask 'save' .text`
+/// names a question and `ask .text` amends the one that arrived, and there is
+/// no third reading for either.
+///
+/// See `takes_route` below for the other half of the parse.
+
+///|
 /// Whether an effect may be written with leg words before its arguments.
 ///
 /// Two of them, and the same two the design gives a route: `intent` chooses one
 /// for a new dispatch, and `forward` chooses one for a message that has not had
 /// one yet — or narrows the one a walk is already on.
+pub fn ask_names_a_question(args : Array[@tutuca.Expr]) -> Bool {
+  match args.get(0) {
+    Some(ELit(lit=LStr(_), ..)) | Some(EName(..)) => true
+    _ => false
+  }
+}
+
+///|
 pub fn takes_route(name : String) -> Bool {
-  name is ("intent" | "forward")
+  name is ("ask" | "notify" | "forward" | "intent")
 }
 
 ///|
@@ -243,7 +284,7 @@ pub fn leg_of_word(w : String) -> @tutuca.Leg? {
 pub fn kind_word(k : DeclKind) -> String {
   match k {
     DReceive => "receive"
-    DIntent => "intent"
+    DAnswer => "answer"
     DCompute => "compute"
     DGet => "get"
     DSet => "set"
@@ -263,7 +304,7 @@ pub fn kind_word(k : DeclKind) -> String {
 pub fn all_decl_kinds() -> Array[DeclKind] {
   [
     DReceive,
-    DIntent,
+    DAnswer,
     DCompute,
     DGet,
     DSet,
@@ -290,7 +331,8 @@ fn decl_kind_list() -> String {
 pub fn kind_of_word(w : String) -> DeclKind? {
   match w {
     "receive" => Some(DReceive)
-    "intent" => Some(DIntent)
+    "answer" => Some(DAnswer)
+    "intent" => Some(DAnswer)
     "compute" => Some(DCompute)
     "get" => Some(DGet)
     "set" => Some(DSet)
@@ -317,7 +359,7 @@ fn kind_takes_stmts(k : DeclKind) -> Bool {
 
 ///|
 pub fn is_transition(k : DeclKind) -> Bool {
-  k is (DReceive | DIntent)
+  k is (DReceive | DAnswer)
 }
 
 ///|
@@ -374,7 +416,12 @@ fn is_binary_only(f : @tutuca.OpFamily) -> Bool {
 /// this way — a fresh cursor over a bare substring, and a demand that the
 /// whole of it was consumed.
 pub fn parse_expr_source(source : String) -> @tutuca.Expr raise ScriptError {
-  let p : P = { toks: tokenize_script(source), at: 0, retired: [], }
+  let p : P = {
+    toks: tokenize_script(source),
+    at: 0,
+    retired: [],
+    decl_kind: DReceive,
+  }
   let e = parse_expr(p)
   if !(p.peek() is TEof) {
     raise Unexpected(
@@ -403,7 +450,12 @@ pub fn parse_script(source : String) -> Array[Decl] raise ScriptError {
 pub fn parse_script_retiring(
   source : String,
 ) -> (Array[Decl], Array[Retirement]) raise ScriptError {
-  let p : P = { toks: tokenize_script(source), at: 0, retired: [], }
+  let p : P = {
+    toks: tokenize_script(source),
+    at: 0,
+    retired: [],
+    decl_kind: DReceive,
+  }
   let out : Array[Decl] = []
   // One name per bucket: a name answered twice is refused rather than ordered,
   // in the spirit of `Path::update`'s "one lookup, by exact name, with no
@@ -435,7 +487,7 @@ pub fn parse_script_retiring(
 /// was found before the failure is still true about the text before it.
 pub fn retired_spellings(source : String) -> Array[Retirement] {
   let toks = tokenize_script(source) catch { _ => return [] }
-  let p : P = { toks, at: 0, retired: [], }
+  let p : P = { toks, at: 0, retired: [], decl_kind: DReceive, }
   for ;; {
     p.skip_seps()
     if p.peek() is TEof {
@@ -469,6 +521,9 @@ fn parse_decl(p : P) -> Decl raise ScriptError {
   guard kind_of_word(word) is Some(kind) else {
     raise UnknownKind(got=word, span=word_span)
   }
+  // Every effect below is parsed knowing which body it is in, because one of
+  // them means two things by position and this is where the position is.
+  p.decl_kind = kind
   // A declaration kind can be retired too, and it is recorded the same way an
   // effect is: the AST below carries only `kind`, so nothing under the parser
   // knows there was another spelling.
@@ -692,7 +747,7 @@ fn parse_stmt(p : P) -> Stmt raise ScriptError {
     p.bump() |> ignore
     // Normalised here and nowhere else: below this point the statement carries
     // the current spelling, so no backend has two arms for one operation.
-    let cur = current_effect(name)
+    let cur = current_effect(name, p.decl_kind)
     if cur != name {
       p.retired.push({
         word: name,
@@ -1209,6 +1264,7 @@ fn parse_tpl_parts(
         // inside an interpolation is not worth a second offset discipline.
         let ip : P = {
           toks: tokenize_script(inner.to_string()),
+          decl_kind: DReceive,
           at: 0,
           retired: [],
         }

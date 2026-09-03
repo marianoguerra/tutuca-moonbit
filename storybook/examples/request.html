@@ -61,7 +61,7 @@
   /// No opts here. The three answer arms are in the schema, so the generator
   /// already knows where the answer goes.
   receive init {
-    intent lex 'loadData'
+    ask lex 'loadData'
     .isLoading = true
   }
 </script>

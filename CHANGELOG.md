@@ -8,6 +8,34 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **The `intent` declaration is `answer`, the `intent` effect is `ask`, and a
+  `forward` in a `receive` body is a bare `ask`.** An intent is the CHANNEL;
+  `ask` is what you do on it and `answer` is the handler that answers one, so
+  the same word no longer names all three.
+
+  `forward` meant two things by position, which is the collision this family
+  exists to remove: in a `receive` body it STARTED a walk from the message that
+  arrived, and in an `intent` body it CONTINUED one that was already running.
+  The first is asking with the question already in hand, so it is a bare `ask`;
+  the second keeps `forward`, and each is now reported in the wrong body.
+
+  `ask 'name' …` names a new question and `ask .name` amends the one that
+  arrived. There is no ambiguity between them, because a message name has to be
+  a literal or a declared protocol operation — a first argument that is neither
+  cannot be naming anything.
+
+- **`notify` — an intent with no answer channel.** An `ask` is a request
+  exactly when its sender declares answer arms, so an `ask` whose author meant
+  a notification and an `ask` whose author forgot the arms are the same line of
+  code, and which one it is lives somewhere else in the file. `notify` says it
+  where it is written: an announcement any ancestor on the route may act on,
+  and none of them answers.
+
+  It is a keyword rather than a synonym because it buys a check. A `<name>Ok` /
+  `<name>Failed` / `<name>Unhandled` arm for a name only ever notified is an arm
+  that can never fire, and it is reported (`ANSWERS_A_NOTIFY`). A name that is
+  both asked and notified has an answer channel and stays quiet.
+
 - **`enrichScope` is `bindWith`.** It BINDS names a subtree reads as `*name`,
   and "enrich" was a word `enrich` already had — one directive per item, one
   per scope, and the same verb on both, so which one a block declared was read

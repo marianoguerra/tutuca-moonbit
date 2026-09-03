@@ -63,8 +63,8 @@ test "the seven declaration kinds" {
     "receive resetTo(n) {\n  .count = n\n}",
   )
   assert_eq(
-    trip("intent rowPicked(i) { .sel = i }"),
-    "intent rowPicked(i) {\n  .sel = i\n}",
+    trip("answer rowPicked(i) { .sel = i }"),
+    "answer rowPicked(i) {\n  .sel = i\n}",
   )
   assert_eq(trip("compute label { .name }"), "compute label { .name }")
   assert_eq(
@@ -122,7 +122,7 @@ test "`when` is not a declaration kind" {
   // `when` could. The kind list is nine rather than ten.
   assert_eq(
     script_err("when unfinished { not @value.completed }"),
-    "`when` is not a declaration kind — expected receive, intent, compute, get, set, pred, invariant, enrich or bindWith",
+    "`when` is not a declaration kind — expected receive, answer, compute, get, set, pred, invariant, enrich or bindWith",
   )
 }
 
@@ -135,7 +135,7 @@ test "a name is answered once per bucket" {
   // Different buckets are different questions, so the same name is fine — an
   // addressed `reset` and a routed one are two things a component can answer.
   assert_eq(
-    script_err("receive reset { .count = 0 }\nintent reset { .count = 0 }"),
+    script_err("receive reset { .count = 0 }\nanswer reset { .count = 0 }"),
     "",
   )
 }
@@ -272,8 +272,8 @@ test "the effects" {
       (
         #|receive save {
         #|  send 'flash' .msg
-        #|  intent dyn 'rowPicked' @key
-        #|  intent lex 'loadData'
+        #|  ask dyn 'rowPicked' @key
+        #|  ask lex 'loadData'
         #|  drop
         #|}
       ),
@@ -281,8 +281,8 @@ test "the effects" {
     (
       #|receive save {
       #|  send 'flash' .msg
-      #|  intent dyn 'rowPicked' @key
-      #|  intent lex 'loadData'
+      #|  ask dyn 'rowPicked' @key
+      #|  ask lex 'loadData'
       #|  drop
       #|}
     ),
@@ -702,82 +702,101 @@ test "a format attaches to a rule and to nothing else" {
 ///|
 test "the intent declaration round-trips" {
   assert_eq(
-    trip("intent saveDraft(text) { reply .count }"),
-    "intent saveDraft(text) {\n  reply .count\n}",
+    trip("answer saveDraft(text) { reply .count }"),
+    "answer saveDraft(text) {\n  reply .count\n}",
   )
   // It is a transition, so it takes contracts like the other four.
   assert_eq(
-    trip("intent saveDraft(text) requires hasRoom { .count += 1 }"),
-    "intent saveDraft(text) requires hasRoom {\n  .count += 1\n}",
+    trip("answer saveDraft(text) requires hasRoom { .count += 1 }"),
+    "answer saveDraft(text) requires hasRoom {\n  .count += 1\n}",
   )
 }
 
 ///|
 test "reply, fail and drop are one-word answers" {
-  assert_eq(trip("intent go { reply 1 }"), "intent go {\n  reply 1\n}")
+  assert_eq(trip("answer go { reply 1 }"), "answer go {\n  reply 1\n}")
   assert_eq(
-    trip("intent go { fail 'disk full' }"),
-    "intent go {\n  fail 'disk full'\n}",
+    trip("answer go { fail 'disk full' }"),
+    "answer go {\n  fail 'disk full'\n}",
   )
-  assert_eq(trip("intent go { drop }"), "intent go {\n  drop\n}")
+  assert_eq(trip("answer go { drop }"), "answer go {\n  drop\n}")
   // The retired spelling still parses, and comes back as the current one:
   // the AST holds one vocabulary, so a round trip is also a migration.
-  assert_eq(trip("intent go { stop }"), "intent go {\n  drop\n}")
+  assert_eq(trip("intent go { stop }"), "answer go {\n  drop\n}")
 }
 
 ///|
 test "leg words are written between the verb and the arguments" {
   assert_eq(
-    trip("receive go { intent 'saveDraft' .name }"),
-    "receive go {\n  intent 'saveDraft' .name\n}",
+    trip("receive go { ask 'saveDraft' .name }"),
+    "receive go {\n  ask 'saveDraft' .name\n}",
   )
   assert_eq(
-    trip("receive go(k) { intent dyn 'picked' k }"),
-    "receive go(k) {\n  intent dyn 'picked' k\n}",
+    trip("receive go(k) { ask dyn 'picked' k }"),
+    "receive go(k) {\n  ask dyn 'picked' k\n}",
   )
   assert_eq(
-    trip("receive go { intent lex 'loadRows' }"),
-    "receive go {\n  intent lex 'loadRows'\n}",
+    trip("receive go { ask lex 'loadRows' }"),
+    "receive go {\n  ask lex 'loadRows'\n}",
   )
   assert_eq(
-    trip("receive go { intent lex dyn 'saveDraft' }"),
-    "receive go {\n  intent lex dyn 'saveDraft'\n}",
+    trip("receive go { ask lex dyn 'saveDraft' }"),
+    "receive go {\n  ask lex dyn 'saveDraft'\n}",
   )
 }
 
 ///|
-test "forward takes leg words, arguments, both or neither" {
+/// A bare `ask` takes leg words, arguments, both or neither.
+///
+/// In a `receive` body it is what `forward` used to be — the message that
+/// arrived becomes the question — and the retired spelling still parses there,
+/// coming back as `ask`.
+test "a bare ask takes leg words, arguments, both or neither" {
   assert_eq(
-    trip("receive saveDraft(t) { forward }"),
-    "receive saveDraft(t) {\n  forward\n}",
+    trip("receive saveDraft(t) { ask }"),
+    "receive saveDraft(t) {\n  ask\n}",
   )
   assert_eq(
-    trip("receive saveDraft(t) { forward dyn }"),
-    "receive saveDraft(t) {\n  forward dyn\n}",
+    trip("receive saveDraft(t) { ask dyn }"),
+    "receive saveDraft(t) {\n  ask dyn\n}",
   )
   assert_eq(
-    trip("receive saveDraft(t) { forward lex dyn }"),
-    "receive saveDraft(t) {\n  forward lex dyn\n}",
+    trip("receive saveDraft(t) { ask lex dyn }"),
+    "receive saveDraft(t) {\n  ask lex dyn\n}",
   )
   assert_eq(
-    trip("receive saveDraft(t) { forward .enriched }"),
-    "receive saveDraft(t) {\n  forward .enriched\n}",
+    trip("receive saveDraft(t) { ask .enriched }"),
+    "receive saveDraft(t) {\n  ask .enriched\n}",
   )
   assert_eq(
     trip("receive saveDraft(t) { forward dyn .enriched }"),
-    "receive saveDraft(t) {\n  forward dyn .enriched\n}",
+    "receive saveDraft(t) {\n  ask dyn .enriched\n}",
+  )
+}
+
+///|
+/// …and in an `answer` body `forward` keeps its name, because there it hands
+/// on a walk that is already running rather than starting one.
+test "forward stays forward where a walk is already running" {
+  assert_eq(
+    trip("answer saveDraft(t) { forward }"),
+    "answer saveDraft(t) {\n  forward\n}",
+  )
+  assert_eq(
+    trip("answer saveDraft(t) { forward dyn .enriched }"),
+    "answer saveDraft(t) {\n  forward dyn .enriched\n}",
   )
 }
 
 ///|
 test "an empty route prints nothing, so the default stays where it is written" {
-  // A bare `intent 'save'` records NO legs, not `[Dyn, Lex]`. The default lives
+  // A bare `ask 'save'` records NO legs, not `[Dyn, Lex]`. The default lives
   // in `@tutuca.IntentOpts::new`, and a parser that resolved it here would be a
   // second place for it to live and a second place for it to drift.
-  guard route_of("receive go { intent 'save' }") is [] else {
-    fail("a bare intent should record no legs")
+  guard route_of("receive go { ask 'save' }") is [] else {
+    fail("a bare ask should record no legs")
   }
-  guard route_of("receive go { intent dyn lex 'save' }") is [Dyn, Lex] else {
+  guard route_of("receive go { ask dyn lex 'save' }") is [Dyn, Lex] else {
     fail("the legs written are the legs recorded")
   }
 }
@@ -807,8 +826,8 @@ test "a handler may be called dyn, and a contract may name a pred called lex" {
     "receive dyn {\n  .count = 1\n}",
   )
   assert_eq(
-    trip("intent go requires lex { .count = 1 }"),
-    "intent go requires lex {\n  .count = 1\n}",
+    trip("answer go requires lex { .count = 1 }"),
+    "answer go requires lex {\n  .count = 1\n}",
   )
 }
 

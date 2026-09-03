@@ -351,7 +351,7 @@ the generated code, not to what you write. An UpperCamel declaration still
 parses, but `gen-views` reports it as a `message-case` warning.
 
 `message` is what something `send`s to this component **by address**; `intent`
-is what reaches it because a walk routed here — a descendant's `intent dyn`, or
+is what reaches it because a walk routed here — a descendant's `ask dyn`, or
 an intent that took the default `dyn lex` route. A bucket the component has no
 use for is simply absent. What a parent asks of a child goes through `receive`
 — a slot is a handle, not a channel.

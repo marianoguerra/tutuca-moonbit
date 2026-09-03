@@ -51,7 +51,7 @@ pub impl @tutuca.Ctx for Recorder with fn intent_at_path(
 ) {
   self.seen.push(
     @conformance.show_effect(
-      "intent " + @tutuca.route_label(opts.route) + " " + name,
+      "ask " + @tutuca.route_label(opts.route) + " " + name,
       args,
     ),
   )

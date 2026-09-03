@@ -38,7 +38,7 @@ pub(all) enum DeclKind {
   /// up the tree and searching the registration scope chain are two legs of
   /// one mechanism, not two kinds of name. The ANSWER is not declared here: it
   /// arrives at the sender as an ordinary addressed message.
-  DIntent
+  DAnswer
   /// A `$name` in a value position. One expression.
   DCompute
   /// A complex public property getter. Its name fixes the property and its
@@ -290,7 +290,15 @@ declare pub fn retired_spellings(source : String) -> Array[Retirement]
 ///|
 /// The current spelling of an effect name — the identity for every name that
 /// has not been renamed.
-declare pub fn current_effect(name : String) -> String
+declare pub fn current_effect(name : String, kind : DeclKind) -> String
+
+///|
+/// Whether an `ask` is naming a QUESTION or amending the one already in hand.
+///
+/// `ask 'save' .text` names one; `ask .text` amends the question that arrived.
+/// Settled by the rule that was already there — a message name has to be a
+/// literal or a declared protocol operation — so there is no third reading.
+declare pub fn ask_names_a_question(args : Array[@tutuca.Expr]) -> Bool
 
 ///|
 /// Parse ONE expression, with no declaration around it — the entry a

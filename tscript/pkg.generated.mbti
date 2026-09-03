@@ -9,9 +9,11 @@ import {
 // Values
 pub fn all_decl_kinds() -> Array[DeclKind]
 
+pub fn ask_names_a_question(Array[@core.Expr]) -> Bool
+
 pub fn collection_method(String) -> Int?
 
-pub fn current_effect(String) -> String
+pub fn current_effect(String, DeclKind) -> String
 
 pub fn effect_min_arity(String) -> Int?
 
@@ -120,7 +122,7 @@ pub fn Decl::to_source(Self) -> String
 
 pub(all) enum DeclKind {
   DReceive
-  DIntent
+  DAnswer
   DCompute
   DGet
   DSet

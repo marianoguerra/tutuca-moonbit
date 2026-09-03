@@ -15,18 +15,18 @@ test "the v2 corpus still holds every case it was written with" {
       #|a message answered at home
       #|a message no arm answers produces no successor
       #|a view name and a schema-declared name share one bucket
-      #|forward with no legs takes the default route
-      #|forward dyn walks the ancestors only
-      #|forward lex walks the registered handlers only
-      #|forward lex dyn walks the legs in the order written
-      #|forward amends the arguments and keeps the name and the route
-      #|a handler may run and then forward
+      #|a bare ask with no legs takes the default route
+      #|a bare ask dyn walks the ancestors only
+      #|a bare ask lex walks the registered handlers only
+      #|a bare ask lex dyn walks the legs in the order written
+      #|a bare ask amends the arguments and keeps the name and the route
+      #|a handler may run and then ask
       #|a bare value fills a nullable field
       #|null empties one, and is the one literal the wanted type names
-      #|an intent with no legs takes the default route
-      #|intent dyn is what v1 spelled bubble
-      #|intent lex is what v1 spelled request
-      #|intent lex dyn reverses the legs
+      #|an ask with no legs takes the default route
+      #|ask dyn is what v1 spelled bubble
+      #|ask lex is what v1 spelled request
+      #|ask lex dyn reverses the legs
       #|a reply to a message names itself
       #|a reply is an effect like the rest, and buffers with them
       #|effects come out in order, with the state
@@ -77,7 +77,9 @@ test "the v2 effects use the vocabulary the design gives them" {
 
   inspect(
     tally(seen, ["drop", "fail", "forward", "intent", "reply", "send"]),
-    content="drop=2 fail=1 forward=7 intent=5 reply=5 send=2",
+    content=(
+      #|drop=2 fail=1 forward=7 intent=0 reply=5 send=2 UNEXPECTED ask=5
+    ),
   )
   inspect(
     tally(routes, ["dyn", "dyn lex", "lex", "lex dyn"]),
@@ -86,9 +88,9 @@ test "the v2 effects use the vocabulary the design gives them" {
 }
 
 ///|
-/// The printed form, which two adapters compare against. `intent` and
-/// `forward` are the two that carry a route, and this is where the spelling of
-/// one is decided rather than in each adapter.
+/// The printed form, which two adapters compare against. `ask`, `notify` and
+/// `forward` are the ones that carry a route, and this is where the spelling
+/// of one is decided rather than in each adapter.
 test "a routed effect prints its route between the verb and the name" {
   let by_name : Map[String, @conformance.Case] = Map([])
   for c in @conformance.cases() {
@@ -99,19 +101,21 @@ test "a routed effect prints its route between the verb and the name" {
   }
 
   inspect(
-    printed("an intent with no legs takes the default route"),
-    content="intent dyn lex saveDraft RStr(\"ada\")",
+    printed("an ask with no legs takes the default route"),
+    content=(
+      #|ask dyn lex saveDraft RStr("ada")
+    ),
   )
   inspect(
-    printed("intent dyn is what v1 spelled bubble"),
-    content="intent dyn picked RNum(3)",
+    printed("ask dyn is what v1 spelled bubble"),
+    content="ask dyn picked RNum(3)",
   )
   inspect(
-    printed("forward with no legs takes the default route"),
+    printed("a bare ask with no legs takes the default route"),
     content="forward dyn lex",
   )
   inspect(
-    printed("forward amends the arguments and keeps the name and the route"),
+    printed("a bare ask amends the arguments and keeps the name and the route"),
     content="forward dyn lex RStr(\"ada\")",
   )
   inspect(

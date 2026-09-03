@@ -373,7 +373,7 @@ fn handle_message_fn(comps : Array[Comp]) -> @abi.Field {
 ///|
 /// The routed transition surface.
 fn handle_intent_fn(comps : Array[Comp]) -> @abi.Field {
-  handle_fn(comps, DIntent, "handle_intent", "handle-intent")
+  handle_fn(comps, DAnswer, "handle_intent", "handle-intent")
 }
 
 ///|

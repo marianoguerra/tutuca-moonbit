@@ -217,7 +217,7 @@ test "a scope that DECLINES is not a scope that failed" {
 - To exercise a handler on a nested child, click the element inside it
   (the dispatch path reconstruction is part of what you're testing) or
   call the child's extracted update fn directly on a state value.
-- A root-level `intent dyn` has no ancestor to reach — test `Intent`
+- A root-level `ask dyn` has no ancestor to reach — test `Intent`
   arms by clicking the child element that raises the intent, or call the
   update fn directly with an `Intent(name, args)` dispatch.
 - To observe every committed transaction (message/state traces), the

@@ -187,7 +187,7 @@ fn component_json(
     // mutator, and `@tutuca.first_broken_domain` is what it asks about them.
     "domains": @tutuca.domains_to_json(@info.domains_of(g.def)),
     "receives": strings(compiled(DReceive)),
-    "intents": strings(compiled(DIntent)),
+    "intents": strings(compiled(DAnswer)),
     "expressMessages": strings(g.def.express_message.map(m => m.name)),
     "expressIntents": strings(g.def.express_intent.map(m => m.name)),
     "implements": strings(g.def.implements),

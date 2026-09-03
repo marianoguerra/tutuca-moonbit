@@ -313,7 +313,7 @@ test "raw, implicit, and named-protocol effects are distinct" {
   assert_eq(codes("receive x { send 'flash' }"), [])
   assert_eq(codes("receive x { send flash }"), [])
   assert_eq(codes("receive x { send Bus::notify }"), [])
-  assert_eq(codes("receive x { intent persist }"), [])
+  assert_eq(codes("receive x { ask persist }"), [])
   assert_eq(codes("receive x { send missing }"), [
     "PROTOCOL_EXPRESSION_UNDECLARED",
   ])
@@ -800,28 +800,46 @@ test "fail ends the walk an intent is on, and a message is not on one" {
 }
 
 ///|
-test "forward passes on the message this body is handling" {
+/// `forward` hands on a walk that is RUNNING, and only an `answer` body is on
+/// one. Starting a walk from the message that arrived is a bare `ask`.
+///
+/// This is what the family bought: `forward` used to mean both, decided by
+/// which body it sat in, so a reader had to look up three lines to find out
+/// whether it was starting something or continuing it.
+test "forward hands on a walk, and a bare ask starts one" {
+  assert_eq(codes("answer rowPicked(k) { forward dyn }"), [])
+  assert_eq(codes("receive resetTo(n) { ask }"), [])
+  // The retired spelling in a `receive` body normalises to `ask`, so it is the
+  // legal one and reports nothing.
   assert_eq(codes("receive resetTo(n) { forward }"), [])
-  assert_eq(codes("intent rowPicked(k) { forward dyn }"), [])
   assert_eq(messages("compute a { .count }"), [])
   assert_eq(messages("enrich row { forward }"), [
-    "`forward` passes on the message this body is handling, and `enrich row` is not handling one",
+    "`forward` hands on the walk this body is answering, and `enrich row` is not on one — to turn a message into an intent, write a bare `ask`",
+  ])
+  // A bare `ask` needs a question already in hand, which only a `receive` has.
+  assert_eq(messages("answer rowPicked(k) { ask }"), [
+    "a bare `ask` asks the question this body was handed, and `answer rowPicked` was handed none — the walk here is already running, and `forward` hands it on",
   ])
 }
 
 ///|
 test "reply and fail are not dynamic message names" {
   // "Is the first argument a literal message name?" is asked only of the
-  // effects that NAME a message. `reply`, `fail` and `forward` name none — an
-  // answer is addressed by the walk and a `forward` re-dispatches the name
-  // that arrived — so asking would report `reply 1` as a dynamic message name.
-  assert_eq(codes("intent rowPicked(k) { reply 1 }"), [])
-  assert_eq(codes("intent rowPicked(k) { reply .count }"), [])
-  assert_eq(codes("intent rowPicked(k) { fail .name }"), [])
-  assert_eq(codes("receive resetTo(n) { forward .name }"), [])
+  // effects that NAME a message. `reply` in an `answer` body, `fail` and
+  // `forward` name none — an answer is addressed by the walk and a `forward`
+  // re-dispatches the name that arrived — so asking would report `reply 1` as
+  // a dynamic message name.
+  assert_eq(codes("answer rowPicked(k) { reply 1 }"), [])
+  assert_eq(codes("answer rowPicked(k) { reply .count }"), [])
+  assert_eq(codes("answer rowPicked(k) { fail .name }"), [])
+  // `ask .name` is not a dynamic message name: a name has to be a literal or a
+  // protocol operation, so a first argument that is neither is amending the
+  // question that arrived rather than naming a new one.
+  assert_eq(codes("receive resetTo(n) { ask .name }"), [])
   // ...and the rule still holds for the effects that DO name one.
-  assert_eq(codes("receive x { intent .name }"), ["DYNAMIC_MESSAGE"])
+  assert_eq(codes("receive x { ask 'a' }"), [])
   assert_eq(codes("receive x { send .name }"), ["DYNAMIC_MESSAGE"])
+  assert_eq(codes("receive x { notify .name }"), ["DYNAMIC_MESSAGE"])
 }
 
 ///|
@@ -986,4 +1004,41 @@ test "a rule declared in both blocks is reported rather than silently resolved" 
   assert_eq(out.length(), 1)
   assert_eq(out[0].code, "RULE_IN_BOTH")
   assert_eq(out[0].severity, SWarning)
+}
+
+///|
+/// `notify` is an `ask` with no answer channel, and the checker holds it to
+/// that.
+///
+/// The word exists because `ask 'x'` whose sender declares no answer arms and
+/// `ask 'x'` whose sender FORGOT them read identically at the call site — one
+/// is a notification and the other is a bug, and which it is was decided
+/// somewhere else in the file. `notify` says it where it is written. The price
+/// of the promise is this: an answer arm for a name only ever notified is an
+/// arm that can never fire, and a promise nothing enforces is a comment.
+test "an answer arm for a notified name never fires, and is reported" {
+  assert_eq(codes("receive x { notify 'rowPicked' .count }"), [])
+  assert_eq(
+    codes(
+      "receive x { notify 'rowPicked' }\nreceive rowPickedOk(v) { .count = 1 }",
+    ),
+    ["ANSWERS_A_NOTIFY"],
+  )
+  assert_eq(
+    messages(
+      "receive x { notify 'rowPicked' }\nreceive rowPickedFailed(v) { .count = 1 }",
+    ),
+    [
+      "`receive rowPickedFailed` answers a question, and `notify 'rowPicked'` asks none — a notification has no answer channel, so this arm never fires. Write `ask 'rowPicked'` if an answer was meant",
+    ],
+  )
+  // A name that is BOTH asked and notified has an answer channel: one call
+  // site is a question and the other is an announcement, which is unusual and
+  // not wrong.
+  assert_eq(
+    codes(
+      "receive x { notify 'rowPicked' }\nreceive y { ask 'rowPicked' }\nreceive rowPickedOk(v) { .count = 1 }",
+    ),
+    [],
+  )
 }
