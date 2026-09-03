@@ -21,7 +21,7 @@ fn emit_decls(src : Src, c : Comp) -> Unit {
   let rest = c.decls.filter(d => !(d.kind is (DPred | DInvariant)))
   // The FORMAT sentences first, because a rule's guard asks whether its own
   // sentence lowered before it decides what to say.
-  let formats = @set.Set::new()
+  let formats : @set.Set[String] = Set([])
   for d in rules {
     guard d.format is Some(text) else { continue }
     let ctx = rule_ctx(c, callable, d, formats)
@@ -326,7 +326,7 @@ fn emit_rule_guard(
   kind : @tscript.DeclKind,
   name : String,
   line : String,
-) -> Unit raise Refused {
+) -> Unit {
   let t = ctx.temp()
   src.line(
     "let \{t} = \{ctx.comp.id}_\{callable_suffix(kind)}_\{mangle(name)}(f, args);",
