@@ -50,7 +50,7 @@ fn counter_main_view_ir() -> @anode.View {
             @anode.text("Count"),
           ]),
           @anode.h("div", [@anode.attr("class", "stat-value")], [
-            @anode.dyn_text(Field("count")),
+            @anode.dyn_text(@tutuca.Expr::field("count")),
           ]),
         ]),
       ]),
@@ -60,8 +60,8 @@ fn counter_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("click", HandlerName(name="dec", ns=Receive))],
-      [@anode.on("click", HandlerName(name="inc", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::name("dec"))],
+      [@anode.on("click", @tutuca.Expr::name("inc"))],
     ],
   )
 }
@@ -72,10 +72,10 @@ fn counter_compact_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "compact",
     @anode.h("button", [@anode.attr("class", "btn btn-sm"), @anode.eid(0)], [
-      @anode.dyn_text(Field("count")),
+      @anode.dyn_text(@tutuca.Expr::field("count")),
     ]),
     [
-      [@anode.on("click", HandlerName(name="inc", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::name("inc"))],
     ],
   )
 }
@@ -127,11 +127,10 @@ fn counter_inline_update(
 pub fn counter_component(
   name? : String = "Counter",
   views? : Map[String, @anode.View] = counter_views(),
-  init? : CounterState = CounterState::zero(),
+  initial? : CounterState = CounterState::zero(),
   common_style? : String = counter_common_style,
   global_style? : String = counter_global_style,
   update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[CounterState],
-  swap? : (CounterInput) -> ((CounterState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -150,11 +149,6 @@ pub fn counter_component(
           None => Unhandled
         }
       answered => answered
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(([Dec, Inc] : Array[CounterInput]), CounterInput::name, f)
-      None => Map([])
     },
     slots~,
     slot_args~,

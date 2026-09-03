@@ -61,13 +61,15 @@ impl @component.Fields for CounterState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant receive` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
+/// Every addressed name: the `message` variant the state block declares,
+/// plus every bare `@on` handler the views write. One bucket holds them
+/// however they were sent, so one type covers it — where the two overlap
+/// the schema's declared payload wins, and a view whose call sites
+/// disagree with it is a build error.
 pub(all) enum CounterMsg {
   Inc
   Dec
-  /// A receive the schema does not declare, or a declared name whose
+  /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
@@ -134,74 +136,18 @@ pub let counter_common_style : String = ""
 pub let counter_global_style : String = ""
 
 ///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum CounterInput {
-  Dec
-  Inc
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CounterInput::name(self : CounterInput) -> String {
-  match self {
-    Dec => "dec"
-    Inc => "inc"
-  }
-}
-
-///|
-pub fn CounterInput::parse(s : String) -> CounterInput? {
-  match s {
-    "dec" => Some(Dec)
-    "inc" => Some(Inc)
-    _ => None
-  }
-}
-
-///|
-/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
-/// Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to counter.html breaks every `match` over this type
-/// until it is handled.
-pub(all) enum CounterMsg {
-  /// `@on.click="dec …"`
-  Dec
-  /// `@on.click="inc …"`
-  Inc
-  /// A dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// None for an `Intent` — a routed name is raised by component code and
-/// never written in a view, so the views cannot type it. A `Receive` the
-/// views do not name decodes to `Unknown`, which is what the sibling
-/// `<T>Receive` (the schema's half of the same bucket) is for.
-pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
-  guard d is Receive(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("dec", []) => Dec
-      ("inc", []) => Inc
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for CounterState with fn schema() {
   @component.SchemaInfo::new(
     name="Counter",
     fingerprint="f1e7380216f156aa",
     fields=[
-      @component.FieldInfo::new("count", TyInt),
+      @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
     ],
     view_handlers=["dec", "inc"],
     receives=["inc", "dec"],
