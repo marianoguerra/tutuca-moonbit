@@ -24,6 +24,13 @@ priv struct Comp {
   /// component with no view has nothing to mount.
   views : Array[@viewfile.RawView]
   common_style : String
+  /// The card's named starting states.
+  ///
+  /// A fixture is not decoration: the DEFAULT one is what a host mounts when it
+  /// is told no other name, so a card whose fixtures are dropped mounts at its
+  /// declared zero and every string field renders empty. That is what dropping
+  /// them looks like on a page, and it is why they are carried.
+  inits : Array[@statedef.InitState]
   refusals : Array[Refusal]
 }
 

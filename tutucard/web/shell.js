@@ -547,14 +547,25 @@ async function drawExamples(report) {
     return;
   }
   const shown = inits.slice(0, EXAMPLE_CAP);
-  const { compileGuest, loadGuest, b64ToBytes } = await import("./card-wasm.js");
-  let module_;
-  try {
-    module_ = await compileGuest(b64ToBytes(report.build.wasm));
-  } catch (e) {
-    els.examplesNote.textContent = String(e);
-    return;
-  }
+  // The SAME backend the preview mounted with. A gallery that instantiated the
+  // module through the other one refuses it — `abi.mjs` screens the import
+  // section against `tutuca:component`, and a `tgc` module imports `tut`, which
+  // is exactly the refusal it is for.
+  const viaTgc = report.backend === "tgc";
+  const { b64ToBytes } = await import("./card-wasm.js");
+  const bytes = b64ToBytes(report.build.wasm);
+  const loadInto = viaTgc
+    ? async (id) => {
+        const { loadTgcGuest } = await import("./card-tgc.js");
+        await loadTgcGuest(bytes, id);
+      }
+    : await (async () => {
+        const { compileGuest, loadGuest } = await import("./card-wasm.js");
+        const module_ = await compileGuest(bytes);
+        return async (id) => {
+          await loadGuest(null, report.build.descriptor, id, { module: module_ });
+        };
+      })();
   for (const init of shown) {
     const id = exampleId(init.name);
     const box = exampleBox(id, init);
@@ -566,7 +577,7 @@ async function drawExamples(report) {
     // one.
     let out;
     try {
-      await loadGuest(null, report.build.descriptor, id, { module: module_ });
+      await loadInto(id);
       out = JSON.parse(
         globalThis.__tutucard.mountCompiled(
           id,
@@ -985,7 +996,10 @@ function showBuild(report) {
   els.compiled.classList.remove("bad");
   lastBuild = report;
   els.wasmSize.textContent = `${(report.size / 1024).toFixed(1)} KB · ${report.fields.length} field${report.fields.length === 1 ? "" : "s"}`;
-  els.download.disabled = false;
+  // The ARCHIVE is the other backend's shape — `tutuca.json` plus a core
+  // module plus the views. A `tgc` module carries its own manifest, so there is
+  // nothing to pack and the button would be offering a file that means nothing.
+  els.download.disabled = report.backend === "tgc";
   els.load.disabled = false;
   drawRefusals(report.refusals);
   drawCompiled();
@@ -1057,13 +1071,22 @@ async function loadAndMount() {
   try {
     // Imported lazily, with the packer beside it: a reader who never presses
     // this never fetches the guest bridge or the ABI it stands on.
-    const { loadGuest, b64ToBytes } = await import("./card-wasm.js");
+    const { b64ToBytes } = await import("./card-wasm.js");
     // The manifest travels with the module it was compiled WITH. Its field list
     // is the order `get-field` answers in, so a manifest paired with any other
-    // build would be a bundle whose halves disagree.
+    // build would be a bundle whose halves disagree — and so would a module
+    // instantiated through the other backend's loader, which is why this asks
+    // which one made it rather than assuming.
+    //
     // Keyed by "loaded", which is this pane's own mount point: the preview
     // above is a compiled card too now, and the two must not share a module.
-    await loadGuest(b64ToBytes(lastBuild.wasm), lastBuild.descriptor, "loaded");
+    if (lastBuild.backend === "tgc") {
+      const { loadTgcGuest } = await import("./card-tgc.js");
+      await loadTgcGuest(b64ToBytes(lastBuild.wasm), "loaded");
+    } else {
+      const { loadGuest } = await import("./card-wasm.js");
+      await loadGuest(b64ToBytes(lastBuild.wasm), lastBuild.descriptor, "loaded");
+    }
     report = JSON.parse(
       globalThis.__tutucard.mountCompiled(
         "loaded",

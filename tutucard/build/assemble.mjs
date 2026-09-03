@@ -24,7 +24,7 @@
 
 import { execSync } from "node:child_process";
 import { build as esbuild } from "esbuild";
-import { cpSync, mkdirSync, rmSync, statSync } from "node:fs";
+import { cpSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { copyScoped } from "../../scripts/scope-bundle.mjs";
@@ -51,6 +51,10 @@ const WEB_FILES = [
   // `.tutuca.tar.gz` packer. Imported lazily by `shell.js` — a reader who
   // never downloads a bundle never fetches it.
   "card-wasm.js",
+  // The OTHER backend's half: instantiate a `tgc` module and install the same
+  // guest surface, so the page mounts one through the host it already has.
+  // Imported lazily too — a reader who never switches backend never fetches it.
+  "card-tgc.js",
 ];
 
 /**
@@ -63,6 +67,29 @@ const WEB_FILES = [
  */
 function copyAbi(out) {
   cpSync(join(REPO, "dyncomp", "host", "wasm", "abi.mjs"), join(out, "abi.mjs"));
+}
+
+/**
+ * The `tgc` value bridge, COPIED for the same reason `abi.mjs` is.
+ *
+ * `tgc/host/values.mjs` is the one spelling of `core.Value`'s JSON on the wasm
+ * side, shared by this page and by `tgc/test`. A second hand-kept copy is a
+ * second answer to what a value is.
+ *
+ * The import is REWRITTEN because the source lives two directories up from
+ * `tutucard/web` and beside it here. Rewriting one specifier is cheaper than
+ * making the repository layout match a dist layout it has no other reason to.
+ */
+function copyTgcValues(out) {
+  cpSync(join(REPO, "tgc", "host", "values.mjs"), join(out, "tgc-values.mjs"));
+  const card = join(out, "card-tgc.js");
+  writeFileSync(
+    card,
+    readFileSync(card, "utf8").replace(
+      "../../tgc/host/values.mjs",
+      "./tgc-values.mjs",
+    ),
+  );
 }
 
 function build() {
@@ -145,6 +172,7 @@ async function assemble() {
     cpSync(join(WEB, name), join(OUT, name));
   }
   copyAbi(OUT);
+  copyTgcValues(OUT);
   const bundle = join(
     REPO,
     "_build",

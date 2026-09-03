@@ -61,7 +61,13 @@ const effects = {
     buffered.push({ kind: "forward", name: "", args: argsOf(args), route: ROUTES[route] }),
   eff_fail: (v) => buffered.push({ kind: "fail", name: "", args: [host.toJs(v)], route: "" }),
   eff_drop: () => buffered.push({ kind: "drop", name: "", args: [], route: "" }),
+  // What a declined rule said. The corpus does not assert on it — a rule that
+  // does not hold is recorded as the transition NOT HAPPENING — so it is
+  // collected rather than compared.
+  eff_log: (msg) => logged.push(host.text(msg)),
 };
+
+let logged = [];
 
 /** A row's JSON values, built into the module's own value world. */
 const build = (j) => host.ofJson(j);

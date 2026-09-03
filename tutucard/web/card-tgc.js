@@ -101,6 +101,15 @@ export async function loadTgcGuest(bytes, key = "default", { runtime } = {}) {
       control.push({ kind: "forward", args: argsOf(args), opts: opts(route) }),
     eff_fail: (v) => control.push({ kind: "fail", value: V.toJson(v) ?? null }),
     eff_drop: () => control.push({ kind: "stopPropagation" }),
+    // What a DECLINED rule said. `takeLog` hands it to whoever is watching —
+    // a scene asserting `expect: log`, or a person with the console open. It
+    // goes to both, because a page a person is looking at and a driver reading
+    // it headlessly want the same sentence.
+    eff_log: (msg) => {
+      const line = V.text(msg);
+      logLines.push(line);
+      console.warn(line);
+    },
   };
 
   // `tg_vals` is a bare array, and the runtime's only reader for one is the
@@ -252,6 +261,13 @@ export async function mountTgcCard(previewId, source, name, { init = "" } = {}) 
   const build = JSON.parse(globalThis.__tutucard.compileTgc(source, name));
   if (!build.ok) return { ...build, stage: "compile" };
 
+  // An id that is not on the page answers `mounted: false` rather than failing:
+  // an embed removed while a debounce was in flight is an ordinary thing.
+  if (!document.getElementById(previewId)) {
+    globalThis.__tutucard.unmount(previewId);
+    return { ...checked, mounted: false, build, backend: "tgc" };
+  }
+
   globalThis.__tutucard.unmount(previewId);
   await loadTgcGuest(b64ToBytes(build.wasm), previewId);
   const mounted = JSON.parse(
@@ -261,7 +277,22 @@ export async function mountTgcCard(previewId, source, name, { init = "" } = {}) 
       init,
     ),
   );
-  return { ...mounted, build, backend: "tgc" };
+  // The SAME shape `mountCard` answers, and that is a contract rather than a
+  // courtesy: `shell.js` reads `issues` off it to draw the gutter, and a page
+  // that had to ask which backend it was talking to before reading the answer
+  // would be a page where the backends are not interchangeable.
+  return {
+    ...checked,
+    mounted: mounted.ok === true,
+    error: mounted.ok === true ? undefined : mounted.error,
+    diagnostics: mounted.diagnostics ?? [],
+    refusals: build.refusals ?? [],
+    // A `tgc` module has no escape hatch: `tutuca/wax` is the other backend's,
+    // and there is nothing here for it to splice into.
+    escapes: [],
+    build,
+    backend: "tgc",
+  };
 }
 
 /**

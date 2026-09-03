@@ -125,6 +125,12 @@ pub fn compile_tgc(source : String, name : String) -> String {
   }
   Json::object({
     "ok": Json::boolean(true),
+    // Which compiler made this, so a page holding a build knows which loader
+    // can instantiate it. A `tgc` module imports `tut`, and the other
+    // backend's loader screens its import section against
+    // `tutuca:component` — so handing one to the wrong loader is a refusal,
+    // not a mystery.
+    "backend": Json::string("tgc"),
     "component": Json::string(out.component),
     "components": Json::array(out.components.map(Json::string)),
     "wasm": Json::string(@base64.encode(out.wasm)),

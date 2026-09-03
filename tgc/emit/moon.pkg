@@ -24,4 +24,5 @@ import {
   "marianoguerra/wax/message",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
+  "moonbitlang/core/set",
 }

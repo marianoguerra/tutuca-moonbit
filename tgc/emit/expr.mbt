@@ -19,6 +19,12 @@ priv struct Ctx {
   /// in an `answer`, and the body is the only thing that says which — and the
   /// render row arrives at different offsets in a `pred` and in an `enrich`.
   kind : @tscript.DeclKind
+  /// The rules whose `format` sentence lowered, so a guard knows whether there
+  /// is one to say.
+  formats : @set.Set[String]
+  /// Every invariant this component declares. Checked after each transition,
+  /// because an invariant is the rule nothing has to mention.
+  invariants : Array[String]
   /// The local holding the bindings an enricher is accumulating, if this is one.
   ///
   /// An enricher ANSWERS the map rather than writing into one, which is the

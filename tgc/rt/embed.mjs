@@ -28,7 +28,10 @@ if (nonAscii.length) {
       "the embedded copy has to be ASCII",
   );
 }
-const lines = kept.split("\n").map((l) => `  #|${l}`).join("\n");
+// FOUR spaces, because that is what `moon fmt` leaves — and a generator whose
+// output the formatter then rewrites is a file that is stale the moment it is
+// written. The drift check below would catch it every run.
+const lines = kept.split("\n").map((l) => `    #|${l}`).join("\n");
 
 writeFileSync(
   join(here, "rt_src_gen.mbt"),

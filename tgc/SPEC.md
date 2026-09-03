@@ -255,6 +255,32 @@ Effects are `tut` imports and the **host** buffers them, because the host
 brackets the call and therefore knows when it ended — an effect performed before
 a statement that abandons is discarded with the transition.
 
+### Held to the playground too
+
+`tutuca/build/assemble.mjs` puts this backend beside the other one in the card
+playground, and every starter card is driven through both. **26 of 26 compile;
+21 of 24 cards with scenes pass all 73 of them.** The three that do not are the
+`new` refusal below — `todo`, `nested-state` and `dynamic-bindings` each build a
+record or a sibling — and they fail loudly rather than silently, which is what a
+refusal is for.
+
+Four things that only running it in a browser found, each now fixed and each
+worth naming because none of them showed up in the corpus:
+
+- **Fixtures were dropped**, so a card mounted at its declared zero and every
+  string field rendered empty. The `args` half of an `InitState` is perfectly
+  JSON-able; only the `fields` half is MoonBit source.
+- **The checker was handed one component's `StateDef` alone**, so `new TodoItem`
+  — a SIBLING in the same spec block — was `NO_TYPE` and the whole card was
+  rejected. A `Surface` naming the siblings is the fix.
+- **Invariants were only checked when a handler named one.** An invariant is
+  the rule nothing has to mention, checked after every transition; without that,
+  `overbook` seated seven people in a room with six chairs.
+- **A declined rule said nothing.** A transition that stops silently is
+  indistinguishable from a click that missed — the state is the same either way
+  and the DOM cannot tell them apart. The sentence is `core/warn.mbt`'s, word
+  for word, with the rule's own `format` clause after it.
+
 ### Still refused
 
 | | why |

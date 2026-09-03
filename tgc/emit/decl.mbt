@@ -14,37 +14,139 @@ fn emit_decls(src : Src, c : Comp) -> Unit {
   for d in c.decls {
     callable[d.name] = d.kind
   }
-  for d in c.decls {
-    let ctx = {
-      comp: c,
-      kind: d.kind,
-      params: params_of(d),
-      callable,
-      temps: 0,
-      binds: binds_var(d),
-    }
+  // RULES FIRST, and the order is load-bearing rather than tidy: a transition
+  // is guarded by every invariant the component declares, so it cannot be
+  // emitted until it is known which invariants lowered.
+  let rules = c.decls.filter(d => d.kind is (DPred | DInvariant))
+  let rest = c.decls.filter(d => !(d.kind is (DPred | DInvariant)))
+  // The FORMAT sentences first, because a rule's guard asks whether its own
+  // sentence lowered before it decides what to say.
+  let formats = @set.Set::new()
+  for d in rules {
+    guard d.format is Some(text) else { continue }
+    let ctx = rule_ctx(c, callable, d, formats)
     let body = Src::new()
     body.depth = 1
-    let head = decl_head(c, d)
     try {
-      emit_decl(ctx, body, d)
-      src.line(head)
+      let v = emit_expr(ctx, body, text)
+      let t = ctx.temp()
+      body.line("let \{t} = \{v};")
+      body.line("if \{t} == null { return tg_null(); }")
+      body.line(t)
+      src.line(
+        "fn \{c.id}_format_\{mangle(d.name)}(f: &tg_vals, args: &tg_vals) -> &?tg_val {",
+      )
       src.buf.write_string(body.text())
       src.line("}")
       src.blank()
+      formats.add(d.name)
     } catch {
-      Refused(why) =>
-        c.refusals.push({
-          comp: c.name,
-          kind: @tscript.kind_word(d.kind),
-          name: d.name,
-          reason: why,
-          line: 0,
-          span: d.span,
-        })
+      // A sentence that will not lower is not a refusal of the RULE: the rule
+      // still holds or does not, and the transition still stops. What is lost
+      // is the half that explains it, and the generic line still says which
+      // rule declined.
+      Refused(_) => ()
     }
   }
+  let invariants = []
+  for d in rules {
+    if lower_one(src, c, callable, [], formats, d) && d.kind is DInvariant {
+      invariants.push(d.name)
+    }
+  }
+  // An invariant that did not lower is a guarantee nobody checks, and a
+  // transition that ran anyway would be claiming one. So every transition goes
+  // with it — refused by name, which is the answer a host can act on.
+  let lost = []
+  for d in rules {
+    if d.kind is DInvariant && !invariants.contains(d.name) {
+      lost.push(d.name)
+    }
+  }
+  for d in rest {
+    if lost.length() > 0 && (@tscript.is_transition(d.kind) || d.kind is DSet) {
+      c.refusals.push({
+        comp: c.name,
+        kind: @tscript.kind_word(d.kind),
+        name: d.name,
+        reason: "the invariant " +
+        lost.map(n => "`" + n + "`").join(", ") +
+        " did not compile, and a transition guarded by a rule that is not there " +
+        "would be claiming a guarantee nobody checks",
+        line: 0,
+        span: d.span,
+      })
+      continue
+    }
+    let _ = lower_one(src, c, callable, invariants, formats, d)
+  }
   emit_call(src, c)
+}
+
+///|
+/// Emit one declaration, or record why it could not be.
+fn lower_one(
+  src : Src,
+  c : Comp,
+  callable : Map[String, @tscript.DeclKind],
+  invariants : Array[String],
+  formats : @set.Set[String],
+  d : @tscript.Decl,
+) -> Bool {
+  let ctx = {
+    comp: c,
+    kind: d.kind,
+    params: params_of(d),
+    callable,
+    temps: 0,
+    binds: binds_var(d),
+    invariants,
+    formats,
+  }
+  let body = Src::new()
+  body.depth = 1
+  let head = decl_head(c, d)
+  try {
+    emit_decl(ctx, body, d)
+    src.line(head)
+    src.buf.write_string(body.text())
+    src.line("}")
+    src.blank()
+    true
+  } catch {
+    Refused(why) => {
+      c.refusals.push({
+        comp: c.name,
+        kind: @tscript.kind_word(d.kind),
+        name: d.name,
+        reason: why,
+        line: 0,
+        span: d.span,
+      })
+      false
+    }
+  }
+}
+
+///|
+/// The context a rule's `format` sentence is emitted in: it reads the state and
+/// the arguments exactly as the rule itself does.
+fn rule_ctx(
+  c : Comp,
+  callable : Map[String, @tscript.DeclKind],
+  d : @tscript.Decl,
+  formats : @set.Set[String],
+) -> Ctx {
+  {
+    comp: c,
+    kind: d.kind,
+    params: params_of(d),
+    callable,
+    temps: 0,
+    binds: None,
+    invariants: [],
+    formats,
+  }
 }
 
 ///|
@@ -129,9 +231,26 @@ fn emit_decl(ctx : Ctx, src : Src, d : @tscript.Decl) -> Unit raise Refused {
       // invariants hold after. Both are the language's guarantees rather than
       // a handler's, which is why they are emitted around the body instead of
       // inside it.
-      emit_attach(ctx, src, d.requires_, "requires")
+      emit_attach(ctx, src, d.name, d.requires_, "requires")
       emit_stmts(ctx, src, stmts)
-      emit_attach(ctx, src, d.ensures_, "ensures")
+      emit_attach(ctx, src, d.name, d.ensures_, "ensures")
+      // THE INVARIANTS — the rules nothing has to mention.
+      //
+      // A `requires` and an `ensures` are named by the handler they guard; an
+      // invariant is checked after EVERY transition the component declares,
+      // including the ones written without a thought for it. That is the whole
+      // difference between a contract and an `if` at the top of a body, and
+      // leaving it out is how `overbook` seated seven people in a room with
+      // six chairs.
+      for name in ctx.invariants {
+        emit_rule_guard(
+          ctx,
+          src,
+          DInvariant,
+          name,
+          "contract: `\{d.name}` was abandoned — it broke the invariant `\{name}`",
+        )
+      }
       src.line("f")
     }
     Value(e) => {
@@ -163,6 +282,7 @@ fn emit_decl(ctx : Ctx, src : Src, d : @tscript.Decl) -> Unit raise Refused {
 fn emit_attach(
   ctx : Ctx,
   src : Src,
+  handler : String,
   attach : @tscript.Attach?,
   which : String,
 ) -> Unit raise Refused {
@@ -175,12 +295,61 @@ fn emit_attach(
       "`\{which} \{a.name}` names a \{@tscript.kind_word(kind)}, not a rule",
     )
   }
+  // Word for word from `core/warn.mbt`. A card author reading a log should not
+  // have to work out which backend wrote it, and a scene asserting `expect:
+  // log` is asserting on THAT sentence — "declined" and "was abandoned" are
+  // the two different things a contract does, and they are not
+  // interchangeable.
+  let line = if which == "requires" {
+    "contract: `\{handler}` declined — its precondition `\{a.name}` does not hold"
+  } else {
+    "contract: `\{handler}` was abandoned — its postcondition `\{a.name}` does not hold after it"
+  }
+  emit_rule_guard(ctx, src, kind, a.name, line)
+}
+
+///|
+/// A rule, checked, and SAID when it does not hold.
+///
+/// A declined transition that says nothing is indistinguishable from a click
+/// that missed: the state is the same either way and the DOM cannot tell them
+/// apart. That is the difference between a contract and an `if` at the top of a
+/// body, and it only exists if somebody hears about it.
+///
+/// The sentence is `core/warn.mbt`'s, word for word, because a card author
+/// reading a log should not have to work out which backend wrote it. The rule's
+/// own `format` clause follows, evaluated over the state that was rejected —
+/// the half only the rule's author could have written.
+fn emit_rule_guard(
+  ctx : Ctx,
+  src : Src,
+  kind : @tscript.DeclKind,
+  name : String,
+  line : String,
+) -> Unit raise Refused {
   let t = ctx.temp()
   src.line(
-    "let \{t} = \{ctx.comp.id}_\{callable_suffix(kind)}_\{mangle(a.name)}(f, args);",
+    "let \{t} = \{ctx.comp.id}_\{callable_suffix(kind)}_\{mangle(name)}(f, args);",
   )
   src.line("if \{t} == null { return null; }")
-  src.line("if tg_truthy(\{t}) == 0 { return null; }")
+  src.open("if tg_truthy(\{t}) == 0 {")
+  if ctx.formats.contains(name) {
+    let sentence = ctx.temp()
+    src.line(
+      "let \{sentence} = \{ctx.comp.id}_format_\{mangle(name)}(f, args);",
+    )
+    src.open("if \{sentence} == null {")
+    src.line("eff_log(\{wax_str(line)});")
+    src.close("} else {")
+    src.depth = src.depth + 1
+    src.line("eff_log(concat(\{wax_str(line + ": ")}, display(\{sentence})));")
+    src.depth = src.depth - 1
+    src.line("}")
+  } else {
+    src.line("eff_log(\{wax_str(line)});")
+  }
+  src.line("return null;")
+  src.close("}")
 }
 
 ///|
