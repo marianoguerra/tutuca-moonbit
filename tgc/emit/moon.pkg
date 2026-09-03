@@ -1,0 +1,26 @@
+// Card -> `tgc` module.
+//
+// The THIRD backend over `tscript`'s one AST, and the one meant to outlive the
+// other two: `tscript/emit_mbt` writes MoonBit ahead of time and
+// `tutucard/wasm` compiles to the Component Model contract this replaces.
+// A language with three implementations and no shared table has three
+// semantics, so this is held to `tscript/conformance` exactly as they are.
+//
+// It emits Wax SOURCE rather than a Wax AST. `tutucard/wasm` builds an AST to
+// avoid linking the front end, and then parses a vendored runtime with it
+// anyway; here the runtime is a separate module and the front end is the only
+// route in, so source is both simpler and readable — the generated text is an
+// artifact a card author can look at, which is what the playground's WAX panel
+// is for.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/tscript",
+  "marianoguerra/tutuca/tscript/check",
+  "marianoguerra/tutuca/viewfile",
+  "marianoguerra/tutuca/tgc/abi",
+  "marianoguerra/wax",
+  "marianoguerra/wax/message",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+}

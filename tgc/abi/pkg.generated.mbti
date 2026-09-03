@@ -1,0 +1,73 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tgc/abi"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub const ABI_VERSION : Int = 1
+
+pub fn all_ops() -> Array[Op]
+
+pub fn all_tags() -> Array[Tag]
+
+pub let export_abi : String
+
+pub let export_describe : String
+
+pub let export_make : String
+
+pub let export_serve : String
+
+pub let import_namespace : String
+
+pub fn preamble_wat() -> String
+
+pub fn preamble_wax() -> String
+
+// Errors
+
+// Types and methods
+pub(all) enum Op {
+  OpWithField
+  OpHandleMessage
+  OpHandleIntent
+  OpCompute
+  OpWhen
+  OpEnrich
+  OpEnrichScope
+  OpGetProperty
+  OpSetProperty
+  OpSeqEntries
+  OpImplements
+  OpPersist
+  OpRestore
+  OpIdentity
+  OpDebug
+} derive(Compare, Eq, Hash, @debug.Debug)
+pub fn Op::code(Self) -> Int
+pub fn Op::name(Self) -> String
+pub fn Op::of_code(Int) -> Self?
+
+pub(all) enum Tag {
+  TagNull
+  TagBool
+  TagNum
+  TagInt
+  TagStr
+  TagBin
+  TagInstant
+  TagList
+  TagMap
+  TagFunc
+  TagComp
+  TagExt
+} derive(Compare, Eq, Hash, @debug.Debug)
+pub fn Tag::code(Self) -> Int
+pub fn Tag::of_code(Int) -> Self?
+pub fn Tag::type_name(Self) -> String
+
+// Type aliases
+
+// Traits

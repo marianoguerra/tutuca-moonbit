@@ -1,0 +1,23 @@
+// `tgc-corpus <outdir>` — the language's semantics, compiled.
+//
+// `tscript/conformance` states what every transition does, as data. This writes
+// each row out as a `tgc` module plus the row itself as JSON, because a
+// compiled card can only be RUN from node — and a backend that is not driven by
+// the corpus is a backend with its own semantics.
+//
+// A projection and nothing else. Both corpus tables state their answers as
+// data, so nothing here has to run an interpreter to find out what a case
+// expects.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/tscript/conformance",
+  "marianoguerra/tutuca/tgc/emit",
+  "marianoguerra/tutuca/tgc/value",
+  "moonbitlang/x/fs",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+}
+
+supported_targets = "native"
+
+pkgtype(kind: "executable")

@@ -1,0 +1,23 @@
+// The canonical `tgc` value, host side, and its two encodings.
+//
+// `TVal` mirrors the frozen rec group in `tgc/abi` arm for arm: this is what a
+// host holds when it is looking at a value it did not build, and what the codecs
+// read and write. It is deliberately NOT `core.Value` yet — phase 4 folds the
+// two together rather than keeping a mirror forever, and until then a mirror is
+// what lets the format be checked without moving the framework under it.
+//
+// Two encodings, two jobs. CBOR is FAITHFUL: every arm survives, and one that
+// cannot be encoded is an error rather than a silent null. JSON is
+// INTERCHANGE: it is what an agent writes by hand and what a browser parses, so
+// it is `$`-tagged and it loses the Int/Num distinction on the way back in. Both
+// facts are stated rather than hidden.
+import {
+  "marianoguerra/tutuca/tgc/abi",
+  "moonbitlang/x/codec/base64",
+  "moonbitlang/x/encoding",
+  "moonbitlang/x/time",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+  "moonbitlang/core/set",
+  "moonbitlang/core/string",
+}

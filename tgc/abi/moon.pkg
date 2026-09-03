@@ -1,0 +1,17 @@
+// The frozen `tgc/1` preamble: the canonical wasm-GC type section every module
+// carries verbatim, plus the op codes, export names and import names that go
+// with it. ONE table, two renderings (Wax source and WAT text), because two
+// hand-kept spellings of a structural type are two types.
+//
+// Depends on `wax` for nothing but the check: `preamble_compiles` in the test
+// is what says the Wax source in here is a module a compiler accepts, rather
+// than a string that looks like one.
+import {
+  "moonbitlang/core/debug",
+}
+
+import {
+  "marianoguerra/wax",
+  "marianoguerra/wax/diagnostic",
+  "marianoguerra/wax/message",
+} for "test"

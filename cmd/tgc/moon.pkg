@@ -1,0 +1,24 @@
+// `tgc` — the toolchain shell for the wasm-GC component format.
+//
+// Two jobs, and the second is why it exists at all:
+//
+//   `tgc preamble --wax|--wat`  print the canonical type section, for a person
+//                               writing a module by hand
+//   `tgc build a.wax a.wasm`    prepend that preamble and compile
+//
+// The point of `build` is not convenience. `tgc/test` needs a module that a
+// REAL COMPILER emitted the preamble for, standing beside modules a person
+// typed, because "different toolchains compose" is the claim and three copies
+// of one route would not test it.
+import {
+  "marianoguerra/tutuca/tgc/abi",
+  "marianoguerra/wax",
+  "marianoguerra/wax/diagnostic",
+  "marianoguerra/wax/message",
+  "moonbitlang/x/fs",
+  "moonbitlang/core/env",
+}
+
+supported_targets = "native"
+
+pkgtype(kind: "executable")

@@ -1,0 +1,63 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tgc/emit"
+
+import {
+  "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/tscript",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn check_card(String, name~ : String) -> Checked raise GenError
+
+pub fn compile(String, name~ : String) -> Compiled raise GenError
+
+pub fn compile_decls(Array[@statedef.StateDef], Map[String, Array[@tscript.Decl]], name~ : String, root~ : String) -> Compiled raise GenError
+
+// Errors
+pub suberror GenError {
+  BadCard(String)
+  BadScript(Array[String])
+  BadModule(Array[String])
+}
+pub fn GenError::message(Self) -> String
+pub impl Show for GenError
+
+// Types and methods
+pub(all) struct Checked {
+  component : String
+  components : Array[String]
+  issues : Array[Issue]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Compiled {
+  component : String
+  components : Array[String]
+  wasm : Bytes
+  wax : String
+  refusals : Array[Refusal]
+  fields : Array[String]
+  manifest : Json
+}
+
+pub(all) struct Issue {
+  comp : String
+  code : String
+  message : String
+  line : Int
+  span : @core.Span
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Refusal {
+  comp : String
+  kind : String
+  name : String
+  reason : String
+  line : Int
+  span : @core.Span
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits

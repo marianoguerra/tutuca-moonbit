@@ -1,0 +1,295 @@
+# `tgc/1` — a WebAssembly component format on core wasm + GC
+
+**Status: prototype.** Everything below is implemented and tested
+(`tgc/abi`, `tgc/value`, `tgc/test/compose.test.mjs`). Nothing below is
+compatible with `tutuca:component@0.12.0`, and compatibility is not a goal —
+see [`../docs/dynamic-components.md`](../docs/dynamic-components.md) for what
+this replaces and why.
+
+## 1. What this is, in one paragraph
+
+A component is **one core WebAssembly module** using the GC proposal and
+nothing else: no component model, no WIT, no `jco`, no `wasm-tools component`,
+no archive, no linear memory, no table. Modules built at different times by
+different people with different toolchains instantiate together and compose
+into one tree. They agree because they carry the same **type preamble** —
+and wasm GC canonicalizes a recursion group *structurally*, so carrying it is
+the whole of the agreement.
+
+## 2. The mechanism
+
+Two modules that declare the same rec group — same order, same field types,
+same subtyping — receive the **same runtime types**. A reference built in one is
+readable in the other with no conversion. An import whose signature mentions
+those types type-checks at link.
+
+There is therefore no registry, no linker, no shared instance type and no
+negotiated ABI. There is a text file.
+
+**The rule that makes this survivable:** a rec group's identity depends on the
+*whole group*. Add a type, reorder, or change one field, and every type in it
+becomes a different type — in every module, retroactively. So:
+
+- The core group is **frozen**. Forever.
+- Anything not mutually recursive with `tg_val` gets its **own** singleton
+  group, so a later addition cannot perturb the core.
+- Extension goes through `tg_ext`, never through a new arm.
+
+`tgc/test/compose.test.mjs` tests both directions: a module with a
+differently-spelled preamble composes, and a module with one extra type inside
+the group is refused **at link**, with a message about the import — not by a
+cast that traps three calls later.
+
+## 3. The types
+
+The canonical text lives in [`abi/preamble.mbt`](abi/preamble.mbt) and is
+printed by `tgc preamble --wax` / `--wat`. Never copy it by hand; ask for it.
+
+```
+tg_bytes                      [mut i8]        UTF-8 text AND binary
+tg_val      kind:i32          the open base; kind 0 is Null
+  tg_bool     value:i32
+  tg_num      value:f64
+  tg_int      value:i64
+  tg_str      value:&tg_bytes
+  tg_bin      value:&tg_bytes
+  tg_instant  secs:i64  nanos:i32
+  tg_list     items:&tg_vals   count:i32
+  tg_map      entries:&tg_entries  count:i32     insertion-ordered
+  tg_func     call:&tg_fn  env:&?eq
+  tg_comp     value:&tg_inst
+  tg_ext      ext_kind:i32  payload:&?eq
+tg_vt       get:&tg_get  call:&tg_call
+tg_inst     vt:&tg_vt  desc:&tg_val  state:&?eq  id:i64
+```
+
+Decisions worth naming:
+
+- **`ref.null` is absence; `kind 0` is the null value.** "There is no such
+  field" and "the field is null" are different answers, and the old contract
+  needed `option<value>` to keep them apart.
+- **`tg_bytes` is UTF-8** and carries binary too. The wire, the GC type and the
+  JSON/CBOR encodings all agree; a UTF-16 host transcodes at its own boundary
+  rather than at every field. This ends the current `--encoding utf16` /
+  `utf8` split by making the encoding part of the type. In Wax it costs nothing
+  extra: a string literal is already `[mut i8]`.
+- **Two numbers.** `tg_num` is tutuca's double; `tg_int` is the 64-bit integer
+  CBOR and the GC types both have natively and the current WIT concedes the
+  absence of ("a 64-bit id is a `str`").
+- **List and map carry capacity plus count**, because a wasm-GC array is
+  fixed-length. The map is an entry array and stays in **insertion order** —
+  `core.Value::Map` is MoonBit's `Map` and `@each` renders in that order, so an
+  encoding that sorted keys would silently re-order a page.
+- **The vtable has two slots and cannot grow.** `get` is separate only because
+  it runs once per `.name` per render. Everything else is one op-coded `call`,
+  and the op space is an `i32` — extensible forever without touching the group.
+- **`state` is `&?eq`.** Each module casts it back to a type only it can name;
+  anyone else **traps**. Opacity is enforced by the engine rather than by a
+  handle table nobody may forge, which is both stronger and cheaper.
+
+## 4. The instance is the composition story
+
+`tg_inst` is an ordinary GC struct, so any module may hold one in its own state,
+put it in a list, pass it on, and call it.
+
+| the current format | `tgc` |
+| --- | --- |
+| a child is an opaque host token | a child is a `&tg_inst` in your own state |
+| `.rows[0].text` is refused when the card compiles | a `call_ref` on the child's `get` |
+| a foreign component cannot live in card state at all | any instance can, whoever built it |
+| compounds are arena handles valid for one call | a value is a reference, and it lives |
+| instances leak in a growing table | the engine's GC collects them |
+| re-entering a component during a call is forbidden | core wasm has no such rule |
+
+## 5. Ops
+
+`call(self, op, name, args, v) -> &?tg_val`. A module that does not know an op
+answers `ref.null` — the same answer an older module gives for an op invented
+after it was built, which is what makes the space extensible rather than merely
+large.
+
+| op | | op | |
+| --- | --- | --- | --- |
+| 1 | withField | 9 | setProperty |
+| 2 | handleMessage | 10 | seqEntries |
+| 3 | handleIntent | 11 | implements |
+| 4 | compute | 12 | persist |
+| 5 | when | 13 | restore |
+| 6 | enrich | 14 | identity |
+| 7 | enrichScope | 15 | debug |
+| 8 | getProperty | | |
+
+A transition (`handleMessage`, `handleIntent`, `withField`, `setProperty`)
+answers `tg_comp(successor)` or `ref.null` for "nothing changed". Copy on
+write, which is the language's model rather than an imitation of it.
+
+## 6. Exports and imports
+
+| export | shape |
+| --- | --- |
+| `tgc.abi` | the ABI version — a mismatch is refused, never adapted |
+| `tgc.describe` | `() -> &tg_val` — the manifest, as a value |
+| `tgc.make` | `(&tg_bytes, &?tg_val) -> &?tg_inst` |
+| `tgc.serve` | `(&tg_bytes, &tg_vals) -> &?tg_val` — module-scoped `lex`-leg intents |
+
+The manifest is an ordinary value, so **a module is the whole distribution**.
+No tar, no `tutuca.json` beside it, no packer — which is what lets a toolchain
+that has never heard of this repository produce one.
+
+Everything a module may reach comes from the namespace **`tut`**. A module
+declares no memory and no table, so its import section is its *complete*
+authority list — the property `dyncomp/SECURITY.md` relies on today, made
+total. `tgc/test` asserts it for every prototype module.
+
+## 7. Matching is by protocol
+
+`desc` names `module`, `component` and `protocols`. A slot declares a protocol
+id (`statedef` already has them: `ProtocolDef.id`, `core.Ty::TyCompProtocols`)
+and any module declaring the same id can fill it. Asked of the instance through
+op 11, so there is no catalog in the path at all.
+
+This replaces a flat `by_name` whose last registration silently wins, and a
+registry that breaks a tie by "most recently loaded".
+
+## 8. Encodings
+
+Two, for two jobs. **CBOR is faithful** — every arm survives, and one that
+cannot be encoded is an error rather than a silent null. **JSON is
+interchange** — `$`-tagged, and lossy on the way back in. Both are
+`tgc/value`, both are tested against the bytes rather than only against
+themselves.
+
+### CBOR (RFC 8949, "ordered" profile)
+
+Canonical in every respect the standard names except key ordering, which
+follows insertion — see `tg_map` above for why. Standard tags wherever one
+exists.
+
+| value | encoding |
+| --- | --- |
+| null / bool / num | major 7 (`0xf6`, `0xf4`/`0xf5`, `0xfb`) |
+| int | major 0 / 1 |
+| str / bin | major 3 / major 2 |
+| list / map | major 4 / major 5 |
+| instant | **tag 1**; whole seconds as an integer, sub-second as a **tag 4** decimal fraction `[-9, nanoseconds]` |
+| comp | tag `40001` wrapping `[module, component, state]` |
+| ext | tag `40002` wrapping `[kind, payload]` |
+| func | **refused**, with the reason |
+
+Non-shortest integer heads are accepted on the way in and never written on the
+way out. Trailing bytes are refused: a decoder that stops at the end of the
+first value has read a different message from the one that was sent.
+
+### JSON
+
+```json
+{"$": "int",     "v": "9007199254740993"}
+{"$": "bin",     "v": "SGVsbG8="}
+{"$": "instant", "v": "2025-09-03T16:00:00.123Z"}
+{"$": "comp",    "v": {"module": "…", "component": "…", "state": "Bw=="}}
+{"$": "ext",     "tag": 99, "v": …}
+{"$": "map",     "v": { … }}
+```
+
+The last line is the **escape**, and it is not optional: a map whose own keys
+include `"$"` is written tagged too. Without it, `{"$":"bin"}` as data and the
+same six bytes as a tag are indistinguishable and a decoder has to guess.
+
+Sub-second digits go in groups of three — milliseconds, microseconds,
+nanoseconds — with trailing all-zero groups dropped, so a whole second has no
+fraction. That is a spelling rule; the value round-trips exactly either way.
+
+**The asymmetry, stated rather than hidden:** a plain JSON number decodes to
+`tg_num`, because a JSON number *is* a double and pretending otherwise past
+2^53 would invent precision the input never had. A producer that needs a
+`tg_int` back writes the tagged form, which the encoder always does. CBOR is
+the encoding without this asymmetry, which is the point of having two.
+
+## 9. Two nulls, and the rule that falls out of them
+
+`ref.null` means **no answer**; `kind 0` is the **null value**. Keeping them
+apart is not fussiness — it is what lets a runtime operation with no answer for
+its arguments return null and have that null propagate through everything above
+it, so a compiled body checks once instead of threading a failure flag through
+every operand. `len true` is not zero. `min` of a string and a number is not the
+string. `.note is null` is still a real question.
+
+The two part at exactly one boundary, and that is the rule:
+
+> A **transition** with no answer **does not happen**.
+> A **callable** with no answer **answers Null**.
+
+Both are the same `ref.null` on the way up. A transition's is the successor that
+was not built — the state does not change, and a scene asserts that. A
+callable's is a value, because a `compute` was asked for one and Null is what it
+has. `tscript/conformance` pins both.
+
+## 10. What the card compiler compiles
+
+`tgc/emit` is the third backend over `tscript`'s one AST, beside
+`tscript/emit_mbt` and the `tutucard/wasm` it replaces, and it is held to
+`tscript/conformance` — **48 of 48**, both tables (`tgc/test/conformance.test.mjs`).
+
+Every declared field is one slot in a `tg_vals`, whatever its type. A
+specialising backend would unbox an `Int` field and save a `struct.new` per
+assignment; this one gets `get_field` and `with_field` for two lines each and no
+per-type path to get subtly wrong. The declared type still decides the zero and
+still truncates an `Int` at its assignment sites, which is where the semantics
+live.
+
+The render row — `@key`, `@value`, `@iter` — arrives **positionally**, because
+a compiled declaration runs after the render stack rather than inside it:
+
+| | handed | answers |
+|---|---|---|
+| `pred` through `@when` | `(key, value, iter)` | that value's truthiness |
+| `pred` read as a method | its own parameters | its own expression |
+| `enrich` | `(binds, key, value, iter)` | the whole binding map |
+| `bindWith` | `()` | the whole binding map |
+
+An enricher **answers** the map rather than writing into one. That is the single
+place the compiled shape has to differ from the interpreted one: the renderer
+reads the map it passed in, and a guest cannot mutate a host's map.
+
+Effects are `tut` imports and the **host** buffers them, because the host
+brackets the call and therefore knows when it ended — an effect performed before
+a statement that abandons is discarded with the transition.
+
+### Still refused
+
+| | why |
+|---|---|
+| `new T` | building a record or a sibling component |
+| `cur` | needs a `new` |
+| `sendAt` | addresses a place, and this backend does not reify one yet |
+| `$method`, `*dyn`, `e.` paths, `^macro`, `$$config` | answered by the render stack or by the view parser, and a compiled handler runs after both |
+| `clear`, `delete`, `set`, `removeAt` | parsed as collection methods that no backend has ever implemented, so there is no behaviour to compile |
+
+### Known deviations
+
+- **Number formatting.** The integer part is exact and up to six fractional
+  digits are written with trailing zeros trimmed, so `0.1 + 0.2` reads as `0.3`.
+  At or beyond 2^63 a number reads as `Infinity`. `tutucard/wasm` made the same
+  trade; this inherits it.
+- **Number parsing** is the same trade in reverse: sign, digits, fraction,
+  exponent, and nothing else. The mantissa accumulates by multiplication rather
+  than rounding correctly, so a long decimal can land an ulp out. The spellings
+  a card writes by hand are exact.
+- **The import section over-claims.** A generated module imports the whole
+  runtime vocabulary rather than the part it reaches. The section is meant to be
+  a true statement about what a card does, and this one says what it *could* do.
+  Narrowing it means walking the lowered bodies for the names they actually
+  used — the analysis `tutucard/wasm`'s `lower_scalar` / `lower_values` split
+  does. Until then, read it as an upper bound.
+- **`lower` / `upper` are ASCII.** A case fold that claimed to know Turkish
+  would be a bigger promise than this makes.
+
+## 11. What is not here yet
+
+- **The host.** No `&Obj` wrapper, no renderer, no dispatch, no policy. The
+  security argument in `dyncomp/SECURITY.md` has to be re-made against this
+  import surface before anything untrusted is loaded through it.
+- **`core.Value` has not grown its new arms**, so `tgc/value` is still a mirror
+  rather than the value itself.
+- **Views.** A card's templates are parsed and checked but not carried into the
+  module's manifest yet.

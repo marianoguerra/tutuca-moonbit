@@ -1,0 +1,206 @@
+// B — Counter. Written in Wax, compiled by `marianoguerra/wax` through
+// `cmd/tgc`, which prepends the canonical preamble.
+//
+// This is the leg the proof needs most: the type section of this module was
+// emitted by a COMPILER, from `tgc/abi`, not typed by the person who wrote the
+// file below. Nothing here mentions the Dashboard or the Clock, and it composes
+// with both.
+//
+// A pleasant accident, and evidence for the design in its own right: a Wax
+// string literal already has type `[mut i8]`, which IS `tg_bytes`. The format's
+// text type is the one the language hands you, so `"count"` needs no
+// conversion, no interning table and no constant pool.
+//
+// It implements `tut.demo.tile@1` — a `label`, a `count` and a `bump` — and it
+// HOLDS a peer, which it reads through exactly the way the Dashboard reads
+// through it. Neither is the framework; neither knows who made the other.
+
+import "tut" {
+    #[import = "str_eq"]
+    fn str_eq(a: &tg_bytes, b: &tg_bytes) -> i32;
+    // `: tg_get` binds the import to the FROZEN function type rather than to a
+    // same-shaped singleton, so the link checks against the group.
+    #[import = "get_field"]
+    fn rt_get_field: tg_get(inst: &tg_inst, name: &tg_bytes) -> &?tg_val;
+}
+
+// Its own state type, outside the frozen group. `tg_inst.state` is `&?eq`, so
+// this name is unreachable from anywhere else and the cast traps for anyone who
+// guesses at it.
+type counter_state = {
+    count: i64,
+    label: &tg_bytes,
+    peer: &?tg_inst,
+};
+
+let counter_next_id: i64 = 100;
+
+// `: tg_get` binds this to the FROZEN function type rather than to an
+// identical-looking inline one. Without it, `counter_get` as a value is a
+// `(ref $some_other_type)` and the vtable will not take it — the freeze rule
+// biting at the smallest possible scale.
+fn counter_get: tg_get(self: &tg_inst, name: &tg_bytes) -> &?tg_val {
+    let state = self.state! as &counter_state;
+    if str_eq(name, "count") != 0 {
+        let out: &tg_int = { kind: 3, value: state.count };
+        return out;
+    }
+    if str_eq(name, "label") != 0 {
+        let out: &tg_str = { kind: 4, value: state.label };
+        return out;
+    }
+    if str_eq(name, "peer") != 0 {
+        if state.peer == null { return null; }
+        let out: &tg_comp = { kind: 10, value: state.peer! };
+        return out;
+    }
+    // Reading THROUGH the peer. `peerLabel` is not a field of this component at
+    // all — it is a field of somebody else's, reached by a call. The current
+    // format refuses this when the card compiles.
+    if str_eq(name, "peerLabel") != 0 {
+        if state.peer == null { return null; }
+        return rt_get_field(state.peer!, "label");
+    }
+    // Absence, not null-the-value: there is no such field.
+    null
+}
+
+fn counter_call: tg_call(self: &tg_inst, op: i32, name: &tg_bytes,
+                         args: &tg_vals, v: &?tg_val) -> &?tg_val {
+    // OpImplements
+    if op == 11 {
+        let out: &tg_bool = { kind: 1, value: str_eq(name, "tut.demo.tile@1") };
+        return out;
+    }
+    // OpHandleMessage
+    if op == 2 {
+        if str_eq(name, "bump") != 0 {
+        let state = self.state! as &counter_state;
+        let next: &counter_state = {
+            count: state.count + 1,
+            label: state.label,
+            peer: state.peer,
+        };
+        return counter_wrap(counter_instance(self.desc, next));
+        }
+    }
+    // OpWithField, for the one field a holder may write. A successor, never a
+    // mutation: the caller keeps the instance it had.
+    if op == 1 {
+        if str_eq(name, "peer") != 0 {
+        let state = self.state! as &counter_state;
+        let next: &counter_state = {
+            count: state.count,
+            label: state.label,
+            peer: counter_as_inst(v),
+        };
+        return counter_wrap(counter_instance(self.desc, next));
+        }
+    }
+    // An op or a name this module does not answer — the same answer an older
+    // module gives for an op invented after it was built.
+    null
+}
+
+fn counter_wrap(inst: &tg_inst) -> &?tg_val {
+    let out: &tg_comp = { kind: 10, value: inst };
+    out
+}
+
+fn counter_as_inst(v: &?tg_val) -> &?tg_inst {
+    if v == null { return null; }
+    let value = v!;
+    if value.kind != 10 { return null; }
+    (value as &tg_comp).value
+}
+
+fn counter_instance(desc: &tg_val, state: &counter_state) -> &tg_inst {
+    counter_next_id = counter_next_id + 1;
+    let vt: &tg_vt = { get: counter_get, call: counter_call };
+    let out: &tg_inst = {
+        vt,
+        desc,
+        state,
+        id: counter_next_id,
+    };
+    out
+}
+
+#[export = "tgc.make"]
+fn counter_make(name: &tg_bytes, args: &?tg_val) -> &?tg_inst {
+    if str_eq(name, "Counter") == 0 { return null; }
+    // A missing or oddly shaped `args` is a zero rather than a refusal: a host
+    // that hands a component nothing has asked for its initial state, and that
+    // is a thing a component knows.
+    let state: &counter_state = {
+        count: counter_arg_int(args, "count"),
+        label: counter_arg_str(args, "label", "Counter"),
+        peer: null,
+    };
+    counter_instance(counter_describe(), state)
+}
+
+fn counter_arg_int(args: &?tg_val, key: &tg_bytes) -> i64 {
+    let found = counter_map_get(args, key);
+    if found == null { return 0; }
+    let v = found!;
+    if v.kind == 3 { return (v as &tg_int).value; }
+    if v.kind == 2 { return (v as &tg_num).value as i64_s; }
+    0
+}
+
+fn counter_arg_str(args: &?tg_val, key: &tg_bytes, fallback: &tg_bytes) -> &tg_bytes {
+    let found = counter_map_get(args, key);
+    if found == null { return fallback; }
+    let v = found!;
+    if v.kind == 4 { return (v as &tg_str).value; }
+    fallback
+}
+
+fn counter_map_get(args: &?tg_val, key: &tg_bytes) -> &?tg_val {
+    if args == null { return null; }
+    let m = args!;
+    if m.kind != 8 { return null; }
+    let map = m as &tg_map;
+    let entries = map.entries;
+    let i: i32 = 0;
+    while i <s map.count {
+        let e = entries[i];
+        if e != null {
+            let entry = e!;
+            if str_eq(entry.key, key) != 0 { return entry.value; }
+        }
+        i = i + 1;
+    }
+    null
+}
+
+// The manifest, as an ordinary value. Not a sidecar file and not an archive
+// member: a module that says what it is needs no packer, and a toolchain that
+// has never heard of this repo can still produce one.
+#[export = "tgc.describe"]
+fn counter_describe() -> &tg_val {
+    let module_v: &tg_str = { kind: 4, value: "tgc.proto.counter" };
+    let comp_v: &tg_str = { kind: 4, value: "Counter" };
+    let tile_v: &tg_str = { kind: 4, value: "tut.demo.tile@1" };
+    let protocols: &tg_list = {
+        kind: 7,
+        items: [tg_vals| tile_v],
+        count: 1,
+    };
+    let e_module: &tg_entry = { key: "module", value: module_v };
+    let e_comp: &tg_entry = { key: "component", value: comp_v };
+    let e_protos: &tg_entry = { key: "protocols", value: protocols };
+    let out: &tg_map = {
+        kind: 8,
+        entries: [tg_entries| e_module, e_comp, e_protos],
+        count: 3,
+    };
+    out
+}
+
+#[export = "tgc.serve"]
+fn counter_serve(name: &tg_bytes, args: &tg_vals) -> &?tg_val { null }
+
+#[export = "tgc.abi"]
+fn counter_abi() -> i32 { 1 }

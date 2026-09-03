@@ -99,6 +99,24 @@ options(
     // `tutucard/wasm/test` stays behind for the reason `dyncomp/test` does —
     // it drives node against real modules.
     "cmd/cardwasm",
+    // `cmd/tgc` is the toolchain shell for the wasm-GC component format
+    // (`tgc/`): it prints the canonical preamble and compiles a `.wax` module
+    // that carries it. A dev shell over a shipping package, the same as the
+    // three above — `tgc/abi` and `tgc/value` ship, a terminal front end for
+    // them does not.
+    "cmd/tgc",
+    // `cmd/tgc-corpus` is the same kind of thing for the conformance table: it
+    // projects `tscript/conformance` into compiled modules so node can drive
+    // them, because a compiled card can only be RUN from node.
+    "cmd/tgc-corpus",
+    // `tgc/proto` and `tgc/test` are the composition proof: three hand-written
+    // and hand-compiled modules and the node harness that instantiates them
+    // together. They are evidence about the format rather than part of it, and
+    // `tgc/rt` travels with them — a consumer who wants the runtime module
+    // wants it built for their own page, not this repo's `_build`.
+    "tgc/proto",
+    "tgc/test",
+    "tgc/rt",
     "cmd/card-corpus",
     "cmd/conformance",
     "tutucard/wasm/test",
