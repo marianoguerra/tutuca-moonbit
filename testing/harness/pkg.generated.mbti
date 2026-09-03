@@ -48,6 +48,7 @@ pub fn[N] Harness::over(@app.App[N], N) -> Self[N]
 pub fn Harness::prop(Self[@memdom.MemNode], String, String, nth? : Int) -> @vdom.AttrValue? raise
 pub fn[N] Harness::render_count(Self[N]) -> Int
 pub fn[N] Harness::send_at_root(Self[N], String, args? : Array[@core.Value]) -> Unit
+pub fn[N] Harness::set(Self[N], String, @core.Value) -> Unit
 pub fn[N] Harness::styles(Self[N]) -> String
 pub fn[N : @vdom.DomWalk] Harness::text(Self[N], String, nth? : Int) -> String raise
 pub fn[N : @vdom.DomWalk] Harness::texts(Self[N], String) -> Array[String]

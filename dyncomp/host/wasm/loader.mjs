@@ -411,7 +411,7 @@ export function createTcompImports(getExports) {
   const optsToJson = (o) => ({
     route: (o?.route ?? []).map((leg) => (typeof leg === "string" ? leg : leg?.tag)),
     onOk: o?.onOk ?? null,
-    onError: o?.onError ?? null,
+    onFailed: o?.onFailed ?? null,
     onUnhandled: o?.onUnhandled ?? null,
     livePath: !!o?.livePath,
   });
@@ -505,11 +505,11 @@ export function createTcompImports(getExports) {
   // which is a legible error rather than a missing import.
   const guestImports = {
     "tutuca:component/values": valuesImpl,
-    "tutuca:component/values@0.11.0": valuesImpl,
+    "tutuca:component/values@0.12.0": valuesImpl,
     "tutuca:component/control": controlImpl,
-    "tutuca:component/control@0.11.0": controlImpl,
+    "tutuca:component/control@0.12.0": controlImpl,
     "tutuca:component/config": configImpl,
-    "tutuca:component/config@0.11.0": configImpl,
+    "tutuca:component/config@0.12.0": configImpl,
   };
   // `tutuca:component/tables` is deliberately absent: it declares types and no
   // functions, so there is nothing for a host to implement and jco asks for

@@ -402,7 +402,9 @@ test "path_keys_label joins fields and keys" {
 test "record_to_entry maps an observer record onto an ActivityEntry" {
   let insp = @inspector.Inspector::new()
   let record : @transactor.ObserveRecord = {
-    kind: Receive,
+    origin: View,
+    bucket: Receive,
+    is_answer: false,
     name: "click",
     args: [],
     path: @tutuca.Path::new(),
@@ -417,6 +419,10 @@ test "record_to_entry maps an observer record onto an ActivityEntry" {
   }
   let entry = insp.record_to_entry(record)
   assert_true(oget(entry, "kind") is Str("receive"))
+  // The bucket's word and WHO raised it are two different answers, and the
+  // row shows both: a `receive` from a view and a `receive` a handler pushed
+  // read the same otherwise.
+  assert_true(oget(entry, "origin") is Str("view"))
   assert_true(oget(entry, "name") is Str("click"))
   assert_true(oget(entry, "matched") is Str("exact"))
   assert_true(oget(entry, "pathLabel") is Str("value"))

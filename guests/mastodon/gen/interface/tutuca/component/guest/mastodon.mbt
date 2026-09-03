@@ -1204,7 +1204,7 @@ impl DynComponent for Poll with fn handle_dispatch(self, bucket, name, args) {
     {
       route: [DYN],
       on_ok: None,
-      on_error: None,
+      on_failed: None,
       on_unhandled: None,
       live_path: false,
     },
@@ -1462,7 +1462,7 @@ impl DynComponent for Status with fn handle_dispatch(self, bucket, name, _args) 
         {
           route: [DYN],
           on_ok: None,
-          on_error: None,
+          on_failed: None,
           on_unhandled: None,
           live_path: false,
         },
@@ -1484,7 +1484,7 @@ impl DynComponent for Status with fn handle_dispatch(self, bucket, name, _args) 
         {
           route: [DYN],
           on_ok: None,
-          on_error: None,
+          on_failed: None,
           on_unhandled: None,
           live_path: false,
         },
@@ -1502,7 +1502,7 @@ impl DynComponent for Status with fn handle_dispatch(self, bucket, name, _args) 
         {
           route: [DYN],
           on_ok: None,
-          on_error: None,
+          on_failed: None,
           on_unhandled: None,
           live_path: false,
         },
@@ -1521,7 +1521,7 @@ impl DynComponent for Status with fn handle_dispatch(self, bucket, name, _args) 
       @control.intent("replyTo", [vtext(self.toot.id)], {
         route: [DYN],
         on_ok: None,
-        on_error: None,
+        on_failed: None,
         on_unhandled: None,
         live_path: false,
       })
@@ -1543,7 +1543,7 @@ impl DynComponent for Status with fn handle_dispatch(self, bucket, name, _args) 
         {
           route: [DYN],
           on_ok: None,
-          on_error: None,
+          on_failed: None,
           on_unhandled: None,
           live_path: false,
         },
@@ -2899,7 +2899,7 @@ impl DynComponent for Profile with fn handle_dispatch(self, bucket, name, _args)
         {
           route: [DYN],
           on_ok: None,
-          on_error: None,
+          on_failed: None,
           on_unhandled: None,
           live_path: false,
         },

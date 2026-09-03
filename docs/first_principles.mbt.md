@@ -619,7 +619,7 @@ the sender's parent; the `Lex` leg resolves handlers through the `Intents`
 trait and waits for each one's `answer` callback, where `Pass` means "not mine,
 keep walking". A hop that replies ends the walk, and the answer comes back to
 the originator's pinned path as an ordinary `receive` transaction named
-`<name>Ok` or `<name>Error`; a route that runs out sends `<name>Unhandled`
+`<name>Ok` or `<name>Failed`; a route that runs out sends `<name>Unhandled`
 there instead. So an answer is a message, and a handler cannot tell one from
 the other. `observe()` exposes the whole dispatch feed (the inspector consumes
 it).

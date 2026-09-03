@@ -1,7 +1,7 @@
 ///| HANDWRITTEN — the one file you write.
 ///
 /// Everything around it is generated: `top.mbt` and `ffi.mbt` are wit-bindgen
-/// output for `tutuca:component@0.11.0`, and `sdk.mbt` implements every one of
+/// output for `tutuca:component@0.12.0`, and `sdk.mbt` implements every one of
 /// their `declare`s over the `DynComponent` trait below. You write a struct per
 /// component and one `dyn_module()` saying what the bundle holds.
 ///
@@ -85,7 +85,7 @@ impl DynComponent for Dice with fn handle_dispatch(self, bucket, name, args) {
       @control.intent("roll", [@values.Value::Number(self.faces)], {
         route: [LEX],
         on_ok: Some("rolled"),
-        on_error: Some("rollFailed"),
+        on_failed: Some("rollFailed"),
         on_unhandled: None,
         live_path: false,
       })
@@ -104,7 +104,7 @@ impl DynComponent for Dice with fn handle_dispatch(self, bucket, name, args) {
           @control.intent("rolled", [@values.Value::Number(n)], {
             route: [DYN],
             on_ok: None,
-            on_error: None,
+            on_failed: None,
             on_unhandled: None,
             live_path: false,
           })

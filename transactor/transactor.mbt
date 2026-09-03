@@ -199,7 +199,9 @@ pub fn Transactor::observe(
 /// from the already-pinned path.
 fn Transactor::emit_record(
   self : Transactor,
-  kind : ObserveKind,
+  origin : @tutuca.Origin,
+  bucket : @tutuca.HandlerBucket,
+  is_answer : Bool,
   name : String,
   args : Array[@tutuca.Value],
   path : @tutuca.Path,
@@ -212,7 +214,9 @@ fn Transactor::emit_record(
 ) -> Int {
   self.obs_seq = self.obs_seq + 1
   let record : ObserveRecord = {
-    kind,
+    origin,
+    bucket,
+    is_answer,
     name,
     args,
     path,
@@ -235,7 +239,6 @@ fn Transactor::emit_record(
 ///|
 fn Transactor::emit(
   self : Transactor,
-  kind : ObserveKind,
   t : Transaction,
   old_root : @tutuca.Value,
   matched : ObserveMatch,
@@ -253,7 +256,9 @@ fn Transactor::emit(
   // when the parent's handler finished, which is strictly before it could have
   // pushed this one, so by now `parent.obs_seq` is stamped.
   t.obs_seq = self.emit_record(
-    kind,
+    t.origin,
+    t.bucket,
+    t.is_answer,
     t.name,
     t.args,
     path,
@@ -305,7 +310,7 @@ fn Transactor::link(
     }
     None => ()
   }
-  self.enqueue(t, if parent is None { Extern } else { Derived })
+  self.enqueue(t)
   t
 }
 
@@ -320,15 +325,11 @@ fn Transactor::link(
 /// `source` is passed rather than inferred from `parent`, because the two
 /// direct pushes have no parent transaction and are nonetheless derived: the
 /// walk caused them, and a walk is not a transaction.
-fn Transactor::enqueue(
-  self : Transactor,
-  t : Transaction,
-  source : Source,
-) -> Unit {
+fn Transactor::enqueue(self : Transactor, t : Transaction) -> Unit {
   if self.recorder.recording() {
     t.push_seq = self.next_record_seq()
     self.recorder.on_dispatch({
-      source,
+      origin: t.origin,
       bucket: t.bucket,
       name: t.name,
       args: t.args,
@@ -363,7 +364,7 @@ fn Transactor::mk_txn(
   bucket : @tutuca.HandlerBucket,
   name : String,
   args : Array[@tutuca.Value],
-  provenance? : @tutuca.DispatchProvenance = Host,
+  origin? : @tutuca.Origin = Host,
   target_path? : @tutuca.DispatchPath,
   txn_path? : @tutuca.Path,
   parent? : Transaction,
@@ -371,8 +372,8 @@ fn Transactor::mk_txn(
   walk_id? : Int = 0,
   walk_parent? : Int = 0,
   is_answer? : Bool = false,
-  origin? : @tutuca.DispatchPath,
-  origin_pinned? : @tutuca.Path,
+  sender? : @tutuca.DispatchPath,
+  sender_pinned? : @tutuca.Path,
 ) -> Transaction {
   {
     transactor: self,
@@ -380,14 +381,14 @@ fn Transactor::mk_txn(
     bucket,
     name,
     args,
-    provenance,
+    origin,
     target_path: target_path.unwrap_or(path),
     txn_path,
     parent,
     walk,
     is_answer,
-    origin,
-    origin_pinned,
+    sender,
+    sender_pinned,
     cmpl: None,
     self_settled: false,
     finished: false,
@@ -419,10 +420,10 @@ pub fn Transactor::push_send(
   name : String,
   args : Array[@tutuca.Value],
   parent? : Transaction,
-  origin? : @tutuca.DispatchPath,
-  provenance? : @tutuca.DispatchProvenance = Host,
+  sender? : @tutuca.DispatchPath,
+  origin? : @tutuca.Origin = Host,
 ) -> Transaction {
-  let origin_pinned : @tutuca.Path? = match origin {
+  let sender_pinned : @tutuca.Path? = match sender {
     Some(o) => Some(o.to_transaction_path().pin_keys(self.root))
     None => None
   }
@@ -431,10 +432,10 @@ pub fn Transactor::push_send(
     Receive,
     name,
     args,
-    provenance~,
+    origin~,
     parent?,
-    origin?,
-    origin_pinned?,
+    sender?,
+    sender_pinned?,
   )
   // `parent` is the whole of the distinction, and `link` is where it is read:
   // a handler pushed this, or something outside the tree did.
@@ -522,20 +523,11 @@ fn Transactor::transact(self : Transactor, t : Transaction) -> Unit {
   // a skipSelf send resolves no handler and emits no record (JS
   // _resolvedHandler undefined)
   match t.obs_matched {
-    Some(matched) =>
-      // An answer is an ordinary `Receive` and the handler cannot tell it from
-      // one a parent sent — that is the claim, so the bucket must not know. An
-      // INSPECTOR needs to know, and this is the only place that does.
-      self.emit(
-        if t.is_answer {
-          Answer
-        } else {
-          ObserveKind::of_bucket(t.bucket)
-        },
-        t,
-        cur,
-        matched,
-      )
+    // An answer is an ordinary `Receive` and the handler cannot tell it from
+    // one a parent sent — that is the claim, so the bucket must not know. An
+    // INSPECTOR needs to know, and `is_answer` is what the record carries it
+    // as, beside the bucket rather than folded into it.
+    Some(matched) => self.emit(t, cur, matched)
     None => ()
   }
   t.finish()
@@ -672,8 +664,8 @@ impl @tutuca.Ctx for EventContext with fn name(self) {
 }
 
 ///|
-impl @tutuca.Ctx for EventContext with fn provenance(self) {
-  self.txn.provenance
+impl @tutuca.Ctx for EventContext with fn origin(self) {
+  self.txn.origin
 }
 
 ///|
@@ -698,8 +690,8 @@ impl @tutuca.Ctx for EventContext with fn send_at_path(self, path, name, args) {
     name,
     args,
     parent=self.txn,
-    origin=self.txn.path,
-    provenance=Component,
+    sender=self.txn.path,
+    origin=Handler,
   )
 }
 
@@ -712,17 +704,18 @@ impl @tutuca.Ctx for EventContext with fn send_at_path(self, path, name, args) {
 /// position as pinned at the moment they sent — see `Transactor::push_send`.
 impl @tutuca.Ctx for EventContext with fn send_reply(self, name, args) {
   let tx = self.txn.transactor
-  match (self.txn.origin, self.txn.origin_pinned) {
-    (Some(origin), pinned) => {
+  match (self.txn.sender, self.txn.sender_pinned) {
+    (Some(sender), pinned) => {
       let t = tx.mk_txn(
-        origin,
+        sender,
         Receive,
         name,
         args,
         txn_path?=pinned,
         parent=self.txn,
-        origin=self.txn.path,
-        origin_pinned=self.txn.path.to_transaction_path().pin_keys(tx.root),
+        origin=Handler,
+        sender=self.txn.path,
+        sender_pinned=self.txn.path.to_transaction_path().pin_keys(tx.root),
       )
       let _ = tx.link(t, Some(self.txn))
     }

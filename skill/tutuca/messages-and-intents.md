@@ -226,7 +226,7 @@ payload shape:
 | outcome                     | dispatched name    | payload            |
 | --------------------------- | ------------------ | ------------------ |
 | a hop replied               | `<name>Ok`         | the replied value  |
-| a hop failed                | `<name>Error`      | the error value    |
+| a hop failed                | `<name>Failed`     | the failure value  |
 | the route ran out           | `<name>Unhandled`  | none               |
 
 They arrive back at the sender as **ordinary messages, in the `receive`
@@ -251,7 +251,7 @@ reads the schema's `receive` list and fills the intent's opts in.
     message {
     init
     loadDataOk(Any)
-    loadDataError(String)
+    loadDataFailed(String)
     loadDataUnhandled
 
     }
@@ -288,7 +288,7 @@ update=(s : ItemsState, msg, ctx) => match msg {
       @tutuca.IntentOpts::new(
         route=[Lex],
         on_ok_name="loadDataOk",
-        on_error_name="loadDataError",
+        on_failed_name="loadDataFailed",
         on_unhandled_name="loadDataUnhandled",
       ),
     )
@@ -299,7 +299,7 @@ update=(s : ItemsState, msg, ctx) => match msg {
   // arm to work out which slot was filled.
   Receive("loadDataOk", [res, ..]) =>
     Next({ ..s, isLoading: false, items: res.list() })
-  Receive("loadDataError", [Str(e), ..]) =>
+  Receive("loadDataFailed", [Str(e), ..]) =>
     Next({ ..s, isLoading: false, error: Str(e) })
   Receive("loadDataUnhandled", _) =>
     Next({ ..s, isLoading: false, error: Str("nothing answers `loadData`") })
@@ -307,10 +307,17 @@ update=(s : ItemsState, msg, ctx) => match msg {
 },
 ```
 
-`@tutuca.IntentOpts::new(route?, on_ok_name?, on_error_name?,
+`@tutuca.IntentOpts::new(route?, on_ok_name?, on_failed_name?,
 on_unhandled_name?, live_path?)` — every field optional, `route`
 defaulting to `[Dyn, Lex]`. Omit the three names and the answers are
-dispatched as `<name>Ok` / `<name>Error` / `<name>Unhandled`.
+dispatched as `<name>Ok` / `<name>Failed` / `<name>Unhandled`; all three
+derive the same way, so a sender that names one and not the others still
+hears the others under their derived names. A sender that names **none** is
+sending a notification and hears nothing at all.
+
+`on_error_name` is the retired spelling of `on_failed_name`. It still fills
+the same field for one release, and a script block's `receive <name>Error` arm
+is still wired to the failure — what changed is the word the runtime derives.
 
 ## `forward` — one operation, two sides
 
@@ -372,7 +379,7 @@ one of three answers:
 | answer            | meaning                                        |
 | ----------------- | ---------------------------------------------- |
 | `Ok(value)`       | answered; the sender hears `<name>Ok`          |
-| `Failed(value)`   | failed; the sender hears `<name>Error`         |
+| `Failed(value)`   | failed; the sender hears `<name>Failed`        |
 | `Pass`            | **declines**; the walk goes on to the next hop |
 
 `Pass` is the `IntentFn`'s half of "running is not answering". A `Pass`
@@ -452,7 +459,7 @@ through handlers — never around them.
 - **Outbound** — the app reaches out (fetch, timers, storage, external
   APIs). `intent lex 'name'`; the scope-registered `IntentFn` does the
   async work and the answer lands back in component state as
-  `<name>Ok` / `<name>Error`.
+  `<name>Ok` / `<name>Failed`.
 - **Inbound** — the outside world pushes an event in (a WebSocket
   message, a `postMessage`, a timer, a third-party callback). Use
   `app.send_at_root("name", args=[...])` from the host / glue code. It

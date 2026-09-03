@@ -54,7 +54,7 @@ the ladder when the one above can't express it:
   [messages-and-intents.md](./messages-and-intents.md) "Intents — routes and legs".
 - **The work is async or host-side** (fetch, timer, storage, an external API) →
   **`intent lex`**, which walks the scope-registered `IntentFn`s and routes the
-  answer back as `<name>Ok` / `<name>Error` / `<name>Unhandled`. See
+  answer back as `<name>Ok` / `<name>Failed` / `<name>Unhandled`. See
   [messages-and-intents.md](./messages-and-intents.md) "The three outcomes".
 - **You don't know who should answer** → **a bare `intent`**, which takes the
   default `dyn lex` route: the ancestors, then the scope.

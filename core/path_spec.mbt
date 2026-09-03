@@ -50,6 +50,15 @@ pub fn HandlerBucket::ordinal(self : HandlerBucket) -> Int {
 }
 
 ///|
+/// The bucket as the wire/display word.
+pub fn HandlerBucket::label(self : HandlerBucket) -> String {
+  match self {
+    Receive => "receive"
+    Intent => "intent"
+  }
+}
+
+///|
 /// A dispatch: which bucket, the name, and what it carries.
 ///
 /// The payload-bearing twin of `HandlerBucket`, and it lives beside it for that
@@ -222,13 +231,18 @@ declare pub fn LookupOpts::new(route? : Array[Leg]) -> LookupOpts
 /// handler failing. `live_path` opts out of pinning field-resolved keys at
 /// dispatch time.
 ///
+/// The middle one is `Failed` and not `Error` because that is what happened: a
+/// handler ran and did not succeed. An `Error` is a thing, and the arm reads as
+/// if one were being handed over; `<n>Failed` says the outcome, which is what
+/// the other two names say.
+///
 /// There is deliberately no combined result-or-error arm. An outcome a handler
 /// has to discriminate is one it can discriminate wrongly.
 pub(all) struct IntentOpts {
   /// The legs to walk, in order. `[Dyn, Lex]` when nothing says otherwise.
   route : Array[Leg]
   on_ok_name : String?
-  on_error_name : String?
+  on_failed_name : String?
   on_unhandled_name : String?
   live_path : Bool
 } derive(Debug, Eq)
@@ -237,9 +251,10 @@ pub(all) struct IntentOpts {
 declare pub fn IntentOpts::new(
   route? : Array[Leg],
   on_ok_name? : String,
-  on_error_name? : String,
+  on_failed_name? : String,
   on_unhandled_name? : String,
   live_path? : Bool,
+  on_error_name? : String,
 ) -> IntentOpts
 
 ///|
@@ -275,17 +290,46 @@ pub(all) enum IntentAnswer {
 } derive(Debug, Eq)
 
 ///|
-/// Who is invoking a component handler.
+/// Who raised a dispatch.
 ///
-/// Generated field mutators are representation-level helpers and are only
-/// eligible for component-owned traffic (`View`/`Component`) or an explicit
-/// diagnostic stress run. A host call is restricted to declared handlers.
-pub(all) enum DispatchProvenance {
+/// Three, and the third is the one that matters: a `Handler` dispatch is a
+/// CONSEQUENCE — some handler already running pushed it — where `Host` and
+/// `View` are the two ways a dispatch enters the tree from outside it. That is
+/// the distinction `is_external` names, and a recorder needs exactly it: an
+/// external dispatch is the input a replay has to feed, a derived one is what a
+/// replay produces again for free.
+///
+/// There used to be a fourth, `Diagnostic`, and it existed only to say that a
+/// stress run was allowed to reach the generated mutator behind a name. There
+/// is no such fallback any more (a write is a write), so there is nothing left
+/// for the case to gate.
+pub(all) enum Origin {
+  /// Something outside the tree: a `send_at_root`, a timer, a test harness.
   Host
+  /// A view's own `@on.*`, on behalf of the component it belongs to.
   View
-  Component
-  Diagnostic
+  /// A handler already running. The only one that is not an input.
+  Handler
 } derive(Debug, Eq)
+
+///|
+/// Did this dispatch enter the tree from outside it?
+///
+/// `Host` and `View` both did — one from a host call, one from a person
+/// clicking — and neither is reproducible by re-running what came before.
+pub fn Origin::is_external(self : Origin) -> Bool {
+  self is (Host | View)
+}
+
+///|
+/// The origin as the wire/display word.
+pub fn Origin::label(self : Origin) -> String {
+  match self {
+    Host => "host"
+    View => "view"
+    Handler => "handler"
+  }
+}
 
 ///|
 /// What a handler can do besides transforming its leaf.
@@ -296,7 +340,7 @@ pub(open) trait Ctx {
   fn path(Self) -> DispatchPath = _
   fn target_path(Self) -> DispatchPath = _
   fn name(Self) -> String? = _
-  fn provenance(Self) -> DispatchProvenance = _
+  fn origin(Self) -> Origin = _
   fn send(Self, name : String, args : Array[Value]) -> Unit = _
   fn send_at_path(Self, path : DispatchPath, name : String, args : Array[Value]) -> Unit = _
   /// Write a member at `path`, the way a view's `.field = v` does.
@@ -383,7 +427,7 @@ impl Ctx with fn name(_self) {
 }
 
 ///|
-impl Ctx with fn provenance(_self) {
+impl Ctx with fn origin(_self) {
   Host
 }
 
@@ -474,11 +518,12 @@ impl Ctx with fn walk_path(_self, _callback) {
 pub(all) struct NullCtx {}
 
 ///|
-pub impl Ctx for NullCtx with fn provenance(_self) {
-  // `Path::update` is the pure, transactor-free diagnostic seam used by unit
-  // tests and model runners. Real host/view/component calls carry an
-  // `EventContext` with their actual provenance.
-  Diagnostic
+pub impl Ctx for NullCtx with fn origin(_self) {
+  // `Path::update` is the pure, transactor-free seam used by unit tests and
+  // model runners. Nothing in the tree asked for what they drive, which is
+  // what `Host` says. Real view and handler calls carry an `EventContext`
+  // with their actual origin.
+  Host
 }
 
 ///|

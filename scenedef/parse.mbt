@@ -115,7 +115,7 @@ fn scene_of(name : String, body : Json) -> Scene raise SceneError {
 fn intents_of(
   scene : String,
   o : Map[String, Json],
-) -> Map[String, Answer] raise SceneError {
+) -> Map[String, @tutuca.IntentAnswer] raise SceneError {
   match o.get("intents") {
     None => Map([])
     Some(i) => parse_answers(i, scene)
@@ -126,18 +126,18 @@ fn intents_of(
 pub fn parse_answers(
   j : Json,
   where_ : String,
-) -> Map[String, Answer] raise SceneError {
+) -> Map[String, @tutuca.IntentAnswer] raise SceneError {
   let scene = where_
-  let out : Map[String, Answer] = Map([])
+  let out : Map[String, @tutuca.IntentAnswer] = Map([])
   match j {
     Object(m) =>
       for name, a in m {
         out[name] = match a {
-          String("pass") => APass
+          String("pass") => Pass
           Object(one) =>
             match (one.get("ok"), one.get("failed")) {
-              (Some(v), None) => AOk(@tutuca.Value::from_json(v))
-              (None, Some(v)) => AFailed(@tutuca.Value::from_json(v))
+              (Some(v), None) => Ok(@tutuca.Value::from_json(v))
+              (None, Some(v)) => Failed(@tutuca.Value::from_json(v))
               (Some(_), Some(_)) =>
                 raise BadIntent(
                   scene~,

@@ -87,7 +87,8 @@ pub fn Inspector::record_to_entry(
   }
   let seq = record.seq
   self.make_("ActivityEntry", args={
-    "kind": Str(record.kind.label()),
+    "kind": Str(record.kind_label()),
+    "origin": Str(record.origin.label()),
     "name": Str(record.name),
     "handlerName": Str(""),
     "matched": Str(record.matched.label()),

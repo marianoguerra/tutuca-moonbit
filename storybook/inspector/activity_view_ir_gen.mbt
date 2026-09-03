@@ -28,6 +28,7 @@
 pub let activity_entry_spec_source : String =
   #|  state ActivityEntry {
   #|    kind : String
+  #|    origin : String
   #|    name : String
   #|    handlerName : String
   #|    matched : String
@@ -38,6 +39,10 @@ pub let activity_entry_spec_source : String =
   #|    hasAfter : Bool
   #|
   #|    where matched is one of ["exact", "none"]
+  #|
+  #|    where kind is one of ["receive", "intent", "answer"]
+  #|
+  #|    where origin is one of ["host", "view", "handler"]
   #|
   #|    where name is nonempty
   #|
@@ -87,11 +92,22 @@ fn activity_entry_main_view_ir() -> @anode.View {
               "span",
               [
                 @anode.attr(
-                  "title", "How this was dispatched: receive (send), bubble, response, input, or request",
+                  "title", "Which bucket it went through: receive, intent — or answer, for a message the runtime wrote",
                 ),
                 @anode.attr("class", "badge badge-sm badge-neutral entry-kind"),
               ],
               [@anode.dyn_text(@tutuca.Expr::field("kind"))],
+            ),
+            @anode.text(" "),
+            @anode.h(
+              "span",
+              [
+                @anode.attr(
+                  "title", "Who raised it: host (something outside the tree), view (a component's own @on), or handler (a dispatch another handler pushed)",
+                ),
+                @anode.attr("class", "badge badge-sm badge-ghost entry-origin"),
+              ],
+              [@anode.dyn_text(@tutuca.Expr::field("origin"))],
             ),
             @anode.text(" "),
             @anode.h(

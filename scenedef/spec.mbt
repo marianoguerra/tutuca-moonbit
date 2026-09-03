@@ -24,29 +24,21 @@ pub(all) struct Scene {
   args : Map[String, @tutuca.Value]
   /// Intents this scene answers, by name.
   ///
+  /// `@tutuca.IntentAnswer` — the same three an intent has anywhere, held as
+  /// data rather than as a closure, so this package still needs no component
+  /// runtime. There was a second enum here saying the same three things, and
+  /// a conversion in the driver between them.
+  ///
   /// A card raises an intent at a HOST, and in a test the scene is the host.
   /// They answer synchronously — a page's fixtures answer late on purpose,
   /// because that is the half of asynchrony a card author has to write for,
   /// and a runner that returns has nothing to wait with.
-  intents : Map[String, Answer]
+  intents : Map[String, @tutuca.IntentAnswer]
   /// Keep the renderer's `data-cid` / `§…§` bookkeeping in the reported HTML.
   /// Off by default: a snapshot that moves because a component id moved is a
   /// snapshot nobody can read.
   raw : Bool
   steps : Array[Step]
-} derive(Eq, @debug.Debug)
-
-///|
-/// What a scene's intent fixture answers. The three an intent has
-/// (`@component.IntentAnswer`), as data rather than as a closure, so this
-/// package needs no component runtime.
-pub(all) enum Answer {
-  AOk(@tutuca.Value)
-  AFailed(@tutuca.Value)
-  /// Declines. The route walks on, and if nothing else answers the sender
-  /// hears `<name>Unhandled` — a different sentence from a failure's, and the
-  /// path a test is likeliest to leave uncovered.
-  APass
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -217,7 +209,7 @@ declare pub fn parse_steps(
 declare pub fn parse_answers(
   j : Json,
   where_ : String,
-) -> Map[String, Answer] raise SceneError
+) -> Map[String, @tutuca.IntentAnswer] raise SceneError
 
 ///|
 /// Parse a `tutuca/test` block into the scenes it declares.

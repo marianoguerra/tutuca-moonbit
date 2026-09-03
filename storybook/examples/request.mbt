@@ -14,7 +14,7 @@
 //    next one instead of it having to invent an error.
 //
 //    The component side dispatches `intent lex 'loadData'`, and the answer
-//    arrives as an ordinary message — `loadDataOk`, `loadDataError` or
+//    arrives as an ordinary message — `loadDataOk`, `loadDataFailed` or
 //    `loadDataUnhandled` — in the same `receive` bucket everything else lands
 //    in. A handler cannot tell an answer from a message a parent sent, and
 //    does not need to.
@@ -46,7 +46,7 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
             @tutuca.IntentOpts::new(
               route=[Lex],
               on_ok_name="loadDataOk",
-              on_error_name="loadDataError",
+              on_failed_name="loadDataFailed",
               on_unhandled_name="loadDataUnhandled",
             ),
           )
@@ -59,7 +59,7 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
         // slot of; no arm here can be handed both.
         Receive("loadDataOk", [res, ..]) =>
           Next(entries_from_response(s, entry, res))
-        Receive("loadDataError", args) => {
+        Receive("loadDataFailed", args) => {
           let err = match args {
             [Str(e), ..] => e
             [_, ..] => "the intent failed"
@@ -149,7 +149,7 @@ fn fixture_request_handlers() -> Map[String, Array[@component.IntentFn]] {
 }
 
 ///|
-/// A handler that always fails — proves the error path and the `on_error_name`
+/// A handler that always fails — proves the failure path and the `on_failed_name`
 /// routing.
 pub fn failing_request_handlers() -> Map[String, Array[@component.IntentFn]] {
   {

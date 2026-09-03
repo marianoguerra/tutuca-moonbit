@@ -975,7 +975,7 @@ returned state into the dispatch path (`Next(s)` = the successor, `Unchanged` =
 this arm answered and nothing moved, `Replace(v)` = this node is superseded by
 another value entirely, `Refused(r)` = this arm turned the dispatch down and
 says why, `Unhandled` = try the next answerer). An intent's three
-answers — `<name>Ok` / `<name>Error` / `<name>Unhandled` — come back as
+answers — `<name>Ok` / `<name>Failed` / `<name>Unhandled` — come back as
 ordinary `Receive` arms. The channels — plus `ctx.at()`,
 routes and legs, `forward` / `reply` / `fail`, catch-all arms, and `IntentFn`
 registration — are in

@@ -53,8 +53,8 @@ fn opts_to_json(o : @tutuca.IntentOpts) -> Json {
     Some(n) => obj["ok"] = Json::string(n)
     None => ()
   }
-  match o.on_error_name {
-    Some(n) => obj["error"] = Json::string(n)
+  match o.on_failed_name {
+    Some(n) => obj["failed"] = Json::string(n)
     None => ()
   }
   match o.on_unhandled_name {
@@ -97,7 +97,7 @@ fn opts_of_json(j : Json) -> @tutuca.IntentOpts {
   @tutuca.IntentOpts::new(
     route~,
     on_ok_name?=name("ok"),
-    on_error_name?=name("error"),
+    on_failed_name?=name("failed"),
     on_unhandled_name?=name("unhandled"),
     live_path=m.get("livePath") is Some(True),
   )

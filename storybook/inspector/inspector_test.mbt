@@ -218,7 +218,9 @@ test "activity log: observe entries land newest-first via appendEntry" {
   let h = @harness.mount(insp.module_(), "ActivityLog")
   inspect(h.find_all(".empty-hint").length(), content="1")
   let record : @transactor.ObserveRecord = {
-    kind: Receive,
+    origin: View,
+    bucket: Receive,
+    is_answer: false,
     name: "click",
     args: [],
     path: @tutuca.Path::new(),
@@ -260,7 +262,8 @@ test "activity entry example renders the dispatch chrome" {
     @inspector.inspector_module(),
     "Activity Entry",
   )
-  inspect(h.text(".entry-kind"), content="input")
+  inspect(h.text(".entry-kind"), content="receive")
+  inspect(h.text(".entry-origin"), content="view")
   inspect(h.text(".entry-name"), content="click")
   inspect(h.text(".entry-path"), content="value.rows[1]")
   let text = h.text(".activity-entry")

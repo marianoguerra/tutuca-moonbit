@@ -16,7 +16,7 @@ test "the default route is dyn lex, and it is written in one place" {
   assert_eq(opts.route, [Dyn, Lex])
   assert_eq(@core.route_label(opts.route), "dyn lex")
   assert_eq(opts.on_ok_name, None)
-  assert_eq(opts.on_error_name, None)
+  assert_eq(opts.on_failed_name, None)
   assert_eq(opts.on_unhandled_name, None)
   assert_false(opts.live_path)
 }
@@ -36,14 +36,30 @@ test "the three outcome names are carried separately, not as one pair" {
   let opts = @core.IntentOpts::new(
     route=[Dyn],
     on_ok_name="saveDraftOk",
-    on_error_name="saveDraftError",
+    on_failed_name="saveDraftFailed",
     on_unhandled_name="saveDraftUnhandled",
     live_path=true,
   )
   assert_eq(opts.on_ok_name, Some("saveDraftOk"))
-  assert_eq(opts.on_error_name, Some("saveDraftError"))
+  assert_eq(opts.on_failed_name, Some("saveDraftFailed"))
   assert_eq(opts.on_unhandled_name, Some("saveDraftUnhandled"))
   assert_true(opts.live_path)
+}
+
+///|
+/// `on_error_name` is the retired spelling, and it still fills the same field.
+///
+/// It goes when the release after this one does. A caller that passes both is
+/// passing the new one twice as far as this is concerned: the new spelling
+/// wins, because a caller who wrote it meant it.
+test "the retired on_error_name still names the failed arm" {
+  let old = @core.IntentOpts::new(on_error_name="saveDraftError")
+  assert_eq(old.on_failed_name, Some("saveDraftError"))
+  let both = @core.IntentOpts::new(
+    on_failed_name="saveDraftFailed",
+    on_error_name="saveDraftError",
+  )
+  assert_eq(both.on_failed_name, Some("saveDraftFailed"))
 }
 
 ///|

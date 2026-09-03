@@ -8,6 +8,55 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **One `Origin`, where there were three enums saying who.** `DispatchProvenance`
+  is `@tutuca.Origin { Host, View, Handler }` — the fourth case, `Diagnostic`,
+  existed only to say a stress run could reach a generated mutator, and there is
+  no such fallback left to gate. `Ctx::provenance()` is `Ctx::origin()`.
+
+  `transactor.Source { Extern, Derived }` is gone: it answered "is this an
+  input a replay has to feed", which is exactly `origin.is_external()` —
+  `Host | View`. So is `ObserveKind { Receive, Intent, Answer }`, which was
+  `HandlerBucket` plus one bit: an `ObserveRecord` now carries `origin`,
+  `bucket` and `is_answer`, and `ObserveRecord::kind_label()` is the one place
+  that folds the last two into the word a reader sees. `HandlerBucket::label()`
+  and `Origin::label()` are beside `ordinal()`.
+
+  The activity log shows both, because they are two questions: a `receive`
+  raised by a view and a `receive` a handler pushed read identically otherwise.
+  A record's JSON gains `"origin"`; `"kind"` is unchanged.
+
+  `Transaction`'s own `origin : DispatchPath?` — the sender's position, which
+  `NO_SENDER` refuses on — is `sender`, and `IntentWalk.origin` with it. Two
+  fields named `origin` meaning a place and a kind in one struct is the
+  collision this release exists to remove.
+
+- **An intent's failure answer is `<n>Failed`.** `Error` is a thing; `Failed`
+  is what happened. `IntentOpts.on_error_name` is `on_failed_name`, the WIT
+  record's `on-error` is `on-failed`, and the hosts pass `onFailed`.
+
+  The old spellings still work for one release: `IntentOpts::new` keeps an
+  `on_error_name?` keyword filling the same field, a script block's
+  `receive <n>Error` arm is still wired to the failure, and
+  `@tutuca.retired(AnswerName, name)` says what to write instead — matching on
+  the SUFFIX, since a derived answer name is an intent's own plus one word.
+
+- **`<n>Unhandled` is derived like the other two.** A sender that declared
+  `on_ok_name` and nothing else used to hear a bare `NO_HANDLER` refusal naming
+  the intent. It now hears `<n>Unhandled`, carrying the intent's own arguments
+  the way a declared one does — and if it has no arm for that, the refusal
+  names `<n>Unhandled`, which says more. A sender that declared nothing is
+  still sending a notification and still hears nothing.
+
+- **`scenedef.Answer` is `@tutuca.IntentAnswer`.** A second three-case enum
+  saying the same three things, with a conversion in the card driver between
+  them. Scenes hold the real one; the conversion is gone.
+
+- **The guest world is `tutuca:component@0.12.0`.** The bump deferred from the
+  `Ty`-as-JSON manifest change, landing with the `on-failed` rename. Manifest
+  `apiVersion` stays at 10: the manifest shim that reads the old `ty : Int`
+  form is what makes an older bundle's manifest readable, and bumping the gate
+  beside it would make the shim unreachable.
+
 - **A dispatch nothing answers is refused, not routed to a setter the field
   implies.** A `Receive` used to be offered to three things in order — the
   `swap` bucket, `update`, and then the generated mutator of that name — so
@@ -59,6 +108,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   it now draws a `SetField(name, value)` and goes through the write seam. In the
   storybook's Fuzz tab the button reads **Fields** rather than *Internal
   mutators*, and the source is named `fields`.
+
+### Fixed
+
+- **The benchmark view corpus kept every schema block it was supposed to
+  strip.** `benchmarks/build.mjs` matched `tutuca/state`, a spelling the repo
+  no longer writes, so `all_views.html` concatenated 36 schema blocks into one
+  file and `split_file` refused it as a duplicate. The corpus had been stale
+  long enough to hide it.
 
 ## [0.47.1] - 2026-09-01
 

@@ -200,9 +200,9 @@ test "an intent fixture answers one of three things" {
     ),
   )
   let i = scenes[0].intents
-  @debug.assert_eq(i.get("rows"), Some(AOk(List([Num(1)]))))
-  @debug.assert_eq(i.get("boom"), Some(AFailed(Str("no"))))
-  @debug.assert_eq(i.get("shrug"), Some(APass))
+  @debug.assert_eq(i.get("rows"), Some(Ok(List([Num(1)]))))
+  @debug.assert_eq(i.get("boom"), Some(Failed(Str("no"))))
+  @debug.assert_eq(i.get("shrug"), Some(Pass))
   inspect(
     err("{ \"a\": { \"intents\": { \"r\": 1 }, \"steps\": [] } }"),
     content="test block: scene `a`'s intent `r`: expected { \"ok\": … }, { \"failed\": … } or \"pass\"",

@@ -452,7 +452,8 @@ pub fn Inspector::module_(self : Inspector) -> @component.ModuleDef {
         component: "ActivityEntry",
         title: "Activity Entry",
         args: {
-          "kind": Str("input"),
+          "kind": Str("receive"),
+          "origin": Str("view"),
           "name": Str("click"),
           "matched": Str("exact"),
           "pathLabel": Str("value.rows[1]"),

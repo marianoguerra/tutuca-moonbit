@@ -72,7 +72,7 @@ impl DynComponent for Counter with fn handle_dispatch(self, bucket, name, args) 
       @control.intent("double", [@values.Value::Number(self.count)], {
         route: [LEX],
         on_ok: Some("doubled"),
-        on_error: None,
+        on_failed: None,
         on_unhandled: None,
         live_path: false,
       })
@@ -93,7 +93,7 @@ impl DynComponent for Counter with fn handle_dispatch(self, bucket, name, args) 
       @control.intent("triple", [@values.Value::Number(self.count)], {
         route: [LEX],
         on_ok: Some("tripled"),
-        on_error: None,
+        on_failed: None,
         on_unhandled: None,
         live_path: false,
       })
@@ -109,7 +109,7 @@ impl DynComponent for Counter with fn handle_dispatch(self, bucket, name, args) 
       @control.intent("counted", [@values.Value::Number(self.count)], {
         route: [DYN],
         on_ok: None,
-        on_error: None,
+        on_failed: None,
         on_unhandled: None,
         live_path: false,
       })

@@ -332,7 +332,7 @@ it declares messages and intents that the component may initiate.
   handle Board {
     message {
       reset, focusRow(Int), loadRowsOk(Array[Any]),
-      loadRowsError(String), loadRowsUnhandled
+      loadRowsFailed(String), loadRowsUnhandled
     }
     intent { rowPicked(Int) }
   }

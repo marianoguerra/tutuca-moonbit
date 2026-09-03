@@ -183,14 +183,14 @@ test "the init Receive arm raises the intent, and the answer lands" {
   )
 }
 
-test "a handler that fails takes the <name>Error arm" {
+test "a handler that fails takes the <name>Failed arm" {
   // the intent handler lives OUTSIDE the component, so swapping the map is
   // all it takes to drive the failure case
   let h = @harness.mount(
     request_module(intents=failing_intent_handlers()),
     "RequestExample",
   )
-  h.click(".another") // this button names its own on_error_name
+  h.click(".another") // this button names its own on_failed_name
   inspect(h.text(".error"), content="network is down")
 }
 
@@ -337,7 +337,7 @@ test "counter: immutability — one render per interaction" {
 Everything above is the ahead-of-time path: a view file, `gen-views`, a
 `ModuleDef`, and `moon test` over `@harness`. A **card** is the other
 thing a `.html` file can be — one file the browser compiles to a
-`tutuca:component@0.11.0` wasm module with no MoonBit toolchain on the
+`tutuca:component@0.12.0` wasm module with no MoonBit toolchain on the
 page. There is no `moon test` there and no MoonBit to write a test in,
 so a card declares its tests as a **fifth block**, in JSON, beside its
 schema and its handlers.

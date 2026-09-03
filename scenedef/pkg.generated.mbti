@@ -7,7 +7,7 @@ import {
 }
 
 // Values
-pub fn parse_answers(Json, String) -> Map[String, Answer] raise SceneError
+pub fn parse_answers(Json, String) -> Map[String, @core.IntentAnswer] raise SceneError
 
 pub fn parse_place(String) -> Array[@core.Step] raise PlaceError
 
@@ -41,12 +41,6 @@ pub fn SceneError::message(Self) -> String
 pub impl Show for SceneError
 
 // Types and methods
-pub(all) enum Answer {
-  AOk(@core.Value)
-  AFailed(@core.Value)
-  APass
-} derive(Eq, @debug.Debug)
-
 pub(all) struct Expect {
   reader : Reader
   sel : String
@@ -77,7 +71,7 @@ pub(all) struct Scene {
   component : String
   init : String
   args : Map[String, @core.Value]
-  intents : Map[String, Answer]
+  intents : Map[String, @core.IntentAnswer]
   raw : Bool
   steps : Array[Step]
 } derive(Eq, @debug.Debug)

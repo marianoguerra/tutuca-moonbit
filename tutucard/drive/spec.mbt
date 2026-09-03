@@ -123,13 +123,13 @@ declare pub fn fixture_of(
 /// what it does not interpret — so this is where they become steps again.
 declare pub fn fixture_drive(
   f : @dyncomp.DynInitDef,
-) -> (Array[@scenedef.Step], Map[String, @scenedef.Answer])
+) -> (Array[@scenedef.Step], Map[String, @tutuca.IntentAnswer])
 
 ///|
 /// Intent answers as handlers that answer AT ONCE. A name with no answer
 /// answers nothing, which is how a card hears `<name>Unhandled`.
 declare pub fn intent_handlers(
-  intents : Map[String, @scenedef.Answer],
+  intents : Map[String, @tutuca.IntentAnswer],
 ) -> Map[String, Array[@component.IntentFn]]
 
 ///|

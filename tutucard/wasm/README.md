@@ -1,6 +1,6 @@
 # tutucard/wasm
 
-Compile a [tutucard](../) `.html` file into a `tutuca:component@0.11.0` **core
+Compile a [tutucard](../) `.html` file into a `tutuca:component@0.12.0` **core
 wasm module**, in the browser, with no MoonBit toolchain anywhere on the page.
 
 ```

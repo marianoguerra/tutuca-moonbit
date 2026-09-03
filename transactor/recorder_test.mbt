@@ -76,7 +76,7 @@ impl @transactor.Recorder for Tape with fn recording(_self) {
 ///|
 impl @transactor.Recorder for Tape with fn on_dispatch(self, d) {
   self.dispatched.push(d)
-  let src = if d.source is Extern { "extern" } else { "derived" }
+  let src = if d.origin.is_external() { "extern" } else { "derived" }
   let bucket = if d.bucket is Receive { "send" } else { "intent" }
   self.lines.push("\{src}:\{bucket}:\{d.name}@\{d.at.to_label()}#t\{d.turn}")
 }
@@ -229,7 +229,7 @@ test "one walk id spans every hop and the answer" {
   tx.settle() |> ignore
   let walks = tape.observed
     .filter(r => r.walk != 0)
-    .map(r => "\{r.kind.label()}:\{r.name}/\{r.walk}")
+    .map(r => "\{r.kind_label()}:\{r.name}/\{r.walk}")
   // The answer's kind is `answer` and not `receive` — the runtime wrote that
   // message — and it carries the walk id all the same, which is the pairing a
   // name could never provide.

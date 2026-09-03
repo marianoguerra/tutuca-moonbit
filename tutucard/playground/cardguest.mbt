@@ -1,7 +1,7 @@
 // The compiled card, mounted — the other half of the boundary `card-wasm.js`
 // holds.
 //
-// The page next door compiles a card to a `tutuca:component@0.11.0` core module
+// The page next door compiles a card to a `tutuca:component@0.12.0` core module
 // and hands you the archive. That proves the BYTES are right. It does not prove
 // the module runs, and until something instantiated one and asked it for a
 // field, "this page produced a real guest" was a claim about a download.
@@ -356,7 +356,7 @@ fn intent_opts(j : Json?) -> @tutuca.IntentOpts {
   if route.is_empty() {
     return @tutuca.IntentOpts::new(
       on_ok_name?=name("onOk"),
-      on_error_name?=name("onError"),
+      on_failed_name?=name("onFailed"),
       on_unhandled_name?=name("onUnhandled"),
       live_path=o.get("livePath") is Some(True),
     )
@@ -364,7 +364,7 @@ fn intent_opts(j : Json?) -> @tutuca.IntentOpts {
   @tutuca.IntentOpts::new(
     route~,
     on_ok_name?=name("onOk"),
-    on_error_name?=name("onError"),
+    on_failed_name?=name("onFailed"),
     on_unhandled_name?=name("onUnhandled"),
     live_path=o.get("livePath") is Some(True),
   )

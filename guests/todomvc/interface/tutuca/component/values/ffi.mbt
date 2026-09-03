@@ -40,31 +40,31 @@ extern "wasm" fn mbt_ffi_ptr2str(ptr : Int, len : Int) -> String =
   #| local.get 0)
 
 ///|
-fn wasmImportFromJson(p0 : Int, p1 : Int, p2 : Int) = "tutuca:component/values@0.11.0" "from-json"
+fn wasmImportFromJson(p0 : Int, p1 : Int, p2 : Int) = "tutuca:component/values@0.12.0" "from-json"
 
 ///|
-fn wasmImportListGet(p0 : Int64, p1 : Int, p2 : Int) = "tutuca:component/values@0.11.0" "list-get"
+fn wasmImportListGet(p0 : Int64, p1 : Int, p2 : Int) = "tutuca:component/values@0.12.0" "list-get"
 
 ///|
-fn wasmImportListLen(p0 : Int64) -> Int = "tutuca:component/values@0.11.0" "list-len"
+fn wasmImportListLen(p0 : Int64) -> Int = "tutuca:component/values@0.12.0" "list-len"
 
 ///|
-fn wasmImportListNew() -> Int64 = "tutuca:component/values@0.11.0" "list-new"
+fn wasmImportListNew() -> Int64 = "tutuca:component/values@0.12.0" "list-new"
 
 ///|
-fn wasmImportListPush(p0 : Int64, p1 : Int, p2 : Int64, p3 : Int) = "tutuca:component/values@0.11.0" "list-push"
+fn wasmImportListPush(p0 : Int64, p1 : Int, p2 : Int64, p3 : Int) = "tutuca:component/values@0.12.0" "list-push"
 
 ///|
-fn wasmImportMapGet(p0 : Int64, p1 : Int, p2 : Int, p3 : Int) = "tutuca:component/values@0.11.0" "map-get"
+fn wasmImportMapGet(p0 : Int64, p1 : Int, p2 : Int, p3 : Int) = "tutuca:component/values@0.12.0" "map-get"
 
 ///|
-fn wasmImportMapKeys(p0 : Int64, p1 : Int) = "tutuca:component/values@0.11.0" "map-keys"
+fn wasmImportMapKeys(p0 : Int64, p1 : Int) = "tutuca:component/values@0.12.0" "map-keys"
 
 ///|
-fn wasmImportMapLen(p0 : Int64) -> Int = "tutuca:component/values@0.11.0" "map-len"
+fn wasmImportMapLen(p0 : Int64) -> Int = "tutuca:component/values@0.12.0" "map-len"
 
 ///|
-fn wasmImportMapNew() -> Int64 = "tutuca:component/values@0.11.0" "map-new"
+fn wasmImportMapNew() -> Int64 = "tutuca:component/values@0.12.0" "map-new"
 
 ///|
 fn wasmImportMapSet(
@@ -74,7 +74,7 @@ fn wasmImportMapSet(
   p3 : Int,
   p4 : Int64,
   p5 : Int,
-) = "tutuca:component/values@0.11.0" "map-set"
+) = "tutuca:component/values@0.12.0" "map-set"
 
 ///|
-fn wasmImportToJson(p0 : Int, p1 : Int64, p2 : Int, p3 : Int) = "tutuca:component/values@0.11.0" "to-json"
+fn wasmImportToJson(p0 : Int, p1 : Int64, p2 : Int, p3 : Int) = "tutuca:component/values@0.12.0" "to-json"

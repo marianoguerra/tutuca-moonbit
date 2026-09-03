@@ -93,7 +93,7 @@ pub fn Leg::from(self : Int) -> Leg {
 pub(all) struct IntentOpts {
   route : Array[Leg]
   on_ok : String?
-  on_error : String?
+  on_failed : String?
   on_unhandled : String?
   live_path : Bool
 } derive(Debug, Eq)
@@ -195,7 +195,7 @@ pub fn intent(
     }
   }
 
-  let (lowered17, lowered18, lowered19) = match opts.on_error {
+  let (lowered17, lowered18, lowered19) = match opts.on_failed {
     None => (0, 0, 0)
     Some(payload15) => {
       let ptr16 = mbt_ffi_str2ptr(payload15)
@@ -389,7 +389,7 @@ pub fn intent_at(
     }
   }
 
-  match opts.on_error {
+  match opts.on_failed {
     None => {
       mbt_ffi_store8(return_area + 44, 0)
 
@@ -518,7 +518,7 @@ pub fn forward(args : Array[@values.Value], opts : IntentOpts) -> Unit {
     }
   }
 
-  let (lowered16, lowered17, lowered18) = match opts.on_error {
+  let (lowered16, lowered17, lowered18) = match opts.on_failed {
     None => (0, 0, 0)
     Some(payload14) => {
       let ptr15 = mbt_ffi_str2ptr(payload14)
@@ -589,7 +589,7 @@ pub fn reply(v : @values.Value) -> Unit {
 }
 
 ///|
-/// Answer it with a failure, and end the walk: `<name>Error`.
+/// Answer it with a failure, and end the walk: `<name>Failed`.
 pub fn fail(e : @values.Value) -> Unit {
   let cleanup_list : Array[Int] = []
 

@@ -1,4 +1,4 @@
-// Card in, `tutuca:component@0.11.0` core module out.
+// Card in, `tutuca:component@0.12.0` core module out.
 //
 // The pipeline is the card runtime's, with one stage swapped:
 //
@@ -524,7 +524,7 @@ pub fn compile(
     fields: g.def.fields.map(f => f.name),
     manifest: manifest_json(comps, file, g),
     descriptor: Json::object({
-      "world": Json::string("tutuca:component@0.11.0"),
+      "world": Json::string("tutuca:component@0.12.0"),
       // utf8 rather than the shipped guests' utf16: a constant pool laid down
       // as a data segment is bytes, and `abi.mjs` implements both.
       "encoding": Json::string("utf8"),
@@ -1218,7 +1218,7 @@ fn intent_opts_params() -> Array[(String?, @abi.VT)] {
 ///|
 /// The ten of those a CARD always passes as zero.
 ///
-/// A card names no answer arm and asks for no live path: `on-ok`, `on-error`
+/// A card names no answer arm and asks for no live path: `on-ok`, `on-failed`
 /// and `on-unhandled` are `none` — discriminant 0, and the two payload slots
 /// of a case that has no payload are dead — and `live-path` is false. The
 /// answer names come from the schema, which is where a card says them.

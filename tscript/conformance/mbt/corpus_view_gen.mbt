@@ -181,6 +181,7 @@ pub(all) enum CorpusReceive {
   Case26(Int)
   Case27(String)
   Case28(String)
+  Case29(String)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -232,6 +233,7 @@ pub fn CorpusReceive::from_dispatch(d : @component.Dispatch) -> CorpusReceive? {
         a0 <= 2147483647.0 => Case26(a0.to_int())
       ("case27", [Str(a0)]) => Case27(a0)
       ("case28", [Str(a0)]) => Case28(a0)
+      ("case29", [Str(a0)]) => Case29(a0)
       _ => {
         match name {
           "case0" => @tutuca.bad_payload(name, "", args)
@@ -255,6 +257,7 @@ pub fn CorpusReceive::from_dispatch(d : @component.Dispatch) -> CorpusReceive? {
           "case26" => @tutuca.bad_payload(name, "Int", args)
           "case27" => @tutuca.bad_payload(name, "String", args)
           "case28" => @tutuca.bad_payload(name, "String", args)
+          "case29" => @tutuca.bad_payload(name, "String", args)
           _ => ()
         }
         Unknown(name, args)
@@ -290,6 +293,7 @@ pub fn CorpusReceive::to_dispatch(
     Case26(a0) => ("case26", [Num(a0.to_double())])
     Case27(a0) => ("case27", [Str(a0)])
     Case28(a0) => ("case28", [Str(a0)])
+    Case29(a0) => ("case29", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
 }
@@ -423,7 +427,7 @@ pub let corpus_global_style : String = ""
 impl @component.Fields for CorpusState with fn schema() {
   @component.SchemaInfo::new(
     name="Corpus",
-    fingerprint="a796e15bdbd4635f",
+    fingerprint="738db89bf4d2da03",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
@@ -438,7 +442,7 @@ impl @component.Fields for CorpusState with fn schema() {
     receives=[
       "case0", "case1", "case2", "case3", "case4", "case5", "case6", "case7", "case8",
       "case9", "case10", "case11", "case12", "case13", "case14", "case15", "case16",
-      "case17", "case26", "case27", "case28",
+      "case17", "case26", "case27", "case28", "case29",
     ],
     intents=[
       "case18", "case19", "case20", "case21", "case22", "case23", "case24", "case25",

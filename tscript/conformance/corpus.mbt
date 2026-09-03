@@ -449,9 +449,13 @@ pub(all) struct Case {
 
 ///|
 /// The v2 schema: the same fields, with the three message variants down to
-/// two. `SaveDraftOk` and `SaveDraftError` are declared because declaring them
+/// two. `SaveDraftOk` and `SaveDraftFailed` are declared because declaring them
 /// is what makes `saveDraft` a request rather than a notification (design
 /// section 6), and a row below turns on that being visible in the schema.
+///
+/// `saveDraftError` is the RETIRED spelling of the failure arm, kept beside its
+/// replacement for one release: both are declared here so a backend is held to
+/// answering the old name as well as the new one.
 fn v2_schema() -> String {
   (
     #|struct Label { text: String, done: Bool }
@@ -467,7 +471,7 @@ fn v2_schema() -> String {
     #|  note   : String?
     #|}
     #|handle C {
-    #|  message { resetTo(Int), saveDraftOk(Int), saveDraftError(String) }
+    #|  message { resetTo(Int), saveDraftOk(Int), saveDraftFailed(String), saveDraftError(String) }
     #|  intent { saveDraft(String), picked(Int) }
     #|}
   )
@@ -810,7 +814,17 @@ pub fn cases() -> Array[Case] {
       after=Some(with_fields({ "count": Num(7) })),
     ),
     recv_case(
-      "an error answer arrives as an ordinary message too",
+      "a failure answer arrives as an ordinary message too",
+      "receive saveDraftFailed(why) { .name = why }",
+      "saveDraftFailed",
+      args=[Str("disk full")],
+      after=Some(with_fields({ "name": Str("disk full") })),
+    ),
+    // The retired spelling, which a backend still has to answer for one
+    // release. It is an ordinary `receive` name and always was — what changed
+    // is which name the WALK derives, and that is not what this row is about.
+    recv_case(
+      "the retired Error spelling still names an arm",
       "receive saveDraftError(why) { .name = why }",
       "saveDraftError",
       args=[Str("disk full")],

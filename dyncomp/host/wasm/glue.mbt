@@ -333,7 +333,7 @@ fn intent_opts(j : Json?) -> @tutuca.IntentOpts {
   if route.is_empty() {
     return @tutuca.IntentOpts::new(
       on_ok_name?=name("onOk"),
-      on_error_name?=name("onError"),
+      on_failed_name?=name("onFailed"),
       on_unhandled_name?=name("onUnhandled"),
       live_path=o.get("livePath") is Some(True),
     )
@@ -341,7 +341,7 @@ fn intent_opts(j : Json?) -> @tutuca.IntentOpts {
   @tutuca.IntentOpts::new(
     route~,
     on_ok_name?=name("onOk"),
-    on_error_name?=name("onError"),
+    on_failed_name?=name("onFailed"),
     on_unhandled_name?=name("onUnhandled"),
     live_path=o.get("livePath") is Some(True),
   )

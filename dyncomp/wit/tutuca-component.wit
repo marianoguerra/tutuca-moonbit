@@ -24,7 +24,7 @@
 /// the host for over an intent, and the host decides per call — and it never
 /// touches the DOM — its views are DATA the host compiles. See ../SECURITY.md
 /// for what that does and does not cover.
-package tutuca:component@0.11.0;
+package tutuca:component@0.12.0;
 
 /// Dynamic values crossing the boundary. WIT has no recursive types, so
 /// scalars travel inline and compounds are u64 handles into a host-side
@@ -302,7 +302,9 @@ interface control {
     /// HOST supplies, so a guest that says nothing cannot disagree with it.
     route: list<leg>,
     on-ok: option<string>,
-    on-error: option<string>,
+    /// `Failed` and not `Error`, because that is what happened: a handler ran
+    /// and did not succeed. It is the field the host's `on_failed_name` fills.
+    on-failed: option<string>,
     on-unhandled: option<string>,
     /// Resolve the answering component by its path as it is WHEN THE ANSWER
     /// ARRIVES rather than pinning the keys at dispatch time (host
@@ -339,7 +341,7 @@ interface control {
   /// arrives at the sender as `<name>Ok`.
   reply: func(v: value);
 
-  /// Answer it with a failure, and end the walk: `<name>Error`.
+  /// Answer it with a failure, and end the walk: `<name>Failed`.
   fail: func(e: value);
 
   /// Send a message to self: arrives as a later handle-message(name, ...).

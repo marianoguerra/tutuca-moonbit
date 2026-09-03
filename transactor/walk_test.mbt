@@ -47,7 +47,7 @@ impl @tutuca.Obj for WItem with fn handler(_self, bucket, name) {
             args,
             @tutuca.IntentOpts::new(
               on_ok_name="saveDraftOk",
-              on_error_name="saveDraftError",
+              on_failed_name="saveDraftFailed",
               on_unhandled_name="saveDraftUnhandled",
             ),
           )
@@ -60,7 +60,7 @@ impl @tutuca.Obj for WItem with fn handler(_self, bucket, name) {
           ctx.intent(
             "saveDraft",
             args,
-            @tutuca.IntentOpts::new(on_error_name="saveDraftError"),
+            @tutuca.IntentOpts::new(on_failed_name="saveDraftFailed"),
           )
           None
         }),
@@ -102,8 +102,8 @@ impl @tutuca.Obj for WItem with fn handler(_self, bucket, name) {
     // The answers, which arrive as ordinary messages.
     (Receive, "saveDraftOk") =>
       Some(Handler((args, _ctx) => Some(witem("ok:" + show_args(args)))))
-    (Receive, "saveDraftError") =>
-      Some(Handler((args, _ctx) => Some(witem("error:" + show_args(args)))))
+    (Receive, "saveDraftFailed") =>
+      Some(Handler((args, _ctx) => Some(witem("failed:" + show_args(args)))))
     (Receive, "saveDraftUnhandled") =>
       Some(Handler((args, _ctx) => Some(witem("unhandled:" + show_args(args)))))
     _ => None
@@ -281,7 +281,7 @@ fn root_seen(root : @tutuca.Value) -> String {
 /// the intent go" looks like from outside.
 fn trace(tx : @transactor.Transactor) -> Array[String] {
   let out : Array[String] = []
-  let _ = tx.observe(r => out.push(r.kind.label() + ":" + r.name))
+  let _ = tx.observe(r => out.push(r.kind_label() + ":" + r.name))
   out
 }
 
@@ -355,11 +355,11 @@ test "the one-shot is per intent, across hops" {
 }
 
 ///|
-test "fail answers with the error name" {
+test "fail answers with the failed name" {
   let tx = @transactor.Transactor::new(tree("fail", "reply"))
   let _ = tx.push_send(item_at(), "go-answered", [])
   tx.settle() |> ignore
-  assert_eq(item_seen(tx.root), "error:RStr(\"panel-failed\")")
+  assert_eq(item_seen(tx.root), "failed:RStr(\"panel-failed\")")
   // The walk ended, so Root never ran.
   assert_eq(root_seen(tx.root), "")
 }
@@ -385,11 +385,11 @@ test "route exhaustion: Unhandled declared, and it carries the intent's own argu
 }
 
 ///|
-test "route exhaustion: only Error declared, so it gets noHandler" {
+test "route exhaustion: only Failed declared, so it gets noHandler" {
   let tx = @transactor.Transactor::new(tree("none", "none"))
   let _ = tx.push_send(item_at(), "go-error-only", [Str("draft")])
   tx.settle() |> ignore
-  assert_eq(item_seen(tx.root), "error:RStr(\"noHandler\")")
+  assert_eq(item_seen(tx.root), "failed:RStr(\"noHandler\")")
 }
 
 ///|
@@ -584,7 +584,21 @@ test "INTENT_DEPTH cuts a walk that will not end, and the sender is told" {
 }
 
 ///|
-test "a sender that declared Ok alone hears about an intent nobody answered" {
+test "a sender that declared Ok alone hears the derived Unhandled" {
+  let tx = @transactor.Transactor::new(tree("none", "none"))
+  let _ = tx.push_send(item_at(), "go-lex", [Str("d")])
+  tx.settle() |> ignore
+  // `go-lex` declares `on_ok_name` and nothing else, so nothing NAMES the
+  // exhausted outcome — and it is derived, the way `Ok` and `Failed` are, and
+  // carries the intent's own arguments the way a declared `Unhandled` does. A
+  // sender that has no arm for it hears a `NO_HANDLER` refusal naming
+  // `saveDraftUnhandled`, which says more than one naming the intent did.
+  assert_eq(item_seen(tx.root), "unhandled:RStr(\"d\")")
+}
+
+///|
+/// …and a sender that declared nothing still hears nothing.
+test "a sender that declared no arm at all is sending a notification" {
   let refusals : Array[String] = []
   let restore = @tutuca.on_runtime_notice(n => {
     match n {
@@ -593,12 +607,11 @@ test "a sender that declared Ok alone hears about an intent nobody answered" {
     }
   })
   let tx = @transactor.Transactor::new(tree("none", "none"))
-  let _ = tx.push_send(item_at(), "go-lex", [])
+  let _ = tx.push_send(item_at(), "go", [Str("d")])
   tx.settle() |> ignore
   restore()
-  // `go-lex` declares on_ok_name and nothing else. No answer arrives, and the
-  // question does not disappear in silence.
-  assert_true(refusals.contains("NO_HANDLER"))
+  assert_eq(item_seen(tx.root), "")
+  assert_false(refusals.contains("NO_HANDLER"))
 }
 
 ///|

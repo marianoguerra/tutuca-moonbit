@@ -15,6 +15,7 @@
 /// this struct lacks fails generation.
 pub(all) struct ActivityEntryState {
   kind : String
+  origin : String
   name : String
   handlerName : String
   matched : String
@@ -36,6 +37,7 @@ pub(all) struct ActivityEntryState {
 pub fn ActivityEntryState::zero() -> ActivityEntryState {
   {
     kind: "",
+    origin: "",
     name: "",
     handlerName: "",
     matched: "",
@@ -57,6 +59,7 @@ pub fn ActivityEntryState::zero() -> ActivityEntryState {
 impl @component.Fields for ActivityEntryState with fn encode(s) {
   let out : Map[String, @tutuca.Value] = Map([])
   out["kind"] = Str(s.kind)
+  out["origin"] = Str(s.origin)
   out["name"] = Str(s.name)
   out["handlerName"] = Str(s.handlerName)
   out["matched"] = Str(s.matched)
@@ -79,6 +82,7 @@ impl @component.Fields for ActivityEntryState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for ActivityEntryState with fn decode(f) {
   guard f.get("kind") is Some(Str(v_kind)) else { return None }
+  guard f.get("origin") is Some(Str(v_origin)) else { return None }
   guard f.get("name") is Some(Str(v_name)) else { return None }
   guard f.get("handlerName") is Some(Str(v_handlerName)) else { return None }
   guard f.get("matched") is Some(Str(v_matched)) else { return None }
@@ -101,6 +105,7 @@ impl @component.Fields for ActivityEntryState with fn decode(f) {
   guard f.get("hasAfter") is Some(Bool(v_hasAfter)) else { return None }
   Some({
     kind: v_kind,
+    origin: v_origin,
     name: v_name,
     handlerName: v_handlerName,
     matched: v_matched,
@@ -130,9 +135,10 @@ pub let activity_entry_global_style : String = ""
 impl @component.Fields for ActivityEntryState with fn schema() {
   @component.SchemaInfo::new(
     name="ActivityEntry",
-    fingerprint="c465846c05bd1e60",
+    fingerprint="d245eba97ac9dbb6",
     fields=[
       @component.FieldInfo::new("kind", TyText),
+      @component.FieldInfo::new("origin", TyText),
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("handlerName", TyText),
       @component.FieldInfo::new("matched", TyText),
@@ -146,6 +152,14 @@ impl @component.Fields for ActivityEntryState with fn schema() {
     invariants=["hasAfterTracksAfter"],
     domains=[
       { field: "matched", domain: DOneOf([Str("exact"), Str("none")]), },
+      {
+        field: "kind",
+        domain: DOneOf([Str("receive"), Str("intent"), Str("answer")]),
+      },
+      {
+        field: "origin",
+        domain: DOneOf([Str("host"), Str("view"), Str("handler")]),
+      },
       { field: "name", domain: DNonEmpty, },
     ],
     view_names=["main"],

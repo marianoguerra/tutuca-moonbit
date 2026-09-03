@@ -45,7 +45,7 @@ pub let request_example_spec_source : String =
   #|    message {
   #|    init
   #|    loadDataOk(Any)
-  #|    loadDataError(String)
+  #|    loadDataFailed(String)
   #|    loadDataUnhandled
   #|
   #|    }
@@ -230,7 +230,7 @@ fn request_example_inline_update(
           @tutuca.IntentOpts::new(
             route=[@tutuca.Leg::Lex],
             on_ok_name="loadDataOk",
-            on_error_name="loadDataError",
+            on_failed_name="loadDataFailed",
             on_unhandled_name="loadDataUnhandled",
           ),
         )

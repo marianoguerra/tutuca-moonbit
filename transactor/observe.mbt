@@ -16,33 +16,25 @@
 // of twelve sends from one click is twelve unrelated rows.
 
 ///|
-pub fn ObserveKind::label(self : ObserveKind) -> String {
-  match self {
-    Receive => "receive"
-    Intent => "intent"
-    Answer => "answer"
-  }
-}
-
-///|
-/// The kind a dispatch through `bucket` is observed as.
-///
-/// `Answer` is the one kind with no bucket behind it: an answer is dispatched
-/// as an ordinary `Receive` and a handler cannot tell it from a parent's
-/// message, so the two enums are not the same enum. Every bucket has exactly
-/// one kind, and this is where that is said.
-pub fn ObserveKind::of_bucket(bucket : @tutuca.HandlerBucket) -> ObserveKind {
-  match bucket {
-    Receive => Receive
-    Intent => Intent
-  }
-}
-
-///|
 pub fn ObserveMatch::label(self : ObserveMatch) -> String {
   match self {
     Exact => "exact"
     NoHandler => "none"
+  }
+}
+
+///|
+/// The three words a reader sees: the bucket's, or `answer`.
+///
+/// An answer is dispatched as an ordinary `Receive` and a handler cannot tell
+/// it from a parent's message — that is the claim, so `bucket` must not know.
+/// An INSPECTOR needs to, and this is the one place that folds the two things
+/// the record holds into the one word it shows.
+pub fn ObserveRecord::kind_label(self : ObserveRecord) -> String {
+  if self.is_answer {
+    "answer"
+  } else {
+    self.bucket.label()
   }
 }
 
@@ -54,9 +46,15 @@ pub fn ObserveMatch::label(self : ObserveMatch) -> String {
 /// the other. `after` is absent — not null — when the handler made no change,
 /// which is the distinction the whole no-op path turns on; `walk` and `parent`
 /// are absent when there is nothing to point at.
+///
+/// `kind` is the bucket's word, except for an answer, which says so: those are
+/// the three words a reader has always seen, now derived from the two things
+/// the record actually holds rather than from a third enum that folded them.
+/// `origin` is beside it, and says who raised the dispatch.
 pub fn ObserveRecord::to_json(self : ObserveRecord) -> Json {
   let obj : Map[String, Json] = {
-    "kind": Json::string(self.kind.label()),
+    "origin": Json::string(self.origin.label()),
+    "kind": Json::string(self.kind_label()),
     "name": Json::string(self.name),
     "matched": Json::string(self.matched.label()),
     "path": Json::string(@tutuca.step_keys_label(self.path_keys)),

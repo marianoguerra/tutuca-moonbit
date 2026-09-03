@@ -122,7 +122,7 @@ function prefixScripts(source, prefix) {
 // call site for why the concatenated corpus cannot keep them.
 function stripStateBlocks(source) {
   return source.replace(
-    /<script type="tutuca\/(?:state|init)">[\s\S]*?<\/script>\n?/g,
+    /<script type="tutuca\/(?:spec|state|init)">[\s\S]*?<\/script>\n?/g,
     "",
   );
 }

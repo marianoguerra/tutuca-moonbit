@@ -17,7 +17,7 @@ pub let loader_bar_common_style : String
 
 pub fn loader_bar_comp(samples? : Array[LoaderBarSample], show_url? : Bool, status? : String, notify? : (LoaderEvent, &@core.Ctx) -> Unit) -> @component.Component
 
-pub fn loader_bar_component(name? : String, views? : Map[String, @anode.View], init? : LoaderBarState, common_style? : String, global_style? : String, update? : (LoaderBarState, @core.Dispatch, &@core.Ctx) -> @component.Update[LoaderBarState], swap? : (LoaderBarInput) -> ((LoaderBarState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn loader_bar_component(name? : String, views? : Map[String, @anode.View], init? : LoaderBarState, common_style? : String, global_style? : String, update? : (LoaderBarState, @core.Dispatch, &@core.Ctx) -> @component.Update[LoaderBarState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let loader_bar_global_style : String
 

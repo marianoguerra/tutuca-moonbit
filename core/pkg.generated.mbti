@@ -131,13 +131,6 @@ pub fn DispatchPath::push_frame(Self, Path) -> Self
 pub fn DispatchPath::push_item(Self, DispatchStep) -> Self
 pub fn DispatchPath::to_transaction_path(Self) -> Path
 
-pub(all) enum DispatchProvenance {
-  Host
-  View
-  Component
-  Diagnostic
-} derive(Eq, @debug.Debug)
-
 pub(all) enum DispatchStep {
   Plain(step~ : Step, origin~ : Int?)
 } derive(Eq, @debug.Debug)
@@ -260,6 +253,7 @@ pub(all) enum HandlerBucket {
   Receive
   Intent
 } derive(Eq, @debug.Debug)
+pub fn HandlerBucket::label(Self) -> String
 pub fn HandlerBucket::ordinal(Self) -> Int
 
 pub(all) enum IntentAnswer {
@@ -279,11 +273,11 @@ pub(all) struct IntentFn((IntentCall, (IntentAnswer) -> Unit) -> Unit)
 pub(all) struct IntentOpts {
   route : Array[Leg]
   on_ok_name : String?
-  on_error_name : String?
+  on_failed_name : String?
   on_unhandled_name : String?
   live_path : Bool
 } derive(Eq, @debug.Debug)
-pub fn IntentOpts::new(route? : Array[Leg], on_ok_name? : String, on_error_name? : String, on_unhandled_name? : String, live_path? : Bool) -> Self
+pub fn IntentOpts::new(route? : Array[Leg], on_ok_name? : String, on_failed_name? : String, on_unhandled_name? : String, live_path? : Bool, on_error_name? : String) -> Self
 
 pub(all) enum Leg {
   Dyn
@@ -327,6 +321,22 @@ pub(all) enum OpFamily {
   FMul
 } derive(Eq, @debug.Debug)
 
+pub(all) enum Origin {
+  Host
+  View
+  Handler
+} derive(Eq, @debug.Debug)
+pub fn Origin::is_external(Self) -> Bool
+pub fn Origin::label(Self) -> String
+
+#alias(PropertyWrite)
+pub(all) enum Outcome {
+  Missing
+  Unchanged
+  Refused(Refusal)
+  Changed(Value)
+}
+
 pub(all) struct Path {
   steps : Array[Step]
 } derive(Eq, @debug.Debug)
@@ -355,6 +365,7 @@ pub fn PathChanges::index(Self, String, Int) -> Self
 pub fn PathChanges::intent(Self, String, Array[Value], opts? : IntentOpts) -> Unit
 pub fn PathChanges::key(Self, String, String) -> Self
 pub fn PathChanges::send(Self, String, Array[Value]) -> Unit
+pub fn PathChanges::set(Self, String, Value) -> Unit
 
 pub(all) enum PathKey {
   KInt(Int)
@@ -407,13 +418,6 @@ pub(all) struct PropertyInfo {
   public_ : Bool
   writable : Bool
 } derive(Eq, @debug.Debug)
-
-pub(all) enum PropertyWrite {
-  PMissing
-  PUnchanged
-  PRefused
-  PChanged(Value)
-}
 
 pub(all) struct ProtocolBindingInfo {
   protocol_id : String
@@ -655,16 +659,16 @@ pub fn Value::map(Self) -> Map[String, Self]
 pub fn Value::map_opt(Self) -> Map[String, Self]?
 pub fn Value::member_at(Self, String, &Stack) -> Self?
 pub fn Value::method_at(Self, String, &Stack) -> Self?
-pub fn Value::mutate_member(Self, String, String, Array[Self]) -> PropertyWrite
+pub fn Value::mutate_member(Self, String, String, Array[Self]) -> Outcome
 pub fn Value::num(Self, default? : Double) -> Double
 pub fn Value::num_opt(Self) -> Double?
 pub fn Value::property(Self, String) -> Self
 pub fn Value::property_opt(Self, String) -> Self?
 pub fn Value::protocol_property(Self, String, String, &Stack) -> Self
 pub fn Value::schema(Self) -> SchemaInfo?
-pub fn Value::set_member(Self, String, Self) -> PropertyWrite
-pub fn Value::set_property(Self, String, Self) -> PropertyWrite
-pub fn Value::set_property_at(Self, Path, String, Self) -> PropertyWrite
+pub fn Value::set_member(Self, String, Self) -> Outcome
+pub fn Value::set_property(Self, String, Self) -> Outcome
+pub fn Value::set_property_at(Self, Path, String, Self) -> Outcome
 pub fn Value::size(Self, default? : Int) -> Int
 pub fn Value::snapshot(Self) -> Map[String, Self]
 pub fn Value::str(Self, default? : String) -> String
@@ -695,9 +699,10 @@ pub(open) trait Ctx {
   fn path(Self) -> DispatchPath = _
   fn target_path(Self) -> DispatchPath = _
   fn name(Self) -> String? = _
-  fn provenance(Self) -> DispatchProvenance = _
+  fn origin(Self) -> Origin = _
   fn send(Self, String, Array[Value]) -> Unit = _
   fn send_at_path(Self, DispatchPath, String, Array[Value]) -> Unit = _
+  fn set_member_at_path(Self, DispatchPath, String, Value) -> Unit = _
   fn intent(Self, String, Array[Value], IntentOpts) -> Unit = _
   fn intent_at_path(Self, DispatchPath, String, Array[Value], IntentOpts) -> Unit = _
   fn forward(Self, Array[Value]?, IntentOpts?) -> Unit = _
@@ -722,10 +727,10 @@ pub(open) trait Obj {
   fn field(Self, String) -> Value? = _
   fn with_field(Self, String, Value) -> Value? = _
   fn property(Self, String) -> Value? = _
-  fn set_property(Self, String, Value) -> PropertyWrite = _
+  fn set_property(Self, String, Value) -> Outcome = _
   fn member_at(Self, String, &Stack) -> Value? = _
-  fn set_member(Self, String, Value) -> PropertyWrite = _
-  fn mutate_member(Self, String, String, Array[Value]) -> PropertyWrite = _
+  fn set_member(Self, String, Value) -> Outcome = _
+  fn mutate_member(Self, String, String, Array[Value]) -> Outcome = _
   fn item(Self, PathKey) -> Value? = _
   fn with_item(Self, PathKey, Value) -> Value? = _
   fn seq_entries(Self) -> Array[(PathKey, Value)]? = _

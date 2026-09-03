@@ -41,7 +41,7 @@ pub fn Transactor::push_intent(
     dyn_at: path,
     args,
     opts,
-    origin: path,
+    sender: path,
     release,
     answered: false,
     stopped: false,
@@ -52,10 +52,10 @@ pub fn Transactor::push_intent(
     // offer, answer and reply can point back at it.
     w.raise_seq = self.next_record_seq()
     self.recorder.on_dispatch({
-      source: if parent is None {
-        Extern
+      origin: if parent is None {
+        Host
       } else {
-        Derived
+        Handler
       },
       bucket: Intent,
       name,
@@ -102,7 +102,7 @@ fn Transactor::advance_walk(self : Transactor, w : IntentWalk) -> Unit {
         // The whole leg, inside the transaction that is already running: the
         // handlers come back as a chain and a `Pass` moves to the next one
         // with a call rather than a queue step.
-        let leaf = w.origin.to_transaction_path().lookup(self.root)
+        let leaf = w.sender.to_transaction_path().lookup(self.root)
         let handlers = match leaf {
           Some(l) => self.intents.intents_for(l, w.name)
           None => []
@@ -138,17 +138,19 @@ fn Transactor::queue_hop(self : Transactor, w : IntentWalk) -> Unit {
     self.exhaust_walk(w)
     return
   }
+  // A hop is derived even at the head of the walk: the WALK caused it, and a
+  // walk is not a transaction, so there is no parent to say so. What raised
+  // the walk itself is recorded once, on the walk.
   let t = self.mk_txn(
     w.dyn_at,
     Intent,
     w.name,
     w.args,
-    target_path=w.origin,
+    origin=Handler,
+    target_path=w.sender,
     walk=w,
   )
-  // Derived, and it has no parent transaction to say so: the WALK caused this
-  // hop, and a walk is not a transaction.
-  self.enqueue(t, Derived)
+  self.enqueue(t)
 }
 
 ///|
@@ -180,18 +182,18 @@ fn Transactor::try_lex(
         rule: "",
         sentence: "",
         state: self.root,
-        path: w.origin.to_transaction_path(),
+        path: w.sender.to_transaction_path(),
       })
     }
     self.exhaust_walk(w)
     return
   }
   let IntentFn(f) = handlers[i]
-  let from = w.origin.to_transaction_path().pin_keys(self.root)
+  let from = w.sender.to_transaction_path().pin_keys(self.root)
   let call : @tutuca.IntentCall = {
     name: w.name,
     args: w.args,
-    from: w.origin,
+    from: w.sender,
   }
   // The boundary, made visible. A lexical hop is invoked inline rather than
   // queued as a transaction, so nothing here ever reached an observer: a log
@@ -205,11 +207,13 @@ fn Transactor::try_lex(
   // existing at all.
   if self.watched() {
     self.emit_record(
+      Handler,
       Intent,
+      false,
       w.name,
       w.args,
       from,
-      w.origin,
+      w.sender,
       Exact,
       None,
       None,
@@ -278,7 +282,7 @@ fn Transactor::answer_walk(
   // would be unobservable if it derived a name too.
   let (name, args) = match result {
     Ok(v) => (w.opts.on_ok_name.unwrap_or(w.name + "Ok"), [v])
-    Err(e) => (w.opts.on_error_name.unwrap_or(w.name + "Error"), [e])
+    Err(e) => (w.opts.on_failed_name.unwrap_or(w.name + "Failed"), [e])
   }
   self.deliver_answer(w, name, args)
 }
@@ -300,24 +304,21 @@ fn Transactor::exhaust_walk(self : Transactor, w : IntentWalk) -> Unit {
     // without having kept a copy.
     Some(n) => self.deliver_answer(w, n, w.args)
     None =>
-      match w.opts.on_error_name {
+      match w.opts.on_failed_name {
         Some(n) => self.deliver_answer(w, n, [Str("noHandler")])
-        None => {
-          // A sender that declared `Ok` alone still asked a question, so the
-          // missing answer is reported rather than dropped. A sender that
-          // declared nothing asked nothing.
-          if w.opts.on_ok_name is Some(_) && @tutuca.refusing() {
-            @tutuca.refuse({
-              code: NoHandler,
-              asked: w.name,
-              rule: "",
-              sentence: "",
-              state: self.root,
-              path: w.origin.to_transaction_path(),
-            })
+        // A sender that declared `Ok` alone still asked a question, so the
+        // missing answer is DELIVERED rather than dropped — under the derived
+        // name, the way `Ok` and `Failed` are derived, and carrying the
+        // intent's own arguments the way a declared `Unhandled` does. If the
+        // sender has no arm for it, that lands as a `NO_HANDLER` refusal
+        // naming `<n>Unhandled`, which says more than a refusal naming the
+        // intent did. A sender that declared nothing asked nothing.
+        None =>
+          if w.opts.on_ok_name is Some(_) {
+            self.deliver_answer(w, w.name + "Unhandled", w.args)
+          } else {
+            self.release_walk(w)
           }
-          self.release_walk(w)
-        }
       }
   }
 }
@@ -344,7 +345,7 @@ fn Transactor::deliver_answer(
   args : Array[@tutuca.Value],
 ) -> Unit {
   let cur_root = self.root
-  let txn_path = w.origin.to_transaction_path()
+  let txn_path = w.sender.to_transaction_path()
   let res_path = if w.opts.live_path {
     None
   } else {
@@ -354,10 +355,11 @@ fn Transactor::deliver_answer(
   // advance one — the walk is already over, and `after_transaction` advances
   // whatever `walk` names.
   let t = self.mk_txn(
-    w.origin,
+    w.sender,
     Receive,
     name,
     args,
+    origin=Handler,
     txn_path?=res_path,
     walk_id=w.id,
     walk_parent=w.raise_seq,
@@ -373,7 +375,7 @@ fn Transactor::deliver_answer(
     }
     None => ()
   }
-  self.enqueue(t, Derived)
+  self.enqueue(t)
 }
 
 ///|

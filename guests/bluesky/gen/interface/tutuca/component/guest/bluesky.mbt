@@ -1187,7 +1187,7 @@ impl DynComponent for Post with fn handle_dispatch(self, bucket, name, _args) {
         {
           route: [DYN],
           on_ok: None,
-          on_error: None,
+          on_failed: None,
           on_unhandled: None,
           live_path: false,
         },
@@ -1205,7 +1205,7 @@ impl DynComponent for Post with fn handle_dispatch(self, bucket, name, _args) {
         {
           route: [DYN],
           on_ok: None,
-          on_error: None,
+          on_failed: None,
           on_unhandled: None,
           live_path: false,
         },
@@ -1228,7 +1228,7 @@ impl DynComponent for Post with fn handle_dispatch(self, bucket, name, _args) {
         {
           route: [DYN],
           on_ok: None,
-          on_error: None,
+          on_failed: None,
           on_unhandled: None,
           live_path: false,
         },
@@ -2512,7 +2512,7 @@ impl DynComponent for Profile with fn handle_dispatch(self, bucket, name, _args)
         {
           route: [DYN],
           on_ok: None,
-          on_error: None,
+          on_failed: None,
           on_unhandled: None,
           live_path: false,
         },

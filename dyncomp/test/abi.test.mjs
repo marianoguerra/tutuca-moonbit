@@ -35,7 +35,7 @@ test('host ABI loads a core-only guest and preserves event results', async () =>
     log: () => {}, send: () => {}, sendAt: () => {},
     intent: () => {}, intentAt: () => {}, forward: () => {},
     reply: () => {}, fail: () => {}, stopPropagation: () => {},
-    // 0.11.0: fixed handler/render operations and public properties.
+    // 0.12.0: fixed handler/render operations and public properties.
     // no ancestor has nothing to answer with, so nil is the truth here.
     sendReply: () => {}, lookup: () => ({ tag: 'nil' }),
     after: () => {}, makeInstance: () => 0n, dropInstance: () => {},
@@ -47,7 +47,7 @@ test('host ABI loads a core-only guest and preserves event results', async () =>
       'tutuca:component/control': control,
     },
     {
-      world: 'tutuca:component@0.11.0',
+      world: 'tutuca:component@0.12.0',
       encoding: 'utf16',
       core: 'counter.component.core.wasm',
     },

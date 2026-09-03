@@ -28,4 +28,4 @@ extern "wasm" fn mbt_ffi_ptr2str(ptr : Int, len : Int) -> String =
   #| local.get 0)
 
 ///|
-fn wasmImportGet(p0 : Int, p1 : Int, p2 : Int) = "tutuca:component/config@0.11.0" "get"
+fn wasmImportGet(p0 : Int, p1 : Int, p2 : Int) = "tutuca:component/config@0.12.0" "get"

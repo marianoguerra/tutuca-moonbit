@@ -37,7 +37,7 @@ not happen is the one outcome nobody can reason about afterwards.
   /// `intent lex 'loadData'` a request rather than a notification — the
   /// generator reads this list and fills the intent's opts in.
   handle Feed {
-    message { init, loadDataOk(Array[Any]), loadDataError(String),
+    message { init, loadDataOk(Array[Any]), loadDataFailed(String),
                  loadDataUnhandled
     }
   }
@@ -76,7 +76,7 @@ not happen is the one outcome nobody can reason about afterwards.
     .items = rows
     .isLoading = false
   }
-  receive loadDataError(e) {
+  receive loadDataFailed(e) {
     .error = e
     .isLoading = false
   }
@@ -114,7 +114,7 @@ Pick by **what you know**: `send` / `receive` when you can name the target,
 two call sites sharing one body — and `sendAt &.status 'flash' .draft`
 addresses a position, where `&.status` denotes the place and `.status` would
 denote what is there. Every intent ends in exactly one of three named answers
-— `<name>Ok`, `<name>Error`, `<name>Unhandled` — dispatched back to the sender
+— `<name>Ok`, `<name>Failed`, `<name>Unhandled` — dispatched back to the sender
 as ordinary `receive` arms. `<name>Unhandled` means the route ran out with
 nobody claiming it, which is a different sentence from a handler failing.
 
@@ -146,7 +146,7 @@ update=(s : FeedState, msg, ctx) => match msg {
     ctx.intent("loadData", [], @tutuca.IntentOpts::new(
       route=[Lex],
       on_ok_name="loadDataOk",
-      on_error_name="loadDataError",
+      on_failed_name="loadDataFailed",
       on_unhandled_name="loadDataUnhandled",
     ))
     Next({ ..s, isLoading: true })

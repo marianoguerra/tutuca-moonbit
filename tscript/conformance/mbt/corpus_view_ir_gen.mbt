@@ -39,7 +39,7 @@ pub let corpus_spec_source : String =
   #|    note   : String?
   #|  }
   #|  handle Corpus {
-  #|    message { case0, case1, case2(Int), case3(String), case4(Int), case5(String), case6(String), case7(String), case8(String), case9(String), case10, case11, case12(Int), case13, case14, case15, case16, case17, case26(Int), case27(String), case28(String) }
+  #|    message { case0, case1, case2(Int), case3(String), case4(Int), case5(String), case6(String), case7(String), case8(String), case9(String), case10, case11, case12(Int), case13, case14, case15, case16, case17, case26(Int), case27(String), case28(String), case29(String) }
   #|    intent { case18(String), case19(String), case20(Int), case21(Int), case22(String), case23(String), case24(String), case25(String) }
   #|  }
 
@@ -364,6 +364,11 @@ fn corpus_inline_update(
       Next(s)
     }
     Receive("case28", args) => {
+      guard args.get(0) is Some(Str(why_)) else { return Unchanged }
+      let s = { ..s, name: why_, }
+      Next(s)
+    }
+    Receive("case29", args) => {
       guard args.get(0) is Some(Str(s_)) else { return Unchanged }
       let s = { ..s, name: s_, }
       Next(s)

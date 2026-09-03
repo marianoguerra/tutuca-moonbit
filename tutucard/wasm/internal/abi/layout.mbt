@@ -108,14 +108,14 @@ pub let pool_base : Int = 1024
 
 ///|
 /// The guest world's names, spelled once.
-pub let guest_iface : String = "tutuca:component/guest@0.11.0"
+pub let guest_iface : String = "tutuca:component/guest@0.12.0"
 
 ///|
 /// The namespace an exported resource's intrinsics are imported from.
-pub let resource_iface : String = "[export]tutuca:component/guest@0.11.0"
+pub let resource_iface : String = "[export]tutuca:component/guest@0.12.0"
 
 ///|
-pub let control_iface : String = "tutuca:component/control@0.11.0"
+pub let control_iface : String = "tutuca:component/control@0.12.0"
 
 ///|
 /// The card compiler's two handler categories. The fixed WIT operations pick

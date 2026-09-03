@@ -109,7 +109,8 @@ test "observe: send records carry kind, matched, before/after and pinned keys" {
   tx.settle() |> ignore
   assert_eq(records.length(), 2)
   let r0 = records[0]
-  assert_true(r0.kind is Receive)
+  assert_true(r0.bucket is Receive)
+  assert_false(r0.is_answer)
   assert_eq(r0.name, "rename")
   assert_true(r0.matched is Exact)
   assert_true(r0.before is Some(Obj(_)))
@@ -125,10 +126,10 @@ test "observe: bubble chains emit one record per hop; skipSelf emits none" {
   let root : @tutuca.Value = Map({ "sheet": Obj(OSheet::{ title: "a", }) })
   let node : @tutuca.Value = root
   let tx = @transactor.Transactor::new(node)
-  let kinds : Array[@transactor.ObserveKind] = []
+  let kinds : Array[String] = []
   let names : Array[String] = []
   let _un = tx.observe(r => {
-    kinds.push(r.kind)
+    kinds.push(r.kind_label())
     names.push(r.name)
   })
   let p = @tutuca.DispatchPath::of_steps([FieldStep("sheet")])
@@ -137,7 +138,7 @@ test "observe: bubble chains emit one record per hop; skipSelf emits none" {
   // the receive that raised the intent, then one Intent hop at the root: the
   // `dyn` leg starts at the sender's PARENT, so the sender is not offered its
   // own intent and emits no hop of its own.
-  assert_true(kinds is [Receive, Intent])
+  assert_eq(kinds, ["receive", "intent"])
   assert_true(names is ["poke-up", "poked"])
 }
 
@@ -226,7 +227,7 @@ test "observe: a record serializes, state change and all" {
   inspect(
     records[0].to_json().stringify(),
     content=(
-      #|{"kind":"receive","name":"rename","matched":"exact","path":"sheet","pathKeys":[{"f":"sheet"}],"seq":1,"args":["b"],"before":{"title":"a"},"after":{"title":"b"}}
+      #|{"origin":"host","kind":"receive","name":"rename","matched":"exact","path":"sheet","pathKeys":[{"f":"sheet"}],"seq":1,"args":["b"],"before":{"title":"a"},"after":{"title":"b"}}
     ),
   )
   // A handler that answered nothing has NO `after` key — absent, not null,

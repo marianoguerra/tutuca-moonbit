@@ -37,16 +37,39 @@ let retired_builtins : Map[String, String] = {
 let retired_keywords : Map[String, String] = Map([])
 
 ///|
-/// The retired derived answer names. Empty until one is renamed.
-let retired_answers : Map[String, String] = Map([])
+/// The retired answer SUFFIXES, each with the suffix that replaced it.
+///
+/// A suffix and not a whole name, because a derived answer name is the
+/// intent's own name plus one of three words — there is no fixed set of them
+/// to enumerate. `saveDraftError` and `reloadError` are the same retirement.
+let retired_answer_suffixes : Map[String, String] = {
+  "Error": "the outcome is `Failed` — write `<name>Failed`",
+}
 
 ///|
 /// For a name that still answers but is no longer the spelling, what to write
 /// instead. `None` for every name in current use.
+///
+/// `AnswerName` matches on the SUFFIX: the name is an intent's own plus one of
+/// three words, so there is nothing to enumerate but the words.
 pub fn retired(kind : RetiredKind, name : String) -> String? {
   match kind {
     BuiltinName => retired_builtins.get(name)
     KeywordName => retired_keywords.get(name)
-    AnswerName => retired_answers.get(name)
+    AnswerName => {
+      // The longest matching suffix, so a longer retirement can never be
+      // shadowed by a shorter one that happens to end it.
+      let mut best : (String, String)? = None
+      for suffix, advice in retired_answer_suffixes {
+        if name.length() <= suffix.length() || !name.has_suffix(suffix) {
+          continue
+        }
+        if best is Some((s, _)) && s.length() >= suffix.length() {
+          continue
+        }
+        best = Some((suffix, advice))
+      }
+      best.map(p => p.1)
+    }
   }
 }

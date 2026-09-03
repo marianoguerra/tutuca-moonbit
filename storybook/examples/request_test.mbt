@@ -31,7 +31,7 @@ test "request-example: the SAME component with a failing handler takes the error
   )
   h.send_at_root("init")
   inspect(h.find_all(".card-title").length(), content="0")
-  // The answer arrives as `loadDataError`, which is its OWN name and its own
+  // The answer arrives as `loadDataFailed`, which is its OWN name and its own
   // shape. A combined `[res, err]` payload on a default arm would mean a
   // split arm that matched it read the wrong slot.
   inspect(h.find_all(".loading").length(), content="0")
@@ -56,7 +56,7 @@ test "request-example: a scope that DECLINES is not a scope that failed" {
 }
 
 ///|
-test "request-example: onOkName / onErrorName route to different handlers" {
+test "request-example: onOkName / onFailedName route to different handlers" {
   let h = @harness.mount(
     request_module(intents=failing_request_handlers()),
     "RequestExample",

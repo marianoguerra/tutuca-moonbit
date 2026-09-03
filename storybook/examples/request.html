@@ -12,7 +12,7 @@
 
     /// The three outcomes are exclusive, and this is the pair that a reader
     /// of the handlers has to hold in their head otherwise: a request that
-    /// is still in flight has not failed yet. `loadDataError` clears the
+    /// is still in flight has not failed yet. `loadDataFailed` clears the
     /// flag as it sets the message, and this is what says why.
     invariant notFailedWhileLoading
       format 'the spinner is up and an error is already showing' {
@@ -35,7 +35,7 @@
     message {
     init
     loadDataOk(Any)
-    loadDataError(String)
+    loadDataFailed(String)
     loadDataUnhandled
 
     }

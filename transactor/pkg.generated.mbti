@@ -31,7 +31,7 @@ pub fn Completion::on_settled(Self, () -> Unit) -> Unit
 pub fn Completion::on_subtree_settled(Self, () -> Unit) -> Unit
 
 pub(all) struct Dispatched {
-  source : Source
+  origin : @core.Origin
   bucket : @core.HandlerBucket
   name : String
   args : Array[@core.Value]
@@ -52,7 +52,7 @@ pub struct IntentWalk {
   mut dyn_at : @core.DispatchPath
   mut args : Array[@core.Value]
   opts : @core.IntentOpts
-  origin : @core.DispatchPath
+  sender : @core.DispatchPath
   mut answered : Bool
   mut stopped : Bool
   mut hops : Int
@@ -71,14 +71,6 @@ pub(all) struct NullRecorder {
 }
 pub impl Recorder for NullRecorder
 
-pub(all) enum ObserveKind {
-  Receive
-  Intent
-  Answer
-} derive(Eq, @debug.Debug)
-pub fn ObserveKind::label(Self) -> String
-pub fn ObserveKind::of_bucket(@core.HandlerBucket) -> Self
-
 pub(all) enum ObserveMatch {
   Exact
   NoHandler
@@ -86,7 +78,9 @@ pub(all) enum ObserveMatch {
 pub fn ObserveMatch::label(Self) -> String
 
 pub(all) struct ObserveRecord {
-  kind : ObserveKind
+  origin : @core.Origin
+  bucket : @core.HandlerBucket
+  is_answer : Bool
   name : String
   args : Array[@core.Value]
   path : @core.Path
@@ -99,6 +93,7 @@ pub(all) struct ObserveRecord {
   walk : Int
   parent_seq : Int
 }
+pub fn ObserveRecord::kind_label(Self) -> String
 pub fn ObserveRecord::to_json(Self) -> Json
 
 pub(all) struct Offered {
@@ -116,17 +111,12 @@ pub(all) struct SettleResult {
   pending : Bool
 } derive(Eq, @debug.Debug)
 
-pub(all) enum Source {
-  Extern
-  Derived
-} derive(Eq, @debug.Debug)
-
 pub struct Transaction {
   path : @core.DispatchPath
   bucket : @core.HandlerBucket
   name : String
   args : Array[@core.Value]
-  provenance : @core.DispatchProvenance
+  origin : @core.Origin
   target_path : @core.DispatchPath
   txn_path : @core.Path?
   parent : Transaction?
@@ -142,18 +132,18 @@ pub struct Transactor {
 pub fn Transactor::clear_subscriptions(Self) -> Unit
 pub fn Transactor::has_pending(Self) -> Bool
 pub fn Transactor::intents(Self) -> &Intents
-pub fn Transactor::mutate_member(Self, @core.DispatchPath, String, String, Array[@core.Value]) -> @core.PropertyWrite
+pub fn Transactor::mutate_member(Self, @core.DispatchPath, String, String, Array[@core.Value]) -> @core.Outcome
 pub fn Transactor::new(@core.Value, intents? : &Intents, names? : &Names) -> Self
 pub fn Transactor::observe(Self, (ObserveRecord) -> Unit) -> () -> Unit
 pub fn Transactor::on_change(Self, (@core.Value, @core.Value) -> Unit) -> Unit
 pub fn Transactor::on_drained(Self, () -> Unit) -> Unit
 pub fn Transactor::push_intent(Self, @core.DispatchPath, String, Array[@core.Value], opts? : @core.IntentOpts, parent? : Transaction) -> IntentWalk
-pub fn Transactor::push_send(Self, @core.DispatchPath, String, Array[@core.Value], parent? : Transaction, origin? : @core.DispatchPath, provenance? : @core.DispatchProvenance) -> Transaction
+pub fn Transactor::push_send(Self, @core.DispatchPath, String, Array[@core.Value], parent? : Transaction, sender? : @core.DispatchPath, origin? : @core.Origin) -> Transaction
 pub fn Transactor::recorder(Self) -> &Recorder
 pub fn Transactor::reset_root(Self, @core.Value) -> Unit
 pub fn Transactor::set_intents(Self, &Intents) -> Unit
-pub fn Transactor::set_member(Self, @core.DispatchPath, String, @core.Value) -> @core.PropertyWrite
-pub fn Transactor::set_property(Self, @core.DispatchPath, String, @core.Value) -> @core.PropertyWrite
+pub fn Transactor::set_member(Self, @core.DispatchPath, String, @core.Value) -> @core.Outcome
+pub fn Transactor::set_property(Self, @core.DispatchPath, String, @core.Value) -> @core.Outcome
 pub fn Transactor::set_recorder(Self, &Recorder) -> Unit
 pub fn Transactor::settle(Self, max_turns? : Int) -> SettleResult
 

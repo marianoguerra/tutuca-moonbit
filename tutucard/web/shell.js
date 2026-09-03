@@ -920,7 +920,7 @@ function setPart(part) {
 // the other backend
 //
 // The card above is INTERPRETED. The same source also goes through
-// `tutucard/wasm`, which compiles it to a `tutuca:component@0.11.0` core wasm
+// `tutucard/wasm`, which compiles it to a `tutuca:component@0.12.0` core wasm
 // module — in this page, with no server and no toolchain — and the panel shows
 // what came out. Two answers to one card, side by side, so a difference between
 // them is visible rather than theoretical.

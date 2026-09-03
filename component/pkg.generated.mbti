@@ -11,7 +11,7 @@ import {
 // Values
 pub fn[E, H] build_bucket(Array[E], (E) -> String, (E) -> H?) -> Map[String, H]
 
-pub fn[S : @core.Fields] component(name~ : String, views~ : Map[String, @anode.View], init~ : S, common_style? : String, global_style? : String, update? : (S, @core.Dispatch, &@core.Ctx) -> Update[S], get_property? : Map[String, (S) -> @core.Value], set_property? : Map[String, (S, @core.Value) -> Update[S]], compute? : Map[String, (S, Array[@core.Value], &@core.Stack) -> @core.Value], swap? : Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?], when? : Map[String, (S, @core.Value, @core.Value, @core.Value, &@core.Stack) -> Bool], enrich? : Map[String, (S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value, &@core.Stack) -> Unit], enrich_scope? : Map[String, (S, &@core.Stack) -> Map[String, @core.Value]], loop_with? : Map[String, (S, @core.Value, LoopCtx) -> LoopWith], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[LookupSpec], spec? : String) -> Component
+pub fn[S : @core.Fields] component(name~ : String, views~ : Map[String, @anode.View], init~ : S, common_style? : String, global_style? : String, update? : (S, @core.Dispatch, &@core.Ctx) -> Update[S], get_property? : Map[String, (S) -> @core.Value], set_property? : Map[String, (S, @core.Value) -> Update[S]], compute? : Map[String, (S, Array[@core.Value], &@core.Stack) -> @core.Value], when? : Map[String, (S, @core.Value, @core.Value, @core.Value, &@core.Stack) -> Bool], enrich? : Map[String, (S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value, &@core.Stack) -> Unit], enrich_scope? : Map[String, (S, &@core.Stack) -> Map[String, @core.Value]], loop_with? : Map[String, (S, @core.Value, LoopCtx) -> LoopWith], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[LookupSpec], spec? : String) -> Component
 
 pub fn lookup_name(String) -> LookupSpec
 
@@ -32,7 +32,6 @@ pub struct Component {
   views : Map[String, @anode.View]
   common_style : String
   global_style : String
-  swap_names : Array[String]
   alter_names : Array[String]
   mut schema : @core.SchemaInfo
   spec : String
@@ -168,6 +167,8 @@ pub(all) enum Update[S] {
   Unhandled
   Unchanged
   Next(S)
+  Replace(@core.Value)
+  Refused(@core.Refusal)
 }
 
 // Type aliases

@@ -13,7 +13,7 @@ pub let counter_common_style : String
 
 pub fn counter_comp() -> @component.Component
 
-pub fn counter_component(name? : String, views? : Map[String, @anode.View], init? : CounterState, common_style? : String, global_style? : String, update? : (CounterState, @core.Dispatch, &@core.Ctx) -> @component.Update[CounterState], swap? : (CounterInput) -> ((CounterState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn counter_component(name? : String, views? : Map[String, @anode.View], init? : CounterState, common_style? : String, global_style? : String, update? : (CounterState, @core.Dispatch, &@core.Ctx) -> @component.Update[CounterState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let counter_global_style : String
 
@@ -30,15 +30,11 @@ pub fn module_def() -> @component.ModuleDef
 // Types and methods
 pub(all) enum CounterInput {
   Add
-  ResetCount
-  SetLabel
 } derive(Eq, @debug.Debug)
 pub fn CounterInput::name(Self) -> String
 pub fn CounterInput::parse(String) -> Self?
 
 pub(all) enum CounterMsg {
-  ResetCount
-  SetLabel(String)
   Unknown(String, Array[@core.Value])
 }
 pub fn CounterMsg::from_dispatch(@core.Dispatch) -> Self?
@@ -46,8 +42,6 @@ pub fn CounterMsg::from_dispatch(@core.Dispatch) -> Self?
 pub(all) enum CounterReceive {
   ResetTo(Int)
   Add(Double)
-  ResetCount
-  SetLabel(String)
   Unknown(String, Array[@core.Value])
 }
 pub fn CounterReceive::from_dispatch(@core.Dispatch) -> Self?

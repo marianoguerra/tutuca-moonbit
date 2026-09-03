@@ -192,22 +192,6 @@ declare fn Completion::mark_self_settled(self : Completion) -> Unit
 declare fn Completion::release_self(self : Completion) -> Unit
 
 ///|
-/// What an observer record describes, as an enum.
-pub(all) enum ObserveKind {
-  Receive
-  /// One hop of an intent's walk. Travelling up the tree, asking a registered
-  /// handler and carrying an answer back are all the same event here, because
-  /// they are all one hop of one walk.
-  Intent
-  /// A message the RUNTIME wrote: the `<name>Ok`, `<name>Error` or
-  /// `<name>Unhandled` a walk produced. It is an ordinary message and the
-  /// component cannot tell it from one a parent sent, which is deliberate: the
-  /// distinction lives here, where an inspector needs it, and a handler never
-  /// sees it.
-  Answer
-} derive(Debug, Eq)
-
-///|
 /// How the handler was resolved: an exact bucket entry, or
 /// nothing (silent no-op).
 ///
@@ -218,17 +202,6 @@ pub(all) enum ObserveMatch {
   Exact
   NoHandler
 } derive(Debug, Eq)
-
-///|
-/// The kind as the wire/display word.
-declare pub fn ObserveKind::label(self : ObserveKind) -> String
-
-///|
-/// The kind a dispatch through `bucket` is observed as. Every bucket has one;
-/// `Request` is the kind with no bucket behind it.
-declare pub fn ObserveKind::of_bucket(
-  bucket : @tutuca.HandlerBucket,
-) -> ObserveKind
 
 ///|
 /// How the handler was resolved, as the wire/display word.
@@ -246,6 +219,10 @@ declare pub fn ObserveMatch::label(self : ObserveMatch) -> String
 declare pub fn ObserveRecord::to_json(self : ObserveRecord) -> Json
 
 ///|
+/// The three words a reader sees: the bucket's, or `answer`.
+declare pub fn ObserveRecord::kind_label(self : ObserveRecord) -> String
+
+///|
 /// One normalized record per handler invocation:
 /// purely observational — dev tools / storybook activity logs subscribe.
 /// `path` has field-resolved keys pinned against the root the handler read,
@@ -253,7 +230,16 @@ declare pub fn ObserveRecord::to_json(self : ObserveRecord) -> Json
 /// made no change. `seq` is a per-transactor monotonic counter (a timestamp
 /// stand-in — wasm-gc has no clock).
 pub(all) struct ObserveRecord {
-  kind : ObserveKind
+  /// Who raised it: a host call, a view's own `@on.*`, or a handler already
+  /// running. What `Source` used to answer for the recorder, said once.
+  origin : @tutuca.Origin
+  bucket : @tutuca.HandlerBucket
+  /// A message the RUNTIME wrote: the `<name>Ok`, `<name>Failed` or
+  /// `<name>Unhandled` a walk produced. It is dispatched as an ordinary
+  /// `Receive` and the component cannot tell it from one a parent sent, which
+  /// is deliberate — the distinction lives here, where an inspector needs it,
+  /// and a handler never sees it.
+  is_answer : Bool
   name : String
   args : Array[@tutuca.Value]
   path : @tutuca.Path
@@ -276,23 +262,6 @@ pub(all) struct ObserveRecord {
 }
 
 ///|
-/// Where a dispatch came from — the whole basis of replaying one.
-///
-/// The distinction is `Transaction.parent`, and it is the only one that
-/// matters to a recording: a derived dispatch is a consequence of a handler
-/// that a rerun produces again, and an external one is not reproducible by
-/// anything, because nothing inside the tree caused it.
-pub(all) enum Source {
-  /// Nobody in the tree asked for it: a DOM event, `send_at_root`, a timer, a
-  /// host reaching in. These are what a recording has to REPLAY.
-  Extern
-  /// A handler produced it. A rerun derives it again; a recording keeps it to
-  /// show, to check a rerun against, and to decide what crossed a subtree
-  /// boundary.
-  Derived
-} derive(Eq, Debug)
-
-///|
 /// One dispatch entering the queue, as a recorder sees it.
 ///
 /// `at` is a `Path` and not the `DispatchPath` the transaction carries, because
@@ -302,7 +271,10 @@ pub(all) enum Source {
 /// transaction path is what the dispatch actually lands on, with every dynamic
 /// active render frame already addresses where the data lives.
 pub(all) struct Dispatched {
-  source : Source
+  /// Who raised it. `origin.is_external()` is the whole basis of replaying
+  /// one: an external dispatch is an input a rerun has to feed, a `Handler`
+  /// one is a consequence a rerun produces again.
+  origin : @tutuca.Origin
   bucket : @tutuca.HandlerBucket
   name : String
   args : Array[@tutuca.Value]
@@ -446,7 +418,7 @@ pub(all) struct SettleResult {
 
 ///|
 /// One queued dispatch, the buckets collapsed onto `HandlerBucket`: `path`
-/// drives dispatch and the walk, `target_path` stays the fixed origin across
+/// drives dispatch and the walk, `target_path` stays the fixed anchor across
 /// an intent's hops so an answer knows where to land, and `txn_path` is a
 /// pre-pinned transaction path for one.
 pub struct Transaction {
@@ -455,7 +427,7 @@ pub struct Transaction {
   bucket : @tutuca.HandlerBucket
   name : String
   args : Array[@tutuca.Value]
-  provenance : @tutuca.DispatchProvenance
+  origin : @tutuca.Origin
   target_path : @tutuca.DispatchPath
   txn_path : @tutuca.Path?
   parent : Transaction?
@@ -479,8 +451,8 @@ pub struct Transaction {
   /// on. The pinned twin is resolved at PUSH time for the same reason an
   /// intent's answer path is: a reply must reach the sender that asked, even if
   /// a key moved while the message was in flight.
-  priv origin : @tutuca.DispatchPath?
-  priv origin_pinned : @tutuca.Path?
+  priv sender : @tutuca.DispatchPath?
+  priv sender_pinned : @tutuca.Path?
   priv mut cmpl : Completion?
   priv mut self_settled : Bool
   priv mut finished : Bool
@@ -690,8 +662,8 @@ declare pub fn Transactor::push_send(
   name : String,
   args : Array[@tutuca.Value],
   parent? : Transaction,
-  origin? : @tutuca.DispatchPath,
-  provenance? : @tutuca.DispatchProvenance,
+  sender? : @tutuca.DispatchPath,
+  origin? : @tutuca.Origin,
 ) -> Transaction
 
 ///|
@@ -729,7 +701,7 @@ pub struct IntentWalk {
   /// The sender's position — where an answer goes. It does not move when a
   /// handler forwards, which is the whole of what makes `forward` different
   /// from dispatching the intent again.
-  origin : @tutuca.DispatchPath
+  sender : @tutuca.DispatchPath
   /// The unit held on the sender for the length of the walk, released once —
   /// onto the answer's subtree if there is an answer, and directly if there is
   /// not. Without it a sender that waits for settlement would see the walk

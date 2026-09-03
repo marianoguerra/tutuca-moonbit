@@ -270,7 +270,7 @@ impl DynComponent for Segment with fn handle_dispatch(self, bucket, name, _args)
           {
             route: [DYN],
             on_ok: None,
-            on_error: None,
+            on_failed: None,
             on_unhandled: None,
             live_path: false,
           },
@@ -380,7 +380,7 @@ impl DynComponent for Reaction with fn handle_dispatch(
         {
           route: [DYN],
           on_ok: None,
-          on_error: None,
+          on_failed: None,
           on_unhandled: None,
           live_path: false,
         },
@@ -633,7 +633,7 @@ impl DynComponent for Message with fn handle_dispatch(self, bucket, name, _args)
           {
             route: [DYN],
             on_ok: None,
-            on_error: None,
+            on_failed: None,
             on_unhandled: None,
             live_path: false,
           },
@@ -1022,7 +1022,7 @@ impl DynComponent for Thread with fn handle_dispatch(self, bucket, name, args) {
         {
           route: [DYN],
           on_ok: None,
-          on_error: None,
+          on_failed: None,
           on_unhandled: None,
           live_path: false,
         },
@@ -1544,7 +1544,7 @@ impl DynComponent for FileList with fn handle_dispatch(self, bucket, name, args)
             {
               route: [DYN],
               on_ok: None,
-              on_error: None,
+              on_failed: None,
               on_unhandled: None,
               live_path: false,
             },

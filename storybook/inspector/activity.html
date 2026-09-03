@@ -1,6 +1,7 @@
 <script type="tutuca/spec">
   state ActivityEntry {
     kind : String
+    origin : String
     name : String
     handlerName : String
     matched : String
@@ -12,6 +13,16 @@
 
     /// `ObserveMatch::label` produces these two and nothing else.
     where matched is one of ["exact", "none"]
+
+    /// `ObserveRecord::kind_label` produces these three and nothing else: the
+    /// bucket's own word, or `answer` for a message the runtime wrote.
+    where kind is one of ["receive", "intent", "answer"]
+
+    /// `Origin::label` produces these three. It says WHO raised the dispatch,
+    /// which is a different question from which bucket it went through — a
+    /// `receive` from a view and a `receive` from a handler are one row kind
+    /// and two very different things to be reading in a log.
+    where origin is one of ["host", "view", "handler"]
 
     /// A dispatch is addressed to a name; a record without one is a row with
     /// nothing to say what happened.
@@ -55,7 +66,8 @@
 <template id="ActivityEntry">
   <div class="rounded border border-base-content/15 p-2 text-sm flex flex-col gap-1 activity-entry">
     <div class="flex items-center gap-2 flex-wrap">
-      <span title="How this was dispatched: receive (send), bubble, response, input, or request" class="badge badge-sm badge-neutral entry-kind" @text=".kind"></span>
+      <span title="Which bucket it went through: receive, intent — or answer, for a message the runtime wrote" class="badge badge-sm badge-neutral entry-kind" @text=".kind"></span>
+      <span title="Who raised it: host (something outside the tree), view (a component's own @on), or handler (a dispatch another handler pushed)" class="badge badge-sm badge-ghost entry-origin" @text=".origin"></span>
       <span title="Message name dispatched — for a DOM input, the event type (click, input, change, keydown, …)" class="font-mono font-semibold entry-name" @text=".name"></span>
       <span title="Actual handler that ran — shown only when it differs from the name" class="text-xs opacity-60 font-mono" @show="truthy? .handlerName" @text=".handlerName"></span>
       <span title="Path to the target component" class="text-xs opacity-40 font-mono entry-path" @text=".pathLabel"></span>

@@ -21,7 +21,7 @@ pub fn implied_domains(Array[@core.FieldDomain], String) -> Array[@core.Domain]
 
 pub fn mutator_args(@statedef.StateDef, depth? : Int, state? : Map[String, @core.Value]) -> Map[String, @gen.Gen[Array[@core.Value]]]
 
-pub fn mutator_dispatch_of(@statedef.StateDef, depth? : Int, state? : Map[String, @core.Value]) -> @gen.Gen[@core.Dispatch]?
+pub fn property_write_of(@statedef.StateDef, depth? : Int, state? : Map[String, @core.Value]) -> @gen.Gen[(String, @core.Value)]?
 
 pub fn protocol_dispatch_of(@statedef.StateDef, String, depth? : Int) -> @gen.Gen[@core.Dispatch]?
 

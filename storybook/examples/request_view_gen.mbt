@@ -92,7 +92,7 @@ impl @component.Fields for RequestExampleState with fn decode(f) {
 pub(all) enum RequestExampleReceive {
   Init
   LoadDataOk(@tutuca.Value)
-  LoadDataError(String)
+  LoadDataFailed(String)
   LoadDataUnhandled
   LoadAnotherWay
   ToggleView
@@ -122,7 +122,7 @@ pub fn RequestExampleReceive::from_dispatch(
     match (name, args) {
       ("init", []) => Init
       ("loadDataOk", [a0]) => LoadDataOk(a0)
-      ("loadDataError", [Str(a0)]) => LoadDataError(a0)
+      ("loadDataFailed", [Str(a0)]) => LoadDataFailed(a0)
       ("loadDataUnhandled", []) => LoadDataUnhandled
       ("loadAnotherWay", []) => LoadAnotherWay
       ("toggleView", []) => ToggleView
@@ -130,7 +130,7 @@ pub fn RequestExampleReceive::from_dispatch(
         match name {
           "init" => @tutuca.bad_payload(name, "", args)
           "loadDataOk" => @tutuca.bad_payload(name, "Any", args)
-          "loadDataError" => @tutuca.bad_payload(name, "String", args)
+          "loadDataFailed" => @tutuca.bad_payload(name, "String", args)
           "loadDataUnhandled" => @tutuca.bad_payload(name, "", args)
           "loadAnotherWay" => @tutuca.bad_payload(name, "", args)
           "toggleView" => @tutuca.bad_payload(name, "", args)
@@ -150,7 +150,7 @@ pub fn RequestExampleReceive::to_dispatch(
   match self {
     Init => ("init", [])
     LoadDataOk(a0) => ("loadDataOk", [a0])
-    LoadDataError(a0) => ("loadDataError", [Str(a0)])
+    LoadDataFailed(a0) => ("loadDataFailed", [Str(a0)])
     LoadDataUnhandled => ("loadDataUnhandled", [])
     LoadAnotherWay => ("loadAnotherWay", [])
     ToggleView => ("toggleView", [])
@@ -261,7 +261,7 @@ pub fn RequestExampleWhen::name(self : RequestExampleWhen) -> String {
 impl @component.Fields for RequestExampleState with fn schema() {
   @component.SchemaInfo::new(
     name="RequestExample",
-    fingerprint="9c3bb26c3abad5a5",
+    fingerprint="e4b522f3e26809ee",
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(Some("Entry")))),
       @component.FieldInfo::new("query", TyText),
@@ -270,7 +270,7 @@ impl @component.Fields for RequestExampleState with fn schema() {
       @component.FieldInfo::new("error", TyOption(TyText)),
     ],
     view_handlers=["loadAnotherWay", "toggleView"],
-    receives=["init", "loadDataOk", "loadDataError", "loadDataUnhandled"],
+    receives=["init", "loadDataOk", "loadDataFailed", "loadDataUnhandled"],
     methods=["notFailedWhileLoading"],
     invariants=["notFailedWhileLoading"],
     domains=[{ field: "view", domain: DOneOf([Str("main"), Str("edit")]), }],

@@ -19,11 +19,11 @@ pub fn clean_html(@memdom.MemNode) -> String
 
 pub fn drive_scene(@harness.Harness[@memdom.MemNode], @scenedef.Scene, take_log? : () -> Array[String]) -> SceneResult
 
-pub fn fixture_drive(@host.DynInitDef) -> (Array[@scenedef.Step], Map[String, @scenedef.Answer])
+pub fn fixture_drive(@host.DynInitDef) -> (Array[@scenedef.Step], Map[String, @core.IntentAnswer])
 
 pub fn fixture_of(@host.Bundle, String, String) -> @host.DynInitDef?
 
-pub fn intent_handlers(Map[String, @scenedef.Answer]) -> Map[String, Array[@core.IntentFn]]
+pub fn intent_handlers(Map[String, @core.IntentAnswer]) -> Map[String, Array[@core.IntentFn]]
 
 pub fn report_json(Array[SceneResult]) -> Json
 

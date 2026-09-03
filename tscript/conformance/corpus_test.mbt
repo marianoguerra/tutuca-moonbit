@@ -39,7 +39,8 @@ test "the v2 corpus still holds every case it was written with" {
       #|a requires that does not hold takes the reply with it
       #|an ensures that does not hold takes the reply with it
       #|an answer arrives as an ordinary message
-      #|an error answer arrives as an ordinary message too
+      #|a failure answer arrives as an ordinary message too
+      #|the retired Error spelling still names an arm
       #|a parameter named `s` is the argument, not the state
     ),
   )

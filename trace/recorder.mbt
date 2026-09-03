@@ -155,7 +155,7 @@ pub impl @transactor.Recorder for TraceRecorder with fn on_dispatch(self, d) {
     parent: d.parent,
     at: Place::of_path(d.at),
     op,
-    input: d.source is Extern,
+    input: d.origin.is_external(),
     after: None,
   })
 }
@@ -390,7 +390,7 @@ pub impl @transactor.Recorder for ScopedRecorder with fn on_dispatch(self, d) {
   // outside the scope sent in is not the scope's own doing, and after the cut
   // nothing remains to send it. `admit` recorded this event's seq already, so
   // the question is about its PARENT and cannot be about itself.
-  let orphan = !(d.source is Extern) && self.kept.get(d.parent) is None
+  let orphan = !d.origin.is_external() && self.kept.get(d.parent) is None
   let op : Op = match d.bucket {
     Receive => Send(name=d.name, args=d.args)
     Intent => Intent(name=d.name, args=d.args, opts=d.opts)
@@ -402,7 +402,7 @@ pub impl @transactor.Recorder for ScopedRecorder with fn on_dispatch(self, d) {
     parent: d.parent,
     at,
     op,
-    input: d.source is Extern || orphan,
+    input: d.origin.is_external() || orphan,
     after: None,
   })
 }
