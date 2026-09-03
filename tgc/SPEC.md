@@ -148,7 +148,7 @@ what a card COULD do, which is a different and much less useful claim.
 
 ## 7. Matching is by protocol
 
-`desc` names `module`, `component` and `protocols`. A slot declares a protocol
+`desc` is that component's slice of `tgc.describe` — its name is under `name`. A slot declares a protocol
 id (`statedef` already has them: `ProtocolDef.id`, `core.Ty::TyCompProtocols`)
 and any module declaring the same id can fill it. Asked of the instance through
 op 11, so there is no catalog in the path at all.
@@ -324,10 +324,6 @@ worth naming because none of them showed up in the corpus:
 - **The host.** No `&Obj` wrapper, no renderer, no dispatch, no policy. The
   security argument in `dyncomp/SECURITY.md` has to be re-made against this
   import surface before anything untrusted is loaded through it.
-- **Views live in the manifest, not in `tgc.describe`.** `tgc/emit` emits a
-  second manifest in `dyncomp/host`'s shape so a page can mount a card through
-  the host it already has. A module that named its own views would need no
-  second manifest at all, and that is the gap this crosses.
 - **The playground mounts through `dyncomp/host`**, via the same
   `__cardguest` surface the old backend installs. There is still no `tgc`-native
   host — no `&Obj` wrapper written against `tg_inst`, no policy re-argued

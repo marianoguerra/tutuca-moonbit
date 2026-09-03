@@ -140,7 +140,7 @@ fn emit_state(src : Src, c : Comp) -> Unit {
 
 ///|
 /// `tgc.make`, `tgc.describe` and the instance constructor.
-fn emit_shell(src : Src, comps : Array[Comp], module_name : String) -> Unit {
+fn emit_shell(src : Src, comps : Array[Comp], manifest : @tutuca.Value) -> Unit {
   src.line("// ── the four exports ──")
   src.blank()
   src.line("let \{ID_COUNTER}: i64 = 0;")
@@ -173,26 +173,17 @@ fn emit_shell(src : Src, comps : Array[Comp], module_name : String) -> Unit {
     src.blank()
   }
 
-  // A descriptor PER COMPONENT, not one per module.
+  // A descriptor PER COMPONENT, and it is that component's slice of the ONE
+  // manifest rather than a second description of it.
   //
   // `desc` is how an instance says what it is, and a host reads `component` off
   // it to decide which view to draw. A card declaring several components whose
-  // children all carried the module's descriptor would draw the root's view for
-  // every child — which is what happened, and looked like the page repeating
-  // itself.
+  // children all carried the module's descriptor drew the root's view for every
+  // child, which looked like the page repeating itself.
+  let by_name = component_descriptors(manifest)
   for c in comps {
     src.open("fn \{c.id}_desc() -> &tg_val {")
-    src.line("tg_map([tg_entries|")
-    src.depth = src.depth + 1
-    src.line("tg_entry_of(\"module\", tg_str(\{wax_str(module_name)})),")
-    src.line("tg_entry_of(\"component\", tg_str(\{wax_str(c.name)})),")
-    src.line("tg_entry_of(\"protocols\", \{str_list(c.def.implements)}),")
-    src.line("tg_entry_of(\"fields\", \{str_list(c.fields.map(f => f.name))}),")
-    src.line("tg_entry_of(\"receives\", \{str_list(answered(c, DReceive))}),")
-    src.line("tg_entry_of(\"intents\", \{str_list(answered(c, DAnswer))}),")
-    src.line("tg_entry_of(\"methods\", \{str_list(answered(c, DCompute))}),")
-    src.depth = src.depth - 1
-    src.line("])")
+    src.line(value_expr(by_name.get(c.name).unwrap_or(Null)))
     src.close("}")
     src.blank()
   }
@@ -208,32 +199,16 @@ fn emit_shell(src : Src, comps : Array[Comp], module_name : String) -> Unit {
   src.close("}")
   src.blank()
 
-  src.line(
-    "// The manifest, as an ordinary value. A module that says what it is",
-  )
-  src.line("// needs no packer and no file beside it.")
+  // The WHOLE manifest, in the module. A module that says what it is needs no
+  // packer and no file beside it — which is what lets a toolchain that has
+  // never heard of this repository produce one, and what stops a card arriving
+  // with half of itself.
+  //
+  // It names the root component first, because every mount site takes the head
+  // of `components`.
   src.line("#[export = \"\{@abi.export_describe}\"]")
   src.open("fn tgc_describe() -> &tg_val {")
-  src.line("tg_map([tg_entries|")
-  src.depth = src.depth + 1
-  src.line("tg_entry_of(\"module\", tg_str(\{wax_str(module_name)})),")
-  src.line("tg_entry_of(\"component\", tg_str(\{wax_str(comps[0].name)})),")
-  src.line("tg_entry_of(\"protocols\", \{str_list(comps[0].def.implements)}),")
-  src.line("tg_entry_of(\"components\", \{str_list(comps.map(c => c.name))}),")
-  src.line(
-    "tg_entry_of(\"fields\", \{str_list(comps[0].fields.map(f => f.name))}),",
-  )
-  src.line(
-    "tg_entry_of(\"receives\", \{str_list(answered(comps[0], DReceive))}),",
-  )
-  src.line(
-    "tg_entry_of(\"intents\", \{str_list(answered(comps[0], DAnswer))}),",
-  )
-  src.line(
-    "tg_entry_of(\"methods\", \{str_list(answered(comps[0], DCompute))}),",
-  )
-  src.depth = src.depth - 1
-  src.line("])")
+  src.line(value_expr(manifest))
   src.close("}")
   src.blank()
 
@@ -275,4 +250,22 @@ fn str_list(items : Array[String]) -> String {
   }
   let parts = items.map(s => "tg_str(\{wax_str(s)})")
   "tg_list([tg_vals| " + parts.join(", ") + "])"
+}
+
+///|
+/// The manifest's components, by name — so an instance's descriptor is a slice
+/// of the module's rather than a second copy of the same facts.
+fn component_descriptors(
+  manifest : @tutuca.Value,
+) -> Map[String, @tutuca.Value] {
+  let out : Map[String, @tutuca.Value] = Map([])
+  guard manifest is Map(m) && m.get("components") is Some(List(items)) else {
+    return out
+  }
+  for item in items {
+    if item is Map(c) && c.get("name") is Some(Str(name)) {
+      out[name] = item
+    }
+  }
+  out
 }

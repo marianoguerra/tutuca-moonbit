@@ -75,7 +75,7 @@
   (global $s.bump (ref $V_bytes) (array.new_fixed $V_bytes 4 (i32.const 98) (i32.const 117) (i32.const 109) (i32.const 112)))
   (global $s.tile (ref $V_bytes) (array.new_fixed $V_bytes 15 (i32.const 116) (i32.const 117) (i32.const 116) (i32.const 46) (i32.const 100) (i32.const 101) (i32.const 109) (i32.const 111) (i32.const 46) (i32.const 116) (i32.const 105) (i32.const 108) (i32.const 101) (i32.const 64) (i32.const 49)))
   (global $s.module (ref $V_bytes) (array.new_fixed $V_bytes 6 (i32.const 109) (i32.const 111) (i32.const 100) (i32.const 117) (i32.const 108) (i32.const 101)))
-  (global $s.component (ref $V_bytes) (array.new_fixed $V_bytes 9 (i32.const 99) (i32.const 111) (i32.const 109) (i32.const 112) (i32.const 111) (i32.const 110) (i32.const 101) (i32.const 110) (i32.const 116)))
+  (global $s.component (ref $V_bytes) (array.new_fixed $V_bytes 4 (i32.const 110) (i32.const 97) (i32.const 109) (i32.const 101)))
   (global $s.protocols (ref $V_bytes) (array.new_fixed $V_bytes 9 (i32.const 112) (i32.const 114) (i32.const 111) (i32.const 116) (i32.const 111) (i32.const 99) (i32.const 111) (i32.const 108) (i32.const 115)))
   (global $s.modname (ref $V_bytes) (array.new_fixed $V_bytes 15 (i32.const 116) (i32.const 103) (i32.const 99) (i32.const 46) (i32.const 112) (i32.const 114) (i32.const 111) (i32.const 116) (i32.const 111) (i32.const 46) (i32.const 99) (i32.const 108) (i32.const 111) (i32.const 99) (i32.const 107)))
   (global $s.compname (ref $V_bytes) (array.new_fixed $V_bytes 5 (i32.const 67) (i32.const 108) (i32.const 111) (i32.const 99) (i32.const 107)))

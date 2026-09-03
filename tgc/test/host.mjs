@@ -55,11 +55,11 @@ export function catalog({ modules, host }) {
   const out = new Map();
   for (const [file, ex] of Object.entries(modules)) {
     const desc = host.toJs(ex["tgc.describe"]());
-    out.set(desc.component, {
+    out.set(desc.name, {
       file,
       module: desc.module,
       protocols: desc.protocols,
-      make: (args) => ex["tgc.make"](host.bytes(desc.component), args ?? null),
+      make: (args) => ex["tgc.make"](host.bytes(desc.name), args ?? null),
       exports: ex,
     });
   }

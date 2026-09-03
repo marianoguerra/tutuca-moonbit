@@ -189,7 +189,7 @@ fn counter_describe() -> &tg_val {
         count: 1,
     };
     let e_module: &tg_entry = { key: "module", value: module_v };
-    let e_comp: &tg_entry = { key: "component", value: comp_v };
+    let e_comp: &tg_entry = { key: "name", value: comp_v };
     let e_protos: &tg_entry = { key: "protocols", value: protocols };
     let out: &tg_map = {
         kind: 8,

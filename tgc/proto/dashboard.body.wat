@@ -34,7 +34,9 @@
   (global $n.bump (ref $tg.bytes) (array.new_fixed $tg.bytes 4 (i32.const 98) (i32.const 117) (i32.const 109) (i32.const 112)))
   (global $n.bumpAll (ref $tg.bytes) (array.new_fixed $tg.bytes 7 (i32.const 98) (i32.const 117) (i32.const 109) (i32.const 112) (i32.const 65) (i32.const 108) (i32.const 108)))
   (global $n.module (ref $tg.bytes) (array.new_fixed $tg.bytes 6 (i32.const 109) (i32.const 111) (i32.const 100) (i32.const 117) (i32.const 108) (i32.const 101)))
-  (global $n.component (ref $tg.bytes) (array.new_fixed $tg.bytes 9 (i32.const 99) (i32.const 111) (i32.const 109) (i32.const 112) (i32.const 111) (i32.const 110) (i32.const 101) (i32.const 110) (i32.const 116)))
+    ;; `name`, which is what a component descriptor calls itself — the manifest's
+  ;; spelling, and there is one description of a component rather than two.
+  (global $n.component (ref $tg.bytes) (array.new_fixed $tg.bytes 4 (i32.const 110) (i32.const 97) (i32.const 109) (i32.const 101)))
   (global $n.protocols (ref $tg.bytes) (array.new_fixed $tg.bytes 9 (i32.const 112) (i32.const 114) (i32.const 111) (i32.const 116) (i32.const 111) (i32.const 99) (i32.const 111) (i32.const 108) (i32.const 115)))
   (global $n.Dashboard (ref $tg.bytes) (array.new_fixed $tg.bytes 9 (i32.const 68) (i32.const 97) (i32.const 115) (i32.const 104) (i32.const 98) (i32.const 111) (i32.const 97) (i32.const 114) (i32.const 100)))
   (global $n.modname (ref $tg.bytes) (array.new_fixed $tg.bytes 19 (i32.const 116) (i32.const 103) (i32.const 99) (i32.const 46) (i32.const 112) (i32.const 114) (i32.const 111) (i32.const 116) (i32.const 111) (i32.const 46) (i32.const 100) (i32.const 97) (i32.const 115) (i32.const 104) (i32.const 98) (i32.const 111) (i32.const 97) (i32.const 114) (i32.const 100)))

@@ -85,12 +85,16 @@ export async function loadTgcGuest(bytes, key = "default", { runtime } = {}) {
     ofHandle: (h) => table.get(h) ?? null,
   });
 
-  // A component's own name, off the instance's descriptor. `desc` is a map and
-  // `component` is the key `tgc.describe` writes.
+  // A component's own name, off the instance's descriptor.
+  //
+  // `desc` is that component's slice of the module's manifest, so the name is
+  // under `name` — the manifest's spelling. There is one description of a
+  // component now and this reads it, rather than a second small map written
+  // beside it that could say something else.
   const instComponent = (inst) => {
     const desc = rt.inst_desc(inst);
     for (let i = 0; i < rt.map_len(desc); i++) {
-      if (V.text(rt.map_key(desc, i)) === "component") {
+      if (V.text(rt.map_key(desc, i)) === "name") {
         return rt.as_str(rt.map_val(desc, i));
       }
     }
@@ -275,7 +279,9 @@ export async function loadTgcGuest(bytes, key = "default", { runtime } = {}) {
       return answer === null ? -1 : put(rt.as_inst(answer));
     },
   };
-  return { exports: ex, runtime: rt };
+  // `tgc.describe` is the manifest, as a value. Read once, here, so a caller
+  // that mounts does not have to know it could have come from anywhere else.
+  return { exports: ex, runtime: rt, manifest: V.toJson(ex["tgc.describe"]()) };
 }
 
 /**
@@ -305,11 +311,16 @@ export async function mountTgcCard(previewId, source, name, { init = "" } = {}) 
   }
 
   globalThis.__tutucard.unmount(previewId);
-  await loadTgcGuest(b64ToBytes(build.wasm), previewId);
+  const { manifest } = await loadTgcGuest(b64ToBytes(build.wasm), previewId);
+  // The manifest comes OUT OF THE MODULE, not out of the build beside it.
+  // `build.manifest` is the same value — the compiler projects it to JSON for
+  // tooling — but taking it from the instantiated module is what makes the
+  // module the single source: one file, and no way for a card to arrive with
+  // half of itself.
   const mounted = JSON.parse(
     globalThis.__tutucard.mountCompiled(
       previewId,
-      JSON.stringify(build.manifest),
+      JSON.stringify(manifest),
       init,
     ),
   );
