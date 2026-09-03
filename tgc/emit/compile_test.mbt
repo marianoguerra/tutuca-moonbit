@@ -73,3 +73,42 @@ test "one declaration is refused and the rest still compiles" {
     msg="a refused handler was emitted",
   )
 }
+
+///|
+/// The import section is what the card DOES, not what a card could do.
+///
+/// A module's import section is its complete authority list — it declares no
+/// memory and no table, so there is nothing else to reach through — and a host
+/// reads it before running a line. That claim is only worth making if the
+/// section discriminates: a card that performs no effect must not import the
+/// machinery for one.
+test "a card that performs no effect imports no effect" {
+  let pure =
+    #|<script type="tutuca/spec">
+    #|  state Pure { n: Int }
+    #|</script>
+    #|<script type="tutuca/script">
+    #|  compute doubled { .n * 2 }
+    #|</script>
+    #|<template id="Pure" data-root><b @text="$doubled"></b></template>
+  let out = @emit.compile(pure, name="pure")
+  assert_true(out.wax.contains("op_mul"), msg="the arithmetic it does use")
+  for effect in ["eff_send", "eff_ask", "eff_reply", "eff_fail", "eff_log"] {
+    assert_false(out.wax.contains("#[import = \"\{effect}\"]"), msg=effect)
+  }
+  // …and a card that DOES send says so.
+  let sender =
+    #|<script type="tutuca/spec">
+    #|  state Loud { n: Int }
+    #|</script>
+    #|<script type="tutuca/script">
+    #|  receive shout { send 'heard' .n }
+    #|</script>
+    #|<template id="Loud" data-root><b></b></template>
+  let loud = @emit.compile(sender, name="loud")
+  assert_true(loud.wax.contains("#[import = \"eff_send\"]"), msg="a sender")
+  assert_false(
+    loud.wax.contains("#[import = \"eff_ask\"]"),
+    msg="but not an asker",
+  )
+}

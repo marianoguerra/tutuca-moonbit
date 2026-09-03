@@ -141,6 +141,11 @@ declares no memory and no table, so its import section is its *complete*
 authority list — the property `dyncomp/SECURITY.md` relies on today, made
 total. `tgc/test` asserts it for every prototype module.
 
+And it DISCRIMINATES: `tgc/emit` writes the body first and then imports what the
+body turned out to call, so a card that performs no effect imports none of the
+machinery for one. A section written before the body would be a statement about
+what a card COULD do, which is a different and much less useful claim.
+
 ## 7. Matching is by protocol
 
 `desc` names `module`, `component` and `protocols`. A slot declares a protocol
@@ -311,22 +316,20 @@ worth naming because none of them showed up in the corpus:
   exponent, and nothing else. The mantissa accumulates by multiplication rather
   than rounding correctly, so a long decimal can land an ulp out. The spellings
   a card writes by hand are exact.
-- **The import section over-claims.** A generated module imports the whole
-  runtime vocabulary rather than the part it reaches. The section is meant to be
-  a true statement about what a card does, and this one says what it *could* do.
-  Narrowing it means walking the lowered bodies for the names they actually
-  used — the analysis `tutucard/wasm`'s `lower_scalar` / `lower_values` split
-  does. Until then, read it as an upper bound.
 - **`lower` / `upper` are ASCII.** A case fold that claimed to know Turkish
   would be a bigger promise than this makes.
 
 ## 11. What is not here yet
 
+- **`sendAt`.** It addresses a PLACE, and this backend does not reify one. The
+  format it replaces compiles a literal or parameter key and refuses a key
+  re-read from live state; this compiles neither. Nothing in the repository
+  uses it — no starter card, no guest, and the corpus names it only in the
+  vocabulary its `kind` field draws on — so nothing regresses today, but
+  removing the older backend would take the only implementation with it.
 - **The host.** No `&Obj` wrapper, no renderer, no dispatch, no policy. The
   security argument in `dyncomp/SECURITY.md` has to be re-made against this
   import surface before anything untrusted is loaded through it.
-- **`core.Value` has not grown its new arms**, so `tgc/value` is still a mirror
-  rather than the value itself.
 - **Views live in the manifest, not in `tgc.describe`.** `tgc/emit` emits a
   second manifest in `dyncomp/host`'s shape so a page can mount a card through
   the host it already has. A module that named its own views would need no
