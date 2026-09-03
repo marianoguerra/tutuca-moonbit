@@ -59,7 +59,43 @@ export async function loadTgcGuest(bytes, key = "default", { runtime } = {}) {
   // instantiates one and hands it over, which is what lets the guest bridge be
   // tested rather than only looked at.
   const rt = runtime ?? (await loadRuntime());
-  const V = makeValues(rt);
+
+  // Instances by integer, because MoonBit's js target passes integers across
+  // this seam. Nothing is kept alive by being in here — the engine owns the
+  // instance — so the sweep the old backend needed has nothing to do.
+  const table = new Map();
+  let next = 1;
+  const put = (inst) => {
+    const h = next++;
+    table.set(h, inst);
+    return h;
+  };
+
+  // A CHILD crossing to the host. The host cannot hold a GC reference, so it
+  // holds a handle and asks for the instance back through
+  // `Bundle::wrap_instance` — which is the marker `cardguest.mbt` already reads,
+  // and the reason a card can put a sibling in a field at all.
+  //
+  // The component NAME travels with it because a handle says which instance,
+  // not which kind, and the host needs the kind to wrap it.
+  const V = makeValues(rt, {
+    onComp: (inst) => ({
+      $dyn: { handle: put(inst), comp: V.text(instComponent(inst)) },
+    }),
+    ofHandle: (h) => table.get(h) ?? null,
+  });
+
+  // A component's own name, off the instance's descriptor. `desc` is a map and
+  // `component` is the key `tgc.describe` writes.
+  const instComponent = (inst) => {
+    const desc = rt.inst_desc(inst);
+    for (let i = 0; i < rt.map_len(desc); i++) {
+      if (V.text(rt.map_key(desc, i)) === "component") {
+        return rt.as_str(rt.map_val(desc, i));
+      }
+    }
+    return rt.bytes_new(0);
+  };
 
   // What the card asked the host to do, for the duration of one dispatch. The
   // HOST buffers rather than the guest, because the host is what brackets the
@@ -129,16 +165,6 @@ export async function loadTgcGuest(bytes, key = "default", { runtime } = {}) {
   });
   const ex = instance.exports;
 
-  // Instances by integer, because MoonBit's js target passes integers across
-  // this seam. Nothing is kept alive by being in here — the engine owns the
-  // instance — so the sweep the old backend needed has nothing to do.
-  const table = new Map();
-  let next = 1;
-  const put = (inst) => {
-    const h = next++;
-    table.set(h, inst);
-    return h;
-  };
   const call = (h, op, name, args, v = null) => {
     const inst = table.get(h);
     if (!inst) return null;

@@ -25,6 +25,15 @@ priv struct Ctx {
   /// Every invariant this component declares. Checked after each transition,
   /// because an invariant is the rule nothing has to mention.
   invariants : Array[String]
+  /// What `cur` currently holds, if a `new` has run.
+  ///
+  /// A `new` names a type at COMPILE time, and the checker guarantees the two
+  /// arms of an `if` agree about it (`C::stmts` merges the target and keeps
+  /// only what both said, so reading `cur` after a one-armed `new` is
+  /// `NO_TARGET`). So one mutable field, walked in statement order, is enough
+  /// — and it is what decides whether reading `cur` yields a map or builds a
+  /// component.
+  mut cur : CurKind
   /// The local holding the bindings an enricher is accumulating, if this is one.
   ///
   /// An enricher ANSWERS the map rather than writing into one, which is the
@@ -38,6 +47,22 @@ priv struct Ctx {
   /// itself a refusal rather than a call to a function that is not there.
   callable : Map[String, @tscript.DeclKind]
   mut temps : Int
+}
+
+///|
+/// What `new` opened.
+///
+/// A RECORD is a map and stays one — `core.Value` has no record, and
+/// `struct Label { text: String }` decodes to a `Map`. A sibling COMPONENT is
+/// an instance, and building one is a call to this module's own `tgc.make`
+/// rather than a request to the host: the old contract had to ask, because
+/// `control.make-instance` was the only way a guest could name one, and the
+/// Component Model forbade re-entering the module while a call was active.
+/// Neither is true here.
+priv enum CurKind {
+  CurNone
+  CurRecord(String)
+  CurComp(String)
 }
 
 ///|
@@ -290,7 +315,11 @@ fn emit_chain(
 }
 
 ///|
-fn emit_root(ctx : Ctx, root : @tutuca.PlaceRoot) -> String raise Refused {
+fn emit_root(
+  ctx : Ctx,
+  src : Src,
+  root : @tutuca.PlaceRoot,
+) -> String raise Refused {
   match root {
     PState(name) =>
       match ctx.comp.field_index(name) {
@@ -322,10 +351,27 @@ fn emit_root(ctx : Ctx, root : @tutuca.PlaceRoot) -> String raise Refused {
               )
           }
       }
+    // `cur` WHOLE. For a record that is the accumulated map; for a sibling it
+    // is the instance, materialized HERE — at the last moment the arguments
+    // can still change and the first moment they are all in. Rebinding is what
+    // makes pushing `cur` twice push one child rather than build two.
     PTarget =>
-      raise Refused(
-        "`cur` needs a `new`, which this backend does not compile yet",
-      )
+      match ctx.cur {
+        CurNone =>
+          raise Refused(
+            "`cur` has no `new` before it, so there is nothing for it to name",
+          )
+        CurRecord(_) => "cur"
+        CurComp(name) => {
+          src.line("if cur == null { return null; }")
+          src.open("if kind_of(cur!) != 10 {")
+          src.line(
+            "cur = tg_comp(\{mangle(name)}_inst(\{mangle(name)}_desc(), \{mangle(name)}_make_fields(cur)));",
+          )
+          src.close("}")
+          "cur"
+        }
+      }
   }
 }
 
@@ -424,7 +470,7 @@ fn emit_read(
   src : Src,
   place : @tutuca.Place,
 ) -> String raise Refused {
-  let mut acc = emit_root(ctx, place.root)
+  let mut acc = emit_root(ctx, src, place.root)
   for step in place.steps {
     acc = match step {
       PField(name) => "member(\{acc}, \{wax_str(name)})"

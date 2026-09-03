@@ -38,7 +38,7 @@ const b64encode = (u8) => {
 const b64decode = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 
 /** Everything a host needs to read and build values, bound to one runtime. */
-export function makeValues(rt) {
+export function makeValues(rt, { onComp, ofHandle } = {}) {
   const bytes = (s) => {
     const u8 = enc.encode(s);
     const b = rt.bytes_new(u8.length);
@@ -86,9 +86,13 @@ export function makeValues(rt) {
         // under it, so reading one back is never a guess.
         return "$" in out ? { $: "map", v: out } : out;
       }
-      // A component crossing as JSON is a component leaving its reference
-      // behind. Nothing here can rebuild one, so it says what it was.
-      case TAG.COMP: return { $: "comp", v: {} };
+      // A component crossing as JSON is a component leaving its REFERENCE
+      // behind, and JSON has no shape that holds one. So a host with somewhere
+      // to put it says so by passing `onComp` and gets back whatever marker it
+      // can turn into an instance again; a host with nowhere to put one gets a
+      // shape that says what it was rather than a null that does not.
+      case TAG.COMP:
+        return onComp ? onComp(rt.as_inst(v)) : { $: "comp", v: {} };
       default: return null;
     }
   };
@@ -102,6 +106,15 @@ export function makeValues(rt) {
       const a = rt.vals_new(j.length);
       j.forEach((x, i) => rt.vals_set(a, i, ofJson(x)));
       return rt.mk_list(a);
+    }
+    // A CHILD coming back. The host holds a handle, not a reference, so
+    // `child_json` writes `{"$dyn":{"handle":n}}` and this turns it back into
+    // the instance that handle names. Without it a successor that carried a
+    // child would hand the guest a two-key map where a component should be.
+    if (j.$dyn && ofHandle) {
+      const inst = ofHandle(j.$dyn.handle);
+      if (inst) return rt.mk_comp(inst);
+      return rt.mk_null();
     }
     const tag = j["$"];
     if (tag === "map") return ofJson(j.v);

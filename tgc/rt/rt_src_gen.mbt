@@ -819,6 +819,9 @@ pub fn source() -> String {
     #|
     #|#[export = "coll_insert_at"]
     #|fn tg_coll_insert_at(v: &?tg_val, at: &?tg_val, x: &?tg_val) -> &?tg_val {
+    #|    if v != null {
+    #|        if v!.kind == 8 { return tg_map_put(v, at, x); }
+    #|    }
     #|    let l = tg_list_of(v);
     #|    if l == null { return null; }
     #|    let src = l!;
@@ -843,6 +846,9 @@ pub fn source() -> String {
     #|
     #|#[export = "coll_set_at"]
     #|fn tg_coll_set_at(v: &?tg_val, at: &?tg_val, x: &?tg_val) -> &?tg_val {
+    #|    if v != null {
+    #|        if v!.kind == 8 { return tg_map_put(v, at, x); }
+    #|    }
     #|    let l = tg_list_of(v);
     #|    if l == null { return null; }
     #|    let src = l!;
@@ -858,6 +864,9 @@ pub fn source() -> String {
     #|
     #|#[export = "coll_delete_at"]
     #|fn tg_coll_delete_at(v: &?tg_val, at: &?tg_val) -> &?tg_val {
+    #|    if v != null {
+    #|        if v!.kind == 8 { return tg_map_del(v, at); }
+    #|    }
     #|    let l = tg_list_of(v);
     #|    if l == null { return null; }
     #|    let src = l!;

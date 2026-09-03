@@ -48,11 +48,67 @@ fn emit_stmt(ctx : Ctx, src : Src, stmt : @tscript.Stmt) -> Unit raise Refused {
         src.line("}")
       }
     }
-    SNew(ty~, ..) =>
-      raise Refused(
-        "`new \{ty.name}` builds a record or a sibling component, which this " +
-        "backend does not compile yet",
-      )
+    SNew(ty~, ..) => emit_new(ctx, src, ty)
+  }
+}
+
+///|
+/// `new T` — the one binding a handler owns.
+///
+/// Nothing is BUILT here. It opens an argument map and remembers which type it
+/// is for; writes to `cur` accumulate into it; and a sibling component is made
+/// at the first READ of `cur`. That is the last moment the arguments can still
+/// change and the first moment they are all in.
+///
+/// The zero is resolved and built at COMPILE time — it is a property of the
+/// declared type and the type is written in the source — so a `new` naming a
+/// type the card does not declare is refused when it compiles rather than
+/// abandoned when it runs.
+fn emit_new(ctx : Ctx, src : Src, ty : @tscript.TyRef) -> Unit raise Refused {
+  match @check.resolve_ty_ref(ctx.comp.def, ty) {
+    Some(TyRecord(name)) => {
+      guard ctx.comp.def.user_ty(name) is Some(u) && u.kind is URecord(fields) else {
+        raise Refused(
+          "`new \{name}` names a record this component does not declare",
+        )
+      }
+      let parts = []
+      for f in fields {
+        parts.push("tg_entry_of(\{wax_str(f.name)}, \{zero_expr(f.ty)})")
+      }
+      let body = if parts.length() == 0 {
+        "tg_map([tg_entries| null; 0])"
+      } else {
+        "tg_map([tg_entries| " + parts.join(", ") + "])"
+      }
+      src.line("cur = \{body};")
+      ctx.cur = CurRecord(name)
+    }
+    // A sibling starts EMPTY rather than at its zero: `<Sib>_make_fields` fills
+    // each slot from the argument map or the declared zero, so filling them
+    // here would be the same table written twice.
+    Some(TyComp(Some(name))) => {
+      guard ctx.comp.siblings.contains(name) else {
+        raise Refused(
+          "`new \{name}` names a component this card does not declare beside it",
+        )
+      }
+      src.line("cur = tg_map([tg_entries| null; 0]);")
+      ctx.cur = CurComp(name)
+    }
+    // A SIBLING is not a type of this component's, so the type resolver does
+    // not know it — `state Swatch` beside `state Palette` is a second
+    // component, and which names are components is a fact about the FILE.
+    _ =>
+      if ctx.comp.siblings.contains(ty.name) {
+        src.line("cur = tg_map([tg_entries| null; 0]);")
+        ctx.cur = CurComp(ty.name)
+      } else {
+        raise Refused(
+          "`new \{ty.name}` names neither a record this component declares nor a " +
+          "component declared beside it",
+        )
+      }
   }
 }
 
@@ -65,6 +121,27 @@ fn emit_assign(
   op : @tscript.AssignOp,
   value : @tutuca.Expr,
 ) -> Unit raise Refused {
+  // Writing into `cur`: what a `new` opened, one member at a time.
+  if place.root is PTarget {
+    guard place.steps is [PField(member)] else {
+      raise Refused("`cur` is written one member at a time: `cur.<name> = …`")
+    }
+    guard !(ctx.cur is CurNone) else {
+      raise Refused(
+        "`cur` has no `new` before it, so there is nothing to write into",
+      )
+    }
+    guard op is ASet else {
+      raise Refused("`cur.\{member}` is written, not accumulated into")
+    }
+    let rv = emit_expr(ctx, src, value)
+    let t = ctx.temp()
+    src.line("let \{t} = \{rv};")
+    src.line("if \{t} == null { return null; }")
+    src.line("cur = with_member(cur, \{wax_str(member)}, \{t});")
+    src.line("if cur == null { return null; }")
+    return
+  }
   // Writing a BINDING rather than a field: an enricher's whole job.
   if place.root is PBind(bname) && ctx.binds is Some(b) {
     guard place.steps.length() == 0 else {
@@ -145,9 +222,13 @@ fn state_slot(ctx : Ctx, place : @tutuca.Place) -> Int raise Refused {
       raise Refused(
         "`@\{name}` is a render binding, and a handler is handed no row",
       )
+    // A whole-`cur` place, which only a collection method could ask for —
+    // `cur.rows.push x`. `cur` is a value being built, not a place with a
+    // slot, and the write that matters (`cur.<name> = …`) never reaches here.
     PTarget =>
       raise Refused(
-        "`cur` needs a `new`, which this backend does not compile yet",
+        "`cur` is a value being built, and a collection inside one is written " +
+        "before it is pushed rather than through it",
       )
   }
 }
@@ -158,7 +239,7 @@ fn read_place(
   src : Src,
   place : @tutuca.Place,
 ) -> String raise Refused {
-  let mut acc = emit_root(ctx, place.root)
+  let mut acc = emit_root(ctx, src, place.root)
   for step in place.steps {
     acc = match step {
       PField(name) => "member(\{acc}, \{wax_str(name)})"

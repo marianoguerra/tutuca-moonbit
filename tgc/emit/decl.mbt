@@ -102,6 +102,7 @@ fn lower_one(
     binds: binds_var(d),
     invariants,
     formats,
+    cur: CurNone,
   }
   let body = Src::new()
   body.depth = 1
@@ -129,6 +130,49 @@ fn lower_one(
 }
 
 ///|
+/// Whether a body needs the `cur` local at all.
+///
+/// Declared only when used, because Wax has no notion of an intentionally
+/// unused binding and every transition would otherwise carry one.
+fn uses_cur(stmts : Array[@tscript.Stmt]) -> Bool {
+  for s in stmts {
+    let hit = match s {
+      SNew(..) => true
+      SAssign(place~, ..) | SMethod(place~, ..) => place.root is PTarget
+      SEffect(args~, ..) => args.iter().any(reads_cur)
+      SIf(cond~, then_~, else_~, ..) =>
+        reads_cur(cond) || uses_cur(then_) || uses_cur(else_)
+    }
+    if hit {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn reads_cur(e : @tutuca.Expr) -> Bool {
+  match e {
+    ERead(place~, ..) | ERef(place~, ..) => place.root is PTarget
+    EApp(args~, ..) => args.iter().any(reads_cur)
+    EChain(operands~, ..) => operands.iter().any(reads_cur)
+    EUnary(operand~, ..) => reads_cur(operand)
+    EIf(cond~, then_~, else_~, ..) =>
+      reads_cur(cond) || reads_cur(then_) || reads_cur(else_)
+    ETpl(parts~, ..) =>
+      parts
+      .iter()
+      .any(p => {
+        match p {
+          TExpr(inner) => reads_cur(inner)
+          TText(..) => false
+        }
+      })
+    _ => false
+  }
+}
+
+///|
 /// The context a rule's `format` sentence is emitted in: it reads the state and
 /// the arguments exactly as the rule itself does.
 fn rule_ctx(
@@ -146,6 +190,7 @@ fn rule_ctx(
     binds: None,
     invariants: [],
     formats,
+    cur: CurNone,
   }
 }
 
@@ -232,6 +277,15 @@ fn emit_decl(ctx : Ctx, src : Src, d : @tscript.Decl) -> Unit raise Refused {
       // a handler's, which is why they are emitted around the body instead of
       // inside it.
       emit_attach(ctx, src, d.name, d.requires_, "requires")
+      // `cur` is a single FUNCTION-LEVEL local, so "no `new` has run yet" is
+      // the null it starts at and a `new` inside an `if` survives the branch.
+      // That is not looseness: the interpreter does the same — both arms get
+      // one `Env` — and the checker makes the difference unobservable, because
+      // a `new` in one arm leaves the target unset and reading `cur` after it
+      // is `NO_TARGET`.
+      if uses_cur(stmts) {
+        src.line("let cur: &?tg_val = null;")
+      }
       emit_stmts(ctx, src, stmts)
       emit_attach(ctx, src, d.name, d.ensures_, "ensures")
       // THE INVARIANTS — the rules nothing has to mention.

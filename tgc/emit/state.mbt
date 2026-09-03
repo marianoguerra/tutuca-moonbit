@@ -24,6 +24,11 @@ priv struct Comp {
   /// component with no view has nothing to mount.
   views : Array[@viewfile.RawView]
   common_style : String
+  /// Every component the CARD declares, this one included.
+  ///
+  /// `new Swatch` names a sibling, and whether a name is one is a fact about
+  /// the file rather than about the component reading it.
+  siblings : Array[String]
   /// The card's named starting states.
   ///
   /// A fixture is not decoration: the DEFAULT one is what a host mounts when it
@@ -168,11 +173,35 @@ fn emit_shell(src : Src, comps : Array[Comp], module_name : String) -> Unit {
     src.blank()
   }
 
+  // A descriptor PER COMPONENT, not one per module.
+  //
+  // `desc` is how an instance says what it is, and a host reads `component` off
+  // it to decide which view to draw. A card declaring several components whose
+  // children all carried the module's descriptor would draw the root's view for
+  // every child — which is what happened, and looked like the page repeating
+  // itself.
+  for c in comps {
+    src.open("fn \{c.id}_desc() -> &tg_val {")
+    src.line("tg_map([tg_entries|")
+    src.depth = src.depth + 1
+    src.line("tg_entry_of(\"module\", tg_str(\{wax_str(module_name)})),")
+    src.line("tg_entry_of(\"component\", tg_str(\{wax_str(c.name)})),")
+    src.line("tg_entry_of(\"protocols\", \{str_list(c.def.implements)}),")
+    src.line("tg_entry_of(\"fields\", \{str_list(c.fields.map(f => f.name))}),")
+    src.line("tg_entry_of(\"receives\", \{str_list(answered(c, DReceive))}),")
+    src.line("tg_entry_of(\"intents\", \{str_list(answered(c, DAnswer))}),")
+    src.line("tg_entry_of(\"methods\", \{str_list(answered(c, DCompute))}),")
+    src.depth = src.depth - 1
+    src.line("])")
+    src.close("}")
+    src.blank()
+  }
+
   src.line("#[export = \"\{@abi.export_make}\"]")
   src.open("fn tgc_make(name: &tg_bytes, args: &?tg_val) -> &?tg_inst {")
   for c in comps {
     src.open("if str_eq(name, \{wax_str(c.name)}) != 0 {")
-    src.line("return \{c.id}_inst(tgc_describe(), \{c.id}_make_fields(args));")
+    src.line("return \{c.id}_inst(\{c.id}_desc(), \{c.id}_make_fields(args));")
     src.close("}")
   }
   src.line("null")

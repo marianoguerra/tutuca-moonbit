@@ -41,9 +41,10 @@ pub fn compile_decls(
   root~ : String,
 ) -> Compiled raise GenError {
   let comps = []
+  let siblings = states.map(d => d.component)
   for def in states {
     let decls = scripts.get(def.component).unwrap_or([])
-    comps.push(comp_of(def, decls))
+    comps.push(comp_of(def, decls, siblings~))
   }
   // The root goes first: every mount site takes the head of `components`.
   comps.sort_by_key(c => if c.name == root { 0 } else { 1 })
@@ -66,6 +67,7 @@ fn comp_of(
   views? : Array[@viewfile.RawView] = [],
   common_style? : String = "",
   inits? : Array[@statedef.InitState] = [],
+  siblings? : Array[String] = [],
 ) -> Comp {
   {
     def,
@@ -76,6 +78,7 @@ fn comp_of(
     views,
     common_style,
     inits,
+    siblings,
     refusals: [],
   }
 }
@@ -88,6 +91,7 @@ fn prepare(
 ) -> (Array[Comp], Array[Issue]) raise GenError {
   let comps = []
   let issues = []
+  let siblings = file.state.map(d => d.component)
   for def in file.state {
     let block = file.script_for(def.component)
     let decls = match block {
@@ -98,7 +102,14 @@ fn prepare(
             raise BadScript(["\{def.component}: line \{b.line}: \{e.message()}"])
         }
     }
-    let set = file.components.filter(v => v.name == def.component)
+    // Through `component_name`, not the raw one. A view set is named by the
+    // prefix on its template ids — `<template id="Todo:main">` — and a card
+    // with a BARE `<template>` names none, so the set takes the card's own
+    // name. Matching on the raw field found the first kind and silently missed
+    // the second, which is a card that mounts with no view at all.
+    let set = file.components.filter(v => {
+      v.component_name(name) == def.component
+    })
     let views = if set.length() > 0 { set[0].views } else { [] }
     let style = if set.length() > 0 { set[0].common_style } else { "" }
     let inits = []
@@ -108,7 +119,9 @@ fn prepare(
         inits.push(state)
       }
     }
-    comps.push(comp_of(def, decls, views~, common_style=style, inits~))
+    comps.push(
+      comp_of(def, decls, views~, common_style=style, inits~, siblings~),
+    )
   }
   // The root is the first declared component unless a template says otherwise.
   comps.sort_by_key(c => if c.name == file.root { 0 } else { 1 })
@@ -296,6 +309,10 @@ let runtime_imports : Array[(String, String, String)] = [
   ("b_trim", "b_trim", "(v: &?tg_val) -> &?tg_val"),
   ("item", "item", "(coll: &?tg_val, key: &?tg_val) -> &?tg_val"),
   ("member", "member", "(v: &?tg_val, name: &tg_bytes) -> &?tg_val"),
+  // Which arm a value is, for the one place a compiled body has to ask: `cur`
+  // is materialized at its first READ, and "has it been already" is that
+  // question.
+  ("kind_of", "kind_of", "(v: &tg_val) -> i32"),
   (
     "with_item", "with_item", "(coll: &?tg_val, key: &?tg_val, x: &?tg_val) -> &?tg_val",
   ),
@@ -455,8 +472,23 @@ fn manifest_json(
       "enriches": lowered(c, DEnrich),
       "bindWiths": lowered(c, DBindWith),
       "serves": Json::array([]),
-      "provide": Json::array([]),
-      "lookup": Json::array([]),
+      // PROVIDE and LOOKUP: what a component publishes to its subtree and what
+      // it reads from above. The host resolves both when it renders, so a
+      // manifest that dropped them is a `*name` in a view answering nothing —
+      // and the symptom is a child that draws, correctly, with every provided
+      // value blank.
+      "provide": Json::array(
+        c.def.provide.map(d => {
+          "name": Json::string(d.name),
+          "source": Json::string(d.source),
+        }),
+      ),
+      "lookup": Json::array(
+        c.def.lookup.map(d => {
+          "name": Json::string(d.name),
+          "default": Json::string(d.default.unwrap_or("")),
+        }),
+      ),
       "inits": Json::array(
         c.inits.map(i => {
           let args : Map[String, Json] = Map([])

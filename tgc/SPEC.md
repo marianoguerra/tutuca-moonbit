@@ -258,13 +258,12 @@ a statement that abandons is discarded with the transition.
 ### Held to the playground too
 
 `tutuca/build/assemble.mjs` puts this backend beside the other one in the card
-playground, and every starter card is driven through both. **26 of 26 compile;
-21 of 24 cards with scenes pass all 73 of them.** The three that do not are the
-`new` refusal below — `todo`, `nested-state` and `dynamic-bindings` each build a
-record or a sibling — and they fail loudly rather than silently, which is what a
-refusal is for.
+playground, and every starter card is driven through both. **26 of 26 compile, and every card's scenes pass.** One card,
+`raw-html`, is refused before it mounts — by the SANITIZER, identically under
+both backends, because `@dangerouslysetinnerhtml` cannot be checked before it
+renders.
 
-Four things that only running it in a browser found, each now fixed and each
+Eight things that only running it in a browser found, each now fixed and each
 worth naming because none of them showed up in the corpus:
 
 - **Fixtures were dropped**, so a card mounted at its declared zero and every
@@ -280,13 +279,24 @@ worth naming because none of them showed up in the corpus:
   indistinguishable from a click that missed — the state is the same either way
   and the DOM cannot tell them apart. The sentence is `core/warn.mbt`'s, word
   for word, with the rule's own `format` clause after it.
+- **A view set was matched by its raw name**, so a card with a bare
+  `<template>` — which names no component and therefore takes the card's own
+  name — mounted with no view at all. `ViewSet::component_name` is what answers
+  that question.
+- **Every instance carried the MODULE's descriptor**, so a card declaring
+  several components drew the root's view for every child. A descriptor is per
+  component; `desc` is how an instance says what it is.
+- **`setAt` always indexed**, so writing a keyed row into a `Map` field
+  abandoned the transition. Which kind of position a key names is decided by the
+  COLLECTION at run time — `.rows[k]` and `.panes[k]` are the same syntax.
+- **`provide` and `lookup` were absent from the manifest**, so a `*name` in a
+  child's view answered nothing and the child drew, correctly, with every
+  provided value blank.
 
 ### Still refused
 
 | | why |
 |---|---|
-| `new T` | building a record or a sibling component |
-| `cur` | needs a `new` |
 | `sendAt` | addresses a place, and this backend does not reify one yet |
 | `$method`, `*dyn`, `e.` paths, `^macro`, `$$config` | answered by the render stack or by the view parser, and a compiled handler runs after both |
 | `clear`, `delete`, `set`, `removeAt` | parsed as collection methods that no backend has ever implemented, so there is no behaviour to compile |

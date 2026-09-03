@@ -939,6 +939,11 @@ fn tg_coll_push(v: &?tg_val, x: &?tg_val) -> &?tg_val {
 // is a bug, and putting the item somewhere plausible hides it.
 #[export = "coll_insert_at"]
 fn tg_coll_insert_at(v: &?tg_val, at: &?tg_val, x: &?tg_val) -> &?tg_val {
+    // A map has no gap to insert INTO — a key is either there or it is not — so
+    // inserting at one is the same as writing it.
+    if v != null {
+        if v!.kind == 8 { return tg_map_put(v, at, x); }
+    }
     let l = tg_list_of(v);
     if l == null { return null; }
     let src = l!;
@@ -961,8 +966,16 @@ fn tg_coll_insert_at(v: &?tg_val, at: &?tg_val, x: &?tg_val) -> &?tg_val {
     tg_list(out)
 }
 
+// `setAt` names a POSITION, and which kind of position is decided by the
+// COLLECTION rather than by the key — `.rows[k]` and `.panes[k]` are the same
+// syntax, and a list indexes where a map keys. Deciding it at run time is what
+// the language means; deciding it at compile time would make `setAt` two
+// operations sharing a spelling.
 #[export = "coll_set_at"]
 fn tg_coll_set_at(v: &?tg_val, at: &?tg_val, x: &?tg_val) -> &?tg_val {
+    if v != null {
+        if v!.kind == 8 { return tg_map_put(v, at, x); }
+    }
     let l = tg_list_of(v);
     if l == null { return null; }
     let src = l!;
@@ -978,6 +991,9 @@ fn tg_coll_set_at(v: &?tg_val, at: &?tg_val, x: &?tg_val) -> &?tg_val {
 
 #[export = "coll_delete_at"]
 fn tg_coll_delete_at(v: &?tg_val, at: &?tg_val) -> &?tg_val {
+    if v != null {
+        if v!.kind == 8 { return tg_map_del(v, at); }
+    }
     let l = tg_list_of(v);
     if l == null { return null; }
     let src = l!;
