@@ -15,8 +15,6 @@ import {
 // Values
 pub const ACTIVITY_CAP : Int = 200
 
-pub fn clean_html(@memdom.MemNode) -> String
-
 pub fn drive_scene(@harness.Harness[@memdom.MemNode], @scenedef.Scene, take_log? : () -> Array[String]) -> SceneResult
 
 pub fn fixture_drive(@host.DynInitDef) -> (Array[@scenedef.Step], Map[String, @core.IntentAnswer])

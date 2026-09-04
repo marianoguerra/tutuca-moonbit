@@ -88,7 +88,8 @@ fn view_diagnostics(
     for f in @check.check_rules(def) {
       let where_ = def.component_name(fallback)
       let line = match file.state_block {
-        Some(b) => "line \{b.line + line_of(b.text, f.span.start) - 1}: "
+        Some(b) =>
+          "line \{b.line + @viewfile.line_of(b.text, f.span.start) - 1}: "
         None => ""
       }
       let level = if f.severity is SWarning { "warning" } else { "error" }
@@ -102,7 +103,7 @@ fn view_diagnostics(
       // Structural HTML (mismatched tags, bad nesting): the WHATWG-tokenizer
       // linter, which needs only the source text.
       for f in @lint.lint_html(view.source) {
-        out.push(diagnostic_line(where_, f))
+        out.push(f.to_line(where_))
       }
       // Parse-issue rules, deprecation nudges and host bare directives. A
       // fresh shadow parse, never the live tree.
@@ -110,13 +111,13 @@ fn view_diagnostics(
       let px = @anode.ParseContext::new(handler=collector)
       let _ = @anode.ANode::parse(view.source, px)
       for f in @lint.check_collected(collector) {
-        out.push(diagnostic_line(where_, f))
+        out.push(f.to_line(where_))
       }
       // Event paths: an off-list step resolves under the open profile these
       // views run under, so it advises rather than refuses — see
       // `@lint.check_event_paths`.
       for f in @lint.check_event_paths(px.events) {
-        out.push(diagnostic_line(where_, f))
+        out.push(f.to_line(where_))
       }
     }
   }
@@ -186,16 +187,6 @@ fn qualifier_of(name : String) -> String {
     Some(i) => name[:i + 2].to_owned()
     None => ""
   }
-}
-
-///|
-fn diagnostic_line(where_ : String, f : @lint.Finding) -> String {
-  let level = match f.level {
-    Error => "error"
-    Warn => "warning"
-    Hint => "hint"
-  }
-  "\{@lint.lint_code_name(f.code)} (\{level}) \{where_}: \{@lint.finding_message(f)}"
 }
 
 ///|
@@ -278,12 +269,6 @@ fn split_path(path : String) -> (String, String) {
   let stem_start = slash + 1
   let stem_end = if dot > slash { dot } else { chars.length() }
   (dir, path[stem_start:stem_end].to_owned())
-}
-
-///|
-/// "counter" -> "Counter", "todo-list" -> "TodoList"
-fn default_name(stem : String) -> String {
-  @viewgen.variant_name(stem)
 }
 
 ///|
@@ -388,7 +373,7 @@ pub fn gen_views_target(
       }
     None => join_path(dir, "\{stem}_view_gen.mbt")
   }
-  (target, name.unwrap_or(default_name(stem)))
+  (target, name.unwrap_or(@statedef.upper_name(stem)))
 }
 
 ///|
@@ -556,23 +541,4 @@ fn basename(path : String) -> String {
 /// The line the shell prints after writing.
 pub fn gen_views_success(target : String, input : String) -> String {
   "generated \{target} from \{input}\n"
-}
-
-///|
-/// The 1-based line of a character offset inside a block. The twin of
-/// `viewgen`'s, and here rather than shared because this package does not
-/// import that one for anything else.
-fn line_of(text : String, offset : Int) -> Int {
-  let mut line = 1
-  let mut i = 0
-  for c in text {
-    if i >= offset {
-      break
-    }
-    if c == '\n' {
-      line = line + 1
-    }
-    i = i + 1
-  }
-  line
 }

@@ -163,11 +163,6 @@ pub fn instant_of_rfc3339(text : String) -> (Int64, Int) raise BadInstant {
 }
 
 ///|
-fn is_digit(c : Char) -> Bool {
-  c >= '0' && c <= '9'
-}
-
-///|
 fn int_at(
   cs : Array[Char],
   text : String,

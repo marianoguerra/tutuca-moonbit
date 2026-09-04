@@ -94,21 +94,6 @@ priv struct Token {
 }
 
 ///|
-fn is_ident_start(c : Char) -> Bool {
-  (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
-}
-
-///|
-fn is_ident_char(c : Char) -> Bool {
-  is_ident_start(c) || (c >= '0' && c <= '9')
-}
-
-///|
-fn is_digit(c : Char) -> Bool {
-  c >= '0' && c <= '9'
-}
-
-///|
 /// Tokenize a state block.
 ///
 /// Newlines are NOT tokens: a declaration ends at its closing brace and a
@@ -198,11 +183,11 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
   // The identifier starting at `from`, and where it ends. ("", from) when there
   // is none.
   fn word_at(from : Int) -> (String, Int) {
-    if from >= n || !is_ident_start(chars[from]) {
+    if from >= n || !@tutuca.is_ident_start(chars[from]) {
       return ("", from)
     }
     let mut k = from
-    while k < n && is_ident_char(chars[k]) {
+    while k < n && @tutuca.is_ident_char(chars[k]) {
       k = k + 1
     }
     (slice(from, k), k)
@@ -353,17 +338,18 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
       continue
     }
     // -- numbers ------------------------------------------------------------
-    if is_digit(c) || (c == '-' && i + 1 < n && is_digit(chars[i + 1])) {
+    if @tutuca.is_digit(c) ||
+      (c == '-' && i + 1 < n && @tutuca.is_digit(chars[i + 1])) {
       let start = i
       if c == '-' {
         i = i + 1
       }
-      while i < n && is_digit(chars[i]) {
+      while i < n && @tutuca.is_digit(chars[i]) {
         i = i + 1
       }
-      if i < n && chars[i] == '.' && i + 1 < n && is_digit(chars[i + 1]) {
+      if i < n && chars[i] == '.' && i + 1 < n && @tutuca.is_digit(chars[i + 1]) {
         i = i + 1
-        while i < n && is_digit(chars[i]) {
+        while i < n && @tutuca.is_digit(chars[i]) {
           i = i + 1
         }
       }
@@ -380,9 +366,9 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
       continue
     }
     // -- identifiers --------------------------------------------------------
-    if is_ident_start(c) {
+    if @tutuca.is_ident_start(c) {
       let start = i
-      while i < n && is_ident_char(chars[i]) {
+      while i < n && @tutuca.is_ident_char(chars[i]) {
         i = i + 1
       }
       let text = StringBuilder()

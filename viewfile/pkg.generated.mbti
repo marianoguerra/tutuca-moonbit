@@ -8,6 +8,8 @@ import {
 }
 
 // Values
+pub fn line_of(String, Int) -> Int
+
 pub fn split_file(String, name? : String) -> ViewFile raise FileError
 
 // Errors

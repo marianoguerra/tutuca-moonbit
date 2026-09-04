@@ -135,13 +135,3 @@ declare pub fn intent_handlers(
 ///|
 /// The report as the JSON a page or a build step reads.
 declare pub fn report_json(results : Array[SceneResult]) -> Json
-
-///|
-/// A mounted DOM as HTML, without the renderer's own bookkeeping.
-///
-/// `data-cid` and friends are how the dispatch path is reconstructed and the
-/// `§…§` comments are where a component's subtree begins; neither is anything
-/// a view wrote, and a snapshot that moves because a component id moved is a
-/// snapshot nobody can keep. The predicates are `render`'s, so the list of
-/// what counts as bookkeeping lives in one place.
-declare pub fn clean_html(node : @memdom.MemNode) -> String

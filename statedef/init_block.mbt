@@ -167,7 +167,8 @@ pub fn parse_init(
           raise BadKey(
             state=name,
             key="value",
-            want="an object of field values, but this is " + shape_of(other),
+            want="an object of field values, but this is " +
+              @scenedef.json_shape(other),
           )
         None => raise NoValue(name)
       }
@@ -415,19 +416,5 @@ fn str_key(
     None => ""
     Some(String(v)) => v
     Some(_) => raise BadKey(state~, key~, want="a string")
-  }
-}
-
-///|
-/// What a JSON value IS, for a message that says what was found as well as what
-/// was wanted.
-fn shape_of(j : Json) -> String {
-  match j {
-    Null => "null"
-    True | False => "a boolean"
-    Number(_) => "a number"
-    String(_) => "a string"
-    Array(_) => "a list"
-    Object(_) => "an object"
   }
 }

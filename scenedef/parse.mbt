@@ -64,7 +64,7 @@ pub fn parse_steps(
       at=-1,
       key="drive",
       want="a list of steps",
-      got=shape_of(steps),
+      got=json_shape(steps),
     )
   }
   let out : Array[Step] = []
@@ -92,7 +92,7 @@ fn scene_of(name : String, body : Json) -> Scene raise SceneError {
         at=-1,
         key="args",
         want="an object of field values",
-        got=shape_of(o.get("args").unwrap()),
+        got=json_shape(o.get("args").unwrap()),
       )
     None => ()
   }
@@ -165,7 +165,7 @@ pub fn parse_answers(
         at=-1,
         key="intents",
         want="an object of named answers",
-        got=shape_of(other),
+        got=json_shape(other),
       )
   }
   out
@@ -224,7 +224,7 @@ fn step_of(scene : String, at : Int, s : Json) -> Step raise SceneError {
               at~,
               key="is",
               want="true or false",
-              got=shape_of(other),
+              got=json_shape(other),
             )
           None => raise MissingKey(scene~, at~, verb="check", key="is")
         },
@@ -255,7 +255,7 @@ fn step_of(scene : String, at : Int, s : Json) -> Step raise SceneError {
               at~,
               key="args",
               want="a list of values",
-              got=shape_of(other),
+              got=json_shape(other),
             )
           None => []
         },
@@ -324,7 +324,7 @@ fn expect_of(
         at~,
         key="contains",
         want="a string",
-        got=shape_of(other),
+        got=json_shape(other),
       )
     (Some(_), Some(_)) =>
       raise BadType(
@@ -444,7 +444,7 @@ fn int_or(
     None => dflt
     Some(Number(n, ..)) => n.to_int()
     Some(other) =>
-      raise BadType(scene~, at~, key~, want="a number", got=shape_of(other))
+      raise BadType(scene~, at~, key~, want="a number", got=json_shape(other))
   }
 }
 
@@ -471,7 +471,7 @@ fn need_str_at(
   match o.get(key) {
     Some(String(s)) => s
     Some(other) =>
-      raise BadType(scene~, at~, key~, want="a string", got=shape_of(other))
+      raise BadType(scene~, at~, key~, want="a string", got=json_shape(other))
     None => raise MissingKey(scene~, at~, verb=key, key~)
   }
 }
@@ -487,7 +487,7 @@ fn need_str(
   match o.get(key) {
     Some(String(s)) => s
     Some(other) =>
-      raise BadType(scene~, at~, key~, want="a string", got=shape_of(other))
+      raise BadType(scene~, at~, key~, want="a string", got=json_shape(other))
     None => raise MissingKey(scene~, at~, verb~, key~)
   }
 }
@@ -495,7 +495,11 @@ fn need_str(
 ///|
 /// What a JSON value IS, for a message that says what was found as well as
 /// what was wanted.
-fn shape_of(j : Json) -> String {
+/// What a JSON value IS, for a message that says what arrived instead of what
+/// was wanted. Public because `statedef`'s init-block reader wants the same
+/// words: two vocabularies for the same six shapes is two error messages the
+/// reader has to learn.
+pub fn json_shape(j : Json) -> String {
   match j {
     Null => "null"
     True | False => "a boolean"
@@ -511,42 +515,7 @@ fn shape_of(j : Json) -> String {
 /// suggesting. Edit distance over a handful of short words, which is what the
 /// schema's own `NoSuchField` suggestion does.
 fn nearest(word : String, options : Array[String]) -> String? {
-  let mut best = ""
-  let mut best_d = 99
-  for o in options {
-    let d = distance(word, o)
-    if d < best_d {
-      best_d = d
-      best = o
-    }
-  }
-  if best_d <= 2 && best != "" {
-    Some(best)
-  } else {
-    None
-  }
-}
-
-///|
-fn distance(a : String, b : String) -> Int {
-  let xs = a.to_array()
-  let ys = b.to_array()
-  let n = ys.length()
-  let mut prev = Array::makei(n + 1, i => i)
-  for i = 1; i <= xs.length(); i = i + 1 {
-    let cur = Array::make(n + 1, 0)
-    cur[0] = i
-    for j = 1; j <= n; j = j + 1 {
-      let cost = if xs[i - 1] == ys[j - 1] { 0 } else { 1 }
-      let a1 = prev[j] + 1
-      let b1 = cur[j - 1] + 1
-      let c1 = prev[j - 1] + cost
-      let m = if a1 < b1 { a1 } else { b1 }
-      cur[j] = if m < c1 { m } else { c1 }
-    }
-    prev = cur
-  }
-  prev[n]
+  @tutuca.closest_name(word, options, limit=2)
 }
 
 ///|

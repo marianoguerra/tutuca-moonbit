@@ -29,16 +29,6 @@ fn control_for(kind : @component.FieldKind) -> String {
 }
 
 ///|
-/// `title` -> `setTitle`: the generated per-field mutator, by name.
-///
-/// The instance surfaces it through `member` as a self-pre-bound `Fn`, so
-/// calling it needs no downcast and no registry — just the field name the
-/// schema already gave us.
-fn setter_name(field : String) -> String {
-  @tutuca.mutator_name("set", field)
-}
-
-///|
 /// One row per declared field of `target`.
 ///
 /// Empty when the instance declares nothing — a guest instance, an ad-hoc
@@ -142,7 +132,7 @@ fn state_editor_comp(insp : Inspector) -> @component.Component {
       Intent("onEdit", [Str(field), v]) => {
         // The declared kind decides what shape to send...
         guard s.target.field_info(field) is Some(info) else { return Unchanged }
-        let next = s.target.call_field(setter_name(field), [
+        let next = s.target.call_field(@tutuca.mutator_name("set", field), [
           coerce_edit(info.kind(), v),
         ])
         // ...and the mutator answers with the successor instance. A write

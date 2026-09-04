@@ -262,7 +262,7 @@ fn read(
         if scene.raw {
           h.container.to_html()
         } else {
-          clean_html(h.container)
+          @harness.clean_html(h.container)
         },
       )
     RRenders => Num(h.render_count().to_double())

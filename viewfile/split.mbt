@@ -273,6 +273,29 @@ fn is_blank(src : String) -> Bool {
 }
 
 ///|
+/// The 1-based line `offset` falls on, for a diagnostic that points at the file
+/// the author edits rather than at the block sliced out of it.
+///
+/// Here because every caller is reporting against a span this package produced,
+/// and because two of them — `viewgen` and `cli` — had written it out
+/// byte-identically. `line_at` below is the same rule over an array the caller
+/// already has, which is what the splitter itself works in.
+pub fn line_of(text : String, offset : Int) -> Int {
+  let mut line = 1
+  let mut i = 0
+  for c in text {
+    if i >= offset {
+      break
+    }
+    if c == '\n' {
+      line = line + 1
+    }
+    i = i + 1
+  }
+  line
+}
+
+///|
 /// The 1-based line `offset` falls on, for a diagnostic that points at the
 /// file the author edits rather than at the block we sliced out of it.
 fn line_at(chars : Array[Char], offset : Int) -> Int {

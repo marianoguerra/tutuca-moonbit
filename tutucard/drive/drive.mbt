@@ -190,7 +190,7 @@ pub fn drive_scene(
     html: if scene.raw {
       h.container.to_html()
     } else {
-      clean_html(h.container)
+      @harness.clean_html(h.container)
     },
     state: h.drive_value(),
     styles: h.styles(),

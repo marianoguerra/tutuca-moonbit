@@ -85,16 +85,7 @@ fn module_key(manifest : DynManifest, config : ResolvedConfig) -> String {
   let sb = StringBuilder()
   sb.write_string("m:\{manifest.module_name}\nv:\{manifest.version}\n")
   sb.write_string(config.canonical())
-  let mut h : UInt64 = 0xcbf29ce484222325UL
-  for c in sb.to_string().to_array() {
-    h = (h ^ c.to_int().reinterpret_as_uint().to_uint64()) * 0x100000001b3UL
-  }
-  let digits = "0123456789abcdef".to_array()
-  let out = StringBuilder()
-  for i in 0..<16 {
-    out.write_char(digits[((h >> ((15 - i) * 4)) & 0xfUL).to_int()])
-  }
-  "\{manifest.module_name}@\{out.to_string()}"
+  "\{manifest.module_name}@\{@tutuca.fnv1a_hex(sb.to_string())}"
 }
 
 ///|
@@ -392,7 +383,7 @@ pub fn register_module(
   // a refusal — a module whose `*name` resolves to nothing still renders, and
   // what is wrong with it is a list to read.
   for f in child.check_names() {
-    diagnostic_line(diagnostics, "module \{manifest.module_name}", f)
+    diagnostics.push(f.to_line("module \{manifest.module_name}"))
   }
   let loaded : Module = {
     guest,
@@ -406,25 +397,6 @@ pub fn register_module(
   }
   self_ref.val = Some(loaded)
   loaded
-}
-
-///|
-/// One finding as a printable line, in the `CODE (level) where: message` shape
-/// `gen` uses. Shared by every screening pass so a module's diagnostics
-/// read as one list rather than as one list per rule that produced it.
-fn diagnostic_line(
-  into : Array[String],
-  where_ : String,
-  f : @lint.Finding,
-) -> Unit {
-  let level = match f.level {
-    Error => "error"
-    Warn => "warning"
-    Hint => "hint"
-  }
-  into.push(
-    "\{@lint.lint_code_name(f.code)} (\{level}) \{where_}: \{@lint.finding_message(f)}",
-  )
 }
 
 ///|
@@ -482,13 +454,15 @@ fn constraint_hint(
   key : String,
   ty : @tutuca.TyInfo,
 ) -> Unit {
-  diagnostic_line(into, "\{def.name}.\{field}", {
-    code: InertConstraint,
-    level: Hint,
-    info: [("name", field), ("key", key), ("kind", ty.show_source())],
-    location: None,
-    suggestion: None,
-  })
+  into.push(
+    @lint.Finding::{
+      code: InertConstraint,
+      level: Hint,
+      info: [("name", field), ("key", key), ("kind", ty.show_source())],
+      location: None,
+      suggestion: None,
+    }.to_line("\{def.name}.\{field}"),
+  )
 }
 
 ///|
@@ -539,13 +513,15 @@ fn screen_method_names(
         }
         None => None
       }
-      diagnostic_line(into, "\{def.name}/\{vname}", {
-        code: UndeclaredMethod,
-        level: Warn,
-        info,
-        location: None,
-        suggestion,
-      })
+      into.push(
+        @lint.Finding::{
+          code: UndeclaredMethod,
+          level: Warn,
+          info,
+          location: None,
+          suggestion,
+        }.to_line("\{def.name}/\{vname}"),
+      )
     }
   }
 }
@@ -570,7 +546,7 @@ fn screen_view(
   html : String,
   config_vars : Map[String, String],
 ) -> Unit raise ManifestError {
-  let line = (f : @lint.Finding) => diagnostic_line(into, where_, f)
+  let line = (f : @lint.Finding) => into.push(f.to_line(where_))
   for f in @lint.lint_html(html) {
     line(f)
   }

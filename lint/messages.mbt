@@ -319,3 +319,18 @@ pub fn finding_message(f : Finding) -> String {
     HtmlBogusComment => "Bogus comment — content dropped by the parser" + loc
   }
 }
+
+///|
+/// One finding as a printable line: `CODE (level) where: message`.
+///
+/// The shape `gen` prints and the shape a module's screening passes print, so
+/// a reader learns one format. `where_` is whatever locates it for the caller —
+/// a file and line for `gen`, a module name for a loaded component.
+pub fn Finding::to_line(self : Finding, where_ : String) -> String {
+  let level = match self.level {
+    Error => "error"
+    Warn => "warning"
+    Hint => "hint"
+  }
+  "\{lint_code_name(self.code)} (\{level}) \{where_}: \{finding_message(self)}"
+}

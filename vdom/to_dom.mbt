@@ -26,7 +26,7 @@ pub fn never_assign(name : String) -> Bool {
 /// IDL property names whose reflected attribute is named differently; needed
 /// when removal goes through the property path so the attribute is dropped
 /// too. `pub` for the same reason as `never_assign`: `vdom/memdom` needs the
-/// same mapping and had its own `reflected_attr_name` saying it again.
+/// same mapping, and says it once.
 pub fn prop_attr_name(name : String) -> String {
   match name {
     "className" => "class"

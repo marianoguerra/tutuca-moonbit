@@ -500,20 +500,12 @@ fn calls(body : String, name : String) -> Bool {
       }
     }
     // A match preceded by an identifier character is the tail of a longer name.
-    if hit && (i == 0 || !is_ident_char(chars[i - 1])) {
+    if hit && (i == 0 || !@tutuca.is_ident_char(chars[i - 1])) {
       return true
     }
     i = i + 1
   }
   false
-}
-
-///|
-fn is_ident_char(c : Char) -> Bool {
-  (c >= 'a' && c <= 'z') ||
-  (c >= 'A' && c <= 'Z') ||
-  (c >= '0' && c <= '9') ||
-  c == '_'
 }
 
 ///|
@@ -643,7 +635,7 @@ fn compile_wax(wax : String) -> Bytes raise GenError {
     Ok(bytes) => bytes
     Err(ds) => {
       let lines = []
-      let offset = line_count(preamble) + 1
+      let offset = @tutuca.line_count(preamble) + 1
       for d in ds {
         lines.push(
           "line \{d.loc.start.lnum - offset}: \{@message.to_plain_string(d.message)}",
@@ -652,17 +644,6 @@ fn compile_wax(wax : String) -> Bytes raise GenError {
       raise BadModule(lines)
     }
   }
-}
-
-///|
-fn line_count(s : String) -> Int {
-  let mut n = 0
-  for c in s {
-    if c == '\n' {
-      n = n + 1
-    }
-  }
-  n
 }
 
 ///|

@@ -98,7 +98,7 @@ pub impl @vdom.DomNode for MemNode with fn set_property(self, name, value) {
   }
   self.props[name] = value
   if is_reflected_prop(name) {
-    self.attrs[reflected_attr_name(name)] = value.to_attr_string()
+    self.attrs[@vdom.prop_attr_name(name)] = value.to_attr_string()
   }
   true
 }
@@ -126,10 +126,4 @@ fn select_set_value(sel : MemNode, value : @vdom.AttrValue) -> Unit {
     }
   }
   sel.props["value"] = Str(if found { target } else { "" })
-}
-
-///|
-/// The core's mapping, reached through it so the two cannot drift.
-fn reflected_attr_name(name : String) -> String {
-  @vdom.prop_attr_name(name)
 }

@@ -69,27 +69,6 @@ pub(all) struct ScriptToken {
 } derive(Debug, Eq)
 
 ///|
-fn is_ident_start(c : Char) -> Bool {
-  (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
-}
-
-///|
-/// Exactly the slot language's rule (`is_valid_val_id`), and deliberately so:
-/// one identifier rule across both halves is the §2.4 property this design
-/// exists to protect. It also settles a real ambiguity — with `-` admitted,
-/// `count-1` would lex as ONE name, and arithmetic is the whole point of a
-/// block. Which is why the two-word declaration kind is `enrichScope` rather
-/// than the design sketch's `enrich-scope`.
-fn is_ident_char(c : Char) -> Bool {
-  is_ident_start(c) || (c >= '0' && c <= '9')
-}
-
-///|
-fn is_digit(c : Char) -> Bool {
-  c >= '0' && c <= '9'
-}
-
-///|
 /// The word operators, so `is` and `mod` lex as operators rather than names.
 ///
 /// `not` is here too even though it is prefix-only: the parser decides
@@ -184,14 +163,14 @@ pub fn tokenize_script(source : String) -> Array[ScriptToken] raise ScriptError 
       continue
     }
     // -- numbers -------------------------------------------------------------
-    if is_digit(c) {
+    if @tutuca.is_digit(c) {
       let start = i
-      while i < n && is_digit(chars[i]) {
+      while i < n && @tutuca.is_digit(chars[i]) {
         i = i + 1
       }
-      if i < n && chars[i] == '.' && i + 1 < n && is_digit(chars[i + 1]) {
+      if i < n && chars[i] == '.' && i + 1 < n && @tutuca.is_digit(chars[i + 1]) {
         i = i + 1
-        while i < n && is_digit(chars[i]) {
+        while i < n && @tutuca.is_digit(chars[i]) {
           i = i + 1
         }
       }
@@ -207,9 +186,9 @@ pub fn tokenize_script(source : String) -> Array[ScriptToken] raise ScriptError 
       continue
     }
     // -- identifiers and word operators -------------------------------------
-    if is_ident_start(c) {
+    if @tutuca.is_ident_start(c) {
       let start = i
-      while i < n && is_ident_char(chars[i]) {
+      while i < n && @tutuca.is_ident_char(chars[i]) {
         i = i + 1
       }
       // A protocol-qualified operation is one lexical name. Keeping `::`
@@ -218,9 +197,9 @@ pub fn tokenize_script(source : String) -> Array[ScriptToken] raise ScriptError 
       if i + 2 < n &&
         chars[i] == ':' &&
         chars[i + 1] == ':' &&
-        is_ident_start(chars[i + 2]) {
+        @tutuca.is_ident_start(chars[i + 2]) {
         i = i + 2
-        while i < n && is_ident_char(chars[i]) {
+        while i < n && @tutuca.is_ident_char(chars[i]) {
           i = i + 1
         }
       }

@@ -214,8 +214,6 @@ pub let json_string_global_style : String
 
 pub fn json_string_views() -> Map[String, @anode.View]
 
-pub fn path_keys_label(Array[@core.StepKey]) -> String
-
 pub let recorder_bar_common_style : String
 
 pub fn recorder_bar_component(name? : String, views? : Map[String, @anode.View], initial? : RecorderBarState, common_style? : String, global_style? : String, update? : (RecorderBarState, @core.Dispatch, &@core.Ctx) -> @component.Update[RecorderBarState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
@@ -786,7 +784,6 @@ pub fn InstanceFieldsLoopWith::name(Self) -> String
 pub(all) enum InstanceFieldsMsg {
   NextPage
   PrevPage
-  ToggleIsExpanded
   Unknown(String, Array[@core.Value])
 }
 pub fn InstanceFieldsMsg::from_dispatch(@core.Dispatch) -> Self?
@@ -1022,7 +1019,6 @@ pub fn SchemaArrayLoopWith::name(Self) -> String
 pub(all) enum SchemaArrayMsg {
   NextPage
   PrevPage
-  ToggleIsExpanded
   Unknown(String, Array[@core.Value])
 }
 pub fn SchemaArrayMsg::from_dispatch(@core.Dispatch) -> Self?
@@ -1085,7 +1081,6 @@ pub fn SchemaCombinatorLoopWith::name(Self) -> String
 pub(all) enum SchemaCombinatorMsg {
   NextPage
   PrevPage
-  ToggleIsExpanded
   Unknown(String, Array[@core.Value])
 }
 pub fn SchemaCombinatorMsg::from_dispatch(@core.Dispatch) -> Self?
@@ -1140,7 +1135,6 @@ pub fn SchemaEnumLoopWith::name(Self) -> String
 pub(all) enum SchemaEnumMsg {
   NextPage
   PrevPage
-  ToggleIsExpanded
   Unknown(String, Array[@core.Value])
 }
 pub fn SchemaEnumMsg::from_dispatch(@core.Dispatch) -> Self?
@@ -1185,7 +1179,6 @@ pub fn SchemaObjectLoopWith::name(Self) -> String
 pub(all) enum SchemaObjectMsg {
   NextPage
   PrevPage
-  ToggleIsExpanded
   Unknown(String, Array[@core.Value])
 }
 pub fn SchemaObjectMsg::from_dispatch(@core.Dispatch) -> Self?
@@ -1237,7 +1230,6 @@ pub fn SchemaScalarLoopWith::name(Self) -> String
 pub(all) enum SchemaScalarMsg {
   NextPage
   PrevPage
-  ToggleIsExpanded
   Unknown(String, Array[@core.Value])
 }
 pub fn SchemaScalarMsg::from_dispatch(@core.Dispatch) -> Self?

@@ -216,18 +216,7 @@ pub fn SchemaInfo::shape_fingerprint(self : SchemaInfo) -> String {
       sb.write_string("\{pair.0}:\{n};")
     }
   }
-  // FNV-1a, hex — not cryptographic and does not need to be: it distinguishes
-  // schemas a human wrote, not ones an attacker did.
-  let mut h : UInt64 = 0xcbf29ce484222325UL
-  for c in sb.to_string().to_array() {
-    h = (h ^ c.to_int().reinterpret_as_uint().to_uint64()) * 0x100000001b3UL
-  }
-  let digits = "0123456789abcdef".to_array()
-  let out = StringBuilder()
-  for i in 0..<16 {
-    out.write_char(digits[((h >> ((15 - i) * 4)) & 0xfUL).to_int()])
-  }
-  out.to_string()
+  fnv1a_hex(sb.to_string())
 }
 
 ///|

@@ -10,6 +10,10 @@
 // Run via: moon run --target native cmd/dev -- gen-conformance
 // (which then runs `gen` over the file it writes).
 import {
+  // For `quote`: one owner for "this string, as a MoonBit literal". The copy
+  // that used to live here wrapped in quotes and escaped nothing, which is a
+  // handler name away from emitting a module that does not parse.
+  "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/tscript/conformance" @corpus,
   "moonbitlang/x/fs",

@@ -6,17 +6,33 @@
 // the cache validates the value it stored by physical identity anyway. Nothing
 // central has to be consulted to mint one, so a component loaded at runtime
 // brings everything it needs to make its own.
-//
-// The FNV-1a here is a second copy of `statedef/fingerprint.mbt`'s. They hash
-// different things — that one hashes a schema's SHAPE at generation time, this
-// one hashes a value at runtime — and `core` is the runtime package, so an
-// import edge to a build-time one is not worth eight lines.
 
 ///|
 const FNV_OFFSET : UInt64 = 0xcbf29ce484222325UL
 
 ///|
 const FNV_PRIME : UInt64 = 0x100000001b3UL
+
+///|
+/// FNV-1a over a string, as sixteen hex digits.
+///
+/// The one copy. Not cryptographic and does not need to be: every caller uses
+/// it to tell apart things a human wrote — a schema's shape, a module and the
+/// config it was resolved with, an instance's contents — and a collision costs
+/// a cache miss rather than a lie. Four hand-written copies of the same eight
+/// lines is four chances for one of them to be a different hash.
+pub fn fnv1a_hex(s : String) -> String {
+  let mut h = FNV_OFFSET
+  for c in s {
+    h = mix_byte(h, c.to_int())
+  }
+  let digits = "0123456789abcdef".to_array()
+  let out = StringBuilder()
+  for i in 0..<16 {
+    out.write_char(digits[((h >> ((15 - i) * 4)) & 0xfUL).to_int()])
+  }
+  out.to_string()
+}
 
 ///|
 fn mix_byte(h : UInt64, b : Int) -> UInt64 {

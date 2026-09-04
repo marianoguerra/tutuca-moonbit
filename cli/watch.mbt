@@ -180,7 +180,7 @@ pub fn watch_name(path : String, name : String?) -> String {
     Some(n) => n
     None => {
       let (_, stem) = split_path(path)
-      default_name(stem)
+      @statedef.upper_name(stem)
     }
   }
 }

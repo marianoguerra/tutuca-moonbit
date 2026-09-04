@@ -35,6 +35,7 @@ pub(all) struct Finding {
   location : Location?
   suggestion : Suggestion?
 } derive(Eq, @debug.Debug)
+pub fn Finding::to_line(Self, String) -> String
 
 pub(all) enum LintCode {
   UnknownDirective

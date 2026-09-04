@@ -214,7 +214,7 @@ fn with_script(
       e =>
         raise BadScriptBlock(
           comp~,
-          line=block.line + line_of(block.text, e.span().start) - 1,
+          line=block.line + @viewfile.line_of(block.text, e.span().start) - 1,
           message=e.message(),
         )
     }
@@ -247,23 +247,6 @@ fn script_answers(file : @viewfile.ViewFile, comp : String) -> Array[String] {
     }
   }
   out
-}
-
-///|
-/// The 1-based line of a character offset inside the block.
-fn line_of(text : String, offset : Int) -> Int {
-  let mut line = 1
-  let mut i = 0
-  for c in text {
-    if i >= offset {
-      break
-    }
-    if c == '\n' {
-      line = line + 1
-    }
-    i = i + 1
-  }
-  line
 }
 
 ///|

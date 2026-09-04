@@ -389,13 +389,13 @@ test "schema_view holds both the classified tree and the raw value" {
 }
 
 ///|
-test "path_keys_label joins fields and keys" {
+test "step_keys_label joins fields and keys" {
   let keys : Array[@tutuca.StepKey] = [
     { field: "value", key: None, },
     { field: "rows", key: Some(KInt(1)), },
     { field: "byName", key: Some(KStr("a")), },
   ]
-  inspect(@inspector.path_keys_label(keys), content="value.rows[1].byName[a]")
+  inspect(@tutuca.step_keys_label(keys), content="value.rows[1].byName[a]")
 }
 
 ///|

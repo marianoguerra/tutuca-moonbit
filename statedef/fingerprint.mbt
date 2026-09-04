@@ -95,27 +95,5 @@ pub fn fingerprint(defs : Array[StateDef]) -> String {
       sb.write_string("p:\{id};")
     }
   }
-  hex64(fnv1a(sb.to_string()))
-}
-
-///|
-/// FNV-1a over the shape string. Not cryptographic and does not need to be:
-/// it distinguishes schemas that a human wrote, not ones an attacker did.
-fn fnv1a(s : String) -> UInt64 {
-  let mut h : UInt64 = 0xcbf29ce484222325UL
-  for c in s.to_array() {
-    h = (h ^ c.to_int().reinterpret_as_uint().to_uint64()) * 0x100000001b3UL
-  }
-  h
-}
-
-///|
-fn hex64(v : UInt64) -> String {
-  let digits = "0123456789abcdef".to_array()
-  let sb = StringBuilder()
-  for i in 0..<16 {
-    let shift = (15 - i) * 4
-    sb.write_char(digits[((v >> shift) & 0xfUL).to_int()])
-  }
-  sb.to_string()
+  @tutuca.fnv1a_hex(sb.to_string())
 }

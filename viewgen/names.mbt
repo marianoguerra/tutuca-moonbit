@@ -25,19 +25,6 @@ fn upper(c : Char) -> Char {
 }
 
 ///|
-/// "setLabel" / "set-label" / "set_label" -> "SetLabel". Separators and any
-/// other non-alphanumeric characters are dropped, capitalizing what follows.
-///
-/// The same rule statedef applies to a WIT name, and deliberately the same
-/// function: a handler the views raise and a message case the schema declares
-/// both end up as variants of a generated enum, so if the two spellings could
-/// drift, a name declared in the block and used in a view would produce two
-/// different variants and neither would be wrong on its own.
-pub fn variant_name(name : String) -> String {
-  @statedef.upper_name(name)
-}
-
-///|
 /// "Counter" -> "counter", "TodoList" -> "todo_list".
 fn value_prefix(name : String) -> String {
   @statedef.value_prefix(name)
@@ -72,7 +59,7 @@ fn variants_for(
   let seen : Map[String, String] = Map([])
   let out : Array[(String, String)] = []
   for n in names {
-    let v = variant_name(n)
+    let v = @statedef.upper_name(n)
     match seen.get(v) {
       Some(first) => raise NameCollision(variant=v, first~, second=n)
       None => {

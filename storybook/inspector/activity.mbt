@@ -53,14 +53,6 @@ fn activity_log_comp() -> @component.Component {
 }
 
 ///|
-/// Join a record's path keys into a readable label, e.g. "value.rows[1]".
-/// A host may slice the prefix first. The rendering itself is `@tutuca`'s, so
-/// a log line and a printed `Path` agree.
-pub fn path_keys_label(path_keys : Array[@tutuca.StepKey]) -> String {
-  @tutuca.step_keys_label(path_keys)
-}
-
-///|
 /// Turn an observer record into an ActivityEntry instance.
 /// `inspect` builds the before/after value views (defaults to the plain data
 /// inspector). `path_label` and `time` default to the full path label and
@@ -92,7 +84,9 @@ pub fn Inspector::record_to_entry(
     "name": Str(record.name),
     "handlerName": Str(""),
     "matched": Str(record.matched.label()),
-    "pathLabel": Str(path_label.unwrap_or(path_keys_label(record.path_keys))),
+    "pathLabel": Str(
+      path_label.unwrap_or(@tutuca.step_keys_label(record.path_keys)),
+    ),
     "time": Str(time.unwrap_or("#\{seq}")),
     "before": before,
     "after": after,

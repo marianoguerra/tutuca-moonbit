@@ -28,8 +28,6 @@ pub fn generate(String, name~ : String, source_file~ : String) -> String raise G
 
 pub fn split_file(String, name? : String) -> @viewfile.ViewFile raise GenError
 
-pub fn variant_name(String) -> String
-
 pub fn view_surface(Array[@viewfile.RawView], macros? : Array[@viewfile.MacroDef], state? : @statedef.StateDef?) -> Surface raise GenError
 
 // Errors

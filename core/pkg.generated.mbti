@@ -20,6 +20,8 @@ pub fn builtin(String) -> Builtin?
 
 pub fn builtin_names() -> Array[String]
 
+pub fn closest_name(String, Array[String], limit~ : Int) -> String?
+
 pub let component_key : String
 
 pub fn default_route() -> Array[Leg]
@@ -36,11 +38,15 @@ pub fn domains_of_json(Json) -> Array[FieldDomain]
 
 pub fn domains_to_json(Array[FieldDomain]) -> Json
 
+pub fn edit_distance(String, String) -> Int
+
 pub fn escape_of(Char) -> Char?
 
 pub fn field_domains_to_mbt_source(Array[FieldDomain]) -> String
 
 pub fn first_broken_domain(Array[FieldDomain], Map[String, Value]) -> FieldDomain?
+
+pub fn fnv1a_hex(String) -> String
 
 pub fn instant_of_rfc3339(String) -> (Int64, Int) raise BadInstant
 
@@ -48,7 +54,15 @@ pub fn instant_to_rfc3339(Int64, Int) -> String
 
 pub fn invariant_failed(handler~ : String, pred~ : String, sentence? : String, state? : Value) -> Unit
 
+pub fn is_digit(Char) -> Bool
+
+pub fn is_ident_char(Char) -> Bool
+
+pub fn is_ident_start(Char) -> Bool
+
 pub fn is_type_name(String) -> Bool
+
+pub fn line_count(String) -> Int
 
 pub let module_key : String
 

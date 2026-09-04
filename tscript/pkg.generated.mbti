@@ -21,8 +21,6 @@ pub fn effect_min_arity(String) -> Int?
 
 pub fn effect_names() -> Array[String]
 
-pub fn escape_of(Char) -> Char?
-
 pub fn escaped_char(Char) -> Char?
 
 pub fn is_predicate(DeclKind) -> Bool

@@ -225,58 +225,7 @@ pub fn StateDef::field_of(
 /// generous; this suggests over field names, which are as long as the author
 /// made them.
 pub fn nearest(name : String, names : Array[String]) -> String? {
-  let limit = 1 + name.length() / 3
-  let mut best : String? = None
-  let mut best_d = limit + 1
-  for n in names {
-    let d = edit_distance(name, n)
-    if d < best_d {
-      best_d = d
-      best = Some(n)
-    }
-  }
-  if best_d <= limit {
-    best
-  } else {
-    None
-  }
-}
-
-///|
-/// Damerau-Levenshtein: adjacent transposition counts as ONE edit, matching
-/// `lint`'s. Plain Levenshtein scores a swap as two, and a swap is the
-/// typo people actually make.
-fn edit_distance(a : String, b : String) -> Int {
-  let (x, y) = (a.to_array(), b.to_array())
-  let n = y.length()
-  let mut prev2 = Array::make(n + 1, 0)
-  let mut prev = Array::makei(n + 1, i => i)
-  for i in 1..<=x.length() {
-    let cur = Array::make(n + 1, 0)
-    cur[0] = i
-    for j in 1..<=n {
-      let sub = prev[j - 1] + (if x[i - 1] == y[j - 1] { 0 } else { 1 })
-      let del = prev[j] + 1
-      let ins = cur[j - 1] + 1
-      let mut m = sub
-      if del < m {
-        m = del
-      }
-      if ins < m {
-        m = ins
-      }
-      if i > 1 && j > 1 && x[i - 1] == y[j - 2] && x[i - 2] == y[j - 1] {
-        let swap = prev2[j - 2] + 1
-        if swap < m {
-          m = swap
-        }
-      }
-      cur[j] = m
-    }
-    prev2 = prev
-    prev = cur
-  }
-  prev[n]
+  @tutuca.closest_name(name, names, limit=1 + name.length() / 3)
 }
 
 ///|

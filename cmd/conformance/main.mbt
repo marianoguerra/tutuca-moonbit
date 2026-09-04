@@ -136,7 +136,7 @@ fn project(cases : Array[@corpus.Case]) -> (String, String) {
     // name no arm answers dispatches its own, and renaming that would be the
     // projection quietly answering it.
     arms.write_string(
-      "    \{i} => Some(\{quote(if c.handler == d.name { name } else { c.handler })})\n",
+      "    \{i} => Some(\{@statedef.quote(if c.handler == d.name { name } else { c.handler })})\n",
     )
   }
   if skipped > 0 {
@@ -217,9 +217,4 @@ fn project(cases : Array[@corpus.Case]) -> (String, String) {
 ///|
 fn indent(s : String) -> String {
   s.split("\n").map(l => "  " + l.to_owned()).collect().join("\n")
-}
-
-///|
-fn quote(s : String) -> String {
-  "\"" + s + "\""
 }
