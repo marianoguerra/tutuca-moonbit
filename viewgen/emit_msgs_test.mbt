@@ -365,12 +365,14 @@ test "an intent bucket gets an enum, a decode and a dispatch" {
 /// Pinned rather than endorsed. It is how a card with no `handle` block works
 /// at all — the views are the declaration — but where the schema HAS declared
 /// the operation, two cases for one operation is a double vocabulary a reader
-/// of the block cannot see. It is also the mechanism behind a dispatch
-/// difference reported across releases: whether the bare name answers depends
-/// on whether some view happens to send it, which is not a property anyone
-/// would think to look for.
+/// of the block cannot see: whether the bare name answers depends on whether
+/// some view happens to send it, which is not a property anyone would think to
+/// look for.
 ///
-/// See `tgc/SPEC.md`, "A protocol operation has three dispatch names".
+/// Found while chasing a dispatch difference it turned out not to explain —
+/// that one was a generated mutator whose name collided with a protocol
+/// member's, and it is documented in 0.48.0's migration table. This is a real
+/// thing standing beside it, and nothing was watching it either.
 test "a bare view name beside a protocol-qualified declaration is a second message" {
   let src = @viewgen.generate(
     "<script type=\"tutuca/spec\">\n" +

@@ -55,6 +55,11 @@ they are pinned:
   the bare member matches nothing and gets a message of its own — the component
   answers both spellings while `receives` advertises one. Pinned rather than
   endorsed, with a control showing the difference is a view and not a schema.
+  Found while chasing a dispatch difference it turned out not to explain: that
+  one was a GENERATED MUTATOR whose name collided with a protocol member's
+  (`setOpen` for a field `open`), retired in 0.48.0 and named in its migration
+  table. Not a bug, and no note is owed — but this is a real thing standing
+  beside it, and nothing was watching it either.
 
 ### Documented
 
