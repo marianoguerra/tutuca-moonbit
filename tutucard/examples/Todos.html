@@ -1,0 +1,163 @@
+<script type="tutuca/spec">
+  /// A list that makes its own rows.
+  ///
+  /// The thing a card could not do until it could: `add` builds a `Todo` while
+  /// the card is running, and the host holds it.
+  state Todos {
+    /// What is being typed.
+    draft: String
+    /// The rows, each a child instance.
+    items: Array[Todo]
+
+    property {
+      count: Int { get }
+    }
+
+    /// True while there is something to add.
+    pred typed
+      format $'nothing to add' { not (empty? .draft) }
+  }
+
+  /// One row, declared beside the list that makes it.
+  state Todo {
+    /// What it says.
+    text: String
+    /// Whether it is struck through.
+    done: Bool
+
+    property {
+      caption: String { get }
+    }
+  }
+</script>
+
+<script type="tutuca/script" for="Todos">
+  /// Add a row, if there is anything to add.
+  ///
+  /// `new Todo` builds nothing yet: it opens an argument map for the sibling
+  /// component. `@cur.text` fills it in, and the child is made at the moment
+  /// `@cur` is READ — which is the push, and the last point the arguments can
+  /// still change.
+  receive add requires typed {
+    new Todo
+    cur.text = .draft
+    cur.done = false
+    .items.push cur
+    .draft = ''
+  }
+
+  /// Take a row away.
+  ///
+  /// The child's token goes with it, and nothing was superseded — the row was
+  /// not replaced by a successor, it is simply gone. Only reachability finds
+  /// that, which is why the host sweeps from the root.
+  receive drop(i) {
+    .items.deleteAt i
+  }
+
+  /// How many rows there are.
+  get count { len .items }
+</script>
+
+<script type="tutuca/script" for="Todo">
+  /// Strike this row through, or un-strike it.
+  receive toggle {
+    .done = not .done
+  }
+
+  /// What the row reads as.
+  get caption { if .done { $'{.text} (done)' } else { .text } }
+</script>
+
+<script type="tutuca/fixtures">
+{
+  "three rows": {
+    "doc": "A list that has been used, arrived at by using it.",
+    "default": true,
+    "drive": [
+      { "type": "input.draft", "value": "write the design" },
+      { "click": "button.add" },
+      { "type": "input.draft", "value": "read it back" },
+      { "click": "button.add" },
+      { "type": "input.draft", "value": "ship it" },
+      { "click": "button.add" }
+    ],
+    "value": {}
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "typing and adding makes a row": {
+    "steps": [
+      { "type": "input.draft", "value": "write it" },
+      { "click": "button.add" },
+      { "expect": "count", "at": "li.todo", "is": 1 },
+      { "expect": "text",  "at": "li.todo", "is": "write it" },
+      { "expect": "text",  "at": "output.count", "is": "1" },
+      { "expect": "value", "at": "input.draft", "is": "" }
+    ]
+  },
+  "a row strikes itself through": {
+    "steps": [
+      { "type": "input.draft", "value": "write it" },
+      { "click": "button.add" },
+      { "click": "li.todo" },
+      { "expect": "text", "at": "li.todo", "is": "write it (done)" }
+    ]
+  },
+  "two adds make two rows": {
+    "steps": [
+      { "type": "input.draft", "value": "one" },
+      { "click": "button.add" },
+      { "type": "input.draft", "value": "two" },
+      { "click": "button.add" },
+      { "expect": "texts", "at": "li.todo", "is": ["one", "two"] },
+      { "expect": "text",  "at": "output.count", "is": "2" }
+    ]
+  },
+  "a fixture can be arrived at by driving": {
+    "init": "three rows",
+    "steps": [
+      { "expect": "texts", "at": "li.todo",
+        "is": ["write the design", "read it back", "ship it"] },
+      { "expect": "text", "at": "output.count", "is": "3" },
+      { "click": "li.todo", "nth": 1 },
+      { "expect": "text", "at": "li.todo", "nth": 1, "is": "read it back (done)" }
+    ]
+  },
+  "a dropped row goes": {
+    "steps": [
+      { "type": "input.draft", "value": "one" },
+      { "click": "button.add" },
+      { "type": "input.draft", "value": "two" },
+      { "click": "button.add" },
+      { "click": "button.drop" },
+      { "expect": "texts", "at": "li.todo", "is": ["two"] },
+      { "expect": "text",  "at": "output.count", "is": "1" }
+    ]
+  },
+  "an empty draft adds nothing, and says why": {
+    "steps": [
+      { "click": "button.add" },
+      { "expect": "count", "at": "li.todo", "is": 0 },
+      { "expect": "log", "contains": "precondition `typed` does not hold" }
+    ]
+  }
+}
+</script>
+
+<template id="Todos:main">
+  <div>
+    <input class="draft" :value=".draft" @on.input=".draft = e.value">
+    <button class="add" @on.click="add">add</button>
+    <ul><x render-each=".items"></x></ul>
+    <button class="drop" @on.click="drop 0">drop the first</button>
+    <output class="count" @text=".count"></output>
+  </div>
+</template>
+
+<template id="Todo:main">
+  <li class="todo" @text=".caption" @on.click="toggle"></li>
+</template>

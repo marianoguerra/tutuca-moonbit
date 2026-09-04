@@ -1,0 +1,101 @@
+<script type="tutuca/spec">
+  /// One entry on the receipt.
+  struct Line { what: String, qty: Int }
+  /// One line of a shopping cart.
+  state Cart {
+    /// What is being bought.
+    item: String
+    /// How many of it.
+    qty: Int
+    /// What one costs.
+    price: Double
+    /// Set once the line has been sent upward.
+    sent: Bool
+    /// Every quantity this line has held.
+    history: Array[Int]
+    /// The receipt lines, each one a record this card builds with `new`.
+    receipt: Array[Line]
+
+    property {
+      total: Double { get }
+      line: String { get }
+      remembered: Int { get }
+      tidy: String { get }
+    }
+
+    /// A line is only ever worth a non-negative amount.
+    invariant sane { .qty >= 0 }
+
+    /// True while there is something to send.
+    pred hasItem
+      format $'a line with no item cannot be checked out ({.qty} of nothing)'
+      { not (empty? .item) }
+
+    /// True once the item names something a receipt would print.
+    pred namable { not (empty? (trim .item)) }
+  }
+</script>
+
+<script type="tutuca/script">
+  /// What this line costs.
+  get total { .qty * .price }
+
+  /// The line as a sentence.
+  get line { $'{.qty} x {.item} = {.qty * .price}' }
+
+  /// One more.
+  receive more {
+    .qty += 1
+  }
+
+  /// One fewer, but never below nothing.
+  receive fewer {
+    .qty = max 0 (.qty - 1)
+  }
+
+  /// Name the item from what the view passed.
+  receive rename(text) {
+    .item = text
+  }
+
+  /// Tell the parent about this line, once it has an item.
+  receive checkout requires hasItem {
+    ask dyn 'lineReady' .item (.qty * .price)
+    .sent = true
+    drop
+  }
+
+  /// Remember the quantity.
+  receive remember {
+    .history.push .qty
+  }
+
+  /// Write the line onto the receipt, as a record built here.
+  receive receipt {
+    new Line
+    cur.what = .item
+    cur.qty = .qty
+    .receipt.push cur
+  }
+
+  /// How many quantities have been remembered.
+  get remembered { len .history }
+
+  /// The item, tidied: no stray spaces, and compared case-blind.
+  get tidy { trim .item }
+</script>
+
+<template id="Cart">
+  <div>
+    <input @on.input="rename e.value" :value=".item" placeholder="what?">
+    <button @on.click="fewer">-</button>
+    <span @text=".qty"></span>
+    <button @on.click="more">+</button>
+    <p @text=".line"></p>
+    <button @on.click="remember">remember</button>
+    <button @on.click="receipt">to receipt</button>
+    <p @text="$'{.remembered} remembered: {.history}'"></p>
+    <button @on.click="checkout" @show="$hasItem">checkout</button>
+    <p @text="'sent'" @show=".sent"></p>
+  </div>
+</template>

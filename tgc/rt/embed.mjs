@@ -1,6 +1,6 @@
 // Regenerate `rt_src_gen.mbt` from `rt.wax`.
 //
-//   node tgc/rt/embed.mjs
+//   moon run --target native cmd/dev -- rt-embed   (snapshots + drift-checks)
 //
 // The `.wax` is authoritative; this is a copy of it that MoonBit can reach. The
 // alternative is a page fetching a file out of this repository's `_build`,

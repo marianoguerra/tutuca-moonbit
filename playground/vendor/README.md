@@ -18,7 +18,7 @@ node playground/build/fetch-compiler.mjs --force   # re-fetch
 ```
 
 `playground/build/assemble.mjs` also calls `ensureCompiler()` automatically, so
-`cmd/dev -- playground` and `cmd/dev -- dist` fetch it for you on a fresh clone.
+`cmd/dev -- dist` fetches it for you on a fresh clone.
 
 Only `moonc-web.cjs` is gitignored; `moonc-web.d.ts` (the tiny type stub) is
 kept in the repo.
@@ -62,7 +62,7 @@ Bumping is one edit plus a re-fetch:
 ```sh
 $EDITOR playground/build/toolchain.json          # both fields, together
 node playground/build/fetch-compiler.mjs --force
-moon run --target native cmd/dev -- playground   # check-viewgen-tab proves the pair
+moon run --target native cmd/dev -- dist   # check-viewgen-tab proves the pair
 ```
 
 Nothing else quotes the versions — don't reintroduce a second copy. What a

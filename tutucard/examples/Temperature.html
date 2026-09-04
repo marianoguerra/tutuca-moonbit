@@ -1,0 +1,41 @@
+<script type="tutuca/spec">
+  /// A temperature, readable either way round.
+  state Temperature {
+    /// Degrees Celsius.
+    c: Double
+
+    property {
+      f: Double { get }
+      both: String { get }
+    }
+
+    /// Never below absolute zero.
+    invariant physical { .c >= (-273.15) }
+  }
+</script>
+
+<script type="tutuca/script">
+  /// The same temperature in Fahrenheit.
+  get f { (.c * 1.8) + 32 }
+
+  /// Warmer by one degree.
+  receive warmer {
+    .c += 1
+  }
+
+  /// Cooler by one degree.
+  receive cooler {
+    .c -= 1
+  }
+
+  /// Both scales, in one sentence.
+  get both { $'{.c} °C is {(.c * 1.8) + 32} °F' }
+</script>
+
+<template id="Temperature">
+  <div>
+    <button @on.click="cooler">cooler</button>
+    <button @on.click="warmer">warmer</button>
+    <p @text=".both"></p>
+  </div>
+</template>

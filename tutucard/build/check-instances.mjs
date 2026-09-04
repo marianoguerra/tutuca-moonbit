@@ -38,7 +38,7 @@ const { driveCard } = await import(
   pathToFileURL(join(OUT, "card.js")).href
 );
 const CARD = readFileSync(
-  join(REPO, "tutucard", "wasm", "examples", "Todos.html"),
+  join(REPO, "tutucard", "examples", "Todos.html"),
   "utf8",
 );
 

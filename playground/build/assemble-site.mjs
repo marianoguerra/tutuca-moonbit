@@ -24,9 +24,10 @@
 //
 // Prereq: assemble.mjs and tutucard/build/assemble.mjs have run. Run:
 //   node playground/build/assemble-site.mjs
-import { existsSync, mkdirSync, rmSync, readdirSync, readFileSync, writeFileSync, cpSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, readdirSync, readFileSync, cpSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { copyTgcValues } from "../../scripts/tgc-values.mjs";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const SITE = join(REPO, "playground/site");
@@ -64,17 +65,8 @@ cpSync(join(CARDWEB, "card-embed.js"), join(outSite, "card-embed.js"));
 cpSync(join(CARDWEB, "regions.js"), join(outSite, "regions.js"));
 cpSync(join(CARDWEB, "margaui.js"), join(outSite, "margaui.js"));
 cpSync(join(CARDWEB, "card.js"), join(outSite, "card.js"));
-// The value bridge, from the one place it is written — the same source
-// `tutucard/build/assemble.mjs` copies it from, and rewritten the same way,
-// because `card.js` imports it by a repo-relative path that is flat here.
-cpSync(join(REPO, "tgc", "host", "values.mjs"), join(outSite, "tgc-values.mjs"));
-writeFileSync(
-  join(outSite, "card.js"),
-  readFileSync(join(outSite, "card.js"), "utf8").replace(
-    "../../tgc/host/values.mjs",
-    "./tgc-values.mjs",
-  ),
-);
+// The value bridge, copied and repointed the one way it is done anywhere.
+copyTgcValues(outSite);
 cpSync(join(SITE, "cards"), join(outSite, "cards"), { recursive: true });
 // Two artifacts of the card build rather than of this one: the runtime every
 // embed needs, and the margaui compiler an `<mb-card margaui>` fetches when it

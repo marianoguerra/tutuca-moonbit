@@ -406,39 +406,8 @@ pub fn tasks() -> Array[Task] {
       ],
     },
     {
-      name: "playground",
-      about: "assemble dist/playground/ (in-browser MoonBit playground): build the js library + mount host, then collect the compiler + prebuilt .core/.mi + web shell",
-      commands: [
-        moon("build · js library", ["build", "--target", "js"]),
-        // `moon build --target js` alone does not build playground/host (it is
-        // not in the default build set); assemble.mjs needs its host.core.
-        moon("build · js playground host", [
-          "build", "--target", "js", "playground/host",
-        ]),
-        // Likewise the module-root facade package (marianoguerra/tutuca) is not
-        // reachable from the demo build roots, so it is not in the default build
-        // set. assemble.mjs exposes its .mi to user code as @tutuca (it re-exports
-        // core's value types — see reexport.mbt), so build it explicitly.
-        moon("build · js root facade", ["build", "--target", "js", "."]),
-        {
-          label: "assemble dist/playground",
-          prog: "node",
-          args: ["playground/build/assemble.mjs"],
-        },
-        // The View tab generates a MoonBit module in the browser and feeds it
-        // to the in-browser compiler. Nothing else can catch a generated
-        // module that fails to compile THERE (no moon.pkg, @tutuca is the
-        // root facade), so drive that path headlessly on every assemble.
-        {
-          label: "check · playground view tab",
-          prog: "node",
-          args: ["playground/build/check-viewgen-tab.mjs"],
-        },
-      ],
-    },
-    {
       name: "tutucard-playground",
-      about: "assemble dist/tutucard/ (the card playground, which carries the card compiler and no MoonBit one): build the js host, the margaui class compiler and the CodeMirror bundle, copy the shell, then check every starter card checks AND compiles AND that every scene its `tutuca/test` block declares passes",
+      about: "assemble dist/tutucard/ (the card playground, which carries the card compiler and no MoonBit one), then run every card gate over it",
       commands: [
         // No MoonBit compiler, no worker, no prebuilt .mi/.core closure and no
         // toolchain pin — a card is parsed and mounted, so what ships is the
@@ -449,44 +418,44 @@ pub fn tasks() -> Array[Task] {
         // codemirror>` its own). Both are fetched lazily, after the first card
         // is mounted, so neither is ever in front of the page.
         // assemble.mjs runs all three builds itself.
+        //
+        // See tutucard/README.md.
+        assemble_tutucard(),
+        ..card_gates(),
+      ],
+    },
+    {
+      name: "check-cards",
+      about: "assemble dist/tutucard/ and run every card gate over it",
+      // In `ci`, which is the point of naming it: the two card corpora — the
+      // starter cards, which are JavaScript strings, and
+      // `playground/site/cards/*.html`, which are in no moon package — are
+      // unreachable from `moon test`, so nothing else stands between a broken
+      // card and whoever opens the page.
+      //
+      // It assembles rather than assuming a `dist/`: a gate that only runs when
+      // somebody has already run something else is a gate that does not run.
+      commands: [assemble_tutucard(), ..card_gates()],
+    },
+    {
+      name: "check-tgc",
+      about: "the node harnesses over the component format: composition, conformance, and whether tgc/rt/rt_src_gen.mbt still matches rt.wax",
+      commands: [
+        // These build hand-written modules from `_build` and instantiate them
+        // together against one import object, which no `moon test` can do — and
+        // they ran in no task at all, so the only check that `rt_src_gen.mbt`
+        // matches `rt.wax` was a harness nobody invoked. compose.test.mjs needs
+        // `wasm-tools` on PATH; the other two need only moon and node.
+        // Named one by one rather than globbed: a task's command is spawned
+        // without a shell, and `node --test <dir>` reads the directory as a
+        // module rather than walking it.
         {
-          label: "assemble dist/tutucard",
+          label: "check · tgc node harnesses",
           prog: "node",
-          args: ["tutucard/build/assemble.mjs"],
-        },
-        // The starter cards are JavaScript strings no MoonBit test can reach,
-        // so a card that stopped parsing would be found by whoever opened the
-        // page. This runs the real loader over every one of them.
-        {
-          label: "check · starter cards load",
-          prog: "node",
-          args: ["tutucard/build/check-examples.mjs"],
-        },
-        // …and every scene every card DECLARES. The three gates above prove a
-        // card loads: it checks, it compiles, the host takes the bytes. None of
-        // them presses a button, so a card whose `inc` adds two passes all
-        // three. This mounts each card on the in-memory DOM and runs the steps
-        // its `<script type="tutuca/test">` block names.
-        {
-          label: "check · card scenes pass",
-          prog: "node",
-          args: ["tutucard/build/run-tests.mjs"],
-        },
-        // …and a card does not grow a table entry per keystroke. Both halves of
-        // the collector: the superseded handle a successor replaced, and the
-        // row that was simply removed and superseded by nothing.
-        {
-          label: "check · card instances are collected",
-          prog: "node",
-          args: ["tutucard/build/check-instances.mjs"],
-        },
-        // The structured view EDITS the card by character offset, which is the
-        // one part of this page that can corrupt what an author typed. Held to
-        // its contract without a browser.
-        {
-          label: "check · card regions split and splice",
-          prog: "node",
-          args: ["tutucard/build/check-regions.mjs"],
+          args: [
+            "--test", "tgc/test/compose.test.mjs", "tgc/test/conformance.test.mjs",
+            "tgc/test/guest.test.mjs",
+          ],
         },
       ],
     },
@@ -704,6 +673,65 @@ fn build_commands() -> Array[Command] {
 }
 
 ///|
+/// Assemble `dist/tutucard/` — named once, because both the playground task and
+/// `dist` need the card runtime and only one of them wants the gates after it.
+fn assemble_tutucard() -> Command {
+  {
+    label: "assemble dist/tutucard",
+    prog: "node",
+    args: ["tutucard/build/assemble.mjs"],
+  }
+}
+
+///|
+/// The four checks over an assembled `dist/tutucard/`.
+///
+/// They are a function rather than a task's inline list because `ci` runs them
+/// too: the two card corpora — the starter cards, which are JavaScript strings,
+/// and `playground/site/cards/*.html`, which are in no moon package — are
+/// unreachable from `moon test`, so before this the only thing standing between
+/// a broken card and whoever opened the page was somebody running the
+/// playground task by hand.
+fn card_gates() -> Array[Command] {
+  [
+    // The starter cards are JavaScript strings no MoonBit test can reach, so a
+    // card that stopped parsing would be found by whoever opened the page. This
+    // runs the real loader over every one of them.
+    {
+      label: "check · starter cards load",
+      prog: "node",
+      args: ["tutucard/build/check-examples.mjs"],
+    },
+    // …and every scene every card DECLARES. Loading proves a card checks,
+    // compiles and that the host takes the bytes. None of that presses a
+    // button, so a card whose `inc` adds two passes all of it. This mounts each
+    // card on the in-memory DOM and runs the steps its `<script
+    // type="tutuca/test">` block names.
+    {
+      label: "check · card scenes pass",
+      prog: "node",
+      args: ["tutucard/build/run-tests.mjs"],
+    },
+    // …and a card does not grow a table entry per keystroke. Both halves of the
+    // collector: the superseded handle a successor replaced, and the row that
+    // was simply removed and superseded by nothing.
+    {
+      label: "check · card instances are collected",
+      prog: "node",
+      args: ["tutucard/build/check-instances.mjs"],
+    },
+    // The structured view EDITS the card by character offset, which is the one
+    // part of that page able to corrupt what an author typed. Held to its
+    // contract without a browser.
+    {
+      label: "check · card regions split and splice",
+      prog: "node",
+      args: ["tutucard/build/check-regions.mjs"],
+    },
+  ]
+}
+
+///|
 /// Assembled tasks: name -> (about, the steps it plans).
 ///
 /// These cannot be `tasks()` entries because they are not a list of commands —
@@ -718,6 +746,10 @@ fn assembled() -> Array[(String, String, () -> Array[Step])] {
     (
       "storybook-template-embed", "regenerate cli/storybook_template_gen.mbt (the gallery project `tutuca new-storybook` writes) from storybook/template",
       storybook_template_embed_steps,
+    ),
+    (
+      "rt-embed", "re-embed tgc/rt/rt.wax into tgc/rt/rt_src_gen.mbt (the runtime source that ships)",
+      rt_embed_steps,
     ),
     (
       "css-bundle", "regenerate css/{tailwind,margaui}_bundle_gen.mbt from the pinned tailwind npm release + margaui clone (needs network)",
@@ -752,11 +784,11 @@ fn composites() -> Array[(String, String, Array[String])] {
     // in `moon fmt` over everything.
     (
       "ci",
-      "gen drift + skill-embed drift + check + the example/skill checks + test + build (build-smokes every backend & demo)",
+      "every drift check (gen, the three embeds), then check, the example/skill/template/tgc/card checks, test and build",
       [
-        "gen", "skill-embed", "storybook-template-embed", "check", "check-examples",
+        "gen", "skill-embed", "storybook-template-embed", "rt-embed", "check", "check-examples",
         "check-skill", "check-storybook-template", "check-publish-graph", "check-diagnostics",
-        "test", "build",
+        "check-tgc", "check-cards", "test", "build",
       ],
     ),
   ]
@@ -774,6 +806,10 @@ fn dist_steps() -> Array[Step] {
     steps.push(step)
   }
   for step in storybook_template_embed_steps() {
+    steps.push(step)
+  }
+  // …and the runtime source that ships inside the package, for the same reason.
+  for step in rt_embed_steps() {
     steps.push(step)
   }
   for cmd in build_commands() {
@@ -872,18 +908,24 @@ fn dist_steps() -> Array[Step] {
       args: ["playground/build/assemble.mjs"],
     }),
   )
+  // The View tab generates a MoonBit module in the browser and hands it to the
+  // in-browser compiler. Nothing else can catch a generated module that fails to
+  // compile THERE — no moon.pkg, and `@tutuca` is the root facade rather than
+  // core/ — and this is the assembly that gets deployed, so the gate belongs on
+  // this path rather than on a task somebody remembers to run.
+  steps.push(
+    Run({
+      label: "check · playground view tab",
+      prog: "node",
+      args: ["playground/build/check-viewgen-tab.mjs"],
+    }),
+  )
   // The card runtime, which the landing site's <mb-card> embeds load, and the
   // margaui class compiler an `<mb-card margaui>` fetches. Assembled BEFORE the
   // site, because assemble-site.mjs copies both out of dist/tutucard/ — the
   // card playground itself is a separate task, but its runtime is what makes an
   // embedded card on the landing page work at all.
-  steps.push(
-    Run({
-      label: "assemble dist/tutucard (the card runtime the site embeds)",
-      prog: "node",
-      args: ["tutucard/build/assemble.mjs"],
-    }),
-  )
+  steps.push(Run(assemble_tutucard()))
   steps.push(
     Run({
       label: "assemble landing site (dist root)",
@@ -998,6 +1040,16 @@ const STORYBOOK_EMBED : String = "cli/storybook_template_gen.mbt"
 const STORYBOOK_EMBED_WAS : String = "_build/storybook_template_gen.mbt.was"
 
 ///|
+/// The embedded runtime module source, and where its pre-regeneration copy
+/// parks. `tgc/rt/rt.wax` is the source; `tgc/emit`'s `compile_runtime` builds
+/// the module from what is embedded here, so a page that hosts a component gets
+/// the runtime without fetching this repository's `_build`.
+const RT_EMBED : String = "tgc/rt/rt_src_gen.mbt"
+
+///|
+const RT_EMBED_WAS : String = "_build/rt_src_gen.mbt.was"
+
+///|
 /// Regenerate the CLI's embedded storybook template — the gallery project
 /// `tutuca new-storybook` writes out. Run after editing `storybook/template/`;
 /// `dist` runs it, and `check-storybook-template` is what proves the result is
@@ -1022,6 +1074,38 @@ pub fn storybook_template_embed_steps() -> Array[Step] {
       label: "drift check · cli/storybook_template_gen.mbt matches storybook/template/",
       prog: "diff",
       args: [STORYBOOK_EMBED_WAS, STORYBOOK_EMBED],
+    }),
+  ]
+}
+
+///|
+/// Re-embed `tgc/rt/rt.wax` into `tgc/rt/rt_src_gen.mbt`. Run after editing the
+/// runtime module.
+///
+/// The third embed, and it gets the other two's shape for the reason they have
+/// it: this one ships INSIDE the published package, and `compile_runtime` builds
+/// a component's runtime from it rather than from the `.wax` beside it. A
+/// `rt.wax` edited without re-embedding is a source file that no longer
+/// describes the module anybody actually gets, and nothing in `check` or `test`
+/// reads the pair — only `tgc/test/guest.test.mjs`, which ran in no task until
+/// `check-tgc`.
+///
+/// The embed drops comments, so a comment-only edit to `rt.wax` correctly
+/// produces no diff here.
+pub fn rt_embed_steps() -> Array[Step] {
+  [
+    Mkdir("_build"),
+    Copy(from=RT_EMBED, to=RT_EMBED_WAS),
+    Run({
+      label: "embed tgc/rt/rt.wax",
+      prog: "node",
+      args: ["tgc/rt/embed.mjs"],
+    }),
+    Run(moon("fmt", ["fmt"])),
+    Run({
+      label: "drift check · tgc/rt/rt_src_gen.mbt matches rt.wax",
+      prog: "diff",
+      args: [RT_EMBED_WAS, RT_EMBED],
     }),
   ]
 }

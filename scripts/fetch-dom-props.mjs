@@ -29,6 +29,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { webrefRaw } from "./upstreams.mjs";
 
 // w3c/webref, pinned. 2026-08-19.
 export const WEBREF_COMMIT = "b706309000d646ba04ab2dcd79b4967db547f4cf";
@@ -36,8 +37,7 @@ export const WEBREF_COMMIT = "b706309000d646ba04ab2dcd79b4967db547f4cf";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "eventpath/dom_props_gen.mbt");
 
-const RAW = (f) =>
-  `https://raw.githubusercontent.com/w3c/webref/${WEBREF_COMMIT}/ed/idl/${f}`;
+const RAW = (f) => webrefRaw(WEBREF_COMMIT, `ed/idl/${f}`);
 
 // The specs an event path can reach. Every one is fetched whole and parsed
 // whole; what is KEPT is decided by the closure below, not by this list, so

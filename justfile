@@ -1,6 +1,8 @@
-# tutuca-mb task index — thin wrappers over the MoonBit task runner in
-# cmd/dev (the single place workflows are defined; see AGENTS.md). Anything
-# not listed here: `just dev <task>`.
+# tutuca-mb — a short front door to the task runner in cmd/dev, which is the
+# single place workflows are defined. `just dev <task>` reaches any task; run
+# it with no task to see them all. A recipe here that is not a one-line wrapper
+# has started being a task in the wrong place. The `clean` pair at the bottom
+# is the deliberate exception and says why.
 
 dev := "moon run --target native cmd/dev --"
 cli := "moon run --target native cmd/tutuca --"
@@ -19,19 +21,11 @@ setup:
 check:
     {{dev}} check
 
-# compile-check the playground's editable examples (no moon package includes them)
-check-examples:
-    {{dev}} check-examples
-
-# compile-check the MoonBit snippets in the bundled skill (skill/tutuca/)
-check-skill:
-    {{dev}} check-skill
-
 # format sources and regenerate the .mbti interface files
 fmt:
     {{dev}} fmt
 
-# run any cmd/dev task directly (escape hatch): just dev <task>
+# any cmd/dev task, and the task list itself: just dev | just dev check-skill
 dev *ARGS:
     {{dev}} {{ARGS}}
 
@@ -45,34 +39,19 @@ test:
 t PKG:
     moon test {{PKG}}
 
-# coverage analysis
-coverage:
-    {{dev}} coverage
-
-# check + test — what CI runs
+# every gate — what CI runs
 ci:
     {{dev}} ci
 
 # ── use ────────────────────────────────────────────────────────────────────
 
-# run the tutuca CLI: just cli help | just cli gen <file.html>
+# run the tutuca CLI: just cli help | just cli gen <file.html> | just cli gen-margaui-css
 cli *ARGS:
     {{cli}} {{ARGS}}
 
-# regenerate every checked-in *_view_gen.mbt, then drift-check them
-#
-# The whole repo. For a single file, use the CLI passthrough above:
-#   just cli gen path/to/counter.html --name Counter
+# regenerate every checked-in *_view_gen.mbt (whole repo), then drift-check them
 gen:
     {{dev}} gen
-
-# compile a project's view classes into CSS (stock Tailwind)
-gen-tailwind-css *ARGS:
-    {{cli}} gen-tailwind-css {{ARGS}}
-
-# compile a project's view classes into CSS (Tailwind + margaui)
-gen-margaui-css *ARGS:
-    {{cli}} gen-margaui-css {{ARGS}}
 
 # ── package ────────────────────────────────────────────────────────────────
 
@@ -95,14 +74,6 @@ dist:
 # serve dist/ locally (build it first with `just dist`)
 serve PORT="8000":
     python3 -m http.server {{PORT}} --directory dist
-
-# assemble only dist/playground/ (needs the vendored compiler: `just dev fetch-moonc` once)
-playground:
-    {{dev}} playground
-
-# dry-run package the module for mooncakes.io
-package:
-    moon package
 
 # stage + npm pack the playground's npm packages into _build/npm (run `just dist` first)
 npm-pack:

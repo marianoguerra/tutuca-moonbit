@@ -98,7 +98,7 @@ and hands them to a `js_of_ocaml` moonc built elsewhere, so the two must come
 from the same moonc. Both are pinned in one place,
 `playground/build/toolchain.json`; bump the fields together, re-fetch with
 `node playground/build/fetch-compiler.mjs --force`, and re-run
-`cmd/dev -- playground`.
+`cmd/dev -- dist`.
 
 ## How to verify after a bump
 

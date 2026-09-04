@@ -1,0 +1,184 @@
+<script type="tutuca/spec">
+  /// A board that publishes its theme, and rows that read it.
+  ///
+  /// The thing a card could not SAY until it could: where a value comes from.
+  /// `provide` and `lookup` used to be MoonBit-only — arguments a component was
+  /// assembled with — so a card could read a `*name` and never declare one.
+  state Board {
+    /// What the whole subtree is themed with.
+    theme: String
+    /// What is being typed.
+    draft: String
+    /// The rows, each a child instance.
+    items: Array[Row]
+
+    /// Published to everything below, and re-evaluated every render: change
+    /// `.theme` and every row reads the new value, with nothing threaded
+    /// through and no message sent.
+    ///
+    /// The expression must be ADDRESSABLE — a field or a `.seq[.key]` — because
+    /// a provide doubles as the path a `<x render="*name">` teleports through.
+    provide { theme = .theme }
+
+    /// True while there is something to add.
+    pred typed
+      format $'nothing to add' { not (empty? .draft) }
+  }
+
+  /// One row, declared beside the list that makes it.
+  state Row {
+    /// What it says.
+    label: String
+
+    property {
+      caption: String { get }
+    }
+
+    /// What it ASKS FOR, not who supplies it — there is no producer named
+    /// here. The default is what a row reads when nothing above provides one,
+    /// which is what a scene driving a bare `Row` sees.
+    lookup { theme = 'plain' }
+  }
+</script>
+
+<script type="tutuca/script" for="Board">
+  /// Add a row, if there is anything to add.
+  receive add requires typed {
+    new Row
+    cur.label = .draft
+    .items.push cur
+    .draft = ''
+  }
+
+  /// Ask the first row about itself.
+  ///
+  /// The board is the SENDER here, which is what gives the row's reply a
+  /// position to reach.
+  receive poke {
+    sendAt &.items[0] 'ping'
+  }
+
+  /// The row's answer, arriving as an ordinary message. Nothing here can tell
+  /// it from one anybody else sent — which is the whole of what a reply is.
+  receive pong(t) {
+    .draft = t
+  }
+</script>
+
+<script type="tutuca/script" for="Row">
+  /// What the row reads as.
+  get caption { .label }
+
+  /// A HANDLER reading the binding, which is the same question the view asks
+  /// one line down and the same answer: the host resolves this component's
+  /// declared lookups before it enters the card, and `*theme` reads one.
+  ///
+  /// It is a `receive`, so a scene can drive it and read the result back out
+  /// of the state.
+  receive stamp {
+    .label = $'{.label} ({*theme})'
+  }
+
+  /// Answering whoever sent this one, under a name this handler picked. An
+  /// intent's answer is named by the runtime because its raiser declared arms
+  /// for one; a message's sender declared none, so the replier names it.
+  receive ping {
+    reply 'pong' .label
+  }
+</script>
+
+<script type="tutuca/fixtures">
+{
+  "themed": {
+    "doc": "Two rows under a theme, arrived at by using the board.",
+    "default": true,
+    "drive": [
+      { "type": "input.theme", "value": "dark" },
+      { "type": "input.draft", "value": "write it" },
+      { "click": "button.add" },
+      { "type": "input.draft", "value": "read it back" },
+      { "click": "button.add" }
+    ],
+    "value": {}
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "a row reads what the board provides": {
+    "steps": [
+      { "type": "input.theme", "value": "dark" },
+      { "type": "input.draft", "value": "write it" },
+      { "click": "button.add" },
+      { "expect": "text", "at": "span.label", "is": "write it" },
+      { "expect": "text", "at": "span.theme", "is": "dark" }
+    ]
+  },
+  "changing the provide changes every row, with no message sent": {
+    "init": "themed",
+    "steps": [
+      { "expect": "texts", "at": "span.theme", "is": ["dark", "dark"] },
+      { "type": "input.theme", "value": "light" },
+      { "expect": "texts", "at": "span.theme", "is": ["light", "light"] }
+    ]
+  },
+  "a row with nothing above it reads its declared default": {
+    "component": "Row",
+    "args": { "label": "alone" },
+    "steps": [
+      { "expect": "text", "at": "span.label", "is": "alone" },
+      { "expect": "text", "at": "span.theme", "is": "plain" }
+    ]
+  },
+  "a handler reads the same binding the view does": {
+    "steps": [
+      { "type": "input.theme", "value": "dark" },
+      { "type": "input.draft", "value": "write it" },
+      { "click": "button.add" },
+      { "click": "li.row" },
+      { "expect": "text", "at": "span.label", "is": "write it (dark)" }
+    ]
+  },
+  "a handler with no producer above it reads the declared default": {
+    "component": "Row",
+    "args": { "label": "alone" },
+    "steps": [
+      { "send": "stamp" },
+      { "expect": "text", "at": "span.label", "is": "alone (plain)" }
+    ]
+  },
+  "a row answers whoever sent it a message, under a name it picked": {
+    "steps": [
+      { "type": "input.draft", "value": "write it" },
+      { "click": "button.add" },
+      { "send": "poke" },
+      { "expect": "value", "at": "input.draft", "is": "write it" }
+    ]
+  },
+  "a reply with nobody waiting is refused, and nothing happens": {
+    "component": "Row",
+    "args": { "label": "alone" },
+    "steps": [
+      { "send": "ping" },
+      { "expect": "text", "at": "span.label", "is": "alone" }
+    ]
+  }
+}
+</script>
+
+<template id="Board:main">
+  <div>
+    <input class="theme" :value=".theme" @on.input=".theme = e.value">
+    <input class="draft" :value=".draft" @on.input=".draft = e.value">
+    <button class="add" @on.click="add">add</button>
+    <ul><x render-each=".items"></x></ul>
+  </div>
+</template>
+
+<template id="Row:main">
+  <li class="row" @on.click="stamp">
+    <span class="label" @text=".caption"></span>
+    <span class="theme" @text="*theme"></span>
+  </li>
+</template>

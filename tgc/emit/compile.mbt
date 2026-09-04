@@ -911,7 +911,7 @@ pub fn compile_runtime() -> Bytes raise GenError {
       raise BadModule([
         "the embedded runtime does not compile — `rt_src_gen.mbt` is stale " +
         "against `rt.wax`, or `rt.wax` itself is broken. Rerun " +
-        "`node tgc/rt/embed.mjs`, then compile `rt.wax` with `tgc build` for " +
+        "the `rt-embed` task, then compile `rt.wax` with `tgc build` for " +
         "the diagnostics this deliberately does not carry",
       ])
   }

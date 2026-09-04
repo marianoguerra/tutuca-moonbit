@@ -161,6 +161,6 @@ test("the embedded runtime is not stale against rt.wax", async () => {
   assert.equal(
     after,
     before,
-    "rt_src_gen.mbt is stale against rt.wax — run `node tgc/rt/embed.mjs` and commit both halves",
+    "rt_src_gen.mbt is stale against rt.wax — run `cmd/dev -- rt-embed` and commit both halves",
   );
 });

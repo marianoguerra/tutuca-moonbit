@@ -41,12 +41,15 @@ test "plan expands the ci composite into its member tasks' steps" {
   let expected = @dev.plan("gen").unwrap_or([]) +
     @dev.plan("skill-embed").unwrap_or([]) +
     @dev.plan("storybook-template-embed").unwrap_or([]) +
+    @dev.plan("rt-embed").unwrap_or([]) +
     @dev.plan("check").unwrap_or([]) +
     @dev.plan("check-examples").unwrap_or([]) +
     @dev.plan("check-skill").unwrap_or([]) +
     @dev.plan("check-storybook-template").unwrap_or([]) +
     @dev.plan("check-publish-graph").unwrap_or([]) +
     @dev.plan("check-diagnostics").unwrap_or([]) +
+    @dev.plan("check-tgc").unwrap_or([]) +
+    @dev.plan("check-cards").unwrap_or([]) +
     @dev.plan("test").unwrap_or([]) +
     @dev.plan("build").unwrap_or([])
   assert_true(ci == expected)

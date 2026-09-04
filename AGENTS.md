@@ -86,7 +86,7 @@ binary inside the `_build` they delete.
 
 | Task | Does |
 |---|---|
-| `ci` | what CI runs: every drift check, then `check`, the example/skill/card checks, `test` and `build` |
+| `ci` | what CI runs: every drift check, then `check`, the example/skill/template/tgc/card checks, `test` and `build` |
 | `dist` | build all targets and assemble a self-contained runnable `dist/` |
 | `check` / `test` / `build` | across wasm-gc, js and native |
 | `fmt` | `moon fmt` then `moon info` — format and regenerate every `.mbti` |

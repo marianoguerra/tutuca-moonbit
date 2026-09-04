@@ -22,10 +22,11 @@
 
 import { execSync } from "node:child_process";
 import { build as esbuild } from "esbuild";
-import { cpSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, rmSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { copyScoped } from "../../scripts/scope-bundle.mjs";
+import { copyTgcValues } from "../../scripts/tgc-values.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = join(HERE, "..", "..");
@@ -57,21 +58,10 @@ const WEB_FILES = [
  * side, shared by this page and by `tgc/test`. A second hand-kept copy is a
  * second answer to what a value is.
  *
- * The import is REWRITTEN because the source lives two directories up from
- * `tutucard/web` and beside it here. Rewriting one specifier is cheaper than
- * making the repository layout match a dist layout it has no other reason to.
+ * The copy and its import rewrite live in `scripts/tgc-values.mjs`, because the
+ * landing site needs the same pair and a copy without the rewrite fails only in
+ * the browser.
  */
-function copyTgcValues(out) {
-  cpSync(join(REPO, "tgc", "host", "values.mjs"), join(out, "tgc-values.mjs"));
-  const card = join(out, "card.js");
-  writeFileSync(
-    card,
-    readFileSync(card, "utf8").replace(
-      "../../tgc/host/values.mjs",
-      "./tgc-values.mjs",
-    ),
-  );
-}
 
 function build() {
   console.log("building tutucard/playground (js) ...");

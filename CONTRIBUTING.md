@@ -42,7 +42,7 @@ the target-agnostic packages; the `check` and `test` tasks run all three for you
   than hand-editing: `cli/skill_assets_gen.mbt` (`... -- skill-embed`, from
   `skill/tutuca/`), `cli/storybook_template_gen.mbt`
   (`... -- storybook-template-embed`, from `storybook/template`),
-  `tgc/rt/rt_src_gen.mbt` (`node tgc/rt/embed.mjs`, from `tgc/rt/rt.wax`), and
+  `tgc/rt/rt_src_gen.mbt` (`... -- rt-embed`, from `tgc/rt/rt.wax`), and
   the `pkg.generated.mbti` interfaces (`moon info`).
 
 ## Releasing to mooncakes.io
@@ -113,7 +113,8 @@ Two rules that are yours to keep when you add a package:
 
 `tgc/proto` and `tgc/test` are excluded and their harnesses build from `_build`,
 which no tarball has — run them from the repo with
-`node --test tgc/test/*.test.mjs`.
+the `check-tgc` task, which `ci` runs (`compose.test.mjs` needs `wasm-tools` on
+PATH).
 
 ## Releasing the playground to npm
 

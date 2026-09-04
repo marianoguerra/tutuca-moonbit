@@ -38,6 +38,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { webrefRaw, webrefTree, mdnRaw } from "./upstreams.mjs";
 
 // w3c/webref, pinned. 2026-08-14.
 export const WEBREF_COMMIT = "7a9fc2cfa944cf4be3eb32f0511edb282cb71160";
@@ -56,12 +57,9 @@ const MDN_TYPES = ["named-color", "system-color", "deprecated-system-color"];
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "anode/sanitize/css/properties_gen.mbt");
 
-const TREE =
-  `https://api.github.com/repos/w3c/webref/git/trees/${WEBREF_COMMIT}?recursive=1`;
-const RAW = (path) =>
-  `https://raw.githubusercontent.com/w3c/webref/${WEBREF_COMMIT}/${path}`;
-const MDN_SYNTAXES =
-  `https://raw.githubusercontent.com/mdn/data/${MDN_COMMIT}/css/syntaxes.json`;
+const TREE = webrefTree(WEBREF_COMMIT);
+const RAW = (path) => webrefRaw(WEBREF_COMMIT, path);
+const MDN_SYNTAXES = mdnRaw(MDN_COMMIT, "css/syntaxes.json");
 
 // The productions that put a fetchable URL in a value. `<url>` is the modern
 // spelling and `<uri>` the CSS2 one; the rest are the image productions that

@@ -1,0 +1,40 @@
+<script type="tutuca/spec">
+  /// A list whose rows are filtered and decorated before they are drawn.
+  state Enriched {
+    /// What the view loops over.
+    rows: Array[String]
+    /// Only rows containing this are drawn.
+    needle: String
+    /// The heading the scope enricher publishes.
+    title: String
+  }
+</script>
+
+<script type="tutuca/script">
+  /// A `@when` filter. It is handed the ROW — `@key`, `@value` and `@iter` —
+  /// rather than parameters, which is what a filter is written with and what a
+  /// compiled one could not read until now.
+  pred matches { contains (str @value) .needle }
+
+  /// A filter with no arguments at all still sees the row.
+  pred second { @key is 1 }
+
+  /// An in-loop enricher: binds what the row does not carry.
+  enrich row {
+    @tag = str @value
+    @echo = str @tag
+    @at = @key
+  }
+
+  /// The scope form is handed no row and answers the whole map.
+  bindWith info {
+    @heading = .title
+    @width = len .title
+  }
+</script>
+
+<template id="Enriched">
+  <ul>
+    <li x:each=".rows" @when="matches" @enrich-with="row" @text="@echo"></li>
+  </ul>
+</template>
