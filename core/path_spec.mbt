@@ -634,16 +634,16 @@ pub(all) enum DispatchStep {
 pub(all) enum FrameBind {
   /// A loop-less `@enrich-with` scope: `val` is re-evaluated as a handler
   /// against the rebuilt stack and whatever map it answers becomes the binds.
-  Scope(val~ : Val)
+  Scope(val~ : Expr)
   /// One `@each` item: the renderer's `{key, value}` seed plus any
   /// `@enrich-with` binds, for the item addressed by `key`. The iteration
   /// expressions ride along (`IterInfo`) so the binds are recomputed the way
   /// the renderer computed them.
   Each(
-    val~ : Val,
-    when_val~ : Val?,
-    enrich_with_val~ : Val?,
-    loop_with_val~ : Val?,
+    val~ : Expr,
+    when_val~ : Expr?,
+    enrich_with_val~ : Expr?,
+    loop_with_val~ : Expr?,
     key~ : PathKey
   )
 } derive(Debug, Eq)

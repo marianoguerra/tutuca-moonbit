@@ -16,7 +16,7 @@
 // It lives above `core` rather than inside it because `core` never parses
 // anything: the only production callers of the slot parser are `anode` (every
 // directive and `<x>` op) and `component` (`provide` / `lookup`). What `core`
-// cannot give up is the parsed form — `Step::ScopeBindStep` embeds a `Val` so
+// cannot give up is the parsed form — `Step::ScopeBindStep` embeds a `Expr` so
 // a rebuilt render stack can replay its bindings, and that cycle is why the
 // value and path layers share one package to begin with. So the AST stays in
 // `core` and everything that produces or reports on one lives here.

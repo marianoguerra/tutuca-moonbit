@@ -15,14 +15,14 @@
 //
 // `rules.mbt` is the third piece and the one that makes the generators useful
 // rather than merely well-typed: a `pred` / `invariant` is ONE expression, so
-// `@tscript.parse_bool` lowers it to a `@core.Val` and `Val::eval` answers it
+// `@tscript.parse_bool` lowers it to a `@core.Expr` and `Expr::eval` answers it
 // over a generated state. No backend, no compiler — which is what lets an
 // invariant both SHAPE a generator and BE a property, and makes a differential
 // test cheap: `storybook/examples/svg_more_property_test.mbt` asks each
 // precondition here and checks the answer against the `Refusal` the arm `gen`
 // compiled from the same line actually raised.
 //
-// The bound worth knowing: a `Val` is what a SLOT holds, so the slot vocabulary
+// The bound worth knowing: a `Expr` is what a SLOT holds, so the slot vocabulary
 // is what lowers. There is no arithmetic, so
 // `invariant conserved { (.here + .there) is .total }` lands in
 // `Rules::unlowerable` rather than being silently treated as satisfied — name

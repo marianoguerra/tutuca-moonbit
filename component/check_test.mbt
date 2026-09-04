@@ -66,7 +66,7 @@ fn chk_findings(
         acc
       }
     })
-    (@lint.lint_code_name(f.code), level, name)
+    (@lint.code_name(f.code), level, name)
   })
 }
 

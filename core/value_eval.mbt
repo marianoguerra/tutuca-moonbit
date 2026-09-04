@@ -1,4 +1,4 @@
-// Val evaluation and Value runtime semantics (eval side +
+// Expr evaluation and Value runtime semantics (eval side +
 // PREDICATES table + immutable `is`). Implements the declares in spec.mbt.
 
 ///|
@@ -290,7 +290,7 @@ fn eval_chain(
 }
 
 ///|
-pub fn Val::eval(self : Val, stack : &Stack) -> Value {
+pub fn Expr::eval(self : Expr, stack : &Stack) -> Value {
   match self {
     ELit(lit~, ..) => lit_value(lit)
     // The one case that reads something outside the value language. The stack
@@ -382,7 +382,7 @@ pub fn Val::eval(self : Val, stack : &Stack) -> Value {
 /// `HandlerNamespace` was: the same bare name means "a parameter" in a body and
 /// "the thing to run" here, and which one it means is a fact about the position
 /// it was written in. So the position asks, and the name carries nothing.
-pub fn Val::eval_as_handler(self : Val, stack : &Stack) -> Value {
+pub fn Expr::eval_as_handler(self : Expr, stack : &Stack) -> Value {
   match self {
     // The raw function, for the dispatch machinery to call with event args.
     EMethod(name~, ..) => stack.lookup_storage(name)
@@ -396,7 +396,7 @@ pub fn Val::eval_as_handler(self : Val, stack : &Stack) -> Value {
 }
 
 ///|
-pub fn Val::to_path_item(self : Val) -> Step? {
+pub fn Expr::to_path_item(self : Expr) -> Step? {
   if self.as_field() is Some(name) {
     return Some(FieldStep(name))
   }
@@ -407,7 +407,7 @@ pub fn Val::to_path_item(self : Val) -> Step? {
 }
 
 ///|
-pub fn Val::is_literal(self : Val) -> Bool {
+pub fn Expr::is_literal(self : Expr) -> Bool {
   match self {
     ELit(..) => true
     // Every part a plain constant, none bound from a macro variable (the

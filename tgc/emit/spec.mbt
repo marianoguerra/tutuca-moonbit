@@ -17,7 +17,7 @@ pub(all) struct Compiled {
   /// Declarations this backend could not lower. The rest of the card still
   /// runs, and the manifest leaves a refused name out — a host is never told a
   /// component answers something it does not.
-  refusals : Array[Refusal]
+  refusals : Array[@check.Refusal]
   /// The declared fields of the root, in order.
   fields : Array[String]
   /// The manifest as JSON, for tooling. The MODULE carries its own
@@ -48,22 +48,6 @@ pub(all) struct Issue {
   /// page as JSON, and a consumer reading one field should not have to import
   /// the checker to know what it says.
   severity : String
-  line : Int
-  span : @tutuca.Span
-} derive(Eq, Debug)
-
-///|
-/// One declaration this backend did not lower.
-///
-/// REFUSED is not REJECTED. A rejected card does not check and is turned away
-/// whole; a refusal is per-declaration, leaves the rest of the card running,
-/// and the host hears "unhandled" for that name and falls back to whatever the
-/// declared field implies — exactly as it would for a handler nobody wrote.
-pub(all) struct Refusal {
-  comp : String
-  kind : String
-  name : String
-  reason : String
   line : Int
   span : @tutuca.Span
 } derive(Eq, Debug)

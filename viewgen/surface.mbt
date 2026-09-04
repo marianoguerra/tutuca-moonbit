@@ -186,7 +186,7 @@ fn Collect::new() -> Collect {
 ///
 /// A `$name` there is a method like any other and is already collected by
 /// `walk_val`; only the bare `HandlerName` form is a bucket entry.
-fn walk_alter(val : @tutuca.Val?, into : @set.Set[String]) -> Unit {
+fn walk_alter(val : @tutuca.Expr?, into : @set.Set[String]) -> Unit {
   match val {
     Some(EName(name~, ..)) => into.add(name)
     _ => ()
@@ -196,7 +196,7 @@ fn walk_alter(val : @tutuca.Val?, into : @set.Set[String]) -> Unit {
 ///|
 /// Every `$name` a value reaches, and — when `root_scope` — every state field
 /// it reads.
-fn walk_val(val : @tutuca.Val, c : Collect, root_scope : Bool) -> Unit {
+fn walk_val(val : @tutuca.Expr, c : Collect, root_scope : Bool) -> Unit {
   if val.as_seq_access() is Some((seq, key)) {
     if root_scope {
       c.fields.add(seq)
@@ -225,7 +225,7 @@ fn walk_val(val : @tutuca.Val, c : Collect, root_scope : Bool) -> Unit {
 }
 
 ///|
-fn walk_val_opt(val : @tutuca.Val?, c : Collect, root_scope : Bool) -> Unit {
+fn walk_val_opt(val : @tutuca.Expr?, c : Collect, root_scope : Bool) -> Unit {
   match val {
     Some(v) => walk_val(v, c, root_scope)
     None => ()
@@ -420,7 +420,7 @@ fn eid_of(attrs : @anode.Attrs) -> Int? {
 /// are binds, whose contents are not statically known. `value_kind` is what
 /// the `value` arg decodes to on the HOST element (String by default; Bool on
 /// a checkbox, Value on a file input — see `value_arg_kind`).
-fn arg_type_of(val : @tutuca.Val, value_kind : ArgType) -> ArgType {
+fn arg_type_of(val : @tutuca.Expr, value_kind : ArgType) -> ArgType {
   match val {
     ELit(lit=LNum(_), ..) => VDouble
     ELit(lit=LStr(_), ..) => VString
@@ -472,7 +472,7 @@ fn accessor_type(name : String, value_kind : ArgType) -> ArgType {
 /// for every diagnostic that touches existing code — a rule whose warned-about
 /// code already works cannot break a build on the day it lands.
 fn check_event_arg(
-  val : @tutuca.Val,
+  val : @tutuca.Expr,
   view_name : String,
   site : String,
   hints : Array[String],

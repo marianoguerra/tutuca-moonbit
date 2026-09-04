@@ -449,7 +449,7 @@ pub fn Component::compile(self : Component) -> Unit raise {
     }
   }
   for spec in self.raw_lookup {
-    let default_val : @tutuca.Val? = match spec.default {
+    let default_val : @tutuca.Expr? = match spec.default {
       Some(d) => @tscript.parse_field(d, @tscript.ParseCtx::new())
       None => None
     }

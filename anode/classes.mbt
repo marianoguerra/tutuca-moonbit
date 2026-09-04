@@ -27,7 +27,7 @@ fn add_classes(s : String, into : Set[String]) -> Unit {
 ///|
 /// Literal fragments of a class-position value: Const strings whole, and the
 /// Const parts of a template string.
-fn add_val_classes(val : @tutuca.Val, into : Set[String]) -> Unit {
+fn add_val_classes(val : @tutuca.Expr, into : Set[String]) -> Unit {
   match val {
     ELit(lit=LStr(s), ..) => add_classes(s, into)
     ETpl(parts~, ..) =>

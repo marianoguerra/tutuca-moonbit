@@ -2,6 +2,35 @@
 // it. READONLY by convention; the implementation is in check.mbt.
 
 ///|
+/// One declaration a backend did not lower, and why.
+///
+/// REFUSED is not REJECTED. A rejected card does not check and is turned away
+/// whole; a refusal is per-declaration, leaves the rest of the component
+/// running, and the host hears "unhandled" for that name and falls back to
+/// whatever the declared field implies — exactly as it would for a handler
+/// nobody wrote. So refusals are DATA and part of the answer, not an error
+/// beside it: a block with one handler that reaches for something the backend
+/// cannot compile still has five that do, and the generator's job is to emit
+/// those and say which one the author writes by hand.
+///
+/// Here, in the CHECKER, because both backends produce them and a reader
+/// comparing what the two compiled should not have to reconcile two shapes for
+/// one fact. `line` is 0 where the backend has only a span.
+pub(all) struct Refusal {
+  /// The component the declaration belongs to.
+  comp : String
+  /// The declaration kind, as `@tscript.kind_word` spells it.
+  kind : String
+  /// The declaration's name, as the author wrote it.
+  name : String
+  /// What cannot be compiled, and what to do instead.
+  reason : String
+  /// The 1-based line, or 0 when only the span is known.
+  line : Int
+  span : @tutuca.Span
+} derive(Debug, Eq)
+
+///|
 /// One finding. Collected rather than raised: a type error does not cascade
 /// the way a syntax error does, and an author fixing one field at a time
 /// because the checker stops at the first is the thing `tgc`'s `coerce`

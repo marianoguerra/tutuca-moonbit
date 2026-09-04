@@ -154,7 +154,7 @@ declare pub fn check_collected(collector : LintCollector) -> Array[Finding]
 /// tutuca lints "template"); `transparent_tag_prefixes` marks templating
 /// tags (`<x>`, `<x:macro>`) as phantom: case checks apply, parent rules
 /// don't.
-declare pub fn lint_html(
+declare pub fn check_html(
   html : String,
   fragment_context? : String = "template",
   transparent_tag_prefixes? : Array[String] = ["x"],

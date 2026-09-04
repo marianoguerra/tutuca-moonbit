@@ -46,8 +46,8 @@ is a literal. That is the whole reason this split is clean:
 | comments | `ANode::Comment` | **yes** |
 | `data-*` | attribute-name prefix | **yes** |
 | raw-markup construct | `AttrItem::RawHtml` | **yes** (already: `has_raw_html`) |
-| attribute value | `Const(lit)`, else a `Val` expression | constant only |
-| raw-markup payload | the `Val` inside `RawHtml` | **no** |
+| attribute value | `Const(lit)`, else a `Expr` expression | constant only |
+| raw-markup payload | the `Expr` inside `RawHtml` | **no** |
 | URL scheme | an attribute value | constant only |
 
 Attribute names deserve the emphasis. They cannot be computed: the parser
@@ -752,7 +752,7 @@ The remaining idea from this section is not implemented, and it is the VALUE
 half of the same thought:
 
 **The static pass can hand the filter a skip set.** Pass 1 distinguishes `Const`
-from a `Val` expression, so a view whose sink-set attributes are all constant,
+from a `Expr` expression, so a view whose sink-set attributes are all constant,
 and which has no `RawHtml`, has *nothing* left for the filter to decide — Pass 1
 settled it.
 

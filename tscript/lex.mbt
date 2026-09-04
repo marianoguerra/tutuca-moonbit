@@ -79,7 +79,7 @@ pub fn tokenize(s : String) -> Array[Token] {
 /// every other backslash stays literal.
 ///
 /// The inverse, `escape_str_literal`, stays in `core` beside the only thing
-/// that needs it — `impl Show for Val`, which has to live where `Val` does.
+/// that needs it — `impl Show for Expr`, which has to live where `Expr` does.
 /// The two are not a pair anybody calls together, so neither follows the
 /// other across the boundary.
 fn unescape_str(s : String) -> String {

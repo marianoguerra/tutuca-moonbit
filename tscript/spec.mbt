@@ -5,7 +5,7 @@
 // beside it define the contract.
 //
 //   source text --tokenize--> Array[Token]   (spans)
-//               --parse_*---> @tutuca.Val?   (the runtime AST, spans and all)
+//               --parse_*---> @tutuca.Expr?   (the runtime AST, spans and all)
 //
 // The AST is `core`'s and there is only one of it: a slot's value and a block's
 // expression are the same language, so the parse below produces the same type
@@ -120,54 +120,54 @@ declare pub fn ParseCtx::new(
 declare pub fn tokenize(s : String) -> Array[Token]
 
 ///|
-/// Parse a single token into the richest Val it can be, with no context/kind
+/// Parse a single token into the richest Expr it can be, with no context/kind
 /// filtering. None when the token is not a well-formed value.
-declare pub fn parse_token(s : String, ctx : ParseCtx) -> @tutuca.Val?
+declare pub fn parse_token(s : String, ctx : ParseCtx) -> @tutuca.Expr?
 
 ///|
 /// Conditionals (@show, @hide, @if.<attr>, …): a single token is a plain
 /// boolean-group value; multiple tokens are an application `empty? .items`.
-declare pub fn parse_bool(s : String, ctx : ParseCtx) -> @tutuca.Val?
+declare pub fn parse_bool(s : String, ctx : ParseCtx) -> @tutuca.Expr?
 
 ///|
 /// Text values (:attr, @text, <x text>, @then/@else, @push-view, @html)
-declare pub fn parse_text(s : String, ctx : ParseCtx) -> @tutuca.Val?
+declare pub fn parse_text(s : String, ctx : ParseCtx) -> @tutuca.Expr?
 
 ///|
 /// A single component to render (<x render>)
-declare pub fn parse_component(s : String, ctx : ParseCtx) -> @tutuca.Val?
+declare pub fn parse_component(s : String, ctx : ParseCtx) -> @tutuca.Expr?
 
 ///|
 /// A sequence to iterate (@each, <x render-each>)
-declare pub fn parse_sequence(s : String, ctx : ParseCtx) -> @tutuca.Val?
+declare pub fn parse_sequence(s : String, ctx : ParseCtx) -> @tutuca.Expr?
 
 ///|
 /// A `provide:` field definition or `lookup` default: field, seq-access,
 /// method reference, or constant.
-declare pub fn parse_field(s : String, ctx : ParseCtx) -> @tutuca.Val?
+declare pub fn parse_field(s : String, ctx : ParseCtx) -> @tutuca.Expr?
 
 ///|
 /// A `provide:` value — addressable kinds only (field or seq-access)
-declare pub fn parse_provide(s : String, ctx : ParseCtx) -> @tutuca.Val?
+declare pub fn parse_provide(s : String, ctx : ParseCtx) -> @tutuca.Expr?
 
 ///|
 /// Pass-through values on a macro-call element (:attr on a macro)
-declare pub fn parse_macro_attr(s : String, ctx : ParseCtx) -> @tutuca.Val?
+declare pub fn parse_macro_attr(s : String, ctx : ParseCtx) -> @tutuca.Expr?
 
 ///|
 /// A synchronous virtual-property action authored directly in an event slot.
 /// The target is always a property of the component that owns the view.
 pub(all) enum PropertyAction {
-  PropertySet(name~ : String, value~ : @tutuca.Val)
+  PropertySet(name~ : String, value~ : @tutuca.Expr)
   PropertyReset(String)
-  PropertyCall(name~ : String, operation~ : String, args~ : Array[@tutuca.Val])
+  PropertyCall(name~ : String, operation~ : String, args~ : Array[@tutuca.Expr])
 } derive(Debug, Eq)
 
 ///|
 /// Handler reference plus parsed args for @on.<event>, or a property action.
 pub(all) struct HandlerParse {
-  handler : @tutuca.Val
-  args : Array[@tutuca.Val]
+  handler : @tutuca.Expr
+  args : Array[@tutuca.Expr]
   action : PropertyAction?
 } derive(Debug, Eq)
 
@@ -178,4 +178,4 @@ declare pub fn parse_input_handler(s : String, ctx : ParseCtx) -> HandlerParse?
 
 ///|
 /// Handler for @when/@enrich-with/@loop-with: no args, silent on failure
-declare pub fn parse_alter_handler(s : String, ctx : ParseCtx) -> @tutuca.Val?
+declare pub fn parse_alter_handler(s : String, ctx : ParseCtx) -> @tutuca.Expr?

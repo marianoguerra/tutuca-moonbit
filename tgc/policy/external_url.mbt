@@ -175,7 +175,7 @@ fn origin_of(url : String) -> String? {
 /// a literal's shape, and the caller is the guest. A `host.name` constant is the
 /// HOST's string wearing a literal's shape, so it is not excluded — that is the
 /// whole of what config vars buy (`config.mbt`).
-fn pinned_prefix(val : @tutuca.Val) -> String? {
+fn pinned_prefix(val : @tutuca.Expr) -> String? {
   match val {
     ELit(lit=LStr(s), from_macro=false, ..) => Some(s)
     ETpl(parts~, ..) => {
@@ -219,9 +219,9 @@ fn Policy::origin_refusal(self : Policy, origin : String) -> String? {
 /// Why this value may not be a URL in an untrusted view, or None when it may.
 ///
 /// The message is the whole point of returning a string rather than a Bool: a
-/// refusal a guest author cannot act on produces a bundle that gets rewritten
+/// rejection a guest author cannot act on produces a bundle that gets rewritten
 /// at random until it loads.
-fn Policy::external_url_refusal(self : Policy, val : @tutuca.Val) -> String? {
+fn Policy::external_url_refusal(self : Policy, val : @tutuca.Expr) -> String? {
   if !self.allows_external_urls {
     return Some("this host does not allow external URLs in views")
   }

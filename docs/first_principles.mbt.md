@@ -36,7 +36,7 @@ The layers, bottom to top:
 | Layer | Package | Key types |
 |---|---|---|
 | dynamic values | `core` | `Value`, `Obj` |
-| the value AST | `core` | `Lit`, `Val`, `Stack` |
+| the value AST | `core` | `Lit`, `Expr`, `Stack` |
 | parsing it | `tscript` | `Token`, `Span`, `ParseCtx`, `Issue` |
 | paths & dispatch | `core` | `Step`, `Path`, `DispatchPath`, `Handler`, `Ctx`, `Obj` |
 | virtual DOM | `vdom` (+ `memdom`, `browser`, `wasm`) | `Vdom`, `AttrValue`, `DomNode` |
@@ -101,7 +101,7 @@ component is.
 Attribute values in templates are a tiny expression language, one sigil per
 resolution rule — and it is the SAME language a `<script type="tutuca/script">`
 block is written in, which is why there is one AST rather than a slot's and a
-block's. `Val` is the older name for it and still reads everywhere:
+block's:
 
 ```mbt nocheck
 ///|
@@ -194,7 +194,7 @@ test "parsing: one sigil, one form" {
 }
 ```
 
-Evaluation is where the key abstraction appears. A `Val` never reads state
+Evaluation is where the key abstraction appears. A `Expr` never reads state
 directly — it reads through the `Stack` trait, which has one lookup method
 per sigil:
 
@@ -210,7 +210,7 @@ pub(open) trait Stack {
 }
 ```
 
-`Val::eval(&Stack) -> Value` is a direct dispatch: `Field(name)` calls
+`Expr::eval(&Stack) -> Value` is a direct dispatch: `Field(name)` calls
 `lookup_storage`, `Bind(name)` calls `lookup_bind`, and so on (see
 `core/value_eval.mbt`). Every default returns `Null` — a stack implements
 only the lookups it can answer. That means *anything* can be a stack;
@@ -229,7 +229,7 @@ impl @tutuca.Stack for FieldMap with fn lookup_storage(self, name) {
 }
 
 ///|
-test "eval: a Val reads state through the Stack trait" {
+test "eval: a Expr reads state through the Stack trait" {
   let px = @tscript.ParseCtx::new()
   let stack = FieldMap::{ fields: { "count": Num(3), "name": Str("ada") }, }
   guard! @tscript.parse_token(".count", px) is Some(count)
@@ -346,7 +346,7 @@ pub(all) enum ANode {
 }
 ```
 
-Attribute values inside it are the `Val`s of section 2 — this is where the
+Attribute values inside it are the `Expr`s of section 2 — this is where the
 two languages meet. Parsing happens once per view (`ANode::parse` +
 `ParseContext`), not per render; directives like `@show` are *hoisted*: the
 parser wraps the DOM node in a `Show` node so the renderer never re-inspects
@@ -363,7 +363,7 @@ test "templates: directives become structure, events are hoisted out" {
       px,
     )
     is Some(node)
-  // @show wrapped the <p> in a Show node with the parsed Val
+  // @show wrapped the <p> in a Show node with the parsed Expr
   guard! node is Show(wrap)
   debug_inspect(
     wrap.val,
@@ -633,7 +633,7 @@ them: the app installs **one** listener per event name at the root; when an
 event fires, `render.from_node_and_event_name` walks *up* the real DOM from
 the target (via the `DomWalk` trait), reading comment markers to reconstruct
 the `DispatchPath` — which component, which loop iteration, which scope —
-and the event tables to find the handler and its parsed argument `Val`s.
+and the event tables to find the handler and its parsed argument `Expr`s.
 Those args are evaluated against a rebuilt `RenderStack` whose `event` slot
 answers names like `value` and `key`, modifiers (`+send`, `+ctrl`) gate the
 dispatch, and the result is pushed into the transactor.
@@ -674,8 +674,8 @@ their types form a single unbreakable cycle:
 Obj::handler returns Handler
   → Handler carries &Ctx and returns Value?
     → Ctx::path() returns DispatchPath
-      → DispatchPath steps carry Val (dynamic/frame segments)
-        → Val evaluates to Value
+      → DispatchPath steps carry Expr (dynamic/frame segments)
+        → Expr evaluates to Value
           → Value::Obj(&Obj)  — back to the start
 ```
 

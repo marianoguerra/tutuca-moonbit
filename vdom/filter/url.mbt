@@ -6,7 +6,7 @@
 // `<a href="javascript:…">` survives `setHTML()` untouched. The platform
 // answers that half with CSP and Trusted Types, neither of which anode can
 // port. This is tutuca's answer, and it necessarily runs here rather than at
-// registration: an attribute's value in a view is a `Val` expression, so what
+// registration: an attribute's value in a view is a `Expr` expression, so what
 // it will hold is unknowable until it holds it.
 
 ///|

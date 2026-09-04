@@ -149,7 +149,7 @@ pub fn render(
 /// A dynamic/lexical name supplies an absolute app path and therefore pushes a
 /// frame; an ordinary field extends the current frame.
 fn render_target(
-  val : @tutuca.Val,
+  val : @tutuca.Expr,
   stack : RenderStack,
 ) -> (@tutuca.Value, @tutuca.DispatchPath, @tutuca.Path?) {
   match val {
@@ -209,7 +209,7 @@ fn stamp_render_base(vdom : @vdom.Vdom, text : String) -> @vdom.Vdom {
 /// reconstruction cross an absent component.
 fn render_site(
   value : @tutuca.Value,
-  view_val : @tutuca.Val?,
+  view_val : @tutuca.Expr?,
   node_id : Int?,
   stack : RenderStack,
   ctx : RenderCtx,

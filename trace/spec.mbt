@@ -21,7 +21,7 @@ pub const VERSION : Int = 1
 ///
 /// The only form of a path that survives being written down. A `DispatchPath`
 /// includes render-continuation frames, and `Step`'s frame-only variants carry
-/// `Val` expressions and `Value::Fn` closures, which JSON has no shape for.
+/// `Expr` expressions and `Value::Fn` closures, which JSON has no shape for.
 ///
 /// So a `Place` is the TRANSACTION path: `DispatchPath::to_transaction_path()`
 /// with its keys pinned, which is a plain sequence of fields and keys. For a

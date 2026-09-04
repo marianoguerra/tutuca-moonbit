@@ -9,7 +9,7 @@
 // form a single dependency
 // cycle that MoonBit packages cannot express across an import edge —
 // Obj::handler returns Handler (path side), Handler carries &Ctx and
-// returns a Value, Ctx returns DispatchPath (whose Steps carry Val), and
+// returns a Value, Ctx returns DispatchPath (whose Steps carry Expr), and
 // Value::Obj(&Obj) closes the loop. Breaking the cycle would mean removing
 // handler from Obj, which needs a trait-object downcast MoonBit doesn't
 // have. The value_/path_ file prefixes are the intended organization.
@@ -49,7 +49,7 @@ pub(all) enum PathKey {
 /// Path steps: the ways one value addresses another.
 ///
 /// `FieldStep` / `SeqAccessStep` are what an expression addresses
-/// (`Val::to_path_item`); `SeqStep` is a field plus a concrete key, and also
+/// (`Expr::to_path_item`); `SeqStep` is a field plus a concrete key, and also
 /// the pinned form of a `SeqAccessStep`; `EachRenderItStep` is an iterated
 /// render target that compacts to a `SeqStep`. Dynamic-var markers live on
 /// `DispatchStep` in the path package.
@@ -523,30 +523,30 @@ pub impl Stack for NullStack
 
 ///|
 /// Evaluate this value against a stack
-declare pub fn Val::eval(self : Val, stack : &Stack) -> Value
+declare pub fn Expr::eval(self : Expr, stack : &Stack) -> Value
 
 ///|
 /// Value in handler position: Method hands back the raw function
 /// (lookup_storage) instead of invoking; everything else is eval.
-declare pub fn Val::eval_as_handler(self : Val, stack : &Stack) -> Value
+declare pub fn Expr::eval_as_handler(self : Expr, stack : &Stack) -> Value
 
 ///|
 /// Path step for path-bearing slots: Field and SeqAccess only
-declare pub fn Val::to_path_item(self : Val) -> Step?
+declare pub fn Expr::to_path_item(self : Expr) -> Step?
 
 ///|
 /// True for constants and for templates whose every part is a plain
 /// non-macro constant (a literal written the long way).
-declare pub fn Val::is_literal(self : Val) -> Bool
+declare pub fn Expr::is_literal(self : Expr) -> Bool
 
-// NOTE(dropped): Val::to_literal_source (the equivalent `'…'` source literal
+// NOTE(dropped): Expr::to_literal_source (the equivalent `'…'` source literal
 // of a literal StrTpl) was removed as dead code; re-add it when the
 // PLACEHOLDERLESS_TEMPLATE_STRING lint rule is ported — it exists to power
 // that nudge.
 
 ///|
-/// Source round-trip: every Val prints back as its original syntax
-declare pub impl Show for Val
+/// Source round-trip: every Expr prints back as its original syntax
+declare pub impl Show for Expr
 
 ///|
 /// The builtin a name denotes, or None when nothing does.

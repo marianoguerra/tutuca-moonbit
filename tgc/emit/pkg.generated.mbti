@@ -5,6 +5,7 @@ import {
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/tscript",
+  "marianoguerra/tutuca/tscript/check",
   "moonbitlang/core/debug",
 }
 
@@ -38,7 +39,7 @@ pub(all) struct Compiled {
   components : Array[String]
   wasm : Bytes
   wax : String
-  refusals : Array[Refusal]
+  refusals : Array[@check.Refusal]
   fields : Array[String]
   manifest : Json
 }
@@ -48,15 +49,6 @@ pub(all) struct Issue {
   code : String
   message : String
   severity : String
-  line : Int
-  span : @core.Span
-} derive(Eq, @debug.Debug)
-
-pub(all) struct Refusal {
-  comp : String
-  kind : String
-  name : String
-  reason : String
   line : Int
   span : @core.Span
 } derive(Eq, @debug.Debug)

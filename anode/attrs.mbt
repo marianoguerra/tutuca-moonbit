@@ -14,11 +14,11 @@ priv struct AttrParser {
   px : ParseContext
   items : Array[AttrItem]
   wrappers : Array[WrapperAttr]
-  mut text_child : @tutuca.Val?
+  mut text_child : @tutuca.Expr?
   mut each_attr : WrapperAttr?
   mut if_attr : IfAttr?
   mut events : NodeEvents?
-  mut bind_target : @tutuca.Val?
+  mut bind_target : @tutuca.Expr?
   mut bind_source : String?
 }
 
@@ -155,7 +155,7 @@ fn AttrParser::push_wrapper(
   self : AttrParser,
   kind : WrapperKind,
   raw : String,
-  val : @tutuca.Val?,
+  val : @tutuca.Expr?,
 ) -> WrapperAttr {
   let node = WrapperAttr::{
     kind,
@@ -174,8 +174,8 @@ fn AttrParser::directive_value(
   self : AttrParser,
   directive_name : String,
   s : String,
-  parser : (String, @tscript.ParseCtx) -> @tutuca.Val?,
-) -> @tutuca.Val? {
+  parser : (String, @tscript.ParseCtx) -> @tutuca.Expr?,
+) -> @tutuca.Expr? {
   let val = self.px.pval(s, parser)
   if val is None {
     self.px.issue(BadValue(role=Directive(name=directive_name), value=s))
@@ -381,7 +381,7 @@ fn AttrParser::branch_val(
   self : AttrParser,
   branch : String,
   s : String,
-) -> @tutuca.Val? {
+) -> @tutuca.Expr? {
   match self.px.pval(s, @tscript.parse_text) {
     Some(v) => Some(v)
     None => {

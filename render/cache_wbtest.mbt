@@ -260,7 +260,7 @@ impl @component.Fields for ThemedState with fn decode(f) {
 ///|
 test "a compute reading `*name` is answered by the render chain it is under" {
   // The parity claim the whole change rests on. `stack.lookup_dynamic` is the
-  // call `core/value_eval.mbt` makes for a `Val::Dyn` in a SLOT, so a `pred`
+  // call `core/value_eval.mbt` makes for a `Expr::Dyn` in a SLOT, so a `pred`
   // or a `compute` that reads `*theme` now answers what `@text="*theme"`
   // beside it would answer — one question, one answer, both backends.
   //

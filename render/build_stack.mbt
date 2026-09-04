@@ -21,10 +21,10 @@
 /// supplies (via loop_iter_data below), then restore the protected binds.
 fn each_binds(
   stack : RenderStack,
-  val : @tutuca.Val,
-  when_val : @tutuca.Val?,
-  enrich_with_val : @tutuca.Val?,
-  loop_with_val : @tutuca.Val?,
+  val : @tutuca.Expr,
+  when_val : @tutuca.Expr?,
+  enrich_with_val : @tutuca.Expr?,
+  loop_with_val : @tutuca.Expr?,
   key : @tutuca.PathKey,
 ) -> Map[String, @tutuca.Value] {
   let seq = val.eval(stack)

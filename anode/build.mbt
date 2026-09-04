@@ -12,22 +12,22 @@
 // Constant values
 
 ///|
-pub fn const_str(s : String) -> @tutuca.Val {
+pub fn const_str(s : String) -> @tutuca.Expr {
   @tutuca.Expr::lit(LStr(s))
 }
 
 ///|
-pub fn const_num(n : Double) -> @tutuca.Val {
+pub fn const_num(n : Double) -> @tutuca.Expr {
   @tutuca.Expr::lit(LNum(n))
 }
 
 ///|
-pub fn const_bool(b : Bool) -> @tutuca.Val {
+pub fn const_bool(b : Bool) -> @tutuca.Expr {
   @tutuca.Expr::lit(LBool(b))
 }
 
 ///|
-pub fn const_null() -> @tutuca.Val {
+pub fn const_null() -> @tutuca.Expr {
   @tutuca.Expr::lit(LNull)
 }
 
@@ -50,7 +50,7 @@ pub fn attr_bool(name : String, value : Bool) -> AttrItem {
 }
 
 ///|
-pub fn attr_val(name : String, val : @tutuca.Val) -> AttrItem {
+pub fn attr_val(name : String, val : @tutuca.Expr) -> AttrItem {
   ConstA(name~, val~)
 }
 
@@ -60,37 +60,37 @@ pub fn eid(id : Int) -> AttrItem {
 }
 
 ///|
-pub fn dyn_attr(name : String, val : @tutuca.Val) -> AttrItem {
+pub fn dyn_attr(name : String, val : @tutuca.Expr) -> AttrItem {
   Plain(name~, val~)
 }
 
 ///|
 pub fn if_attr(
   name : String,
-  cond : @tutuca.Val,
-  then_val? : @tutuca.Val,
-  else_val? : @tutuca.Val,
+  cond : @tutuca.Expr,
+  then_val? : @tutuca.Expr,
+  else_val? : @tutuca.Expr,
 ) -> AttrItem {
   If({ name, cond_val: cond, then_val, else_val, })
 }
 
 ///|
-pub fn raw_html(val? : @tutuca.Val) -> AttrItem {
+pub fn raw_html(val? : @tutuca.Expr) -> AttrItem {
   RawHtml(val~)
 }
 
 ///|
-pub fn set_inner_md(val? : @tutuca.Val) -> AttrItem {
+pub fn set_inner_md(val? : @tutuca.Expr) -> AttrItem {
   RawMarkdown(val~)
 }
 
 ///|
-pub fn set_inner_html(val? : @tutuca.Val) -> AttrItem {
+pub fn set_inner_html(val? : @tutuca.Expr) -> AttrItem {
   SafeHtml(val~)
 }
 
 ///|
-pub fn set_inner_svg(val? : @tutuca.Val) -> AttrItem {
+pub fn set_inner_svg(val? : @tutuca.Expr) -> AttrItem {
   SafeSvg(val~)
 }
 
@@ -130,37 +130,37 @@ pub fn frag(childs : Array[ANode]) -> ANode {
 }
 
 ///|
-pub fn dyn_text(val : @tutuca.Val, id? : Int) -> ANode {
+pub fn dyn_text(val : @tutuca.Expr, id? : Int) -> ANode {
   RenderText({ node_id: id, val, })
 }
 
 ///|
-pub fn render(id : Int, val : @tutuca.Val, view? : @tutuca.Val) -> ANode {
+pub fn render(id : Int, val : @tutuca.Expr, view? : @tutuca.Expr) -> ANode {
   Render({ node_id: id, val, view_val: view, })
 }
 
 ///|
-pub fn render_it(id : Int, view? : @tutuca.Val) -> ANode {
+pub fn render_it(id : Int, view? : @tutuca.Expr) -> ANode {
   RenderIt({ node_id: id, view_val: view, })
 }
 
 ///|
-pub fn show(val : @tutuca.Val, node : ANode, id? : Int) -> ANode {
+pub fn show(val : @tutuca.Expr, node : ANode, id? : Int) -> ANode {
   Show({ node_id: id, val, node, })
 }
 
 ///|
-pub fn hide(val : @tutuca.Val, node : ANode, id? : Int) -> ANode {
+pub fn hide(val : @tutuca.Expr, node : ANode, id? : Int) -> ANode {
   Hide({ node_id: id, val, node, })
 }
 
 ///|
-pub fn push_view(val : @tutuca.Val, node : ANode, id? : Int) -> ANode {
+pub fn push_view(val : @tutuca.Expr, node : ANode, id? : Int) -> ANode {
   PushView({ node_id: id, val, node, })
 }
 
 ///|
-pub fn scope(id : Int, val : @tutuca.Val, node : ANode) -> ANode {
+pub fn scope(id : Int, val : @tutuca.Expr, node : ANode) -> ANode {
   Scope({ node_id: Some(id), val, node, })
 }
 
@@ -172,11 +172,11 @@ pub fn slot(name : String, node : ANode) -> ANode {
 ///|
 pub fn each(
   id : Int,
-  val : @tutuca.Val,
+  val : @tutuca.Expr,
   node : ANode,
-  when_val? : @tutuca.Val,
-  loop_with_val? : @tutuca.Val,
-  enrich_with_val? : @tutuca.Val,
+  when_val? : @tutuca.Expr,
+  loop_with_val? : @tutuca.Expr,
+  enrich_with_val? : @tutuca.Expr,
   from_render_each? : Bool = false,
 ) -> ANode {
   Each({
@@ -193,8 +193,8 @@ pub fn each(
 ///|
 pub fn on(
   name : String,
-  handler : @tutuca.Val,
-  args? : Array[@tutuca.Val] = [],
+  handler : @tutuca.Expr,
+  args? : Array[@tutuca.Expr] = [],
   modifiers? : Array[String] = [],
   binding? : BindCoercion,
   action? : @tscript.PropertyAction,
@@ -207,7 +207,7 @@ pub fn on(
 /// so generated view modules need no direct dependency on the script parser.
 pub fn set_property_action(
   name : String,
-  value : @tutuca.Val,
+  value : @tutuca.Expr,
 ) -> @tscript.PropertyAction {
   PropertySet(name~, value~)
 }
@@ -221,7 +221,7 @@ pub fn reset_property_action(name : String) -> @tscript.PropertyAction {
 pub fn call_property_action(
   name : String,
   operation : String,
-  args : Array[@tutuca.Val],
+  args : Array[@tutuca.Expr],
 ) -> @tscript.PropertyAction {
   PropertyCall(name~, operation~, args~)
 }

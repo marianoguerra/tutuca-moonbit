@@ -73,9 +73,7 @@ test "an iteration directive on an <x> op is an error with a rewrite" {
     suggestion
     is Some(Rewrite(from="@each=\".rows\"", to="<x render-each=\".rows\">")),
   )
-  assert_true(
-    @lint.lint_code_name(findings[0].code) == "LOOP_DIRECTIVE_ON_X_OP",
-  )
+  assert_true(@lint.code_name(findings[0].code) == "LOOP_DIRECTIVE_ON_X_OP")
   assert_true(@lint.finding_message(findings[0]).contains("render-each"))
 }
 

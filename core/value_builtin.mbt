@@ -3,12 +3,12 @@
 //
 // This was `enum Pred` — five constructors, an arity match and an apply match,
 // all of them closed. Nothing an author could write joined the set, which is
-// why a predicate needed its own AST node (`Val::Predicate`), its own parse
+// why a predicate needed its own AST node (`Expr::Predicate`), its own parse
 // path and its own no-kind exception. Applying a NAME to arguments is the
 // general shape, and the five become the first rows of a table.
 //
 // The table is data rather than an enum for one reason worth stating plainly:
-// `Val::App` carries the NAME, so `Val` still derives `Eq` and `Debug` even
+// `Expr::App` carries the NAME, so `Expr` still derives `Eq` and `Debug` even
 // though the behaviour here is a closure. An enum in the AST would have had to
 // grow a case per user-declared predicate, which is exactly the thing that
 // cannot work.
@@ -21,7 +21,7 @@
 // view of this list and re-exports rather than restates it.
 //
 // TWO ROWS DO NOT EVALUATE HERE. `and` and `or` short-circuit, and `apply`
-// takes ARGUMENTS THAT ARE ALREADY EVALUATED, so they cannot. `Val::eval`
+// takes ARGUMENTS THAT ARE ALREADY EVALUATED, so they cannot. `Expr::eval`
 // answers them ahead of the generic path; the rows exist so the name resolves
 // and the arity is checked in one place with everything else.
 
@@ -64,7 +64,7 @@ let builtin_table : Map[String, Builtin] = {
 
   // -- Logic ---------------------------------------------------------------
   //
-  // `not` evaluates here; `and` / `or` do not — `Val::eval` short-circuits
+  // `not` evaluates here; `and` / `or` do not — `Expr::eval` short-circuits
   // them, because `apply` is handed evaluated arguments and a guard like
   // `and (truthy? .items) ($firstLabel)` has to be able to stop.
   "not": { name: "not", arity: 1, apply: args => Bool(!op_truthy(args[0])), },

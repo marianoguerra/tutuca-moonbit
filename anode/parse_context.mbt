@@ -101,8 +101,8 @@ fn ParseContext::drain_value_issues(self : ParseContext) -> Unit {
 fn ParseContext::pval(
   self : ParseContext,
   s : String,
-  f : (String, @tscript.ParseCtx) -> @tutuca.Val?,
-) -> @tutuca.Val? {
+  f : (String, @tscript.ParseCtx) -> @tutuca.Expr?,
+) -> @tutuca.Expr? {
   let r = f(s, self.value_ctx())
   self.drain_value_issues()
   r
@@ -118,8 +118,8 @@ fn ParseContext::issue(self : ParseContext, issue : ParseIssue) -> Unit {
 /// parse failed and no node is created.
 fn ParseContext::add_node_if(
   self : ParseContext,
-  val : @tutuca.Val?,
-  make : (Int, @tutuca.Val) -> ANode,
+  val : @tutuca.Expr?,
+  make : (Int, @tutuca.Expr) -> ANode,
 ) -> ANode? {
   match val {
     Some(v) => {

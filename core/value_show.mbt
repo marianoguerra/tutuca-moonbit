@@ -169,7 +169,7 @@ pub fn Expr::to_source(self : Expr) -> String {
 }
 
 ///|
-pub impl Show for Val with fn output(self, logger) {
+pub impl Show for Expr with fn output(self, logger) {
   logger.write_string(val_source(self))
 }
 

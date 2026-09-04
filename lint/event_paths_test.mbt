@@ -15,7 +15,7 @@ test "an off-list traversal step is reported, naming step and site" {
   let f = findings[0]
   assert_true(f.code is EventPathUnsafeStep)
   assert_eq(f.level, Hint)
-  assert_true(@lint.lint_code_name(f.code) == "EVENT_PATH_UNSAFE_STEP")
+  assert_true(@lint.code_name(f.code) == "EVENT_PATH_UNSAFE_STEP")
   assert_eq(@lint.finding_message(f).contains("'e.target.form.action'"), true)
   assert_eq(@lint.finding_message(f).contains("traverses 'form'"), true)
 }

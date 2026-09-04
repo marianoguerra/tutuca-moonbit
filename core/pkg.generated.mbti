@@ -186,7 +186,6 @@ pub(all) enum DomainOperand {
   DField(String)
 } derive(Eq, @debug.Debug)
 
-#alias(Val)
 pub(all) enum Expr {
   ELit(lit~ : Lit, from_macro~ : Bool, span~ : Span)
   ETpl(parts~ : Array[TplPart], span~ : Span)

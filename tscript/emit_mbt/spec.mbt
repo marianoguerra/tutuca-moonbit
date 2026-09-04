@@ -2,20 +2,6 @@
 // in emit.mbt.
 
 ///|
-/// A declaration this backend will not compile, and why.
-///
-/// Refusals are DATA and are part of the answer, not an error beside it. A
-/// script block with one handler that reaches for `walk_path` still has five
-/// that compile, and the generator's job is to emit those and say which one
-/// the author writes by hand — which is the same shape `Card` takes with its
-/// issues, and for the same reason.
-pub(all) struct Refusal {
-  /// The declaration's name, as the author wrote it.
-  name : String
-  /// What cannot be compiled, and what to do instead.
-  why : String
-  span : @tutuca.Span
-} derive(Debug, Eq)
 
 ///|
 /// Which generated bucket each declared name is reached through.
@@ -93,7 +79,7 @@ pub(all) struct Emitted {
   answers_intent : Array[String]
   /// The value bodies that compiled, by role — what the generator routes to.
   /// A name asked for in `Roles` and missing here was refused, and its
-  /// `Refusal` says why.
+  /// `@check.Refusal` says why.
   answers_methods : Array[String]
   answers_whens : Array[String]
   answers_enriches : Array[String]
@@ -102,7 +88,7 @@ pub(all) struct Emitted {
   /// the synchronous property maps, never through a dispatch bucket.
   answers_property_get : Array[String]
   answers_property_set : Array[String]
-  refusals : Array[Refusal]
+  refusals : Array[@check.Refusal]
 } derive(Debug, Eq)
 
 ///|

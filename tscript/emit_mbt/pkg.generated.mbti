@@ -2,7 +2,6 @@
 package "marianoguerra/tutuca/tscript/emit_mbt"
 
 import {
-  "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/tscript/check",
@@ -30,13 +29,7 @@ pub(all) struct Emitted {
   answers_bind_withs : Array[String]
   answers_property_get : Array[String]
   answers_property_set : Array[String]
-  refusals : Array[Refusal]
-} derive(Eq, @debug.Debug)
-
-pub(all) struct Refusal {
-  name : String
-  why : String
-  span : @core.Span
+  refusals : Array[@check.Refusal]
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Role {

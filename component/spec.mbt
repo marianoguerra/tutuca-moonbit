@@ -98,7 +98,7 @@ declare pub fn schema_writers(
 /// rather than a wire.
 pub(all) struct ProvideInfo {
   name : String
-  val : @tutuca.Val
+  val : @tutuca.Expr
 } derive(Debug)
 
 ///|
@@ -173,7 +173,7 @@ pub fn lookup_or(name : String, default : String) -> LookupSpec {
 /// nothing to resolve ahead of time.
 pub(all) struct LookupInfo {
   name : String
-  default_val : @tutuca.Val?
+  default_val : @tutuca.Expr?
 } derive(Debug)
 
 ///|

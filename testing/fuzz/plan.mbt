@@ -19,7 +19,7 @@ pub struct Plan {
   /// should not have to re-parse.
   def : @statedef.StateDef
   /// The `pred`s and `invariant`s, lowered. `Rules::usable` is false when the
-  /// block declared none that `@core.Val` can evaluate — a plan is still fine
+  /// block declared none that `@core.Expr` can evaluate — a plan is still fine
   /// then, it just has nothing to hold the component to.
   rules : @arb.Rules
   /// One dispatch, drawn from the chosen bucket. None when the component
@@ -342,7 +342,7 @@ pub fn Plan::has_oracle(self : Plan) -> Bool {
 }
 
 ///|
-/// The rules the block declared that `@core.Val` could not lower, as
+/// The rules the block declared that `@core.Expr` could not lower, as
 /// (name, why).
 ///
 /// Empty is the good answer and the common one. A non-empty list is the honest

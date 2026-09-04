@@ -608,7 +608,7 @@ fn emit_module_compiled(
             ) {
             continue
           }
-          let line = "\{cname}: `\{r.name}` stays in MoonBit — \{r.why} (script-refusal)"
+          let line = "\{cname}: `\{r.name}` stays in MoonBit — \{r.reason} (script-refusal)"
           if said.add_and_check(line) {
             hints.push(line)
           }

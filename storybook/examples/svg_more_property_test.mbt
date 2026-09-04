@@ -8,7 +8,7 @@
 //
 // Why THIS component. It is the one in the corpus that declares all three
 // kinds of rule — two `pred`s used as preconditions and an `invariant` — and
-// every one of their bodies is in the vocabulary `@core.Val` can evaluate. So
+// every one of their bodies is in the vocabulary `@core.Expr` can evaluate. So
 // the rules can be read here, in the test, and held against the compiled arms
 // `gen` emitted from the same source. Two readings of one declaration
 // that have to agree is a differential test, and it costs one function call.
@@ -104,7 +104,7 @@ fn settled(h : @harness.Harness[@memdom.MemNode]) -> Map[String, @tutuca.Value] 
 /// shipping component — a test that existed only because the copy did. The
 /// copy is gone, so the claim moves to the two things that can still be wrong:
 /// that `gen` actually carried the block through, and that every rule in
-/// it is one `@core.Val` can answer, so nothing below is quietly skipped.
+/// it is one `@core.Expr` can answer, so nothing below is quietly skipped.
 test "the component carries the block it was declared in" {
   let p = bar_chart_plan()
   assert_eq(p.component, "BarChart")
@@ -172,7 +172,7 @@ test "property: no generated mutator can drive the chart through its invariant" 
 ///
 /// This is the differential test, and it is worth being explicit about what
 /// the two sides are. On the left, `@tscript.parse_bool` lowers
-/// `(len .values) < 9` to a `@core.Val` and `Val::eval` walks it over the
+/// `(len .values) < 9` to a `@core.Expr` and `Expr::eval` walks it over the
 /// state as it stands. On the right is the `guard` `gen` compiled from
 /// that same line into the generated MoonBit arm, whose verdict reaches here
 /// as a `Refusal` with `code: Precondition` and the rule's name on it.

@@ -11,7 +11,7 @@
 /// come from that package's `Arbitrary for Document`, which moved into a
 /// white-box test file and stopped being a consumer's to use — and what this
 /// test actually needs is varied nesting, not any particular generator.
-test "lint_html never panics on well-formed nesting" {
+test "check_html never panics on well-formed nesting" {
   let containers = [
     "div", "span", "p", "ul", "li", "table", "tr", "td", "b", "i", "svg",
   ]
@@ -35,21 +35,21 @@ test "lint_html never panics on well-formed nesting" {
       buf.write_string("</\{open.unsafe_pop()}>")
     }
     buf.write_string("</body></html>")
-    @lint.lint_html(buf.to_string()) |> ignore
+    @lint.check_html(buf.to_string()) |> ignore
     true
   })
 }
 
 ///|
-test "lint_html never panics on arbitrary strings" {
+test "check_html never panics on arbitrary strings" {
   @qc.quick_check_fn(fn(s : String) -> Bool {
-    @lint.lint_html(s) |> ignore
+    @lint.check_html(s) |> ignore
     true
   })
 }
 
 ///|
-test "lint_html never panics on adversarial tag soup" {
+test "check_html never panics on adversarial tag soup" {
   // Arbitrary ints select fragments from a soup of valid and broken markup
   // (mismatched closes, foreign content, table parts, bogus comments).
   let fragments = [
@@ -65,7 +65,7 @@ test "lint_html never panics on adversarial tag soup" {
       let i = if x < 0 { -(x + 1) } else { x }
       buf.write_string(fragments[i % fragments.length()])
     }
-    @lint.lint_html(buf.to_string()) |> ignore
+    @lint.check_html(buf.to_string()) |> ignore
     true
   })
 }

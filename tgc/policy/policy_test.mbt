@@ -11,8 +11,8 @@ fn parsed(html : String) -> @anode.ANode {
 }
 
 ///|
-fn shown(refusals : Array[Refusal]) -> Array[String] {
-  refusals.map(r => r.to_string())
+fn shown(rejections : Array[Rejection]) -> Array[String] {
+  rejections.map(r => r.to_string())
 }
 
 ///|
@@ -137,13 +137,13 @@ test "untrusted views may state a constant style" {
 /// the caller. They are an easy traversal gap, so hold this
 /// authority check against them explicitly.
 test "untrusted network checks reach macro slots" {
-  let refusals = shown(
+  let rejections = shown(
     Policy::untrusted().check_view(
       "Guest/main",
       parsed("<x:card><a href=\"https://attacker.test\">go</a></x:card>"),
     ),
   )
-  assert_true(refusals.any(message => message.contains("'href' on <a>")))
+  assert_true(rejections.any(message => message.contains("'href' on <a>")))
   // The safe markup directives too. A slot is guest markup wherever it ends up,
   // and a directive hidden one level down is exactly the shape this walk has
   // been wrong about before.

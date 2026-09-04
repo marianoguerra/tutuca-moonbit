@@ -671,7 +671,7 @@ pub(all) struct FuzzVerdictState {
   sentence : String
   rule : String
   at : Int
-  /// Rules the block declares that `@core.Val` could not lower, so the run
+  /// Rules the block declares that `@core.Expr` could not lower, so the run
   /// is quieter than a green verdict looks.
   unchecked : String
   hasUnchecked : Bool

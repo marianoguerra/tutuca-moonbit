@@ -60,20 +60,20 @@ pub(all) enum ParseIssue {
 /// (None = the not-set sentinel).
 pub(all) struct IfAttr {
   name : String
-  cond_val : @tutuca.Val
-  mut then_val : @tutuca.Val?
-  mut else_val : @tutuca.Val?
+  cond_val : @tutuca.Expr
+  mut then_val : @tutuca.Expr?
+  mut else_val : @tutuca.Expr?
 } derive(Debug)
 
 ///|
 /// One parsed attribute of a DynAttrs element.
 pub(all) enum AttrItem {
   /// Dynamic `:attr` (or macro attr): value evaluated per render.
-  Plain(name~ : String, val~ : @tutuca.Val)
+  Plain(name~ : String, val~ : @tutuca.Expr)
   /// Constant attribute (plain HTML attr, data-eid, setDataAttr insertions).
-  ConstA(name~ : String, val~ : @tutuca.Val)
+  ConstA(name~ : String, val~ : @tutuca.Expr)
   /// `@dangerouslysetinnerhtml` (None val = failed parse, attr kept).
-  RawHtml(val~ : @tutuca.Val?)
+  RawHtml(val~ : @tutuca.Expr?)
   /// `@setinnermd`: a markdown source string (None val = failed parse, same
   /// sentinel convention as `RawHtml`).
   ///
@@ -83,7 +83,7 @@ pub(all) enum AttrItem {
   /// except through a node builder that consults the sanitizer for every
   /// element and every attribute value. Pass 1 refuses the first by default and
   /// never refuses the second — which it cannot express if they share a case.
-  RawMarkdown(val~ : @tutuca.Val?)
+  RawMarkdown(val~ : @tutuca.Expr?)
   /// `@setinnerhtml`: an HTML source string (None val = failed parse, same
   /// sentinel convention as `RawHtml`).
   ///
@@ -95,7 +95,7 @@ pub(all) enum AttrItem {
   /// sanitizer about every element and every attribute value it builds, so
   /// there is nothing here for a host to grant and Pass 1 never refuses it.
   /// One variant for both would make that difference inexpressible.
-  SafeHtml(val~ : @tutuca.Val?)
+  SafeHtml(val~ : @tutuca.Expr?)
   /// `@setinnersvg`: an SVG source string (None val = failed parse, same
   /// sentinel convention as `RawHtml`).
   ///
@@ -104,7 +104,7 @@ pub(all) enum AttrItem {
   /// namespace that comes out of that decides which half of a
   /// namespace-qualified config applies. `svg("script")` and `html("script")`
   /// are different entries.
-  SafeSvg(val~ : @tutuca.Val?)
+  SafeSvg(val~ : @tutuca.Expr?)
   If(IfAttr)
 } derive(Debug)
 
@@ -157,10 +157,10 @@ pub(all) enum WrapperKind {
 pub(all) struct WrapperAttr {
   kind : WrapperKind
   raw : String
-  val : @tutuca.Val?
-  mut enrich_with_val : @tutuca.Val?
-  mut when_val : @tutuca.Val?
-  mut loop_with_val : @tutuca.Val?
+  val : @tutuca.Expr?
+  mut enrich_with_val : @tutuca.Expr?
+  mut when_val : @tutuca.Expr?
+  mut loop_with_val : @tutuca.Expr?
 } derive(Debug)
 
 ///|
@@ -169,7 +169,7 @@ pub(all) struct WrapperAttr {
 pub(all) struct AttrParseResult {
   attrs : Attrs
   wrappers : Array[WrapperAttr]
-  text_child : @tutuca.Val?
+  text_child : @tutuca.Expr?
   bind : BindData?
 } derive(Debug)
 
@@ -178,7 +178,7 @@ pub(all) struct AttrParseResult {
 /// against the component schema and fills `event.binding`; keeping the source
 /// value here lets that pass reject anything other than a direct state field.
 pub(all) struct BindData {
-  target : @tutuca.Val
+  target : @tutuca.Expr
   property : String
   event : NodeEvent
 } derive(Debug)
@@ -268,7 +268,7 @@ pub(all) struct FragmentData {
 /// directive's child (built with a null nodeId, unregistered).
 pub(all) struct RenderTextData {
   node_id : Int?
-  val : @tutuca.Val
+  val : @tutuca.Expr
 } derive(Debug)
 
 ///|
@@ -276,15 +276,15 @@ pub(all) struct RenderTextData {
 /// view_val is the parsed `as=` view selector (None when absent).
 pub(all) struct RenderData {
   node_id : Int
-  val : @tutuca.Val
-  view_val : @tutuca.Val?
+  val : @tutuca.Expr
+  view_val : @tutuca.Expr?
 } derive(Debug)
 
 ///|
 /// `<x render-it>`: renders the current item; carries no value of its own.
 pub(all) struct RenderItData {
   node_id : Int
-  view_val : @tutuca.Val?
+  view_val : @tutuca.Expr?
 } derive(Debug)
 
 ///|
@@ -293,7 +293,7 @@ pub(all) struct RenderItData {
 /// (Scope always; Show/Hide only in their <x>-extra-attr form).
 pub(all) struct WrapData {
   node_id : Int?
-  val : @tutuca.Val
+  val : @tutuca.Expr
   mut node : ANode
 } derive(Debug)
 
@@ -308,10 +308,10 @@ pub(all) struct SlotData {
 /// Iteration spec shared by `@each` and `<x render-each>` (evaluation
 /// deferred to the renderer).
 pub(all) struct IterInfo {
-  val : @tutuca.Val
-  mut when_val : @tutuca.Val?
-  mut loop_with_val : @tutuca.Val?
-  mut enrich_with_val : @tutuca.Val?
+  val : @tutuca.Expr
+  mut when_val : @tutuca.Expr?
+  mut loop_with_val : @tutuca.Expr?
+  mut enrich_with_val : @tutuca.Expr?
 } derive(Debug)
 
 ///|
@@ -454,16 +454,16 @@ declare fn maybe_fragment(childs : Array[ANode]) -> ANode
 ///|
 /// `@tutuca.Expr::lit(LStr(s))`, the constant a plain attribute
 /// value or a literal handler argument parses to.
-declare pub fn const_str(s : String) -> @tutuca.Val
+declare pub fn const_str(s : String) -> @tutuca.Expr
 
 ///|
-declare pub fn const_num(n : Double) -> @tutuca.Val
+declare pub fn const_num(n : Double) -> @tutuca.Expr
 
 ///|
-declare pub fn const_bool(b : Bool) -> @tutuca.Val
+declare pub fn const_bool(b : Bool) -> @tutuca.Expr
 
 ///|
-declare pub fn const_null() -> @tutuca.Val
+declare pub fn const_null() -> @tutuca.Expr
 
 ///|
 /// A plain HTML attribute: `ConstA` with a constant string.
@@ -479,7 +479,7 @@ declare pub fn attr_bool(name : String, value : Bool) -> AttrItem
 ///|
 /// `ConstA` with a value built by hand — the escape hatch for a constant that
 /// came from a macro variable (`from_macro=true`).
-declare pub fn attr_val(name : String, val : @tutuca.Val) -> AttrItem
+declare pub fn attr_val(name : String, val : @tutuca.Expr) -> AttrItem
 
 ///|
 /// The `data-eid` stamp that ties an element to its NodeEvents entry.
@@ -487,20 +487,20 @@ declare pub fn eid(id : Int) -> AttrItem
 
 ///|
 /// A dynamic `:attr`, evaluated per render (`Plain`).
-declare pub fn dyn_attr(name : String, val : @tutuca.Val) -> AttrItem
+declare pub fn dyn_attr(name : String, val : @tutuca.Expr) -> AttrItem
 
 ///|
 /// `@if.<name>` with its optional `@then` / `@else` values.
 declare pub fn if_attr(
   name : String,
-  cond : @tutuca.Val,
-  then_val? : @tutuca.Val,
-  else_val? : @tutuca.Val,
+  cond : @tutuca.Expr,
+  then_val? : @tutuca.Expr,
+  else_val? : @tutuca.Expr,
 ) -> AttrItem
 
 ///|
 /// `@dangerouslysetinnerhtml` (None val = the failed-parse sentinel).
-declare pub fn raw_html(val? : @tutuca.Val) -> AttrItem
+declare pub fn raw_html(val? : @tutuca.Expr) -> AttrItem
 
 ///|
 /// An element. The attribute list decides the representation exactly as the
@@ -525,29 +525,33 @@ declare pub fn frag(childs : Array[ANode]) -> ANode
 ///|
 /// `<x text=…>` / `@text` output. `id` is unset for the `@text` directive's
 /// child, which registers no node of its own.
-declare pub fn dyn_text(val : @tutuca.Val, id? : Int) -> ANode
+declare pub fn dyn_text(val : @tutuca.Expr, id? : Int) -> ANode
 
 ///|
 /// `<x render=…>`, with the optional `as=` view selector.
-declare pub fn render(id : Int, val : @tutuca.Val, view? : @tutuca.Val) -> ANode
+declare pub fn render(
+  id : Int,
+  val : @tutuca.Expr,
+  view? : @tutuca.Expr,
+) -> ANode
 
 ///|
 /// `<x render-it>`, with the optional `as=` view selector.
-declare pub fn render_it(id : Int, view? : @tutuca.Val) -> ANode
+declare pub fn render_it(id : Int, view? : @tutuca.Expr) -> ANode
 
 ///|
 /// `@show`; `id` is set only in the `<x show=…>` form, which registers.
-declare pub fn show(val : @tutuca.Val, node : ANode, id? : Int) -> ANode
+declare pub fn show(val : @tutuca.Expr, node : ANode, id? : Int) -> ANode
 
 ///|
-declare pub fn hide(val : @tutuca.Val, node : ANode, id? : Int) -> ANode
+declare pub fn hide(val : @tutuca.Expr, node : ANode, id? : Int) -> ANode
 
 ///|
-declare pub fn push_view(val : @tutuca.Val, node : ANode, id? : Int) -> ANode
+declare pub fn push_view(val : @tutuca.Expr, node : ANode, id? : Int) -> ANode
 
 ///|
 /// A loop-less `@enrich-with` frame. Always registers, hence the plain id.
-declare pub fn scope(id : Int, val : @tutuca.Val, node : ANode) -> ANode
+declare pub fn scope(id : Int, val : @tutuca.Expr, node : ANode) -> ANode
 
 ///|
 declare pub fn slot(name : String, node : ANode) -> ANode
@@ -557,11 +561,11 @@ declare pub fn slot(name : String, node : ANode) -> ANode
 /// `@loop-with` and `@enrich-with` on the same element.
 declare pub fn each(
   id : Int,
-  val : @tutuca.Val,
+  val : @tutuca.Expr,
   node : ANode,
-  when_val? : @tutuca.Val,
-  loop_with_val? : @tutuca.Val,
-  enrich_with_val? : @tutuca.Val,
+  when_val? : @tutuca.Expr,
+  loop_with_val? : @tutuca.Expr,
+  enrich_with_val? : @tutuca.Expr,
   from_render_each? : Bool,
 ) -> ANode
 
@@ -569,8 +573,8 @@ declare pub fn each(
 /// One `@on.<name>+mod+…` handler.
 declare pub fn on(
   name : String,
-  handler : @tutuca.Val,
-  args? : Array[@tutuca.Val],
+  handler : @tutuca.Expr,
+  args? : Array[@tutuca.Expr],
   modifiers? : Array[String],
   binding? : BindCoercion,
   action? : @tscript.PropertyAction,

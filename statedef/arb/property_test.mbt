@@ -217,7 +217,7 @@ test "every rule the fixtures declare lowers to something evaluable" {
 ///|
 /// A rule answers yes or no, over any state at all.
 ///
-/// The property that catches what `tscript/check` cannot see. `Val::eval`
+/// The property that catches what `tscript/check` cannot see. `Expr::eval`
 /// answers `Null` for a name that resolved to nothing, so a rule reading a
 /// field the state does not have comes back neither true nor false — and a
 /// filter written over it would silently reject every state.
@@ -240,7 +240,7 @@ test "property: every rule answers a boolean over any generated state" {
 /// The interpreted rule agrees with what it declares.
 ///
 /// Not a tautology: the left side is `@tscript.parse_bool` lowering the rule's
-/// source to a `@core.Val` and `Val::eval` walking it, and the right side is
+/// source to a `@core.Expr` and `Expr::eval` walking it, and the right side is
 /// the comparison done here in MoonBit. They agree only if the block
 /// language's `<=`, `>`, `not` and `and` mean what the declaration says they
 /// do — which is the same claim the two shipping backends make when they
@@ -394,8 +394,8 @@ test "property: shrinking a script only ever shortens it" {
 ///|
 /// Where this reading of a rule stops, said out loud.
 ///
-/// `@tscript.parse_bool` lowers the block language to a `@core.Val`, and a
-/// `Val` is what a SLOT holds — so it admits exactly the slot vocabulary:
+/// `@tscript.parse_bool` lowers the block language to a `@core.Expr`, and a
+/// `Expr` is what a SLOT holds — so it admits exactly the slot vocabulary:
 /// comparisons, `and` / `or` / `not` / `implies`, `is`, the `empty?` family,
 /// `len`, `min` / `max` / `clamp`, `has` / `contains`, the converters and the
 /// string verbs. It has no arithmetic, deliberately: "a slot has no arithmetic

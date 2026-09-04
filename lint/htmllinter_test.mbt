@@ -8,7 +8,7 @@ fn lint(
   fragment_context? : String = "template",
   transparent_tag_prefixes? : Array[String] = ["x"],
 ) -> Array[@lint.Finding] {
-  @lint.lint_html(html, fragment_context~, transparent_tag_prefixes~)
+  @lint.check_html(html, fragment_context~, transparent_tag_prefixes~)
 }
 
 ///|
@@ -424,16 +424,19 @@ test "a self-closing void element is not a duplicate attribute" {
       "<input class=\"a\" />", "<input type=\"checkbox\" :checked=\"@value.done\" @on.input=\"toggleAt @key\" />",
       "<div><br /></div>",
     ] {
-    assert_false(has_code(lint_html(html), HtmlDuplicateAttribute))
+    assert_false(has_code(check_html(html), HtmlDuplicateAttribute))
   }
   // ...and a REAL duplicate still reports, self-closing or not
   assert_true(
     has_code(
-      lint_html("<input class=\"a\" class=\"b\" />"),
+      check_html("<input class=\"a\" class=\"b\" />"),
       HtmlDuplicateAttribute,
     ),
   )
   assert_true(
-    has_code(lint_html("<div id=\"a\" id=\"b\"></div>"), HtmlDuplicateAttribute),
+    has_code(
+      check_html("<div id=\"a\" id=\"b\"></div>"),
+      HtmlDuplicateAttribute,
+    ),
   )
 }

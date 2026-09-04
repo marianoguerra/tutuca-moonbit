@@ -354,14 +354,14 @@ test "seq-access resolves through a custom collection, not only List and Map" {
       "name": Str("k"),
     },
   }
-  let v : @core.Val = Expr::seq_access("rows", "idx")
+  let v : @core.Expr = Expr::seq_access("rows", "idx")
   assert_eq(v.eval(stack), Str("one"))
   // ...and the two shapes that always worked still do
-  let l : @core.Val = Expr::seq_access("plainList", "idx")
+  let l : @core.Expr = Expr::seq_access("plainList", "idx")
   assert_eq(l.eval(stack), Str("b"))
-  let m : @core.Val = Expr::seq_access("plainMap", "name")
+  let m : @core.Expr = Expr::seq_access("plainMap", "name")
   assert_eq(m.eval(stack), Str("v"))
   // a key that is neither an index nor a name resolves to nothing
-  let x : @core.Val = Expr::seq_access("rows", "missing")
+  let x : @core.Expr = Expr::seq_access("rows", "missing")
   assert_eq(x.eval(stack), Null)
 }

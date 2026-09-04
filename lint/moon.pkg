@@ -1,7 +1,7 @@
 import {
   "marianoguerra/tutuca/anode",
   // The event-path profile the rule above advises about. The `e.<path>`
-  // arguments themselves arrive as core Val variants, matched by inference —
+  // arguments themselves arrive as core Expr variants, matched by inference —
   // no core import needed.
   "marianoguerra/tutuca/eventpath",
   "moonbit-community/html/src" @html5,

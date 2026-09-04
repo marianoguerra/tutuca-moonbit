@@ -102,7 +102,7 @@ fn view_diagnostics(
       let where_ = "\{cname}/\{view.name}"
       // Structural HTML (mismatched tags, bad nesting): the WHATWG-tokenizer
       // linter, which needs only the source text.
-      for f in @lint.lint_html(view.source) {
+      for f in @lint.check_html(view.source) {
         out.push(f.to_line(where_))
       }
       // Parse-issue rules, deprecation nudges and host bare directives. A

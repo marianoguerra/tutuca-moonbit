@@ -86,7 +86,7 @@ test "the fixture really is a component whose invariant nothing enforces" {
   guard @fuzz.Plan::of_component(drawer_comp(), source=Fields) is Some(plan) else {
     fail("Drawer carries a spec block, so it has a plan")
   }
-  // Both rules the block declares are ones `@core.Val` can answer.
+  // Both rules the block declares are ones `@core.Expr` can answer.
   assert_eq(plan.unchecked(), [])
   let h = @harness.mount_example(drawer_module(), "Open")
   let run = plan.run(h, plan.script(seed=1, steps=20))

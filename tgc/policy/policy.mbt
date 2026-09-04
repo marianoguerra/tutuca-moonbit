@@ -126,7 +126,7 @@ pub(all) struct Policy {
 /// making. Anything it cannot do for itself — a clock, entropy, the network —
 /// it asks the host for over an intent, and the host decides per call.
 ///
-/// `CssPolicy::payload()` is the one thing here that is not a refusal, and it is
+/// `CssPolicy::payload()` is the one thing here that is not a rejection, and it is
 /// new: a CONSTANT inline style or SVG presentation attribute is now read
 /// rather than refused by name. See `check_untrusted_attrs`. It buys a guest
 /// `fill="#1da1f2"` and `style="text-align:center"` without buying it a fetch,
@@ -185,23 +185,29 @@ pub fn Policy::system() -> Policy {
 }
 
 ///|
-/// One reason a bundle was refused.
+/// One reason a bundle was REJECTED.
+///
+/// Rejected and not refused, and the difference is the whole shape of this
+/// layer: a refusal is per-declaration and leaves the rest of the component
+/// running (`tscript/check`'s at compile time, `core`'s at run time), where a
+/// rejection turns the bundle away whole. A host that has one of these does
+/// not load the module.
 ///
 /// `where_` names the component and view when there is one (`Counter/main`) so
 /// a guest author can find it, and is empty for a decision about the bundle as
 /// a whole.
-pub(all) struct Refusal {
+pub(all) struct Rejection {
   where_ : String
   message : String
 } derive(Eq, Debug)
 
 ///|
-fn refusal(where_ : String, message : String) -> Refusal {
+fn rejection(where_ : String, message : String) -> Rejection {
   { where_, message, }
 }
 
 ///|
-pub fn Refusal::to_string(self : Refusal) -> String {
+pub fn Rejection::to_string(self : Rejection) -> String {
   if self.where_ == "" {
     self.message
   } else {
@@ -229,12 +235,12 @@ pub(all) struct ModuleFacts {
 pub fn Policy::check_quotas(
   self : Policy,
   facts : ModuleFacts,
-) -> Array[Refusal] {
+) -> Array[Rejection] {
   let q = self.quotas
-  let out : Array[Refusal] = []
+  let out : Array[Rejection] = []
   let check = (n : Int, limit : Int, what : String) => {
     if n > limit {
-      out.push(refusal("", "too many \{what}: \{n} (the limit is \{limit})"))
+      out.push(rejection("", "too many \{what}: \{n} (the limit is \{limit})"))
     }
   }
   check(facts.components, q.max_components, "components")
@@ -271,12 +277,12 @@ pub fn Policy::check_style(
   self : Policy,
   where_ : String,
   style : String,
-) -> Array[Refusal] {
+) -> Array[Rejection] {
   if style == "" || self.allow_custom_css {
     return []
   }
   [
-    refusal(
+    rejection(
       where_, "this host takes no CSS from a bundle; style with the host's utility classes instead",
     ),
   ]
@@ -291,7 +297,7 @@ pub fn Policy::check_style(
 /// so an allowlist over names is COMPLETE over the described part of a view.
 /// That is what makes this decidable here rather than at render.
 ///
-/// It is not decidable for attribute VALUES: `AttrItem::Plain` carries a `Val`,
+/// It is not decidable for attribute VALUES: `AttrItem::Plain` carries a `Expr`,
 /// so what an `href` will hold is unknowable until render. For an Untrusted
 /// bundle the authority check therefore refuses browser network/CSS SINKS by
 /// name, alongside raw Markdown and arbitrary utility CSS. Granted/System
@@ -300,10 +306,10 @@ pub fn Policy::check_view(
   self : Policy,
   where_ : String,
   tree : @anode.ANode,
-) -> Array[Refusal] {
+) -> Array[Rejection] {
   let out = self.sanitizer
     .check(tree)
-    .map(v => refusal(where_, @sanitize.Violation::to_string(v)))
+    .map(v => rejection(where_, @sanitize.Violation::to_string(v)))
   out.append(self.check_untrusted_view_authority(where_, tree))
   out
 }
@@ -365,7 +371,7 @@ pub fn Policy::with_sanitizer(
 /// False everywhere by default, and always false for Untrusted: even sanitized
 /// HTML can contain a non-script network request. A trusted host that flips it
 /// MUST also install the
-/// markup filter — the payload is a `Val` at registration, so nothing decided
+/// markup filter — the payload is a `Expr` at registration, so nothing decided
 /// here can see what it will hold, and without the filter it goes to
 /// `set_inner_html` unchecked. `@markdown.filter_for` reads this and builds the
 /// matching filter, which is how the two stay in step.

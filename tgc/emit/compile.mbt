@@ -664,7 +664,7 @@ fn compile_wax(wax : String) -> Bytes raise GenError {
 fn manifest_value(
   comps : Array[Comp],
   name : String,
-  refusals : Array[Refusal],
+  refusals : Array[@check.Refusal],
   macros : Array[@viewfile.MacroDef],
 ) -> @tutuca.Value {
   let out : Map[String, @tutuca.Value] = Map([])
@@ -762,7 +762,7 @@ fn bindings_value(bs : Array[@statedef.ProtocolBinding]) -> @tutuca.Value {
 ///|
 /// One component's half of it — and the whole of what an INSTANCE says about
 /// itself, which is why `<C>_desc()` is this same value.
-fn component_value(c : Comp, refusals : Array[Refusal]) -> @tutuca.Value {
+fn component_value(c : Comp, refusals : Array[@check.Refusal]) -> @tutuca.Value {
   // The names the module ANSWERS TO, which for a message or an intent is the
   // schema's runtime name and not the declaration's own spelling — the same
   // resolution the dispatch does, because a manifest that advertised a name

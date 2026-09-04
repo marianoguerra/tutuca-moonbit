@@ -8,7 +8,7 @@
 /// Every `$name` inside one value, including the ones nested in a `$'…'`
 /// template's placeholders and in a predicate's arguments — a method reached
 /// through either is called exactly as a bare one is.
-fn add_val_methods(val : @tutuca.Val, into : Set[String]) -> Unit {
+fn add_val_methods(val : @tutuca.Expr, into : Set[String]) -> Unit {
   match val {
     EMethod(name~, ..) => into.add(name)
     ETpl(parts~, ..) =>
@@ -45,7 +45,7 @@ fn add_val_methods(val : @tutuca.Val, into : Set[String]) -> Unit {
 }
 
 ///|
-fn add_opt_val_methods(val : @tutuca.Val?, into : Set[String]) -> Unit {
+fn add_opt_val_methods(val : @tutuca.Expr?, into : Set[String]) -> Unit {
   if val is Some(v) {
     add_val_methods(v, into)
   }

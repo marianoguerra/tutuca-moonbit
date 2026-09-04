@@ -197,7 +197,7 @@ fn tpl_part_expr(part : @tutuca.TplPart) -> String {
 /// rebuilds carries `no_span`. Which is also why the shape constructors
 /// (`Expr::field`, `Expr::bind`, …) are what this emits — they default the
 /// span, and they are the same four shapes a slot can write.
-fn val_expr(val : @tutuca.Val) -> String {
+fn val_expr(val : @tutuca.Expr) -> String {
   // The four addressable shapes, by their own names. `as_bind_member` before
   // `as_bind` for the reason the parser tries them in that order: `@a.b` is
   // not a whole-binding read.
@@ -269,7 +269,7 @@ fn val_expr(val : @tutuca.Val) -> String {
 
 ///|
 /// `, label=…` for an optional argument that is set, "" for one that is not.
-fn val_arg(label : String, val : @tutuca.Val?) -> String {
+fn val_arg(label : String, val : @tutuca.Expr?) -> String {
   match val {
     Some(v) => ", \{label}=\{val_expr(v)}"
     None => ""

@@ -302,7 +302,7 @@ test "an e. path is refused outside an argument slot" {
 
 ///|
 test "an operator is transparent to the surface walk" {
-  // The reason operators lower to `App` rather than to new `Val` cases. Every
+  // The reason operators lower to `App` rather than to new `Expr` cases. Every
   // walker in the tree already recurses through `App(args~, ..)` and ignores
   // the name — the statedef collector here, the `UnknownStateField` checker,
   // the method collector — so nesting an operator changes nothing for any of

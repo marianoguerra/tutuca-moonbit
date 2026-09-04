@@ -83,8 +83,8 @@ fn parse_x_op_val(
   op_name : String,
   value : String,
   px : ParseContext,
-  parser : (String, @tscript.ParseCtx) -> @tutuca.Val?,
-) -> @tutuca.Val? {
+  parser : (String, @tscript.ParseCtx) -> @tutuca.Expr?,
+) -> @tutuca.Expr? {
   let val = px.pval(value, parser)
   if val is None {
     px.issue(BadValue(role=XOp(op=op_name), value~))
@@ -96,7 +96,7 @@ fn parse_x_op_val(
 /// `as=` view selector: a dynamic text value like `@push-view`, but a bare
 /// identifier (which parses as a NameVal outside the text grammar and so
 /// yields None) is a literal const view name.
-fn parse_view_name(s : String, px : ParseContext) -> @tutuca.Val {
+fn parse_view_name(s : String, px : ParseContext) -> @tutuca.Expr {
   px.pval(s, @tscript.parse_text).unwrap_or(@tutuca.Expr::lit(LStr(s)))
 }
 
@@ -116,7 +116,7 @@ fn parse_x_op(
   if op is Some(o) && o.ignores_children() && has_meaningful_childs(childs) {
     px.issue(XOpIgnoresChildren(op=name))
   }
-  let as_val : @tutuca.Val? = match get_named_item(attrs, "as") {
+  let as_val : @tutuca.Expr? = match get_named_item(attrs, "as") {
     Some(s) => Some(parse_view_name(s, px))
     None => None
   }
@@ -164,7 +164,7 @@ fn process_x_extras(
   start_idx : Int,
   px : ParseContext,
 ) -> ANode? {
-  let wrappers : Array[(WrapperKind, @tutuca.Val?)] = []
+  let wrappers : Array[(WrapperKind, @tutuca.Expr?)] = []
   // An iteration directive the op cannot carry FAILS the node, the same way a
   // failed op does — see the divergence note below. Every attribute is still
   // visited first, so one bad spelling does not hide the rest.
@@ -230,7 +230,7 @@ fn process_x_extras(
 fn parse_render_each(
   px : ParseContext,
   value : String,
-  as_val : @tutuca.Val?,
+  as_val : @tutuca.Expr?,
   attrs : Array[(String, String)],
 ) -> ANode? {
   let seq_val = parse_x_op_val(

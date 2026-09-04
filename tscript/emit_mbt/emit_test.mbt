@@ -123,7 +123,7 @@ fn body(block : String) -> String raise {
 ///|
 /// The reasons a block's declarations were refused.
 fn whys(block : String) -> Array[String] raise {
-  out(block).refusals.map(r => r.why)
+  out(block).refusals.map(r => r.reason)
 }
 
 // -- what compiles ----------------------------------------------------------
@@ -187,7 +187,7 @@ test "a pred used as a @when is compiled again, with the row in scope" {
   // As a METHOD it cannot: a `$name` call site has no row to hand it, and
   // guessing one is the thing this backend does not do.
   assert_eq(e.answers_methods, [])
-  assert_true(e.refusals[0].why.contains("@value"))
+  assert_true(e.refusals[0].reason.contains("@value"))
 }
 
 ///|
@@ -250,7 +250,7 @@ test "`has` asks a set and a map for a KEY, and a list for a value" {
 test "`has` refuses a receiver with no membership to ask about" {
   let e = out_values("pred inLabel { has .label .label }", methods=["inLabel"])
   assert_eq(e.answers_methods, [])
-  assert_true(e.refusals[0].why.contains("a set, a map or a list"))
+  assert_true(e.refusals[0].reason.contains("a set, a map or a list"))
 }
 
 ///|
@@ -307,7 +307,7 @@ test "an enricher refuses a construct that would have to leave mid-body" {
   let e = out_values("enrich row { @half = .count / 2 }", enriches=["row"])
   assert_eq(e.answers_enriches, [])
   assert_eq(e.refusals.map(r => r.name), ["row"])
-  assert_true(e.refusals[0].why.contains("an `enrich` cannot"))
+  assert_true(e.refusals[0].reason.contains("an `enrich` cannot"))
 }
 
 ///|
@@ -408,10 +408,10 @@ test "a nullable field takes `null` for its empty and the bare value for its ful
 test "a nullable place widens nothing a plain one would not" {
   let e = out("receive bad { .note = 3 }")
   assert_eq(e.source, "")
-  assert_true(e.refusals[0].why.contains("does not fit"))
+  assert_true(e.refusals[0].reason.contains("does not fit"))
   let e2 = out("receive badAny { .note = .blob }")
   assert_eq(e2.source, "")
-  assert_true(e2.refusals[0].why.contains("does not fit"))
+  assert_true(e2.refusals[0].reason.contains("does not fit"))
 }
 
 ///|
@@ -684,7 +684,7 @@ fn rows_whys(block : String) -> Array[String] raise {
     def_of(rows_schema()),
     state_ty="CardState",
     fn_name="card_inline_update",
-  ).refusals.map(r => r.why)
+  ).refusals.map(r => r.reason)
 }
 
 ///|
@@ -954,7 +954,7 @@ test "a `*name` in a value body reads the render stack" {
   // DISPATCH context and there is none while a view is being rendered.
   //
   // `stack.lookup_dynamic` is literally the call `core/value_eval.mbt` makes
-  // for a `Val::Dyn` in a slot, so the compiled and the interpreted backends
+  // for a `Expr::Dyn` in a slot, so the compiled and the interpreted backends
   // answer one question one way rather than by two tables kept in step.
   let e = out_values(
     "pred picked { .label is *sectionTitle }",
@@ -1017,7 +1017,7 @@ test "a transition still reads `*name` through its ctx, and names the parameter"
   // transition on a different rule that predates this one, and the point here
   // is the ctx, not that rule.
   let e = out("receive rename(a, b) { .blob = *theme }")
-  assert_eq(e.refusals.map(r => r.why), [])
+  assert_eq(e.refusals.map(r => r.reason), [])
   assert_true(e.source.contains("ctx.lookup(\"theme\""))
   assert_true(e.source.contains("\n  ctx : &@tutuca.Ctx,\n"))
   assert_false(e.source.contains("stack.lookup_dynamic"))

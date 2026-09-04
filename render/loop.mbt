@@ -12,7 +12,7 @@ fn loop_plan(
   stack : RenderStack,
   seq : @tutuca.Value,
   filter_h : @tutuca.Value?,
-  loop_with_val : @tutuca.Val?,
+  loop_with_val : @tutuca.Expr?,
 ) -> @component.LoopWith {
   guard loop_with_val is Some(lv) else {
     return @component.LoopWith::new(iter_data=Map({ "seq": seq }))
@@ -39,8 +39,8 @@ fn loop_plan(
 fn loop_iter_data(
   stack : RenderStack,
   seq : @tutuca.Value,
-  when_val : @tutuca.Val?,
-  loop_with_val : @tutuca.Val?,
+  when_val : @tutuca.Expr?,
+  loop_with_val : @tutuca.Expr?,
 ) -> @tutuca.Value {
   let filter_h : @tutuca.Value? = match when_val {
     Some(v) => Some(v.eval_as_handler(stack))

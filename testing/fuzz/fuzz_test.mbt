@@ -358,7 +358,7 @@ test "no declared message can break the invariant" {
 /// Every refusal the runtime raised, the block agrees with.
 ///
 /// The differential claim, and the one that costs nothing to make: on one side
-/// the rule's source lowered to a `@core.Val` and evaluated over the state as
+/// the rule's source lowered to a `@core.Expr` and evaluated over the state as
 /// it stood, on the other the compiled guard whose verdict arrived as a
 /// `Refusal`. A hand-written test cannot make this claim — it asserts a state
 /// it chose against a rule it read — because the two only diverge on the

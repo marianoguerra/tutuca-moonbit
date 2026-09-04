@@ -9,7 +9,7 @@
 ///|
 /// Canonical SCREAMING_SNAKE rule code for a LintCode — the names the
 /// rule catalog (lint_rules.mbt), agent-context and the CLI use.
-pub fn lint_code_name(code : LintCode) -> String {
+pub fn code_name(code : LintCode) -> String {
   match code {
     UnknownDirective => "UNKNOWN_DIRECTIVE"
     UnknownXOp => "UNKNOWN_X_OP"
@@ -332,5 +332,5 @@ pub fn Finding::to_line(self : Finding, where_ : String) -> String {
     Warn => "warning"
     Hint => "hint"
   }
-  "\{lint_code_name(self.code)} (\{level}) \{where_}: \{finding_message(self)}"
+  "\{code_name(self.code)} (\{level}) \{where_}: \{finding_message(self)}"
 }

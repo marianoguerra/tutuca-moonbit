@@ -272,7 +272,11 @@ fn Checker::property_action(
 ///|
 /// The type a value has in this scope, or None when it is not statically
 /// known. None means "do not check", never "wrong".
-fn Checker::ty_of(self : Checker, val : @tutuca.Val, sc : Scope) -> @tutuca.Ty? {
+fn Checker::ty_of(
+  self : Checker,
+  val : @tutuca.Expr,
+  sc : Scope,
+) -> @tutuca.Ty? {
   if val.as_field() is Some(name) {
     return match sc.self_ty {
       SState => self.def.member_ty(name)
@@ -328,7 +332,7 @@ fn Checker::ty_of(self : Checker, val : @tutuca.Val, sc : Scope) -> @tutuca.Ty? 
 ///|
 /// How a value reads in a diagnostic, in the source spelling the author
 /// wrote it in.
-fn expr_src(val : @tutuca.Val) -> String {
+fn expr_src(val : @tutuca.Expr) -> String {
   match val {
     ERead(..) | EMethod(..) | EDyn(..) | EName(..) => val.to_source()
     _ => "the expression"
@@ -339,7 +343,7 @@ fn expr_src(val : @tutuca.Val) -> String {
 /// Every `.field` and `@value.member` a value reads must exist.
 fn Checker::val(
   self : Checker,
-  val : @tutuca.Val,
+  val : @tutuca.Expr,
   sc : Scope,
 ) -> Unit raise GenError {
   if val.as_field() is Some(name) {
@@ -467,7 +471,7 @@ fn Checker::members_of(self : Checker, t : @tutuca.Ty) -> Array[String] {
 fn Checker::child_view(
   self : Checker,
   comp : String?,
-  view_val : @tutuca.Val?,
+  view_val : @tutuca.Expr?,
 ) -> Unit {
   guard comp is Some(c) else { return }
   guard view_val is Some(ELit(lit=LStr(want), ..)) else { return }
@@ -498,7 +502,7 @@ fn self_comp(sc : Scope) -> String? {
 /// decide something. An unknown type checks the reads and stops there.
 fn Checker::boolish(
   self : Checker,
-  val : @tutuca.Val,
+  val : @tutuca.Expr,
   directive : String,
   sc : Scope,
 ) -> Unit raise GenError {
@@ -516,7 +520,7 @@ fn Checker::boolish(
 ///|
 fn Checker::val_opt(
   self : Checker,
-  val : @tutuca.Val?,
+  val : @tutuca.Expr?,
   sc : Scope,
 ) -> Unit raise GenError {
   if val is Some(v) {

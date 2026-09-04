@@ -106,7 +106,7 @@ fn untrusted_sink_element(tag : String) -> Bool {
 /// is, and the policy did not admit what it says. The second carries the
 /// validator's own reason, because "your `fill` was refused" and "your `fill`
 /// pointed at another origin" are different things for an author to be told.
-fn css_refusal(attr : String, val : @tutuca.Val, policy : Policy) -> String? {
+fn css_refusal(attr : String, val : @tutuca.Expr, policy : Policy) -> String? {
   let text = match val {
     ELit(lit=LStr(s), ..) => s
     // A number or a boolean in a CSS attribute is not CSS. Refused with the
@@ -132,7 +132,7 @@ fn css_refusal(attr : String, val : @tutuca.Val, policy : Policy) -> String? {
 
 ///|
 /// Tailwind/margaui bracket syntax is guest-authored CSS, including url(...).
-fn has_arbitrary_css(val : @tutuca.Val) -> Bool {
+fn has_arbitrary_css(val : @tutuca.Expr) -> Bool {
   fn fragment_is_arbitrary(s : String) -> Bool {
     s.contains("[") || s.contains("]")
   }
@@ -159,7 +159,7 @@ fn class_lit_has_arbitrary_css(lit : @tutuca.Lit) -> Bool {
 fn check_untrusted_attrs(
   where_ : String,
   d : @anode.DomData,
-  out : Array[Refusal],
+  out : Array[Rejection],
   policy : Policy,
 ) -> Unit {
   let tag = d.tag.to_lower()
@@ -168,11 +168,11 @@ fn check_untrusted_attrs(
   // rule never needed them (a name is a name); the external-URL rule does,
   // being a rule about where the value POINTS, read off the literal part of
   // it. See external_url.mbt.
-  fn check_name(name : String, vals : Array[@tutuca.Val?]) {
+  fn check_name(name : String, vals : Array[@tutuca.Expr?]) {
     let lower = name.to_lower()
     if lower == "is" {
       out.push(
-        refusal(
+        rejection(
           where_,
           "untrusted views may not use 'is' on <\{d.tag}>; customized built-in elements run host-registered code",
         ),
@@ -183,7 +183,7 @@ fn check_untrusted_attrs(
           guard val is Some(v) else { continue }
           if policy.external_url_refusal(v) is Some(why) {
             out.push(
-              refusal(
+              rejection(
                 where_,
                 "untrusted views may not use '\{name}' on <\{d.tag}>: \{why}",
               ),
@@ -204,7 +204,7 @@ fn check_untrusted_attrs(
           match css_refusal(lower, v, policy) {
             Some(why) =>
               out.push(
-                refusal(
+                rejection(
                   where_,
                   "untrusted views may not use '\{name}' on <\{d.tag}>: \{why}",
                 ),
@@ -214,7 +214,7 @@ fn check_untrusted_attrs(
         }
       } else {
         out.push(
-          refusal(
+          rejection(
             where_,
             "untrusted views may not use network/CSS sink attribute '\{name}' on <\{d.tag}>",
           ),
@@ -223,10 +223,10 @@ fn check_untrusted_attrs(
     }
   }
 
-  fn check_class(val : @tutuca.Val) {
+  fn check_class(val : @tutuca.Expr) {
     if has_arbitrary_css(val) {
       out.push(
-        refusal(
+        rejection(
           where_, "untrusted views may not use bracketed arbitrary utility classes; they are guest-authored CSS",
         ),
       )
@@ -242,7 +242,7 @@ fn check_untrusted_attrs(
         check_name(name, [Some(@tutuca.Expr::lit(lit))])
         if name.to_lower() == "class" && class_lit_has_arbitrary_css(lit) {
           out.push(
-            refusal(
+            rejection(
               where_, "untrusted views may not use bracketed arbitrary utility classes; they are guest-authored CSS",
             ),
           )
@@ -274,11 +274,11 @@ fn check_untrusted_attrs(
           }
           RawMarkdown(_) =>
             out.push(
-              refusal(
+              rejection(
                 where_, "untrusted views may not render runtime Markdown because it can synthesize network-bearing elements",
               ),
             )
-          // The same refusal, for the same reason, and it is worth saying why
+          // The same rejection, for the same reason, and it is worth saying why
           // "but the sanitizer checks every element it builds" is not an
           // answer here. It is the answer for a plain app, and it is why Pass 1
           // waves these through. This walk is about something narrower: an
@@ -289,23 +289,23 @@ fn check_untrusted_attrs(
           // runtime payload can synthesize, so the payload has to go.
           SafeHtml(_) =>
             out.push(
-              refusal(
+              rejection(
                 where_, "untrusted views may not render runtime HTML because it can synthesize network-bearing elements",
               ),
             )
           SafeSvg(_) =>
             out.push(
-              refusal(
+              rejection(
                 where_, "untrusted views may not render runtime SVG because it can synthesize network-bearing elements",
               ),
             )
-          // Avoid duplicating the baseline sanitizer's refusal. If a host
+          // Avoid duplicating the baseline sanitizer's rejection. If a host
           // loosens that sanitizer, Untrusted still cannot use the construct:
           // its dynamic payload could synthesize every sink checked here.
           RawHtml(_) =>
             if policy.sanitizer.raw_markup {
               out.push(
-                refusal(
+                rejection(
                   where_, "untrusted views may not render runtime HTML because it can synthesize network-bearing elements",
                 ),
               )
@@ -319,14 +319,14 @@ fn check_untrusted_attrs(
 fn visit_untrusted_view(
   where_ : String,
   node : @anode.ANode,
-  out : Array[Refusal],
+  out : Array[Rejection],
   policy : Policy,
 ) -> Unit {
   match node {
     Dom(d) => {
       if untrusted_sink_element(d.tag) {
         out.push(
-          refusal(
+          rejection(
             where_,
             "untrusted views may not create <\{d.tag}> because it can load or synthesize external content",
           ),
@@ -359,7 +359,7 @@ fn visit_untrusted_view(
       for name, raw in d.attrs {
         if policy.macro_arg_refusal(raw) is Some(why) {
           out.push(
-            refusal(
+            rejection(
               where_,
               "untrusted views may not pass '\{name}' to <x:\{d.name}>: \{why}",
             ),
@@ -379,11 +379,11 @@ fn Policy::check_untrusted_view_authority(
   self : Policy,
   where_ : String,
   tree : @anode.ANode,
-) -> Array[Refusal] {
+) -> Array[Rejection] {
   if self.tier != Untrusted {
     return []
   }
-  let out : Array[Refusal] = []
+  let out : Array[Rejection] = []
   visit_untrusted_view(where_, tree, out, self)
   out
 }
@@ -394,7 +394,7 @@ fn Policy::check_untrusted_view_authority(
 ///
 /// The SAFE profile is the default here — in every tier, because views are
 /// data whoever shipped them, and an off-list traversal step is ambient
-/// authority no guest declared (SECURITY.md §9). A refusal names the step and
+/// authority no guest declared (SECURITY.md §9). A rejection names the step and
 /// its index, so a guest author is told "not allowed to go that far" rather
 /// than "wrong from the start", and points at the intent channel, which is
 /// the way to ask the host for what a path must not take.
@@ -408,11 +408,11 @@ pub fn Policy::check_event_paths(
   self : Policy,
   where_ : String,
   events : Array[@anode.NodeEvents],
-) -> Array[Refusal] {
+) -> Array[Rejection] {
   if self.event_paths is Open {
     return []
   }
-  let out : Array[Refusal] = []
+  let out : Array[Rejection] = []
   for ev in events {
     for h in ev.handlers {
       for arg in h.handler.args {
@@ -422,7 +422,7 @@ pub fn Policy::check_event_paths(
           continue
         }
         out.push(
-          refusal(
+          rejection(
             where_,
             "this host's event-path policy refuses '\{step}' (at \{index}) in 'e." +
             segments.join(".") +

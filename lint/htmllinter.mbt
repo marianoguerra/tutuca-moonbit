@@ -1,4 +1,4 @@
-// lint_html driver: feeds @html5's WHATWG tokenizer into the prediction
+// check_html driver: feeds @html5's WHATWG tokenizer into the prediction
 // machine. Token-level rules that need raw source (case, offsets) use
 // rawscan.mbt on each token's span; rules the tokenizer already detects
 // (duplicate attrs, end-tag attrs, missing values, CDATA, bogus comments)
@@ -6,7 +6,7 @@
 // and finding order stay correct.
 
 ///|
-pub fn lint_html(
+pub fn check_html(
   html : String,
   fragment_context? : String = "template",
   transparent_tag_prefixes? : Array[String] = ["x"],

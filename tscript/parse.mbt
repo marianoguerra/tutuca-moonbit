@@ -38,7 +38,7 @@ fn ParseCtx::issue(
 /// call that reads it for the answer a slot's caller wants: a yes or a no, with
 /// the sentence — when there is one — reported as a bad-expression issue
 /// against the span the form covers.
-fn val_in_position(val : @tutuca.Val, pos : @tutuca.Position) -> Bool {
+fn val_in_position(val : @tutuca.Expr, pos : @tutuca.Position) -> Bool {
   val.admitted_in(pos) is Admitted
 }
 
@@ -85,20 +85,20 @@ fn is_float_literal(s : String) -> Bool {
 }
 
 ///|
-fn const_str(s : String, span : Span) -> @tutuca.Val {
+fn const_str(s : String, span : Span) -> @tutuca.Expr {
   @tutuca.Expr::lit(LStr(s), span~)
 }
 
 ///|
 /// The public entry: a bare string with no position of its own, so anything
 /// it reports spans the whole of it.
-pub fn parse_token(s : String, ctx : ParseCtx) -> @tutuca.Val? {
+pub fn parse_token(s : String, ctx : ParseCtx) -> @tutuca.Expr? {
   parse_tok({ text: s, span: { start: 0, end_: s.to_array().length(), }, }, ctx)
 }
 
 ///|
-/// One token into the richest @tutuca.Val it can be, reporting against its span.
-fn parse_tok(tok : Token, ctx : ParseCtx) -> @tutuca.Val? {
+/// One token into the richest @tutuca.Expr it can be, reporting against its span.
+fn parse_tok(tok : Token, ctx : ParseCtx) -> @tutuca.Expr? {
   let s = tok.text
   let span = tok.span
   guard s.get_char(0) is Some(c0) else { return None }
@@ -199,7 +199,7 @@ fn parse_tok(tok : Token, ctx : ParseCtx) -> @tutuca.Val? {
 }
 
 ///|
-fn mk_id(name : String, make : (String) -> @tutuca.Val) -> @tutuca.Val? {
+fn mk_id(name : String, make : (String) -> @tutuca.Expr) -> @tutuca.Expr? {
   if is_valid_val_id(name) {
     Some(make(name))
   } else {
@@ -222,7 +222,7 @@ fn find_char(s : String, c : Char) -> Int? {
 ///|
 /// `seq[key]`: exactly one `[`, a closing `]` as the last char, both sides
 /// plain fields. Anything else (nested/unbalanced brackets) is rejected.
-fn parse_seq_access(s : String, ctx : ParseCtx, span : Span) -> @tutuca.Val? {
+fn parse_seq_access(s : String, ctx : ParseCtx, span : Span) -> @tutuca.Expr? {
   let chars : Array[Char] = s.iter().collect()
   let mut open = -1
   let mut second_open = -1
@@ -263,7 +263,7 @@ fn parse_seq_access(s : String, ctx : ParseCtx, span : Span) -> @tutuca.Val? {
 /// between becomes constants, brace interiors parse via parse_text), then
 /// trim empty constant bookends — keeping macro-var-bound empties, which are
 /// real placeholders the linter must see.
-fn parse_str_tpl(s : String, ctx : ParseCtx, span : Span) -> @tutuca.Val {
+fn parse_str_tpl(s : String, ctx : ParseCtx, span : Span) -> @tutuca.Expr {
   let interior = unescape_str(s)
   let chars : Array[Char] = interior.iter().collect()
   let parts : Array[@tutuca.TplPart] = []
@@ -354,7 +354,7 @@ fn resolve_macro_var(
   said : String,
   at : Span,
   ctx : ParseCtx,
-) -> @tutuca.Val? {
+) -> @tutuca.Expr? {
   match ctx.macro_vars.get(name) {
     Some(new_s) => {
       let tokens = tokenize(new_s)
@@ -395,7 +395,7 @@ fn resolve_config_var(
   said : String,
   at : Span,
   ctx : ParseCtx,
-) -> @tutuca.Val? {
+) -> @tutuca.Expr? {
   guard is_valid_val_id(name) else { return None }
   match ctx.config_vars.get(name) {
     Some(v) => Some(@tutuca.Expr::lit(LStr(v)))
@@ -412,7 +412,7 @@ fn parse_single(
   s : String,
   ctx : ParseCtx,
   pos : @tutuca.Position,
-) -> @tutuca.Val? {
+) -> @tutuca.Expr? {
   // Not `s.trim()` first: the tokenizer already skips whitespace, and
   // trimming would shift every span off the string the caller handed in.
   let tokens = tokenize(s)
@@ -433,7 +433,7 @@ fn parse_single(
 /// semantics only that path implements. Anything longer is handed to
 /// `parse_expr_source` and lowered — which is what makes a slot and a
 /// block body the same language rather than two that resemble each other.
-pub fn parse_bool(s : String, ctx : ParseCtx) -> @tutuca.Val? {
+pub fn parse_bool(s : String, ctx : ParseCtx) -> @tutuca.Expr? {
   let tokens = tokenize(s)
   if tokens.length() != 1 {
     if tokens.length() == 0 {
@@ -458,7 +458,7 @@ pub fn parse_bool(s : String, ctx : ParseCtx) -> @tutuca.Val? {
 /// Spans index `s` directly: `parse_expr_source` tokenizes the attribute
 /// value itself, so an operand's position is already the one the reader is
 /// looking at and nothing is rebased.
-fn parse_expression(s : String, ctx : ParseCtx) -> @tutuca.Val? {
+fn parse_expression(s : String, ctx : ParseCtx) -> @tutuca.Expr? {
   // `^name` and `host.name` reach here as ORDINARY OPERANDS, and the grammar has
   // a leaf for each. They are resolved by substitution during `resolve_expr`,
   // through the same two functions the single-token path calls, which is what
@@ -523,8 +523,8 @@ fn resolve_expr(
   ctx : ParseCtx,
   src : String,
   pos : @tutuca.Position,
-) -> @tutuca.Val? {
-  fn refuse(why : String, span : Span) -> @tutuca.Val? {
+) -> @tutuca.Expr? {
+  fn refuse(why : String, span : Span) -> @tutuca.Expr? {
     ctx.issue(BadExpression(why~), slice_span(src, span), span)
     None
   }
@@ -586,7 +586,7 @@ fn resolve_app(
   ctx : ParseCtx,
   src : String,
   pos : @tutuca.Position,
-) -> @tutuca.Val? {
+) -> @tutuca.Expr? {
   // The HEAD is what is unknown, so that is what the span covers — the name
   // sits at the start of the application, which is what makes this exact.
   let head : Span = {
@@ -603,7 +603,7 @@ fn resolve_app(
     ctx.issue(PredicateArity(name~, want=b.arity), slice_span(src, span), span)
     return None
   }
-  let out : Array[@tutuca.Val] = []
+  let out : Array[@tutuca.Expr] = []
   for a in args {
     guard resolve_expr(a, ctx, src, pos) is Some(v) else { return None }
     // An argument of an application is itself a condition: it reads a field, a
@@ -619,32 +619,32 @@ fn resolve_app(
 }
 
 ///|
-pub fn parse_text(s : String, ctx : ParseCtx) -> @tutuca.Val? {
+pub fn parse_text(s : String, ctx : ParseCtx) -> @tutuca.Expr? {
   parse_single(s, ctx, PosText)
 }
 
 ///|
-pub fn parse_component(s : String, ctx : ParseCtx) -> @tutuca.Val? {
+pub fn parse_component(s : String, ctx : ParseCtx) -> @tutuca.Expr? {
   parse_single(s, ctx, PosComponent)
 }
 
 ///|
-pub fn parse_sequence(s : String, ctx : ParseCtx) -> @tutuca.Val? {
+pub fn parse_sequence(s : String, ctx : ParseCtx) -> @tutuca.Expr? {
   parse_single(s, ctx, PosSequence)
 }
 
 ///|
-pub fn parse_field(s : String, ctx : ParseCtx) -> @tutuca.Val? {
+pub fn parse_field(s : String, ctx : ParseCtx) -> @tutuca.Expr? {
   parse_single(s, ctx, PosField)
 }
 
 ///|
-pub fn parse_provide(s : String, ctx : ParseCtx) -> @tutuca.Val? {
+pub fn parse_provide(s : String, ctx : ParseCtx) -> @tutuca.Expr? {
   parse_single(s, ctx, PosProvide)
 }
 
 ///|
-pub fn parse_macro_attr(s : String, ctx : ParseCtx) -> @tutuca.Val? {
+pub fn parse_macro_attr(s : String, ctx : ParseCtx) -> @tutuca.Expr? {
   parse_single(s, ctx, PosMacroAttr)
 }
 
@@ -691,7 +691,7 @@ fn parse_property_action(s : String, ctx : ParseCtx) -> PropertyAction? {
     }
     SMethod(place~, call~, args~, ..) if place.root is PState(name) &&
       place.steps.is_empty() => {
-      let lowered : Array[@tutuca.Val] = []
+      let lowered : Array[@tutuca.Expr] = []
       for arg in args {
         guard resolve_action_expr(arg, ctx, wrapped) is Some(v) else {
           return None
@@ -711,7 +711,7 @@ fn resolve_action_expr(
   expr : @tutuca.Expr,
   ctx : ParseCtx,
   source : String,
-) -> @tutuca.Val? {
+) -> @tutuca.Expr? {
   match expr {
     ERead(place={ root: PParam("e"), steps, .. }, ..) => {
       let path : Array[String] = []
@@ -730,7 +730,7 @@ fn resolve_action_expr(
 }
 
 ///|
-pub fn parse_alter_handler(s : String, ctx : ParseCtx) -> @tutuca.Val? {
+pub fn parse_alter_handler(s : String, ctx : ParseCtx) -> @tutuca.Expr? {
   match parse_handler(s, ctx, PosTrigger, allow_args=false, report=false) {
     Some(h) => Some(h.handler)
     None => None
@@ -744,7 +744,7 @@ pub fn parse_alter_handler(s : String, ctx : ParseCtx) -> @tutuca.Val? {
 /// `pos` is `PosEvent` or `PosTrigger`, and it replaced a NAMESPACE the parsed
 /// name used to carry. What the namespace said was which position the name was
 /// written in, which the caller already knows — and what it decided,
-/// downstream, was how the name is read, which is `Val::eval_as_handler`'s
+/// downstream, was how the name is read, which is `Expr::eval_as_handler`'s
 /// question rather than the value's.
 fn parse_handler(
   s : String,
@@ -757,12 +757,12 @@ fn parse_handler(
   let head_tok : Token = tokens
     .get(0)
     .unwrap_or({ text: "", span: { start: 0, end_: 0, }, })
-  let head : @tutuca.Val? = if head_tok.text == "" {
+  let head : @tutuca.Expr? = if head_tok.text == "" {
     None
   } else {
     parse_tok(head_tok, ctx)
   }
-  let handler : @tutuca.Val = match head {
+  let handler : @tutuca.Expr = match head {
     Some(h) if val_in_position(h, pos) => h
     _ => {
       if report {
@@ -778,7 +778,7 @@ fn parse_handler(
       None
     }
   }
-  let args : Array[@tutuca.Val] = []
+  let args : Array[@tutuca.Expr] = []
   for i in 1..<tokens.length() {
     let tok = tokens[i]
     match parse_tok(tok, ctx) {

@@ -267,7 +267,7 @@ pub(all) struct ObserveRecord {
 /// `at` is a `Path` and not the `DispatchPath` the transaction carries, because
 /// this is the form that can be written down: a `DispatchPath` names render-time
 /// producers by component id — a process-global counter nothing may persist —
-/// and `Step`'s frame-only variants hold `Val` expressions and closures. The
+/// and `Step`'s frame-only variants hold `Expr` expressions and closures. The
 /// transaction path is what the dispatch actually lands on, with every dynamic
 /// active render frame already addresses where the data lives.
 pub(all) struct Dispatched {

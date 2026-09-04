@@ -547,7 +547,7 @@ fn screen_view(
   config_vars : Map[String, String],
 ) -> Unit raise ManifestError {
   let line = (f : @lint.Finding) => into.push(f.to_line(where_))
-  for f in @lint.lint_html(html) {
+  for f in @lint.check_html(html) {
     line(f)
   }
   let collector = @lint.LintCollector::new()
@@ -579,7 +579,9 @@ fn screen_view(
 /// refusal is terminal: there is no partially-registered module to report the
 /// rest of the problems against, and a guest author fixing the first thing
 /// will re-run and see the second.
-fn refuse_if_any(refusals : Array[@policy.Refusal]) -> Unit raise ManifestError {
+fn refuse_if_any(
+  refusals : Array[@policy.Rejection],
+) -> Unit raise ManifestError {
   if refusals.is_empty() {
     return
   }

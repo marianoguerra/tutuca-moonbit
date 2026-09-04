@@ -150,12 +150,15 @@ pub fn emit(
   // optional sentence — and giving it a second path through this file would
   // mean `callables`, `rules`, `formats`, `invariants` and `value_bodies` each
   // learning about two kinds of rule that behave identically.
-  let refusals : Array[Refusal] = []
+  let refusals : Array[@check.Refusal] = []
   let (spec_rules, unreadable) = @check.rule_decls(def, decls)
   for name in unreadable {
     refusals.push({
+      comp: "",
+      kind: "rule",
       name,
-      why: "its body is not an expression this backend can read",
+      reason: "its body is not an expression this backend can read",
+      line: 0,
       span: @tscript.no_span,
     })
   }
@@ -247,7 +250,14 @@ pub fn emit(
         // A refused arm is not emitted, so whatever it reached for does not
         // count towards what the function's parameters are used for.
         e.uses_ctx = before
-        refusals.push({ name: d.name, why, span: d.span, })
+        refusals.push({
+          comp: "",
+          kind: @tscript.kind_word(d.kind),
+          name: d.name,
+          reason: why,
+          line: 0,
+          span: d.span,
+        })
         continue
       }
     }
@@ -307,7 +317,10 @@ pub fn emit(
     answers_bind_withs: values.bind_withs,
     answers_property_get: values.property_get,
     answers_property_set: setters.names,
-    refusals,
+    // The component is a property of this whole call rather than of each site
+    // that refused, so it is stamped once here instead of threaded through
+    // five signatures that have no other use for it.
+    refusals: refusals.map(r => { ..r, comp: def.component, }),
   }
 }
 
@@ -354,7 +367,7 @@ fn E::value_bodies(
   decls : Array[@tscript.Decl],
   prefix : String,
   roles : Roles,
-  refusals : Array[Refusal],
+  refusals : Array[@check.Refusal],
 ) -> Values {
   let out = Values::{
     source: "",
@@ -379,7 +392,14 @@ fn E::value_bodies(
     }
     let src = self.value_body(d, role, prefix) catch {
       Cannot(why) => {
-        refusals.push({ name: d.name, why, span: d.span, })
+        refusals.push({
+          comp: "",
+          kind: @tscript.kind_word(d.kind),
+          name: d.name,
+          reason: why,
+          line: 0,
+          span: d.span,
+        })
         return
       }
     }
@@ -429,7 +449,7 @@ fn E::property_setters(
   decls : Array[@tscript.Decl],
   prefix : String,
   surface : @check.Surface,
-  refusals : Array[Refusal],
+  refusals : Array[@check.Refusal],
 ) -> PropertySetters {
   let source = StringBuilder()
   let names : Array[String] = []
@@ -447,15 +467,25 @@ fn E::property_setters(
     let arm = self.arm(d, "Receive", surface) catch {
       Cannot(why) => {
         self.uses_ctx = before_ctx
-        refusals.push({ name: d.name, why, span: d.span, })
+        refusals.push({
+          comp: "",
+          kind: @tscript.kind_word(d.kind),
+          name: d.name,
+          reason: why,
+          line: 0,
+          span: d.span,
+        })
         continue
       }
     }
     if self.uses_ctx != before_ctx {
       self.uses_ctx = before_ctx
       refusals.push({
+        comp: "",
+        kind: @tscript.kind_word(d.kind),
         name: d.name,
-        why: "a property setter is synchronous and pure, so it cannot use component effects or context",
+        reason: "a property setter is synchronous and pure, so it cannot use component effects or context",
+        line: 0,
         span: d.span,
       })
       continue
@@ -2117,7 +2147,7 @@ fn E::expr(self : E, e : @tutuca.Expr) -> (String, @tutuca.Ty) raise NoWay {
       if self.in_value_body {
         // A value body is called BY the render stack, so the stack is what
         // answers — and `stack.lookup_dynamic` is literally the call the
-        // interpreter makes for a `Val::Dyn` in a slot
+        // interpreter makes for a `Expr::Dyn` in a slot
         // (`core/value_eval.mbt`), so the two backends answer one question one
         // way rather than by a table kept in sync.
         self.uses_stack = true

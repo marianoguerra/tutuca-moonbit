@@ -4,7 +4,7 @@
 // arguments and no `@`-binding — the spec block refuses a parameterised rule
 // by name, which is exactly what makes this possible. So the rule's source
 // goes through `@tscript.parse_bool`, which lowers the block language to a
-// `@core.Val`, and `Val::eval` answers it against a state map.
+// `@core.Expr`, and `Expr::eval` answers it against a state map.
 //
 // That there are two ways to reach a rule's answer is the point rather than a
 // duplication. The card compiler emits the rule into a wasm module and
@@ -21,9 +21,9 @@
 pub(all) struct Rules {
   /// `pred` by name — the rules a `requires` / `ensures` clause can name and a
   /// view can read as `$name`.
-  preds : Map[String, @tutuca.Val]
+  preds : Map[String, @tutuca.Expr]
   /// `invariant` by name — the rules that hold after EVERY dispatch.
-  invariants : Map[String, @tutuca.Val]
+  invariants : Map[String, @tutuca.Expr]
   /// A rule whose source did not lower, with the reason.
   ///
   /// Reported rather than dropped, and never silently: a rule nobody can
@@ -41,8 +41,8 @@ pub(all) struct Rules {
 /// does not depend on it — the skill's own words: "a sentence that cannot be
 /// evaluated is dropped and the report still fires".
 pub fn rules_of(def : @statedef.StateDef) -> Rules {
-  let preds : Map[String, @tutuca.Val] = Map([])
-  let invariants : Map[String, @tutuca.Val] = Map([])
+  let preds : Map[String, @tutuca.Expr] = Map([])
+  let invariants : Map[String, @tutuca.Expr] = Map([])
   let unlowerable : Array[(String, String)] = []
   for r in def.rules {
     let ctx = @tscript.ParseCtx::new()
@@ -80,7 +80,7 @@ pub fn Rules::usable(self : Rules) -> Bool {
 ///
 /// `None` for a name this spec does not declare, and `None` for a rule that
 /// did not answer a boolean. The second case is the one worth having: `Null`
-/// out of `Val::eval` means a name resolved to nothing, which is a rule that
+/// out of `Expr::eval` means a name resolved to nothing, which is a rule that
 /// reads a field it does not have. A `Bool` answer and "no answer" are
 /// different facts and a property asserts against both.
 pub fn Rules::holds(
@@ -137,7 +137,7 @@ pub fn Rules::broken(
 /// One namespace, because an `invariant` IS a `pred` with a role — `$conserved`
 /// reads one from a view exactly as `$canPush` reads the other — so a
 /// `requires` may name either and so may another rule.
-fn Rules::lookup(self : Rules, name : String) -> @tutuca.Val? {
+fn Rules::lookup(self : Rules, name : String) -> @tutuca.Expr? {
   match self.preds.get(name) {
     Some(v) => Some(v)
     None => self.invariants.get(name)

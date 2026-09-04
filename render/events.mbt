@@ -53,7 +53,7 @@ fn find_handlers(
 }
 
 ///|
-fn base_step(val : @tutuca.Val, key : @tutuca.PathKey?) -> @tutuca.Step? {
+fn base_step(val : @tutuca.Expr, key : @tutuca.PathKey?) -> @tutuca.Step? {
   match val.to_path_item() {
     Some(step) =>
       Some(

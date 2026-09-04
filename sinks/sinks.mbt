@@ -3,7 +3,7 @@
 //
 // Every rule in `vdom/filter` is two questions — does this attribute's NAME
 // concern me, and if so, is this render's VALUE allowed? The second is why the
-// filter exists at all: an attribute's value is a `Val` expression until state
+// filter exists at all: an attribute's value is a `Expr` expression until state
 // produces it, so nothing before render can decide it. The first is not like
 // that. Every attribute name in a view is a literal (`AttrItem` carries
 // `name : String` in every variant), so "does this element have an attribute

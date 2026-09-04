@@ -1,18 +1,16 @@
 // THE expression AST.
 //
-// One tree, where there were two. `core` held a span-free `Val` — what a view
-// slot parses to, what a render frame replays, what the generated IR modules
-// spell out — and `tscript` held an `Expr` with spans, positions and operators,
-// which its parser lowered INTO a `Val` for anything a slot could hold. The
-// lowering was the problem: two enums for one language means every question
-// ("is this addressable", "may this go here") is answered twice and the answers
-// drift, and it means the block language could never grow a form a slot might
-// legitimately want without the slot half having somewhere to put it.
+// ONE tree for the whole language. A view slot and a script block parse to the
+// same thing — `@show=".open"` and `requires .open` mean the same thing — and
+// two enums for one language would mean every question ("is this addressable",
+// "may this go here") is answered twice, by answers that drift. It would also
+// cap the block language at whatever the slot half had somewhere to put.
 //
-// So the tree is one, it lives here — `core` never parses anything, but it is
-// what a parse produces and what `Step` embeds, and that embedding is why the
-// value and path layers already share this package — and the question of which
-// forms are legal WHERE is a separate answer, `Position` (`position.mbt`).
+// It lives here because `core` is what a parse PRODUCES and what `Step`
+// embeds, which is the same reason the value and path layers already share
+// this package. `core` itself never parses anything. Which forms are legal
+// WHERE is a separate question with a separate answer: `Position`
+// (`position.mbt`).
 //
 // SPANS RIDE ALONG AND DO NOT COUNT. Every node carries where it was read
 // from, which is what lets a diagnostic point at the operand that was wrong
@@ -134,10 +132,9 @@ pub(all) struct Place {
 ///|
 /// An expression.
 ///
-/// `Val` is the same type under its older name — a slot's value and a block's
-/// expression are one language, and the alias is what keeps the ~1500 places
-/// that say `Val` reading as they did.
-#alias(Val)
+/// One type, because a slot's value and a block's expression are one language:
+/// `@show=".open"` and `requires .open` mean the same thing, and a second type
+/// would be a second answer about what they mean.
 pub(all) enum Expr {
   /// A literal. `from_macro` is set when a `^name` macro var resolved to this
   /// constant, which makes an enclosing template non-literal — and is the one
@@ -181,7 +178,7 @@ pub(all) enum Expr {
   /// anything: an `@on` name is dispatched BY NAME and never evaluated. What
   /// the namespace really said was which POSITION the name was written in,
   /// which is `Position`'s question and is asked where the name is read
-  /// (`Val::eval_as_handler`) rather than carried on it.
+  /// (`Expr::eval_as_handler`) rather than carried on it.
   EName(name~ : String, span~ : Span)
   /// A bare Uppercase name — a component TYPE (`@tutuca.is_type_name`).
   ETypeName(name~ : String, span~ : Span)

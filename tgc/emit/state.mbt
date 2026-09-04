@@ -44,7 +44,7 @@ priv struct Comp {
   /// declared zero and every string field renders empty. That is what dropping
   /// them looks like on a page, and it is why they are carried.
   inits : Array[@statedef.InitState]
-  refusals : Array[Refusal]
+  refusals : Array[@check.Refusal]
 }
 
 ///|
