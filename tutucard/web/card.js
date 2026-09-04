@@ -62,13 +62,27 @@ export async function loadGuest(bytes, key = "default", { runtime } = {}) {
   const rt = runtime ?? (await loadRuntime());
 
   // Instances by integer, because MoonBit's js target passes integers across
-  // this seam. Nothing is kept alive by being in here — the engine owns the
-  // instance — so the sweep the old backend needed has nothing to do.
+  // this seam. The engine owns the instance; this only names it.
   const table = new Map();
+  // …and the same instance keeps the same NAME. `onComp` runs every time a
+  // child crosses, which is once per render per row, so minting a fresh handle
+  // each time gave one live row two or three entries — the collector then freed
+  // the ones the newest render had not just made, and the count sat at a
+  // multiple of the rows rather than at the rows. A handle is an identity here,
+  // not a ticket.
+  const byInstance = new Map();
+  const table_delete = (h) => {
+    const inst = table.get(h);
+    if (inst !== undefined && byInstance.get(inst) === h) byInstance.delete(inst);
+    return table.delete(h);
+  };
   let next = 1;
   const put = (inst) => {
+    const seen = byInstance.get(inst);
+    if (seen !== undefined) return seen;
     const h = next++;
     table.set(h, inst);
+    byInstance.set(inst, h);
     return h;
   };
 
@@ -202,6 +216,17 @@ export async function loadGuest(bytes, key = "default", { runtime } = {}) {
     return rt.call_op(inst, op, V.bytes(name), V.vals(args), v);
   };
 
+  // A NEW table under this key, so whatever the collector recorded about the
+  // last one is a set of handles into a table that no longer exists. Left in
+  // place it is not merely stale, it is wrong: handles restart at 1 here, so
+  // an old record names live rows of the new table and pins them forever. The
+  // sweep keeps the UNION of every app registered under a key, so one drive
+  // per key never notices and a second one leaks the first one's whole tree.
+  //
+  // Guarded because `loadGuest` is drivable with no page at all — `tgc/test`
+  // hands in its own runtime and installs no `__tutucard`.
+  globalThis.__tutucard?.resetSweep?.(key);
+
   globalThis.__cardguest = globalThis.__cardguest ?? {};
   globalThis.__cardguest[key] = {
     takeLog() {
@@ -210,7 +235,7 @@ export async function loadGuest(bytes, key = "default", { runtime } = {}) {
       return out;
     },
     dropInstance(handle) {
-      table.delete(handle);
+      table_delete(handle);
     },
     size() {
       return table.size;
@@ -220,7 +245,7 @@ export async function loadGuest(bytes, key = "default", { runtime } = {}) {
       let gone = 0;
       for (const h of [...table.keys()]) {
         if (!keep.has(h)) {
-          table.delete(h);
+          table_delete(h);
           gone++;
         }
       }
