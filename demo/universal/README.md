@@ -42,21 +42,33 @@ card itself. Four things are not, and each needs a browser:
 - **`?loadAll` timing** — eleven cards compiling at once, while the page draws.
 - **The localStorage round trip**, across a real reload.
 
-## Known: a placed guest does not respond to clicks
+## Known: a component from ANOTHER module does not respond to clicks
 
-Placement works — a `Grid` from `std` holding a `Counter` from another module
-renders correctly, at any depth. **Interacting with the placed component does
-not:** clicking the Counter's `+` produces no transition and no re-render.
+Placement works everywhere. A `Grid` from `std` holding a `Counter` from another
+module renders correctly, at any depth. What fails is *interacting* with a
+component whose module is not the module of the thing holding it.
 
-It is specific. Dispatch reaches host components on the same page (the shell's
-own buttons work), and a guest mounted as the app *root* works — that is what
-the card playground does. What fails is a guest held in a **host component's
-field**, which is what `Shell.canvas` is.
+It is narrow, and the boundaries are worth writing down because they were each
+measured rather than assumed:
 
-Reproduce: load the page, press `edit`, press `+`, pick `Counter`, then press
-the counter's `+`. The count stays at 0.
+| holder | held | dispatch |
+|---|---|---|
+| host (`Shell.canvas`) | guest (`std`'s `Hole`) | **works** — the `+`, the `x` and the badge all dispatch |
+| guest (`std`'s `Hole`) | guest, same module (`std`'s `Textarea`) | **works** — typed text survives two full re-renders, so the successor is written back through the holder |
+| guest (`std`'s `Hole`) | guest, another module (`Counter`) | **fails** — no transition, no re-render |
 
-Not diagnosed further, and deliberately not guessed at: the composition claim
-this demo exists to make is about placement and rendering, and those are
-verified end to end. This is a separate defect in the dispatch path and it wants
-its own repro before its own fix.
+So it is not "a guest cannot dispatch" and not "a guest under a host component
+cannot dispatch". It is the cross-module hop, which puts it in the same family
+as the two bugs this branch opened by fixing — the per-module handle table and
+the marker that named a component without naming its module.
+
+Reproduce: press `edit`, press `+`, pick `Counter` (load it from the library
+first), press `edit` again to leave editor mode, then press the counter's `+`.
+The count stays at 0.
+
+Not diagnosed further, and deliberately not guessed at. The read and write paths
+are both proved at the bridge (`tgc/test/compose-guest.test.mjs` holds a
+component from one module in another and reads and writes through it), so what
+is left is the host's dispatch and spine rebuild across that boundary — and that
+wants its own headless repro before its own fix, rather than a change made from
+the browser.

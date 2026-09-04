@@ -254,6 +254,22 @@ pub fn card_source() -> String {
     #|
     #|  /// Show the held component under its own `editor` role, or stop.
     #|  receive toggleConfig { .configuring = not .configuring }
+    #|
+    #|  /// What the child is drawn under.
+    #|  ///
+    #|  /// ONE render site with a pushed name, rather than two `<x render>` siblings
+    #|  /// gated on `@show` / `@hide`. Two of them is one too many: the renderer drew
+    #|  /// the first and skipped the second whatever the flags said, so a held
+    #|  /// component was permanently in its editor view — which for a card that binds
+    #|  /// no editor role LOOKS right, because the role falls back to `main`, and is
+    #|  /// wrong in the way that matters.
+    #|  ///
+    #|  /// Empty means "whatever is being pushed from above", so a cell follows the
+    #|  /// whole page into editor mode without being told, and naming the role here
+    #|  /// overrides it for this one cell.
+    #|  compute childView {
+    #|    if .configuring { 'tutuca.dev/universal/Editable@1::editor' } else { '' }
+    #|  }
     #|</script>
     #|
     #|<script type="tutuca/script" for="Text">
@@ -437,8 +453,7 @@ pub fn card_source() -> String {
     #|            @show=".editable" @on.click="toggleConfig">edit</button>
     #|    <button class="hole-remove absolute top-0.5 right-1 z-10 btn btn-xs btn-circle btn-ghost opacity-40 hover:opacity-100"
     #|            @show=".filled" @on.click="askEmpty">x</button>
-    #|    <x render=".child" as="tutuca.dev/universal/Editable@1::editor" @show=".configuring"></x>
-    #|    <x render=".child" @hide=".configuring"></x>
+    #|    <span class="contents" @push-view="$childView"><x render=".child"></x></span>
     #|  </div>
     #|</template>
     #|
