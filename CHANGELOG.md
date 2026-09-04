@@ -6,6 +6,39 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.50.1] - 2026-09-04
+
+### `tutuca gen` no longer guesses at a handler it cannot see
+
+`STALE_MUTATOR_MESSAGE` ran in `gen` gated on the component having a script
+block, on the reasoning that "a card's handlers are all in it, so what this
+cannot see is nothing". That is true of a **card** and false of a **compiled
+component**: a block is not a promise that it is the only handler surface.
+
+The tutuca-components port's `SkillEditor` has a block answering `save` and
+`cancel`, and answers `setName` in MoonBit — `Receive("setName", args) => …` —
+because that path must also recompute a validity verdict, which a script arm
+cannot express. `gen` reads .html; the arm is in .mbt. The warning fired on
+correct code and named `.name = v` as the repair, which is exactly the bug that
+author avoided by declaring `name` a message rather than a writable property.
+
+The property is per-NAME, not per-component: *is this name's handler somewhere
+`gen` can see*. For a compiled component the answer is no, and nothing in the
+view file changes it. So the check now lives only where it is decidable —
+`tgc`'s card backend, where there is no MoonBit for an arm to hide in — and
+`gen` does not guess. Measured: two false positives on that tree before, zero
+after; `check_card` is unchanged.
+
+This is the same mistake `NO_VIEW_HANDLER`'s exemption was, one level up: a
+proxy standing in for a property it does not actually imply. Reported by
+tutuca-components, who derived it statically before upgrading.
+
+### Fixed
+
+- `cli/moon.pkg` imported `tscript` for the removed check, and carried a
+  comment attributing `moonbitlang/core/string` to `tutuca migrate` — a command
+  deleted in 0.49.
+
 ## [0.50.0] - 2026-09-04
 
 Two bugs found from the outside and one found by looking where they pointed.

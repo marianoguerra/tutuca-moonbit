@@ -50,28 +50,26 @@ fn view_diagnostics(
     for line in message_case_diagnostics(def, fallback) {
       out.push(line)
     }
-    // A declared message that used to be answered by a generated mutator and is
-    // answered by nothing since 0.48. `gen` is where a component author reads
-    // findings, and the alternative to reading it here is a `NO_HANDLER`
-    // refusal at run time, in a test whose assertion is about something else.
+    // NOT `check_stale_mutators` here, and the reason is the whole shape of
+    // what `gen` can know.
     //
-    // ONLY for a component whose handlers are all in a script block. Where the
-    // behaviour is a MoonBit `update~` this cannot see the arms, and a warning
-    // it cannot substantiate is noise on correct code — most components in a
-    // large tree are that shape.
-    match file.script_for(def.component_name(fallback)) {
-      None => ()
-      Some(block) => {
-        // A block that does not parse is reported by the generator itself, in
-        // its own words and with a position, so this says nothing about one.
-        let decls = @tscript.parse_script(block.text) catch { _ => [] }
-        for f in @check.check_stale_mutators(def, decls.map(d => d.name)) {
-          out.push(
-            "\{f.code} (warning) \{def.component_name(fallback)}: \{f.message}",
-          )
-        }
-      }
-    }
+    // It ran here in 0.49.5, gated on the component having a script block —
+    // "a card's handlers are all in it, so what this cannot see is nothing".
+    // That is true of a CARD and false of a compiled component: a block is not
+    // a promise that it is the only handler surface. `SkillEditor` in the
+    // tutuca-components port has a block answering `save` and `cancel`, and
+    // answers `setName` in MoonBit (`Receive("setName", args) => …`) because
+    // it must also recompute a verdict, which a script arm cannot express.
+    // `gen` reads .html, the arm is in .mbt, and the warning fired on correct
+    // code — naming `.name = v` as the repair, which is precisely the bug that
+    // component's author avoided on purpose.
+    //
+    // The property is per-NAME, not per-component: "is this name's handler
+    // somewhere `gen` can see". For a compiled component the answer is no, and
+    // there is nothing in the view file that changes it. So the check lives
+    // where it is decidable — `tgc`'s card backend, where there is no MoonBit
+    // for an arm to hide in — and `gen` does not guess.
+
     // The rule layer, checked against the schema it is about. A `pred` reading
     // a field the state does not declare is the same mistake as a view reading
     // one, and it is worth the same report — a rule that cannot be evaluated

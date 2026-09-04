@@ -10,15 +10,12 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/lint",
   "marianoguerra/tutuca/statedef",
-  "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/tscript/check",
   "marianoguerra/tutuca/viewgen",
   // `tutuca trace`: reading and shortening a recording, which needs nothing
   // but the file
   "marianoguerra/tutuca/trace",
   "marianoguerra/tutuca/viewfile",
-  // `tutuca migrate`: rewriting a file from one spelling to the next, which
-  // needs nothing but the file either.
   "moonbitlang/core/string",
 }
 

@@ -638,3 +638,39 @@ test "a file that does not split stops the batch before the emit pass" {
   assert_true(shape.message.contains("unclosed <template"))
   assert_true(!shape.message.contains("views/uses.html"))
 }
+
+///|
+/// `gen` does NOT report a stale mutator, and this pins the reason rather than
+/// the absence.
+///
+/// The component below is the shape that made 0.49.5's version wrong: a script
+/// block that answers SOME of its names, with the rest answered in MoonBit
+/// because they must also do something a script arm cannot express. The block's
+/// presence was read as "every handler is here", which is true of a card and
+/// false of a compiled component — `gen` reads .html and the missing arm is in
+/// .mbt. Warning here named `.name = v` as the repair, which is the bug the
+/// author avoided by declaring `name` a message rather than a writable
+/// property.
+///
+/// The check still runs where it is decidable: `tgc`'s card backend, where
+/// there is no MoonBit for an arm to hide in.
+test "gen does not guess at a handler it cannot see" {
+  let r = @cli.gen_views(
+    (
+      #|<script type="tutuca/spec">
+      #|  state Editor { name: String  nameError: String }
+      #|  handle Editor { message { save, setName(String) } }
+      #|</script>
+      #|<script type="tutuca/script" for="Editor">
+      #|  receive save { .nameError = '' }
+      #|</script>
+      #|<template><input @on.input="setName e.value"><button @on.click="save">s</button></template>
+    ),
+    name="Editor",
+    input="views/editor.html",
+    target="views/editor_view_gen.mbt",
+    ir=false,
+  )
+  guard! r is Ok(plan)
+  assert_eq(plan.diagnostics.filter(d => d.contains("STALE_MUTATOR")), [])
+}
