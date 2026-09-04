@@ -194,7 +194,14 @@ fn place_pick(argument : String) -> Unit {
   // `markEditable` is the HOLE's message and the thing being placed is a Grid,
   // which does not answer it — calling it there answers null, and a hole handed
   // null holds nothing, silently.
-  app.send_at_root("placeBuilt", args=[instance, Bool(entry.is_editable())])
+  app.send_at_root("placeBuilt", args=[
+    instance,
+    Bool(entry.is_editable()),
+    // Whether it declares `init`. A card may put its starting state there
+    // rather than in its field defaults, and one built from the schema's zeros
+    // renders perfectly while behaving like nothing.
+    Bool(entry.messages.contains("init")),
+  ])
   |> ignore
 }
 

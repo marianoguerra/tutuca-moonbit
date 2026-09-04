@@ -86,6 +86,11 @@ options(
     // links. `tutucard/drive`, the headless card driver, is the part that IS
     // one, and it ships.
     "playground",
+    // …and the card one, by its own name. "playground" above does not reach it:
+    // exclusion matches a package path exactly or as a directory prefix, and
+    // `tutucard/playground` is neither. The comment above has claimed both were
+    // out since they were written; only one of them was.
+    "tutucard/playground",
     "tutucard/build",
     "tutucard/web",
     // The `&Guest` over a compiled card. One half of a bridge whose other half

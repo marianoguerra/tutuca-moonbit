@@ -247,6 +247,17 @@ pub fn shell_comp() -> @component.Component {
           return Next({ ..s, canvas: built, status: "placed on the canvas", })
         }
         ctx.send_at_path(at, @catalog.holder_hold, [built])
+        // `init`, if it declares one, and this is not optional politeness.
+        //
+        // A card may put its starting state in a `receive init` rather than in
+        // its field defaults — `tutucard/examples/Counter.html` sets `step` to
+        // 1 there — and a host that does not send it gets a component built
+        // from the schema's ZEROS. That counter renders perfectly and adds zero
+        // per click, which reads exactly like a dispatch that never arrived.
+        // It cost an afternoon of looking for one.
+        if args.get(2) is Some(Bool(true)) {
+          ctx.send_at_path(at.concat([FieldStep("child")]), "init", [])
+        }
         // Told AFTER it is holding, and told the hole rather than the thing in
         // it: `markEditable` is the holder's own message.
         if args.get(1) is Some(Bool(true)) {

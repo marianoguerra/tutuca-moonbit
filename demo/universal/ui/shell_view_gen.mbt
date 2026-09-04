@@ -807,7 +807,7 @@ impl @component.Fields for ShellState with fn decode(f) {
 pub(all) enum ShellMsg {
   OpenPicker
   PickerHits(Array[@tutuca.Value], String)
-  PlaceBuilt(@tutuca.Value, Bool)
+  PlaceBuilt(@tutuca.Value, Bool, Bool)
   AddNote(String, String)
   SetLibrary(Array[@tutuca.Value])
   SetStatus(String)
@@ -888,7 +888,7 @@ pub fn ShellMsg::from_dispatch(d : @component.Dispatch) -> ShellMsg? {
             Unknown(name, args)
           }
         }
-      ("placeBuilt", [a0, Bool(a1)]) => PlaceBuilt(a0, a1)
+      ("placeBuilt", [a0, Bool(a1), Bool(a2)]) => PlaceBuilt(a0, a1, a2)
       ("addNote", [Str(a0), Str(a1)]) => AddNote(a0, a1)
       ("setLibrary", _) =>
         match shell_msg_set_library_of_args(args) {
@@ -912,7 +912,7 @@ pub fn ShellMsg::from_dispatch(d : @component.Dispatch) -> ShellMsg? {
         match name {
           "openPicker" => @tutuca.bad_payload(name, "", args)
           "pickerHits" => @tutuca.bad_payload(name, "Array[Any], String", args)
-          "placeBuilt" => @tutuca.bad_payload(name, "Any, Bool", args)
+          "placeBuilt" => @tutuca.bad_payload(name, "Any, Bool, Bool", args)
           "addNote" => @tutuca.bad_payload(name, "String, String", args)
           "setLibrary" => @tutuca.bad_payload(name, "Array[Any]", args)
           "setStatus" => @tutuca.bad_payload(name, "String", args)
@@ -940,7 +940,7 @@ pub fn ShellMsg::to_dispatch(self : ShellMsg) -> (String, Array[@tutuca.Value]) 
     OpenPicker => ("openPicker", [])
     PickerHits(a0, a1) =>
       ("pickerHits", [(List(a0.map(x => x)) : @tutuca.Value), Str(a1)])
-    PlaceBuilt(a0, a1) => ("placeBuilt", [a0, Bool(a1)])
+    PlaceBuilt(a0, a1, a2) => ("placeBuilt", [a0, Bool(a1), Bool(a2)])
     AddNote(a0, a1) => ("addNote", [Str(a0), Str(a1)])
     SetLibrary(a0) => ("setLibrary", [(List(a0.map(x => x)) : @tutuca.Value)])
     SetStatus(a0) => ("setStatus", [Str(a0)])
@@ -985,7 +985,7 @@ pub let shell_global_style : String = ""
 impl @component.Fields for ShellState with fn schema() {
   @component.SchemaInfo::new(
     name="Shell",
-    fingerprint="ebdf15daade43244",
+    fingerprint="52c4ae3ab4d89c72",
     fields=[
       @component.FieldInfo::new("canvas", TyComp(None)),
       @component.FieldInfo::new("picker", TyComp(Some("ComponentPicker"))),

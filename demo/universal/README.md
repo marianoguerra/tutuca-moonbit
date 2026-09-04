@@ -42,44 +42,29 @@ card itself. Four things are not, and each needs a browser:
 - **`?loadAll` timing** — eleven cards compiling at once, while the page draws.
 - **The localStorage round trip**, across a real reload.
 
-## Known: a component from ANOTHER module does not respond to clicks
+## A card may declare `init`, and a host that skips it gets zeros
 
-Placement works everywhere. A `Grid` from `std` holding a `Counter` from another
-module renders correctly, at any depth. What fails is *interacting* with a
-component whose module is not the module of the thing holding it.
+`tutucard/examples/Counter.html` puts its starting state in a `receive init`
+(`step = 1`) rather than in its field defaults. A component built from the
+schema's zeros therefore has a step of zero — it renders perfectly and adds
+nothing per click, which reads exactly like a dispatch that never arrived.
 
-It is narrow, and the boundaries are worth writing down because they were each
-measured rather than assumed:
+So a placement sends `init` when the component declares one, and the catalog
+carries whether it does. Worth knowing before writing another host: the symptom
+of getting it wrong is not an error, it is a component that looks right and does
+nothing.
 
-| holder | held | dispatch |
-|---|---|---|
-| host (`Shell.canvas`) | guest (`std`'s `Hole`) | **works** — the `+`, the `x` and the badge all dispatch |
-| guest (`std`'s `Hole`) | guest, same module (`std`'s `Textarea`) | **works** — typed text survives two full re-renders, so the successor is written back through the holder |
-| guest (`std`'s `Hole`) | guest, another module (`Counter`) | **fails** — no transition, no re-render |
+It cost an afternoon of hunting a dispatch bug that did not exist. What settled
+it was the ladder below — every rung passed, which left nowhere for a bug to be.
 
-So it is not "a guest cannot dispatch" and not "a guest under a host component
-cannot dispatch". It is the cross-module hop, which puts it in the same family
-as the two bugs this branch opened by fixing — the per-module handle table and
-the marker that named a component without naming its module.
+## What is proved, and at which level
 
-Reproduce: press `edit`, press `+`, pick `Counter` (load it from the library
-first), press `edit` again to leave editor mode, then press the counter's `+`.
-The count stays at 0.
+Cross-module composition is one claim asked four times, because a proof at the
+level that never had the bug is a proof about the wrong thing:
 
-**It is not the host.** `tgc/host/host_test.mbt` now has the headless version of
-exactly this — two modules registered into one scope, a `Shelf` from one holding
-a `Counter` from the other, mounted and clicked — and it passes: the counter
-answers, and the successor is written back through a holder whose module has
-never heard of it. Two in-process fakes, no wasm.
-
-So the remaining fault is in the bridge between that host and a compiled card,
-and the two ends that are already proved narrow it further:
-`tgc/test/compose-guest.test.mjs` holds a component from one module inside
-another and reads and writes through it at the `__cardguest` surface. What is
-left is the seam between those two proofs — a card's `get_field` answering a
-`$dyn` marker, that marker being wrapped back into a `DynObj`, and dispatch
-finding a handler on it.
-
-Deliberately not guessed at from the browser. The next step is a headless
-two-card repro through `tutucard/guest` — the same shape as the host test above,
-with real compiled modules in place of the fakes.
+| where | what it drives |
+|---|---|
+| `tgc/test/compose.test.mjs` | the RUNTIME — a module holding another module's instance, which always worked |
+| `tgc/test/compose-guest.test.mjs` | the BRIDGE a page loads a card through — hold, read through, write through, and the property door that keeps a private field private |
+| `tgc/host/host_test.mbt` | the HOST — two in-process fakes, two modules, one tree, one click |
+| `tgc/test/twomod.test.mjs` | the SEAM — two really compiled modules registered into one scope, mounted and clicked, both by construction argument and by a `hold` message, because those are two different crossings |

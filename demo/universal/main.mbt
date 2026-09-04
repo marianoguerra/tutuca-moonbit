@@ -140,7 +140,8 @@ fn seed_canvas() -> Unit {
   match @guest.make_instance(@std.module_name(), "Hole") {
     Some(hole) => {
       @ui.forget_cell()
-      app.send_at_root("placeBuilt", args=[hole, Bool(false)]) |> ignore
+      app.send_at_root("placeBuilt", args=[hole, Bool(false), Bool(false)])
+      |> ignore
     }
     None => note("the layout kit has no Hole in it", tone="error")
   }

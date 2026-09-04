@@ -162,7 +162,7 @@ pub fn PickerRowState::zero() -> Self
 pub(all) enum ShellMsg {
   OpenPicker
   PickerHits(Array[@core.Value], String)
-  PlaceBuilt(@core.Value, Bool)
+  PlaceBuilt(@core.Value, Bool, Bool)
   AddNote(String, String)
   SetLibrary(Array[@core.Value])
   SetStatus(String)

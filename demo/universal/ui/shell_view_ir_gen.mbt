@@ -91,7 +91,7 @@ pub let picker_row_spec_source : String =
   #|    message {
   #|      openPicker
   #|      pickerHits(Array[Any], String)
-  #|      placeBuilt(Any, Bool)
+  #|      placeBuilt(Any, Bool, Bool)
   #|      addNote(String, String)
   #|      setLibrary(Array[Any])
   #|      setStatus(String)

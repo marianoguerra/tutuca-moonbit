@@ -474,11 +474,13 @@ pub fn tasks() -> Array[Task] {
         // matches `rt.wax` was a harness nobody invoked. compose.test.mjs needs
         // `wasm-tools` on PATH; the other three need only moon and node.
         //
-        // compose.test.mjs and compose-guest.test.mjs are the same claim at two
-        // levels, and both are needed: the first drives the RUNTIME, where
-        // composition worked all along, and the second drives the bridge a page
-        // loads a card through, where it did not. A claim proved only at the
-        // level that never had the bug is a claim about the wrong thing.
+        // compose.test.mjs, compose-guest.test.mjs and twomod.test.mjs are one
+        // claim at three levels, and all three are needed. The first drives the
+        // RUNTIME, where composition worked all along. The second drives the
+        // bridge a page loads a card through, where it did not. The third puts
+        // a compiled module's component inside another compiled module's field
+        // and dispatches into it — the seam between the other two, and the
+        // thing a page holding two cards does every time somebody clicks.
         // Named one by one rather than globbed: a task's command is spawned
         // without a shell, and `node --test <dir>` reads the directory as a
         // module rather than walking it.
@@ -487,7 +489,7 @@ pub fn tasks() -> Array[Task] {
           prog: "node",
           args: [
             "--test", "tgc/test/compose.test.mjs", "tgc/test/conformance.test.mjs",
-            "tgc/test/guest.test.mjs", "tgc/test/compose-guest.test.mjs",
+            "tgc/test/guest.test.mjs", "tgc/test/compose-guest.test.mjs", "tgc/test/twomod.test.mjs",
           ],
         },
       ],

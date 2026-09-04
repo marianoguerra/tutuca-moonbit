@@ -1,0 +1,28 @@
+// Two REAL modules, one tree, one click.
+//
+// `tgc/host/host_test.mbt` asks the same question with two in-process fakes and
+// gets yes. `tgc/test/compose-guest.test.mjs` asks the bridge whether a
+// component from one module can be held, read and written through another and
+// gets yes. This is the seam between those two answers: real compiled modules,
+// registered into one scope, mounted on the in-memory DOM, and clicked.
+//
+// It is a js executable because that is the only place the two halves meet —
+// `tgc/emit` compiles, `tutucard/web/card.js` instantiates, `tutucard/guest`
+// bridges, and the app renders — and node is the only thing that can drive all
+// four without a browser.
+import {
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/memdom",
+  "marianoguerra/tutuca/tgc/host",
+  "marianoguerra/tutuca/tgc/policy",
+  "marianoguerra/tutuca/tutucard/guest",
+  "marianoguerra/tutuca/testing/harness",
+  "moonbitlang/core/json",
+}
+
+supported_targets = "js"
+
+pkgtype(kind: "executable")

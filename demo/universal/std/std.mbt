@@ -172,10 +172,15 @@ pub fn annotations() -> Map[String, @catalog.Annotation] {
         // the one field `cellField` names and nothing else — which is right,
         // because a builder cannot know that a tab strip keeps its names in a
         // parallel array, and wrong to leave to it.
-        preset("two", "Two empty pages.", {
-          "labels": Json::array([Json::string("one"), Json::string("two")]),
-          "active": Json::number(0),
-        }, cells=2),
+        preset(
+          "two",
+          "Two empty pages.",
+          {
+            "labels": Json::array([Json::string("one"), Json::string("two")]),
+            "active": Json::number(0),
+          },
+          cells=2,
+        ),
       ],
     ),
     "Text": note(["text", "label", "caption", "title", "heading"], "content"),
