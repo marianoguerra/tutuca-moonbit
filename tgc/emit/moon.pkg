@@ -18,6 +18,9 @@ import {
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/tscript/check",
   "marianoguerra/tutuca/viewfile",
+  // The VIEW checker, and the surface it answers: `check_component_views` does
+  // both, which is why a card's templates are checked at all.
+  "marianoguerra/tutuca/viewgen",
   "marianoguerra/tutuca/tgc/abi",
   "marianoguerra/tutuca/tgc/rt",
   "marianoguerra/wax",

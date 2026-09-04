@@ -319,6 +319,36 @@ worth naming because none of them showed up in the corpus:
 - **`lower` / `upper` are ASCII.** A case fold that claimed to know Turkish
   would be a bigger promise than this makes.
 
+### A protocol operation has three dispatch names, and should have one
+
+**Known deviation, not a design.** A component that implements a protocol and
+declares `handle B { message { Holder::hold(Any) } }` gets a different runtime
+message name from each backend, and from `tgc/emit` a different one again per
+spelling:
+
+| written | `tscript/emit_mbt` answers to | `tgc/emit` answers to |
+|---|---|---|
+| `receive hold` | `x/Holder@1::hold` | `hold` |
+| `receive Holder::hold` | `x/Holder@1::hold` | `Holder::hold` |
+
+`gen` resolves through the SCHEMA, which is right: `statedef` already stores the
+wire name (`id::member`), and a host that knows the protocol knows that name and
+no other. `tgc/emit` lists and matches the SCRIPT declaration's own name, which
+is a local spelling the host has never seen.
+
+The same card's EXPRESS side is already correct — `expressIntents` comes out
+qualified — so one protocol crosses in two vocabularies depending on direction.
+
+What this costs is the mix the format exists to allow: a host holding one
+compiled-in component and one card, both implementing the same protocol, cannot
+name a message that reaches both. Found by
+[marianoguerra/hmtp](https://github.com/marianoguerra/hmtp) migrating onto 0.49,
+against real instantiated modules rather than by reading.
+
+Fixing it changes a dispatch key, so it is written down here rather than
+slipped into a patch: `tgc/emit` should resolve a receive's name through the
+schema the way `gen` does, and the release that does it says so.
+
 ## 11. What is not here yet
 
 - **A `tgc`-native `&Obj`.** The host mounts a module through `tgc/host`, which

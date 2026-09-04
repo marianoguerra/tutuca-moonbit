@@ -6,6 +6,90 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.49.2] - 2026-09-04
+
+Three gaps in the card backend, found by
+[marianoguerra/hmtp](https://github.com/marianoguerra/hmtp) migrating a real
+seven-component card onto 0.49 — reported against the emitter rather than as
+symptoms, which is why they are fixed rather than triaged.
+
+### `check_card` checks the views
+
+A card's templates were not checked at all. A template naming a field the spec
+does not declare compiled clean and drew blank, while the same fault in the
+SCRIPT was caught properly — so the loop an author runs before paying for a
+compile could converge on "it compiles" and hand back a component with nothing
+in it, and nothing anywhere saying why.
+
+`prepare` now runs `viewgen.check_component_views` per component. That does two
+jobs at once, which is the reason to call it rather than to check views
+separately: the surface it answers KNOWS what the views reach, and that is what
+turns on `NO_VIEW_HANDLER`, the handler arity cross-check and the call-site
+parameter types. A surface built without reading the views cannot have those
+rules, because every name would look unreached.
+
+Per COMPONENT and not merged across the file, which is not an optimization: one
+surface for a multi-component card makes every component answer for every
+other's views, and the first attempt reported six faults in a card that has
+none.
+
+**`Issue` gains `severity`** (`"error"` or `"warning"`), because the view rules
+brought the distinction with them and dropping it would have been wrong in both
+directions. Only an error stops `compile`. A view name nothing answers is the
+shape of a misspelling AND the shape of a name the host dispatches — a card
+cannot tell them apart, so it says so and compiles. A caller that fails on any
+issue at all now fails on cards that run: `tutucard/build/check-examples.mjs`
+prints warnings and fails on errors.
+
+A false positive fell out of the same change and is fixed with it: spec-block
+rules are synthesized into the declaration list for compiling, and checking that
+merged list made every one of them its own `RULE_IN_BOTH` duplicate. The
+checker sees the AUTHORED declarations now; the compiler still sees both.
+
+### A message name is a slot of syntax, not an expression
+
+`send flash`, `send Bus::notify` and `ask persist` were refused —
+"nothing this backend compiles is called `Bus::notify`" — because the argument
+loop read every argument as a value, and arg 0 of a naming effect is a NAME.
+The checker resolves these and passes them, so a card could check and then fail
+to compile, which is the worst disagreement two passes can have.
+
+The name slot is resolved the way `tscript/check` resolves it, through
+`StateDef::operation_name`: an `import protocol "example/Bus@1" as Bus` makes
+`Bus::notify` a local spelling of `example/Bus@1::notify`, and the emitter
+writes the WIRE name. A card author spelling out the resolved id by hand is
+exactly what the alias exists to avoid.
+
+Bare names (`send flash`) were refused too, which the report had not tried.
+
+### A card's manifest carries its protocol definitions
+
+`protocols`, `propertyBindings`, `viewBindings`, `provideBindings` and
+`lookupBindings` were hard-coded empty for every component. `implements` was
+emitted correctly, so a host could match a component by protocol id and then
+find nothing to match against — silently.
+
+All five are projected from the `StateDef` now. A protocol's four message
+surfaces cross as NAMES and its properties as typed defs, which is the asymmetry
+the host has: a message is matched by name, and a property is read, so a host
+needs its type to say what came back.
+
+### Known deviation, written down rather than fixed
+
+The same migration turned up a third thing, and it is in
+[`tgc/SPEC.md`](tgc/SPEC.md) rather than here: **a protocol operation has three
+dispatch names and should have one.** `gen` resolves a `receive` through the
+schema and answers to `x/Holder@1::hold`; `tgc/emit` answers to the script
+declaration's own spelling, so `hold` or `Holder::hold` depending on how it was
+written — while the same card's `expressIntents` comes out qualified. One
+protocol crosses in two vocabularies depending on direction, and a host holding
+one compiled-in component and one card, both implementing the same protocol,
+cannot name a message that reaches both.
+
+That is the mix the format exists to allow, so it is a real bug. Fixing it
+changes a dispatch key, which is not a thing to slip into a patch release on the
+day it was reported — the release that does it will say so.
+
 ## [0.49.1] - 2026-09-04
 
 Dependencies, and 495 warnings that no `moon check` was showing.

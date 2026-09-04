@@ -233,6 +233,9 @@ pub fn check(source : String, name : String) -> String {
         Json::object({
           "code": Json::string(i.code),
           "message": Json::string(i.message),
+          // `"error"` or `"warning"`. Only an error stops the compile, so a
+          // caller that fails on any issue at all fails on cards that run.
+          "severity": Json::string(i.severity),
           "line": Json::number(i.line.to_double()),
           "start": Json::number(i.span.start.to_double()),
           "end": Json::number(i.span.end_.to_double()),

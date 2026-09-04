@@ -47,6 +47,7 @@ pub(all) struct Issue {
   comp : String
   code : String
   message : String
+  severity : String
   line : Int
   span : @core.Span
 } derive(Eq, @debug.Debug)

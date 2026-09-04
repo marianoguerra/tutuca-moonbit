@@ -20,6 +20,14 @@ priv struct Comp {
   /// Declared fields, in declaration order. The index IS the slot.
   fields : Array[@statedef.FieldDef]
   decls : Array[@tscript.Decl]
+  /// The declarations the SCRIPT BLOCK wrote, without the rules synthesized
+  /// from the spec block.
+  ///
+  /// `decls` above is what gets compiled and is both; this is what gets
+  /// CHECKED. `RULE_IN_BOTH` asks whether an author wrote one rule twice, and
+  /// handing it a synthesized copy makes every spec-block rule its own
+  /// duplicate.
+  authored : Array[@tscript.Decl]
   /// The card's templates, carried through so the manifest can name them. A
   /// component with no view has nothing to mount.
   views : Array[@viewfile.RawView]

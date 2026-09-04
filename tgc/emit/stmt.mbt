@@ -374,12 +374,30 @@ fn emit_effect(
   // the running one on. `tscript` decides it, because the decision is the
   // language's rather than this backend's.
   let named_question = @tscript.ask_names_a_question(args)
+  // Which argument, if any, NAMES the message rather than valuing one. It is a
+  // slot of syntax, not an expression: `send flash` and `send Bus::notify`
+  // write a name where a value would go, and reading either as a value refuses
+  // the whole effect over a name the checker already resolved.
+  let name_at = message_arg(name, ctx.kind, named_question)
   let vals = []
   for i, a in args {
     // A `&.place` is an address, not a value. `sendAt` reifies its first
     // argument below; evaluating it here would refuse the whole effect.
     if name == "sendAt" && i == 0 {
       vals.push("tg_null()")
+      continue
+    }
+    // The WIRE name, resolved the way `tscript/check` resolves it: an
+    // `import protocol "example/Bus@1" as Bus` makes `Bus::notify` a local
+    // spelling of a name the host knows by its id, and a card author writing
+    // the id out by hand is the thing the alias exists to avoid.
+    if name_at is Some(at) && i == at && a is EName(name=n, ..) {
+      guard ctx.comp.def.operation_name(n) is Some(wire) else {
+        raise Refused(
+          "`\{n}` uses a protocol name this component did not import",
+        )
+      }
+      vals.push("tg_str(\{wax_str(wire)})")
       continue
     }
     let v = emit_expr(ctx, src, a)
@@ -450,6 +468,31 @@ fn emit_effect(
       src.line("eff_send_at(\{path}, display(\{name_v}), \{rest});")
     }
     _ => raise Refused("no effect called `\{name}`")
+  }
+}
+
+///|
+/// Which argument names the message, for the effects that name one.
+///
+/// The same table `tscript/check` keeps, and it has to be: a name this refuses
+/// to resolve is a name the checker already passed, so the two disagreeing
+/// would be a card that checks and does not compile.
+///
+/// `reply` is the one that depends on WHERE it is written — in a `receive` body
+/// the replier names the reply, in an `answer` body the walk addresses it and
+/// the argument is the value. A bare `ask` names nothing: the question is the
+/// message that arrived.
+fn message_arg(
+  effect : String,
+  kind : @tscript.DeclKind,
+  named_question : Bool,
+) -> Int? {
+  match effect {
+    "send" => Some(0)
+    "sendAt" => Some(1)
+    "reply" => if kind is DAnswer { None } else { Some(0) }
+    "ask" | "notify" => if named_question { Some(0) } else { None }
+    _ => None
   }
 }
 

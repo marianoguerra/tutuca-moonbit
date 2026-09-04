@@ -76,10 +76,16 @@ for (const ex of cards) {
     failed++;
     continue;
   }
-  if (report.issues.length > 0) {
-    for (const i of report.issues) {
-      console.error(`✗ ${ex.name}: line ${i.line} ${i.code} — ${i.message}`);
-    }
+  // ERRORS fail; warnings are printed and do not. A starter card is meant to
+  // be exemplary, so a warning in one is worth seeing — but `NO_VIEW_HANDLER`
+  // on a name the HOST dispatches, and `RULE_IN_BOTH` on a rule a card
+  // deliberately states twice, are both things a correct card can say.
+  const errors = report.issues.filter((i) => i.severity !== "warning");
+  for (const i of report.issues) {
+    const tag = i.severity === "warning" ? "  note " : "✗";
+    console.error(`${tag} ${ex.name}: line ${i.line} ${i.code} — ${i.message}`);
+  }
+  if (errors.length > 0) {
     failed++;
     continue;
   }

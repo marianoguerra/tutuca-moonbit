@@ -34,11 +34,20 @@ pub(all) struct Checked {
 } derive(Eq, Debug)
 
 ///|
-/// One thing wrong with a card, from `tscript/check`.
+/// One thing wrong with a card, from `tscript/check` or from the view checker.
 pub(all) struct Issue {
   comp : String
   code : String
   message : String
+  /// `"error"` or `"warning"`. Only an error stops `compile`; a warning is a
+  /// thing worth saying about a card that runs — a view name nothing answers
+  /// is the shape of a misspelling AND the shape of a name the host dispatches,
+  /// and a card cannot tell them apart, so it says so and compiles.
+  ///
+  /// A String rather than the checker's own enum because this crosses to a
+  /// page as JSON, and a consumer reading one field should not have to import
+  /// the checker to know what it says.
+  severity : String
   line : Int
   span : @tutuca.Span
 } derive(Eq, Debug)

@@ -15,4 +15,4 @@ pub const VERSION : String = "0.13.0"
 ///
 /// Keep in sync with `version` in moon.mod; `scripts/check-module-version.mjs`
 /// does it for you in `ci`.
-pub const MODULE_VERSION : String = "0.49.1"
+pub const MODULE_VERSION : String = "0.49.2"

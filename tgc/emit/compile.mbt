@@ -26,8 +26,12 @@ pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
 pub fn compile(source : String, name~ : String) -> Compiled raise GenError {
   let file = split(source, name)
   let (comps, issues) = prepare(file, name)
-  guard issues.length() == 0 else {
-    raise BadScript(issues.map(i => "line \{i.line} [\{i.code}]: \{i.message}"))
+  // ERRORS only. A warning is a thing worth telling an author about a card that
+  // RUNS, and refusing to build one would make the two indistinguishable from
+  // the outside — which is the whole reason the checker separates them.
+  let fatal = issues.filter(i => i.severity == "error")
+  guard fatal.length() == 0 else {
+    raise BadScript(fatal.map(i => "line \{i.line} [\{i.code}]: \{i.message}"))
   }
   guard comps.length() > 0 else { raise BadCard("no component is declared") }
   build(comps, name, macros=file.macros)
@@ -64,6 +68,7 @@ fn split(source : String, name : String) -> @viewfile.ViewFile raise GenError {
 fn comp_of(
   def : @statedef.StateDef,
   decls : Array[@tscript.Decl],
+  authored? : Array[@tscript.Decl] = [],
   views? : Array[@viewfile.RawView] = [],
   common_style? : String = "",
   inits? : Array[@statedef.InitState] = [],
@@ -75,6 +80,11 @@ fn comp_of(
     id: mangle(def.component),
     fields: def.fields,
     decls,
+    authored: if authored.is_empty() {
+      decls
+    } else {
+      authored
+    },
     views,
     common_style,
     inits,
@@ -113,6 +123,7 @@ fn prepare(
     // raised: `check_card` has already reported it with a position in the
     // file, and a card that renders is what this function exists to produce.
     let (spec_rules, _) = @check.rule_decls(def, decls)
+    let authored = decls
     let decls = spec_rules + decls
     // Through `component_name`, and with the FILE's root as the fallback.
     //
@@ -140,23 +151,44 @@ fn prepare(
       }
     }
     comps.push(
-      comp_of(def, decls, views~, common_style=style, inits~, siblings~),
+      comp_of(
+        def,
+        decls,
+        authored~,
+        views~,
+        common_style=style,
+        inits~,
+        siblings~,
+      ),
     )
   }
   // The root is the first declared component unless a template says otherwise.
   comps.sort_by_key(c => if c.name == file.root { 0 } else { 1 })
-  let surface = surface_of(comps)
+  // THE VIEWS, before the script — a view is most of a card, and a template
+  // that names a field the spec does not declare used to compile clean and draw
+  // blank. `check_card` is the loop somebody runs before paying for a compile,
+  // so a fault it cannot see is a fault they converge past.
+  let prog = @viewgen.ProgramIndex::of(file, name)
+  let names = comps.map(c => c.name)
   for c in comps {
-    for f in @check.check(c.decls, c.def, surface~) {
-      if f.severity is SError {
-        issues.push({
-          comp: c.name,
-          code: f.code,
-          message: f.message,
-          line: 0,
-          span: f.span,
-        })
-      }
+    let surface = view_surface(c, names, prog, file.macros, issues)
+    for f in @check.check(c.authored, c.def, surface~) {
+      // WARNINGS travel too, and only here: `compile` below gates on errors
+      // alone, so a warning is something to show an author rather than a build
+      // to stop. `check_card` is what an editor calls between keystrokes, and
+      // the findings it drops are findings nobody ever sees.
+      issues.push({
+        comp: c.name,
+        code: f.code,
+        message: f.message,
+        severity: if f.severity is SError {
+          "error"
+        } else {
+          "warning"
+        },
+        line: 0,
+        span: f.span,
+      })
     }
   }
   ignore(name)
@@ -189,17 +221,70 @@ fn check_all(comps : Array[Comp]) -> Unit raise GenError {
 /// `open_senders` because a card is mounted by a host that dispatches a name
 /// into it and driven by scenes that send it one, and neither is in the file.
 ///
-/// `knows_views` stays FALSE, and that is a gap rather than a decision: the
-/// old backend builds this through `viewgen.check_component_views`, which
-/// checks the templates as well and answers a surface that knows what the
-/// views reach. Until this does the same, a name only a view mentions is
-/// unchecked here.
+/// `knows_views` stays FALSE: this is the surface for a caller that has not
+/// checked the templates, and claiming otherwise would let three rules fire
+/// against a view set nobody read. `view_surface` below is the one that has.
 fn surface_of(comps : Array[Comp]) -> @check.Surface {
   {
     inputs: Map([]),
     knows_views: false,
     open_senders: true,
     comps: comps.map(c => c.name),
+  }
+}
+
+///|
+/// One component's surface, built by CHECKING its own templates — which is also
+/// how those templates get checked at all.
+///
+/// `check_component_views` does both jobs at once, and that is the reason to
+/// call it rather than to check views separately: the surface it answers KNOWS
+/// what the views reach, which is what turns on `NO_VIEW_HANDLER`, the handler
+/// arity cross-check and the call-site parameter types. A surface built without
+/// reading the views cannot have those rules, because every name would look
+/// unreached.
+///
+/// PER COMPONENT, and that is not an optimization: a card declares several, and
+/// `NO_VIEW_HANDLER` asks "does THIS block answer what ITS OWN views send". One
+/// surface merged across the file makes every component answer for every
+/// other's views, which reports six faults in a card that has none.
+///
+/// A fatal finding RAISES there and is collected here instead: a card that does
+/// not check is a card to REPORT on, not a build to abandon — `check_card` is
+/// an editor's call, and an editor that answers nothing when one template is
+/// wrong is worse than one that lists what is wrong with it.
+///
+/// `open_senders` because a card is mounted by a host that dispatches a name
+/// into it and driven by scenes that send it one, and neither is in the file.
+fn view_surface(
+  c : Comp,
+  names : Array[String],
+  prog : @viewgen.ProgramIndex,
+  macros : Array[@viewfile.MacroDef],
+  issues : Array[Issue],
+) -> @check.Surface {
+  @viewgen.check_component_views(
+    c.views,
+    c.def,
+    prog,
+    macros~,
+    comps=names,
+    open_senders=true,
+  ) catch {
+    e => {
+      issues.push({
+        comp: c.name,
+        code: e.code(),
+        message: e.message(),
+        severity: "error",
+        line: 0,
+        span: { start: 0, end_: 0, },
+      })
+      // Its views did not read, so nothing here knows what they reach — and a
+      // rule that fires on "no view mentions this" would report the failure
+      // above a second time, in worse words.
+      { ..surface_of([c]), comps: names, }
+    }
   }
 }
 
@@ -529,6 +614,57 @@ fn manifest_value(
 }
 
 ///|
+/// One protocol, in the shape `tgc/host`'s `parse_protocols` reads.
+///
+/// A member list is NAMES for the four message surfaces and typed defs for the
+/// properties, because that is the asymmetry the host has: a message is matched
+/// by name, and a property is READ, so a host needs its type to say what came
+/// back.
+fn protocol_value(p : @statedef.ProtocolDef) -> @tutuca.Value {
+  let names = (ms : Array[@statedef.MsgDef]) => {
+    @tutuca.Value::List(ms.map(m => Str(m.name)))
+  }
+  Map({
+    "id": Str(p.id),
+    "handleMessages": names(p.handle_message),
+    "handleIntents": names(p.handle_intent),
+    "expressMessages": names(p.express_message),
+    "expressIntents": names(p.express_intent),
+    "properties": List(p.properties.map(property_value)),
+    "views": List(p.views.map(v => Str(v))),
+    "provides": List(p.provides.map(d => Str(d.name))),
+    "lookups": List(p.lookups.map(d => Str(d.name))),
+  })
+}
+
+///|
+/// One declared member, typed. The same shape a component's own `properties`
+/// take, so a host reads a protocol's member and a component's the one way.
+fn property_value(d : @statedef.PropertyDef) -> @tutuca.Value {
+  Map({
+    "name": Str(d.name),
+    "ty": @tutuca.Value::from_json(d.ty.to_json()),
+    "public": Bool(d.public_),
+    "writable": Bool(d.writable),
+    "doc": Str(d.doc.unwrap_or("")),
+  })
+}
+
+///|
+/// Which of this component's own members answers for a protocol's.
+fn bindings_value(bs : Array[@statedef.ProtocolBinding]) -> @tutuca.Value {
+  List(
+    bs.map(b => {
+      Map({
+        "protocolId": Str(b.protocol_id),
+        "member": Str(b.member_name),
+        "source": Str(b.source),
+      })
+    }),
+  )
+}
+
+///|
 /// One component's half of it — and the whole of what an INSTANCE says about
 /// itself, which is why `<C>_desc()` is this same value.
 fn component_value(c : Comp, refusals : Array[Refusal]) -> @tutuca.Value {
@@ -581,11 +717,15 @@ fn component_value(c : Comp, refusals : Array[Refusal]) -> @tutuca.Value {
   out["expressMessages"] = strs(c.def.express_message.map(m => m.name))
   out["expressIntents"] = strs(c.def.express_intent.map(m => m.name))
   out["implements"] = strs(c.def.implements)
-  out["protocols"] = List([])
-  out["propertyBindings"] = List([])
-  out["viewBindings"] = List([])
-  out["provideBindings"] = List([])
-  out["lookupBindings"] = List([])
+  // The PROTOCOLS this component implements, as definitions and not just as
+  // ids. `implements` above says which ones; this says what each one requires,
+  // which is what a host resolving a slot THROUGH a protocol reads. Both, or a
+  // host that matched by id would then find nothing to match against.
+  out["protocols"] = List(c.def.protocols.map(protocol_value))
+  out["propertyBindings"] = bindings_value(c.def.property_bindings)
+  out["viewBindings"] = bindings_value(c.def.view_bindings)
+  out["provideBindings"] = bindings_value(c.def.provide_bindings)
+  out["lookupBindings"] = bindings_value(c.def.lookup_bindings)
   // A `pred` is BOTH: read as `$name` it answers its own expression, and
   // reached through `@when` it answers that value's truthiness. One
   // declaration, two lists — a host that found it in only one of them would
