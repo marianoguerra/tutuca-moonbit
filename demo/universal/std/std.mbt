@@ -166,7 +166,17 @@ pub fn annotations() -> Map[String, @catalog.Annotation] {
     "Tabs": note(
       ["tabs", "tabbed", "pages", "notebook", "sections", "switch"],
       "layout",
-      presets=[preset("two", "Two empty pages.", {}, cells=2)],
+      presets=[
+        // The LABELS travel with the cell count, and a preset for a container
+        // whose cells have anything beside them has to say so. `cells` fills
+        // the one field `cellField` names and nothing else — which is right,
+        // because a builder cannot know that a tab strip keeps its names in a
+        // parallel array, and wrong to leave to it.
+        preset("two", "Two empty pages.", {
+          "labels": Json::array([Json::string("one"), Json::string("two")]),
+          "active": Json::number(0),
+        }, cells=2),
+      ],
     ),
     "Text": note(["text", "label", "caption", "title", "heading"], "content"),
     "Textarea": note(
