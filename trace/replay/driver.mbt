@@ -50,7 +50,7 @@ pub struct Driver {
 pub fn Driver::new(
   t : @trace.Trace,
   tx : @transactor.Transactor,
-  base? : @trace.Place = @trace.Place([]),
+  base? : @trace.Place = Place([]),
   verify? : Bool,
   answer_intents? : Bool = true,
 ) -> Driver {

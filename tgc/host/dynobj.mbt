@@ -320,7 +320,7 @@ fn DynObj::method_fn(
 /// answers.
 fn DynObj::field_box(self : DynObj) -> @component.FieldBox {
   {
-    get: name => self.field(name).unwrap_or(Null),
+    get: name => @tutuca.Obj::field(self, name).unwrap_or(Null),
     // The write every generated mutator makes, and where BOTH doors stand for
     // it. Not `with_member`, which is also how the RENDERER rebuilds a
     // spine: refusing there would turn a re-render into a refusal.

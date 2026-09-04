@@ -130,8 +130,8 @@ test "the empty path traverses nothing" {
 /// decision and not a list edit.
 test "the open profile permits any path" {
   fn open_ok(segments : Array[String]) -> Unit raise {
-    let verdict = @eventpath.EventPathProfile::allows(@eventpath.Open, segments)
-    assert_eq(verdict, @eventpath.PathOk)
+    let verdict = @eventpath.EventPathProfile::allows(Open, segments)
+    assert_eq(verdict, PathOk)
   }
 
   // The escape paths, each of which Safe refuses below its named step:

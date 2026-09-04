@@ -213,7 +213,7 @@ pub fn is_url_attr(name : String) -> Bool {
 /// decided off the view tree — see `@sinks.SinkHints`.
 pub impl VdomFilter for UrlFilter with fn filter_elem_hinted(self, el, hints) {
   if hints.url {
-    self.filter_elem(el)
+    VdomFilter::filter_elem(self, el)
   }
 }
 

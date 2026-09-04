@@ -592,7 +592,7 @@ fn parse_protocol_properties(c : Map[String, Json]) -> Array[DynPropertyDef] {
 pub fn DynComponentDef::property_infos(
   self : DynComponentDef,
 ) -> Array[@tutuca.PropertyInfo] {
-  self.properties.map(p => @tutuca.PropertyInfo::{
+  self.properties.map(p => {
     name: p.name,
     ty: p.ty,
     public_: p.public_,

@@ -91,10 +91,10 @@ pub fn intent_dyn(h : @harness.MemHarness, depth : Int) -> Int {
 fn declining_chain(n : Int) -> Map[String, Array[@component.IntentFn]] {
   let fns : Array[@component.IntentFn] = []
   for _ in 0..<n {
-    fns.push(@tutuca.IntentFn((_call, answer) => answer(Pass)))
+    fns.push(IntentFn((_call, answer) => answer(Pass)))
   }
   fns.push(
-    @tutuca.IntentFn((_call, answer) => {
+    IntentFn((_call, answer) => {
       answer(Ok(List([Map({ "title": Str("row"), "description": Str("") })])))
     }),
   )
@@ -158,7 +158,7 @@ let tree_module : @component.ModuleDef = @examples.tree_module()
 pub fn declining_scope(n : Int) -> Map[String, Array[@component.IntentFn]] {
   let fns : Array[@component.IntentFn] = []
   for _ in 0..<n {
-    fns.push(@tutuca.IntentFn((_call, answer) => answer(Pass)))
+    fns.push(IntentFn((_call, answer) => answer(Pass)))
   }
   { "loadData": fns }
 }

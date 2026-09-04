@@ -130,10 +130,10 @@ fn stem_of(path : String) -> String {
   let parts = path.split("/")
   let mut last = path
   for p in parts {
-    last = p.to_string()
+    last = p.to_owned()
   }
   match last.split(".").to_array() {
-    [head, ..] => head.to_string()
+    [head, ..] => head.to_owned()
     _ => last
   }
 }

@@ -59,10 +59,7 @@ test "a handler with no dispatcher can reply, and nothing happens" {
     @core.IntentOpts::new(),
   )
   ctx.forward(None, None)
-  ctx.forward(
-    Some([Str("amended")]),
-    Some(@core.IntentOpts::new(route=[@core.Leg::Lex])),
-  )
+  ctx.forward(Some([Str("amended")]), Some(@core.IntentOpts::new(route=[Lex])))
   ctx.reply(Str("done"))
   ctx.fail(Str("nope"))
   assert_true(true)

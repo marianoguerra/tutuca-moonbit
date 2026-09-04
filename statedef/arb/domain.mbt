@@ -30,7 +30,7 @@ pub fn value_in_domain(
   drawn : Map[String, @tutuca.Value],
 ) -> @gen.Gen[@tutuca.Value]? {
   match domain {
-    @tutuca.DIndexOf(field~, allow_none~) => {
+    DIndexOf(field~, allow_none~) => {
       guard drawn.get(field) is Some(seq) && @tutuca.size_of(seq) is Some(len) else {
         return None
       }
@@ -61,7 +61,7 @@ pub fn value_in_domain(
         Some(in_range)
       }
     }
-    @tutuca.DKeyOf(field~) => {
+    DKeyOf(field~) => {
       guard drawn.get(field) is Some(Map(m)) else { return None }
       let keys = m.keys().collect()
       if keys.is_empty() {
@@ -71,7 +71,7 @@ pub fn value_in_domain(
     }
     // A member is a key the set HOLDS — value `Bool(true)`. A key present and
     // false is non-membership, which is what `toggleIn` leaves behind.
-    @tutuca.DMemberOf(field~) => {
+    DMemberOf(field~) => {
       guard drawn.get(field) is Some(Map(m)) else { return None }
       let members : Array[@tutuca.Value] = []
       for k, held in m {
@@ -84,7 +84,7 @@ pub fn value_in_domain(
       }
       Some(@gen.one_of_array(members))
     }
-    @tutuca.DSubsetOf(field~) => {
+    DSubsetOf(field~) => {
       guard drawn.get(field) is Some(Map(m)) else { return None }
       let members : Array[String] = []
       for k, held in m {
@@ -107,7 +107,7 @@ pub fn value_in_domain(
         ),
       )
     }
-    @tutuca.DOneOf(members) => {
+    DOneOf(members) => {
       if members.is_empty() {
         return None
       }
@@ -116,7 +116,7 @@ pub fn value_in_domain(
     // The list the value has to come from, drawn from. An empty one bounds
     // nothing a draw can satisfy — the same answer `DKeyOf` gives for an empty
     // map: no generator, and the caller falls back to the field's own.
-    @tutuca.DElementOf(field~) => {
+    DElementOf(field~) => {
       guard drawn.get(field) is Some(List(items)) && !items.is_empty() else {
         return None
       }
@@ -125,18 +125,18 @@ pub fn value_in_domain(
     // A length, not a value. The caller is what knows how to build a
     // collection of a given size, so these two answer the SIZE and
     // `size_in_domain` is what reads them.
-    @tutuca.DNonEmpty | @tutuca.DLen(_) => None
-    @tutuca.DCompare(op~, rhs~) => {
+    DNonEmpty | DLen(_) => None
+    DCompare(op~, rhs~) => {
       guard operand_of(rhs, drawn) is Some(r) else { return None }
       let (lo, hi) = match op {
-        @tutuca.DGe => (r, r + BAND)
-        @tutuca.DGt => (r + 1.0, r + BAND)
-        @tutuca.DLe => (r - BAND, r)
-        @tutuca.DLt => (r - BAND, r - 1.0)
+        DGe => (r, r + BAND)
+        DGt => (r + 1.0, r + BAND)
+        DLe => (r - BAND, r)
+        DLt => (r - BAND, r - 1.0)
       }
       Some(num_between(lo, hi))
     }
-    @tutuca.DBetween(lo~, hi~) => {
+    DBetween(lo~, hi~) => {
       guard operand_of(lo, drawn) is Some(a) && operand_of(hi, drawn) is Some(b) else {
         return None
       }
@@ -151,7 +151,7 @@ pub fn value_in_domain(
     // means "draw from the type", which is the honest fallback: a `where`
     // block cannot declare either of these (`wheres.mbt` refuses them), so the
     // vocabulary an author writes stays closed and invertible.
-    @tutuca.DPattern(_) | @tutuca.DFormat(_) => None
+    DPattern(_) | DFormat(_) => None
   }
 }
 
@@ -190,8 +190,8 @@ fn operand_of(
   drawn : Map[String, @tutuca.Value],
 ) -> Double? {
   match o {
-    @tutuca.DLit(n) => Some(n)
-    @tutuca.DField(f) =>
+    DLit(n) => Some(n)
+    DField(f) =>
       match drawn.get(f) {
         Some(Num(n)) => Some(n)
         _ => None
@@ -213,30 +213,30 @@ pub fn size_in_domain(
   let mut said = false
   for d in domains {
     match d {
-      @tutuca.DNonEmpty => {
+      DNonEmpty => {
         least = @cmp.maximum(least, 1)
         said = true
       }
-      @tutuca.DLen(inner) =>
+      DLen(inner) =>
         // A bound on the length is read the same way a bound on a value is,
         // and then clamped into the sizes this package is willing to build:
         // `len <= 10000` is a legal thing to declare and not a list anybody
         // wants generated.
         match inner {
-          @tutuca.DCompare(op~, rhs~) =>
+          DCompare(op~, rhs~) =>
             match operand_of(rhs, drawn) {
               Some(r) => {
                 said = true
                 match op {
-                  @tutuca.DGe => least = @cmp.maximum(least, r.to_int())
-                  @tutuca.DGt => least = @cmp.maximum(least, r.to_int() + 1)
-                  @tutuca.DLe => most = @cmp.minimum(most, r.to_int())
-                  @tutuca.DLt => most = @cmp.minimum(most, r.to_int() - 1)
+                  DGe => least = @cmp.maximum(least, r.to_int())
+                  DGt => least = @cmp.maximum(least, r.to_int() + 1)
+                  DLe => most = @cmp.minimum(most, r.to_int())
+                  DLt => most = @cmp.minimum(most, r.to_int() - 1)
                 }
               }
               None => ()
             }
-          @tutuca.DBetween(lo~, hi~) =>
+          DBetween(lo~, hi~) =>
             match (operand_of(lo, drawn), operand_of(hi, drawn)) {
               (Some(x), Some(y)) => {
                 said = true
@@ -290,14 +290,12 @@ pub fn implied_domains(
   let out : Array[@tutuca.Domain] = []
   for d in all {
     let implies_nonempty = match d.domain {
-      @tutuca.DIndexOf(field=target, allow_none~) =>
-        target == field && !allow_none
-      @tutuca.DKeyOf(field=target) | @tutuca.DMemberOf(field=target) =>
-        target == field
+      DIndexOf(field=target, allow_none~) => target == field && !allow_none
+      DKeyOf(field=target) | DMemberOf(field=target) => target == field
       _ => false
     }
-    if implies_nonempty && !out.contains(@tutuca.DNonEmpty) {
-      out.push(@tutuca.DNonEmpty)
+    if implies_nonempty && !out.contains(DNonEmpty) {
+      out.push(DNonEmpty)
     }
   }
   out
@@ -307,25 +305,22 @@ pub fn implied_domains(
 /// Which fields a domain reads, so a caller can draw them first.
 pub fn domain_deps(domain : @tutuca.Domain) -> Array[String] {
   match domain {
-    @tutuca.DIndexOf(field~, ..)
-    | @tutuca.DKeyOf(field~)
-    | @tutuca.DMemberOf(field~)
-    | @tutuca.DElementOf(field~)
-    | @tutuca.DSubsetOf(field~) => [field]
-    @tutuca.DCompare(rhs~, ..) => operand_dep(rhs)
-    @tutuca.DBetween(lo~, hi~) => operand_dep(lo) + operand_dep(hi)
-    @tutuca.DLen(inner) => domain_deps(inner)
-    @tutuca.DOneOf(_)
-    | @tutuca.DNonEmpty
-    | @tutuca.DPattern(_)
-    | @tutuca.DFormat(_) => []
+    DIndexOf(field~, ..)
+    | DKeyOf(field~)
+    | DMemberOf(field~)
+    | DElementOf(field~)
+    | DSubsetOf(field~) => [field]
+    DCompare(rhs~, ..) => operand_dep(rhs)
+    DBetween(lo~, hi~) => operand_dep(lo) + operand_dep(hi)
+    DLen(inner) => domain_deps(inner)
+    DOneOf(_) | DNonEmpty | DPattern(_) | DFormat(_) => []
   }
 }
 
 ///|
 fn operand_dep(o : @tutuca.DomainOperand) -> Array[String] {
   match o {
-    @tutuca.DField(f) => [f]
-    @tutuca.DLit(_) => []
+    DField(f) => [f]
+    DLit(_) => []
   }
 }

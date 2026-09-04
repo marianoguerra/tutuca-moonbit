@@ -305,11 +305,11 @@ fn playground_intents(
 
   {
     "rows": [
-      @tutuca.IntentFn((_call, answer) => {
+      IntentFn((_call, answer) => {
         later(500, () => {
           answer(
             Ok(
-              @tutuca.Value::List([
+              List([
                 Map({
                   "title": Str("Tutuca"),
                   "description": Str("A SPA framework that fits in your head"),
@@ -331,12 +331,12 @@ fn playground_intents(
       }),
     ],
     "echo": [
-      @tutuca.IntentFn((call, answer) => {
+      IntentFn((call, answer) => {
         later(300, () => answer(Ok(call.args.get(0).unwrap_or(Null))))
       }),
     ],
     "fail": [
-      @tutuca.IntentFn((_call, answer) => {
+      IntentFn((_call, answer) => {
         later(500, () => answer(Failed(Str("the host said no"))))
       }),
     ],

@@ -123,7 +123,7 @@ pub fn schema_info(
     handle_intents: p.handle_intent.map(m => m.name),
     express_messages: p.express_message.map(m => m.name),
     express_intents: p.express_intent.map(m => m.name),
-    properties: p.properties.map(x => @tutuca.PropertyInfo::{
+    properties: p.properties.map(x => {
       name: x.name,
       ty: x.ty,
       public_: true,
@@ -144,7 +144,7 @@ pub fn schema_info(
     name~,
     fingerprint=fp,
     fields~,
-    properties=def.properties.map(p => @tutuca.PropertyInfo::{
+    properties=def.properties.map(p => {
       name: p.name,
       ty: p.ty,
       public_: p.public_,

@@ -505,7 +505,7 @@ fn manifest_value(
       for k, v in m.defaults {
         defaults[k] = Str(v)
       }
-      @tutuca.Value::Map({
+      Map({
         "name": Str(m.name),
         "defaults": Map(defaults),
         "html": Str(m.source),
@@ -517,7 +517,7 @@ fn manifest_value(
   // what did compile. A host ignores what it does not read.
   out["refusals"] = List(
     refusals.map(r => {
-      @tutuca.Value::Map({
+      Map({
         "component": Str(r.comp),
         "kind": Str(r.kind),
         "name": Str(r.name),
@@ -542,9 +542,7 @@ fn component_value(c : Comp, refusals : Array[Refusal]) -> @tutuca.Value {
   let lowered = (kind : @tscript.DeclKind) => {
     @tutuca.Value::List(names_of([kind]))
   }
-  let strs = (xs : Array[String]) => {
-    @tutuca.Value::List(xs.map(x => @tutuca.Value::Str(x)))
-  }
+  let strs = (xs : Array[String]) => @tutuca.Value::List(xs.map(x => Str(x)))
   let out : Map[String, @tutuca.Value] = Map([])
   out["name"] = Str(c.name)
   out["doc"] = Str(c.def.doc.unwrap_or(""))
@@ -552,13 +550,11 @@ fn component_value(c : Comp, refusals : Array[Refusal]) -> @tutuca.Value {
   out["category"] = Str("")
   out["messageDocs"] = List([])
   out["views"] = List(
-    c.views.map(v => {
-      @tutuca.Value::Map({ "name": Str(v.name), "html": Str(v.source) })
-    }),
+    c.views.map(v => Map({ "name": Str(v.name), "html": Str(v.source) })),
   )
   out["fields"] = List(
     c.fields.map(f => {
-      @tutuca.Value::Map({
+      Map({
         "name": Str(f.name),
         "ty": @tutuca.Value::from_json(f.ty.to_json()),
         "doc": Str(f.doc.unwrap_or("")),
@@ -568,7 +564,7 @@ fn component_value(c : Comp, refusals : Array[Refusal]) -> @tutuca.Value {
   )
   out["properties"] = List(
     c.def.properties.map(p => {
-      @tutuca.Value::Map({
+      Map({
         "name": Str(p.name),
         "ty": @tutuca.Value::from_json(p.ty.to_json()),
         "public": Bool(p.public_),
@@ -603,16 +599,11 @@ fn component_value(c : Comp, refusals : Array[Refusal]) -> @tutuca.Value {
   // The host resolves both when it renders, so a manifest that dropped them is
   // a `*name` in a view answering nothing.
   out["provide"] = List(
-    c.def.provide.map(d => {
-      @tutuca.Value::Map({ "name": Str(d.name), "source": Str(d.source) })
-    }),
+    c.def.provide.map(d => Map({ "name": Str(d.name), "source": Str(d.source) })),
   )
   out["lookup"] = List(
     c.def.lookup.map(d => {
-      @tutuca.Value::Map({
-        "name": Str(d.name),
-        "default": Str(d.default.unwrap_or("")),
-      })
+      Map({ "name": Str(d.name), "default": Str(d.default.unwrap_or("")) })
     }),
   )
   // The DEFAULT fixture is what a host mounts when told no other name, so a
@@ -624,7 +615,7 @@ fn component_value(c : Comp, refusals : Array[Refusal]) -> @tutuca.Value {
       for k, v in i.args {
         args[k] = v
       }
-      @tutuca.Value::Map({
+      Map({
         "name": Str(i.name),
         // The host parses this back out of a STRING, which is what
         // `parse_inits` reads: `argsJson`, not `args`.

@@ -9,7 +9,5 @@ import {
 
 import {
   "moonbitlang/quickcheck" @qc,
-  "moonbitlang/quickcheck/gen",
-  "moonbit-community/html/src" @html5,
   "moonbitlang/core/debug",
 } for "test"

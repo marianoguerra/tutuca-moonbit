@@ -69,7 +69,7 @@ pub impl VdomFilter for HandlerFilter with fn filter_elem_hinted(
   hints,
 ) {
   if hints.handler {
-    self.filter_elem(el)
+    VdomFilter::filter_elem(self, el)
   }
 }
 

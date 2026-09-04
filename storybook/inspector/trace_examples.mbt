@@ -17,7 +17,7 @@
 /// it to ask.
 fn tp(src : String) -> @trace.Place {
   @trace.parse_place(src) catch {
-    _ => @trace.Place([])
+    _ => Place([])
   }
 }
 

@@ -8,7 +8,7 @@ fn main raise {
   for i, c in @conformance.cases() {
     let card = card_of(c.schema, c.script)
     let row : Json = match
-      ((@emit.compile(card, name="case\{i}") |> Ok(_)) catch { e => Err(e) }) {
+      (Ok(@emit.compile(card, name="case\{i}")) catch { e => Err(e) }) {
       Ok(out) => {
         @fs.write_bytes_to_file("\{outdir}/case\{i}.wasm", out.wasm)
         @fs.write_string_to_file("\{outdir}/case\{i}.wax", out.wax)
@@ -74,7 +74,7 @@ fn main raise {
   for i, c in @conformance.value_cases() {
     let card = card_of(c.schema, c.script)
     let row : Json = match
-      ((@emit.compile(card, name="value\{i}") |> Ok(_)) catch { e => Err(e) }) {
+      (Ok(@emit.compile(card, name="value\{i}")) catch { e => Err(e) }) {
       Ok(out) => {
         @fs.write_bytes_to_file("\{outdir}/value\{i}.wasm", out.wasm)
         {
@@ -152,9 +152,9 @@ fn card_of(schema : String, script : String) -> String {
 /// The component a schema declares — the word after the first `state`.
 fn component_of(schema : String) -> String {
   for line in schema.split("\n") {
-    let text = line.trim(chars=" \t").to_string()
+    let text = line.trim(chars=" \t").to_owned()
     if text.has_prefix("state ") {
-      let rest = text[6:].trim(chars=" \t").to_string()
+      let rest = text[6:].trim(chars=" \t").to_owned()
       let out = StringBuilder()
       for ch in rest {
         if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' {

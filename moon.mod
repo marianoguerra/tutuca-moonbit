@@ -1,6 +1,6 @@
 name = "marianoguerra/tutuca"
 
-version = "0.49.0"
+version = "0.49.1"
 
 readme = "README.mbt.md"
 
@@ -22,8 +22,8 @@ import {
   "moonbitlang/quickcheck@0.14.0",
   "mizchi/js@0.12.2",
   "mizchi/js_browser@0.12.2",
-  "moonbitlang/async@0.21.0",
-  "moonbit-community/html@0.1.2",
+  "moonbitlang/async@0.21.2",
+  "moonbit-community/html@0.2.1",
   "mizchi/fswatch@0.2.1",
   // Only `mizchi/css/token` is used, by `anode/sanitize/css` — a css-syntax-3
   // tokenizer with no dependency of its own beyond `moonbitlang/core/string`.
@@ -35,7 +35,7 @@ import {
   // The Wax compiler, for `tgc/emit` — the card-to-core-wasm backend.
   // Dependency-free itself, and MoonBit links per package, so a consumer who
   // never compiles a card pays the fetch and nothing else.
-  "marianoguerra/wax@0.2.0",
+  "marianoguerra/wax@0.2.1",
   "marianoguerra/tailwindcss@0.4.0",
   "moonbitlang/x@0.5.1",
 }

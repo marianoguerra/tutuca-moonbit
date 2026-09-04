@@ -6,6 +6,59 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.49.1] - 2026-09-04
+
+Dependencies, and 495 warnings that no `moon check` was showing.
+
+### Dependencies
+
+- `moonbitlang/async` 0.21.0 → 0.21.2, `marianoguerra/wax` 0.2.0 → 0.2.1.
+- `moonbit-community/html` 0.1.2 → **0.2.1**, which is a breaking bump under
+  0.x and cost one test: the package's `Arbitrary for Document` moved into a
+  white-box test file and stopped being a consumer's to use. `lint/qc_test.mbt`
+  builds its own well-formed trees now — which is what the property actually
+  needed, since the linter takes a string and the Document was only ever there
+  to produce one. A generator this repo owns cannot be taken away by an
+  upstream refactor, and it makes the third case explicit: WELL-FORMED nesting,
+  arbitrary strings, and tag soup, where before the first was implicit in
+  somebody else's generator.
+- `@bytecodealliance/jco` leaves `package.json`. It componentized guest bundles,
+  and there are no guests — it had been sitting there since the guests went, pulling 3860
+  lines of lockfile for nothing.
+
+### Warnings
+
+`ci` was reporting 495 of them, and none of the three `moon check` targets
+showed one — the count comes from `--warn-list +unnecessary_annotation`, which
+this repo opts into precisely to keep redundant `Type::` / `@pkg.` prefixes from
+creeping back in, and 490 had. They are gone: deleted at the exact position
+moonc named, then re-checked, on every target.
+
+Three exceptions, each one a decision rather than a miss:
+
+- **An empty struct literal has one spelling.** `T::{ }` is required, because a
+  bare `{ }` reads as an empty Map — `({ } : T)`, `{ .. }` and an annotated
+  binding were all tried and none compiles — and moonc flags the `T::` as
+  unnecessary anyway. Warning 73 is off in the two packages that hold such a
+  line, with the reason written where the switch is.
+- **Generated modules keep their qualifiers.** `gen` writes `@anode.` and
+  `@tutuca.` on purpose: the same emitter writes into a CONSUMER's package,
+  whose imports it does not control, and a bare name there is one collision away
+  from not compiling. Redundant in this repo, load-bearing outside it — so the
+  three packages holding generated modules turn the lint off rather than the
+  emitter dropping the prefix.
+- Fourteen implicitly-promoted trait methods (`self.filter_elem(el)` where
+  `filter_elem` comes from an `impl` rather than from the type) are spelled
+  `VdomFilter::filter_elem(self, el)`, which is what the deprecation asks for
+  and says which trait the call goes through. Most were in `vdom/filter`, where
+  one filter delegates to another and the promoted spelling read as though the
+  method belonged to the struct.
+
+And the ones a `--deny-warn` check did miss, because they are in packages only
+the native build reaches: a deprecated `try?`, a partial-application `|>`, four
+`to_string()` on StringViews that want `to_owned()`, and an import `cmd/tgc` had
+stopped using.
+
 ## [0.49.0] - 2026-09-04
 
 The component format release. A dynamic component is **one core wasm

@@ -60,7 +60,7 @@ test "args and view come from the example" {
     },
   ])
   let s = stories_of_module(m)[0]
-  assert_eq(s.args.get("count"), Some(@tutuca.Value::Num(3)))
+  assert_eq(s.args.get("count"), Some(Num(3)))
   assert_eq(s.view, "edit")
 }
 

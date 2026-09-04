@@ -143,7 +143,7 @@ test "a story renders the args its example declared" {
   let stories = @sb.stories_of_module(demo_module())
   let seeded = stories[1]
   assert_eq(seeded.root, "Counter")
-  assert_eq(seeded.args.get("count"), Some(@tutuca.Value::Num(7)))
+  assert_eq(seeded.args.get("count"), Some(Num(7)))
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
   let _app = mount(

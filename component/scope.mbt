@@ -210,7 +210,7 @@ pub impl @anode.MacroScope for ComponentStack with fn lookup_macro(self, name) {
     Some(m) => Some(m)
     None =>
       match self.parent {
-        Some(p) => p.lookup_macro(name)
+        Some(p) => @anode.MacroScope::lookup_macro(p, name)
         None => None
       }
   }

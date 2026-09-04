@@ -91,7 +91,7 @@ fn TraceSession::recording(self : TraceSession) -> Bool {
 /// a finished recording. The field name is the shell's to say
 /// (`@sbui.story_field`); turning it into a place is ours.
 fn story_place(idx : Int) -> @trace.Place {
-  @trace.Place([{ field: @sbui.story_field(idx), key: None, }])
+  Place([{ field: @sbui.story_field(idx), key: None, }])
 }
 
 ///|
@@ -136,7 +136,7 @@ fn[N] start_recording(
     session.recorder = Some(r)
     session.scoped = None
     // The whole gallery: the recording's addresses ARE the tree's.
-    session.base = Some(@trace.Place([]))
+    session.base = Some(Place([]))
     app.transactor.set_recorder(r)
   }
 }
@@ -187,8 +187,7 @@ fn[N] push_trace_panel(
     // A rerun can be mounted once there is a recording AND somewhere to aim
     // it. An imported trace with no base yet is a trace nobody has said where
     // to put, and offering Step for it would aim it at the gallery's root.
-    can_replay=t is Some(_) &&
-      session.base.unwrap_or(@trace.Place([])).depth() > 0,
+    can_replay=t is Some(_) && session.base.unwrap_or(Place([])).depth() > 0,
     replaying=session.driver is Some(_),
     at=match session.driver {
       Some(d) => d.at() - 1
@@ -478,7 +477,7 @@ fn[N] trace_handlers(
 
   {
     "traceStart": [
-      @tutuca.IntentFn((call, answer) => {
+      IntentFn((call, answer) => {
         let scope = match call.args {
           [Str(s), ..] => s
           _ => "all"
@@ -496,7 +495,7 @@ fn[N] trace_handlers(
       }),
     ],
     "traceStop": [
-      @tutuca.IntentFn((_call, answer) => {
+      IntentFn((_call, answer) => {
         with_app(app => {
           stop_recording(app, session)
           push_trace_panel(app, insp, session)
@@ -505,7 +504,7 @@ fn[N] trace_handlers(
       }),
     ],
     "traceDiscard": [
-      @tutuca.IntentFn((_call, answer) => {
+      IntentFn((_call, answer) => {
         session.taken = None
         session.selected_place = None
         session.selecting = false
@@ -519,7 +518,7 @@ fn[N] trace_handlers(
     // places back, because a stale list of candidates from a click nobody
     // remembers making is worse than no list.
     "traceSelect": [
-      @tutuca.IntentFn((_call, answer) => {
+      IntentFn((_call, answer) => {
         session.selecting = !session.selecting
         selecting_now.val = session.selecting
         if !session.selecting {
@@ -534,7 +533,7 @@ fn[N] trace_handlers(
     // something a component can install — and the host is the only thing that
     // can rebuild the panel around the answer.
     "traceCandidates": [
-      @tutuca.IntentFn((call, answer) => {
+      IntentFn((call, answer) => {
         let cs : Array[(String, String)] = []
         match call.args {
           [List(items), ..] =>
@@ -561,7 +560,7 @@ fn[N] trace_handlers(
     // CLI reads `.trace.jsonl`, every shortening operation is a line
     // operation, and a recording of a real session is mostly a list of events.
     "traceExport": [
-      @tutuca.IntentFn((_call, answer) => {
+      IntentFn((_call, answer) => {
         with_app(app => ensure_story(app, session, sections))
         match session.current() {
           Some(t) => {
@@ -593,7 +592,7 @@ fn[N] trace_handlers(
     // fails puts the message on the panel and changes nothing else. A trace
     // half-loaded over a good one would be worse than no import at all.
     "traceImport": [
-      @tutuca.IntentFn((call, answer) => {
+      IntentFn((call, answer) => {
         with_app(app => ensure_story(app, session, sections))
         let text = match call.args {
           [Str(s), ..] => s
@@ -629,7 +628,7 @@ fn[N] trace_handlers(
             // of. So the reader is told to aim it rather than having it
             // aimed for them at the wrong component.
             session.base = if t.relocated_from.is_empty() {
-              Some(@trace.Place([]))
+              Some(Place([]))
             } else {
               Some(story_place(session.idx))
             }
@@ -656,7 +655,7 @@ fn[N] trace_handlers(
     // something is usually missing something that did not matter, and is still
     // worth having.
     "traceRelocate": [
-      @tutuca.IntentFn((_call, answer) => {
+      IntentFn((_call, answer) => {
         with_app(app => ensure_story(app, session, sections))
         guard session.current() is Some(t) else {
           session.notice = "There is no recording to cut."
@@ -692,9 +691,7 @@ fn[N] trace_handlers(
             session.candidates = None
             // A cut recording is about the subtree, so a rerun of it aims
             // there — under whatever the recording was already relative to.
-            session.base = Some(
-              at.under(session.base.unwrap_or(@trace.Place([]))),
-            )
+            session.base = Some(at.under(session.base.unwrap_or(Place([]))))
             session.notice = if gaps.is_empty() {
               ""
             } else {
@@ -713,7 +710,7 @@ fn[N] trace_handlers(
     // mount that has to be asked for separately is a mode nobody remembers
     // they are in.
     "traceReplayStep": [
-      @tutuca.IntentFn((_call, answer) => {
+      IntentFn((_call, answer) => {
         with_app(app => {
           match replay_step(app, session) {
             Ok(_) => ()
@@ -725,7 +722,7 @@ fn[N] trace_handlers(
       }),
     ],
     "traceReplayRun": [
-      @tutuca.IntentFn((_call, answer) => {
+      IntentFn((_call, answer) => {
         with_app(app => ensure_story(app, session, sections))
         with_app(app => {
           match replay_mount(app, session) {
@@ -745,7 +742,7 @@ fn[N] trace_handlers(
     ],
     // Put the story back the way it was before the rerun touched it.
     "traceReplayReset": [
-      @tutuca.IntentFn((_call, answer) => {
+      IntentFn((_call, answer) => {
         with_app(app => {
           match session.driver {
             Some(d) => d.stop()
@@ -770,7 +767,7 @@ fn[N] trace_handlers(
     // both of which are computed here because only the host knows whether
     // there is a recording behind them.
     "traceSetTab": [
-      @tutuca.IntentFn((call, answer) => {
+      IntentFn((call, answer) => {
         let want = match call.args {
           [Str(s), ..] => s
           _ => "record"
@@ -786,7 +783,7 @@ fn[N] trace_handlers(
     // recording is a separate press, and choosing a place is the thing a person
     // does several times before they mean it.
     "tracePick": [
-      @tutuca.IntentFn((call, answer) => {
+      IntentFn((call, answer) => {
         session.selected_place = match call.args {
           [Str(p), ..] => Some(p)
           _ => None

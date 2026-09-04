@@ -163,7 +163,7 @@ fn event_ctrl_or_cmd(ev : @core.Any) -> Bool {
 /// caller's profile before this is ever called, so one place decides and this
 /// backend cannot forget to ask.
 fn event_path_reader(ev : @core.Any) -> @render.EventPathReader {
-  @render.EventPathReader(segments => {
+  EventPathReader(segments => {
     let mut cur = ev
     for i, seg in segments {
       if i == segments.length() - 1 {

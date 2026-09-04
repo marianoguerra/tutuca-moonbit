@@ -370,7 +370,7 @@ fn[N] fuzz_handlers(
     // three arrive together and the script is redrawn whole — a seed that no
     // longer describes the rows under it is the one state this must not have.
     "fuzzConfig": [
-      @tutuca.IntentFn((call, answer) => {
+      IntentFn((call, answer) => {
         match call.args {
           [Str(seed), Str(steps), Str(source), ..] => {
             session.seed = @string.parse_uint64(seed) catch {
@@ -400,7 +400,7 @@ fn[N] fuzz_handlers(
     // the next tick, outside this dispatch — see `FuzzSession::mode` for why
     // that is a correctness requirement and not a scheduling choice.
     "fuzzStep": [
-      @tutuca.IntentFn((_call, answer) => {
+      IntentFn((_call, answer) => {
         with_app(app => arm_run(app, insp, session, fx, "step", sections))
         answer(Ok(Str("step")))
       }),
@@ -408,7 +408,7 @@ fn[N] fuzz_handlers(
     // The whole script with no yield. What a flame chart wants: settle,
     // render and morph back to back, with no scheduler noise between them.
     "fuzzBurst": [
-      @tutuca.IntentFn((_call, answer) => {
+      IntentFn((_call, answer) => {
         with_app(app => arm_run(app, insp, session, fx, "burst", sections))
         answer(Ok(Str("burst")))
       }),
@@ -417,13 +417,13 @@ fn[N] fuzz_handlers(
     // What a person wants, and what makes a DevTools recording show real
     // layout and paint rather than one blocking call.
     "fuzzPlay": [
-      @tutuca.IntentFn((_call, answer) => {
+      IntentFn((_call, answer) => {
         with_app(app => arm_run(app, insp, session, fx, "play", sections))
         answer(Ok(Bool(true)))
       }),
     ],
     "fuzzStop": [
-      @tutuca.IntentFn((_call, answer) => {
+      IntentFn((_call, answer) => {
         session.playing = false
         session.mode = ""
         with_app(app => push_fuzz_panel(app, insp, session))
@@ -434,7 +434,7 @@ fn[N] fuzz_handlers(
     // makes it exact: rewinding a component by sending it the reverse of what
     // it received is not a thing that exists.
     "fuzzReset": [
-      @tutuca.IntentFn((_call, answer) => {
+      IntentFn((_call, answer) => {
         session.playing = false
         with_app(app => {
           remount_story(app, session.idx, sections)
@@ -452,7 +452,7 @@ fn[N] fuzz_handlers(
     // component dozens of times, and what is on screen afterwards must be the
     // reproducer's own result rather than wherever the last candidate landed.
     "fuzzShrink": [
-      @tutuca.IntentFn((_call, answer) => {
+      IntentFn((_call, answer) => {
         with_app(app => {
           guard session.plan is Some(plan) else { return }
           let idx = session.idx
@@ -635,5 +635,5 @@ pub fn fuzz_tick() -> Unit {
 /// A closure rather than the value, because a run reads it back after every
 /// step and the whole point is that it changed.
 fn[N] story_reader(app : @app.App[N], idx : Int) -> @fuzz.Reader {
-  @fuzz.Reader(() => @sbui.story_value(app, idx))
+  Reader(() => @sbui.story_value(app, idx))
 }

@@ -78,7 +78,7 @@ pub impl @filter.VdomFilter for MdFilter with fn filter_elem_hinted(
   hints,
 ) {
   if hints.markup {
-    self.filter_elem(el)
+    @filter.VdomFilter::filter_elem(self, el)
   }
 }
 

@@ -105,7 +105,7 @@ pub(all) struct EventEffect(() -> Unit)
 
 ///|
 pub impl @debug.Debug for EventEffect with fn to_repr(_self) {
-  @debug.Repr::Repr("<effect>")
+  Repr("<effect>")
 }
 
 ///|
@@ -119,7 +119,7 @@ pub(all) struct EventPathReader((Array[String]) -> @tutuca.Value)
 
 ///|
 pub impl @debug.Debug for EventPathReader with fn to_repr(_self) {
-  @debug.Repr::Repr("<reader>")
+  Repr("<reader>")
 }
 
 ///|

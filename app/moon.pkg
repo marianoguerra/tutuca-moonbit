@@ -27,3 +27,11 @@ import {
   "marianoguerra/tutuca/vdom/memdom",
   "moonbitlang/core/json",
 } for "test"
+
+// Warning 73 (`unnecessary_annotation`) is off HERE and nowhere else, for one
+// line: an EMPTY struct literal has exactly one spelling, `T::{ }`, because a
+// bare `{ }` reads as an empty Map — and moonc flags the `T::` on it as
+// unnecessary anyway. `T::{  }`, `({  } : T)` and `{ .. }` were all tried; only
+// the flagged one compiles. Remove this when moonc stops reporting it.
+
+warnings = "-73"

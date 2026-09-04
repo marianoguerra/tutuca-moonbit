@@ -223,39 +223,39 @@ pub fn register_module(
       methods=def.methods,
       view_names=def.views.map(v => v.name),
       init_names=def.inits.map(i => i.name),
-      protocols=def.protocols.map(p => @tutuca.ProtocolInfo::{
+      protocols=def.protocols.map(p => {
         id: p.id,
         handle_messages: p.handle_messages,
         handle_intents: p.handle_intents,
         express_messages: p.express_messages,
         express_intents: p.express_intents,
-        properties: p.properties.map(prop => @tutuca.PropertyInfo::{
+        properties: p.properties.map(prop => {
           name: prop.name,
           ty: prop.ty,
           public_: true,
           writable: prop.writable,
         }),
         views: p.views,
-        provides: p.provides.map(n => (n, @tutuca.TyAny)),
-        lookups: p.lookups.map(n => (n, @tutuca.TyAny)),
+        provides: p.provides.map(n => (n, TyAny)),
+        lookups: p.lookups.map(n => (n, TyAny)),
       }),
       implements=def.implements,
-      property_bindings=def.property_bindings.map(b => @tutuca.ProtocolBindingInfo::{
+      property_bindings=def.property_bindings.map(b => {
         protocol_id: b.protocol_id,
         member_name: b.member_name,
         source: b.source,
       }),
-      view_bindings=def.view_bindings.map(b => @tutuca.ProtocolBindingInfo::{
+      view_bindings=def.view_bindings.map(b => {
         protocol_id: b.protocol_id,
         member_name: b.member_name,
         source: b.source,
       }),
-      provide_bindings=def.provide_bindings.map(b => @tutuca.ProtocolBindingInfo::{
+      provide_bindings=def.provide_bindings.map(b => {
         protocol_id: b.protocol_id,
         member_name: b.member_name,
         source: b.source,
       }),
-      lookup_bindings=def.lookup_bindings.map(b => @tutuca.ProtocolBindingInfo::{
+      lookup_bindings=def.lookup_bindings.map(b => {
         protocol_id: b.protocol_id,
         member_name: b.member_name,
         source: b.source,

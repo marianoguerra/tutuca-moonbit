@@ -429,7 +429,7 @@ fn emit_call(src : Src, c : Comp) -> Unit {
   src.line(
     "// OpImplements — asked of the INSTANCE, with no catalog in the path.",
   )
-  src.open("if op == \{op_code(@abi.OpImplements)} {")
+  src.open("if op == \{op_code(OpImplements)} {")
   if c.def.implements.length() == 0 {
     src.line("return tg_bool(0);")
   } else {
@@ -444,7 +444,7 @@ fn emit_call(src : Src, c : Comp) -> Unit {
   src.line(
     "// OpWithField — the COW write-through a host path writes through.",
   )
-  src.open("if op == \{op_code(@abi.OpWithField)} {")
+  src.open("if op == \{op_code(OpWithField)} {")
   src.line("let i = \{c.id}_slot(name);")
   src.line("if i <s 0 { return null; }")
   src.line("let f = \{c.id}_copy(st);")
@@ -472,7 +472,7 @@ fn emit_call(src : Src, c : Comp) -> Unit {
     !c.decls.iter().any(d => d.kind is DSet && d.name == pair.0)
   })
   if backed_set.length() > 0 {
-    src.open("if op == \{op_code(@abi.Op::OpSetProperty)} {")
+    src.open("if op == \{op_code(OpSetProperty)} {")
     for pair in backed_set {
       let (prop, field) = pair
       src.open("if str_eq(name, \{wax_str(prop)}) != 0 {")
@@ -528,7 +528,7 @@ fn emit_call(src : Src, c : Comp) -> Unit {
     !c.decls.iter().any(d => d.kind is DGet && d.name == pair.0)
   })
   if backed_get.length() > 0 {
-    src.open("if op == \{op_code(@abi.Op::OpGetProperty)} {")
+    src.open("if op == \{op_code(OpGetProperty)} {")
     for pair in backed_get {
       let (prop, field) = pair
       src.open("if str_eq(name, \{wax_str(prop)}) != 0 {")

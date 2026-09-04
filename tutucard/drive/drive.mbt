@@ -320,7 +320,7 @@ pub fn intent_handlers(
 ) -> Map[String, Array[@component.IntentFn]] {
   let out : Map[String, Array[@component.IntentFn]] = Map([])
   for name, answer in intents {
-    out[name] = [@tutuca.IntentFn((_call, reply) => reply(answer))]
+    out[name] = [IntentFn((_call, reply) => reply(answer))]
   }
   out
 }

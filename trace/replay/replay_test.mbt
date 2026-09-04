@@ -23,7 +23,7 @@ impl @transactor.Intents for Host with fn intents_for(self, _leaf, name) {
     return []
   }
   [
-    @tutuca.IntentFn((call, answer) => {
+    IntentFn((call, answer) => {
       self.asked.push(call.args.map(a => a.str(default="")).join(","))
       let i = self.asked.length() - 1
       answer(

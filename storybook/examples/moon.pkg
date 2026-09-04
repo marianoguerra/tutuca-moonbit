@@ -59,3 +59,12 @@ import {
   "moonbitlang/quickcheck" @qc,
   "moonbitlang/quickcheck/gen",
 } for "test"
+
+// Warning 73 (`unnecessary_annotation`) is off here because this package holds
+// GENERATED modules, and `gen` writes `@anode.`/`@tutuca.` qualifiers on
+// purpose: the same emitter writes into a CONSUMER's package, whose imports it
+// does not control, and a bare name there is one collision away from not
+// compiling. The qualifier is redundant in this repo and load-bearing outside
+// it, so the lint is the thing that gives way.
+
+warnings = "-73"

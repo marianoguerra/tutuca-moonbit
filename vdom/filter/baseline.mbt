@@ -38,15 +38,15 @@ pub fn Baseline::new(max_reports? : Int = 64) -> Baseline {
 /// URL drops first, then handler drops. Within each the order is the order they
 /// happened; across the two it is not, and nothing should read meaning into it.
 pub impl VdomFilter for Baseline with fn take_reports(self) {
-  let out = self.url.take_reports()
-  out.append(self.handlers.take_reports())
+  let out = VdomFilter::take_reports(self.url)
+  out.append(VdomFilter::take_reports(self.handlers))
   out
 }
 
 ///|
 pub impl VdomFilter for Baseline with fn filter_elem(self, el) {
-  self.url.filter_elem(el)
-  self.handlers.filter_elem(el)
+  VdomFilter::filter_elem(self.url, el)
+  VdomFilter::filter_elem(self.handlers, el)
 }
 
 ///|
@@ -56,9 +56,9 @@ pub impl VdomFilter for Baseline with fn filter_elem(self, el) {
 /// traversal, two rules, no indirection between them.
 pub impl VdomFilter for Baseline with fn filter_elem_hinted(self, el, hints) {
   if hints.url {
-    self.url.filter_elem(el)
+    VdomFilter::filter_elem(self.url, el)
   }
   if hints.handler {
-    self.handlers.filter_elem(el)
+    VdomFilter::filter_elem(self.handlers, el)
   }
 }

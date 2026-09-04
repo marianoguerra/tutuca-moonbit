@@ -5,7 +5,7 @@ fn p(src : String) -> @trace.Place {
   @trace.parse_place(src) catch {
     e => {
       println(e.message())
-      @trace.Place([])
+      Place([])
     }
   }
 }

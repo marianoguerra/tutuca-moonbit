@@ -98,7 +98,7 @@ pub fn is_css_attr(name : String) -> Bool {
 /// names, and `class`, `id` and `type` are in none of them.
 pub impl VdomFilter for CssFilter with fn filter_elem_hinted(self, el, hints) {
   if hints.css {
-    self.filter_elem(el)
+    VdomFilter::filter_elem(self, el)
   }
 }
 

@@ -4,7 +4,7 @@
 ///|
 fn place_of(src : String) -> @trace.Place {
   @trace.parse_place(src) catch {
-    _ => @trace.Place([])
+    _ => Place([])
   }
 }
 
@@ -220,12 +220,7 @@ test "blank lines are skipped and still counted" {
 /// therefore a bare word rather than an empty object.
 test "the three answers round-trip" {
   let t = sample()
-  for
-    a in [
-      (@tutuca.IntentAnswer::Ok(Num(1)) : @tutuca.IntentAnswer),
-      Failed(Str("nope")),
-      Pass,
-    ] {
+  for a in [(Ok(Num(1)) : @tutuca.IntentAnswer), Failed(Str("nope")), Pass] {
     let one : @trace.Trace = {
       ..t,
       events: [

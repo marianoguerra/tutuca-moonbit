@@ -132,7 +132,7 @@ fn js_value(v : @core.Any) -> @tutuca.Value {
 /// backend cannot forget to ask. Do not add a second check: a second one is a
 /// second place to disagree.
 fn event_path_reader(ev : @core.Any) -> @render.EventPathReader {
-  @render.EventPathReader(segments => {
+  EventPathReader(segments => {
     let mut cur = ev
     for i, seg in segments {
       // The leaf crosses; everything before it stays on the DOM side, which is

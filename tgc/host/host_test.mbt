@@ -2982,8 +2982,8 @@ test "who keeps a slot, for every spelling and every value" {
     ("nothing", None),
     ("host value", Some(host_value)),
     ("guest value", Some(guest_value)),
-    ("list of host", Some(@tutuca.Value::List([host_value]))),
-    ("list of guest", Some(@tutuca.Value::List([guest_value]))),
+    ("list of host", Some(List([host_value]))),
+    ("list of guest", Some(List([guest_value]))),
   ]
   let rows : Array[String] = []
   for spelling in spellings {

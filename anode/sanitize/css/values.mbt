@@ -269,7 +269,7 @@ fn component_text(
       } else {
         Err(BadValue(c.to_string()))
       }
-    @token.String(s) => {
+    String(s) => {
       // Only reachable at `Computed`: `Constant` admits no string. The content
       // cannot contain a quote or a backslash — a quote would have ended the
       // token and a backslash was refused before tokenizing — so quoting it is
@@ -356,7 +356,7 @@ fn url_text(
   }
   let target = match inner {
     Hash(name, _) => "#" + name
-    @token.String(s) => s
+    String(s) => s
     _ =>
       return Err(Malformed("url() that is not a fragment or a quoted string"))
   }

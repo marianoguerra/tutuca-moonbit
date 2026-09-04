@@ -524,8 +524,7 @@ test "a value bounded by a list draws from that list" {
   let drawn : Map[String, @tutuca.Value] = {
     "options": List([Str("main"), Str("format"), Str("raw")]),
   }
-  guard @arb.value_in_domain(@tutuca.DElementOf(field="options"), drawn)
-    is Some(g) else {
+  guard @arb.value_in_domain(DElementOf(field="options"), drawn) is Some(g) else {
     fail("no generator for a list-bounded value")
   }
   for seed in [1UL, 2UL, 3UL, 4UL, 5UL, 6UL] {
@@ -536,13 +535,11 @@ test "a value bounded by a list draws from that list" {
   // generator and the caller falls back to the field's own — the same answer
   // `is key of` gives for an empty map.
   assert_true(
-    @arb.value_in_domain(@tutuca.DElementOf(field="options"), {
-      "options": List([]),
-    })
+    @arb.value_in_domain(DElementOf(field="options"), { "options": List([]) })
     is None,
   )
   // …and so does a list that has not been drawn yet.
   assert_true(
-    @arb.value_in_domain(@tutuca.DElementOf(field="options"), Map([])) is None,
+    @arb.value_in_domain(DElementOf(field="options"), Map([])) is None,
   )
 }
