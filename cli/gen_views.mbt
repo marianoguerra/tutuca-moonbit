@@ -64,6 +64,12 @@ fn view_diagnostics(
     // code — naming `.name = v` as the repair, which is precisely the bug that
     // component's author avoided on purpose.
     //
+    // The sharpest statement of the bug, from the consumer who found it: the
+    // per-component test was doing DOUBLE DUTY as "has no handlers here" and
+    // "has all handlers here", and only the first is what a missing block
+    // implies. The old comment argued the first and the code relied on the
+    // second, which is why it read as justified.
+    //
     // The property is per-NAME, not per-component: "is this name's handler
     // somewhere `gen` can see". For a compiled component the answer is no, and
     // there is nothing in the view file that changes it. So the check lives
