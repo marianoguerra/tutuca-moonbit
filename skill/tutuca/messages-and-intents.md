@@ -332,9 +332,9 @@ sending a notification and hears nothing at all.
 
 ## Asking the question you were handed — a bare `ask`, and `forward`
 
-Two operations, and they used to share a word. Both re-dispatch a
-question already in hand rather than naming a new one; which one you get
-depends on whether a walk is running yet.
+Two operations that read alike and are not. Both re-dispatch a question
+already in hand rather than naming a new one; which one you get depends on
+whether a walk is running yet.
 
 - **A bare `ask` in a `receive` body** *starts* a walk: the message that
   arrived becomes the intent, keeping its name and payload.

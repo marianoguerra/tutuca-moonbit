@@ -2,7 +2,8 @@
 
 The gallery in `storybook/` is not this repo's private tooling: it ships, and a
 project that depends on `marianoguerra/tutuca` can build one over its own
-components. This document is how, and why it is shaped the way it is.
+components. This document is why it is shaped the way it is; the step-by-step
+for writing one is `skill/tutuca/storybook.md`, which the CLI installs.
 
 | Package | What it is | Ships |
 | --- | --- | --- |
@@ -12,7 +13,7 @@ components. This document is how, and why it is shaped the way it is.
 | `storybook/ui/wasm` | the browser host: URL and theme services, the DOM event bridge, the compiled margaui sheet. Imports no panel layer | yes |
 | `storybook/ui/panels/wasm` | the panels' browser half: the animation frame, the profiler marks, the click a Trace pick consumes | yes |
 | `storybook/inspector` | the components the panels are drawn with | yes |
-| `storybook/examples` | **this repo's own 52 stories** and the fixtures the lint and view sweeps run over | no |
+| `storybook/examples` | **this repo's own stories** and the fixtures the lint and view sweeps run over | no |
 | `demo/storybook_wasm` | this repo's page: an export list and a story set | no |
 
 The line between the last two rows and the rest is the whole design. A gallery
@@ -183,8 +184,8 @@ trace, fuzz and all.
 
 ## Why `storybook/examples` stays behind
 
-Not because it is unfinished, but because it is *ours*: 52 demos with a curated
-`name -> section` table and a `name -> (title, description)` table, plus the
+Not because it is unfinished, but because it is *ours*: a curated set with its
+own `name -> section` and `name -> (title, description)` tables, plus the
 fixture set the `gen` sweep and `benchmarks` run over. A consumer needs
 none of it, and the projection means nobody has to borrow a story set to get a
 gallery.

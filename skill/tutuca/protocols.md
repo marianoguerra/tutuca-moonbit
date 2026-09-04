@@ -1,7 +1,12 @@
 # Protocols
 
 Use a protocol when components need a shared capability without sharing a
-concrete component or filesystem module. Protocol identity is a string:
+concrete component or filesystem module. `protocol` and not "interface": an
+interface usually means an inbound callable surface, while a protocol here is
+bidirectional and also covers observations, views and dynamic bindings.
+
+Protocol identity is a string, and the local name is only a source alias —
+manifests and runtime checks carry the id:
 
 ```html
 <script type="tutuca/spec">
@@ -56,13 +61,32 @@ ask Lifecycle::wantsAttention 'editor'
 ```
 
 Use protocols as component constraints with
-`Instance[protocol ListItem & Selectable]`.
+`Instance[protocol ListItem & Selectable]`. The constraint survives in the
+declared `Ty`, so installing a dynamic component checks its runtime schema and
+its explicit protocol claims; a mismatch rejects that value, keeps the previous
+one, and reports `PROTOCOL_TARGET_MISMATCH`.
 
-Whole-batch validation reports **strict** when everything is proved and
-**gradual** when dynamic loading leaves facts deferred. Runtime mismatches do
-not crash the UI: they choose a documented fallback and emit a structured
-`ProtocolMismatch` through `on_runtime_notice`, using the same issue codes as
-the static checker.
+Whole-batch validation reports **strict** when every referenced definition is
+present and every checkable claim validates, and **gradual** when a fact can
+only be known after dynamic loading. A known contradiction is an error either
+way; an absent dynamic fact is a warning.
+
+Runtime mismatches do not crash the UI. Each chooses a documented fallback and
+emits through `on_runtime_notice`, in the same `ProtocolIssueCode` vocabulary
+the static checker uses:
+
+- `Refused(Refusal)` — an ordinary dispatch or contract refusal;
+- `ProtocolMismatch(RuntimeProtocolNotice)` — a protocol failure, carrying the
+  component, path, state, operation and the resolution chosen (`ReturnedNull`,
+  `UsedMainView`, `RejectedComponentValue`, …);
+- `RuntimeWarning(String)` — uncategorized.
+
+The fallbacks favour a partly usable UI: a missing property or lookup answers
+`Null` or its declared default, a missing semantic view falls through to `main`,
+an invalid slot value is rejected and the previous value kept, an unhandled
+intent continues to its ordinary unhandled outcome, and an invalid transition
+keeps the last good state. A notice fires when a deferred assumption is
+exercised and fails, not because a module is gradual.
 
 Protocols cover boundary-visible behavior: handled/expressed operations,
 semantic views, typed properties, dynamic bindings, and component constraints.

@@ -468,9 +468,9 @@ Three consequences worth stating:
 `@dangerouslysetinnerhtml` is the construct a host has to think about. The
 construct people actually *want* most of the time is narrower: render some
 markdown that the app did not write — a comment body, a CMS field, an LLM
-response. Before this, that meant shipping a JS markdown library and handing its
-output to the dangerous directive, which is the worst available shape: a second
-parser, outside the sanitizer, feeding a string to `innerHTML`.
+response. Reaching for the dangerous directive to do that is the worst
+available shape: a markdown library outside the sanitizer, feeding a string to
+`innerHTML`.
 
 `@setinnermd` takes the markdown SOURCE. It reaches the DOM through
 `Block`/`Inline` → `@vdom.h`, and **every element it emits goes through

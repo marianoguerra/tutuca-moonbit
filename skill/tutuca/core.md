@@ -994,11 +994,11 @@ field writes it, in the view, as a **property action**:
 <button @on.click=".count = default">reset</button>
 ```
 
-That is a write, and it reads as one. A name in an event position — `@on.click="rename"`
-— is a **message**, and a message needs an answerer. The two used to be the same
-thing when the name happened to be `setTitle`, which meant a typo'd handler
-silently became a field write and a real handler could be shadowed by the field
-beside it.
+That is a write, and it reads as one. A name in an event position —
+`@on.click="rename"` — is a **message**, and a message needs an answerer. Keeping
+the two spellings apart is what stops a typo'd handler named `setTitle` from
+silently becoming a field write, and stops a real handler from being shadowed by
+the field beside it.
 
 Writing a property from a view goes through the same door a parent's write goes
 through: the domain and the invariants both get asked, and a rejected write comes
@@ -1132,8 +1132,8 @@ still a request to an origin the guest chose, from the host's page.
 
 ## State values: the `Value` enum
 
-Underneath the typed structs, all state is the `@tutuca.Value` enum —
-there is no immutable.js layer in this port:
+Underneath the typed structs, all state is the `@tutuca.Value` enum — no
+persistent-collection library underneath it, just the enum:
 
 ```moonbit nocheck
 // nocheck: reproduces core's own declaration for reference; `&Obj` only

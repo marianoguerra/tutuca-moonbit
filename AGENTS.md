@@ -23,6 +23,17 @@ You can browse and install extra skills here:
 
 ## Coding convention
 
+- **The repo reads as a first release.** There is no backward compatibility to
+  keep, no retired spelling still accepted, and no alias kept for a name that
+  moved — rename the thing and fix every caller. Prose follows the same rule:
+  documentation and comments describe what is true now, not what changed. The
+  CHANGELOG is where history lives, and it is the only place.
+
+- **A diagnostic names the repair, not just the verdict.** "does not conform" is
+  something the reader has to go and derive; the spelling to write instead is
+  what they needed. Tests assert on the MESSAGE, not the code — a code is a
+  constant and stays green while the sentence beside it rots.
+
 - MoonBit code is organized in block style, each block is separated by `///|`,
   the order of each block is irrelevant. In some refactorings, you can process
   block by block independently.
@@ -35,7 +46,7 @@ You can browse and install extra skills here:
   later `moon fmt` leaves it alone — run the task, not the CLI directly.
 
 - `tgc/` has two documents: `SPEC.md` is the format — the frozen rec group, the
-  freeze rule, the op space, the exports, the encodings — and `SECURITY.md` is
+  freeze rule, the op space, the exports, the encoding — and `SECURITY.md` is
   what a loaded module can and cannot do, with the evidence for each claim.
   **The rec group in `tgc/abi/preamble.mbt` is frozen**: a group's identity
   depends on the whole group, so touching it breaks every module ever built.
@@ -44,22 +55,13 @@ You can browse and install extra skills here:
 
 - `examples/*` are not packages of this module and not demos. Each is a
   CONSUMER: its own `moon.mod` depending on the PUBLISHED `marianoguerra/tutuca`
-  fetched from mooncakes like anyone else's. They are excluded from publish,
-  `moon check` / `moon fmt` / `cmd/dev -- ci` never reach them (a nested
-  `moon.mod` stops discovery), and each has its own
-  `build.mjs` that is the only way to build it. **An example must never gain a
-  path dependency, a `../` out of its own directory, or a step that runs
-  anything from this repo** — the one thing they prove is that a release is
-  complete on its own, and any of those would quietly stop proving it. That is
-  also why the directory is `examples/` rather than `example/`: no one of them
-  is "the" example, and a new one should be able to cover a different seam
-  without renaming anything.
-
-  `examples/storybook-gallery` is the one that exists: a gallery scaffolded by
-  `tutuca new-storybook`, built against the published package. It exercises
-  precisely what `moon check` cannot — that the wasm-gc JS loader survives
-  `moon publish`, and that the scaffold emits a tree that actually builds. Run
-  the examples after a release, before announcing one.
+  fetched from mooncakes like anyone else's, so `moon check` / `moon fmt` / `ci`
+  never reach them and each builds only through its own `build.mjs`. **An
+  example must never gain a path dependency, a `../` out of its own directory,
+  or a step that runs anything from this repo** — proving a release is complete
+  on its own is the one thing they do, and any of those would quietly stop
+  proving it. `examples/README.md` and CONTRIBUTING.md's release section are the
+  rest.
 
 ## Tooling
 
@@ -82,25 +84,25 @@ started being a task in the wrong place. The two `clean` recipes are the
 deliberate exception, and say why in the file: the task runner is a native
 binary inside the `_build` they delete.
 
-| Task       | Does                                                              |
-|------------|------------------------------------------------------------------|
-| `check`    | `moon check` for default, js and native targets                  |
-| `fmt`      | `moon fmt` then `moon info` (format + regenerate `.mbti`)         |
-| `test`     | `moon test` for default, native, and js browser adapters. The native leg is capped with `-j` — it links 49 whole-program test binaries and the biggest `moonc` peaks near 1.8 GB, so moon's default one-job-per-core fan-out OOMs an 8-core/12 GB box. See `NATIVE_TEST_JOBS` in `dev/tasks.mbt` |
-| `build`    | `moon build` for wasm-gc, native CLI, and js                     |
-| `coverage` | `moon coverage analyze`                                           |
-| `setup`    | `npm install` (happy-dom for js tests) + enable the git hooks    |
-| `ci`       | `gen` + `skill-embed` drift checks, then `check`, the example/skill checks, `test` and `build` |
-| `dist`     | build all targets and assemble a self-contained runnable `dist/` |
-| `gen` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); formats after generating, then drift-checks the generated modules — a stale one type-checks and tests green, so this is what catches it |
-| `gen-conformance` | project `tscript/conformance`'s corpus into `tscript/conformance/mbt/corpus.html`, then run `gen` over it — the MoonBit backend cannot read the corpus directly, since its answers only exist once `moonc` has compiled them. Run after ADDING a case; `ci` re-runs and drift-checks the compiled half on its own |
-| `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first), format, then drift-check the CONTENT against a snapshot taken before regenerating — in `ci`, because the embed ships inside the binary and a skill edited without re-embedding is invisible until somebody installs it and reads the wrong thing |
-| `sanitizer-defaults` | regenerate `anode/sanitize/spec_default_gen.mbt` from the pinned WHATWG spec commit, format, then drift-check (needs network) |
-| `dom-props` | regenerate `eventpath/dom_props_gen.mbt` from the browser specs' machine-extracted IDL (`w3c/webref`, pinned in `scripts/fetch-dom-props.mjs`), format, then drift-check (needs network). The type oracle an `e.<path>` is checked against — does this event interface have this property, and what is its type. Same rule as the sanitizer baseline and for the same reason: **never hand-transcribe it** |
-| `check-skill` | compile-check the MoonBit snippets in `skill/tutuca/` and check every one against the `.mbti` files for names that no longer exist; part of `ci` |
-| `css-bundle` | regenerate `css/{tailwind,margaui}_bundle_gen.mbt` from the pinned `tailwindcss` npm release + a margaui clone (needs network); see "Styling" below |
-| `npm-pack` | stage + `npm pack` the playground's two npm packages from an assembled `dist/` (manifests in `playground/npm/`); packs only — publishing is manual, see CONTRIBUTING.md |
-| `tutucard-playground` | assemble `dist/tutucard/` — the CARD playground, which ships no MoonBit compiler: a card is compiled to wasm by `tgc/emit` and the module is instantiated in the page, so the payload is that compiler, the Wax front end it stands on, and the page — plus the two things a card can ASK for, each fetched lazily by the page that wants it: `margaui.wasm` (the class compiler the starter cards' `btn`/`card`/`badge` need, scoped to the preview — `web/margaui.js`) and `editor.bundle.js` (the shared CodeMirror: the page upgrades its own textareas to it once the first card is mounted, `?editor=plain` keeps the textareas, and an `<mb-card codemirror>` upgrades its own). Ends by CHECKING and COMPILING every card through the real entry points — the starter cards, which are JS strings no MoonBit test can reach, and the landing site's `playground/site/cards/*.html`, which are in no moon package — and by holding `web/regions.js` — the offset arithmetic the structured view edits through — to its contract |
+| Task | Does |
+|---|---|
+| `ci` | what CI runs: every drift check, then `check`, the example/skill/card checks, `test` and `build` |
+| `dist` | build all targets and assemble a self-contained runnable `dist/` |
+| `check` / `test` / `build` | across wasm-gc, js and native |
+| `fmt` | `moon fmt` then `moon info` — format and regenerate every `.mbti` |
+| `gen` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources, then drift-check them. A stale one type-checks and tests green, which is why the check exists |
+| `setup` | `npm install` (happy-dom for js tests) + enable the git hooks |
+
+**That is the whole table, deliberately.** `cmd/dev` with no task prints every
+task with what it does, generated from the same list that runs them, so a task
+added without touching this file is still discoverable. A table here is a second
+list, and the second list is the one that goes stale.
+
+Two tasks worth knowing about before you need them: `test` caps its native leg
+with `-j` (it links a whole-program binary per test package and the biggest
+`moonc` peaks near 1.8 GB, so moon's one-job-per-core default OOMs a small box —
+see `NATIVE_TEST_JOBS` in `dev/tasks.mbt`), and the four regenerate-from-upstream
+tasks need the network, so they are not in `ci` — see `css/README.md`.
 
 While editing views, `tutuca watch [path…]` regenerates them on every save
 (mizchi/fswatch; native only, since the watcher is the shell's job). It
@@ -109,74 +111,24 @@ it at a project root does not try to compile `index.html`. Add
 `--tailwind-css`/`--margaui-css <file>` and it rewrites that stylesheet too,
 once per settled batch over every watched view.
 
-The `playground` task ends with `playground/build/check-viewgen-tab.mjs`: the
-View tab generates a MoonBit module in the browser and feeds it to the
-in-browser compiler, and nothing else exercises that path — the generated
-module compiles in a package with no `moon.pkg`, where `@tutuca` is the
-module-root facade rather than `core/`. It drives generate → compile → link
-headlessly against the assembled payload, for every standalone-playground
-starter example with a View tab (`playground/web/starter.js` — covered here
-and nowhere else) AND every landing-site example pair
-(`playground/site/examples/<name>.{mbt,html}`, which the embedded
-`<mb-playground>` elements compile in a visitor's browser). The cheaper
-`check-examples` task covers the same examples through `moon check` instead,
-generating their views with the same generator built to js.
+Three checks are worth knowing exist, each documented in its own script's
+header: `playground/build/check-viewgen-tab.mjs` drives generate → compile →
+link headlessly through the in-browser compiler (the only thing that does),
+`scripts/check-playground-examples.mjs` covers the same examples through `moon
+check`, and `scripts/check-skill-snippets.mjs` compiles the bundled skill's
+snippets and checks every identifier in them against the checked-in `.mbti`
+files. The last one matters most: the skill ships inside the CLI binary, so a
+wrong snippet is what an agent reads before writing any tutuca code.
 
-`check-skill` reuses that same js generator for the bundled skill. Nothing else
-compiles `skill/tutuca/`, and it rots — and the skill ships inside the CLI
-binary, so a wrong snippet is what an agent reads before writing any tutuca
-code. A recipe that shows both halves — an ```` ```html ```` view file then
-the ```` ```moonbit ```` that uses it — gets the view half generated and the pair
-compiled together, per markdown SECTION (snippets in one section refer to each
-other; snippets in different sections are unrelated components that would
-collide). Fences are load-bearing: bare ```` ```moonbit ```` is compiled,
-`moonbit fragment` is wrapped in a `fn` first, and `moonbit nocheck` is skipped
-but **must** carry a `// nocheck: <reason>` line. Most blocks are bucket-argument
-fragments that no wrapper makes compilable, so they are `nocheck` — which is why
-every block, `nocheck` included, additionally goes through an identifier check
-against the checked-in `.mbti` files. That second pass is the one that catches a
-removed parameter, and it is the reason the task is worth having at all.
+`dist` assembles a self-contained, runnable tree: the landing page and card
+tutorial, the js and wasm-gc counter demos, this repo's storybook gallery, both
+playgrounds, and the native CLI binary. `dist_steps` in `dev/tasks.mbt` is the
+inventory and says why each piece is copied where it is; `tutucard/README.md`
+covers the card half.
 
-Nothing in the playground shell resolves a fetched URL against the page.
-`runtime.js`'s `playgroundConfig` derives the four of them — the worker, the
-compiler blob, `manifest.json`, `fs/` — from the calling module's own
-`import.meta.url`, and `makeCompiler` hands them to the worker **absolutely**,
-so the worker resolves nothing against its own location either. That is what
-lets the payload sit somewhere other than the shell (a different folder,
-package, or origin — a cross-origin worker gets a same-origin blob shim,
-since a `Worker` script must be same-origin), and what lets a host serve their
-own `@moonbit/moonc-worker` rather than a copy of the 5.5 MB blob:
-`globalThis.MB_PLAYGROUND = { payloadBase, compilerUrl, workerUrl }` (all
-optional) before the first compile. A host-supplied compiler is checked against
-`manifest.mooncWorker` when npm's `package.json` sits beside it — the payload
-and the compiler are one pair, and a mismatch otherwise surfaces as nonsense
-about the user's code (`playground/vendor/README.md`).
-
-`dist` produces `dist/index.html` (a landing page with run instructions),
-`dist/cards.html` (the card tutorial — the `<mb-card>` embeds and the block
-language in one page; its cards are `playground/site/cards/*.html`, which
-`tutucard-playground` loads through the real loader),
-`dist/counter/` (the **js** counter demo with its bundle, `<script src>`
-repointed to sit beside the page), `dist/counter-wasm/`
-(the **wasm-gc** demo — a `.wasm`, a host page, and `app/wasm/loader.mjs`
-copied beside it as `app-loader.mjs`),
-`dist/storybook/` (this repo's storybook
-gallery compiled to wasm-gc — one of the bundles `tutuca storybook` serves; a
-downstream project builds its own with `tutuca new-storybook`),
-`dist/playground/` + `dist/site/` + `dist/tutucard/` (the landing page embeds
-BOTH kinds of live example: `<mb-playground>`, which compiles MoonBit in the
-browser against `dist/playground/`, and `<mb-card>`, which compiles no MoonBit
-— `assemble-site.mjs` copies `dist/tutucard/tutucard.js` beside the page,
-which is why `dist` assembles the card runtime before the site. It copies
-`margaui.wasm` from there too, for an `<mb-card margaui>`: that is the one
-thing a card DOES compile, its class names into CSS, and only when an element
-asks), and `dist/cli/tutuca` (the native CLI binary).
-
-The wasm pages need a browser with
-the JS String Builtins proposal, e.g. Chrome. Serve dist with any static file
-server: `cd dist && python3 -m http.server` — or `dist/cli/tutuca storybook`
-serves `dist/storybook/` over HTTP (default port 4321). `dist/` is gitignored.
-Run with no task to print the task list.
+The wasm pages need a browser with the JS String Builtins proposal, e.g. Chrome.
+Serve it with any static file server (`cd dist && python3 -m http.server`), or
+`dist/cli/tutuca storybook` serves the gallery over HTTP. `dist/` is gitignored.
 
 The wasm demos are driven by the `vdom/wasm` + `app/wasm` packages (the wasm-gc
 twins of `vdom/browser` + `app/browser`): the DOM is reached from wasm-gc
@@ -189,98 +141,12 @@ published `storybook/ui/wasm` — an export list and this repo's story set,
 nothing else, an export list being per-package `link` config that cannot come
 from a dependency).
 
-margaui styling is compiled
-in MoonBit: the host's `mount()` hands `collect_classes()` to `css`'s
-`compile_margaui` (the `marianoguerra/tailwindcss` port + embedded stylesheet
-bundles) and injects the resulting `<style id="margaui-css">`, re-running it from
-the exported `refresh_margaui()` after a module loads. No CDN build and
-no `globalThis` class hand-off. The in-browser playground uses the same compiler
-shipped to wasm-gc (`playground/margaui_wasm` → `margaui.wasm`, release + wasm-opt).
-
-### Styling (`css/`)
-
-`css/` is the one place stylesheets live, and it is published — the wasm hosts,
-the js playground and the native CLI all compile through it. Two generated
-bundles, split by provenance and regenerated together by `cmd/dev -- css-bundle`:
-
-- `css/tailwind_bundle_gen.mbt` — stock Tailwind's `theme` / `preflight` /
-  `utilities`, taken from the **`tailwindcss` npm tarball** at the version pinned
-  in `scripts/fetch-tailwind.mjs`.
-- `css/margaui_bundle_gen.mbt` — margaui's `base/`, `themes/` and `src/*.css`,
-  from a clone at the ref pinned in `scripts/fetch-margaui.mjs`, with its `tw/*`
-  dropped (`--skip-prefix tw/`).
-
-More generated-from-upstream files live elsewhere and follow the same rule:
-
-- `anode/sanitize/spec_default_gen.mbt` — the WHATWG Sanitizer API's built-in
-  default configuration, from the **machine-readable `builtins/` in the spec
-  repo** at the commit pinned in `scripts/fetch-sanitizer-defaults.mjs`.
-  Regenerate and verify with the `sanitizer-defaults` task, which does what
-  `gen` does — regenerate, `moon fmt`, then diff. Prefer it to the script's own
-  `--check`: that flag compares the generator's UNFORMATTED output against a
-  file `moon fmt` has reformatted, so it reports "stale" on content that is
-  byte-identical.
-
-- `eventpath/dom_props_gen.mbt` — every property an event path can reach, with its
-  type, from the **machine-extracted WebIDL in `w3c/webref`'s `ed/idl/`** at the
-  commit pinned in `scripts/fetch-dom-props.mjs`. Regenerate with the
-  `dom-props` task, which has the same three steps and the same `--check`
-  caveat.
-
-  It covers everything inheriting from `Event` or `Element`, plus the leaf types
-  an allowlisted step lands on. `Window` and `Document` are deliberately absent,
-  and that absence is load-bearing rather than an omission — see the generated
-  file's header. The reader in the script is strict on purpose: an attribute
-  declaration it cannot take apart THROWS rather than being skipped, because a
-  dropped property is a lint that fires on correct code.
-
-  It is a **type oracle and not a permission list**. Whether a step may be
-  traversed at all is `eventpath/event_paths.mbt`'s question, and the two are
-  separate because one is fetched and the other is argued.
-
-- `anode/sanitize/css/properties_gen.mbt` — every CSS property the style
-  sanitizer will let through, with what its value may contain, from the same
-  `w3c/webref` extraction plus `mdn/data`, at the commits pinned in
-  `scripts/fetch-css-properties.mjs`. Regenerate with the `css-properties`
-  task, which has the same three steps.
-
-One vendored-from-upstream tree follows the same rule from the other end — it
-is copied rather than generated, but it is equally not ours to edit:
-
-- `markdown/` — the CommonMark + GFM parser, copied verbatim from
-  [mizchi/markdown.mbt](https://github.com/mizchi/markdown.mbt) at the commit
-  pinned in `markdown/UPSTREAM.md` (MIT). 15 of upstream's 29 production files;
-  the HTML renderer, serializer and incremental reparser are deliberately left
-  behind, because `vdom/filter/markdown` walks the AST straight into vdom nodes
-  and never builds an HTML string. **Do not hand-edit a file in there** —
-  re-sync by copying again, and let `markdown/parse_test.mbt` (ours, not
-  upstream's) fail if a behaviour the node builder depends on moved.
-
-  It is vendored rather than depended on because the published
-  `mizchi/markdown` drags `mizchi/moomaid` and declares `supported-targets:
-  js+wasm`, while this module prefers wasm-gc. What is copied has no
-  third-party dependency and no `extern` at all — `UPSTREAM.md` has the full
-  reasoning and the list.
-
-  **Never hand-transcribe an allow-list, and never take one from MDN or a blog
-  post.** An entry quietly lost is a component that mysteriously fails to
-  render; one quietly gained is a hole. `sanitize_test.mbt` holds
-  `unsafe_elements` against the spec's own baseline for that reason.
-
-**Take `tw/*.css` from npm, never from the margaui checkout.** margaui's own
-`tw/README.md` calls its copies a manual mirror, and they lag upstream. The
-compiler is ported from one exact tag
-(`.mooncakes/marianoguerra/tailwindcss/UPSTREAM.md`), so the stylesheets must
-come from that tag or the engine and its data disagree; `fetch-tailwind.mjs`
-fails the build if the two pins drift apart. `compile_margaui` merges both maps,
-so margaui resolves its `./tw/*` imports against the good copies.
-
-`tutuca gen-tailwind-css` / `gen-margaui-css` are the build-time face of the same
-pipeline: the class collection a host does at mount time, run over a project's
-view files instead, so an AOT project can ship a static stylesheet. `tutuca watch
---margaui-css <file>` keeps that stylesheet current alongside the view modules —
-`WatchPlan` carries a whole `CssPlan`, so it runs the same path rather than a
-second implementation of it.
+margaui styling is compiled in MoonBit rather than fetched: a host's `mount()`
+hands `collect_classes()` to `css`, injects the resulting `<style
+id="margaui-css">`, and re-runs it from `refresh_margaui()` after a module
+loads. No CDN build and no `globalThis` class hand-off. **`css/README.md`** is
+that pipeline, the two generated bundles behind it, and the rule every
+generated-from-upstream table in this repo follows.
 
 The raw `moon` commands below still work and are what the tasks run underneath.
 
@@ -302,14 +168,12 @@ The raw `moon` commands below still work and are what the tasks run underneath.
 - Run `moon test` to check tests pass. MoonBit supports snapshot testing; when
   changes affect outputs, run `moon test --update` to refresh snapshots.
 
-- Targets: the module's `preferred_target` is `wasm-gc`, so a bare
-  `moon check` / `moon test` covers only the target-agnostic packages. Full
-  coverage needs all three: `moon test` (wasm-gc), `moon test --target js`
-  (vdom/browser, app/browser — happy-dom based; those two packages are what
-  the `test` task passes, and the only ones with js-target tests)
-  and `moon test --target native` (the cli shell: cmd/tutuca).
-  Run `moon check --target js` and `--target native` too before handing off —
-  each target surfaces warnings the others don't.
+- Targets: `preferred_target` is `wasm-gc`, so a bare `moon check` / `moon test`
+  covers only the target-agnostic packages. Full coverage needs all three, which
+  is what the `check` and `test` tasks run: wasm-gc, `--target js` (the
+  happy-dom browser adapters `vdom/browser` and `app/browser`, the only packages
+  with js-target tests) and `--target native` (the CLI shell). Each target
+  surfaces warnings the others don't, so run the task rather than a bare `moon`.
 
 - Prefer `assert_eq` or `assert_true(pattern is Pattern(...))` for results that
   are stable or very unlikely to change. For snapshot tests that record
@@ -321,93 +185,14 @@ The raw `moon` commands below still work and are what the tasks run underneath.
 
 ## Testing components
 
-There is no `tutuca test` command — **`moon test` is the runner**, and MoonBit's
-built-in assertions cover the whole jest surface. Author component tests as
-plain `moon test "..." { ... }` blocks:
+`moon test` is the runner — there is no `tutuca test`, and MoonBit's built-ins
+cover the whole jest surface. Component tests are ordinary `test { ... }` blocks
+over `marianoguerra/tutuca/testing/harness`; a card declares its own as a
+`<script type="tutuca/test">` block that `tutucard/drive` runs.
 
-- Mount and drive a `ModuleDef` on the in-memory DOM with the reusable harness
-  `marianoguerra/tutuca/testing/harness` (`@harness`): `mount` / `mount_example`
-  → a live app, then `click` / `type_into` / `key_down` / `drag` / `send_at_root`
-  fire real events through the transactor, and `text` / `texts` / `attr` / `prop`
-  / `value_of` / `html` / `render_count` / `drive_value` read the re-rendered DOM
-  and settled root value back. See `testing/harness/harness_test.mbt` for the
-  shape; the `storybook/examples/*_test.mbt` suite is the worked reference.
-- A **card** — the `.html` the browser compiles to a wasm module with no MoonBit
-  toolchain — has no `moon test` to run and no MoonBit to write a test in, so it
-  declares its tests as a fifth block: `<script type="tutuca/test">`, JSON, in
-  the shape `tutuca/fixtures` already has. `scenedef/` parses it (target-agnostic,
-  so its error messages are `moon test`-able), `viewfile` lifts and validates it
-  at split time so a mistake lands on the line of the `.html`, and
-  `tutucard/drive/` mounts the card on memdom and runs the steps through
-  `@harness`'s own verbs. It reaches a page as `__tutucard.drive` (beside
-  `check` / `compile` / `mountCompiled`) and `driveCard` in
-  `tutucard/web/card.js`; the playground's Tests pane and
-  `tutucard/build/run-tests.mjs` are the two callers. `gen` ignores the block.
-- A card's `refused` is usually EMPTY, and that is the contract rather than a
-  gap: `tgc/host/dynobj.mbt`'s `handler` never gates a `Receive`, so a
-  guest answers `unhandled` and the host has nothing to refuse. What a compiled
-  card says instead is `control.log` — a `requires` / `ensures` / `invariant`
-  that did not hold, carrying the rule's own `format` sentence — which
-  `card.js` keeps as well as prints and a scene reads with `expect: log`.
-  Reach for `refused` when driving a MODULE and `log` when driving a CARD.
-- **A card may declare more than one component.** One `state` each in the one
-  state block, one `<script ... for="Comp">` each,
-  `<template id="Comp:main">`. Each becomes its own state struct, its own
-  `tg_vt`, and its own arm of `tgc.make`; generated names are qualified
-  (`cm_Row_caption`) only when the file declares several, so a one-component
-  card compiles the same either way. The ROOT is the first component in the
-  file, or the one whose `<template>` carries `data-root`; the manifest lists it
-  first, because a host takes the head.
-- A card BUILDS a sibling with `new <Component>`: `cur.f = v` accumulates an
-  argument map and the child is made at the first READ of `cur`, as a
-  `tg_comp` wrapping a real `tg_inst`. There is no host hop and no token — the
-  instance is an ordinary GC struct in the parent's own state — which is the
-  difference the format was written for, and the reason reading THROUGH a
-  child is a call rather than a compile-time refusal.
-- **Instances the HOST holds are collected, both halves.** A module's own
-  children are the engine's to collect; what needs help is the handle table the
-  `&Guest` bridge keeps. `install_gc` drops the handle a successor replaced —
-  which is every interaction, since an instance is immutable — and a row that is
-  REMOVED is superseded by nothing, so `install_sweep` walks the root and
-  retains what it finds. `tutucard/build/check-instances.mjs` pins both.
-- **Property tests derive their generators from the spec block, not from a
-  MoonBit type.** `derive(Arbitrary)` has nothing to derive over here — a
-  component's shape is a `<script type="tutuca/spec">` block, not a type — so
-  `statedef/arb` is the randomized twin of `statedef/info`: `value_of` walks a
-  `@tutuca.Ty` where `zero_of` walks it, `state_of` mirrors `zero_value`,
-  `dispatch_of` reads `MsgDef.payload`, and `mutator_dispatch_of` takes its
-  names from `@component.schema_writers` so it cannot drift from the table the
-  runtime installs — the WRITING half of it, because `xLen` and `hasInX` are
-  generated callables that answer a scalar rather than a successor, and
-  dispatching one lands on `Unhandled`. Nothing is generated ahead of time; the `StateDef` is
-  parsed at test time and the generators are built from that value.
-
-  `rules_of` is the piece worth knowing about. A `pred` / `invariant` is ONE
-  expression with no arguments, so `@tscript.parse_bool` lowers it to a
-  `@core.Val` and `Val::eval` answers it over any state — which makes an
-  invariant both a FILTER on a generator and a PROPERTY a driven component is
-  held to. It also makes a differential test cheap:
-  `storybook/examples/svg_more_property_test.mbt` asks each precondition here
-  and checks the answer against the `Refusal` the arm `gen` compiled from
-  the same line actually raised. Bound worth knowing: `Val` is what a SLOT
-  holds, so the slot vocabulary is what lowers — there is no arithmetic, and
-  `invariant conserved { (.here + .there) is .total }` lands in
-  `Rules::unlowerable` rather than being silently treated as satisfied. Name
-  the sum with a `compute` and compare against `$name`.
-
-- Assert with the built-ins — no matcher DSL needed. JS → MoonBit mapping:
-
-  | chai/jest | MoonBit built-in |
-  |---|---|
-  | `toBe` (identity) | `@test.assert_same_object` / `assert_not_same_object` |
-  | `toBe` / `toEqual` (value; `Eq` **is** deep-equal) | `assert_eq` / `assert_not_eq` |
-  | `toThrow` | `@test.assert_raise` (or `expect_error` to inspect the error) |
-  | `toBeInstanceOf` | `assert_true(v is Obj(_))` — pattern match, no runtime classes |
-  | `toBeNull` / `toBeUndefined` | `assert_true(v is Null)` (Value) / `x is None` (Option) |
-  | `toBeTruthy` / `toBeFalsy` | `assert_true` / `assert_false`; `v.is_truthy()` for a Value |
-  | `toContain` / `toHaveLength` | `assert_true(xs.contains(x))` / `assert_eq(xs.length(), n)` |
-  | snapshot | `inspect(x, content=..)` / `debug_inspect(x, content=..)` |
-
-  `tutuca.Value` already derives `Eq + Debug`, so `assert_eq` and `debug_inspect`
-  work on values directly. `--bail` and per-component filtering have no direct
-  equivalent — organize by `moon test` block names and files.
+**`skill/tutuca/testing.md` is the reference** — the harness verbs, the scene
+language, the assertion mapping, and what a card reports instead of a refusal.
+It ships inside the CLI, so it is what an agent reads, and `check-skill` keeps
+its snippets compiling. Two repo-internal notes live with their packages
+instead: how instances the host holds are collected is in `tgc/host`, and how a
+property test derives its generators from a spec block is in `statedef/arb`.

@@ -17,26 +17,20 @@ This runs `npm install` (happy-dom) and enables the git hooks
 
 ## Workflow
 
-Common tasks live in the `cmd/dev` task runner — run it with no argument to see
-the full list:
+Common tasks live in the `cmd/dev` task runner. Run it with no argument and it
+prints every task with what it does — that listing is the task list, so nothing
+here restates it:
 
 ```sh
-moon run --target native cmd/dev --            # list tasks
-moon run --target native cmd/dev -- check      # moon check across wasm-gc, js, native
-moon run --target native cmd/dev -- test       # moon test across the three targets
-moon run --target native cmd/dev -- fmt        # moon fmt + moon info (regenerate .mbti)
-moon run --target native cmd/dev -- ci         # check then test (what CI runs)
-moon run --target native cmd/dev -- build      # build all targets
-moon run --target native cmd/dev -- dist       # assemble a runnable dist/
+moon run --target native cmd/dev --            # every task, with what it does
+moon run --target native cmd/dev -- ci         # what CI runs; green before a PR
 ```
 
 ### Targets
 
-`preferred_target` is `wasm-gc`, so a bare `moon check` / `moon test` covers
-only the target-agnostic packages. Full coverage needs all three targets — the
-`check` and `test` tasks run wasm-gc, `--target js` (browser adapters,
-happy-dom), and `--target native` (CLI shells) for you. Run the full `ci` task
-before opening a PR.
+`preferred_target` is `wasm-gc`, so a bare `moon check` / `moon test` covers only
+the target-agnostic packages; the `check` and `test` tasks run all three for you
+(see AGENTS.md "Targets"). Run the full `ci` task before opening a PR.
 
 ### Before you commit
 
@@ -104,42 +98,22 @@ commit that migrates its source.
 
 ### What ships
 
-`options(exclude: ...)` in `moon.mod` keeps the tarball to the library
-packages, `tgc/`, the storybook, the CLI and `docs/`. The demo and playground
-trees, the `dev`/`cmd/dev` task runner, `scripts/`, `skill/` and `package.json`
-are repo-only.
+`options(exclude: ...)` in `moon.mod` decides it, and **its comment is the
+argument** — each exclusion says why, package by package, and that is the one
+place to read or change it. `moon package --list` shows the result.
 
-`storybook/` ships except for `storybook/examples` and `storybook/template`.
-The model, the gallery shell, the panel layer and the two browser halves are how
-a project gets a gallery of its OWN components (see
-[docs/storybook.md](docs/storybook.md)); the corpus is this repo's own demos plus
-the fixtures the lint and view-generation sweeps and `benchmarks` run over,
-which is editorial content and not a library, and the template already travels
-inside the CLI binary. Stories are projected from a module's own `examples`, so
-nobody needs ours.
+Two rules that are yours to keep when you add a package:
 
-If you add a package that a shipped package imports, make sure it is not under
-an excluded directory. `scripts/check-publish-graph.mjs` (in `ci`) fails on that
-— including a `for "test"` import, since test files travel in the tarball too —
-and the end-to-end check is still unpacking `_build/publish/*.zip` into an empty
-directory and running `moon check` / `moon test` there, which is what a consumer
-sees.
+- **A shipping package may not import an excluded one**, in a `for "test"` block
+  either, since test files travel in the tarball too.
+  `scripts/check-publish-graph.mjs` fails `ci` on that.
+- **The end-to-end check is still a human one**: unpack `_build/publish/*.zip`
+  into an empty directory and run `moon check` / `moon test` there. That is what
+  a consumer sees.
 
-`tgc/` ships: it is the component format, and without it a consumer can host no
-dynamic component at all — no preamble, no runtime module, no card compiler, no
-host, no policy. Two consequences worth knowing when you edit around it:
-
-- **`tgc/proto` and `tgc/test` are excluded.** They are the composition proof:
-  hand-written modules in WAT and Wax, and the node harnesses that instantiate
-  them together against one import object. Evidence about the format rather than
-  part of it, and the harnesses build from `_build`, which no tarball has. Run
-  them from the repo with `node --test tgc/test/*.test.mjs`.
-- **`tgc/rt` ships, and it is a `.wax` file.** A page that hosts a component
-  needs the runtime module and cannot fetch it from this repository's `_build`,
-  so the source is embedded (`tgc/rt/rt_src_gen.mbt`) and `tgc/emit`'s
-  `compile_runtime` builds it on demand. Same rule as `app/wasm/loader.mjs`,
-  which is not `.mbt` either but is the only way a consumer's wasm-gc page can
-  instantiate anything.
+`tgc/proto` and `tgc/test` are excluded and their harnesses build from `_build`,
+which no tarball has — run them from the repo with
+`node --test tgc/test/*.test.mjs`.
 
 ## Releasing the playground to npm
 

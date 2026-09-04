@@ -362,9 +362,9 @@ The types are the field types: scalars, `Array[T]`, `Map[String, V]`, a
 A dispatch whose arguments do not fit falls into `Unknown` — never coerced —
 **and is reported** as `BAD_PAYLOAD` on the refusal channel, carrying the
 argument list that did not fit. Declaring `focusRow(Int)` and sending it a
-string is a bug in the sender, and it used to be indistinguishable from a name
-nobody sent. `Any` buys silence here, which is a reason to declare the shape
-you mean.
+string is a bug in the sender, and the report is what tells it apart from a
+name nobody sent. `Any` buys silence here, which is a reason to declare the
+shape you mean.
 
 Note the three `LoadRows…` names in the `message` list. An intent's **answers**
 are ordinary messages, so they are declared where every other message is; and
@@ -443,8 +443,9 @@ in a card exactly as in a MoonBit component. A `*name` the `state` block does
 not declare is `DYN_NOT_DECLARED`: whether a producer is above you at render
 time is a runtime fact, but whether you ever asked for the name is not.
 
-`$name` is still render-only, and for the reason `*name` no longer is: a
-`compute` really is the render stack's answer, and a body calls one bare.
+`$name` is render-only where `*name` is not, and the reason is the difference
+between them: a `compute` really is the render stack's answer, and a body calls
+one bare.
 
 The provide/lookup declarations themselves reach the host as source text in the
 manifest, and the host evaluates them against the instance while rendering,

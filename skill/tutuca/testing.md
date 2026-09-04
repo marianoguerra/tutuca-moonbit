@@ -274,8 +274,8 @@ distinction that does not exist. `$` belongs in a value position
 <input @on.input="countTo event" />
 ```
 
-`event`, `target` and `ctx` are **not** handler arguments in this port: a DOM
-object is not a `Value`, so each resolves to `Null` and the arm receives
+`event`, `target` and `ctx` are **not** handler arguments: a DOM object is not
+a `Value`, so each resolves to `Null` and the arm receives
 `[Null, ..]`. There is nothing to dig into — the handler simply never sees the
 input. Nothing reports it either; the dispatch lands and does nothing.
 

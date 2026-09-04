@@ -307,23 +307,20 @@ to leave it too, and compiling is the expensive half of the loop. A view that
 will not parse is reported once by the regeneration pass and leaves the previous
 stylesheet in place; the next save fixes it.
 
-## Not in this port
+## Three commands that do not exist, and what answers instead
 
-- **`tutuca test` does not exist.** `moon test` is the test runner —
-  component tests are `test { ... }` blocks over the `@harness` package
-  (see [testing.md](./testing.md)). The exit-4 code from the JS CLI is
-  gone with it.
-- **`tutuca lint` does not exist** as a command. The rules still run, inside
-  `gen` (above). What genuinely went away is the part of the JS linter
-  that needed a live component — undefined fields, unimplemented `$`-methods,
-  bad handler names — because those are type errors in the generated module now.
-- **`tutuca storybook` serves a pre-built gallery, not scanned `*.dev.js`.**
-  The port compiles ahead of time and the native binary can't load user
-  code, so there is no runtime `*.dev.js` discovery. A gallery is a wasm page
-  built from the project's own modules — `tutuca new-storybook` scaffolds one,
-  `node build.mjs` builds it — and `tutuca storybook [dir] [--port <n>]
-  [--out <dir>]` serves it (static HTTP) or copies it (`--out`). Stories come
-  from the modules' own `examples`, so there is no story registry either.
+- **`tutuca test`.** `moon test` is the runner — component tests are
+  `test { ... }` blocks over the `@harness` package, see
+  [testing.md](./testing.md).
+- **`tutuca lint`.** The rules run inside `gen` (above). The questions a linter
+  would need a live component to answer — undefined fields, bad handler names —
+  are type errors in the generated module instead.
+- **A story registry.** `tutuca storybook [dir] [--port <n>] [--out <dir>]`
+  serves (or copies) a gallery that is already built: a wasm page compiled from
+  the project's own modules, scaffolded by `tutuca new-storybook` and built by
+  `node build.mjs`. The native binary loads no user code, and stories are a
+  projection of the modules' own `examples`, so there is nothing to register
+  and nothing to discover at run time.
 
 ## Global flags
 

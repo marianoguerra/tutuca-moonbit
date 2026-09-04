@@ -1,8 +1,8 @@
 # `tgc/1` — a WebAssembly component format on core wasm + GC
 
 Everything below is implemented and tested (`tgc/abi`, `tgc/emit`,
-`tgc/test/`). It replaces a Component Model format, and
-compatibility with that is not a goal — see
+`tgc/test/`). It is core wasm plus the GC proposal and nothing else — no
+Component Model, no WIT, no archive, no linear memory. See
 [`../docs/dynamic-components.md`](../docs/dynamic-components.md) for the
 practical route in, and [`SECURITY.md`](SECURITY.md) for what a loaded module
 can and cannot do.
@@ -67,13 +67,13 @@ tg_inst     vt:&tg_vt  desc:&tg_val  state:&?eq  id:i64
 Decisions worth naming:
 
 - **`ref.null` is absence; `kind 0` is the null value.** "There is no such
-  field" and "the field is null" are different answers, and the old contract
-  needed `option<value>` to keep them apart.
+  field" and "the field is null" are different answers, and a format with one
+  null needs an `option<value>` wrapper at every field to keep them apart.
 - **`tg_bytes` is UTF-8** and carries binary too. The wire, the GC type and the
   JSON encoding all agree; a UTF-16 host transcodes at its own boundary
-  rather than at every field. This ends the current `--encoding utf16` /
-  `utf8` split by making the encoding part of the type. In Wax it costs nothing
-  extra: a string literal is already `[mut i8]`.
+  rather than at every field. There is no per-module encoding choice, because
+  the encoding is part of the type. In Wax it costs nothing extra: a string
+  literal is already `[mut i8]`.
 - **Two numbers.** `tg_num` is tutuca's double; `tg_int` is the 64-bit integer
   the GC types have natively and a double cannot hold past 2^53.
 - **List and map carry capacity plus count**, because a wasm-GC array is

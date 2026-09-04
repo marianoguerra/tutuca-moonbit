@@ -44,26 +44,21 @@ component — is REFUSED by name, with the reason, and comes back as an
 - **[README.mbt.md](README.mbt.md)** — the detailed guide: the package stack,
   ahead-of-time views, the value language, the CLI, and what each backend
   adapter does. Every code block in it is compiled and run by `moon test`.
-- **[docs/tutorial.mbt.md](docs/tutorial.mbt.md)** — build an app from a
-  counter up, also executable.
-- **[docs/first_principles.mbt.md](docs/first_principles.mbt.md)** — the same
-  framework rebuilt layer by layer, if you want to know *why* it works.
-- **[skill/tutuca/messages-and-intents.md](skill/tutuca/messages-and-intents.md)**
-  — the two ways a component is reached: a message is addressed and stops at
-  one component, an intent is routed and walks until something answers.
-- **[docs/dynamic-components.md](docs/dynamic-components.md)** — the part that
-  is *not* decided before the program runs: a WebAssembly module fetched at
-  runtime, from someone you have no reason to trust, mounted into a page that
-  is already running. How to host one, and how to write one.
-- **[docs/playground-wasm.md](docs/playground-wasm.md)** — how the in-browser
-  playground compiles and runs on both backends: the string ABI, the
-  worker-per-target rule, and how to verify a change to either.
+- **[docs/](docs/)** — the guides. Start with
+  [tutorial.mbt.md](docs/tutorial.mbt.md), which builds an app from a counter
+  up; [first_principles.mbt.md](docs/first_principles.mbt.md) rebuilds the
+  framework layer by layer if you want to know *why* it works. Both are
+  executable. [dynamic-components.md](docs/dynamic-components.md) is the part
+  that is *not* decided before the program runs: a WebAssembly module fetched at
+  runtime, from someone you have no reason to trust, mounted into a page that is
+  already running.
+- **[skill/tutuca/](skill/tutuca/)** — the authoring reference an agent reads,
+  shipped inside the CLI: the spec and script languages, views, events,
+  protocols, testing and cards. `tutuca install-skill` writes it out.
 - **[tgc/SPEC.md](tgc/SPEC.md)** — the component format itself: the frozen rec
-  group, the freeze rule, the op space, the exports, and the JSON encoding. **[tgc/SECURITY.md](tgc/SECURITY.md)** is what a loaded module can
-  and cannot do, tested rather than asserted.
-- **[docs/storybook.md](docs/storybook.md)** — the gallery as a library: how a
-  project gets one over its own components, why stories are a projection of a
-  module's `examples`, and what stays behind in this repo.
+  group, the freeze rule, the op space, the exports, and the JSON encoding.
+  **[tgc/SECURITY.md](tgc/SECURITY.md)** is what a loaded module can and cannot
+  do, tested rather than asserted.
 - **[AGENTS.md](AGENTS.md)** — repo layout, tooling and testing conventions.
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — how to propose a change.
 

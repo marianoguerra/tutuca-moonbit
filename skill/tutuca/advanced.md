@@ -330,24 +330,20 @@ Notes:
 
 ## Custom collections
 
-The JS `SEQ_INFO` prototype walker does not exist in this port — a
-custom collection is any struct implementing the `@tutuca.Obj` trait,
+A custom collection is any struct implementing the `@tutuca.Obj` trait,
 chiefly `seq_entries` (what `@each` iterates, keyed) and `item`
-(seq-access reads). Full treatment with the worked `KeyedList` example
+(seq-access reads). There is nothing to register: the trait implementation IS
+the registration. Full treatment with the worked `KeyedList` example
 in [iteration.md](./iteration.md) *Custom collections — the `Obj`
 trait*.
 
-## Not in this port
+## There is no run-time module loading
 
-- **JS-side module loading** (`import()`-based CLI module input,
-  `*.dev.js` discovery) — modules are `ModuleDef` **values** and the CLI is
-  embedded in a project binary; see [cli.md](./cli.md). The storybook is
-  ported and SHIPS as a library, but as a compiled gallery whose stories are
-  a projection of your modules' own `examples` rather than scanned
-  `*.dev.js`; `tutuca new-storybook` scaffolds the page and
-  `tutuca storybook` serves what it builds. See
-  [storybook.md](./storybook.md).
-- **`SEQ_INFO` registration** — replaced by the `Obj` trait (above).
+A module is a `ModuleDef` **value** the project links, not something a CLI
+discovers on disk; see [cli.md](./cli.md). The storybook ships as a library and
+a gallery is compiled from those values — `tutuca new-storybook` scaffolds the
+page, `tutuca storybook` serves what it builds, and the stories are a projection
+of your modules' own `examples`. See [storybook.md](./storybook.md).
 
 ## Tailwind / MargaUI Class Compilation
 

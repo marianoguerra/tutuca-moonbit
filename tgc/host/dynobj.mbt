@@ -235,6 +235,13 @@ pub fn collect_superseded() -> Unit {
 /// Call once per app, after mounting it — the App subscribes its re-render in
 /// `App::new`, and `on_drained` runs subscribers in subscription order, so a
 /// later subscription is a post-render hook.
+///
+/// This is one of the two halves. A module's own children are the engine's to
+/// collect; what needs help is the handle table the `&Guest` bridge keeps. This
+/// drops the handle a successor replaced — which is every interaction, since an
+/// instance is immutable — and a row that is REMOVED is superseded by nothing,
+/// so `install_sweep` walks the root and retains what it finds. Installing one
+/// without the other leaks. `tutucard/build/check-instances.mjs` pins both.
 pub fn install_gc(tx : @transactor.Transactor) -> Unit {
   tx.on_drained(collect_superseded)
 }
