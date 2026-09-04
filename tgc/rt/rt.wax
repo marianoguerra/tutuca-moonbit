@@ -1116,8 +1116,24 @@ fn tg_item(coll: &?tg_val, key: &?tg_val) -> &?tg_val {
 
 // `.field.member` — a named member of a map-shaped value. A record is a map,
 // which is what `struct Label { text: String }` decodes to.
+//
+// A HELD INSTANCE is the other case, and it goes through the property door:
+// op 8, never the `get` slot. `get` is the private field slot, so reading
+// through it would make every field of every component readable by whoever
+// happens to hold it — and a holder is exactly the thing that holds components
+// it did not write. The declaration is the whole permission: a field with no
+// `property` beside it is private, and stays private however it is held.
+//
+// Both directions answered null before this, silently, so `.child.body` read
+// nothing and `.child.body = x` changed nothing and reported `handled: false`.
 #[export = "member"]
 fn tg_member(v: &?tg_val, name: &tg_bytes) -> &?tg_val {
+    if v != null {
+        if v!.kind == 10 {
+            let inst = (v! as &tg_comp).value;
+            return inst.vt.call(inst, 8, name, tg_no_args(), null);
+        }
+    }
     let m = tg_map_of(v);
     if m == null { return null; }
     let at = tg_map_find(m!, name);
@@ -1125,8 +1141,19 @@ fn tg_member(v: &?tg_val, name: &tg_bytes) -> &?tg_val {
     m!.entries[at]!.value
 }
 
+// The write half, and the same door: op 9 answers the SUCCESSOR instance,
+// because an instance is copy on write like everything else here. A property
+// the component did not declare writable answers null, which is the refusal.
 #[export = "with_member"]
 fn tg_with_member(v: &?tg_val, name: &tg_bytes, x: &?tg_val) -> &?tg_val {
+    if v != null {
+        if v!.kind == 10 {
+            let inst = (v! as &tg_comp).value;
+            let next = inst.vt.call(inst, 9, name, tg_no_args(), x);
+            if next == null { return null; }
+            return next;
+        }
+    }
     tg_map_put(v, tg_str(name), x)
 }
 

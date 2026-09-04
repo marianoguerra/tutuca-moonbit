@@ -979,6 +979,12 @@ pub fn source() -> String {
     #|
     #|#[export = "member"]
     #|fn tg_member(v: &?tg_val, name: &tg_bytes) -> &?tg_val {
+    #|    if v != null {
+    #|        if v!.kind == 10 {
+    #|            let inst = (v! as &tg_comp).value;
+    #|            return inst.vt.call(inst, 8, name, tg_no_args(), null);
+    #|        }
+    #|    }
     #|    let m = tg_map_of(v);
     #|    if m == null { return null; }
     #|    let at = tg_map_find(m!, name);
@@ -988,6 +994,14 @@ pub fn source() -> String {
     #|
     #|#[export = "with_member"]
     #|fn tg_with_member(v: &?tg_val, name: &tg_bytes, x: &?tg_val) -> &?tg_val {
+    #|    if v != null {
+    #|        if v!.kind == 10 {
+    #|            let inst = (v! as &tg_comp).value;
+    #|            let next = inst.vt.call(inst, 9, name, tg_no_args(), x);
+    #|            if next == null { return null; }
+    #|            return next;
+    #|        }
+    #|    }
     #|    tg_map_put(v, tg_str(name), x)
     #|}
     #|

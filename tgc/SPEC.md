@@ -95,11 +95,29 @@ put it in a list, pass it on, and call it.
 | the current format | `tgc` |
 | --- | --- |
 | a child is an opaque host token | a child is a `&tg_inst` in your own state |
-| `.rows[0].text` is refused when the card compiles | a `call_ref` on the child's `get` |
+| `.rows[0].text` is refused when the card compiles | a `call_ref` through the child's PROPERTY door |
 | a foreign component cannot live in card state at all | any instance can, whoever built it |
 | compounds are arena handles valid for one call | a value is a reference, and it lives |
 | instances leak in a growing table | the engine's GC collects them |
 | re-entering a component during a call is forbidden | core wasm has no such rule |
+
+### Reading and writing THROUGH a held instance
+
+`.child.body` is `member`, and `.child.body = x` is `with_member`, and when the
+value is a `tg_comp` both go through the property door: **op 8 to read, op 9 to
+write**, never the `get` slot.
+
+`get` is the private field slot, and a holder is precisely the thing that holds
+components it did not write — so reading through `get` would make every field of
+every component legible to whoever happened to hold it. The declaration is the
+whole permission: a field with no `property` beside it is private, and stays
+private however it is held.
+
+The write answers a SUCCESSOR instance, like every other transition here, so a
+holder that writes through its child ends up holding a different child than it
+started with. A property the component did not declare writable answers
+`ref.null`, and `ref.null` is no successor rather than a successor that quietly
+kept the old value.
 
 ## 5. Ops
 

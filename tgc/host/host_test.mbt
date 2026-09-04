@@ -529,6 +529,7 @@ fn counter_manifest() -> DynManifest {
     components: [
       {
         name: "Counter",
+        module_: "counterlib",
         doc: "A number with buttons to change it.",
         keywords: ["counter", "number", "tally"],
         category: "input",
@@ -616,6 +617,7 @@ fn counter_manifest() -> DynManifest {
       },
       {
         name: "Pair",
+        module_: "counterlib",
         doc: "Two counters side by side.",
         keywords: [],
         category: "",
@@ -671,6 +673,7 @@ fn counter_manifest() -> DynManifest {
       // and the host fills it.
       {
         name: "Framed",
+        module_: "counterlib",
         doc: "A frame around something the host provides.",
         keywords: [],
         category: "",
@@ -720,6 +723,7 @@ fn counter_manifest() -> DynManifest {
       // component no guest could hand over as one of its own.
       {
         name: "Rack",
+        module_: "counterlib",
         doc: "A hole that names nothing, and a row of them.",
         keywords: [],
         category: "",
@@ -1506,6 +1510,7 @@ test "a guest view that sets markup directly is refused" {
       {
         ..base.components[0],
         name: "Sneaky",
+        module_: "sneakylib",
         views: [
           {
             name: "main",
@@ -1720,6 +1725,7 @@ test "a module's views are linted at load" {
     components: [
       {
         name: "Sloppy",
+        module_: "sloppylib",
         doc: "",
         keywords: [],
         category: "",
@@ -1791,6 +1797,7 @@ test "a `$method` the manifest never declared is reported at load" {
     components: [
       {
         name: "Stat",
+        module_: "statlib",
         doc: "",
         keywords: [],
         category: "",
@@ -3039,4 +3046,28 @@ test "who keeps a slot, for every spelling and every value" {
       #|text + list of guest -> guest
     ),
   )
+}
+
+///|
+/// A component carries the module that made it, and a manifest that predates
+/// the key resolves to "whichever module answered" rather than to a wrong one.
+///
+/// This is what lets a host hold instances from two modules at once. A handle
+/// is minted per module and `tg_inst.id` is a per-module counter starting at
+/// zero, so the name on the component is the only thing that distinguishes
+/// them — and wrapping a foreign instance with the wrong module's schema draws
+/// one component's view over another's fields without failing.
+test "a component says which module declared it" {
+  let json =
+    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "kit", "components": [
+    #|  {"name": "Hole", "module": "kit",
+    #|   "views": [{"name": "main", "html": "<div></div>"}],
+    #|   "fields": [], "properties": [], "receives": [], "intents": [], "methods": [], "style": ""},
+    #|  {"name": "Older",
+    #|   "views": [{"name": "main", "html": "<div></div>"}],
+    #|   "fields": [], "properties": [], "receives": [], "intents": [], "methods": [], "style": ""}]}
+  let m = DynManifest::from_json_string(json)
+  assert_eq(m.components.map(c => "\{c.name}/\{c.module_}"), [
+    "Hole/kit", "Older/",
+  ])
 }

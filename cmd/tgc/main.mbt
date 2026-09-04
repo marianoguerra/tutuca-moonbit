@@ -1,6 +1,15 @@
 // `tgc` — print the canonical preamble, or compile a module that carries it.
 
 ///|
+/// A refusal is an exit code, not only a sentence.
+///
+/// It printed `rejected:` and exited 0, and wrote no output file — so a caller
+/// that checks the status saw success and went on to read whatever `.wasm` was
+/// already at that path. A stale artifact is worse than none: the build that
+/// produced it succeeded once, so nothing about it looks wrong.
+extern "c" fn process_exit(code : Int) = "exit"
+
+///|
 fn main raise {
   let args = @env.args()
   let rest = args[1:]
@@ -27,6 +36,7 @@ fn main raise {
       let bytes = @emit.compile_runtime() catch {
         e => {
           println("rejected: \{e.message()}")
+          process_exit(1)
           return
         }
       }
@@ -69,6 +79,7 @@ fn build(rest : ArrayView[String]) -> Unit raise {
   let result = @wax.compile_string(source, fname=inp) catch {
     e => {
       println("this is a tgc bug rather than an input error: \{e}")
+      process_exit(1)
       return
     }
   }
@@ -88,6 +99,7 @@ fn build(rest : ArrayView[String]) -> Unit raise {
         }
         println("  \{where_}: \{@message.to_plain_string(d.message)}")
       }
+      process_exit(1)
     }
   }
 }
@@ -127,6 +139,7 @@ fn card(rest : ArrayView[String]) -> Unit raise {
   let out = @emit.compile(source, name=stem_of(rest[1])) catch {
     e => {
       println("rejected: \{e.message()}")
+      process_exit(1)
       return
     }
   }
@@ -179,6 +192,9 @@ fn check(rest : ArrayView[String]) -> Unit {
     }
   }
   println("\{rest.length() - 1} cards, \{bad} issues")
+  if bad > 0 {
+    process_exit(1)
+  }
 }
 
 ///|

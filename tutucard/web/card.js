@@ -49,6 +49,55 @@ export const b64ToBytes = (b64) =>
 // explicit route passes.
 const ROUTE_LEGS = { 1: ["dyn"], 2: ["lex"], 3: ["dyn", "lex"], 4: ["lex", "dyn"] };
 
+// ── the instance names, PAGE-WIDE ──
+//
+// One table for every module on the page, and that is the whole of what makes
+// composition work through this bridge. It was one table per `loadGuest`, and
+// each started at 1, so a hole in module A holding a note from module B read
+// B's handle in A's table and answered A's own first instance — or nothing.
+// Two pages of that: `card-embed.js` mints a key per `<mb-card>` element, so
+// two embeds on one page already collided without any composition at all.
+//
+// The engine still owns the instance and this still only NAMES it. What it now
+// also records is who made it, because a name that does not say which module
+// it belongs to cannot be resolved by a host holding two.
+const table = new Map(); // handle -> { inst, owner }
+// …and the same instance keeps the same NAME. `onComp` runs every time a child
+// crosses, which is once per render per row, so minting a fresh handle each
+// time gave one live row two or three entries — the collector then freed the
+// ones the newest render had not just made, and the count sat at a multiple of
+// the rows rather than at the rows. A handle is an identity here, not a ticket.
+const byInstance = new Map();
+let next = 1;
+
+const tableDelete = (h) => {
+  const row = table.get(h);
+  if (row !== undefined && byInstance.get(row.inst) === h) {
+    byInstance.delete(row.inst);
+  }
+  return table.delete(h);
+};
+
+/** Name an instance, recording its owner the first time it is seen. */
+const put = (inst, owner) => {
+  const seen = byInstance.get(inst);
+  if (seen !== undefined) return seen;
+  const h = next++;
+  table.set(h, { inst, owner });
+  byInstance.set(inst, h);
+  return h;
+};
+
+const instOf = (h) => table.get(h)?.inst ?? null;
+const ownerOf = (h) => table.get(h)?.owner ?? "";
+
+/** Forget everything a module owns. Called before it is instantiated again. */
+const evictOwner = (owner) => {
+  for (const [h, row] of [...table.entries()]) {
+    if (row.owner === owner) tableDelete(h);
+  }
+};
+
 /**
  * Instantiate a compiled card and install the guest surface for `cardguest.mbt`.
  *
@@ -62,57 +111,58 @@ export async function loadGuest(bytes, key = "default", { runtime } = {}) {
   const rt = runtime ?? (await loadRuntime());
 
   // Instances by integer, because MoonBit's js target passes integers across
-  // this seam. The engine owns the instance; this only names it.
-  const table = new Map();
-  // …and the same instance keeps the same NAME. `onComp` runs every time a
-  // child crosses, which is once per render per row, so minting a fresh handle
-  // each time gave one live row two or three entries — the collector then freed
-  // the ones the newest render had not just made, and the count sat at a
-  // multiple of the rows rather than at the rows. A handle is an identity here,
-  // not a ticket.
-  const byInstance = new Map();
-  const table_delete = (h) => {
-    const inst = table.get(h);
-    if (inst !== undefined && byInstance.get(inst) === h) byInstance.delete(inst);
-    return table.delete(h);
-  };
-  let next = 1;
-  const put = (inst) => {
-    const seen = byInstance.get(inst);
-    if (seen !== undefined) return seen;
-    const h = next++;
-    table.set(h, inst);
-    byInstance.set(inst, h);
-    return h;
-  };
+  // this seam. The table is page-wide (see above); this module owns the rows it
+  // mints, which is what `evictOwner` and `dropInstance` go by.
+  const mine = (inst) => put(inst, key);
 
   // A CHILD crossing to the host. The host cannot hold a GC reference, so it
   // holds a handle and asks for the instance back through
-  // `Bundle::wrap_instance` — which is the marker `cardguest.mbt` already reads,
+  // `Module::wrap_instance` — which is the marker `cardguest.mbt` already reads,
   // and the reason a card can put a sibling in a field at all.
   //
   // The component NAME travels with it because a handle says which instance,
-  // not which kind, and the host needs the kind to wrap it.
+  // not which kind, and the host needs the kind to wrap it. The MODULE travels
+  // beside it for the same reason one step out: a component name is only unique
+  // within a module, and the host resolving `Note` against whichever module
+  // happened to be decoding is how a note came back wearing a hole's schema.
+  //
+  // Read off the instance's own descriptor rather than assumed to be `key`.
+  // An instance answering a call on THIS module may have been made by another
+  // one — that is what holding a foreign component means — and the descriptor
+  // is the only thing that travels with it.
   const V = makeValues(rt, {
     onComp: (inst) => ({
-      $dyn: { handle: put(inst), comp: V.text(instComponent(inst)) },
+      $dyn: {
+        handle: mine(inst),
+        comp: V.text(instDescKey(inst, "comp")),
+        module: V.text(instDescKey(inst, "module")),
+      },
     }),
-    ofHandle: (h) => table.get(h) ?? null,
+    ofHandle: instOf,
   });
 
-  // A component's own name, off the instance's descriptor.
+  // Who this instance is and who made it, off the instance's own descriptor.
   //
   // `desc` is that component's slice of the module's manifest, so the name is
-  // under `name` — the manifest's spelling. There is one description of a
-  // component now and this reads it, rather than a second small map written
-  // beside it that could say something else.
-  const instComponent = (inst) => {
+  // under `name` and the module under `module` — the manifest's spellings.
+  // There is one description of a component now and this reads it, rather than
+  // a second small map written beside it that could say something else.
+  //
+  // `comp` is spelled `name` on the wire because that is what the manifest
+  // calls it; the caller asks for it by the role it plays here.
+  const DESC_KEY = { comp: "name", module: "module" };
+
+  const instDescKey = (inst, role) => {
+    const want = DESC_KEY[role];
     const desc = rt.inst_desc(inst);
     for (let i = 0; i < rt.map_len(desc); i++) {
-      if (V.text(rt.map_key(desc, i)) === "name") {
+      if (V.text(rt.map_key(desc, i)) === want) {
         return rt.as_str(rt.map_val(desc, i));
       }
     }
+    // A module built before the key existed. Empty rather than `key`, because
+    // "I do not know" and "the module doing the decoding" are different
+    // answers, and guessing the second is the bug this key was added to end.
     return rt.bytes_new(0);
   };
 
@@ -210,21 +260,30 @@ export async function loadGuest(bytes, key = "default", { runtime } = {}) {
     return V.ofJson(m);
   };
 
+  // Note this dispatches through the INSTANCE's vtable, not this module's
+  // exports, so a handle naming another module's instance calls that module —
+  // which is what makes a hole holding a foreign component work at all.
   const call = (h, op, name, args, v = null) => {
-    const inst = table.get(h);
+    const inst = instOf(h);
     if (!inst) return null;
     return rt.call_op(inst, op, V.bytes(name), V.vals(args), v);
   };
 
-  // A NEW table under this key, so whatever the collector recorded about the
-  // last one is a set of handles into a table that no longer exists. Left in
-  // place it is not merely stale, it is wrong: handles restart at 1 here, so
-  // an old record names live rows of the new table and pins them forever. The
-  // sweep keeps the UNION of every app registered under a key, so one drive
-  // per key never notices and a second one leaks the first one's whole tree.
+  // This module is being instantiated again, so every instance it had made is
+  // dead: the rows naming them are the leak the playground would otherwise grow
+  // one of per keystroke. Only ITS rows — the table is page-wide now, and
+  // another module's instances outlive this one's reload.
   //
-  // Guarded because `loadGuest` is drivable with no page at all — `tgc/test`
-  // hands in its own runtime and installs no `__tutucard`.
+  // A component of another module that was holding one of these gets `null`
+  // back and renders empty. That is the honest outcome and it is worth saying
+  // out loud: reloading a card does not migrate what other cards were holding,
+  // it orphans it.
+  evictOwner(key);
+
+  // Whatever the collector recorded about this module's last instantiation
+  // names rows that no longer exist. Guarded because `loadGuest` is drivable
+  // with no page at all — `tgc/test` hands in its own runtime and installs no
+  // `__tutucard`.
   globalThis.__tutucard?.resetSweep?.(key);
 
   globalThis.__cardguest = globalThis.__cardguest ?? {};
@@ -234,18 +293,23 @@ export async function loadGuest(bytes, key = "default", { runtime } = {}) {
       logLines.length = 0;
       return out;
     },
+    // Each of these three is scoped to the rows THIS module owns. The table is
+    // page-wide, and a module freeing a name it did not mint would collect an
+    // instance another module is still rendering.
     dropInstance(handle) {
-      table_delete(handle);
+      if (ownerOf(handle) === key) tableDelete(handle);
     },
     size() {
-      return table.size;
+      let n = 0;
+      for (const row of table.values()) if (row.owner === key) n++;
+      return n;
     },
     retain(handlesJson) {
       const keep = new Set(JSON.parse(handlesJson));
       let gone = 0;
-      for (const h of [...table.keys()]) {
-        if (!keep.has(h)) {
-          table_delete(h);
+      for (const [h, row] of [...table.entries()]) {
+        if (row.owner === key && !keep.has(h)) {
+          tableDelete(h);
           gone++;
         }
       }
@@ -253,10 +317,10 @@ export async function loadGuest(bytes, key = "default", { runtime } = {}) {
     },
     create(component, argsJson) {
       const inst = ex["tgc.make"](V.bytes(component), V.ofJson(JSON.parse(argsJson)));
-      return inst ? put(inst) : -1;
+      return inst ? mine(inst) : -1;
     },
     getField(handle, name) {
-      const inst = table.get(handle);
+      const inst = instOf(handle);
       if (!inst) return "";
       const v = rt.get_field(inst, V.bytes(name));
       const j = V.toJson(v);
@@ -272,7 +336,7 @@ export async function loadGuest(bytes, key = "default", { runtime } = {}) {
         // answer. `unhandled` and `unchanged` are the same answer to this host
         // — no successor — and the card compiler does not distinguish them.
         handled: answer !== null,
-        next: answer === null ? null : put(rt.as_inst(answer)),
+        next: answer === null ? null : mine(rt.as_inst(answer)),
         msgs: control,
       });
       control = [];
@@ -307,7 +371,7 @@ export async function loadGuest(bytes, key = "default", { runtime } = {}) {
       return JSON.stringify(
         answer === null
           ? { tag: "missing" }
-          : { tag: "changed", next: put(rt.as_inst(answer)) },
+          : { tag: "changed", next: mine(rt.as_inst(answer)) },
       );
     },
     withField(handle, name, valueJson) {
@@ -318,7 +382,7 @@ export async function loadGuest(bytes, key = "default", { runtime } = {}) {
         [],
         V.ofJson(JSON.parse(valueJson)),
       );
-      return answer === null ? -1 : put(rt.as_inst(answer));
+      return answer === null ? -1 : mine(rt.as_inst(answer));
     },
   };
   // `tgc.describe` is the manifest, as a value. Read once, here, so a caller

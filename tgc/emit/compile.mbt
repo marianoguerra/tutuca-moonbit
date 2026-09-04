@@ -692,7 +692,7 @@ fn manifest_value(
       })
     }),
   )
-  out["components"] = List(comps.map(c => component_value(c, refusals)))
+  out["components"] = List(comps.map(c => component_value(c, name, refusals)))
   // Not part of the host's shape; carried so a playground can show them beside
   // what did compile. A host ignores what it does not read.
   out["refusals"] = List(
@@ -762,7 +762,11 @@ fn bindings_value(bs : Array[@statedef.ProtocolBinding]) -> @tutuca.Value {
 ///|
 /// One component's half of it — and the whole of what an INSTANCE says about
 /// itself, which is why `<C>_desc()` is this same value.
-fn component_value(c : Comp, refusals : Array[@check.Refusal]) -> @tutuca.Value {
+fn component_value(
+  c : Comp,
+  module_name : String,
+  refusals : Array[@check.Refusal],
+) -> @tutuca.Value {
   // The names the module ANSWERS TO, which for a message or an intent is the
   // schema's runtime name and not the declaration's own spelling — the same
   // resolution the dispatch does, because a manifest that advertised a name
@@ -780,6 +784,14 @@ fn component_value(c : Comp, refusals : Array[@check.Refusal]) -> @tutuca.Value 
   let strs = (xs : Array[String]) => @tutuca.Value::List(xs.map(x => Str(x)))
   let out : Map[String, @tutuca.Value] = Map([])
   out["name"] = Str(c.name)
+  // WHO MADE IT, and the reason it is on the component rather than only on the
+  // manifest around it: `<C>_desc()` is this same value, so this is the only
+  // place an INSTANCE can say which module it came from. A host holding
+  // instances from two modules has nothing else to tell them apart — a handle
+  // is per-module, and `tg_inst.id` is a per-module counter starting at zero —
+  // so without this the host wraps a foreign instance with the wrong module's
+  // schema and renders one component's view over another's fields.
+  out["module"] = Str(module_name)
   out["doc"] = Str(c.def.doc.unwrap_or(""))
   out["keywords"] = List([])
   out["category"] = Str("")

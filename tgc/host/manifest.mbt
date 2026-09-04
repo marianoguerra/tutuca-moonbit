@@ -114,6 +114,15 @@ pub(all) struct DynInitDef {
 ///|
 pub(all) struct DynComponentDef {
   name : String
+  /// The module that declared it, as the module's own manifest spells it.
+  ///
+  /// A component's descriptor IS this record for the guest — `<C>_desc()` is
+  /// the same value — so this is the only place an instance can say where it
+  /// came from. A host holding instances from two modules has nothing else to
+  /// tell them apart, and wrapping one with the other's schema renders one
+  /// component's view over another's fields. Empty for a module whose manifest
+  /// predates the key, which resolves to "whichever module answered".
+  module_ : String
   /// What this component IS. A catalog with nothing but names is a catalog
   /// nobody — person or model — can choose from.
   doc : String
@@ -760,6 +769,7 @@ pub fn DynManifest::from_json_string(
     }
     components.push({
       name: str_field(c, "name"),
+      module_: opt_str(c, "module"),
       doc: opt_str(c, "doc"),
       keywords: str_array(c, "keywords"),
       category: opt_str(c, "category"),

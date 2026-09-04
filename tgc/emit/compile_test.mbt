@@ -163,3 +163,46 @@ test "a sendAt key read from live state is refused" {
     msg=out.refusals[0].reason,
   )
 }
+
+///|
+/// Every component says which module made it, and says it on the COMPONENT
+/// rather than only on the manifest around it.
+///
+/// `<C>_desc()` is this same value, so this is the only place an instance can
+/// answer "where did you come from". Without it a host holding instances from
+/// two modules has nothing to tell them apart — a handle is minted per module
+/// and `tg_inst.id` is a per-module counter starting at zero — and wrapping a
+/// foreign instance with the wrong module's schema renders one component's view
+/// over another's fields, silently and in both directions.
+test "a component's descriptor names the module that made it" {
+  let card =
+    #|<script type="tutuca/spec">
+    #|  state Hole { child: Instance }
+    #|  state Text { body: String }
+    #|</script>
+    #|<template id="Hole:main" data-root><x render=".child"></x></template>
+    #|<template id="Text:main"><b @text=".body"></b></template>
+  let out = @emit.compile(card, name="kit")
+  let str_at = (j : Json, key : String) => {
+    match j {
+      Object(o) =>
+        match o.get(key) {
+          Some(String(s)) => s
+          _ => ""
+        }
+      _ => ""
+    }
+  }
+  assert_eq(str_at(out.manifest, "moduleName"), "kit")
+  // Both of them, not just the root: a card's second component crosses a
+  // boundary exactly as often as its first.
+  let named = match out.manifest {
+    Object(m) =>
+      match m.get("components") {
+        Some(Array(cs)) => cs.map(c => (str_at(c, "name"), str_at(c, "module")))
+        _ => []
+      }
+    _ => []
+  }
+  assert_eq(named, [("Hole", "kit"), ("Text", "kit")])
+}

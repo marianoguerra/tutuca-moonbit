@@ -56,6 +56,7 @@ pub(all) struct DispatchResult {
 
 pub(all) struct DynComponentDef {
   name : String
+  module_ : String
   doc : String
   keywords : Array[String]
   category : String

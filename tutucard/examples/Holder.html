@@ -1,8 +1,9 @@
 <script type="tutuca/spec">
   /// A hole that names nothing: `child` is a bare `component`, so what goes in
   /// it is anybody's — a sibling declared below, or something from outside the
-  /// card entirely. A card cannot BUILD one, and does not have to: what makes
-  /// a holder work is that a host can PUT one here and the card can render it.
+  /// card entirely. A card can build a SIBLING and cannot build a stranger, and
+  /// does not have to: what makes a holder work is that a host can PUT one here
+  /// and the card renders it without knowing which of the two it got.
   state Hole {
     /// The hole.
     child: Instance
@@ -29,6 +30,19 @@
 </script>
 
 <script type="tutuca/script" for="Hole">
+  /// Put one of our own in the hole.
+  ///
+  /// A card CAN build a sibling — `new Text` is the same declaration the spec
+  /// block above makes — and it is only a component from ANOTHER module that a
+  /// host has to hand over. That is what makes the scenes below possible at
+  /// all: a scene seeds fields from JSON, and JSON has no way to spell an
+  /// instance, so the card has to be able to make its own.
+  receive fill(body) {
+    new Text
+    .child = cur
+    .child.body = body
+  }
+
   /// Write a member of the child this hole holds.
   ///
   /// Not a spine rebuild and never was — the instance belongs to the HOST and
@@ -39,6 +53,37 @@
     .child.body = to
     .kept = 'wrote'
   }
+</script>
+
+<script type="tutuca/test">
+{
+  "a hole holds what it was given, and says so": {
+    "component": "Hole",
+    "steps": [
+      { "expect": "count", "at": "span.text", "is": 0 },
+      { "send": "fill", "args": ["first"] },
+      { "expect": "text", "at": "span.text", "is": "first" },
+      { "expect": "text", "at": "b.kept", "is": "" }
+    ]
+  },
+  "a holder writes THROUGH the child, and the child keeps its own view": {
+    "component": "Hole",
+    "steps": [
+      { "send": "fill", "args": ["before"] },
+      { "expect": "text", "at": "span.text", "is": "before" },
+      { "send": "rename", "args": ["after"] },
+      { "expect": "text",  "at": "span.text", "is": "after" },
+      { "expect": "state", "at": ".kept", "is": "wrote" }
+    ]
+  },
+  "an empty hole refuses the write rather than pretending": {
+    "component": "Hole",
+    "steps": [
+      { "send": "rename", "args": ["nobody"] },
+      { "expect": "state", "at": ".kept", "is": "" }
+    ]
+  }
+}
 </script>
 
 <template id="Hole:main"><div class="hole"><x render=".child"></x><b class="kept" @text=".kept"></b></div></template>
