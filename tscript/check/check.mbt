@@ -323,12 +323,25 @@ fn C::view_names(self : C, decls : Array[@tscript.Decl]) -> Unit {
     }
   }
   for name, _ in self.surface.inputs {
-    if declared.contains(name) || self.addresses_a_field(name) {
+    if declared.contains(name) {
       continue
+    }
+    // A mutator SPELLING is not an answer, and until 0.48 it was: the name
+    // fell through to a generated mutator, so this rule skipped it. The
+    // mutators are gone and the fall-through with them, which turns the old
+    // exemption inside out — those are now the names most likely to be dead,
+    // because they are the ones that used to work. So it fires, and what the
+    // shape is still good for is naming the RIGHT repair: a property action,
+    // not a handler.
+    let repair = match mutator_shape(self.def, name) {
+      Some((verb, name_of)) =>
+        "`\{name}` is the generated `\{verb}` mutator's name for `\{name_of}`, and generated mutators stopped answering dispatches in 0.48 — \{mutator_repair(verb, name_of)}, or answer it here with `receive \{name}(…) { … }`"
+      None =>
+        "write `receive \{name}(…) { forward }` to dispatch it as an intent, or `receive \{name}(…) { … }` to answer it here"
     }
     self.warn(
       "NO_VIEW_HANDLER",
-      "the view sends `\{name}`, and this block neither answers it nor forwards it — write `receive \{name}(…) { forward }` to dispatch it as an intent, or `receive \{name}(…) { … }` to answer it here",
+      "the view sends `\{name}`, and this block neither answers it nor forwards it — \{repair}",
       // The block has no span for a name it does not mention, so the finding
       // points at the block's start. Where the name IS written is the view,
       // and this package cannot see one.
@@ -338,33 +351,75 @@ fn C::view_names(self : C, decls : Array[@tscript.Decl]) -> Unit {
 }
 
 ///|
-/// Whether `name` looks like a generated mutator over a declared field.
+/// The generated-mutator shape of `name`, as `(verb, member)`, or None.
 ///
-/// Deliberately CONSERVATIVE, and deliberately not a copy of
-/// `component/gen_mutators`' verb table. This package imports `tscript` and
-/// `statedef` and nothing else, so it cannot see that table, and a second copy
-/// of a list is exactly how two lists drift apart. What it can see is that
-/// every generated name is built from a field's name capitalized
-/// (`@tutuca.mutator_name`) — `setTitle`, `titleLen`, `removeInItemsAt` — so a
-/// name that does not contain one is certainly not a mutator, and one that
-/// does might be.
+/// EXACT rather than conservative, and that is a change of direction. While a
+/// generated mutator answered the name, guessing wide and staying silent was
+/// the safe error — a warning on a name that worked is a warning people learn
+/// to skip. Nothing answers these now, so the costly error flipped: a name
+/// this fails to recognize is not a missed warning, it is a warning that names
+/// the wrong repair. `set` + `title` is `setTitle` and nothing else, so this
+/// asks `@tutuca.mutator_name` rather than looking for a capitalized substring
+/// — `myTextArea` contains `Text` and is not a mutator for `text`.
 ///
-/// Erring toward silence is this package's governing rule: unknown is not
-/// wrong. A missed mutator here is a warning nobody wanted; a false one is a
-/// warning that teaches people to ignore the rule.
-fn C::addresses_a_field(self : C, name : String) -> Bool {
-  for f in self.def.fields {
-    if f.name.is_empty() {
-      continue
-    }
-    let capped = f.name[0:1].to_owned().to_upper() + f.name[1:].to_owned()
-    // `<field>Len` is the one generated name that does NOT capitalize, so it
-    // is the one that has to be spelled out here.
-    if name.contains(capped) || name == f.name + "Len" {
-      return true
+/// The verb list is `component/gen_mutators`' and is written out because this
+/// package imports `tscript` and `statedef` and nothing else. Its one reader
+/// beyond this file is `check_stale_mutators`, which asks the same question
+/// from the other side — a message DECLARED with a mutator's name rather than
+/// a message SENT with one — and both must answer it the same way.
+fn mutator_shape(def : @statedef.StateDef, name : String) -> (String, String)? {
+  let verbs = [
+    "set", "reset", "toggle", "pushIn", "insertIn", "setIn", "addIn", "deleteIn",
+    "removeIn", "hasIn", "toggleIn",
+  ]
+  for name_of in mutable_members(def) {
+    for verb in verbs {
+      // Both spellings, because `component()` generates both: `pushInItems`
+      // takes no key and `insertInItemsAt` takes one, and the `At` is part of
+      // the generated name rather than of the verb.
+      let bare = @tutuca.mutator_name(verb, name_of)
+      if name == bare || name == bare + "At" {
+        return Some((verb, name_of))
+      }
     }
   }
-  false
+  None
+}
+
+///|
+/// Every name a mutator could have been generated over: fields first, then the
+/// properties that are not already one.
+fn mutable_members(def : @statedef.StateDef) -> Array[String] {
+  let members : Array[String] = []
+  for f in def.fields {
+    members.push(f.name)
+  }
+  for p in def.properties {
+    if !members.contains(p.name) {
+      members.push(p.name)
+    }
+  }
+  members
+}
+
+///|
+/// The property action that replaces a generated mutator, spelled where the
+/// spelling is known.
+///
+/// `set` and `toggle` are written out because they are the two an author reads
+/// most and the two whose form is unambiguous. The collection verbs take a key
+/// or an index that this cannot see — `pushIn` over `items` is `.items.push v`
+/// at one call site and something else at another — so they get the honest
+/// sentence rather than a guess an author would paste.
+fn mutator_repair(verb : String, name_of : String) -> String {
+  match verb {
+    "set" => "write `.\{name_of} = v` in the view where it is sent"
+    "toggle" =>
+      "write `.\{name_of} = not .\{name_of}` in the view where it is sent"
+    "reset" => "write `.\{name_of} = default` in the view where it is sent"
+    _ =>
+      "write the property action on `.\{name_of}` in the view where it is sent"
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -429,13 +484,13 @@ fn C::decl(self : C, d : @tscript.Decl) -> Unit {
         None =>
           self.say(
             "NO_PROPERTY",
-            "`get {d.name}` names no property in the spec block",
+            "`get \{d.name}` names no property in the spec block",
             d.name_span,
           )
         Some(p) if p.getter is Some(_) =>
           self.say(
             "PROPERTY_ALREADY_BACKED",
-            "property `{d.name}` already names a backing field for `get`, so it cannot also have a complex getter",
+            "property `\{d.name}` already names a backing field for `get`, so it cannot also have a complex getter",
             d.name_span,
           )
         _ => ()
@@ -445,19 +500,19 @@ fn C::decl(self : C, d : @tscript.Decl) -> Unit {
         None =>
           self.say(
             "NO_PROPERTY",
-            "`set {d.name}` names no property in the spec block",
+            "`set \{d.name}` names no property in the spec block",
             d.name_span,
           )
         Some(p) if !p.writable =>
           self.say(
             "READ_ONLY_PROPERTY",
-            "property `{d.name}` did not opt into `set`",
+            "property `\{d.name}` did not opt into `set`",
             d.name_span,
           )
         Some(p) if p.setter is Some(_) =>
           self.say(
             "PROPERTY_ALREADY_BACKED",
-            "property `{d.name}` already names a backing field for `set`, so it cannot also have a complex setter",
+            "property `\{d.name}` already names a backing field for `set`, so it cannot also have a complex setter",
             d.name_span,
           )
         _ => ()
@@ -795,7 +850,8 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
     SEffect(name~, args~, span~, ..) => {
       if self.decl_kind is DSet {
         self.say(
-          "PROPERTY_EFFECT", "a property setter is synchronous and pure; move `{name}` to a message handler",
+          "PROPERTY_EFFECT",
+          "a property setter is synchronous and pure; move `\{name}` to a message handler",
           span,
         )
       }
@@ -1681,48 +1737,25 @@ pub fn check_stale_mutators(
   claimed : Array[String],
 ) -> Array[Finding] {
   let out : Array[Finding] = []
-  // The verbs `component()` generated, from `gen_mutators`.
-  let verbs = [
-    "set", "reset", "toggle", "pushIn", "insertIn", "setIn", "addIn", "deleteIn",
-    "removeIn", "hasIn", "toggleIn",
-  ]
-  let members : Array[String] = []
-  for f in def.fields {
-    members.push(f.name)
-  }
-  for p in def.properties {
-    if !members.contains(p.name) {
-      members.push(p.name)
-    }
-  }
   for m in def.receive {
     if claimed.contains(m.name) || claimed.contains(m.source_name) {
       continue
     }
-    for name_of in members {
-      for verb in verbs {
-        if m.name != @tutuca.mutator_name(verb, name_of) {
-          continue
-        }
-        let repair = if verb == "set" {
-          "write `.\{name_of} = v` where the view sends it"
-        } else if verb == "toggle" {
-          "write `.\{name_of} = not .\{name_of}` where the view sends it"
-        } else {
-          "write the property action where the view sends it"
-        }
-        out.push({
-          code: "STALE_MUTATOR_MESSAGE",
-          message: "`\{m.name}` is the generated `\{verb}` mutator's name for `\{name_of}`, and generated mutators stopped answering dispatches in 0.48 — so this declares a message nothing answers unless you wrote a handler for it. Delete the declaration and \{repair}, or keep it and answer it",
-          severity: SWarning,
-          // A `MsgDef` carries no span — a handle block's names parse into a
-          // table rather than into positions — so this carries none either,
-          // and the finding is located by the component it names. `gen` and
-          // `check_card` both prefix it with that.
-          span: { start: 0, end_: 0, },
-        })
-      }
-    }
+    // The SAME question `NO_VIEW_HANDLER` asks about a name the views send,
+    // asked here about a name the spec declares. One helper for both, because
+    // two spellings of "is this a mutator's name" is how a card gets told to
+    // write a property action by one rule and a handler by the other.
+    guard mutator_shape(def, m.name) is Some((verb, name_of)) else { continue }
+    out.push({
+      code: "STALE_MUTATOR_MESSAGE",
+      message: "`\{m.name}` is the generated `\{verb}` mutator's name for `\{name_of}`, and generated mutators stopped answering dispatches in 0.48 — so this declares a message nothing answers unless you wrote a handler for it. Delete the declaration and \{mutator_repair(verb, name_of)}, or keep it and answer it",
+      severity: SWarning,
+      // A `MsgDef` carries no span — a handle block's names parse into a
+      // table rather than into positions — so this carries none either,
+      // and the finding is located by the component it names. `gen` and
+      // `check_card` both prefix it with that.
+      span: { start: 0, end_: 0, },
+    })
   }
   out
 }

@@ -6,6 +6,80 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.50.0] - 2026-09-04
+
+Two bugs found from the outside and one found by looking where they pointed.
+`NO_VIEW_HANDLER`'s change is breaking for anyone whose card leaned on the
+exemption, which is why this takes the minor.
+
+### A mutator spelling no longer silences `NO_VIEW_HANDLER`
+
+The rule skipped any view name that addressed a declared field, because until
+0.48 a generated mutator answered it: `@on.input="setText e.value"` needed no
+handler, and warning about it would have been wrong.
+
+0.48 deleted the mutators. The exemption survived them, and it is now backwards
+— those are the names MOST likely to be dead, because they are the ones that
+used to work. A consumer's `Textarea` had exactly this shape: three fields, a
+template, no script block, `setText` declared nowhere and answered nowhere. It
+rendered, took focus, and dropped every keystroke since 0.48, through a green
+suite, a clean `gen` and a clean `moon check --deny-warn`.
+
+The shape is still read, and now it picks the REPAIR rather than the silence:
+
+    the view sends `setName`, and this block neither answers it nor forwards
+    it — `setName` is the generated `set` mutator's name for `name`, and
+    generated mutators stopped answering dispatches in 0.48 — write
+    `.name = v` in the view where it is sent, or answer it here with
+    `receive setName(…) { … }`
+
+Recognition went from a capitalized-substring guess to `@tutuca.mutator_name`,
+because the costly error flipped with the exemption. While a mutator answered,
+guessing wide and staying quiet was safe; now a name it fails to place is a
+warning that names the wrong fix. `myTextArea` contains `Text` and is not a
+mutator for `text`. `check_stale_mutators` asks the same question from the
+other side — a name DECLARED rather than SENT — and both now read one helper,
+so a card cannot be told to write a property action by one rule and a handler
+by the other.
+
+**Before you upgrade:** this fires on cards that were quiet. Every one it names
+was doing nothing when clicked. Measured over this repo's 21 cards and 55
+dispatches, the delta is zero — the exemption was concealing nothing here, which
+is why it took a consumer to find it.
+
+### Six diagnostics printed `{d.name}` instead of a name
+
+MoonBit interpolation is `\{expr}`; a bare `{expr}` is legal text. The whole
+property-checking family was missing the backslash:
+
+    [error] NO_PROPERTY: `get {d.name}` names no property in the spec block
+
+`NO_PROPERTY` (both arms), `PROPERTY_ALREADY_BACKED` (both), `READ_ONLY_PROPERTY`
+and `PROPERTY_EFFECT` — the six diagnostics an author meets while writing a
+`property { }` block, which as a group could not say which property they meant.
+Reported independently by two consumers.
+
+The suite could not have caught it: nothing asserted a message here, and a code
+is a constant. Those six messages are now pinned by text, and `just ci` runs
+`scripts/check-diagnostics.mjs`, a whole-repo ban on unescaped `{ident}` in a
+string literal with three named exemptions (all scaffold templates). The gate
+was verified by putting one bug back and watching it fail.
+
+### `Component` is gone; the type is `Instance`
+
+`Component` was reserved as a builtin type name and accepted in
+`Component[protocol X]`, but `resolve` had no arm for it — so it could be
+neither used nor shadowed, and the "unknown type" message listing the builtins
+already omitted it. One spelling now. `tutucard/examples/Addressing.html` said
+`Map[String, Component]` and had therefore never parsed; it says `Instance`.
+
+### `tgc check <card.html>...`
+
+`check_card` over one or more cards, printing every issue. `tgc card` compiles
+and so shows only what stops a build; a warning nobody prints is a warning
+nobody has. This is how the card corpus gets audited after a rule changes, and
+it is what found the broken example above.
+
 ## [0.49.5] - 2026-09-04
 
 Three findings from a second consumer port (tutuca-components, 0.43.0 →

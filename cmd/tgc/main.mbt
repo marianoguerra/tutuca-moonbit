@@ -19,6 +19,7 @@ fn main raise {
     }
     "build" => build(rest)
     "card" => card(rest)
+    "check" => check(rest)
     // The runtime, from its EMBEDDED source rather than from `rt.wax`. It is
     // the route a page takes, so it is the route worth being able to run.
     "runtime" => {
@@ -126,6 +127,45 @@ fn card(rest : ArrayView[String]) -> Unit raise {
 }
 
 ///|
+/// `check_card` over one or more cards, printing every issue.
+///
+/// A warning does not stop `compile`, so `tgc card` never shows one — and a
+/// warning nobody prints is a warning nobody has. This is how the corpus gets
+/// audited after a rule changes: run it over every card in the repo and read
+/// what moved.
+fn check(rest : ArrayView[String]) -> Unit {
+  guard rest.length() >= 2 else {
+    println("usage: tgc check <card.html>...")
+    return
+  }
+  let mut bad = 0
+  for i in 1..<rest.length() {
+    let path = rest[i]
+    let source = @fs.read_file_to_string(path) catch {
+      _ => {
+        println("\{path}: cannot read")
+        bad = bad + 1
+        continue
+      }
+    }
+    let checked = @emit.check_card(source, name=stem_of(path)) catch {
+      e => {
+        println("\{path}: rejected: \{e.message()}")
+        bad = bad + 1
+        continue
+      }
+    }
+    for issue in checked.issues {
+      println(
+        "\{path}: \{issue.severity} \{issue.comp} [\{issue.code}] \{issue.message}",
+      )
+      bad = bad + 1
+    }
+  }
+  println("\{rest.length() - 1} cards, \{bad} issues")
+}
+
+///|
 fn stem_of(path : String) -> String {
   let parts = path.split("/")
   let mut last = path
@@ -155,5 +195,6 @@ fn usage() -> Unit {
   println("  tgc preamble [--wax|--wat]   print the canonical type section")
   println("  tgc build <in.wax> <out.wasm>")
   println("  tgc card <card.html> <out.wasm>")
+  println("  tgc check <card.html>...          report without compiling")
   println("  tgc runtime [out.wasm]        compile the embedded runtime")
 }

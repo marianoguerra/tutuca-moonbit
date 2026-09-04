@@ -873,30 +873,45 @@ test "NO_VIEW_HANDLER names both fixes, and is not fatal" {
 }
 
 ///|
-test "a generated mutator answers a view name, so it is not reported" {
-  // The checker cannot see `component/gen_mutators`' verb table, so it asks
-  // the conservative question instead: does the name address a declared field?
-  // Erring toward silence is this package's governing rule.
+test "a mutator spelling is reported, and names the property action" {
+  // The premise this test used to hold — "a generated mutator answers it, so
+  // stay quiet" — is what 0.48 deleted. These are now the names MOST likely to
+  // be dead, because they are the ones that used to work without a handler.
   assert_eq(
     codes_with_views("receive resetTo(n) { .count = n }", ["setCount"]),
-    [],
-  )
-  assert_eq(
-    codes_with_views("receive resetTo(n) { .count = n }", ["countLen"]),
-    [],
-  )
-  assert_eq(
-    codes_with_views("receive resetTo(n) { .count = n }", ["removeInItemsAt"]),
-    [],
+    ["NO_VIEW_HANDLER"],
   )
   assert_eq(
     codes_with_views("receive resetTo(n) { .count = n }", ["toggleOk"]),
-    [],
+    ["NO_VIEW_HANDLER"],
   )
-  // A name that addresses no field is not a mutator, whatever it looks like.
+  // `At` is part of the generated name, not of the verb.
+  assert_eq(
+    codes_with_views("receive resetTo(n) { .count = n }", ["removeInItemsAt"]),
+    ["NO_VIEW_HANDLER"],
+  )
+  // A name that is no mutator of any member is reported too — the rule is the
+  // same one, and only the repair it names differs.
   assert_eq(
     codes_with_views("receive resetTo(n) { .count = n }", ["setWidget"]),
     ["NO_VIEW_HANDLER"],
+  )
+}
+
+///|
+test "the repair a mutator spelling names is a property action" {
+  let inputs : Map[String, Array[@tutuca.Ty?]] = Map([])
+  inputs["setName"] = [None]
+  let found = @check.check(
+    @tscript.parse_script("receive resetTo(n) { .count = n }"),
+    def_of(schema()),
+    surface={ inputs, knows_views: true, open_senders: false, comps: [], },
+  )
+  assert_eq(found.length(), 1)
+  assert_eq(found[0].severity, SWarning)
+  assert_eq(
+    found[0].message,
+    "the view sends `setName`, and this block neither answers it nor forwards it — `setName` is the generated `set` mutator's name for `name`, and generated mutators stopped answering dispatches in 0.48 — write `.name = v` in the view where it is sent, or answer it here with `receive setName(…) { … }`",
   )
 }
 
@@ -1059,4 +1074,71 @@ test "an answer arm for a notified name never fires, and is reported" {
 test "a write into a child is a path this component may address" {
   assert_eq(codes("receive focusIt { .row.text = 'x' }"), [])
   assert_eq(codes("receive focusIt { .row.n = .count }"), [])
+}
+
+// -- the property block's diagnostics ---------------------------------------
+//
+// Every one of these asserts the MESSAGE, not the code, and that is the whole
+// point of the group: all six shipped in 0.49.5 printing a literal `{d.name}`
+// because MoonBit interpolation is `\{…}` and the backslash was missing. A
+// suite that asserts codes cannot see that — the code is a constant — so the
+// family that names a subject is tested by its wording or not at all.
+// Reported independently by two consumers, neither of whom could tell from the
+// diagnostic which `get` in their spec block was the wrong one.
+
+///|
+fn prop_messages(spec : String, block : String) -> Array[String] raise {
+  @check.check(@tscript.parse_script(block), def_of(spec)).map(f => f.message)
+}
+
+///|
+/// A spec whose one property is FIELD-BACKED, so nothing else in the block is
+/// missing: a `{ get }` with no body of its own reports its own finding, which
+/// would ride along in every assertion below and hide the one being made.
+fn backed_spec() -> String {
+  "state Counter { count : Int  view : String  property { reading : String { get .view set .view } } }"
+}
+
+///|
+test "NO_PROPERTY names the property the block asked for" {
+  assert_eq(prop_messages(backed_spec(), "get heading { .view }"), [
+    "`get heading` names no property in the spec block",
+  ])
+  assert_eq(prop_messages(backed_spec(), "set heading { .view = value }"), [
+    "`set heading` names no property in the spec block",
+  ])
+}
+
+///|
+test "READ_ONLY_PROPERTY names the property that did not opt into `set`" {
+  assert_eq(
+    prop_messages(
+      "state Counter { count : Int  view : String  property { reading : String { get .view } } }",
+      "set reading { .view = value }",
+    ),
+    ["property `reading` did not opt into `set`"],
+  )
+}
+
+///|
+test "PROPERTY_ALREADY_BACKED names the property backed by a field" {
+  assert_eq(prop_messages(backed_spec(), "get reading { .view }"), [
+    "property `reading` already names a backing field for `get`, so it cannot also have a complex getter",
+  ])
+  assert_eq(prop_messages(backed_spec(), "set reading { .view = value }"), [
+    "property `reading` already names a backing field for `set`, so it cannot also have a complex setter",
+  ])
+}
+
+///|
+test "PROPERTY_EFFECT names the effect to move" {
+  assert_eq(
+    prop_messages(
+      "state Counter { count : Int  view : String  property { reading : String { get set } } }",
+      "get reading { .view }\nset reading { send 'saved' }",
+    ),
+    [
+      "a property setter is synchronous and pure; move `send` to a message handler",
+    ],
+  )
 }

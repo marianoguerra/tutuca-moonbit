@@ -362,6 +362,20 @@ pub fn tasks() -> Array[Task] {
       ],
     },
     {
+      name: "check-diagnostics",
+      about: "no diagnostic prints its interpolation placeholder as literal text",
+      commands: [
+        // MoonBit interpolation is `\{expr}` and a bare `{expr}` is legal text,
+        // so a diagnostic missing the backslash compiles and passes any suite
+        // that asserts codes rather than wording. Six shipped that way at once.
+        {
+          label: "check · diagnostics interpolate their subject",
+          prog: "node",
+          args: ["scripts/check-diagnostics.mjs"],
+        },
+      ],
+    },
+    {
       name: "check-publish-graph",
       about: "no shipping package may import one moon.mod excludes (test blocks included)",
       commands: [
@@ -741,8 +755,8 @@ fn composites() -> Array[(String, String, Array[String])] {
       "gen drift + skill-embed drift + check + the example/skill checks + test + build (build-smokes every backend & demo)",
       [
         "gen", "skill-embed", "storybook-template-embed", "check", "check-examples",
-        "check-skill", "check-storybook-template", "check-publish-graph", "test",
-        "build",
+        "check-skill", "check-storybook-template", "check-publish-graph", "check-diagnostics",
+        "test", "build",
       ],
     ),
   ]

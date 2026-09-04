@@ -1276,7 +1276,7 @@ fn parse_ty(p : P) -> RawTy raise DefError {
       let args : Array[RawTy] = []
       if p.peek() is TLBracket {
         p.bump() |> ignore
-        if name is ("Instance" | "Component") && p.peek() is TIdent("protocol") {
+        if name == "Instance" && p.peek() is TIdent("protocol") {
           p.bump() |> ignore
           let refs : Array[(String, Span)] = []
           for ;; {
@@ -1744,8 +1744,7 @@ fn is_builtin_ty(name : String) -> Bool {
   | "Set"
   | "Map"
   | "Any"
-  | "Instance"
-  | "Component")
+  | "Instance")
 }
 
 ///|
