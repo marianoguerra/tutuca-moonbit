@@ -131,6 +131,14 @@ declare pub fn check(
 declare pub fn check_rules(def : @statedef.StateDef) -> Array[Finding]
 
 ///|
+/// Declared messages that used to be answered by a generated mutator and are
+/// not answered by anything now. Schema-only, so both backends can ask.
+declare pub fn check_stale_mutators(
+  def : @statedef.StateDef,
+  claimed : Array[String],
+) -> Array[Finding]
+
+///|
 /// The spec block's `pred`s and `invariant`s, as declarations a backend can
 /// walk like any other, plus the names whose body did not parse.
 ///

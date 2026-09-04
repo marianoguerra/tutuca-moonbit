@@ -151,9 +151,8 @@ fn P::skip_seps(self : P) -> Unit {
 /// The mutating collection methods, receiver-first, with their arity.
 ///
 /// `delete` and `remove` are one method under two names, and so are `deleteAt`
-/// and `removeAt`. The generated mutators already spell both
-/// (`deleteInXAt` / `removeInXAt`), and a language that took only one of each
-/// would make the choice of spelling a thing to look up.
+/// and `removeAt` — a language that took only one of each would make the choice
+/// of spelling a thing to look up.
 pub fn collection_method(name : String) -> Int? {
   match name {
     "clear" => Some(0)
@@ -161,6 +160,29 @@ pub fn collection_method(name : String) -> Int? {
       Some(1)
     "insertAt" | "setAt" | "set" => Some(2)
     _ => None
+  }
+}
+
+///|
+/// Which collection methods apply to a declared type.
+///
+/// The ONE table, so a checker, a backend and a tool that renders a schema all
+/// answer the same way. It used to exist only inside `tscript/check`, where
+/// nothing outside could read it — and the first consumer to build a schema
+/// inspector had to guess at it, which is the failure mode a shared vocabulary
+/// exists to prevent.
+///
+/// What it does NOT say is as important: `clear`, `set`, `delete` and
+/// `removeAt` are accepted on ANY type by the checker today, so they are absent
+/// here rather than listed against everything. That is a hole — `.count.clear`
+/// on an `Int` passes — and naming it in one place is the first step to closing
+/// it.
+pub fn collection_methods_for(t : @tutuca.Ty) -> Array[String] {
+  match t {
+    TySet | TyFlags(_, _) => ["add", "remove", "toggle"]
+    TyList(_) => ["push", "insertAt", "setAt", "deleteAt"]
+    TyOMap(_) => ["setAt", "deleteAt"]
+    _ => []
   }
 }
 

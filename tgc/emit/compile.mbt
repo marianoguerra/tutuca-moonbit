@@ -172,6 +172,25 @@ fn prepare(
   let names = comps.map(c => c.name)
   check_protocols(comps, prog, issues)
   for c in comps {
+    // The script block's own names: a card's handlers are all in it, so what
+    // this cannot see is nothing.
+    let claimed = c.authored.map(d => d.name)
+    for f in @check.check_stale_mutators(c.def, claimed) {
+      issues.push({
+        comp: c.name,
+        code: f.code,
+        message: f.message,
+        severity: if f.severity is SError {
+          "error"
+        } else {
+          "warning"
+        },
+        line: 0,
+        span: f.span,
+      })
+    }
+  }
+  for c in comps {
     let surface = view_surface(c, names, prog, file.macros, issues)
     for f in @check.check(c.authored, c.def, surface~) {
       // WARNINGS travel too, and only here: `compile` below gates on errors

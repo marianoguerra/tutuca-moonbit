@@ -13,6 +13,8 @@ pub fn ask_names_a_question(Array[@core.Expr]) -> Bool
 
 pub fn collection_method(String) -> Int?
 
+pub fn collection_methods_for(@core.Ty) -> Array[String]
+
 pub let config_root : String
 
 pub fn effect_min_arity(String) -> Int?

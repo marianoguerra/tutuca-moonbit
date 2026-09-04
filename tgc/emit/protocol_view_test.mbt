@@ -433,3 +433,87 @@ test "a component that implements nothing is held to nothing" {
   let c = @emit.check_card(src, name="b")
   assert_eq(c.issues.filter(i => i.severity == "error"), [])
 }
+
+///|
+/// A declared message that used to be answered by a generated mutator.
+///
+/// Before 0.48 a component got `setX` / `toggleX` / `resetX` per field from its
+/// kind alone, and a dispatch no arm claimed fell through to one. So
+/// `handle B { message { setView(String) } }` was a complete declaration —
+/// nothing had to answer it. 0.48 removed the fallback and left the
+/// declaration, which still advertises the name on `receives` and still lets an
+/// outside sender send it, so the send refuses at run time with `NO_HANDLER`.
+///
+/// A consumer carried nineteen of these across their tree. What surfaced them
+/// was three test failures whose assertions were about something else entirely.
+test "a message named for a removed generated mutator is reported" {
+  let spec =
+    #|state B { view: String, done: Bool }
+    #|handle B { message { setView(String), toggleDone, realOne } }
+  let c = @emit.check_card(
+    card(spec, "receive realOne { .done = true }"),
+    name="b",
+  )
+  let stale = c.issues.filter(i => i.code == "STALE_MUTATOR_MESSAGE")
+  assert_eq(stale.length(), 2)
+  // A warning: a handler of that name is legal, and this cannot see a MoonBit
+  // `update~`. What it can see is the mutator spelling for a member the
+  // component declares, which is what makes it a leftover and not a name.
+  assert_true(stale.iter().all(i => i.severity == "warning"))
+  // The repair, named. `setView` writes a field, `toggleDone` flips one, and
+  // "declares a message nothing answers" with no next step is a finding an
+  // author has to go and derive.
+  guard stale.iter().find_first(i => i.message.contains("`setView`"))
+    is Some(set_) else {
+    fail("no finding for setView")
+  }
+  assert_true(set_.message.contains(".view = v"))
+  guard stale.iter().find_first(i => i.message.contains("`toggleDone`"))
+    is Some(tog) else {
+    fail("no finding for toggleDone")
+  }
+  assert_true(tog.message.contains(".done = not .done"))
+  // …and it compiles, because a warning is a thing to say and not a build to
+  // stop.
+  let out = @emit.compile(
+    card(spec, "receive realOne { .done = true }"),
+    name="b",
+  )
+  assert_eq(out.component, "B")
+}
+
+///|
+/// A message whose name is nobody's mutator is left alone.
+///
+/// The control, and it matters: the finding keys off a mutator SPELLING for a
+/// member this component declares, so an ordinary handler named for nothing in
+/// particular must not trip it.
+test "an ordinary declared message is not reported as a stale mutator" {
+  let spec =
+    #|state B { view: String }
+    #|handle B { message { refresh, setSomethingElse(String) } }
+  let c = @emit.check_card(
+    card(spec, "receive refresh { .view = 'x' }"),
+    name="b",
+  )
+  assert_eq(c.issues.filter(i => i.code == "STALE_MUTATOR_MESSAGE"), [])
+}
+
+///|
+/// A mutator-named message the block DOES answer is not reported.
+///
+/// The control that matters most, and the one this repo's own
+/// `tut-6-messages` card supplied: it declares `setMode(String)` and answers it
+/// with a `receive setMode(m)` that also appends to a log. The first version of
+/// this check keyed on the spelling alone and flagged that card — a warning
+/// that fires on correct code is a warning nobody reads.
+test "a mutator-named message the script answers is left alone" {
+  let spec =
+    #|state B { mode: String, log: Array[String] }
+    #|handle B { message { setMode(String) } }
+  let c = @emit.check_card(
+    card(spec, "receive setMode(m) { .mode = m\n  .log.push m }"),
+    name="b",
+  )
+  assert_eq(c.issues.filter(i => i.code == "STALE_MUTATOR_MESSAGE"), [])
+}

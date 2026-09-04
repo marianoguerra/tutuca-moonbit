@@ -13,6 +13,8 @@ pub fn check(Array[@tscript.Decl], @statedef.StateDef, surface? : Surface) -> Ar
 
 pub fn check_rules(@statedef.StateDef) -> Array[Finding]
 
+pub fn check_stale_mutators(@statedef.StateDef, Array[String]) -> Array[Finding]
+
 pub fn resolve_ty_ref(@statedef.StateDef, @tscript.TyRef) -> @core.Ty?
 
 pub fn rule_decls(@statedef.StateDef, Array[@tscript.Decl]) -> (Array[@tscript.Decl], Array[String])

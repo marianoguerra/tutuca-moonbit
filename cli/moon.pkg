@@ -10,6 +10,7 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/lint",
   "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/tscript/check",
   "marianoguerra/tutuca/viewgen",
   // `tutuca trace`: reading and shortening a recording, which needs nothing

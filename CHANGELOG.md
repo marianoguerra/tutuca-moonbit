@@ -6,6 +6,72 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.49.5] - 2026-09-04
+
+Three findings from a second consumer port (tutuca-components, 0.43.0 →
+0.49.4 — 37 view files, 200+ components).
+
+### A declared message nothing answers is reported
+
+Before 0.48 a component got a MUTATOR per field from its kind alone — `setX`,
+`toggleX`, `resetX`, `pushInX` — and a dispatch no arm claimed fell through to
+one. So `handle X { message { setView(String) } }` was a complete declaration:
+nothing had to answer it, because the fallback did. 0.48 removed the fallback
+and left the declarations.
+
+The result generated clean, `moon check --deny-warn` clean, and refused at run
+time with `NO_HANDLER`. The reporter had **nineteen** components in that shape,
+plus four `@on.input` handlers that had been dropping every keystroke since 0.48
+with a fully green suite, because no test typed into them. What surfaced it was
+three failures whose assertions were about something else.
+
+`STALE_MUTATOR_MESSAGE` is a warning on both paths — `tutuca gen` and
+`check_card` — for a declared message that is a mutator spelling for a member
+the component declares AND that nothing in its script block answers. It names
+the repair (`delete the declaration and write \`.view = v\``), because a verdict
+with no next step is one an author has to derive.
+
+**Only where the handlers are visible.** A component whose behaviour is a
+MoonBit `update~` is not checked at all: the arms cannot be seen, and a warning
+that cannot be substantiated is noise on correct code — most components in a
+large tree are that shape. This repo's own `tut-6-messages` card is why the
+check also requires that nothing answers the name: it declares `setMode(String)`
+and answers it, with a handler that also appends to a log. A mutator spelling is
+not by itself evidence; a name a component answers is a name it answers,
+whatever it is called.
+
+### `collection_methods_for` — the kind→methods table, made public
+
+Which collection methods apply to which declared type lived inside
+`tscript/check` where nothing outside could read it, and the first consumer to
+build a schema inspector had to guess. `tscript.collection_methods_for(ty)`
+answers it, and `C::method_fits` reads the same table, so a checker, a backend
+and a tool rendering a schema cannot diverge.
+
+What it does not say is in its doc: `clear`, `set`, `delete` and `removeAt` are
+accepted on ANY type today — `.count.clear` on an `Int` passes — so they are
+absent rather than listed against everything. That is a hole, and naming it in
+one place is the first step to closing it.
+
+### Also
+
+- The doc comment on `collection_method` justified two spellings for one method
+  by pointing at the generated mutators, which 0.48 removed. The conclusion
+  stands on its own and no longer argues from machinery that is gone.
+
+### Note for anyone upgrading across 0.48
+
+`StateTy` becoming `@tutuca.Ty` (0.49.1) reads as a mechanical rename and is
+not: the constructors are `TyBool` / `TyInt` / `TyText` where the old enum's
+were `TBool` / `TInt` / `TText`, and `TyTable` is new with no counterpart (it
+groups with `TyRecord` as a map-shaped kind). One error becomes sixteen, and the
+first masks the rest.
+
+And any tool that INTROSPECTS a schema — rendering "the mutators a field gets
+for free" — is describing machinery 0.48 removed. It will still compile and its
+tests will still pass while its output is wrong, which is the one failure mode a
+type system cannot help with.
+
 ## [0.49.4] - 2026-09-04
 
 `check_card` holds a card to the protocols it claims.

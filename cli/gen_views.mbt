@@ -50,6 +50,28 @@ fn view_diagnostics(
     for line in message_case_diagnostics(def, fallback) {
       out.push(line)
     }
+    // A declared message that used to be answered by a generated mutator and is
+    // answered by nothing since 0.48. `gen` is where a component author reads
+    // findings, and the alternative to reading it here is a `NO_HANDLER`
+    // refusal at run time, in a test whose assertion is about something else.
+    //
+    // ONLY for a component whose handlers are all in a script block. Where the
+    // behaviour is a MoonBit `update~` this cannot see the arms, and a warning
+    // it cannot substantiate is noise on correct code — most components in a
+    // large tree are that shape.
+    match file.script_for(def.component_name(fallback)) {
+      None => ()
+      Some(block) => {
+        // A block that does not parse is reported by the generator itself, in
+        // its own words and with a position, so this says nothing about one.
+        let decls = @tscript.parse_script(block.text) catch { _ => [] }
+        for f in @check.check_stale_mutators(def, decls.map(d => d.name)) {
+          out.push(
+            "\{f.code} (warning) \{def.component_name(fallback)}: \{f.message}",
+          )
+        }
+      }
+    }
     // The rule layer, checked against the schema it is about. A `pred` reading
     // a field the state does not declare is the same mistake as a view reading
     // one, and it is worth the same report — a rule that cannot be evaluated

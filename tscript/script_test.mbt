@@ -874,3 +874,28 @@ test "the two vocabulary tables answer for exactly their own names" {
   }
   assert_true(@tscript.kind_of_word("when") is None)
 }
+
+///|
+/// The ONE kind→methods table, and the reason it is public.
+///
+/// It lived inside `tscript/check` where nothing outside could read it, and the
+/// first consumer to build a schema inspector had to guess at it — which is the
+/// failure mode a shared vocabulary exists to prevent. `C::method_fits` reads
+/// this now, so the checker and a tool rendering a schema cannot diverge.
+test "collection_methods_for is the table the checker uses" {
+  assert_eq(@tscript.collection_methods_for(TySet), ["add", "remove", "toggle"])
+  assert_eq(@tscript.collection_methods_for(TyFlags("F", ["a"])), [
+    "add", "remove", "toggle",
+  ])
+  assert_eq(@tscript.collection_methods_for(TyList(TyText)), [
+    "push", "insertAt", "setAt", "deleteAt",
+  ])
+  // A map is keyed rather than ordered, so it takes the keyed half and not
+  // `push`.
+  assert_eq(@tscript.collection_methods_for(TyOMap(TyText)), [
+    "setAt", "deleteAt",
+  ])
+  // A scalar has none, and the checker refuses a sequence method on one.
+  assert_eq(@tscript.collection_methods_for(TyText), [])
+  assert_eq(@tscript.collection_methods_for(TyInt(width=32, signed=true)), [])
+}

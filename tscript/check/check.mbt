@@ -1543,14 +1543,17 @@ fn C::method_fits(
   span : @tutuca.Span,
 ) -> Unit {
   guard definite(Some(t)) is Some(t) else { return }
-  let ok = match call {
-    // The set operations, over open and closed membership alike.
-    "add" | "remove" | "toggle" => t is (TySet | TyFlags(_, _))
-    // The sequence operations. A map is keyed rather than ordered, so it takes
-    // the keyed half and not `push`.
-    "push" | "insertAt" => t is TyList(_)
-    "setAt" | "deleteAt" => t is (TyList(_) | TyOMap(_))
-    _ => true
+  // The table is `tscript`'s, so this and any tool rendering a schema answer
+  // alike. A method the table constrains must be listed for this type; one it
+  // does not constrain (`clear`, `set`, `delete`, `removeAt`) still passes on
+  // anything, which is where it stood before the table moved.
+  let constrained = [
+    "add", "remove", "toggle", "push", "insertAt", "setAt", "deleteAt",
+  ]
+  let ok = if constrained.contains(call) {
+    @tscript.collection_methods_for(t).contains(call)
+  } else {
+    true
   }
   if !ok {
     self.say(
@@ -1640,4 +1643,86 @@ pub fn rule_decls(
     })
   }
   (out, unreadable)
+}
+
+///|
+/// A declared message that used to be answered for free, and is not any more.
+///
+/// Before 0.48 a component got a MUTATOR per field from its kind alone —
+/// `setX`, `toggleX`, `resetX`, `pushInX` — and a dispatch no arm claimed fell
+/// through to it. So `handle X { message { setView(String) } }` was a complete
+/// declaration: nothing had to answer it, because the fallback did.
+///
+/// 0.48 removed that fallback. The declaration is still a PROMISE about the
+/// public surface — `receives` advertises it, `SchemaInfo::conforms` reads it,
+/// an outside sender is entitled to send it — and now nothing answers, so the
+/// send refuses with `NO_HANDLER` at run time, a long way from the line that is
+/// wrong.
+///
+/// A WARNING and not an error, because a handler of that name is legal: the
+/// author may have written one in the script block or in `update~`, and this
+/// cannot see either. What it CAN see is that the name is a mutator spelling
+/// for a name_of this component declares, which is what makes it a leftover
+/// rather than a coincidence — every one of the nineteen a consumer found was
+/// exactly this shape, and their tests failed somewhere else entirely.
+///
+/// `answered` is what the caller KNOWS answers a name — a script block's own
+/// declarations. The finding fires only for a name nothing in it claims, and a
+/// caller that cannot see the handlers — a component whose behaviour is a
+/// MoonBit `update~` — must not call this at all, because a warning that fires
+/// on correct code is a warning nobody reads.
+///
+/// This repo's own `tut-6-messages` card is why: it declares `setMode(String)`
+/// AND answers it, with a `receive setMode(m)` that also appends to a log. A
+/// mutator spelling is not by itself evidence — a name a component answers is a
+/// name it answers, whatever it is called.
+pub fn check_stale_mutators(
+  def : @statedef.StateDef,
+  claimed : Array[String],
+) -> Array[Finding] {
+  let out : Array[Finding] = []
+  // The verbs `component()` generated, from `gen_mutators`.
+  let verbs = [
+    "set", "reset", "toggle", "pushIn", "insertIn", "setIn", "addIn", "deleteIn",
+    "removeIn", "hasIn", "toggleIn",
+  ]
+  let members : Array[String] = []
+  for f in def.fields {
+    members.push(f.name)
+  }
+  for p in def.properties {
+    if !members.contains(p.name) {
+      members.push(p.name)
+    }
+  }
+  for m in def.receive {
+    if claimed.contains(m.name) || claimed.contains(m.source_name) {
+      continue
+    }
+    for name_of in members {
+      for verb in verbs {
+        if m.name != @tutuca.mutator_name(verb, name_of) {
+          continue
+        }
+        let repair = if verb == "set" {
+          "write `.\{name_of} = v` where the view sends it"
+        } else if verb == "toggle" {
+          "write `.\{name_of} = not .\{name_of}` where the view sends it"
+        } else {
+          "write the property action where the view sends it"
+        }
+        out.push({
+          code: "STALE_MUTATOR_MESSAGE",
+          message: "`\{m.name}` is the generated `\{verb}` mutator's name for `\{name_of}`, and generated mutators stopped answering dispatches in 0.48 — so this declares a message nothing answers unless you wrote a handler for it. Delete the declaration and \{repair}, or keep it and answer it",
+          severity: SWarning,
+          // A `MsgDef` carries no span — a handle block's names parse into a
+          // table rather than into positions — so this carries none either,
+          // and the finding is located by the component it names. `gen` and
+          // `check_card` both prefix it with that.
+          span: { start: 0, end_: 0, },
+        })
+      }
+    }
+  }
+  out
 }

@@ -318,6 +318,11 @@ declare pub fn TyRef::to_source(self : TyRef) -> String
 declare pub fn collection_method(name : String) -> Int?
 
 ///|
+/// Which collection methods apply to a declared type. The ONE table, so a
+/// checker, a backend and a tool that renders a schema answer alike.
+declare pub fn collection_methods_for(t : @tutuca.Ty) -> Array[String]
+
+///|
 /// The effects a statement may perform, and the fewest arguments each takes.
 /// None when the name is not an effect.
 ///
