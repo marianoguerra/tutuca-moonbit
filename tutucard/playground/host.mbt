@@ -98,7 +98,7 @@ pub fn install() -> Unit {
     id => classes_at(id),
     (id, manifest, init) => mount_compiled(id, manifest, init),
     (key, manifest, source, scenes) => drive(key, manifest, source, scenes),
-    key => @guest.forget_sweep_roots(key),
+    () => instance_count(),
     () => runtime_wasm(),
   )
 }
@@ -175,10 +175,10 @@ extern "js" fn publish(
   classes_at : (String) -> String,
   mount_compiled : (String, String, String) -> String,
   drive : (String, String, String, String) -> String,
-  reset_sweep : (String) -> Unit,
+  instance_count : () -> Int,
   runtime_wasm : () -> String,
 ) -> Unit =
-  #|(check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive, resetSweep, runtimeWasm) => { globalThis.__tutucard = { check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive, resetSweep, runtimeWasm } }
+  #|(check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive, instanceCount, runtimeWasm) => { globalThis.__tutucard = { check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive, instanceCount, runtimeWasm } }
 
 ///|
 /// Tear a card down and forget its mount point.
@@ -261,7 +261,6 @@ fn teardown(id : String) -> Unit {
   slot.activity.clear()
   // …and what the sweep for this mount point was walking. The apps that
   // registered those roots are gone, and the next mount installs its own.
-  @guest.forget_sweep_roots(id)
   // Whatever this card asked the host for, it is no longer here to be told.
   slot.gen += 1
 }

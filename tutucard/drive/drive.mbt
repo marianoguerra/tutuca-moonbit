@@ -2,7 +2,7 @@
 
 ///|
 pub fn run(
-  guest : &@host.Guest,
+  gmod : &@host.GuestModule,
   manifest : @host.DynManifest,
   scenes : Array[@scenedef.Scene],
   root? : String = "",
@@ -10,7 +10,7 @@ pub fn run(
   on_bundle? : (@host.Module) -> Unit = _b => (),
   on_app? : (@app.App[@memdom.MemNode]) -> Unit = _a => (),
 ) -> Array[SceneResult] {
-  scenes.map(s => run_one(guest, manifest, s, root, take_log, on_bundle, on_app))
+  scenes.map(s => run_one(gmod, manifest, s, root, take_log, on_bundle, on_app))
 }
 
 ///|
@@ -22,7 +22,7 @@ pub fn run(
 /// depend on whether the third ran, which is the kind of test that passes
 /// alone and fails in a suite.
 fn run_one(
-  guest : &@host.Guest,
+  gmod : &@host.GuestModule,
   manifest : @host.DynManifest,
   scene : @scenedef.Scene,
   root : String,
@@ -46,7 +46,7 @@ fn run_one(
   let scope = @component.ComponentStack::new()
   let loaded = @host.register_module(
     scope,
-    guest,
+    gmod,
     manifest,
     policy=@policy.Policy::granted(),
   ) catch {
@@ -119,14 +119,14 @@ fn run_one(
     }
   })
   |> ignore
-  // A guest instance is superseded by every transition that answers a
-  // successor, which is every interaction a scene drives — so a scene of fifty
-  // steps leaves fifty dead handles behind without this. It is the host's job
-  // whoever the host is, and a driver is one.
-  @host.install_gc(app.transactor)
-  // …and whatever else the caller wants to hang on this app. The card driver
-  // installs a reachability sweep here, which needs the root and therefore the
-  // app rather than the module.
+  // Nothing to install. A guest instance is superseded by every transition that
+  // answers a successor, and the successor is what the host adopts — so the one
+  // it replaced is a thing nothing holds, and the engine collects it. There is
+  // no table to sweep.
+  //
+  // What the caller wants to hang on this app, it hangs here. The card driver
+  // counts what the tree reaches, which needs the root and therefore the app
+  // rather than the module.
   on_app(app)
   app.start()
   let h = @harness.Harness::over(app, container)

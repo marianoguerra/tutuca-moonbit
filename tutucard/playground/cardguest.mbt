@@ -51,10 +51,10 @@ fn mount_failed(msg : String) -> String {
 /// into the element with this id.
 ///
 /// The page calls `loadGuest` first — that is what puts the module behind
-/// `globalThis.__cardguest` — and passes the manifest the SAME compile
-/// produced. They travel together on purpose: a manifest's field list is the
-/// order `get-field` answers in, so a manifest paired with a different module is
-/// a module whose halves disagree.
+/// `globalThis.__tgcmod` — and the manifest is read back off the module rather
+/// than passed beside it. A manifest's field list is the order `get_field`
+/// answers in, so one paired with a different module is a module whose halves
+/// disagree; asking the module removes the pairing.
 ///
 /// The instance is the app's ROOT rather than a child of some host component,
 /// which is what `App::new` taking a value makes possible. There is nothing for
@@ -72,14 +72,14 @@ fn mount_failed(msg : String) -> String {
 /// refused or a manifest the host will not take.
 pub fn mount_compiled(
   id : String,
-  manifest_json : String,
+  _manifest_json : String,
   init : String,
 ) -> String {
   // The same teardown-first order every mount here uses, and for the same
   // reason: the app holds transactor subscriptions and DOM listeners, and
   // pressing the button twice would otherwise leave the first set behind.
   teardown(id)
-  guard @guest.ready(id) else {
+  guard @guest.native_ready(id) else {
     return mount_failed("no compiled card is instantiated on this page")
   }
   let doc = @dom.window().document()
@@ -99,7 +99,7 @@ pub fn mount_compiled(
   // was refused — and one thing worth showing: why. The reasons are a person's
   // to act on, so they reach the page rather than collapsing into a sentence
   // about mounting.
-  let loaded = match @guest.register(id, manifest_json, scope, policy) {
+  let loaded = match @guest.register(id, scope, policy) {
     Ok(m) => m
     Err(reason) => return mount_failed(reason)
   }
@@ -179,12 +179,9 @@ pub fn mount_compiled(
   // render-time chain enforce it, so a policy is not half-applied by being
   // checked at registration and forgotten at render.
   app.set_sanitizer(policy.sanitizer)
-  @host.install_gc(app.transactor)
-  // …and the sweep, after it. `install_gc` drops what a successor replaced;
-  // this drops what nothing points at any more. Subscribers run in
-  // subscription order, so by the time this reads the root the superseded ones
-  // are already gone and the render that needed them has run.
-  @guest.install_sweep(id, () => app.root_value(), app.transactor)
+  // Nothing to install here either. What a successor replaced is a thing
+  // nothing holds, and what a removed row left behind is the same — both are
+  // the engine's, now that the host holds instances rather than naming them.
   app.start()
   @glue.install(app)
   @glue.install_styles(app, @bdom.BrowserNode::from_document(doc))
@@ -258,7 +255,7 @@ pub fn drive(
   source : String,
   scenes_json : String,
 ) -> String {
-  guard @guest.ready(key) else {
+  guard @guest.native_ready(key) else {
     return drive_failed("no compiled card is instantiated on this page")
   }
   let scenes = if scenes_json != "" {
@@ -274,24 +271,42 @@ pub fn drive(
   let manifest = @host.DynManifest::from_json_string(manifest_json) catch {
     e => return drive_failed(e.message())
   }
-  let guest = @guest.CardGuest::new(key)
-  @drive.report_json(
-    @drive.run(
-      guest,
-      manifest,
-      scenes,
-      on_bundle=b => guest.adopted(b),
-      on_app=a => @guest.install_sweep(key, () => a.root_value(), a.transactor),
-      take_log=() => {
-        let raw = @guest.take_log(key)
-        if raw == "" {
-          []
-        } else {
-          raw.split("\n").map(l => l.to_owned()).collect()
-        }
-      },
-    ),
-  ).stringify()
+  guard @guest.native_of(key) is Some(native) else {
+    return drive_failed("no compiled card is instantiated on this page")
+  }
+  // What the HOST holds. It is the honest form of the question
+  // `check-instances` asks: there is no table to count any more, and the tree
+  // is what keeps an instance alive.
+  //
+  // A closure rather than a number, because `on_app` fires at MOUNT and the
+  // question is about afterwards.
+  let count : Ref[() -> Int] = { val: () => 0, }
+  let report = @drive.run(
+    native,
+    manifest,
+    scenes,
+    on_bundle=b => @guest.adopt(key, native, b),
+    on_app=a => {
+      count.val = () => {
+        let seen : Array[String] = []
+        @host.live_instances(a.root_value(), seen)
+        seen.length()
+      }
+    },
+    take_log=() => @guest.take_log(key),
+  )
+  last_held.val = (count.val)()
+  @drive.report_json(report).stringify()
+}
+
+///|
+/// What the host held after the last drive.
+let last_held : Ref[Int] = { val: 0, }
+
+///|
+/// …read from the page. `check-instances` is the only caller.
+pub fn instance_count() -> Int {
+  last_held.val
 }
 
 ///|

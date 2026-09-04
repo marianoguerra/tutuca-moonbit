@@ -472,15 +472,13 @@ pub fn tasks() -> Array[Task] {
         // together against one import object, which no `moon test` can do — and
         // they ran in no task at all, so the only check that `rt_src_gen.mbt`
         // matches `rt.wax` was a harness nobody invoked. compose.test.mjs needs
-        // `wasm-tools` on PATH; the other three need only moon and node.
+        // `wasm-tools` on PATH; the other two need only moon and node.
         //
-        // compose.test.mjs, compose-guest.test.mjs and twomod.test.mjs are one
-        // claim at three levels, and all three are needed. The first drives the
-        // RUNTIME, where composition worked all along. The second drives the
-        // bridge a page loads a card through, where it did not. The third puts
-        // a compiled module's component inside another compiled module's field
-        // and dispatches into it — the seam between the other two, and the
-        // thing a page holding two cards does every time somebody clicks.
+        // compose.test.mjs and twomod.test.mjs are one claim at two levels, and
+        // both are needed. The first drives the RUNTIME, where composition
+        // worked all along. The second puts a compiled module's component
+        // inside another compiled module's field and DISPATCHES into it, which
+        // is what a page holding two cards does every time somebody clicks.
         // Named one by one rather than globbed: a task's command is spawned
         // without a shell, and `node --test <dir>` reads the directory as a
         // module rather than walking it.

@@ -6,25 +6,22 @@ import {
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/tgc/persist",
   "marianoguerra/tutuca/tgc/policy",
-  "marianoguerra/tutuca/transactor",
   "moonbitlang/core/debug",
   "moonbitlang/core/ref",
 }
 
 // Values
-pub fn child_json(@core.Value) -> Json
-
-pub fn collect_superseded() -> Unit
-
 pub let handle_field : String
 
-pub fn install_gc(@transactor.Transactor) -> Unit
+pub let inst_field : String
 
-pub fn register_module(@component.ComponentStack, &Guest, DynManifest, policy? : @policy.Policy) -> Module raise ManifestError
+pub fn inst_of(@core.Value) -> &Inst?
+
+pub fn live_instances(@core.Value, Array[String]) -> Unit
+
+pub fn register_module(@component.ComponentStack, &GuestModule, DynManifest, policy? : @policy.Policy) -> Module raise ManifestError
 
 pub fn slot_owner(@core.Ty, @core.Value?, declared_here~ : (String) -> Bool) -> SlotOwner
-
-pub fn superseded_count() -> Int
 
 pub let supported_api_version : Int
 
@@ -195,11 +192,13 @@ pub struct HandleInst {
   handle : Int
 }
 pub fn HandleInst::new(&Guest, Int) -> Self
+pub impl Inst for HandleInst
 
 pub struct HandleModule {
   guest : &Guest
 }
 pub fn HandleModule::new(&Guest) -> Self
+pub impl GuestModule for HandleModule
 
 pub(all) struct InstDispatch {
   handled : Bool
@@ -229,7 +228,6 @@ pub fn Module::config(Self) -> Map[String, String]
 pub fn Module::def_of(Self, String) -> DynComponentDef?
 pub fn Module::default_init(Self, String) -> String
 pub fn Module::diagnostics(Self) -> Array[String]
-pub fn Module::drop_instance(Self, Int) -> Unit
 pub fn Module::init_names(Self, String) -> Array[String]
 pub fn Module::key(Self) -> String
 pub fn Module::make_init(Self, String, String) -> DynObj?
@@ -240,6 +238,7 @@ pub fn Module::module_name(Self) -> String
 pub fn Module::restore(Self, @persist.Snapshot, src? : &@core.ComponentSource) -> DynObj?
 pub fn Module::schema_of(Self, String) -> @core.SchemaInfo?
 pub fn Module::snapshot(Self, @core.Value) -> @persist.Snapshot?
+pub fn Module::wrap_inst(Self, String, &Inst) -> @core.Value?
 pub fn Module::wrap_instance(Self, String, Int) -> @core.Value?
 
 pub(all) struct ResolvedConfig {
@@ -292,5 +291,7 @@ pub(open) trait Inst {
   fn render_call(Self, String, String, Array[@core.Value], Map[String, @core.Value]) -> @core.Value
   fn persist(Self) -> Bytes
   fn release(Self) -> Unit
+  fn hand_over(Self) -> Unit = _
+  fn identity(Self) -> String = _
   fn token(Self) -> Int
 }

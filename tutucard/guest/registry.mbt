@@ -3,59 +3,63 @@
 ///
 /// A PAGE-level table, because a page that holds an arrangement holds several
 /// modules at once and a component from one of them can end up inside a
-/// component from another. `card.js` keeps the matching table of instances for
-/// the same reason: a name that does not say which module it belongs to cannot
-/// be resolved by a host holding two.
-let modules : Map[String, @host.Module] = Map([])
+/// component from another. What it holds is the module — not a table of that
+/// module's instances, which is the thing this seam stopped needing.
+let modules : Map[String, @browser.NativeModule] = Map([])
 
 ///|
-/// Remember a registered module under the key its guest was loaded as.
-pub fn adopt(key : String, loaded : @host.Module) -> Unit {
-  modules[key] = loaded
-}
+let hosted : Map[String, @host.Module] = Map([])
 
 ///|
 pub fn module_of(key : String) -> @host.Module? {
-  modules.get(key)
+  hosted.get(key)
 }
 
 ///|
 /// Forget a module, before it is instantiated again or after it is unmounted.
 pub fn drop_module(key : String) -> Unit {
   modules.remove(key)
+  hosted.remove(key)
 }
 
 ///|
 pub fn loaded_keys() -> Array[String] {
-  modules.keys().to_array()
+  hosted.keys().to_array()
 }
 
 ///|
-/// Instantiate a card and register it, in one call.
+/// Register a card `card.js` has already instantiated.
 ///
-/// The two halves travel together on purpose: a manifest's field list is the
-/// order `get-field` answers in, so a manifest paired with a different module is
-/// a module whose halves disagree.
+/// The manifest is read off the MODULE rather than passed in. It travelled
+/// separately when it had to — a JSON seam has no way to ask — and travelling
+/// separately is how a manifest gets paired with a different module than the
+/// one it describes.
 pub fn register(
   key : String,
-  manifest_json : String,
   scope : @component.ComponentStack,
   policy : @policy.Policy,
 ) -> Result[@host.Module, String] {
   drop_module(key)
-  // The guest is built BEFORE it is registered and told about the module
-  // afterwards, which is the only order available: `register_module` takes the
-  // guest, and the guest needs the module to wrap a child token. Nothing can
-  // call the guest in between.
-  let guest = CardGuest::{ key, registered: Ref(None), }
-  let loaded = try {
-    let manifest = @host.DynManifest::from_json_string(manifest_json)
-    @host.register_module(scope, guest, manifest, policy~)
-  } catch {
-    e => return Err(e.message())
+  guard native_ready(key) else {
+    return Err("no compiled card is instantiated under `\{key}`")
   }
-  guest.registered.val = Some(loaded)
-  adopt(key, loaded)
+  let native = @browser.NativeModule::new(key, native_rt(key), native_ex(key), peer => {
+    modules.get(peer)
+  })
+  modules[key] = native
+  let loaded = try {
+    let manifest = @host.DynManifest::from_json_string(native.manifest_json())
+    @host.register_module(scope, native, manifest, policy~)
+  } catch {
+    e => {
+      modules.remove(key)
+      return Err(e.message())
+    }
+  }
+  // The module needs its own host record to wrap an instance as a `DynObj`,
+  // and `register_module` takes the module and cannot also return into it.
+  native.adopted(loaded)
+  hosted[key] = loaded
   Ok(loaded)
 }
 
@@ -77,31 +81,71 @@ pub fn make_instance(
 }
 
 ///|
-/// The instance a `$dyn` marker names, wrapped by the module that MADE it.
-///
-/// The marker carries the module because a component name is only unique inside
-/// one, and resolving it against whichever module happened to be decoding is
-/// how a note came back wearing a hole's schema — its fields, its views, its
-/// guest — with nothing failing anywhere.
-///
-/// `fallback` is the decoding module, and it is only reached for a marker from
-/// a build that predates the key.
-fn wrap_marked(
-  module_ : String,
-  comp : String,
-  handle : Int,
-  fallback : @host.Module?,
-) -> @tutuca.Value {
-  let owner = match module_of(module_) {
-    Some(m) => Some(m)
-    None => fallback
-  }
-  match owner {
-    Some(loaded) =>
-      match loaded.wrap_instance(comp, handle) {
-        Some(v) => v
-        None => Null
-      }
-    None => Null
+/// What the card has SAID since this was last asked — a declined `requires`, an
+/// `ensures` that did not hold, with the rule's own sentence over the state it
+/// rejected. A host component raises a structured refusal for the same event; a
+/// guest has no shape to put one in, so this is the whole of what it can say.
+pub fn take_log(key : String) -> Array[String] {
+  let raw = native_log(key)
+  if raw == "" {
+    []
+  } else {
+    raw.split("\n").map(l => l.to_owned()).collect()
   }
 }
+
+///|
+/// A `&GuestModule` over a card `card.js` has instantiated, before it is
+/// registered.
+///
+/// `register` is the ordinary door and does both halves. This is for a caller
+/// that has to hold the module first and be told the host's record afterwards —
+/// `tutucard/drive` takes the module, builds it, and hands it back through
+/// `on_bundle`.
+pub fn native_of(key : String) -> @browser.NativeModule? {
+  if !native_ready(key) {
+    return None
+  }
+  let m = @browser.NativeModule::new(key, native_rt(key), native_ex(key), peer => {
+    modules.get(peer)
+  })
+  modules[key] = m
+  Some(m)
+}
+
+///|
+/// Tell a module the host's record of it, and the page's table too.
+pub fn adopt(
+  key : String,
+  native : @browser.NativeModule,
+  m : @host.Module,
+) -> Unit {
+  native.adopted(m)
+  hosted[key] = m
+}
+
+///|
+/// The manifest a module gives of itself.
+pub fn manifest_json(key : String) -> String {
+  match modules.get(key) {
+    Some(m) => m.manifest_json()
+    None => "{}"
+  }
+}
+
+///|
+/// Whether a compiled card is instantiated under this key.
+pub extern "js" fn native_ready(key : String) -> Bool =
+  #|(key) => !!(globalThis.__tgcmod && globalThis.__tgcmod[key])
+
+///|
+extern "js" fn native_rt(key : String) -> @core.Any =
+  #|(key) => globalThis.__tgcmod[key].rt
+
+///|
+extern "js" fn native_ex(key : String) -> @core.Any =
+  #|(key) => globalThis.__tgcmod[key].ex
+
+///|
+extern "js" fn native_log(key : String) -> String =
+  #|(key) => { const b = globalThis.__cardlog?.[key] ?? []; const out = b.join("\n"); b.length = 0; return out; }

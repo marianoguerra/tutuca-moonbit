@@ -80,7 +80,7 @@ pub const ACTIVITY_CAP : Int = 200
 /// hold. Empty by default, because a host component has no such channel: it
 /// raises a structured `Refusal` instead, and that is what `refused` reads.
 declare pub fn run(
-  guest : &@host.Guest,
+  gmod : &@host.GuestModule,
   manifest : @host.DynManifest,
   scenes : Array[@scenedef.Scene],
   root? : String,

@@ -80,7 +80,7 @@ pub fn load_card(source : String, label : String) -> Bool {
 ///|
 /// The other half of `load_card`, called from JS once the module is up.
 pub fn finish_load(key : String, manifest_json : String) -> String {
-  match @guest.register(key, manifest_json, scope, page_policy()) {
+  match @guest.register(key, scope, page_policy()) {
     Err(reason) => {
       note("\{key}: \{reason}", tone="error")
       "refused"

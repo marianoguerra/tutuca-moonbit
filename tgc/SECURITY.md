@@ -84,6 +84,21 @@ controls. What bounds it:
   (an instance of its own that forwards, and stops), and nothing in the format
   does that for it.
 
+This became true of the HOST too, and it was not before. While a host named
+instances by integer it kept a table, and a table row can be deleted — so a host
+could revoke by forgetting, and did: `install_gc` and a reachability sweep
+existed to do exactly that. `tgc/host` holds the instance now, so it revokes
+nothing and frees nothing; it stops holding, and the engine collects. The claim
+above is stronger than it was and the machinery under it is gone.
+
+One mechanism is worth naming rather than leaving to be found. `DynObj` answers
+the protocol field `__tgc_inst` with a CLOSURE that publishes its `&Inst` into a
+host-side slot, because MoonBit has no trait-object downcast and a reference
+cannot ride in a `core.Value`. It widens no guest authority — nothing in a guest
+can call `Obj::field`, which is host-side MoonBit — and it replaces an integer
+that could be forged, incremented or guessed with a closure over a reference
+that cannot be.
+
 ## 4. Re-entrancy is possible
 
 Core wasm has no rule against re-entering a module while a call into it is

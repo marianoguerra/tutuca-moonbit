@@ -72,13 +72,49 @@ pub(open) trait Inst {
   /// persist — not a failure, since the host can project declared fields.
   fn persist(Self) -> Bytes
   fn release(Self) -> Unit
+  /// Publish this instance into whatever crossing slot its own transport
+  /// keeps, for a caller that has an `&Inst` and needs the concrete thing.
+  ///
+  /// MoonBit has no trait-object downcast (`core/spec.mbt` says so where it
+  /// matters), so a transport that can hand a real reference back cannot be
+  /// asked for one through a return type this package is allowed to name — the
+  /// type is the transport's, and this package is target-agnostic on purpose.
+  /// So the value goes out sideways, into a slot the transport owns and reads
+  /// on the statement after the call.
+  ///
+  /// A no-op for a transport with nothing to publish, which is every transport
+  /// that names its instances rather than holding them.
+  fn hand_over(Self) -> Unit = _
+  /// What distinguishes this instance from every other one the host holds.
+  ///
+  /// It seeds the render cache's bucket (`@tutuca.ObjId`), and a collision
+  /// there is a re-render that does not happen — silently, because two
+  /// instances that hash alike are simply treated as one. `tgc/emit`'s own
+  /// comment on the identity counter says the same thing about the guest side
+  /// of it.
+  ///
+  /// The default is the transport's name for it, which is unique within one
+  /// transport. A transport that can hold instances from several modules has
+  /// to say which module too, because the counter each module carries starts
+  /// at zero.
+  fn identity(Self) -> String = _
   /// How this instance names itself to the transport it came over.
   ///
-  /// TRANSPORT-SPECIFIC, and the one method here that is. It exists because
-  /// values still cross as JSON, and `child_json` has to write something a
-  /// JSON decoder can turn back into this instance. A seam that hands the
-  /// reference over directly answers 0 and nobody asks.
+  /// TRANSPORT-SPECIFIC, and the one method here that is. A transport that
+  /// names instances by integer — the in-process fake does, and so did the
+  /// JSON seam this replaced — answers that name; one that hands the reference
+  /// over answers 0, and nothing asks.
   fn token(Self) -> Int
+}
+
+///|
+impl Inst with fn hand_over(_self) {
+
+}
+
+///|
+impl Inst with fn identity(self) {
+  self.token().to_string()
 }
 
 ///|
@@ -122,12 +158,12 @@ pub fn HandleInst::new(guest : &Guest, handle : Int) -> HandleInst {
 }
 
 ///|
-impl Inst for HandleInst with fn get_field(self, name) {
+pub impl Inst for HandleInst with fn get_field(self, name) {
   self.guest.get_field(self.handle, name)
 }
 
 ///|
-impl Inst for HandleInst with fn with_field(self, name, v) {
+pub impl Inst for HandleInst with fn with_field(self, name, v) {
   match self.guest.with_field(self.handle, name, v) {
     Some(h) => Some(HandleInst::{ guest: self.guest, handle: h, })
     None => None
@@ -135,12 +171,12 @@ impl Inst for HandleInst with fn with_field(self, name, v) {
 }
 
 ///|
-impl Inst for HandleInst with fn get_property(self, name) {
+pub impl Inst for HandleInst with fn get_property(self, name) {
   self.guest.get_property(self.handle, name)
 }
 
 ///|
-impl Inst for HandleInst with fn set_property(self, name, value) {
+pub impl Inst for HandleInst with fn set_property(self, name, value) {
   match self.guest.set_property(self.handle, name, value) {
     GuestPropertyMissing => InstPropertyMissing
     GuestPropertyUnchanged => InstPropertyUnchanged
@@ -151,7 +187,13 @@ impl Inst for HandleInst with fn set_property(self, name, value) {
 }
 
 ///|
-impl Inst for HandleInst with fn dispatch(self, bucket, name, args, bindings) {
+pub impl Inst for HandleInst with fn dispatch(
+  self,
+  bucket,
+  name,
+  args,
+  bindings,
+) {
   // Through the BUCKET method rather than `handle_dispatch` directly, so an
   // implementation that overrode one of the two still gets its override. They
   // are defaulted in terms of `handle_dispatch`, which is exactly why routing
@@ -171,7 +213,7 @@ impl Inst for HandleInst with fn dispatch(self, bucket, name, args, bindings) {
 }
 
 ///|
-impl Inst for HandleInst with fn render_call(
+pub impl Inst for HandleInst with fn render_call(
   self,
   category,
   name,
@@ -192,17 +234,17 @@ impl Inst for HandleInst with fn render_call(
 }
 
 ///|
-impl Inst for HandleInst with fn persist(self) {
+pub impl Inst for HandleInst with fn persist(self) {
   self.guest.persist(self.handle)
 }
 
 ///|
-impl Inst for HandleInst with fn release(self) {
+pub impl Inst for HandleInst with fn release(self) {
   self.guest.drop_instance(self.handle)
 }
 
 ///|
-impl Inst for HandleInst with fn token(self) {
+pub impl Inst for HandleInst with fn token(self) {
   self.handle
 }
 
@@ -218,7 +260,7 @@ pub fn HandleModule::new(guest : &Guest) -> HandleModule {
 }
 
 ///|
-impl GuestModule for HandleModule with fn make(self, component, args) {
+pub impl GuestModule for HandleModule with fn make(self, component, args) {
   // A guest that could not build one answers a handle no instance has. `-1` is
   // the transport's spelling of that and it is the only place it is read.
   let h = self.guest.create(component, args)
@@ -230,7 +272,7 @@ impl GuestModule for HandleModule with fn make(self, component, args) {
 }
 
 ///|
-impl GuestModule for HandleModule with fn restore(self, component, state) {
+pub impl GuestModule for HandleModule with fn restore(self, component, state) {
   match self.guest.restore(component, state) {
     Some(h) => Some(HandleInst::{ guest: self.guest, handle: h, })
     None => None
@@ -238,11 +280,11 @@ impl GuestModule for HandleModule with fn restore(self, component, state) {
 }
 
 ///|
-impl GuestModule for HandleModule with fn serve_intent(self, name, args) {
+pub impl GuestModule for HandleModule with fn serve_intent(self, name, args) {
   self.guest.serve_intent(name, args)
 }
 
 ///|
-impl GuestModule for HandleModule with fn of_token(self, token) {
+pub impl GuestModule for HandleModule with fn of_token(self, token) {
   HandleInst::{ guest: self.guest, handle: token, }
 }

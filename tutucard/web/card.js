@@ -3,8 +3,8 @@
 // The OTHER backend, on the page. `tgc/emit` compiles a card to a core wasm
 // module using the GC proposal and nothing else — no component model, no WIT,
 // no archive — and this instantiates one and installs the same
-// `globalThis.__cardguest[key]` surface the old backend installs, so
-// `cardguest.mbt` mounts it unchanged and the whole host above it (views,
+// runtime and the module's exports on `globalThis.__tgcmod[key]`, and the host
+// reads a `tg_val` off them directly — so the whole host above it (views,
 // renderer, dispatch, the transactor) is the host it already was.
 //
 // That reuse is the point rather than a shortcut. What changed is the guest
@@ -22,7 +22,7 @@
 //     engine collects it. The handle map below exists only because MoonBit's
 //     js target passes integers across this seam, not because anything needs
 //     to be kept alive.
-import { makeValues, OP } from "../../tgc/host/values.mjs";
+import { makeValues } from "../../tgc/host/values.mjs";
 
 /** The runtime module, instantiated once per page. `tut` is shared. */
 let runtimePromise = null;
@@ -43,61 +43,6 @@ function loadRuntime() {
 export const b64ToBytes = (b64) =>
   Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 
-// The route, as the one integer the emitter writes it as. Written RESOLVED —
-// a bare `ask` is `dyn lex` — because the default route is exactly the kind of
-// thing two backends can agree to disagree about while every case with an
-// explicit route passes.
-const ROUTE_LEGS = { 1: ["dyn"], 2: ["lex"], 3: ["dyn", "lex"], 4: ["lex", "dyn"] };
-
-// ── the instance names, PAGE-WIDE ──
-//
-// One table for every module on the page, and that is the whole of what makes
-// composition work through this bridge. It was one table per `loadGuest`, and
-// each started at 1, so a hole in module A holding a note from module B read
-// B's handle in A's table and answered A's own first instance — or nothing.
-// Two pages of that: `card-embed.js` mints a key per `<mb-card>` element, so
-// two embeds on one page already collided without any composition at all.
-//
-// The engine still owns the instance and this still only NAMES it. What it now
-// also records is who made it, because a name that does not say which module
-// it belongs to cannot be resolved by a host holding two.
-const table = new Map(); // handle -> { inst, owner }
-// …and the same instance keeps the same NAME. `onComp` runs every time a child
-// crosses, which is once per render per row, so minting a fresh handle each
-// time gave one live row two or three entries — the collector then freed the
-// ones the newest render had not just made, and the count sat at a multiple of
-// the rows rather than at the rows. A handle is an identity here, not a ticket.
-const byInstance = new Map();
-let next = 1;
-
-const tableDelete = (h) => {
-  const row = table.get(h);
-  if (row !== undefined && byInstance.get(row.inst) === h) {
-    byInstance.delete(row.inst);
-  }
-  return table.delete(h);
-};
-
-/** Name an instance, recording its owner the first time it is seen. */
-const put = (inst, owner) => {
-  const seen = byInstance.get(inst);
-  if (seen !== undefined) return seen;
-  const h = next++;
-  table.set(h, { inst, owner });
-  byInstance.set(inst, h);
-  return h;
-};
-
-const instOf = (h) => table.get(h)?.inst ?? null;
-const ownerOf = (h) => table.get(h)?.owner ?? "";
-
-/** Forget everything a module owns. Called before it is instantiated again. */
-const evictOwner = (owner) => {
-  for (const [h, row] of [...table.entries()]) {
-    if (row.owner === owner) tableDelete(h);
-  }
-};
-
 /**
  * Instantiate a compiled card and install the guest surface for `cardguest.mbt`.
  *
@@ -110,11 +55,6 @@ export async function loadGuest(bytes, key = "default", { runtime } = {}) {
   // tested rather than only looked at.
   const rt = runtime ?? (await loadRuntime());
 
-  // Instances by integer, because MoonBit's js target passes integers across
-  // this seam. The table is page-wide (see above); this module owns the rows it
-  // mints, which is what `evictOwner` and `dropInstance` go by.
-  const mine = (inst) => put(inst, key);
-
   // A CHILD crossing to the host. The host cannot hold a GC reference, so it
   // holds a handle and asks for the instance back through
   // `Module::wrap_instance` — which is the marker `cardguest.mbt` already reads,
@@ -125,97 +65,33 @@ export async function loadGuest(bytes, key = "default", { runtime } = {}) {
   // beside it for the same reason one step out: a component name is only unique
   // within a module, and the host resolving `Note` against whichever module
   // happened to be decoding is how a note came back wearing a hole's schema.
-  //
-  // Read off the instance's own descriptor rather than assumed to be `key`.
-  // An instance answering a call on THIS module may have been made by another
-  // one — that is what holding a foreign component means — and the descriptor
-  // is the only thing that travels with it.
-  const V = makeValues(rt, {
-    onComp: (inst) => ({
-      $dyn: {
-        handle: mine(inst),
-        comp: V.text(instDescKey(inst, "comp")),
-        module: V.text(instDescKey(inst, "module")),
-      },
-    }),
-    ofHandle: instOf,
-  });
+  // Text out of `tg_bytes`, and the manifest at the end. The only two things
+  // this file still reads out of a value; everything else a card produces is
+  // read by the HOST, in MoonBit, off the `tg_val` itself — no marker, no
+  // handle, no JSON.
+  const V = makeValues(rt);
 
-  // Who this instance is and who made it, off the instance's own descriptor.
-  //
-  // `desc` is that component's slice of the module's manifest, so the name is
-  // under `name` and the module under `module` — the manifest's spellings.
-  // There is one description of a component now and this reads it, rather than
-  // a second small map written beside it that could say something else.
-  //
-  // `comp` is spelled `name` on the wire because that is what the manifest
-  // calls it; the caller asks for it by the role it plays here.
-  const DESC_KEY = { comp: "name", module: "module" };
-
-  const instDescKey = (inst, role) => {
-    const want = DESC_KEY[role];
-    const desc = rt.inst_desc(inst);
-    for (let i = 0; i < rt.map_len(desc); i++) {
-      if (V.text(rt.map_key(desc, i)) === want) {
-        return rt.as_str(rt.map_val(desc, i));
-      }
-    }
-    // A module built before the key existed. Empty rather than `key`, because
-    // "I do not know" and "the module doing the decoding" are different
-    // answers, and guessing the second is the bug this key was added to end.
-    return rt.bytes_new(0);
-  };
-
-  // What the card asked the host to do, for the duration of one dispatch. The
-  // HOST buffers rather than the guest, because the host is what brackets the
-  // call and therefore knows when it ended — an effect performed before a
-  // statement that abandons is discarded with the transition, and only this
-  // side can tell that the transition abandoned.
-  let control = [];
+  const control = [];
   const logLines = [];
 
-  const opts = (route) => ({
-    route: ROUTE_LEGS[route] ?? [],
-    onOk: null,
-    onError: null,
-    onUnhandled: null,
-    livePath: false,
-  });
-
   const effects = {
-    eff_send: (name, args) =>
-      control.push({ kind: "send", name: V.text(name), args: argsOf(args) }),
+    eff_send: (name, args) => control.push(["send", name, rt.mk_list(args)]),
     // A PLACE, reified by the generator and walked by the host. The steps are
     // already in the host's own spelling — `{"field":…}`, `{"item":[seq,key]}`,
     // `{"at":[seq,i]}` — so this hands them over rather than translating them.
     eff_send_at: (path, name, args) =>
-      control.push({
-        kind: "sendAt",
-        path: V.toJson(path) ?? [],
-        name: V.text(name),
-        args: argsOf(args),
-      }),
+      control.push(["sendAt", path, name, rt.mk_list(args)]),
     eff_reply: (name, args) =>
-      control.push({ kind: "sendReply", name: V.text(name), args: argsOf(args) }),
-    eff_answer: (v) => control.push({ kind: "reply", value: V.toJson(v) ?? null }),
+      control.push(["sendReply", name, rt.mk_list(args)]),
+    eff_answer: (v) => control.push(["reply", v]),
     eff_ask: (name, args, route) =>
-      control.push({
-        kind: "intent",
-        name: V.text(name),
-        args: argsOf(args),
-        opts: opts(route),
-      }),
+      control.push(["intent", name, rt.mk_list(args), route]),
     eff_notify: (name, args, route) =>
-      control.push({
-        kind: "intent",
-        name: V.text(name),
-        args: argsOf(args),
-        opts: opts(route),
-      }),
+      control.push(["intent", name, rt.mk_list(args), route]),
     eff_forward: (args, route) =>
-      control.push({ kind: "forward", args: argsOf(args), opts: opts(route) }),
-    eff_fail: (v) => control.push({ kind: "fail", value: V.toJson(v) ?? null }),
-    eff_drop: () => control.push({ kind: "stopPropagation" }),
+      control.push(["forward", rt.mk_list(args), route]),
+    eff_fail: (v) => control.push(["fail", v]),
+    eff_drop: () => control.push(["stopPropagation"]),
     // What a DECLINED rule said. `takeLog` hands it to whoever is watching —
     // a scene asserting `expect: log`, or a person with the console open. It
     // goes to both, because a page a person is looking at and a driver reading
@@ -227,18 +103,9 @@ export async function loadGuest(bytes, key = "default", { runtime } = {}) {
     },
   };
 
-  // `tg_vals` is a bare array, and the runtime's only reader for one is the
-  // list accessor — so it is wrapped rather than given a second accessor that
-  // would do the same thing under another name.
-  const argsOf = (a) => {
-    const asList = rt.mk_list(a);
-    const out = [];
-    for (let i = 0; i < rt.list_len(asList); i++) {
-      out.push(V.toJson(rt.list_at(asList, i)) ?? null);
-    }
-    return out;
-  };
-
+  // A raw buffered entry, as the JSON surface's `msgs` shape. Only the JSON
+  // half needs this, which is why it lives beside that half rather than in the
+  // buffer.
   const { instance } = await WebAssembly.instantiate(bytes, {
     tut: { ...rt, ...effects },
   });
@@ -248,143 +115,16 @@ export async function loadGuest(bytes, key = "default", { runtime } = {}) {
   // — for a dispatch and for a render call alike — and they ride in the call's
   // fifth slot, which is otherwise only used by a property write. That is how a
   // `*name` in a compiled handler reads the same value the view beside it does.
-  const bindings = (json) => {
-    if (!json) return null;
-    let m;
-    try {
-      m = JSON.parse(json);
-    } catch {
-      return null;
-    }
-    if (!m || typeof m !== "object" || Array.isArray(m)) return null;
-    return V.ofJson(m);
-  };
+  globalThis.__tgcmod = globalThis.__tgcmod ?? {};
+  // The buffer travels BESIDE the exports rather than on them: a WebAssembly
+  // exports object is frozen, and a host that has to own the buffer cannot put
+  // it there.
+  globalThis.__tgcmod[key] = { rt, ex, control };
+  // What the card has SAID, where a host that is not the playground can read
+  // it. Same lines, same order; `takeLog` below drains the same array.
+  globalThis.__cardlog = globalThis.__cardlog ?? {};
+  globalThis.__cardlog[key] = logLines;
 
-  // Note this dispatches through the INSTANCE's vtable, not this module's
-  // exports, so a handle naming another module's instance calls that module —
-  // which is what makes a hole holding a foreign component work at all.
-  const call = (h, op, name, args, v = null) => {
-    const inst = instOf(h);
-    if (!inst) return null;
-    return rt.call_op(inst, op, V.bytes(name), V.vals(args), v);
-  };
-
-  // This module is being instantiated again, so every instance it had made is
-  // dead: the rows naming them are the leak the playground would otherwise grow
-  // one of per keystroke. Only ITS rows — the table is page-wide now, and
-  // another module's instances outlive this one's reload.
-  //
-  // A component of another module that was holding one of these gets `null`
-  // back and renders empty. That is the honest outcome and it is worth saying
-  // out loud: reloading a card does not migrate what other cards were holding,
-  // it orphans it.
-  evictOwner(key);
-
-  // Whatever the collector recorded about this module's last instantiation
-  // names rows that no longer exist. Guarded because `loadGuest` is drivable
-  // with no page at all — `tgc/test` hands in its own runtime and installs no
-  // `__tutucard`.
-  globalThis.__tutucard?.resetSweep?.(key);
-
-  globalThis.__cardguest = globalThis.__cardguest ?? {};
-  globalThis.__cardguest[key] = {
-    takeLog() {
-      const out = logLines.join("\n");
-      logLines.length = 0;
-      return out;
-    },
-    // Each of these three is scoped to the rows THIS module owns. The table is
-    // page-wide, and a module freeing a name it did not mint would collect an
-    // instance another module is still rendering.
-    dropInstance(handle) {
-      if (ownerOf(handle) === key) tableDelete(handle);
-    },
-    size() {
-      let n = 0;
-      for (const row of table.values()) if (row.owner === key) n++;
-      return n;
-    },
-    retain(handlesJson) {
-      const keep = new Set(JSON.parse(handlesJson));
-      let gone = 0;
-      for (const [h, row] of [...table.entries()]) {
-        if (row.owner === key && !keep.has(h)) {
-          tableDelete(h);
-          gone++;
-        }
-      }
-      return gone;
-    },
-    create(component, argsJson) {
-      const inst = ex["tgc.make"](V.bytes(component), V.ofJson(JSON.parse(argsJson)));
-      return inst ? mine(inst) : -1;
-    },
-    getField(handle, name) {
-      const inst = instOf(handle);
-      if (!inst) return "";
-      const v = rt.get_field(inst, V.bytes(name));
-      const j = V.toJson(v);
-      return j === undefined ? "" : JSON.stringify(j);
-    },
-    dispatch(handle, bucketInt, name, argsJson, bindingsJson) {
-      control = [];
-      const args = JSON.parse(argsJson).map(V.ofJson);
-      const op = bucketInt === 1 ? OP.HANDLE_INTENT : OP.HANDLE_MESSAGE;
-      const answer = call(handle, op, name, args, bindings(bindingsJson));
-      const out = JSON.stringify({
-        // Null is "it did not happen": a rule declined, or an operation had no
-        // answer. `unhandled` and `unchanged` are the same answer to this host
-        // — no successor — and the card compiler does not distinguish them.
-        handled: answer !== null,
-        next: answer === null ? null : mine(rt.as_inst(answer)),
-        msgs: control,
-      });
-      control = [];
-      return out;
-    },
-    renderCall(handle, category, name, argsJson, bindingsJson) {
-      const op = category === "when"
-        ? OP.WHEN
-        : category === "enrich"
-        ? OP.ENRICH
-        : category === "enrichScope"
-        ? OP.ENRICH_SCOPE
-        : OP.COMPUTE;
-      const args = JSON.parse(argsJson).map(V.ofJson);
-      const answer = call(handle, op, name, args, bindings(bindingsJson));
-      const j = V.toJson(answer);
-      return j === undefined ? "" : JSON.stringify(j);
-    },
-    getProperty(handle, name) {
-      const answer = call(handle, OP.GET_PROPERTY, name, []);
-      const j = V.toJson(answer);
-      return j === undefined ? "" : JSON.stringify(j);
-    },
-    setProperty(handle, name, valueJson) {
-      const answer = call(
-        handle,
-        OP.SET_PROPERTY,
-        name,
-        [],
-        V.ofJson(JSON.parse(valueJson)),
-      );
-      return JSON.stringify(
-        answer === null
-          ? { tag: "missing" }
-          : { tag: "changed", next: mine(rt.as_inst(answer)) },
-      );
-    },
-    withField(handle, name, valueJson) {
-      const answer = call(
-        handle,
-        OP.WITH_FIELD,
-        name,
-        [],
-        V.ofJson(JSON.parse(valueJson)),
-      );
-      return answer === null ? -1 : mine(rt.as_inst(answer));
-    },
-  };
   // `tgc.describe` is the manifest, as a value. Read once, here, so a caller
   // that mounts does not have to know it could have come from anywhere else.
   return { exports: ex, runtime: rt, manifest: V.toJson(ex["tgc.describe"]()) };

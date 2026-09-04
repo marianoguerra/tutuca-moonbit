@@ -10,11 +10,12 @@ extern "js" fn install_probe(
   mount : (String, String, String, String, String) -> String,
   mount_empty : (String, String) -> String,
   hold : (String, String, String) -> String,
+  send : (String, String) -> String,
   click : (String) -> String,
   html : () -> String,
 ) -> Unit =
-  #|(register, mount, mountEmpty, hold, click, html) => {
-  #|  globalThis.__twomod = { register, mount, mountEmpty, hold, click, html };
+  #|(register, mount, mountEmpty, hold, send, click, html) => {
+  #|  globalThis.__twomod = { register, mount, mountEmpty, hold, send, click, html };
   #|}
 
 ///|
@@ -34,6 +35,7 @@ fn install() -> Unit {
     (hk, hc, hf, ck, cc) => mount(hk, hc, hf, ck, cc),
     (hk, hc) => mount_empty(hk, hc),
     (name, ck, cc) => hold(name, ck, cc),
+    (name, arg) => send(name, arg),
     sel => click(sel),
     () => current_html(),
   )
@@ -41,8 +43,8 @@ fn install() -> Unit {
 
 ///|
 /// Register a module whose guest `card.js` has already instantiated.
-fn register(key : String, manifest_json : String) -> String {
-  match @guest.register(key, manifest_json, scope, @policy.Policy::granted()) {
+fn register(key : String, _manifest_json : String) -> String {
+  match @guest.register(key, scope, @policy.Policy::granted()) {
     Ok(_) => "ok"
     Err(reason) => "refused: " + reason
   }
@@ -74,7 +76,6 @@ fn mount_value(root : @tutuca.Value) -> String {
   let app = @app.App::new(scope, root, container, @vdom.RenderOpts::new(doc)) catch {
     e => return "would not mount: \{e}"
   }
-  @host.install_gc(app.transactor)
   app.start()
   live.val = Some(@harness.Harness::over(app, container))
   current_html()
@@ -102,6 +103,14 @@ fn hold(name : String, child_key : String, child_comp : String) -> String {
     return "could not build \{child_key}/\{child_comp}"
   }
   h.send_at_root(name, args=[child])
+  current_html()
+}
+
+///|
+/// Send the mounted root a message with one string argument.
+fn send(name : String, arg : String) -> String {
+  guard live.val is Some(h) else { return "nothing is mounted" }
+  h.send_at_root(name, args=[Str(arg)])
   current_html()
 }
 

@@ -1,19 +1,19 @@
-// A card does not grow a table entry per keystroke.
+// The host holds one instance per live component and not one more.
 //
-// A guest instance is immutable, so every transition that answers a successor
-// makes its predecessor garbage — which is every interaction. The host has a
-// collector for that (`tgc/host/dynobj.mbt`, `install_gc`) and it was
-// handing the doomed handles to a card guest whose `drop_instance` did
-// nothing, on the grounds that the table goes with the module. True, and never
-// the whole story: a card left open on a page grew forever.
+// This used to count a TABLE. The bridge named every instance with an integer
+// so that MoonBit had something it could hold, and the table that mapped those
+// integers back was a strong reference to everything ever made — so a card left
+// open on a page grew forever, and two collectors existed to repair it: one for
+// the predecessor a successor replaced, and a reachability sweep for the row
+// that was simply removed and superseded by nothing.
 //
-// The other half is the row that is simply REMOVED. `.items.deleteAt 0` gives
-// the list a successor and the child it dropped was superseded by nothing —
-// there is no predecessor/successor pair to notice, only a place it used to
-// be. Reachability is what finds that, and the host can answer it because it
-// holds the root.
+// There is no table. The host holds the instance itself, the engine collects it
+// when the host stops, and what is left to check is the only thing that was
+// ever really being asked: does the TREE grow. `live_instances` walks the root
+// and counts what it reaches, which is the same question the sweep answered and
+// a more direct way to ask it.
 //
-// This watches both. The numbers are exact rather than a bound: a card with
+// The numbers are unchanged and still exact rather than a bound: a card with
 // three rows holds four instances — itself and three — whatever it did to get
 // there.
 
@@ -55,7 +55,7 @@ const check = (name, got, want) => {
 const add = (t) => [{ type: "input.draft", value: t }, { click: "button.add" }];
 const drive = async (steps) => {
   await driveCard(CARD, "Todos", { scenes: JSON.stringify({ s: { steps } }) });
-  return globalThis.__cardguest.drive.size();
+  return globalThis.__tutucard.instanceCount();
 };
 
 // Nothing but the root.

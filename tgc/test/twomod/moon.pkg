@@ -16,7 +16,6 @@ import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/memdom",
-  "marianoguerra/tutuca/tgc/host",
   "marianoguerra/tutuca/tgc/policy",
   "marianoguerra/tutuca/tutucard/guest",
   "marianoguerra/tutuca/testing/harness",

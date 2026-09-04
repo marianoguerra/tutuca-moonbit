@@ -25,7 +25,7 @@ pub fn intent_handlers(Map[String, @core.IntentAnswer]) -> Map[String, Array[@co
 
 pub fn report_json(Array[SceneResult]) -> Json
 
-pub fn run(&@host.Guest, @host.DynManifest, Array[@scenedef.Scene], root? : String, take_log? : () -> Array[String], on_bundle? : (@host.Module) -> Unit, on_app? : (@app.App[@memdom.MemNode]) -> Unit) -> Array[SceneResult]
+pub fn run(&@host.GuestModule, @host.DynManifest, Array[@scenedef.Scene], root? : String, take_log? : () -> Array[String], on_bundle? : (@host.Module) -> Unit, on_app? : (@app.App[@memdom.MemNode]) -> Unit) -> Array[SceneResult]
 
 pub fn[N : @vdom.DomWalk] seed(@harness.Harness[N], Array[@scenedef.Step]) -> Unit raise
 

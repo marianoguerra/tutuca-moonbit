@@ -65,13 +65,11 @@ fn boot() -> Unit {
   @glue.install(app)
   @glue.install_styles(app, @bdom.BrowserNode::from_document(doc))
   refresh_margaui()
-  // Every instance the host stops holding, released. Both halves: `install_gc`
-  // frees the predecessor a successor replaced — which is every interaction,
-  // since an instance is immutable — and the sweep frees a cell that was
-  // REMOVED, which is superseded by nothing and which only reachability can
-  // find. A composition demo does both constantly.
-  @host.install_gc(app.transactor)
-  @guest.install_sweep("std", () => app.root_value(), app.transactor)
+  // Nothing to install. An instance is a GC struct and the host holds a
+  // reference to it; when the host stops holding it, the engine collects it.
+  // There is no table to sweep and no handle to free — which is what
+  // `tgc/SPEC.md` §4 has claimed since the format landed and what the JSON seam
+  // made false.
   // THE PUMP. The shell posts a verb and one argument into its own state and
   // this reads them once the cascade that posted them has settled — which is
   // the only moment it is safe to answer, because answering means dispatching

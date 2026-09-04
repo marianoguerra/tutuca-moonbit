@@ -62,38 +62,34 @@ pub struct DynObj {
 pub let handle_field : String = "__tgc_handle"
 
 ///|
-/// A value on its way INTO a guest, with every nested-child instance in it
-/// encoded as the `{"$dyn": {"handle": n}}` marker `loader.mjs`'s `jsonToGuest`
-/// turns back into an instance token.
+/// The protocol field a `DynObj` answers with a HAND-OFF CLOSURE.
 ///
-/// `Value::to_json` cannot do this: an `Obj` has no JSON form, so it projects
-/// the object's FIELDS — which for a guest instance is a copy of its state
-/// under a name that no longer refers to it. What crosses has to be the handle.
+/// Reading it yields a `Fn` whose call publishes this object's `&Inst` into
+/// `crossing` and answers `Null`. It is a closure rather than a value for the
+/// reason `core/spec.mbt` names: an `Int` can ride in a `Value` and a reference
+/// cannot, and MoonBit has no downcast. What rides is a `Fn` that closes over
+/// the instance — the same self-pre-binding every other method on this trait
+/// already uses, with the answer put somewhere a `Value` cannot go.
 ///
-/// It recurses, and that is the whole point. A scalar `comp` field (the sample
-/// counter's `Pair` holds two that way) is not enough for guests whose children
-/// sit in a LIST — where a child that returns a successor is written back as
-/// the parent's whole list, one element of which is the new instance.
-pub fn child_json(v : @tutuca.Value) -> Json {
-  match v {
-    Obj(o) =>
-      match o.field(handle_field) {
-        Some(Num(h)) =>
-          Json::object({ "$dyn": Json::object({ "handle": Json::number(h) }) })
-        // An object that is not a guest instance — a host component, say.
-        // Nothing can be done for it here, so it projects as before.
-        _ => v.to_json()
-      }
-    List(items) => Json::array(items.map(child_json))
-    Map(entries) => {
-      let obj : Map[String, Json] = Map([])
-      for k, item in entries {
-        obj[k] = child_json(item)
-      }
-      Json::object(obj)
-    }
-    _ => v.to_json()
-  }
+/// Strictly better than the integer it replaces on the property that matters:
+/// an integer can be forged, incremented or guessed, and a closure over a
+/// reference cannot.
+pub let inst_field : String = "__tgc_inst"
+
+///|
+/// Where that closure puts it. One slot, read on the statement after the call:
+/// the host is single threaded and this never outlives `inst_of`.
+let crossing : Ref[&Inst?] = Ref(None)
+
+///|
+/// The instance behind this value, or None for a value no guest could hold.
+pub fn inst_of(v : @tutuca.Value) -> &Inst? {
+  guard v is Obj(o) && o.field(inst_field) is Some(Fn(f)) else { return None }
+  crossing.val = None
+  f([]) |> ignore
+  let out = crossing.val
+  crossing.val = None
+  out
 }
 
 ///|
@@ -113,9 +109,7 @@ pub fn DynObj::new(
     pid,
     owned,
     mutators: @component.schema_mutators(schema),
-    id: @tutuca.ObjId::of(schema.fingerprint, {
-      "handle": Num(inst.token().to_double()),
-    }),
+    id: @tutuca.ObjId::of(schema.fingerprint, { "inst": Str(inst.identity()) }),
   }
 }
 
@@ -195,12 +189,11 @@ pub fn slot_owner(
 /// The test is the VALUE rather than the field, and that is the point. An
 /// instance of the guest's own module crosses as a token it holds and reads
 /// back through `Module::wrap_instance`; a host component cannot cross at all,
-/// because `child_json` has nothing to write for it but its fields — which
-/// come back as a Map with the shape of a component and none of its
-/// behaviour. So the host keeps what the guest could not have held, and leaves
+/// because a host component has no `tg_val` form at all — there is nothing to
+/// hand over. So the host keeps what the guest could not have held, and leaves
 /// the rest where it is.
 fn uncrossable(v : @tutuca.Value) -> Bool {
-  v is Obj(o) && o.field(handle_field) is None
+  v is Obj(o) && o.field(handle_field) is None && inst_of(v) is None
 }
 
 ///|
@@ -208,57 +201,20 @@ pub fn DynObj::to_value(self : DynObj) -> @tutuca.Value {
   Obj(self)
 }
 
-// --- superseded-handle GC ---
-// A handler that returns a successor makes the old guest instance garbage
-// once its transaction settles and the render that reads the successor has
-// run. `install_gc` says exactly that: it collects at the end of every
-// drained cascade, after the App's own on_drained re-render (subscription
-// order — the App subscribes in App::new, a host installs this afterwards).
-// collect_superseded() is the same sweep, run by hand.
-
-///|
-let superseded : Array[&Inst] = []
-
-///|
-/// Release every instance a successor replaced. Idempotent, and safe to call
-/// at any point where no render is mid-flight.
-pub fn collect_superseded() -> Unit {
-  for inst in superseded {
-    inst.release()
-  }
-  superseded.clear()
-}
-
-///|
-/// Collect superseded guest handles at the end of every drained cascade.
-/// Call once per app, after mounting it — the App subscribes its re-render in
-/// `App::new`, and `on_drained` runs subscribers in subscription order, so a
-/// later subscription is a post-render hook.
-///
-/// This is one of the two halves. A module's own children are the engine's to
-/// collect; what needs help is the handle table the `&Guest` bridge keeps. This
-/// drops the handle a successor replaced — which is every interaction, since an
-/// instance is immutable — and a row that is REMOVED is superseded by nothing,
-/// so `install_sweep` walks the root and retains what it finds. Installing one
-/// without the other leaks. `tutucard/build/check-instances.mjs` pins both.
-pub fn install_gc(tx : @transactor.Transactor) -> Unit {
-  tx.on_drained(collect_superseded)
-}
-
-///|
-pub fn superseded_count() -> Int {
-  superseded.length()
-}
-
-///|
-pub fn DynObj::handle(self : DynObj) -> Int {
-  self.inst.token()
-}
-
 ///|
 /// The instance behind this object.
 pub fn DynObj::inst(self : DynObj) -> &Inst {
   self.inst
+}
+
+///|
+/// This instance's name in the transport it came over, or 0 for a transport
+/// that hands references rather than naming them.
+///
+/// Only a test reads it, and only to reach into a fake's own tables — which is
+/// a fair thing for a fake that does name instances by integer to expose.
+pub fn DynObj::handle(self : DynObj) -> Int {
+  self.inst.token()
 }
 
 ///|
@@ -371,19 +327,11 @@ fn DynObj::write_field(
   // THE SECOND DOOR: the whole state. `setItems []` says nothing about
   // `currentIndex` and leaves it stranded, which is precisely what the first
   // door cannot see.
-  match self.adopt(@tutuca.mutator_name("set", name), Obj(self.successor(h))) {
-    Some(nv) => {
-      superseded.push(self.inst)
-      nv
-    }
-    // The successor is what nothing holds now, so it is what the sweep takes.
-    // The instance that stands is the one this was called on, and its handle
-    // was never queued.
-    None => {
-      superseded.push(h)
-      Obj(self)
-    }
-  }
+  // A successor nothing adopts is a successor nothing holds, and nothing
+  // holding it is the whole of what used to be a queue: the engine collects it.
+  self
+  .adopt(@tutuca.mutator_name("set", name), Obj(self.successor(h)))
+  .unwrap_or(Obj(self))
 }
 
 ///|
@@ -524,6 +472,14 @@ fn DynObj::field_at(
   name : String,
   stack : &@tutuca.Stack,
 ) -> @tutuca.Value? {
+  if name == inst_field {
+    return Some(
+      Fn(_args => {
+        crossing.val = Some(self.inst)
+        Null
+      }),
+    )
+  }
   if name == handle_field {
     Some(Num(self.inst.token().to_double()))
   } else if self.owned.get(name) is Some(v) {
@@ -563,10 +519,7 @@ pub impl @tutuca.Obj for DynObj with fn with_field(self, name, v) {
     return Some(Obj({ ..self, owned, id: self.id.next(), }))
   }
   match self.inst.with_field(name, v) {
-    Some(h) => {
-      superseded.push(self.inst)
-      Some(Obj(self.successor(h)))
-    }
+    Some(h) => Some(Obj(self.successor(h)))
     None => None
   }
 }
@@ -759,10 +712,7 @@ fn DynObj::write_member(
             write_refusal(name, "the successor could not be adopted", value),
           )
         }
-        Some(next) => {
-          superseded.push(self.inst)
-          Changed(next)
-        }
+        Some(next) => Changed(next)
       }
     }
   }
@@ -915,12 +865,10 @@ pub impl @tutuca.Obj for DynObj with fn handler(self, bucket, name) {
         Some(h) => self.adopt(name, Obj(self.successor(h)))
         None => None
       }
-      if result.next is Some(h) && adopted is None {
-        // The successor is what nothing holds, so it is what the sweep takes.
-        // The instance that stands is the one this handler was called on, and
-        // its handle was never queued — which is the whole reason the check
-        // sits here rather than after the successor has been adopted.
-        superseded.push(h)
+      // A successor the host did not adopt is a successor nothing holds, and
+      // the one that stands is the instance this handler was called on. There
+      // is nothing to free and nowhere to queue it.
+      if result.next is Some(_) && adopted is None {
         return Some((Obj(self) : @tutuca.Value))
       }
       for msg in result.msgs {
@@ -964,13 +912,7 @@ pub impl @tutuca.Obj for DynObj with fn handler(self, bucket, name) {
       if !result.handled {
         return None
       }
-      match adopted {
-        Some(_) as nv => {
-          superseded.push(self.inst)
-          nv
-        }
-        None => None
-      }
+      adopted
     }),
   )
 }
@@ -994,5 +936,53 @@ pub impl @tutuca.Obj for DynObj with fn persist_id(self) {
     None
   } else {
     Some(self.pid)
+  }
+}
+
+///|
+/// Every loaded-module instance this value reaches, by identity.
+///
+/// The host holds the tree, so the host can answer what is in it — which is
+/// what makes "does a card grow an instance per keystroke" a question with an
+/// exact answer rather than a bound. It walks DECLARED fields, because that is
+/// the only list of them there is and because what a guest did not declare is
+/// not the host's to read.
+///
+/// A cycle cannot happen — a child is made before its parent holds it — but a
+/// diamond can: two fields naming one child. Stopping at an identity already
+/// seen keeps the walk linear either way.
+pub fn live_instances(v : @tutuca.Value, out : Array[String]) -> Unit {
+  match v {
+    Obj(o) => {
+      match inst_of(v) {
+        Some(inst) => {
+          let id = inst.identity()
+          if out.contains(id) {
+            return
+          }
+          out.push(id)
+        }
+        None => ()
+      }
+      match o.schema() {
+        Some(sc) =>
+          for f in sc.fields {
+            match o.field(f.name) {
+              Some(fv) => live_instances(fv, out)
+              None => ()
+            }
+          }
+        None => ()
+      }
+    }
+    List(items) =>
+      for item in items {
+        live_instances(item, out)
+      }
+    Map(entries) =>
+      for _k, item in entries {
+        live_instances(item, out)
+      }
+    _ => ()
   }
 }

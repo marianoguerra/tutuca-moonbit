@@ -1,0 +1,27 @@
+// A `tgc`-native `&Inst`: the host holding an INSTANCE rather than a name for
+// one.
+//
+// `tgc/SPEC.md` §11 named this as the next thing, and §4 is what it is for: "a
+// child is a `&tg_inst` in your own state", "a value is a reference, and it
+// lives", "instances leak in a growing table -> the engine's GC collects them".
+// The JSON seam this replaces made the last of those false — it kept a strong
+// table so that MoonBit had an integer to hold, and every piece of lifetime
+// machinery in `tgc/host` existed to repair the leak that table is.
+//
+// What crosses now is the `tg_val` itself. No handle, no `$dyn` marker, no
+// base64 for bytes, no RFC-3339 spelling for an instant, and no `{"$":"map"}`
+// escape — those are the JSON encoding's problems, and there is no JSON.
+//
+// TARGET-LOCKED, and `tgc/host` next door is not: it keeps its in-process fake
+// and stays checkable on all three backends, which is what makes a browser-free
+// test of the host possible at all. `vdom/browser` beside `vdom/wasm` is the
+// same split and the same reason.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/tgc/host",
+  "mizchi/js/core",
+  "moonbitlang/core/json",
+  "moonbitlang/core/string",
+}
+
+supported_targets = "js"

@@ -150,7 +150,7 @@ pub fn Module::manifest(self : Module) -> DynManifest {
 /// Guest view parse errors surface as the compile error.
 pub fn register_module(
   scope : @component.ComponentStack,
-  guest : &Guest,
+  gmod : &GuestModule,
   manifest : DynManifest,
   policy? : @policy.Policy = @policy.Policy::untrusted(),
 ) -> Module raise ManifestError {
@@ -324,7 +324,6 @@ pub fn register_module(
   // Built once, here, because the intent handlers below close over it and a
   // second adapter over the same transport would be a second answer to "what
   // does this module export".
-  let gmod : &GuestModule = HandleModule::new(guest)
   let served : Map[String, Array[@component.IntentFn]] = Map([])
   for def in manifest.components {
     for name in def.serves {
@@ -779,11 +778,23 @@ pub fn Module::wrap_instance(
   component : String,
   handle : Int,
 ) -> @tutuca.Value? {
+  self.wrap_inst(component, self.gmod.of_token(handle))
+}
+
+///|
+/// The same, over an instance the caller already has.
+///
+/// The general form: `wrap_instance` is this with a transport's integer turned
+/// back into one first. A seam that hands the reference over has nothing to
+/// turn.
+pub fn Module::wrap_inst(
+  self : Module,
+  component : String,
+  inst : &Inst,
+) -> @tutuca.Value? {
   match self.comps.get(component) {
     Some((comp_id, schema, def)) =>
-      Some(
-        DynObj::new(comp_id, def, self.gmod.of_token(handle), schema~).to_value(),
-      )
+      Some(DynObj::new(comp_id, def, inst, schema~).to_value())
     None => None
   }
 }
@@ -815,14 +826,6 @@ pub fn Module::migrate_instance(
   self.make_instance(component, args~)
 }
 
-///|
-/// Drop one guest instance by handle (successor handles from dispatch are
-/// collected automatically — see collect_superseded; this is for instances
-/// the caller seeded and unmounted explicitly).
-pub fn Module::drop_instance(self : Module, handle : Int) -> Unit {
-  self.gmod.of_token(handle).release()
-}
-
 // --- persistence (tgc/persist) ------------------------------------------
 
 ///|
@@ -838,9 +841,9 @@ pub fn Module::snapshot(self : Module, v : @tutuca.Value) -> @persist.Snapshot? 
   guard v is Obj(o) else { return None }
   guard o.schema() is Some(schema) else { return None }
   guard self.comps.get(schema.name) is Some(_) else { return None }
-  let state = match o.field(handle_field) {
-    Some(Num(h)) => self.gmod.of_token(h.to_int()).persist()
-    _ => b""
+  let state = match inst_of(v) {
+    Some(inst) => inst.persist()
+    None => b""
   }
   // The TAGGED projection, because a declared field may hold another
   // component — a placeholder somebody filled — and the untagged one would

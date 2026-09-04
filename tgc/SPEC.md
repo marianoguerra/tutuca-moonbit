@@ -176,6 +176,11 @@ registry that breaks a tie by "most recently loaded".
 
 ## 8. Encoding
 
+The JSON below is a JS HOST's encoding, and the only one that needs a spelling
+rule: a host that can read a `tg_val` reads the value. `tgc/host/browser` does,
+so base64 for a byte string, the RFC-3339 text for an instant and the
+`{"$":"map"}` escape are things JSON needs rather than things a value has.
+
 One, `$`-tagged JSON, because a value crosses this boundary in a browser and a
 browser parses JSON without a library. It is written and read by
 `tgc/host/values.mjs` on the page side and `core`'s `Value::to_json` /
@@ -356,11 +361,14 @@ worth naming because none of them showed up in the corpus:
 
 ## 11. What is not here yet
 
-- **A `tgc`-native `&Obj`.** The host mounts a module through `tgc/host`, which
-  wraps it as an ordinary `&Obj` over the `__cardguest` JSON surface. Nothing
-  downstream can tell that from a compiled-in component, which is why it works
-  — but it means a value crossing into the host is re-spelled as JSON rather
-  than handed over as the `tg_val` it already is. A wrapper written directly
-  against `tg_inst` is the next thing.
+- **A host that holds `tg_inst` without JS in the middle.** The JSON seam is
+  gone: `tgc/host` speaks `Inst` and `GuestModule`, and `tgc/host/browser` is an
+  `&Inst` written against `tg_inst` — a value crossing into the host is the
+  `tg_val` it already is, and an instance is the reference rather than a name
+  for one. What remains is that a MoonBit host still reaches those references
+  THROUGH JS, as an opaque value, so every `call_op` is a wasm->JS->wasm hop
+  rather than the `call_ref` §4 describes. A host that imported this runtime's
+  functions with preamble-typed signatures and did real `struct.get`s is the
+  next thing, and it is what a wasm-gc `tgc/host/wasm` would be.
 - **Worker isolation.** `tgc/SECURITY.md` §7 leaves a runaway call open, and
   nothing here closes it.

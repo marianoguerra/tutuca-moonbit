@@ -537,6 +537,31 @@ fn plain_field(name : String, ty : @tutuca.Ty) -> DynFieldDef {
 }
 
 ///|
+/// How many loaded-module instances the host reaches from the app root.
+///
+/// The question `install_gc` and the reachability sweep existed to make
+/// answerable, asked directly: there is no table, so what is alive is what the
+/// tree holds.
+fn held(h : @harness.Harness[@memdom.MemNode]) -> Int {
+  let seen : Array[String] = []
+  live_instances(h.app.root_value(), seen)
+  seen.length()
+}
+
+///|
+/// The transport's name for the one instance the host holds.
+fn held_one(h : @harness.Harness[@memdom.MemNode]) -> Int {
+  match h.app.root_value().field("slot") {
+    Obj(o) =>
+      match o.field(handle_field) {
+        Some(Num(n)) => n.to_int()
+        _ => -1
+      }
+    _ => -1
+  }
+}
+
+///|
 /// The policy these tests register under.
 ///
 /// They are about the MECHANICS — dispatch, identity, migration, schemas — and
@@ -951,12 +976,9 @@ fn filler_comp() -> @component.Component {
 ///|
 fn mount_with_bundle(fake : FakeGuest) -> (@harness.MemHarness, Module) raise {
   let h = @harness.mount(shell_module(), "Shell")
-  // what a host does after mounting: sweep superseded guest handles at the end
-  // of every drained cascade (see install_gc)
-  install_gc(h.app.transactor)
   let loaded = register_module(
     h.app.scope,
-    fake,
+    HandleModule::new(fake),
     counter_manifest(),
     policy=vouched(),
   )
@@ -966,7 +988,6 @@ fn mount_with_bundle(fake : FakeGuest) -> (@harness.MemHarness, Module) raise {
 
 ///|
 test "module mounts into a live app and dispatches through stock machinery" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   inspect(h.find_all(".counter").length(), content="0")
@@ -978,13 +999,13 @@ test "module mounts into a live app and dispatches through stock machinery" {
   inspect(h.text(".count"), content="10")
   inspect(h.text(".label"), content="count is 10")
 
-  // input dispatch: guest returns a successor handle -> new DynObj -> render;
-  // the cascade drains, the render reads the successor, and the sweep drops
-  // the handle it replaced
+  // input dispatch: the guest answers a successor, the host adopts it, and
+  // what it replaced is what the host no longer holds. There is no sweep and no
+  // queue: the tree is the only thing keeping an instance alive.
   h.click(".inc")
   inspect(h.text(".count"), content="11")
-  assert_true(fake.counters.get(inst0.handle()) is None)
-  inspect(superseded_count(), content="0")
+  assert_eq(held(h), 1)
+  assert_true(inst0.handle() != held_one(h))
   h.click(".dec")
   inspect(h.text(".count"), content="10")
 
@@ -994,10 +1015,12 @@ test "module mounts into a live app and dispatches through stock machinery" {
   inspect(h.text(".note"), content="changed!")
   inspect(h.text(".count"), content="10")
 
-  // eager collection leaves only the live instance behind
-  collect_superseded()
-  inspect(superseded_count(), content="0")
-  assert_true(fake.counters.length() == 1)
+  // …and the host still holds exactly one. The FAKE's table has every instance
+  // it ever made in it, and that is the honest difference between the two
+  // transports: one names instances and has to be told when a name is dead,
+  // the other holds them and stops holding.
+  assert_eq(held(h), 1)
+  assert_true(fake.counters.length() > 1)
 }
 
 ///|
@@ -1005,7 +1028,6 @@ test "a guest successor keeps its origin and moves its revision" {
   // A guest instance is replaced by a NEW DynObj around a new handle on every
   // dispatch, so without carrying the bucket forward each update would look
   // like a brand-new component to the render cache and never hit.
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(10) }) is Some(a)
@@ -1022,12 +1044,10 @@ test "a guest successor keeps its origin and moves its revision" {
   guard! h.app.root_value().field("slot").identity() is Some(after)
   assert_eq(after.to_hex(), id_a.to_hex())
   assert_eq(after.rev, 1)
-  collect_superseded()
 }
 
 ///|
 test "a guest `request` round-trips through a host IntentFn" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   h.app.scope.register_intent_handlers({
@@ -1052,7 +1072,6 @@ test "a guest `request` round-trips through a host IntentFn" {
 
 ///|
 test "nested guest children render and dispatch through two DynObj levels" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Pair") is Some(pair)
@@ -1073,7 +1092,6 @@ test "nested guest children render and dispatch through two DynObj levels" {
 
 ///|
 test "event modifiers in guest views dispatch through stock parsing" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(5) }) is Some(c)
@@ -1089,7 +1107,6 @@ test "event modifiers in guest views dispatch through stock parsing" {
 
 ///|
 test "migrate_instance rebuilds state from the JSON projection" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (_h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(10) }) is Some(a)
@@ -1107,7 +1124,6 @@ test "migrate_instance rebuilds state from the JSON projection" {
 /// instance whose history survives could only have come back through the
 /// guest.
 test "a snapshot restores through the guest's own bytes" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (_h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(7) }) is Some(a)
@@ -1134,7 +1150,6 @@ test "a snapshot restores through the guest's own bytes" {
 /// instances, its `persist` is empty, and it comes back rebuilt by its
 /// constructor.
 test "a component that does not persist restores from its declared fields" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (_h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Pair") is Some(p)
@@ -1153,7 +1168,6 @@ test "a component that does not persist restores from its declared fields" {
 /// makes changing a persisted format survivable: the state the guest could no
 /// longer read is lost and the declared fields are not.
 test "a guest refusing its own bytes falls back to the fields" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (_h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(3) }) is Some(a)
@@ -1166,7 +1180,6 @@ test "a guest refusing its own bytes falls back to the fields" {
 ///|
 /// The round trip a page actually makes: through a store, as text.
 test "a snapshot survives a store round trip" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (_h, loaded) = mount_with_bundle(fake)
   let store = @persist.MemStore::new()
@@ -1215,7 +1228,7 @@ test "event_names reflects a module registered after boot" {
   assert_false(h.app.event_names().contains("keydown"))
   let _ = register_module(
     h.app.scope,
-    FakeGuest::new(),
+    HandleModule::new(FakeGuest::new()),
     counter_manifest(),
     policy=vouched(),
   )
@@ -1481,7 +1494,10 @@ test "the default policy refuses CSS and a bomb" {
   let refused = (m : DynManifest) => {
     let mut ok = true
     // no `policy=`: this is what a page gets when it just drops a module on
-    try register_module(h.app.scope, FakeGuest::new(), m) |> ignore catch {
+    try
+      register_module(h.app.scope, HandleModule::new(FakeGuest::new()), m)
+      |> ignore
+    catch {
       _ => ok = false
     }
     !ok
@@ -1520,7 +1536,12 @@ test "untrusted registration blocks DOM egress but keeps custom elements" {
     }
     let mut ok = true
     try
-      register_module(h.app.scope, FakeGuest::new(), manifest) |> ignore
+      register_module(
+        h.app.scope,
+        HandleModule::new(FakeGuest::new()),
+        manifest,
+      )
+      |> ignore
     catch {
       _ => ok = false
     }
@@ -1550,7 +1571,12 @@ test "allowing external URLs lets a registered guest view name a pinned image" {
     }
     let mut ok = true
     try
-      register_module(h.app.scope, FakeGuest::new(), manifest, policy~)
+      register_module(
+        h.app.scope,
+        HandleModule::new(FakeGuest::new()),
+        manifest,
+        policy~,
+      )
       |> ignore
     catch {
       _ => ok = false
@@ -1598,7 +1624,12 @@ test "a guest view that sets markup directly is refused" {
   let register = (man : DynManifest) => {
     let mut ok = true
     try
-      register_module(h.app.scope, FakeGuest::new(), man, policy=vouched())
+      register_module(
+        h.app.scope,
+        HandleModule::new(FakeGuest::new()),
+        man,
+        policy=vouched(),
+      )
       |> ignore
     catch {
       // `register_module` also propagates the compiler's MacroError, so its
@@ -1839,7 +1870,7 @@ test "a module's views are linted at load" {
   let h = @harness.mount(shell_module(), "Shell")
   let loaded = register_module(
     h.app.scope,
-    FakeGuest::new(),
+    HandleModule::new(FakeGuest::new()),
     bad,
     policy=vouched(),
   )
@@ -1922,7 +1953,7 @@ test "a `$method` the manifest never declared is reported at load" {
   let h = @harness.mount(shell_module(), "Shell")
   let loaded = register_module(
     h.app.scope,
-    FakeGuest::new(),
+    HandleModule::new(FakeGuest::new()),
     sloppy,
     policy=vouched(),
   )
@@ -2016,45 +2047,6 @@ test "a same-module child is the guest's own, and the host does not fill it" {
 }
 
 ///|
-/// `child_json` is what a value looks like on its way INTO a guest, and the
-/// claim under test is the recursion: a nested child inside a LIST has to cross
-/// as its handle, not as a copy of its fields under a name that no longer
-/// refers to it.
-///
-/// This is the write half of nesting. A guest whose children sit in a list — a
-/// message holding reactions, a channel holding threads — has a child return a
-/// successor, and the host writes the parent's WHOLE LIST back with the new
-/// instance in it.
-test "child_json encodes a nested guest instance at any depth" {
-  let fake = FakeGuest::new()
-  let (_, loaded) = mount_with_bundle(fake)
-  guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(a)
-  guard! loaded.make_instance("Counter", args={ "count": Num(2) }) is Some(b)
-  let marker = (h : Int) => "{\"$dyn\":{\"handle\":\{h}}}"
-
-  // the case that always worked: a scalar `comp` field
-  inspect(child_json(a.to_value()).stringify(), content=marker(a.handle()))
-
-  // a list of them — what a parent's list field is written back as
-  inspect(
-    child_json(List([a.to_value(), Num(7), b.to_value()])).stringify(),
-    content="[\{marker(a.handle())},7,\{marker(b.handle())}]",
-  )
-
-  // and inside a map, and inside a list inside a map
-  inspect(
-    child_json(Map({ "who": a.to_value(), "all": List([b.to_value()]) })).stringify(),
-    content="{\"who\":\{marker(a.handle())},\"all\":[\{marker(b.handle())}]}",
-  )
-
-  // anything that is not a guest instance is untouched
-  inspect(
-    child_json(List([Str("x"), Bool(true), Null])).stringify(),
-    content="[\"x\",true,null]",
-  )
-}
-
-///|
 /// A bound the field's type cannot carry is named at load.
 ///
 /// The manifest's constraint record spells "unstated" two ways — `null` or an
@@ -2100,7 +2092,7 @@ test "a bound the type cannot carry is a load-time hint" {
   }
   let loaded = register_module(
     h.app.scope,
-    FakeGuest::new(),
+    HandleModule::new(FakeGuest::new()),
     manifest,
     policy=vouched(),
   )
@@ -2135,7 +2127,7 @@ test "a bound the type cannot carry is a load-time hint" {
   }
   let quiet = register_module(
     h.app.scope,
-    FakeGuest::new(),
+    HandleModule::new(FakeGuest::new()),
     fine,
     policy=vouched(),
   )
@@ -2197,13 +2189,13 @@ test "a config origin lets one module serve two instances" {
   ])
   let a = register_module(
     h.app.scope,
-    FakeGuest::new(),
+    HandleModule::new(FakeGuest::new()),
     config_manifest("reader"),
     policy=hachyderm,
   )
   let b = register_module(
     h.app.scope,
-    FakeGuest::new(),
+    HandleModule::new(FakeGuest::new()),
     config_manifest("reader"),
     policy=masto,
   )
@@ -2234,7 +2226,7 @@ test "a config origin lets one module serve two instances" {
   // which is what keeps hot-swap meaning what it always meant.
   let again = register_module(
     h.app.scope,
-    FakeGuest::new(),
+    HandleModule::new(FakeGuest::new()),
     config_manifest("reader"),
     policy=hachyderm,
   )
@@ -2258,7 +2250,7 @@ test "the screened tree and the rendered tree resolve config the same way" {
     try
       register_module(
         h.app.scope,
-        FakeGuest::new(),
+        HandleModule::new(FakeGuest::new()),
         config_manifest(module_name),
         policy~,
       )
@@ -2294,7 +2286,7 @@ test "a manifest's own origin default is not a grant" {
   let refused = try {
     register_module(
       h.app.scope,
-      FakeGuest::new(),
+      HandleModule::new(FakeGuest::new()),
       config_manifest("default-only"),
     )
     |> ignore
@@ -2308,7 +2300,7 @@ test "a manifest's own origin default is not a grant" {
   let trusting = @policy.Policy::untrusted().trusting_manifest_config()
   let b = register_module(
     h.app.scope,
-    FakeGuest::new(),
+    HandleModule::new(FakeGuest::new()),
     config_manifest("default-trusted"),
     policy=trusting,
   )
@@ -2334,7 +2326,7 @@ test "a config type the host and the manifest disagree about refuses" {
   let why = try {
     register_module(
       h.app.scope,
-      FakeGuest::new(),
+      HandleModule::new(FakeGuest::new()),
       config_manifest("mismatch"),
       policy=mismatched,
     )
@@ -2367,7 +2359,7 @@ test "a bound name the module does not declare is a diagnostic" {
   }
   let b = register_module(
     h.app.scope,
-    FakeGuest::new(),
+    HandleModule::new(FakeGuest::new()),
     plain,
     policy=@policy.Policy::untrusted().with_config([
       ("mediaOrigin", @policy.origin("https://files.hachyderm.io")),
@@ -2393,7 +2385,6 @@ test "a bound name the module does not declare is a diagnostic" {
 /// against the frame `Shell` pushed — the same path a host component's `*name`
 /// takes. The guest is not asked, and does not know.
 test "a guest reads a value a host ancestor provides" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
@@ -2414,13 +2405,11 @@ test "a guest reads a value a host ancestor provides" {
 /// "nobody provides it" case, and a card that names a value nothing supplies
 /// should still render rather than show a hole.
 test "a guest with no provider above it reads its declared default" {
-  collect_superseded()
   let h = @harness.mount(no_provide_shell(), "Bare")
-  install_gc(h.app.transactor)
   let fake = FakeGuest::new()
   let loaded = register_module(
     h.app.scope,
-    fake,
+    HandleModule::new(fake),
     counter_manifest(),
     policy=vouched(),
   )
@@ -2460,7 +2449,6 @@ fn no_provide_shell() -> @component.ModuleDef {
 /// through `Module::make_instance`, so the instance a `provide {Counter:
 /// "self"}` promises is one the guest actually created and still owns.
 test "a guest component published as a type can be built" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   // Through the BUNDLE's own scope, which is where a module's components live:
@@ -2488,7 +2476,6 @@ test "a guest component published as a type can be built" {
 /// effect applied after the call, and a value a handler is using cannot wait
 /// for that.
 test "a guest handler reads a declared lookup" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
@@ -2530,7 +2517,6 @@ impl @tutuca.Stack for OneBinding with fn lookup_dynamic(self, name) {
 /// same body working in a MoonBit component. The two halves ask the same
 /// question of the two environments a `*name` has ever meant.
 test "a guest value body reads a declared lookup" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (_, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
@@ -2559,7 +2545,6 @@ test "a guest value body reads a declared lookup" {
 /// absent rather than null — which is the same distinction the checker draws
 /// when it refuses a `*name` nothing declares.
 test "a guest handler reads nothing for an undeclared name" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
@@ -2571,7 +2556,6 @@ test "a guest handler reads nothing for an undeclared name" {
 ///|
 /// A guest answers the sender of a message, under a name it picked.
 test "a guest replies to whoever sent it a message" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
@@ -2610,10 +2594,9 @@ fn mount_with_domains(
   domains : Array[@tutuca.FieldDomain],
 ) -> (@harness.MemHarness, Module) raise {
   let h = @harness.mount(shell_module(), "Shell")
-  install_gc(h.app.transactor)
   let loaded = register_module(
     h.app.scope,
-    fake,
+    HandleModule::new(fake),
     bounded_counter_manifest(domains),
     policy=vouched(),
   )
@@ -2633,7 +2616,6 @@ fn mount_with_domains(
 ///
 /// Both doors, because neither catches what the other does.
 test "a guest's declared domain is enforced at both of the host's doors" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_domains(fake, [
     { field: "count", domain: DBetween(lo=DLit(5), hi=DLit(12)), },
@@ -2667,7 +2649,6 @@ test "a guest's declared domain is enforced at both of the host's doors" {
 ///|
 /// The refusal a host can READ, with the sentence composed from the values.
 test "a refused guest write reaches the refusal channel" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_domains(fake, [
     { field: "count", domain: DBetween(lo=DLit(5), hi=DLit(12)), },
@@ -2698,7 +2679,6 @@ test "a refused guest write reaches the refusal channel" {
 /// vocabulary still mounts and still works — it is simply not held to the
 /// clause this host could not understand.
 test "a component with no readable domain is unconstrained" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_domains(fake, [])
   guard! loaded.make_instance("Counter", args={ "count": Num(10) })
@@ -2719,7 +2699,6 @@ test "a component with no readable domain is unconstrained" {
 /// perfectly and collects the live instance — a component that reads its own
 /// fields through a handle the guest has already freed.
 test "a refused transition frees the successor and keeps the live handle" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_domains(fake, [
     { field: "count", domain: DBetween(lo=DLit(5), hi=DLit(12)), },
@@ -2730,12 +2709,12 @@ test "a refused transition frees the successor and keeps the live handle" {
   inspect(h.text(".count"), content="12")
   // The guest ran and minted a handle for 13; the host will not adopt it.
   h.click(".inc")
-  collect_superseded()
-  // One instance left, which is the one that stands — the successor was
-  // collected rather than leaked, and the live handle was not.
-  assert_true(fake.counters.length() == 1)
+  // One instance held, and it is the one that stands: the successor the host
+  // refused is a successor nothing holds, which is the whole of what used to
+  // be a queue.
+  assert_eq(held(h), 1)
   // …and reading it still crosses the bridge, which is the assertion that
-  // would fail if the sweep had taken the wrong one.
+  // would fail if the host had adopted the wrong one.
   inspect(h.text(".count"), content="12")
   h.click(".dec")
   inspect(h.text(".count"), content="11")
@@ -2745,7 +2724,6 @@ test "a refused transition frees the successor and keeps the live handle" {
 /// The same ownership question on the MUTATOR path, where the host does the
 /// guest write itself.
 test "a refused mutator frees the successor and keeps the live handle" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_domains(fake, [
     { field: "count", domain: DBetween(lo=DLit(5), hi=DLit(12)), },
@@ -2756,7 +2734,6 @@ test "a refused mutator frees the successor and keeps the live handle" {
   // `setCount 0` is turned down at the FIRST door, before the guest is
   // entered — so there is no successor to free and nothing to get wrong.
   h.click(".zero")
-  collect_superseded()
   assert_true(fake.counters.length() == 1)
   inspect(h.text(".count"), content="10")
 }
@@ -2769,7 +2746,6 @@ test "a refused mutator frees the successor and keeps the live handle" {
 /// the projection beside them, tagged, which is what lets a restore build it
 /// back rather than dropping in a fresh one.
 test "what a person put in a placeholder survives a snapshot" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! h.app.scope.lookup_component("Filler") is Some(filler)
@@ -2794,7 +2770,6 @@ test "what a person put in a placeholder survives a snapshot" {
 /// `fill_placeholders` puts there — no worse than before, and never a plain
 /// Map wearing the field's name.
 test "a restore with nothing to resolve the hole fills it fresh" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! h.app.scope.lookup_component("Filler") is Some(filler)
@@ -2814,7 +2789,6 @@ test "a restore with nothing to resolve the hole fills it fresh" {
 /// even when the source could: the guest's constructor is what fills it, and
 /// two instances for one field is what refusing avoids.
 test "a restore leaves a same-module child to the guest" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Pair") is Some(pair)
@@ -2866,7 +2840,7 @@ test "a protocol's properties parse as objects or as bare names" {
   let h = @harness.mount(shell_module(), "Shell")
   let loaded = register_module(
     h.app.scope,
-    FakeGuest::new(),
+    HandleModule::new(FakeGuest::new()),
     m,
     policy=vouched(),
   )
@@ -2886,7 +2860,7 @@ test "a protocol's properties parse as objects or as bare names" {
 /// `Rack`'s `holds` is a bare `component`: it says "some component" and there
 /// is nothing to build — but a caller can still pass one, and that is the
 /// whole shape of a holder. What crosses to a guest cannot carry a host
-/// component (`child_json` has nothing to write but its FIELDS, which come
+/// component (a host component has no `tg_val` form, so what would come
 /// back as a Map with the shape of a component and none of its behaviour), so
 /// the host keeps it and answers reads itself.
 test "a bare component field holds what the host puts in it" {
@@ -2938,7 +2912,6 @@ test "a list of bare component fields holds what the host puts in it" {
 /// The fake's constructor ignores the arg, which is what makes this visible —
 /// a host that had claimed the field would answer with it anyway.
 test "a same-module instance in a bare component field stays the guest's" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (_h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(4) }) is Some(mine)
@@ -2994,7 +2967,6 @@ test "a guest can address a message into a hole it does not own" {
 /// nested slot mints a successor the parent guest never hears about. When it
 /// lands, this test flips to the value and the gap entry goes.
 test "a holder nested in a container loses what the host put in it" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (_h, loaded) = mount_with_bundle(fake)
   guard! _h.app.scope.lookup_component("Filler") is Some(filler)
@@ -3043,7 +3015,6 @@ test "a holder nested in a container loses what the host put in it" {
 ///    because there is no count to build one FROM. That is the difference
 ///    between a list and the scalar above it, not an oversight.
 test "who keeps a slot, for every spelling and every value" {
-  collect_superseded()
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! h.app.scope.lookup_component("Filler") is Some(filler)
@@ -3160,7 +3131,6 @@ test "a component says which module declared it" {
 /// It is the case a composition demo is made of, and the case nothing in this
 /// file covered — every other module test registers exactly one module.
 test "a counter from another module answers a click through its holder" {
-  collect_superseded()
   let kit = FakeGuest::new()
   let (h, loaded_kit) = mount_with_bundle(kit)
   // A SECOND module, its own guest, its own registration, in the same scope —
@@ -3168,7 +3138,7 @@ test "a counter from another module answers a click through its holder" {
   let other = FakeGuest::new()
   let loaded_other = register_module(
     h.app.scope,
-    other,
+    HandleModule::new(other),
     { ..counter_manifest(), module_name: "otherlib", },
     policy=vouched(),
   )

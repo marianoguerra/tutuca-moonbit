@@ -509,7 +509,7 @@ const exampleId = (name) =>
  * whole reason this is affordable on a keystroke debounce — `WebAssembly.compile`
  * is the expensive half, and every box here is the same bytes. Everything a
  * card guest holds is already keyed by mount point (the arena, the instance
- * table, `__cardguest[key]`), so N of them side by side is what the shape was
+ * slot, `__tgcmod[key]`), so N of them side by side is what the shape was
  * built for.
  *
  * Each box is a separate app in a separate scope: pressing a button in one
@@ -517,11 +517,11 @@ const exampleId = (name) =>
  */
 async function drawExamples(report) {
   // Torn down first, and the JS half with it. `unmount` drops the MoonBit slot;
-  // `__cardguest[id]` is the instance table on this side, and a card whose
+  // `__tgcmod[id]` is this card's slot on this side, and a card whose
   // fixtures get renamed would otherwise strand one entry per name ever used.
   for (const id of mountedExamples) {
     globalThis.__tutucard.unmount(id);
-    delete globalThis.__cardguest?.[id];
+    delete globalThis.__tgcmod?.[id];
   }
   mountedExamples.length = 0;
   els.examples.replaceChildren();
@@ -977,7 +977,7 @@ function showBuild(report) {
 // ...and the module RUNNING
 //
 // The download proves the bytes. This runs them. `card.js` instantiates the
-// module against the shared runtime and installs it as `globalThis.__cardguest`;
+// module against the shared runtime and installs it as `globalThis.__tgcmod`;
 // `mountCompiled` implements `&Guest` over those calls, registers the module's
 // own manifest and mounts an instance into the pane below
 // (`tutucard/playground/cardguest.mbt`).

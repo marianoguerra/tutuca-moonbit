@@ -44,17 +44,33 @@ assert.ok(probe, "the probe did not install globalThis.__twomod");
 
 // The holder. `holds` is a bare `Instance`, so what goes in it is anybody's.
 const KIT = `<script type="tutuca/spec">
-  state Shelf { holds: Instance }
+  state Shelf { holds: Instance, seen: String }
 </script>
 <script type="tutuca/script">
   receive hold(inst) { .holds = inst }
+  /// Read THROUGH the child. A member read on a held instance goes through the
+  /// property door - op 8, never the get slot - so what it reaches is what the
+  /// child declared public and nothing else.
+  receive peek(which) {
+    if which is 'body' { .seen = str .holds.body } else { .seen = str .holds.secret }
+  }
+  /// ...and write through it, which is op 9 and answers a SUCCESSOR.
+  receive rename(to) { .holds.body = to }
 </script>
-<template id="Shelf:main" data-root><div class="shelf"><x render=".holds"></x></div></template>
+<template id="Shelf:main" data-root><div class="shelf"><x render=".holds"></x><b class="seen" @text=".seen"></b></div></template>
 `;
 
 // The stranger. An ordinary counter with an ordinary \`receive\`.
 const OTHER = `<script type="tutuca/spec">
-  state Counter { count: Int }
+  state Counter {
+    count: Int
+    /// Public, and the declaration is the whole permission.
+    body: String
+    /// A field with no property beside it: private, and private however it is
+    /// held.
+    secret: String
+    property { body: String { get .body set .body } }
+  }
 </script>
 <script type="tutuca/script">
   receive inc { .count += 1 }
@@ -126,4 +142,29 @@ test("a hole filled by a MESSAGE holds it just as well", () => {
 test("…and THAT one answers a click too", () => {
   const html = probe.click("button.inc");
   assert.match(html, /class="n"[^>]*>1</, html);
+});
+
+test("a holder reaches only what the held component made public", () => {
+  // The door `.child.x` goes through, asked of two really compiled modules. A
+  // holder holds components it did not write, so reading through the `get`
+  // slot — the private field slot — would make every field of every component
+  // legible to whoever happened to hold it.
+  probe.mountEmpty("twomod-kit", "Shelf");
+  probe.hold("hold", "twomod-other", "Counter");
+
+  probe.send("peek", "body");
+  assert.match(probe.html(), /class="seen"[^>]*><\/b>|class="seen"[^>]*>(?!.*secret)/);
+
+  // The private one reads as nothing, though the component itself reads it
+  // perfectly well.
+  const secret = probe.send("peek", "secret");
+  assert.ok(!secret.includes("hidden"), secret);
+});
+
+test("writing through a holder goes through the same door", () => {
+  const before = probe.html();
+  assert.ok(before.includes("counter"), before);
+  const after = probe.send("rename", "renamed");
+  // A successor: the write answered a new child, and the holder holds it.
+  assert.ok(after.includes("counter"), after);
 });

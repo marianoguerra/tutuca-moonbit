@@ -59,12 +59,11 @@ it was the ladder below — every rung passed, which left nowhere for a bug to b
 
 ## What is proved, and at which level
 
-Cross-module composition is one claim asked four times, because a proof at the
+Cross-module composition is one claim asked three times, because a proof at the
 level that never had the bug is a proof about the wrong thing:
 
 | where | what it drives |
 |---|---|
 | `tgc/test/compose.test.mjs` | the RUNTIME — a module holding another module's instance, which always worked |
-| `tgc/test/compose-guest.test.mjs` | the BRIDGE a page loads a card through — hold, read through, write through, and the property door that keeps a private field private |
 | `tgc/host/host_test.mbt` | the HOST — two in-process fakes, two modules, one tree, one click |
-| `tgc/test/twomod.test.mjs` | the SEAM — two really compiled modules registered into one scope, mounted and clicked, both by construction argument and by a `hold` message, because those are two different crossings |
+| `tgc/test/twomod.test.mjs` | the SEAM — two really compiled modules registered into one scope, mounted and clicked, both by construction argument and by a `hold` message, because those are two different crossings; and the property door, which keeps a private field private through a holder |

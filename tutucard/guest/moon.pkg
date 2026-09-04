@@ -1,25 +1,22 @@
-// The `&Guest` over a compiled card, and the page-level registry beside it.
+// The page-level registry of loaded cards.
 //
 // `tutucard/web/card.js` instantiates a `tgc` module against the shared runtime
-// and installs a handful of calls on `globalThis.__cardguest[key]`; this
-// implements `&Guest` over them. Nothing here is card-specific once the module
-// is running — `register_module` is the same call any host makes over a module
-// it was handed.
+// and installs the runtime and the module's exports on `globalThis.__tgcmod`;
+// `tgc/host/browser` is the `&Inst` over those, and this is where a page keeps
+// the ones it has. Nothing here names an instance by an integer, because
+// nothing between here and the engine does any more.
 //
-// EXTRACTED so there is one of it. The playground mounts one card at a time and
-// the composition demo holds several at once, and a second copy of a value
-// codec is how the two would come to disagree about what a value IS.
-//
-// Excluded from `moon publish` for the reason `tutucard/web` is: this is one
-// half of a bridge whose other half is a `.js` file that does not ship, and
-// half a bridge is worse than none.
+// It exists as its own package because two consumers hold cards — the card
+// playground, one at a time, and the composition demo, several at once — and a
+// second copy of a registry is how they would come to disagree about which
+// module made what.
 import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/tgc/host",
+  "marianoguerra/tutuca/tgc/host/browser",
   "marianoguerra/tutuca/tgc/policy",
-  "marianoguerra/tutuca/transactor",
-  "moonbitlang/core/json",
+  "mizchi/js/core",
 }
 
 supported_targets = "js"
