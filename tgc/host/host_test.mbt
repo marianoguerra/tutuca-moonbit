@@ -21,6 +21,15 @@ priv struct FakeGuest {
   /// instance of this module is a token — so the guest keeps the tokens and
   /// answers reads through `wrap_instance`, exactly as the wasm bridge does.
   racks : Map[Int, Array[Int]]
+  /// `Shelf` instances, holding the VALUE they were handed rather than a token
+  /// for it.
+  ///
+  /// A `Rack` keeps tokens and re-wraps them through its own module, which is
+  /// the shape the wasm bridge had and is exactly why it could not hold a
+  /// stranger: the re-wrap names the component AND the module, and both were
+  /// its own. A shelf keeps what it was given, which is what a guest holding a
+  /// component from somewhere else amounts to from the host's side.
+  shelves : Map[Int, @tutuca.Value]
   next : Ref[Int]
   loaded : Ref[Module?]
   /// requests the module served, in order (the guest-served request test)
@@ -35,6 +44,7 @@ fn FakeGuest::new() -> FakeGuest {
     pairs: Map([]),
     titles: Map([]),
     racks: Map([]),
+    shelves: Map([]),
     next: { val: 0, },
     loaded: { val: None, },
     served: [],
@@ -108,6 +118,12 @@ impl Guest for FakeGuest with fn create(self, component, args) {
       }
       h
     }
+    "Shelf" => {
+      let h = self.next.val
+      self.next.val = h + 1
+      self.shelves[h] = args.get("holds").unwrap_or(Null)
+      h
+    }
     "Rack" => {
       let h = self.next.val
       self.next.val = h + 1
@@ -134,6 +150,9 @@ impl Guest for FakeGuest with fn create(self, component, args) {
 
 ///|
 impl Guest for FakeGuest with fn get_field(self, handle, name) {
+  if self.shelves.get(handle) is Some(held) {
+    return if name == "holds" { Some(held) } else { None }
+  }
   // A Framed answers its title and nothing else. Asked for `body` it says
   // None — which it never is, because the host answers that one itself.
   if self.racks.get(handle) is Some(cells) {
@@ -412,6 +431,19 @@ impl Guest for FakeGuest with fn render_call(
 
 ///|
 impl Guest for FakeGuest with fn with_field(self, handle, name, v) {
+  // The write-through a successor takes on its way back up: the child
+  // transitioned, and the shelf holding it becomes a new shelf holding the new
+  // child. Copy on write, like every other transition here.
+  if self.shelves.get(handle) is Some(_) {
+    return if name == "holds" {
+      let h = self.next.val
+      self.next.val = h + 1
+      self.shelves[h] = v
+      Some(h)
+    } else {
+      None
+    }
+  }
   if self.titles.get(handle) is Some(_) {
     return match (name, v) {
       ("title", Str(t)) => {
@@ -721,6 +753,47 @@ fn counter_manifest() -> DynManifest {
       // there — which is the difference from `Framed` — and everything for it
       // to hold, because what a caller puts in one is as likely to be a
       // component no guest could hand over as one of its own.
+      // A guest that HOLDS what it was handed, rather than keeping a token and
+      // re-wrapping it through its own module. That difference is the whole
+      // subject of the cross-module test at the end of this file.
+      {
+        name: "Shelf",
+        module_: "counterlib",
+        doc: "One hole, holding whatever it was given.",
+        keywords: [],
+        category: "",
+        message_docs: Map([]),
+        views: [
+          {
+            name: "main",
+            html: (
+              #|<div class="shelf"><x render=".holds"></div>
+            ),
+          },
+        ],
+        fields: [plain_field("holds", TyComp(None))],
+        properties: [],
+        domains: [],
+        receives: [],
+        intents: [],
+        express_messages: [],
+        express_intents: [],
+        implements: [],
+        protocols: [],
+        property_bindings: [],
+        view_bindings: [],
+        provide_bindings: [],
+        lookup_bindings: [],
+        methods: [],
+        whens: [],
+        enriches: [],
+        bind_withs: [],
+        serves: [],
+        provide: [],
+        lookup: [],
+        inits: [],
+        style: "",
+      },
       {
         name: "Rack",
         module_: "counterlib",
@@ -1312,7 +1385,9 @@ test "component_names lists the manifest's components in order" {
   let (_, loaded) = mount_with_bundle(FakeGuest::new())
   debug_inspect(
     loaded.component_names(),
-    content="[\"Counter\", \"Pair\", \"Framed\", \"Rack\"]",
+    content=(
+      #|["Counter", "Pair", "Framed", "Shelf", "Rack"]
+    ),
   )
 }
 
@@ -3070,4 +3145,42 @@ test "a component says which module declared it" {
   assert_eq(m.components.map(c => "\{c.name}/\{c.module_}"), [
     "Hole/kit", "Older/",
   ])
+}
+
+///|
+/// TWO MODULES, one tree: a rack from one holding a counter from another, and
+/// a click that has to reach the counter and come back through the rack.
+///
+/// The three cases around it all pass — a host holding a guest, a guest holding
+/// a guest of its OWN module, and a guest MESSAGING into a hole by path. This
+/// is the one that is neither: a component the holder could not have built,
+/// reached by dispatch rather than by address, with a successor that has to be
+/// written back through a module that has never heard of it.
+///
+/// It is the case a composition demo is made of, and the case nothing in this
+/// file covered — every other module test registers exactly one module.
+test "a counter from another module answers a click through its holder" {
+  collect_superseded()
+  let kit = FakeGuest::new()
+  let (h, loaded_kit) = mount_with_bundle(kit)
+  // A SECOND module, its own guest, its own registration, in the same scope —
+  // which is the arrangement a page holding two cards is in.
+  let other = FakeGuest::new()
+  let loaded_other = register_module(
+    h.app.scope,
+    other,
+    { ..counter_manifest(), module_name: "otherlib", },
+    policy=vouched(),
+  )
+  other.loaded.val = Some(loaded_other)
+  guard! loaded_other.make_instance("Counter", args={ "count": Num(7) })
+    is Some(theirs)
+  guard! loaded_kit.make_instance("Shelf", args={ "holds": theirs.to_value() })
+    is Some(shelf)
+  h.send_at_root("setSlot", args=[shelf.to_value()])
+  // It renders, which is the half that was never in doubt.
+  assert_eq(h.text(".count"), "7")
+  // And it answers, which is the half that is.
+  h.click(".inc")
+  assert_eq(h.text(".count"), "8")
 }

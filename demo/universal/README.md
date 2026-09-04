@@ -66,9 +66,20 @@ Reproduce: press `edit`, press `+`, pick `Counter` (load it from the library
 first), press `edit` again to leave editor mode, then press the counter's `+`.
 The count stays at 0.
 
-Not diagnosed further, and deliberately not guessed at. The read and write paths
-are both proved at the bridge (`tgc/test/compose-guest.test.mjs` holds a
-component from one module in another and reads and writes through it), so what
-is left is the host's dispatch and spine rebuild across that boundary — and that
-wants its own headless repro before its own fix, rather than a change made from
-the browser.
+**It is not the host.** `tgc/host/host_test.mbt` now has the headless version of
+exactly this — two modules registered into one scope, a `Shelf` from one holding
+a `Counter` from the other, mounted and clicked — and it passes: the counter
+answers, and the successor is written back through a holder whose module has
+never heard of it. Two in-process fakes, no wasm.
+
+So the remaining fault is in the bridge between that host and a compiled card,
+and the two ends that are already proved narrow it further:
+`tgc/test/compose-guest.test.mjs` holds a component from one module inside
+another and reads and writes through it at the `__cardguest` surface. What is
+left is the seam between those two proofs — a card's `get_field` answering a
+`$dyn` marker, that marker being wrapped back into a `DynObj`, and dispatch
+finding a handler on it.
+
+Deliberately not guessed at from the browser. The next step is a headless
+two-card repro through `tutucard/guest` — the same shape as the host test above,
+with real compiled modules in place of the fakes.
