@@ -27,6 +27,6 @@ description = "A storybook gallery built only from published packages, exactly a
 preferred_target = "wasm-gc"
 
 import {
-  "marianoguerra/tutuca@0.50.1",
+  "marianoguerra/tutuca@0.50.2",
   "mizchi/js@0.12.2",
 }

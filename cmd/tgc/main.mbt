@@ -108,6 +108,22 @@ fn card(rest : ArrayView[String]) -> Unit raise {
       return
     }
   }
+  // The WARNINGS first, from the same source, because `compile` gates on
+  // errors alone: a card whose view sends a name nothing answers compiles
+  // clean, and the dead control is exactly what an author wants told. A
+  // consumer read the silence as "the compiler refuses that" and skipped
+  // building the check on their own card plane, which is the cost of a
+  // compiler that only speaks when it fails.
+  // A check that RAISES stopped on something the compile below will stop on
+  // too, in its own words, so nothing is said about it here.
+  let checked = @emit.check_card(source, name=stem_of(rest[1])) catch {
+    _ => { component: "", components: [], issues: [], }
+  }
+  for issue in checked.issues {
+    println(
+      "  \{issue.severity} \{issue.comp} [\{issue.code}] \{issue.message}",
+    )
+  }
   let out = @emit.compile(source, name=stem_of(rest[1])) catch {
     e => {
       println("rejected: \{e.message()}")

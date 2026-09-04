@@ -6,6 +6,29 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.50.2] - 2026-09-04
+
+### `tgc card` prints the warnings it was compiling past
+
+`compile` gates on errors alone, so a card whose view sends a name nothing
+answers built clean and said nothing — the dead control is exactly what an
+author wants told, and the one tool that would have told them
+(`check_card`) was not on the path anyone takes to build a card.
+
+The cost of that silence is measurable. The hmtp port's card plane omits a
+dead-handler check on purpose, and says why in its source: "a view naming a
+handler that does not exist is `NO_VIEW_HANDLER` and fails the compile, so
+checking for it again would be a second opinion about a settled question."
+It does not fail the compile. `NO_VIEW_HANDLER` is the one non-fatal finding
+in `tscript/check` and always has been, so every user-authored card served
+through that plane can carry a dead control with nothing anywhere reporting
+it — the exact bug class that port built a static gate for, missing on the
+surface the gate does not cover.
+
+A reasonable reading of a compiler that only speaks when it fails. `tgc card`
+now prints every issue before writing the module, and `tgc check` (0.50.0)
+remains the way to ask without compiling.
+
 ## [0.50.1] - 2026-09-04
 
 ### `tutuca gen` no longer guesses at a handler it cannot see
