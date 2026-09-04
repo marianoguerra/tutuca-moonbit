@@ -6,6 +6,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Documented
+
+- **A component's manifest `protocols` list is a DICTIONARY, not a claim.** It
+  carries every protocol declared in the file, and that reads like a bug: a
+  component implementing nothing still carries them all. It is what a protocol
+  id is looked UP in — a field typed `Instance[SomeProtocol]` names a protocol
+  the component itself need not implement, and the slot check has to find its
+  definition. `SchemaInfo::conforms` gates on `implements` first, so an entry a
+  component does not implement is inert, and both backends carry the same list.
+  Reported by the hmtp migration; documented on `DynProtocolDef` rather than
+  changed.
+
 ## [0.49.2] - 2026-09-04
 
 Three gaps in the card backend, found by

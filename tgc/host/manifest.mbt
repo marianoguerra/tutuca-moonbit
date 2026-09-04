@@ -35,6 +35,19 @@ pub(all) struct DynPropertyDef {
 } derive(Debug, Eq)
 
 ///|
+/// One protocol DEFINITION, as a dictionary entry rather than a claim.
+///
+/// A component's `protocols` list is every protocol declared in the FILE, not
+/// only the ones it implements — which reads like a bug and is not. It is what
+/// a protocol id is looked UP in: a field typed `Instance[SomeProtocol]` names
+/// a protocol the component itself need not implement, and
+/// `FieldSpec::protocol(id)` has to find its definition to check what goes in
+/// the slot. `SchemaInfo::conforms` gates on `implements` before it reads any
+/// of this, so an entry a component does not implement is inert.
+///
+/// What a component CLAIMS is `implements`. Both backends carry the same list
+/// here, which is the property that matters — a card and a compiled component
+/// describing one protocol two ways would be worse than either shape.
 pub(all) struct DynProtocolDef {
   id : String
   handle_messages : Array[String]
