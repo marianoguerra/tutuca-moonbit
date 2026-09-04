@@ -254,6 +254,28 @@ The outbound direction resolves the same way — `ask Holder::addRequested` rais
 `x/Holder@1::addRequested` — so one protocol crosses in one vocabulary whichever
 way a message is going.
 
+### What implementing a protocol is checked to mean
+
+`check_card` holds a component to the protocols it CLAIMS, and there are two
+questions behind that:
+
+- the SCHEMA's — does the spec block declare the protocol's operations at all?
+  `statedef.validate_protocols` answers it, and its findings arrive as ordinary
+  issues.
+- the SCRIPT's — is there a handler that ANSWERS each declared operation, under
+  the name a host dispatches? A card can declare
+  `handle Hole { message { Holder::hold(Any) } }` and write `receive hold`, and
+  then it answers `hold` while its manifest claims a protocol whose operation is
+  `x/Holder@1::hold`.
+
+Both are ERRORS. `SchemaInfo::conforms` refuses such a component when a host
+fills a slot with it, so the card is already broken — it just says nothing until
+something tries to use it, and by then the failure is a long way from the line
+that is wrong.
+
+The express side is the schema's question alone: nothing in a script declares an
+outbound name.
+
 Every declared field is one slot in a `tg_vals`, whatever its type. A
 specialising backend would unbox an `Int` field and save a `struct.new` per
 assignment; this one gets `get_field` and `with_field` for two lines each and no

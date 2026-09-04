@@ -116,7 +116,7 @@ test "a card's manifest carries its protocol definitions and bindings" {
     #|handle B { message { Lifecycle::init } }
     #|express B { message { Lifecycle::didInit } }
   let out = @emit.compile(
-    card(spec, "receive init { .active = true }"),
+    card(spec, "receive Lifecycle::init { .active = true }"),
     name="b",
   )
   guard out.manifest is Object(m) else { fail("no manifest") }
@@ -339,4 +339,97 @@ test "check_card and compile agree about what is fatal" {
     }
     assert_eq(compiled, should_compile)
   }
+}
+
+///|
+/// A component that CLAIMS a protocol and answers none of its operations is
+/// reported, at the step an author runs before paying for a compile.
+///
+/// The failure this catches is silent twice over: the card compiles, and the
+/// manifest reads `implements: ["x/Holder@1"]` beside `receives: ["hold"]` — so
+/// a host matches the component by protocol id and then `conforms` refuses it
+/// when something tries to fill a slot with it, which is a long way from the
+/// line that is wrong. A real card carried exactly this for its whole life; the
+/// only thing that ever noticed was a release changing what `receives` said.
+test "a card claiming a protocol it does not answer is reported" {
+  let spec =
+    #|protocol Holder = "x/Holder@1" { handle { message { hold(Any) } } }
+    #|state B implements Holder { n: Double }
+    #|handle B { message { Holder::hold(Any) } }
+  // The spec declares the operation; the script answers a name of its own.
+  let c = @emit.check_card(
+    card(spec, "receive hold(x) { .n += 1.0 }"),
+    name="b",
+  )
+  let found = c.issues.filter(i => i.code == "PROTOCOL_MEMBER_UNANSWERED")
+  assert_eq(found.length(), 1)
+  assert_eq(found[0].severity, "error")
+  // The message names the spelling to write, because "does not conform" with
+  // no repair is a finding an author has to go and derive.
+  assert_true(found[0].message.contains("receive Holder::hold"))
+  // …and it is fatal, so the card does not quietly compile into a component
+  // the host will refuse.
+  let compiled = try {
+    @emit.compile(card(spec, "receive hold(x) { .n += 1.0 }"), name="b")
+    |> ignore
+    true
+  } catch {
+    _ => false
+  }
+  assert_false(compiled)
+}
+
+///|
+/// …and the same card answering under the protocol's name is clean.
+test "a card that answers its protocol's operations checks clean" {
+  let spec =
+    #|protocol Holder = "x/Holder@1" {
+    #|  handle { message { hold(Any) } intent { emptied } }
+    #|}
+    #|state B implements Holder { n: Double }
+    #|handle B { message { Holder::hold(Any) } intent { Holder::emptied } }
+  let script = "receive Holder::hold(x) { .n += 1.0 }\n" +
+    "answer Holder::emptied { reply 1 }"
+  let c = @emit.check_card(card(spec, script), name="b")
+  assert_eq(c.issues.filter(i => i.severity == "error"), [])
+  let out = @emit.compile(card(spec, script), name="b")
+  assert_eq(out.component, "B")
+}
+
+///|
+/// A handled INTENT is checked the same way, and named as one.
+///
+/// The two buckets take different keywords, so a message's advice would send an
+/// author to write `receive` for something only `answer` can declare.
+test "an unanswered protocol intent names `answer`, not `receive`" {
+  let spec =
+    #|protocol Holder = "x/Holder@1" { handle { intent { emptied } } }
+    #|state B implements Holder { n: Double }
+    #|handle B { intent { Holder::emptied } }
+  let c = @emit.check_card(card(spec, "receive bump { .n += 1.0 }"), name="b")
+  let found = c.issues.filter(i => i.code == "PROTOCOL_MEMBER_UNANSWERED")
+  assert_eq(found.length(), 1)
+  assert_true(found[0].message.contains("answer Holder::emptied"))
+}
+
+///|
+/// A component that does not CLAIM the protocol answers for nothing.
+///
+/// The control. A card's `protocols` list is every protocol in the FILE — it is
+/// the dictionary a slot's declared type is resolved through — so checking
+/// conformance against that list rather than against `implements` would hold
+/// every component in a card to every protocol any of them uses.
+test "a component that implements nothing is held to nothing" {
+  let spec =
+    #|protocol Holder = "x/Holder@1" { handle { message { hold(Any) } } }
+    #|state A implements Holder { n: Double }
+    #|handle A { message { Holder::hold(Any) } }
+    #|state B { m: Double }
+  let src = "<script type=\"tutuca/spec\">\{spec}</script>" +
+    "<script type=\"tutuca/script\" for=\"A\">receive Holder::hold(x) { .n += 1.0 }</script>" +
+    "<script type=\"tutuca/script\" for=\"B\">receive bump { .m += 1.0 }</script>" +
+    "<template id=\"A:main\" data-root><div></div></template>" +
+    "<template id=\"B:main\"><div></div></template>"
+  let c = @emit.check_card(src, name="b")
+  assert_eq(c.issues.filter(i => i.severity == "error"), [])
 }

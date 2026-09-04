@@ -170,6 +170,7 @@ fn prepare(
   // so a fault it cannot see is a fault they converge past.
   let prog = @viewgen.ProgramIndex::of(file, name)
   let names = comps.map(c => c.name)
+  check_protocols(comps, prog, issues)
   for c in comps {
     let surface = view_surface(c, names, prog, file.macros, issues)
     for f in @check.check(c.authored, c.def, surface~) {
@@ -230,6 +231,100 @@ fn surface_of(comps : Array[Comp]) -> @check.Surface {
     knows_views: false,
     open_senders: true,
     comps: comps.map(c => c.name),
+  }
+}
+
+///|
+/// The validator's code, as the string an editor puts in a gutter.
+///
+/// Spelled out rather than derived: these are the names a card author reads and
+/// searches for, and a `Show` that happened to answer the constructor is a
+/// coupling between a diagnostic code and a MoonBit identifier.
+fn protocol_code(c : @tutuca.ProtocolIssueCode) -> String {
+  match c {
+    ProtocolUnresolved => "PROTOCOL_UNRESOLVED"
+    ProtocolDefinitionConflict => "PROTOCOL_DEFINITION_CONFLICT"
+    ProtocolNotImplemented => "PROTOCOL_NOT_IMPLEMENTED"
+    ProtocolMemberMissing => "PROTOCOL_MEMBER_MISSING"
+    ProtocolMemberType => "PROTOCOL_MEMBER_TYPE"
+    ProtocolTargetMismatch => "PROTOCOL_TARGET_MISMATCH"
+    ProtocolPropertyMissing => "PROTOCOL_PROPERTY_MISSING"
+    ProtocolPropertyType => "PROTOCOL_PROPERTY_TYPE"
+    ProtocolViewMissing => "PROTOCOL_VIEW_MISSING"
+    ProtocolProvideMissing => "PROTOCOL_PROVIDE_MISSING"
+    ProtocolLookupMissing => "PROTOCOL_LOOKUP_MISSING"
+    ProtocolResultType => "PROTOCOL_RESULT_TYPE"
+    ProtocolExpressionUndeclared => "PROTOCOL_EXPRESSION_UNDECLARED"
+  }
+}
+
+///|
+/// What a component PROMISES by implementing a protocol, held to what it does.
+///
+/// Two questions, and a card could fail either while compiling clean:
+///
+/// The SCHEMA's — does the spec block declare the protocol's operations at all?
+/// `statedef.validate_protocols` answers it, and `gen` has run it since
+/// protocols landed. This backend never did.
+///
+/// The SCRIPT's — is there a handler that ANSWERS each declared operation,
+/// under the name the module will be dispatched at? A card can declare
+/// `handle Hole { message { Holder::hold(Any) } }` and write `receive hold`,
+/// and then it answers `hold` while its manifest claims a protocol whose
+/// operation is `x/Holder@1::hold`. `SchemaInfo::conforms` refuses such a
+/// component when a host fills a slot with it, so the card is already broken —
+/// it just says nothing until something tries to use it. That is the shape this
+/// exists for, and it is what a real card carried unnoticed for its whole life.
+///
+/// An ERROR, not a warning: a component the host will refuse is not a component
+/// that runs. The express side is the schema's question alone — nothing in a
+/// script declares an outbound name — so it is left to the validator above.
+fn check_protocols(
+  comps : Array[Comp],
+  prog : @viewgen.ProgramIndex,
+  issues : Array[Issue],
+) -> Unit {
+  for d in prog.protocol_validation().diagnostics {
+    // A protocol this batch cannot see is checked at runtime and says so; the
+    // validator marks it non-fatal and this keeps that.
+    issues.push({
+      comp: d.component,
+      code: protocol_code(d.code),
+      message: d.message,
+      severity: if d.error {
+        "error"
+      } else {
+        "warning"
+      },
+      line: 0,
+      span: d.span,
+    })
+  }
+  for c in comps {
+    for p in c.def.protocols {
+      if !c.def.implements.contains(p.id) {
+        continue
+      }
+      let answered = c.decls
+        .filter(d => d.kind is (DReceive | DAnswer))
+        .map(d => wire_name(c, d))
+      for pair in [(p.handle_message, "message"), (p.handle_intent, "intent")] {
+        let (members, what) = pair
+        for m in members {
+          let wire = p.id + "::" + m.name
+          if !answered.contains(wire) {
+            issues.push({
+              comp: c.name,
+              code: "PROTOCOL_MEMBER_UNANSWERED",
+              message: "`\{c.name}` implements `\{p.id}` and nothing answers its \{what} `\{m.name}` — the handler has to be declared under the protocol's own name (`\{if what == "message" { "receive" } else { "answer" }} \{p.local_name}::\{m.name}`), because that is the name a host dispatches",
+              severity: "error",
+              line: 0,
+              span: p.span,
+            })
+          }
+        }
+      }
+    }
   }
 }
 

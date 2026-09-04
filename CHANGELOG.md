@@ -6,6 +6,53 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.49.4] - 2026-09-04
+
+`check_card` holds a card to the protocols it claims.
+
+### The check
+
+A component declaring `implements P` is now held to P at the step an author runs
+before paying for a compile, and both questions behind that are asked:
+
+- **The schema's** — does the spec block declare the protocol's operations?
+  `statedef.validate_protocols` has answered this since protocols landed and
+  `gen` has run it all along; this backend never did.
+- **The script's** — does a handler ANSWER each declared operation, under the
+  name a host dispatches? A card can declare
+  `handle Hole { message { Holder::hold(Any) } }` and write `receive hold`, and
+  then answer `hold` while its manifest claims a protocol whose operation is
+  `x/Holder@1::hold`.
+
+Both are errors, because `SchemaInfo::conforms` refuses such a component when a
+host fills a slot with it — the card is already broken and merely silent, and by
+the time a slot refuses it the failure is a long way from the line that is
+wrong. The finding names the spelling to write, since "does not conform" with no
+repair is something an author has to go and derive.
+
+The reported case was a card carrying this for its whole life across four
+components and ten declarations — every protocol operation it had. The only
+thing that ever noticed was 0.49.3 changing what `receives` said.
+
+It also caught a fixture in this repo's own test suite, written the same way.
+
+### A contradiction the check exposed
+
+`answer Holder::emptied` was reported as undeclared — "did you mean
+`x/Holder@1::emptied`?" — which made the conformance error impossible to
+satisfy: the check demanded the qualified spelling and the checker refused it.
+
+`C::msg_params` looked a declaration up by the schema's WIRE name only. A
+protocol operation's case carries both that and the local spelling the file
+imported it under, and a handler may be written with either. `receive` escaped
+this through the branch for a name only the views send; `answer` had no such
+door. It now matches on either, which is what `tscript/emit_mbt`'s
+`declared_msg` and `tgc/emit`'s `wire_name` already did — the three had to
+agree and did not.
+
+That also means a `receive Holder::hold` takes its parameter types from the
+schema instead of falling through untyped, on both backends.
+
 ## [0.49.3] - 2026-09-04
 
 **A protocol operation has one dispatch name.** The deviation 0.49.2 wrote into

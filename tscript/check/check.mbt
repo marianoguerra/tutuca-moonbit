@@ -560,7 +560,16 @@ fn C::msg_params(self : C, d : @tscript.Decl) -> Unit {
     DAnswer => (self.def.intent, "intent")
     _ => (self.def.receive, "receive")
   }
-  let found = cases.filter(m => m.name == d.name)
+  // EITHER spelling. A protocol operation's declared case carries the wire
+  // name (`x/Holder@1::hold`) and the local one the file imported it under
+  // (`Holder::hold`), and a handler may be written with either — so a lookup on
+  // the wire name alone finds nothing for the spelling an author actually
+  // types. `receive` escaped that below, through the branch for a name only the
+  // views send; `answer` had no such door, so `answer Holder::emptied` was
+  // reported as undeclared while being the only spelling that satisfies the
+  // protocol. `tscript/emit_mbt`'s `declared_msg` and `tgc/emit`'s `wire_name`
+  // both match on either, and the three have to agree.
+  let found = cases.filter(m => m.name == d.name || m.source_name == d.name)
   // A `receive` name the VIEWS send needs no schema case. One bucket holds a
   // view's name and a parent's, and the schema declares every message the
   // component accepts BEYOND the ones its own views send. So a `receive` that
