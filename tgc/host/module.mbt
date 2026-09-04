@@ -5,7 +5,11 @@
 
 ///|
 pub struct Module {
-  guest : &Guest
+  /// The module's own exports, as the HOST speaks them: `make`, `restore`,
+  /// `serve_intent`, and the two transport-shaped calls that go with the JSON
+  /// seam. Nothing on this struct names an instance by integer any more —
+  /// `&Guest` is one transport behind this, not the interface.
+  gmod : &GuestModule
   manifest : DynManifest
   /// What the linter said about this module's views, as
   /// `CODE (level) Comp/view: message` lines (the shape `gen` prints).
@@ -317,13 +321,17 @@ pub fn register_module(
   // A served name cannot answer `Pass`: the guest ABI has no way to decline,
   // so it answers `Ok` or `Failed` and the walk ends here whichever it is.
   // Declining is a host-side handler's privilege.
+  // Built once, here, because the intent handlers below close over it and a
+  // second adapter over the same transport would be a second answer to "what
+  // does this module export".
+  let gmod : &GuestModule = HandleModule::new(guest)
   let served : Map[String, Array[@component.IntentFn]] = Map([])
   for def in manifest.components {
     for name in def.serves {
       served[name] = [
         IntentFn((call, answer) => {
           answer(
-            match guest.serve_intent(name, call.args) {
+            match gmod.serve_intent(name, call.args) {
               Ok(v) => Ok(v)
               Err(e) => Failed(e)
             },
@@ -386,7 +394,7 @@ pub fn register_module(
     diagnostics.push(f.to_line("module \{manifest.module_name}"))
   }
   let loaded : Module = {
-    guest,
+    gmod,
     manifest,
     comps,
     diagnostics,
@@ -635,13 +643,12 @@ pub fn Module::make_instance(
 ) -> DynObj? {
   match self.comps.get(component) {
     Some((comp_id, schema, def)) => {
-      let handle = self.guest.create(component, args)
+      guard self.gmod.make(component, args) is Some(inst) else { return None }
       Some(
         DynObj::new(
           comp_id,
           def,
-          self.guest,
-          handle,
+          inst,
           schema~,
           pid=if pid == "" { self.mint_pid(component) } else { pid },
           owned=self.fill_placeholders(schema, args),
@@ -774,7 +781,9 @@ pub fn Module::wrap_instance(
 ) -> @tutuca.Value? {
   match self.comps.get(component) {
     Some((comp_id, schema, def)) =>
-      Some(DynObj::new(comp_id, def, self.guest, handle, schema~).to_value())
+      Some(
+        DynObj::new(comp_id, def, self.gmod.of_token(handle), schema~).to_value(),
+      )
     None => None
   }
 }
@@ -811,7 +820,7 @@ pub fn Module::migrate_instance(
 /// collected automatically — see collect_superseded; this is for instances
 /// the caller seeded and unmounted explicitly).
 pub fn Module::drop_instance(self : Module, handle : Int) -> Unit {
-  self.guest.drop_instance(handle)
+  self.gmod.of_token(handle).release()
 }
 
 // --- persistence (tgc/persist) ------------------------------------------
@@ -830,7 +839,7 @@ pub fn Module::snapshot(self : Module, v : @tutuca.Value) -> @persist.Snapshot? 
   guard o.schema() is Some(schema) else { return None }
   guard self.comps.get(schema.name) is Some(_) else { return None }
   let state = match o.field(handle_field) {
-    Some(Num(h)) => self.guest.persist(h.to_int())
+    Some(Num(h)) => self.gmod.of_token(h.to_int()).persist()
     _ => b""
   }
   // The TAGGED projection, because a declared field may hold another
@@ -946,7 +955,7 @@ pub fn Module::restore(
     None => snap.field_args()
   }
   if snap.has_state() {
-    if self.guest.restore(snap.component, snap.state) is Some(handle) {
+    if self.gmod.restore(snap.component, snap.state) is Some(inst) {
       // The guest brought back its own state, and its PLACEHOLDERS are not
       // part of it: they are the host's fields, and the only record of what
       // was in them is the projection beside the bytes. Filling them here is
@@ -956,8 +965,7 @@ pub fn Module::restore(
         DynObj::new(
           comp_id,
           def,
-          self.guest,
-          handle,
+          inst,
           schema~,
           pid~,
           owned=self.fill_placeholders(schema, args),

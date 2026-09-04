@@ -137,8 +137,7 @@ pub fn DynManifest::from_json_string(String) -> Self raise ManifestError
 pub struct DynObj {
   comp_id : Int
   def : DynComponentDef
-  guest : &Guest
-  handle : Int
+  inst : &Inst
   schema : @core.SchemaInfo
   mutators : Map[String, (@component.FieldBox, Array[@core.Value]) -> @core.Value]
   pid : String
@@ -147,7 +146,8 @@ pub struct DynObj {
 }
 pub fn DynObj::component_name(Self) -> String
 pub fn DynObj::handle(Self) -> Int
-pub fn DynObj::new(Int, DynComponentDef, &Guest, Int, schema~ : @core.SchemaInfo, pid? : String, owned? : Map[String, @core.Value]) -> Self
+pub fn DynObj::inst(Self) -> &Inst
+pub fn DynObj::new(Int, DynComponentDef, &Inst, schema~ : @core.SchemaInfo, pid? : String, owned? : Map[String, @core.Value]) -> Self
 pub fn DynObj::to_value(Self) -> @core.Value
 pub fn DynObj::with_persist_id(Self, String) -> Self
 pub impl @core.Obj for DynObj
@@ -190,8 +190,32 @@ pub(all) enum GuestPropertyResult {
   GuestPropertyChanged(Int)
 } derive(Eq, @debug.Debug)
 
-pub struct Module {
+pub struct HandleInst {
   guest : &Guest
+  handle : Int
+}
+pub fn HandleInst::new(&Guest, Int) -> Self
+
+pub struct HandleModule {
+  guest : &Guest
+}
+pub fn HandleModule::new(&Guest) -> Self
+
+pub(all) struct InstDispatch {
+  handled : Bool
+  next : &Inst?
+  msgs : Array[ControlMsg]
+}
+
+pub(all) enum InstProperty {
+  InstPropertyMissing
+  InstPropertyUnchanged
+  InstPropertyRefused
+  InstPropertyChanged(&Inst)
+}
+
+pub struct Module {
+  gmod : &GuestModule
   manifest : DynManifest
   diagnostics : Array[String]
   comps : Map[String, (Int, @core.SchemaInfo, DynComponentDef)]
@@ -250,4 +274,23 @@ pub(open) trait Guest {
   fn persist(Self, Int) -> Bytes
   fn restore(Self, String, Bytes) -> Int?
   fn drop_instance(Self, Int) -> Unit
+}
+
+pub(open) trait GuestModule {
+  fn make(Self, String, Map[String, @core.Value]) -> &Inst?
+  fn restore(Self, String, Bytes) -> &Inst?
+  fn serve_intent(Self, String, Array[@core.Value]) -> Result[@core.Value, @core.Value]
+  fn of_token(Self, Int) -> &Inst
+}
+
+pub(open) trait Inst {
+  fn get_field(Self, String) -> @core.Value?
+  fn with_field(Self, String, @core.Value) -> &Inst?
+  fn get_property(Self, String) -> @core.Value?
+  fn set_property(Self, String, @core.Value) -> InstProperty
+  fn dispatch(Self, @core.HandlerBucket, String, Array[@core.Value], Map[String, @core.Value]) -> InstDispatch
+  fn render_call(Self, String, String, Array[@core.Value], Map[String, @core.Value]) -> @core.Value
+  fn persist(Self) -> Bytes
+  fn release(Self) -> Unit
+  fn token(Self) -> Int
 }

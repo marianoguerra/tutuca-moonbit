@@ -8,8 +8,9 @@
 pub struct DynObj {
   comp_id : Int
   def : DynComponentDef
-  guest : &Guest
-  handle : Int
+  /// The instance itself — not a name for it, and not the module it came from.
+  /// Everything this object does to the guest, it does through here.
+  inst : &Inst
   /// What the guest DECLARED about this component (see `register_module`).
   /// Carried on the instance because that is where the generic layers ask for
   /// it: `schema` is what gives a guest structural equality, a debug
@@ -29,10 +30,11 @@ pub struct DynObj {
   /// store with the history of a thing instead of the thing.
   pid : String
   /// The render cache's bucket (see `@tutuca.ObjId`), seeded from the
-  /// component's schema fingerprint and the handle this instance started on.
-  /// A guest's fields are lazy — reading them means crossing the bridge — so
-  /// the handle is the only thing about the instance the host can hash without
-  /// paying for a round trip, and it is enough: a bucket only has to spread.
+  /// component's schema fingerprint and the transport's name for the instance
+  /// it started on. A guest's fields are lazy — reading them means crossing the
+  /// bridge — so that name is the only thing about the instance the host can
+  /// hash without paying for a round trip, and it is enough: a bucket only has
+  /// to spread.
   id : @tutuca.ObjId
   /// The PLACEHOLDERS this instance declared: fields holding a component the
   /// guest cannot — one whose type names a component from another module
@@ -98,8 +100,7 @@ pub fn child_json(v : @tutuca.Value) -> Json {
 pub fn DynObj::new(
   comp_id : Int,
   def : DynComponentDef,
-  guest : &Guest,
-  handle : Int,
+  inst : &Inst,
   schema~ : @tutuca.SchemaInfo,
   pid? : String = "",
   owned? : Map[String, @tutuca.Value] = Map([]),
@@ -107,14 +108,13 @@ pub fn DynObj::new(
   {
     comp_id,
     def,
-    guest,
-    handle,
+    inst,
     schema,
     pid,
     owned,
     mutators: @component.schema_mutators(schema),
     id: @tutuca.ObjId::of(schema.fingerprint, {
-      "handle": Num(handle.to_double()),
+      "handle": Num(inst.token().to_double()),
     }),
   }
 }
@@ -217,15 +217,14 @@ pub fn DynObj::to_value(self : DynObj) -> @tutuca.Value {
 // collect_superseded() is the same sweep, run by hand.
 
 ///|
-let superseded : Array[(&Guest, Int)] = []
+let superseded : Array[&Inst] = []
 
 ///|
-/// Drop every guest handle a successor replaced. Idempotent, and safe to call
+/// Release every instance a successor replaced. Idempotent, and safe to call
 /// at any point where no render is mid-flight.
 pub fn collect_superseded() -> Unit {
-  for entry in superseded {
-    let (guest, handle) = entry
-    guest.drop_instance(handle)
+  for inst in superseded {
+    inst.release()
   }
   superseded.clear()
 }
@@ -253,7 +252,13 @@ pub fn superseded_count() -> Int {
 
 ///|
 pub fn DynObj::handle(self : DynObj) -> Int {
-  self.handle
+  self.inst.token()
+}
+
+///|
+/// The instance behind this object.
+pub fn DynObj::inst(self : DynObj) -> &Inst {
+  self.inst
 }
 
 ///|
@@ -274,8 +279,8 @@ pub fn DynObj::with_persist_id(self : DynObj, pid : String) -> DynObj {
 /// The instance that replaces this one: same component, new guest handle, and
 /// the same bucket at the next revision — a successor is the same logical
 /// instance one update later, which is exactly what the revision means.
-fn DynObj::successor(self : DynObj, handle : Int) -> DynObj {
-  { ..self, handle, id: self.id.next(), }
+fn DynObj::successor(self : DynObj, inst : &Inst) -> DynObj {
+  { ..self, inst, id: self.id.next(), }
 }
 
 ///|
@@ -316,7 +321,7 @@ fn DynObj::method_fn(
   stack : &@tutuca.Stack,
 ) -> @tutuca.Value {
   let bindings = self.render_bindings(stack)
-  Fn(args => self.guest.compute(self.handle, name, drop_this(args), bindings))
+  Fn(args => self.inst.render_call("compute", name, drop_this(args), bindings))
 }
 
 ///|
@@ -362,22 +367,20 @@ fn DynObj::write_field(
   if self.owned.contains(name) {
     return @tutuca.Obj::with_field(self, name, v).unwrap_or(Obj(self))
   }
-  guard self.guest.with_field(self.handle, name, v) is Some(h) else {
-    return Obj(self)
-  }
+  guard self.inst.with_field(name, v) is Some(h) else { return Obj(self) }
   // THE SECOND DOOR: the whole state. `setItems []` says nothing about
   // `currentIndex` and leaves it stranded, which is precisely what the first
   // door cannot see.
   match self.adopt(@tutuca.mutator_name("set", name), Obj(self.successor(h))) {
     Some(nv) => {
-      superseded.push((self.guest, self.handle))
+      superseded.push(self.inst)
       nv
     }
     // The successor is what nothing holds now, so it is what the sweep takes.
     // The instance that stands is the one this was called on, and its handle
     // was never queued.
     None => {
-      superseded.push((self.guest, h))
+      superseded.push(h)
       Obj(self)
     }
   }
@@ -522,7 +525,7 @@ fn DynObj::field_at(
   stack : &@tutuca.Stack,
 ) -> @tutuca.Value? {
   if name == handle_field {
-    Some(Num(self.handle.to_double()))
+    Some(Num(self.inst.token().to_double()))
   } else if self.owned.get(name) is Some(v) {
     // A placeholder, answered without crossing the bridge — the guest was
     // never given this value and has nothing to say about it.
@@ -530,7 +533,7 @@ fn DynObj::field_at(
   } else if self.def.methods.contains(name) {
     Some(self.method_fn(name, stack))
   } else {
-    match self.guest.get_field(self.handle, name) {
+    match self.inst.get_field(name) {
       Some(v) => Some(v)
       // A generated mutator surfaces as a self-pre-bound Fn, exactly as it
       // does on a typed instance — `$setCount 5` in a guest view reads the
@@ -559,9 +562,9 @@ pub impl @tutuca.Obj for DynObj with fn with_field(self, name, v) {
     owned[name] = v
     return Some(Obj({ ..self, owned, id: self.id.next(), }))
   }
-  match self.guest.with_field(self.handle, name, v) {
+  match self.inst.with_field(name, v) {
     Some(h) => {
-      superseded.push((self.guest, self.handle))
+      superseded.push(self.inst)
       Some(Obj(self.successor(h)))
     }
     None => None
@@ -577,9 +580,7 @@ pub impl @tutuca.Obj for DynObj with fn property(self, name) {
   if !property.public_ {
     return None
   }
-  guard self.guest.get_property(self.handle, name) is Some(value) else {
-    return None
-  }
+  guard self.inst.get_property(name) is Some(value) else { return None }
   if property.ty.accepts(value) {
     Some(value)
   } else {
@@ -593,9 +594,7 @@ pub impl @tutuca.Obj for DynObj with fn member_at(self, name, _stack) {
     is Some(property) else {
     return self.field_at(name, _stack)
   }
-  guard self.guest.get_property(self.handle, name) is Some(value) else {
-    return None
-  }
+  guard self.inst.get_property(name) is Some(value) else { return None }
   if property.ty.accepts(value) {
     Some(value)
   } else {
@@ -733,17 +732,17 @@ fn DynObj::write_member(
       ),
     )
   }
-  match self.guest.set_property(self.handle, name, value) {
-    GuestPropertyMissing => Missing
-    GuestPropertyUnchanged => Unchanged
-    GuestPropertyRefused => Refused(guest_refusal(name))
-    GuestPropertyChanged(handle) => {
+  match self.inst.set_property(name, value) {
+    InstPropertyMissing => Missing
+    InstPropertyUnchanged => Unchanged
+    InstPropertyRefused => Refused(guest_refusal(name))
+    InstPropertyChanged(next_inst) => {
       // A declared getter is part of the same typed contract as its setter.
       // Validate the successor before it enters the host tree; a hand-written
       // guest must not smuggle an ill-typed public result past its manifest.
-      guard self.guest.get_property(handle, name) is Some(next_value) &&
+      guard next_inst.get_property(name) is Some(next_value) &&
         property.ty.accepts(next_value) else {
-        self.guest.drop_instance(handle)
+        next_inst.release()
         return Refused(
           write_refusal(
             name,
@@ -752,16 +751,16 @@ fn DynObj::write_member(
           ),
         )
       }
-      let candidate : @tutuca.Value = Obj(self.successor(handle))
+      let candidate : @tutuca.Value = Obj(self.successor(next_inst))
       match self.adopt(name, candidate) {
         None => {
-          self.guest.drop_instance(handle)
+          next_inst.release()
           Refused(
             write_refusal(name, "the successor could not be adopted", value),
           )
         }
         Some(next) => {
-          superseded.push((self.guest, self.handle))
+          superseded.push(self.inst)
           Changed(next)
         }
       }
@@ -792,7 +791,11 @@ fn DynObj::callable_at(
     let bindings = self.render_bindings(stack)
     return Some(
       Fn(args => {
-        Bool(self.guest.when(self.handle, name, drop_this(args), bindings))
+        Bool(
+          self.inst
+          .render_call("when", name, drop_this(args), bindings)
+          .bool(default=false),
+        )
       }),
     )
   }
@@ -812,8 +815,8 @@ fn DynObj::callable_at(
             // write, then `key` / `value` / `iter`, which is the shape
             // `component/instance.mbt` uses and the offsets the generated
             // guest reads them at.
-            let out = self.guest.enrich(
-              self.handle,
+            let out = self.inst.render_call(
+              "enrich",
               name,
               [
                 Map(binds),
@@ -851,7 +854,12 @@ fn DynObj::callable_at(
     return Some(
       Fn(_args => {
         match
-          self.guest.bind_with(self.handle, name, self.render_bindings(stack)) {
+          self.inst.render_call(
+            "enrichScope",
+            name,
+            [],
+            self.render_bindings(stack),
+          ) {
           Map(_) as m => m
           _ => Map(Map([]))
         }
@@ -894,10 +902,7 @@ pub impl @tutuca.Obj for DynObj with fn handler(self, bucket, name) {
       for pair in self.def.lookup {
         bindings[pair.0] = ctx.lookup(pair.0, @tutuca.LookupOpts::new())
       }
-      let result = match bucket {
-        Receive => self.guest.handle_message(self.handle, name, args, bindings)
-        Intent => self.guest.handle_intent(self.handle, name, args, bindings)
-      }
+      let result = self.inst.dispatch(bucket, name, args, bindings)
       // THE DOMAINS, BEFORE the guest's buffered control calls go out.
       //
       // A guest buffers its effects for exactly this reason — the interpreter
@@ -915,7 +920,7 @@ pub impl @tutuca.Obj for DynObj with fn handler(self, bucket, name) {
         // The instance that stands is the one this handler was called on, and
         // its handle was never queued — which is the whole reason the check
         // sits here rather than after the successor has been adopted.
-        superseded.push((self.guest, h))
+        superseded.push(h)
         return Some((Obj(self) : @tutuca.Value))
       }
       for msg in result.msgs {
@@ -961,7 +966,7 @@ pub impl @tutuca.Obj for DynObj with fn handler(self, bucket, name) {
       }
       match adopted {
         Some(_) as nv => {
-          superseded.push((self.guest, self.handle))
+          superseded.push(self.inst)
           nv
         }
         None => None
