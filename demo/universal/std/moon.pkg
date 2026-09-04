@@ -1,0 +1,21 @@
+// The universal demo's layout kit.
+//
+// The components are NOT privileged. This is an ordinary tutucard — the same
+// file shape a person or a model writes, compiled by the same `tgc/emit` and
+// registered by the same `register_module` under the same policy — and the one
+// place it differs is CONSTRUCTION: it is embedded rather than fetched, so the
+// page has a palette before it has drawn anything.
+//
+// That is the whole demonstration. A host-provided component and a loaded
+// guest have to be indistinguishable to the person and to every other guest,
+// and the honest way to show it is to have no host-provided components at all.
+//
+// What lives here beside the card is the half a card manifest cannot carry:
+// keywords, a category and presets. `tgc/emit` writes both fields empty and
+// the card spec block has no syntax for either, so the SHIPPER supplies them —
+// which is also how a card somebody pastes in gets found by name and doc alone.
+import {
+  "marianoguerra/tutuca/tgc/emit",
+  "marianoguerra/tutuca/demo/universal/catalog",
+  "moonbitlang/core/json",
+}

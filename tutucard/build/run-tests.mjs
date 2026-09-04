@@ -51,6 +51,10 @@ const { driveCard } = await import(
 // landing site's are `.html` files in no moon package.
 const SITE_CARDS = join(REPO, "playground", "site", "cards");
 const CARD_EXAMPLES = join(REPO, "tutucard", "examples");
+// The universal demo's layout kit. It is an ordinary card compiled by the
+// ordinary compiler — that is the demo's whole claim — so it is driven by the
+// ordinary gate rather than by something of its own.
+const DEMO_CARDS = join(REPO, "demo", "universal", "std");
 const htmlIn = (dir, label) =>
   readdirSync(dir)
     .filter((f) => f.endsWith(".html"))
@@ -63,6 +67,7 @@ const cards = [
   ...EXAMPLES.map((e) => ({ name: e.name, source: e.source })),
   ...htmlIn(SITE_CARDS, "site/cards"),
   ...htmlIn(CARD_EXAMPLES, "examples"),
+  ...htmlIn(DEMO_CARDS, "universal"),
 ];
 
 let failed = 0;

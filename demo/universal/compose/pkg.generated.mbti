@@ -1,0 +1,37 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/demo/universal/compose"
+
+import {
+  "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/demo/universal/catalog",
+}
+
+// Values
+pub fn build(ComposeHost, PlanNode) -> (@core.Value?, BuildReport)
+
+pub let default_cell_field : String
+
+// Errors
+
+// Types and methods
+pub(all) struct BuildReport {
+  problems : Array[String]
+  placed : Array[String]
+}
+
+pub(all) struct ComposeHost {
+  make : (@catalog.ComponentRef, Map[String, @core.Value]) -> @core.Value?
+  property : (@core.Value, String) -> @core.Value?
+  hole : (@core.Value?) -> @core.Value?
+}
+
+pub(all) struct PlanNode {
+  ref_ : @catalog.ComponentRef
+  args : Map[String, Json]
+  cells : Int
+  children : Array[(Int, PlanNode)]
+}
+
+// Type aliases
+
+// Traits

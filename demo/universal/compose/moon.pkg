@@ -1,0 +1,20 @@
+// An arrangement, built.
+//
+// BOTTOM UP, and that is the whole design rather than a detail of it. The
+// obvious way round is to build the root, place it, grow it, then address each
+// cell by path and send it a `hold` — and that version cannot build anything
+// the page is not already showing, because a cell does not exist until the
+// thing that makes it has answered, and it cannot answer until it knows where
+// the cell is. Constructing from the inside out dissolves the question: a
+// container is handed its cells as a constructor argument, already finished.
+//
+// There is no document walker here. Validating a whole nested composition
+// against the catalog — unknown keys, unknown components, type fits, RFC 6901
+// pointers into the request — is what an agent-facing `compose` tool needs, and
+// this demo has no such tool. What it has is a person clicking `+`, which is
+// one node at a time.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/demo/universal/catalog",
+  "moonbitlang/core/json",
+}

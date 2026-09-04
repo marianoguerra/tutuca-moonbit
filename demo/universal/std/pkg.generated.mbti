@@ -1,0 +1,31 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/demo/universal/std"
+
+import {
+  "marianoguerra/tutuca/demo/universal/catalog",
+}
+
+// Values
+pub fn annotations() -> Map[String, @catalog.Annotation]
+
+pub fn card_source() -> String
+
+pub fn compiled() -> Compiled?
+
+pub fn entries() -> Array[@catalog.Entry]
+
+pub fn module_name() -> String
+
+// Errors
+
+// Types and methods
+pub struct Compiled {
+  wasm : Bytes
+  manifest : Json
+  error : String
+}
+pub fn Compiled::manifest_module_name(Self) -> String
+
+// Type aliases
+
+// Traits

@@ -1,0 +1,11 @@
+// What can be placed, and how a person finds it.
+//
+// Built from MANIFESTS, which is what makes it testable with no browser and
+// what makes it blind to where a component came from: the kit's own components
+// and a card somebody pasted in thirty seconds ago arrive here as the same
+// shape and rank by the same rules. A palette that could tell them apart would
+// be the one place this demo's claim leaked.
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+}

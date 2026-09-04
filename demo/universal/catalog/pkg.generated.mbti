@@ -1,0 +1,106 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/demo/universal/catalog"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub let container_append : String
+
+pub let container_insert_at : String
+
+pub let container_insert_requested : String
+
+pub let container_protocol : String
+
+pub let container_remove_at : String
+
+pub let container_remove_requested : String
+
+pub let editable_editor : String
+
+pub let editable_protocol : String
+
+pub fn entries_of_manifest(Json, module_? : String, annotations? : Map[String, Annotation]) -> Array[Entry]
+
+pub let holder_add_requested : String
+
+pub let holder_empty : String
+
+pub let holder_hold : String
+
+pub let holder_protocol : String
+
+// Errors
+
+// Types and methods
+pub(all) struct Annotation {
+  keywords : Array[String]
+  category : String
+  presets : Array[Preset]
+  hidden : Bool
+} derive(Eq, @debug.Debug)
+pub fn Annotation::none() -> Self
+
+pub struct Catalog {
+  rows : Array[Entry]
+}
+pub fn Catalog::add(Self, Array[Entry]) -> Unit
+pub fn Catalog::all(Self) -> Array[Entry]
+pub fn Catalog::find(Self, String, module_? : String) -> Entry?
+pub fn Catalog::forget(Self, String) -> Unit
+pub fn Catalog::new() -> Self
+pub fn Catalog::search(Self, String, limit? : Int) -> Array[Hit]
+
+pub(all) struct ComponentRef {
+  module_ : String
+  name : String
+} derive(Eq, @debug.Debug)
+pub fn ComponentRef::to_id(Self) -> String
+
+pub(all) struct Entry {
+  ref_ : ComponentRef
+  doc : String
+  keywords : Array[String]
+  category : String
+  fields : Array[FieldInfo]
+  implements : Array[String]
+  messages : Array[String]
+  expresses : Array[String]
+  properties : Array[String]
+  presets : Array[Preset]
+  hidden : Bool
+  module_doc : String
+} derive(Eq, @debug.Debug)
+pub fn Entry::is_container(Self) -> Bool
+pub fn Entry::is_editable(Self) -> Bool
+pub fn Entry::is_holder(Self) -> Bool
+pub fn Entry::summary(Self) -> String
+
+pub(all) struct FieldInfo {
+  name : String
+  ty : String
+  doc : String
+  required : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Hit {
+  entry : Entry
+  preset : String
+  score : Int
+  why : Array[String]
+} derive(Eq, @debug.Debug)
+pub fn Hit::label(Self) -> String
+pub fn Hit::summary(Self) -> String
+
+pub(all) struct Preset {
+  name : String
+  doc : String
+  args : Map[String, Json]
+  cells : Int
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
