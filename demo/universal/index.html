@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tutuca — universal composition</title>
+    <style id="margaui-css"></style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <!--
+      Build first:      moon build --target js
+      Then serve the REPO ROOT (the script paths reach into _build):
+                        python3 -m http.server 8901
+      And open:         http://localhost:8901/demo/universal/
+      …or with every sample card loaded at once:
+                        http://localhost:8901/demo/universal/?loadAll
+    -->
+    <script src="../../_build/js/debug/build/demo/universal/universal.js"></script>
+    <script type="module">
+      import { start } from "./page.js";
+      // The runtime module every card is instantiated against, fetched once.
+      const res = await fetch("./tutuca-rt.wasm");
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      let s = "";
+      for (const b of bytes) s += String.fromCharCode(b);
+      await start(btoa(s));
+    </script>
+  </body>
+</html>

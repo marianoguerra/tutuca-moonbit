@@ -24,7 +24,6 @@
 import {
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/transactor",
-  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
   // The card compiler: core wasm plus GC, no component model, no archive.
   "marianoguerra/tutuca/tgc/emit" @tgc,
@@ -39,8 +38,10 @@ import {
   "marianoguerra/tutuca/testing/harness",
   "marianoguerra/tutuca/viewfile",
   // What the compiled card is mounted AS: an ordinary loaded module. The
-  // `&Guest` over the instantiated module is `cardguest.mbt`, and `policy` is
-  // what this page will accept from one.
+  // `&Guest` over the instantiated module is `tutucard/guest`, which the
+  // composition demo loads several cards through at once, and `policy` is what
+  // this page will accept from one.
+  "marianoguerra/tutuca/tutucard/guest",
   "marianoguerra/tutuca/tgc/host",
   "marianoguerra/tutuca/tgc/policy",
   "moonbitlang/core/encoding/base64",

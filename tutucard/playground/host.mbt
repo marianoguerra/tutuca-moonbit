@@ -98,7 +98,7 @@ pub fn install() -> Unit {
     id => classes_at(id),
     (id, manifest, init) => mount_compiled(id, manifest, init),
     (key, manifest, source, scenes) => drive(key, manifest, source, scenes),
-    key => forget_sweep_roots(key),
+    key => @guest.forget_sweep_roots(key),
     () => runtime_wasm(),
   )
 }
@@ -261,7 +261,7 @@ fn teardown(id : String) -> Unit {
   slot.activity.clear()
   // …and what the sweep for this mount point was walking. The apps that
   // registered those roots are gone, and the next mount installs its own.
-  forget_sweep_roots(id)
+  @guest.forget_sweep_roots(id)
   // Whatever this card asked the host for, it is no longer here to be told.
   slot.gen += 1
 }

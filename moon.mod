@@ -88,6 +88,10 @@ options(
     "playground",
     "tutucard/build",
     "tutucard/web",
+    // The `&Guest` over a compiled card. One half of a bridge whose other half
+    // is `tutucard/web/card.js`, which does not ship — and half a bridge is
+    // worse than none.
+    "tutucard/guest",
     "demo",
     "skill",
     "scripts",

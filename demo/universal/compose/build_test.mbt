@@ -46,12 +46,7 @@ fn Fake::host(self : Fake) -> @compose.ComposeHost {
     },
     hole: held => {
       self.built.push("Hole")
-      Some(
-        Map({
-          "__name": Str("Hole"),
-          "child": held.unwrap_or(Null),
-        }),
-      )
+      Some(Map({ "__name": Str("Hole"), "child": held.unwrap_or(Null) }))
     },
   }
 }

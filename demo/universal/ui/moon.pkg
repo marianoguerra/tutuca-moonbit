@@ -1,0 +1,26 @@
+// The page's own components: the palette, its rows, the library list, and the
+// shell that holds all of it plus the arrangement.
+//
+// TARGET-AGNOSTIC, which is what lets the whole interaction be driven on the
+// in-memory DOM: open the picker, type, arrow down, press Enter, and assert
+// that a component landed in the cell that was clicked. The half that cannot
+// be tested that way is the half that needs a real module loaded, and that
+// lives in the page package next door.
+//
+// The shell is a HOST component and not a card, and that is not a wobble in the
+// demo's claim. A card cannot reach the host registry, and the palette is a
+// projection of the registry; what the claim is about is what goes in the
+// CANVAS, and nothing in the canvas is a host component.
+import {
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/demo/universal/catalog",
+  "moonbitlang/core/json",
+  "moonbitlang/core/debug",
+}
+
+import {
+  "marianoguerra/tutuca/testing/harness",
+  "marianoguerra/tutuca/vdom/memdom",
+} for "test"

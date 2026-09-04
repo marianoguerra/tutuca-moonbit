@@ -1,0 +1,287 @@
+<script type="tutuca/spec">
+  /// One row of the palette.
+  state PickerRow {
+    component: String
+    module: String
+    /// The preset this row offers, or "" for the component's own row.
+    preset: String
+    summary: String
+    /// Why it ranked here. A list nobody can account for is one people stop
+    /// trusting, so the reasons are on the row rather than in a log.
+    why: String
+    /// Where the keyboard is. Held PER ROW rather than as one index on the
+    /// picker, so moving the cursor touches two rows instead of redrawing the
+    /// list — and redrawing it would replace the `<input>` being typed in.
+    selected: Bool
+  }
+
+  handle PickerRow { message { setSelected(Bool) } }
+  express PickerRow { intent { componentPicked(String, String, String) } }
+
+  /// The list a `+` opens: search as you type, over everything registered.
+  ///
+  /// It knows nothing about the catalog. It reports what was typed and gets
+  /// rows back, which is what lets the same list rank the kit's own components
+  /// and a card compiled ten seconds ago without knowing there is a difference.
+  state ComponentPicker {
+    query: String
+    hits: Array[PickerRow]
+    cursor: Int
+    open: Bool
+    emptyMessage: String
+  }
+
+  handle ComponentPicker {
+    message {
+      setCursor(Int)
+      dismissed
+      setHits(Array[Any], String)
+      opened
+      closed
+    }
+  }
+  express ComponentPicker {
+    intent { queryChanged(String), componentPicked(String, String, String), pickerClosed }
+  }
+
+  /// One card in the library, offered rather than loaded.
+  state CardRow {
+    name: String
+    path: String
+    loaded: Bool
+    chosen: Bool
+    /// What went wrong compiling it, where it went wrong.
+    error: String
+  }
+
+  handle CardRow { message { setLoaded(Bool), setError(String) } }
+  express CardRow { intent { loadOne(String), toggleChosen(String, Bool) } }
+
+  /// Something the page has to say. Diagnostics, refusals, and the notices the
+  /// renderer raises when a component has no view for a role it was asked for.
+  state Note {
+    text: String
+    tone: String
+  }
+
+  /// The page.
+  state Shell {
+    /// The arrangement. ONE component, and it starts as an empty hole — the
+    /// component tree IS the layout, so there is no document beside it that
+    /// could disagree with it.
+    canvas: Instance
+    /// The list a `+` opens. Always present and usually closed: a picker built
+    /// when it is needed cannot animate in, and one field holding a closed
+    /// component costs nothing.
+    picker: ComponentPicker
+    /// The view role every component is drawn under, or "" for normal.
+    ///
+    /// A FIELD and not a literal, because `@push-view` takes a text expression
+    /// with no literal fallback — and because the whole point is that it is
+    /// toggled. "" is not a view name, so it falls through to `main`.
+    editView: String
+    library: Array[CardRow]
+    /// The paste-and-compile box.
+    source: String
+    notes: Array[Note]
+    /// The one-slot pump to the shell outside. `pending` is a verb and
+    /// `argument` is its one argument; the encoder and the decoder are written
+    /// in one file so they cannot disagree.
+    pending: String
+    argument: String
+    status: String
+  }
+
+  handle Shell {
+    message {
+      openPicker
+      pickerHits(Array[Any], String)
+      placeBuilt(Any, Bool)
+      addNote(String, String)
+      setLibrary(Array[Any])
+      setStatus(String)
+      pumped
+    }
+  }
+</script>
+
+<script type="tutuca/script" for="PickerRow">
+  compute label { if .preset is '' { .component } else { .preset } }
+  receive setSelected(on) { .selected = on }
+  /// The row raises and the shell answers. It carries all three names because
+  /// the shell would otherwise have to find the row again to learn them, and a
+  /// row that has scrolled is a row it would find by index.
+  receive pick { ask componentPicked .module .component .preset }
+</script>
+
+<script type="tutuca/script" for="ComponentPicker">
+  /// Typing writes through and asks at once.
+  receive typed(text) {
+    .query = text
+    ask queryChanged text
+  }
+  receive setHits(rows, message) {
+    .hits = rows
+    .cursor = 0
+    .emptyMessage = message
+  }
+  receive setCursor(at) { .cursor = at }
+  receive opened {
+    .open = true
+    .query = ''
+    .cursor = 0
+  }
+  /// Shut, having picked something. The cell that asked is still waiting.
+  receive closed { .open = false }
+  /// Shut, having picked NOTHING - Escape, or a click on the backdrop.
+  ///
+  /// One receive for both cost exactly the bug you would expect: a pick closed
+  /// the picker, closing it forgot the cell, and by the time the built
+  /// component came back there was nowhere to put it.
+  receive dismissed {
+    .open = false
+    ask pickerClosed
+  }
+</script>
+
+<script type="tutuca/script" for="CardRow">
+  receive setLoaded(on) { .loaded = on }
+  receive setError(e) { .error = e }
+  receive load { ask loadOne .path }
+  receive choose(on) { ask toggleChosen .path on }
+</script>
+
+<script type="tutuca/script" for="Shell">
+  compute editing { not (.editView is '') }
+  compute editLabel { if editing { 'done' } else { 'edit' } }
+  receive addNote(text, tone) {
+    new Note
+    cur.text = text
+    cur.tone = tone
+    .notes.push cur
+  }
+  receive setStatus(s) { .status = s }
+  receive clearNotes { .notes.clear }
+  receive typeSource(s) { .source = s }
+  /// The pump is drained by the page outside, which then sends this back.
+  receive pumped {
+    .pending = ''
+    .argument = ''
+  }
+  receive toggleEdit {
+    if editing {
+      .editView = ''
+    } else {
+      .editView = 'tutuca.dev/universal/Editable@1::editor'
+    }
+  }
+  receive compileSource {
+    .pending = 'compile'
+    .argument = .source
+  }
+  receive loadAll {
+    .pending = 'loadAll'
+    .argument = ''
+  }
+  receive loadChosen {
+    .pending = 'loadChosen'
+    .argument = ''
+  }
+  receive save {
+    .pending = 'save'
+    .argument = ''
+  }
+  receive restore {
+    .pending = 'restore'
+    .argument = ''
+  }
+  receive clearCanvas {
+    .pending = 'clear'
+    .argument = ''
+  }
+</script>
+
+<template id="PickerRow:main">
+  <div @if.class=".selected"
+       @then="'picker-row row-selected flex flex-col gap-0.5 px-2 py-1 rounded cursor-pointer bg-base-300'"
+       @else="'picker-row flex flex-col gap-0.5 px-2 py-1 rounded cursor-pointer hover:bg-base-200'"
+       @on.click="pick">
+    <span class="flex items-baseline gap-2">
+      <span class="row-name font-medium" @text="$label"></span>
+      <span class="row-module text-xs opacity-50" @text=".module"></span>
+    </span>
+    <span class="row-summary text-xs opacity-70" @text=".summary"></span>
+    <span class="row-why text-xs opacity-40" @text=".why"></span>
+  </div>
+</template>
+
+<template id="ComponentPicker:main">
+  <div class="picker-backdrop fixed inset-0 z-50 flex items-start justify-center bg-black/20 pt-24"
+       @show=".open" @on.click="dismissed">
+    <div class="picker w-[32rem] max-w-[90vw] rounded-lg border border-base-300 bg-base-100 shadow-xl flex flex-col gap-2 p-3">
+      <input class="picker-query input input-bordered w-full" autofocus
+             placeholder="what goes here?"
+             :value=".query"
+             @on.input="typed e.value"
+             @on.keydown="navigate e.key">
+      <div class="picker-hits flex flex-col gap-0.5 max-h-80 overflow-y-auto">
+        <x render-each=".hits"></x>
+      </div>
+      <p class="picker-empty text-sm opacity-60 px-2" @show="empty? .hits" @text=".emptyMessage"></p>
+    </div>
+  </div>
+</template>
+
+<template id="CardRow:main">
+  <li class="card-row flex items-center gap-2 text-sm">
+    <input type="checkbox" class="row-chosen checkbox checkbox-xs"
+           :checked=".chosen" @on.input="choose e.value">
+    <span class="row-name grow" @text=".name"></span>
+    <span class="row-loaded badge badge-xs badge-success" @show=".loaded">loaded</span>
+    <span class="row-error text-xs text-error" @hide="empty? .error" @text=".error"></span>
+    <button class="row-load btn btn-xs" @hide=".loaded" @on.click="load">load</button>
+  </li>
+</template>
+
+<template id="Note:main">
+  <li @if.class=".tone" @then="'note text-xs px-2 py-1 rounded bg-error/10'"
+      @else="'note text-xs px-2 py-1 rounded bg-base-200'" @text=".text"></li>
+</template>
+
+<template id="Shell:main">
+  <div class="universal flex flex-col gap-3 p-4 min-h-screen">
+    <header class="flex items-center gap-2 flex-wrap">
+      <h1 class="text-lg font-semibold grow">universal</h1>
+      <span class="shell-status text-xs opacity-60" @text=".status"></span>
+      <button class="act-edit btn btn-sm" @on.click="toggleEdit" @text="$editLabel"></button>
+      <button class="act-save btn btn-sm btn-ghost" @on.click="save">save</button>
+      <button class="act-restore btn btn-sm btn-ghost" @on.click="restore">restore</button>
+      <button class="act-clear btn btn-sm btn-ghost" @on.click="clearCanvas">clear</button>
+    </header>
+
+    <main class="canvas grow rounded border border-base-300 p-2" @push-view=".editView">
+      <x render=".canvas"></x>
+    </main>
+
+    <section class="library flex flex-col gap-1">
+      <div class="flex items-center gap-2">
+        <h2 class="text-sm font-medium grow">library</h2>
+        <button class="act-load-chosen btn btn-xs" @on.click="loadChosen">load selected</button>
+        <button class="act-load-all btn btn-xs btn-ghost" @on.click="loadAll">load all</button>
+      </div>
+      <ul class="flex flex-col gap-1"><x render-each=".library"></x></ul>
+    </section>
+
+    <section class="paste flex flex-col gap-1">
+      <h2 class="text-sm font-medium">write a card</h2>
+      <textarea class="src textarea textarea-bordered w-full font-mono text-xs" rows="6"
+                placeholder="paste a card here"
+                :value=".source" @on.input="typeSource e.value"></textarea>
+      <div><button class="act-compile btn btn-sm" @on.click="compileSource">compile and add</button></div>
+    </section>
+
+    <ul class="notes flex flex-col gap-1" @hide="empty? .notes"><x render-each=".notes"></x></ul>
+
+    <x render=".picker"></x>
+  </div>
+</template>

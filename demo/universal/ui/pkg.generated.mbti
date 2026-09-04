@@ -1,0 +1,199 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/demo/universal/ui"
+
+import {
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
+}
+
+// Values
+pub let card_row_common_style : String
+
+pub fn card_row_component(name? : String, views? : Map[String, @anode.View], initial? : CardRowState, common_style? : String, global_style? : String, update? : (CardRowState, @core.Dispatch, &@core.Ctx) -> @component.Update[CardRowState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let card_row_global_style : String
+
+pub fn card_row_views() -> Map[String, @anode.View]
+
+pub let component_picker_common_style : String
+
+pub fn component_picker_component(name? : String, views? : Map[String, @anode.View], initial? : ComponentPickerState, common_style? : String, global_style? : String, update? : (ComponentPickerState, @core.Dispatch, &@core.Ctx) -> @component.Update[ComponentPickerState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let component_picker_global_style : String
+
+pub fn component_picker_views() -> Map[String, @anode.View]
+
+pub fn components() -> Array[@component.Component]
+
+pub fn empty_message(String, total~ : Int, offered? : Bool) -> String
+
+pub fn forget_cell() -> Unit
+
+pub fn library_rows(Array[(String, String)]) -> Array[@core.Value]
+
+pub fn module_def() -> @component.ModuleDef
+
+pub let note_common_style : String
+
+pub fn note_component(name? : String, views? : Map[String, @anode.View], initial? : NoteState, common_style? : String, global_style? : String, update? : (NoteState, @core.Dispatch, &@core.Ctx) -> @component.Update[NoteState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let note_global_style : String
+
+pub fn note_views() -> Map[String, @anode.View]
+
+pub fn peek_cell() -> @core.DispatchPath?
+
+pub fn pick_argument(String, String, String) -> String
+
+pub fn pick_parts(String) -> (String, String, String)
+
+pub fn picker_node() -> @core.Value
+
+pub let picker_row_common_style : String
+
+pub fn picker_row_component(name? : String, views? : Map[String, @anode.View], initial? : PickerRowState, common_style? : String, global_style? : String, update? : (PickerRowState, @core.Dispatch, &@core.Ctx) -> @component.Update[PickerRowState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let picker_row_global_style : String
+
+pub let picker_row_spec_source : String
+
+pub fn picker_row_views() -> Map[String, @anode.View]
+
+pub fn picker_rows(Array[PickerHit]) -> Array[@core.Value]
+
+pub fn remember_cell(@core.DispatchPath) -> Unit
+
+pub fn root_value() -> @core.Value
+
+pub let saved_key : String
+
+pub let shell_common_style : String
+
+pub fn shell_comp() -> @component.Component
+
+pub fn shell_component(name? : String, views? : Map[String, @anode.View], initial? : ShellState, common_style? : String, global_style? : String, update? : (ShellState, @core.Dispatch, &@core.Ctx) -> @component.Update[ShellState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let shell_global_style : String
+
+pub fn shell_views() -> Map[String, @anode.View]
+
+pub fn take_cell() -> @core.DispatchPath?
+
+// Errors
+
+// Types and methods
+pub(all) enum CardRowMsg {
+  SetLoaded(Bool)
+  SetError(String)
+  Choose(Bool)
+  Load
+  Unknown(String, Array[@core.Value])
+}
+pub fn CardRowMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn CardRowMsg::send(Self, &@core.Ctx) -> Unit
+pub fn CardRowMsg::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct CardRowState {
+  name : String
+  path : String
+  loaded : Bool
+  chosen : Bool
+  error : String
+}
+pub fn CardRowState::zero() -> Self
+
+pub(all) enum ComponentPickerMsg {
+  SetCursor(Int)
+  Dismissed
+  SetHits(Array[@core.Value], String)
+  Opened
+  Closed
+  Navigate(String)
+  Typed(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ComponentPickerMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn ComponentPickerMsg::send(Self, &@core.Ctx) -> Unit
+pub fn ComponentPickerMsg::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct ComponentPickerState {
+  query : String
+  hits : Array[@core.Value]
+  cursor : Int
+  open : Bool
+  emptyMessage : String
+}
+pub fn ComponentPickerState::zero() -> Self
+
+pub(all) struct NoteState {
+  text : String
+  tone : String
+}
+pub fn NoteState::zero() -> Self
+
+pub(all) struct PickerHit {
+  component : String
+  module_ : String
+  preset : String
+  summary : String
+  why : String
+}
+
+pub(all) enum PickerRowMsg {
+  SetSelected(Bool)
+  Pick
+  Unknown(String, Array[@core.Value])
+}
+pub fn PickerRowMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn PickerRowMsg::send(Self, &@core.Ctx) -> Unit
+pub fn PickerRowMsg::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct PickerRowState {
+  component : String
+  module_ : String
+  preset : String
+  summary : String
+  why : String
+  selected : Bool
+}
+pub fn PickerRowState::zero() -> Self
+
+pub(all) enum ShellMsg {
+  OpenPicker
+  PickerHits(Array[@core.Value], String)
+  PlaceBuilt(@core.Value, Bool)
+  AddNote(String, String)
+  SetLibrary(Array[@core.Value])
+  SetStatus(String)
+  Pumped
+  ClearCanvas
+  CompileSource
+  LoadAll
+  LoadChosen
+  Restore
+  Save
+  ToggleEdit
+  TypeSource(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ShellMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn ShellMsg::send(Self, &@core.Ctx) -> Unit
+pub fn ShellMsg::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct ShellState {
+  canvas : @core.Value
+  picker : @core.Value
+  editView : String
+  library : Array[@core.Value]
+  source : String
+  notes : Array[@core.Value]
+  pending : String
+  argument : String
+  status : String
+}
+pub fn ShellState::zero() -> Self
+
+// Type aliases
+
+// Traits

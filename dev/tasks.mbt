@@ -438,6 +438,33 @@ pub fn tasks() -> Array[Task] {
       commands: [assemble_tutucard(), ..card_gates()],
     },
     {
+      name: "universal",
+      about: "build and assemble dist/universal/ — the composition demo",
+      commands: [
+        {
+          label: "embed the layout kit",
+          prog: "node",
+          args: ["demo/universal/std/embed.mjs"],
+        },
+        moon("fmt", ["fmt"]),
+        {
+          label: "drift check · demo/universal/std/std_card_gen.mbt matches std.card.html",
+          prog: "git",
+          args: [
+            "diff", "--exit-code", "--", "demo/universal/std/std_card_gen.mbt",
+          ],
+        },
+        moon("build · js universal", [
+          "build", "--target", "js", "demo/universal",
+        ]),
+        {
+          label: "assemble dist/universal",
+          prog: "node",
+          args: ["demo/universal/build/assemble.mjs"],
+        },
+      ],
+    },
+    {
       name: "check-tgc",
       about: "the node harnesses over the component format: composition, conformance, and whether tgc/rt/rt_src_gen.mbt still matches rt.wax",
       commands: [
@@ -522,6 +549,7 @@ fn gen_views_commands() -> Array[Command] {
   // (relative .html path, --name override or None)
   let files : Array[(String, String?)] = [
     ("demo/counterlib/counter.html", Some("Counter")),
+    ("demo/universal/ui/shell.html", Some("Shell")),
     ("tscript/conformance/mbt/corpus.html", Some("Corpus")),
     ("storybook/inspector/activity.html", None),
     ("storybook/inspector/json.html", None),
@@ -794,7 +822,7 @@ fn composites() -> Array[(String, String, Array[String])] {
       [
         "gen", "skill-embed", "storybook-template-embed", "rt-embed", "check", "check-examples",
         "check-skill", "check-storybook-template", "check-publish-graph", "check-diagnostics",
-        "check-tgc", "check-cards", "test", "build",
+        "check-tgc", "check-cards", "universal", "test", "build",
       ],
     ),
   ]

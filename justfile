@@ -145,3 +145,7 @@ _rm *PATHS:
 # publish to mooncakes.io (runs the full ci gate first; needs `moon login`)
 publish: ci
     moon publish
+
+# build and assemble dist/universal/ (the composition demo)
+universal:
+    {{dev}} universal
