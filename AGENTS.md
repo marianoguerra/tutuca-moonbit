@@ -153,7 +153,7 @@ and the compiler are one pair, and a mismatch otherwise surfaces as nonsense
 about the user's code (`playground/vendor/README.md`).
 
 `dist` produces `dist/index.html` (a landing page with run instructions),
-`dist/cards.html` (the card tutorial — eight `<mb-card>` embeds and the block
+`dist/cards.html` (the card tutorial — the `<mb-card>` embeds and the block
 language in one page; its cards are `playground/site/cards/*.html`, which
 `tutucard-playground` loads through the real loader),
 `dist/counter/` (the **js** counter demo with its bundle, `<script src>`
@@ -184,7 +184,7 @@ through mizchi/js's `@core.Any` plus a small `tdom` FFI, and — since MoonBit
 closures can't cross into JS on wasm-gc — JS calls the exported `on_event` on
 each DOM event instead of receiving a closure. `demo/counter_wasm` and
 `demo/storybook_wasm` are the wasm-gc hosts (`demo/counter_wasm` is the twin of
-the js `demo/counter`; `storybook_wasm` is the same ~45-line shape over the
+the js `demo/counter`; `storybook_wasm` is the same shape over the
 published `storybook/ui/wasm` — an export list and this repo's story set,
 nothing else, an export list being per-package `link` config that cannot come
 from a dependency).
@@ -210,21 +210,16 @@ bundles, split by provenance and regenerated together by `cmd/dev -- css-bundle`
   from a clone at the ref pinned in `scripts/fetch-margaui.mjs`, with its `tw/*`
   dropped (`--skip-prefix tw/`).
 
-Two more generated-from-upstream files live elsewhere and follow the same rule:
+More generated-from-upstream files live elsewhere and follow the same rule:
 
 - `anode/sanitize/spec_default_gen.mbt` — the WHATWG Sanitizer API's built-in
   default configuration, from the **machine-readable `builtins/` in the spec
   repo** at the commit pinned in `scripts/fetch-sanitizer-defaults.mjs`.
   Regenerate and verify with the `sanitizer-defaults` task, which does what
-  `gen` does — regenerate, `moon fmt`, then `git diff --exit-code`.
-  (`skill-embed` no longer works this way: it snapshots the file first and
-  diffs the CONTENT, so it passes on a skill edit that has been re-embedded but
-  not yet committed. The git form fails that case, which made `ci` unrunnable
-  during exactly the change it guards. The remaining `git diff` checks have the
-  same blind spot and could move the same way.)
-  Prefer it to the script's own `--check`: that flag
-  compares the generator's UNFORMATTED output against a file `moon fmt` has
-  reformatted, so it reports "stale" on content that is byte-identical.
+  `gen` does — regenerate, `moon fmt`, then diff. Prefer it to the script's own
+  `--check`: that flag compares the generator's UNFORMATTED output against a
+  file `moon fmt` has reformatted, so it reports "stale" on content that is
+  byte-identical.
 
 - `eventpath/dom_props_gen.mbt` — every property an event path can reach, with its
   type, from the **machine-extracted WebIDL in `w3c/webref`'s `ed/idl/`** at the
@@ -243,8 +238,14 @@ Two more generated-from-upstream files live elsewhere and follow the same rule:
   traversed at all is `eventpath/event_paths.mbt`'s question, and the two are
   separate because one is fetched and the other is argued.
 
-A fourth vendored-from-upstream tree follows the same rule from the other end —
-it is copied rather than generated, but it is equally not ours to edit:
+- `anode/sanitize/css/properties_gen.mbt` — every CSS property the style
+  sanitizer will let through, with what its value may contain, from the same
+  `w3c/webref` extraction plus `mdn/data`, at the commits pinned in
+  `scripts/fetch-css-properties.mjs`. Regenerate with the `css-properties`
+  task, which has the same three steps.
+
+One vendored-from-upstream tree follows the same rule from the other end — it
+is copied rather than generated, but it is equally not ours to edit:
 
 - `markdown/` — the CommonMark + GFM parser, copied verbatim from
   [mizchi/markdown.mbt](https://github.com/mizchi/markdown.mbt) at the commit

@@ -39,9 +39,8 @@ pub(all) enum HandlerBucket {
 /// A numbering, not a vocabulary: the host's buckets and the guest's are the
 /// same two, so there is nothing to translate — what this pins is the ORDER,
 /// which is the WIT variant's case order and cannot be changed without
-/// changing the contract. It lives here, beside the enum, because it used to
-/// live in `tgc/host/guest.mbt` while `guests/sdk.mbt` and
-/// `internal/abi/layout.mbt` carried the same two numbers separately.
+/// changing the contract. It lives here, beside the enum, so the two numbers
+/// have exactly one owner: a second copy anywhere is a second contract.
 pub fn HandlerBucket::ordinal(self : HandlerBucket) -> Int {
   match self {
     Receive => 0

@@ -28,8 +28,9 @@ jobs:
     steps:
       # Kept in step with ci.yml's setup, which is the environment the tasks
       # actually expect: several of them (check-examples, check-skill,
-      # check-guest-template, the playground assembly) are node scripts, so an
-      # agent with only MoonBit installed can run `moon check` and nothing else.
+      # check-storybook-template, the playground assembly) are node scripts, so
+      # an agent with only MoonBit installed can run `moon check` and nothing
+      # else.
       - name: Checkout code
         uses: actions/checkout@v5
 

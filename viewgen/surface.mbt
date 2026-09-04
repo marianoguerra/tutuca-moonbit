@@ -688,8 +688,8 @@ fn finish_surface(c : Collect, inputs : Map[String, InputSig]) -> Surface {
 }
 
 ///|
-/// NOTE: plain `Array[String]::sort()` is a silent no-op here — String's
-/// `Compare` impl is deprecated in favour of `lexical_compare`.
+/// Sorts through `lexical_compare`: plain `Array[String]::sort()` is a silent
+/// no-op here, because that is what String's own `Compare` impl does.
 fn sorted(s : @set.Set[String]) -> Array[String] {
   let out = s.to_array()
   out.sort_by((a, b) => a.lexical_compare(b))

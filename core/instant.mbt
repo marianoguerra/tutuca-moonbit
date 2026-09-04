@@ -1,10 +1,10 @@
 // The canonical spelling of an `Instant`.
 //
 // It lives in `core` rather than beside a codec because `Value::Instant` is
-// the thing being spelled: `to_display_string`, `to_json` and the CBOR and
-// JSON codecs all have to agree about what 1 756 915 200 seconds and 123 456
-// 789 nanoseconds LOOKS like, and two hand-kept spellings of that are two
-// answers.
+// the thing being spelled: `to_display_string`, `to_json` and the page-side
+// codec in `tgc/host/values.mjs` all have to agree about what 1 756 915 200
+// seconds and 123 456 789 nanoseconds LOOKS like, and two hand-kept spellings
+// of that are two answers.
 //
 // `moonbitlang/x/time` owns the calendar — turning an epoch second into a date
 // is exactly the arithmetic nobody should write twice — and this owns the
@@ -202,8 +202,9 @@ fn base64(b : Bytes) -> String {
 /// The tag key is `$` and the payload key is `v`, and a MAP whose own keys
 /// include `$` is written tagged too — without that escape the discriminator is
 /// ambiguous. `Value::to_json` does not need the escape (a `Map` here is a
-/// tutuca map, and `tgc/value` owns the round trip), but the SPELLING has to
-/// match or the two encoders answer differently for the same value.
+/// tutuca map, and the tag can only have come from this encoder), but the
+/// SPELLING has to match `tgc/host/values.mjs` or the two ends answer
+/// differently for the same value.
 fn tagged_json(name : String, payload : Json) -> Json {
   let obj : Map[String, Json] = Map([])
   obj["$"] = Json::string(name)

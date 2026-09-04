@@ -7,7 +7,7 @@
 //
 //   Component  the .mbt the example is written in
 //   View       the .html its views live in (the `view` attribute)
-//   Generated  read-only: what `tutuca gen-views` makes of the View tab
+//   Generated  read-only: what `tutuca gen` makes of the View tab
 //
 // The generated module is handed to the compiler as an EXTRA FILE OF THE
 // USER'S PACKAGE, which is why the component can name `counter_views()` and

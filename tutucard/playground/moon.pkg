@@ -16,7 +16,7 @@
 //
 // The edit loop is therefore check → compile → instantiate → mount, and the
 // third step is the only one that is not a synchronous call: it lives in
-// `web/card-tgc.js` as `mountTgcCard`, because `WebAssembly.compile` answers a
+// `tutucard/web/card.js` as `mountTgcCard`, because `WebAssembly.compile` answers a
 // promise. What is left on this side is `check(source)` — the diagnostics, as
 // JSON, with real columns, which nothing in a view file could report until
 // `tscript` carried spans — and `mountCompiled`, which takes a module the page

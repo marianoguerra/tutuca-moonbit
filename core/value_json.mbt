@@ -14,8 +14,7 @@
 /// number decodes to `Num`, because a JSON number IS a double and pretending
 /// otherwise past 2^53 would invent precision the input never had. A producer
 /// that needs an `Int` back writes the tagged form, which `to_json` always
-/// does. CBOR (`tgc/value`) is the encoding without this asymmetry, which is
-/// the point of having two.
+/// does — which is why the tagged form is not an option a producer may skip.
 ///
 /// One consequence worth naming, since this is also the bridge a DOM
 /// `CustomEvent` detail crosses: a page that sends `{"$":"bin","v":"…"}` now
@@ -112,7 +111,7 @@ pub fn Value::to_json(self : Value) -> Json {
     Num(n) => Json::number(n)
     Str(s) => Json::string(s)
     // The three arms JSON has no shape for take the format's `$`-tagged
-    // spelling, which is what `tgc/value` writes and what a browser reads back.
+    // spelling, which is what `tgc/host/values.mjs` reads back on the page.
     // A plain JSON number for an `Int` would stop being itself past 2^53, which
     // is the whole reason the arm exists.
     Int(i) => tagged_json("int", Json::string(i.to_string()))

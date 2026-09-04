@@ -371,18 +371,3 @@ pub fn escaped_char(c : Char) -> Char? {
     _ => None
   }
 }
-
-///|
-/// The inverse: `c` written back into a literal, or None when it needs no
-/// escape. Both printers read this, for the same reason both lexers read the
-/// table above.
-pub fn escape_of(c : Char) -> Char? {
-  match c {
-    '\'' => Some('\'')
-    '\\' => Some('\\')
-    '\n' => Some('n')
-    '\t' => Some('t')
-    '\r' => Some('r')
-    _ => None
-  }
-}

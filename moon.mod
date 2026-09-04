@@ -50,7 +50,7 @@ import {
 // (`storybook/ui/panels`) and the two browser halves (`storybook/ui/wasm`,
 // `storybook/ui/panels/wasm`) are how a project gets a gallery of ITS OWN
 // components, which is the point of having written them. What stays behind is
-// `storybook/examples` — this repo's 52 demos plus the fixtures the lint and
+// `storybook/examples` — this repo's own demos plus the fixtures the lint and
 // view sweeps and `benchmarks` run over, editorial content rather than a
 // library — and `storybook/template`, which already travels inside the CLI.
 // The split is what `stories_of_module` is for: a consumer's story set is a

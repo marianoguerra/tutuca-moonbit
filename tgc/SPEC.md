@@ -1,7 +1,7 @@
 # `tgc/1` — a WebAssembly component format on core wasm + GC
 
-Everything below is implemented and tested (`tgc/abi`, `tgc/value`,
-`tgc/emit`, `tgc/test/`). It replaces a Component Model format, and
+Everything below is implemented and tested (`tgc/abi`, `tgc/emit`,
+`tgc/test/`). It replaces a Component Model format, and
 compatibility with that is not a goal — see
 [`../docs/dynamic-components.md`](../docs/dynamic-components.md) for the
 practical route in, and [`SECURITY.md`](SECURITY.md) for what a loaded module
@@ -70,13 +70,12 @@ Decisions worth naming:
   field" and "the field is null" are different answers, and the old contract
   needed `option<value>` to keep them apart.
 - **`tg_bytes` is UTF-8** and carries binary too. The wire, the GC type and the
-  JSON/CBOR encodings all agree; a UTF-16 host transcodes at its own boundary
+  JSON encoding all agree; a UTF-16 host transcodes at its own boundary
   rather than at every field. This ends the current `--encoding utf16` /
   `utf8` split by making the encoding part of the type. In Wax it costs nothing
   extra: a string literal is already `[mut i8]`.
 - **Two numbers.** `tg_num` is tutuca's double; `tg_int` is the 64-bit integer
-  CBOR and the GC types both have natively and the current WIT concedes the
-  absence of ("a 64-bit id is a `str`").
+  the GC types have natively and a double cannot hold past 2^53.
 - **List and map carry capacity plus count**, because a wasm-GC array is
   fixed-length. The map is an entry array and stays in **insertion order** —
   `core.Value::Map` is MoonBit's `Map` and `@each` renders in that order, so an
@@ -157,34 +156,12 @@ op 11, so there is no catalog in the path at all.
 This replaces a flat `by_name` whose last registration silently wins, and a
 registry that breaks a tie by "most recently loaded".
 
-## 8. Encodings
+## 8. Encoding
 
-Two, for two jobs. **CBOR is faithful** — every arm survives, and one that
-cannot be encoded is an error rather than a silent null. **JSON is
-interchange** — `$`-tagged, and lossy on the way back in. Both are
-`tgc/value`, both are tested against the bytes rather than only against
-themselves.
-
-### CBOR (RFC 8949, "ordered" profile)
-
-Canonical in every respect the standard names except key ordering, which
-follows insertion — see `tg_map` above for why. Standard tags wherever one
-exists.
-
-| value | encoding |
-| --- | --- |
-| null / bool / num | major 7 (`0xf6`, `0xf4`/`0xf5`, `0xfb`) |
-| int | major 0 / 1 |
-| str / bin | major 3 / major 2 |
-| list / map | major 4 / major 5 |
-| instant | **tag 1**; whole seconds as an integer, sub-second as a **tag 4** decimal fraction `[-9, nanoseconds]` |
-| comp | tag `40001` wrapping `[module, component, state]` |
-| ext | tag `40002` wrapping `[kind, payload]` |
-| func | **refused**, with the reason |
-
-Non-shortest integer heads are accepted on the way in and never written on the
-way out. Trailing bytes are refused: a decoder that stops at the end of the
-first value has read a different message from the one that was sent.
+One, `$`-tagged JSON, because a value crosses this boundary in a browser and a
+browser parses JSON without a library. It is written and read by
+`tgc/host/values.mjs` on the page side and `core`'s `Value::to_json` /
+`Value::from_json` on the MoonBit side.
 
 ### JSON
 
@@ -208,8 +185,8 @@ fraction. That is a spelling rule; the value round-trips exactly either way.
 **The asymmetry, stated rather than hidden:** a plain JSON number decodes to
 `tg_num`, because a JSON number *is* a double and pretending otherwise past
 2^53 would invent precision the input never had. A producer that needs a
-`tg_int` back writes the tagged form, which the encoder always does. CBOR is
-the encoding without this asymmetry, which is the point of having two.
+`tg_int` back writes the tagged form, which the encoder always does — which is
+why the tagged form is not an option a producer may skip.
 
 ## 9. Two nulls, and the rule that falls out of them
 

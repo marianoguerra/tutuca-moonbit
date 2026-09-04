@@ -6,7 +6,7 @@
 // that inlines the entry + bundle as `#|` raw strings so wasm-gc (no filesystem)
 // can read them. Not shipped — see the moon.mod exclude list.
 //
-// Run via: moon run --target native cmd/dev -- margaui-bundle
+// Run via: moon run --target native cmd/dev -- css-bundle
 // (the task clones margaui at the ref pinned in scripts/fetch-margaui.mjs into
 // _build/margaui first; --base points at any other checkout).
 import {

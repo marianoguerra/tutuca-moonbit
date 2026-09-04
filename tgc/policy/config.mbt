@@ -1,9 +1,9 @@
 ///| What a bundle's variables are, once a host has decided them.
 ///
 /// A config var is the answer to "this component would work anywhere, if
-/// somebody told it where." `guests/mastodon` is the worked example: the same
-/// six components read mastodon.social or hachyderm.io depending on two
-/// strings, and neither the wasm nor the views change between them.
+/// somebody told it where." A component that reads a timeline is the worked
+/// example: the same views read mastodon.social or hachyderm.io depending on
+/// two strings, and neither the wasm nor the views change between them.
 ///
 /// The whole design is one question — WHO chose the string — and the answer
 /// has to be the host for the same reason it has to be the host in

@@ -59,8 +59,7 @@ component — is REFUSED by name, with the reason, and comes back as an
   playground compiles and runs on both backends: the string ABI, the
   worker-per-target rule, and how to verify a change to either.
 - **[tgc/SPEC.md](tgc/SPEC.md)** — the component format itself: the frozen rec
-  group, the freeze rule, the op space, the exports, and the CBOR and JSON
-  encodings. **[tgc/SECURITY.md](tgc/SECURITY.md)** is what a loaded module can
+  group, the freeze rule, the op space, the exports, and the JSON encoding. **[tgc/SECURITY.md](tgc/SECURITY.md)** is what a loaded module can
   and cannot do, tested rather than asserted.
 - **[docs/storybook.md](docs/storybook.md)** — the gallery as a library: how a
   project gets one over its own components, why stories are a projection of a
@@ -79,9 +78,8 @@ As a library:
 moon add marianoguerra/tutuca
 ```
 
-The CLI (`gen`, `watch`, `gen-*-css`, `storybook`, `new-storybook`,
-`install-skill`, `new-storybook`) is the `cmd/tutuca` package, and `moon install` names the binary
-after that package's last segment:
+The CLI is the `cmd/tutuca` package, and `moon install` names the binary after
+that package's last segment:
 
 ```sh
 moon install marianoguerra/tutuca/cmd/tutuca

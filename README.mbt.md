@@ -32,13 +32,13 @@ and formal `spec.mbt`. From the bottom up:
 | **Styling** | `css/` | The one place stylesheets live: a Tailwind port plus embedded Tailwind and margaui bundles, so a host compiles its collected class names to CSS with no Node, no CDN and no checkout. |
 | **Tooling** | `lint/`, `storybook/inspector/`, `statedef/`, `viewfile/`, `viewgen/`, `cli/` | The linter (parse-issue rules + a WHATWG-tokenizer structural HTML linter), a schema inspector, the state schema language, the view-file splitter, the ahead-of-time view compiler, and the native `tutuca` CLI. |
 | **Testing** | `testing/harness` | A reusable harness to mount and drive a `ModuleDef` on the in-memory DOM. |
-| **Component format** | `tgc/` — `abi/` (the frozen preamble), `rt/` (the runtime module), `value/` (CBOR + `$`-tagged JSON), `emit/` (the card compiler), `host/`, `policy/`, `persist/` | Loading a WebAssembly module from anywhere into a *running* app. Core wasm plus the GC proposal and nothing else: one file that carries its own manifest, and an instance a component can hold in its own state. See [`tgc/SPEC.md`](tgc/SPEC.md) and [`tgc/SECURITY.md`](tgc/SECURITY.md). |
-| **Demos & docs** | `demo/`, `playground/`, `storybook/`, `tutucard/` | 51 ported examples (`storybook/examples/`), browser/wasm demo hosts, an in-browser playground, the compiler-free card playground, and a compiled storybook gallery. |
+| **Component format** | `tgc/` — `abi/` (the frozen preamble), `rt/` (the runtime module), `emit/` (the card compiler), `host/`, `policy/`, `persist/` | Loading a WebAssembly module from anywhere into a *running* app. Core wasm plus the GC proposal and nothing else: one file that carries its own manifest, and an instance a component can hold in its own state. See [`tgc/SPEC.md`](tgc/SPEC.md) and [`tgc/SECURITY.md`](tgc/SECURITY.md). |
+| **Demos & docs** | `demo/`, `playground/`, `storybook/`, `tutucard/` | The ported examples (`storybook/examples/`), browser/wasm demo hosts, an in-browser playground, the compiler-free card playground, and a compiled storybook gallery. |
 
-The `tutuca` CLI does the work that happens outside the compiler:
-`gen`, `watch`, `storybook`, `install-skill`, `feedback`,
-`agent-context` and `help`. It does not inspect, document, lint or render
-components — this is an ahead-of-time port, so those questions belong to
+The `tutuca` CLI does the work that happens outside the compiler — generating
+view modules and stylesheets, watching them, scaffolding and serving a gallery,
+reading a trace; `tutuca help` lists it. It does not inspect, document, lint or
+render components — this is an ahead-of-time port, so those questions belong to
 `gen` (which makes a bad field reference or an unhandled `@on` handler a
 *build* error), to `moon check`, and to `moon test` over
 `testing/harness`. There is no module path and no way to point the binary at

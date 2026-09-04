@@ -2012,6 +2012,12 @@ components in one, 19 in the other. Every one of them was silent.
   the two now agree — which they must, since a rule kept differently by two
   backends is two answers to one question.
 
+## [0.36.0] - 2026-08-27
+
+A re-release of 0.35.0 under a new number, carrying no changes of its own: a
+mooncakes version is immutable, so a publish that has to be redone needs the
+next number rather than the same one.
+
 ## [0.35.0] - 2026-08-27
 
 ### Added

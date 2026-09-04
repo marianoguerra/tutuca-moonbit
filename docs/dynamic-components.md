@@ -102,7 +102,6 @@ The host is assembled from published packages:
 | `tgc/host` | wraps a module's instance as an ordinary `&Obj`, and synthesizes real components from its manifest. `&Guest` is the seam — tests implement it with an in-process fake, so the whole host runs with no wasm at all |
 | `tgc/policy` | what this host will *accept*. Three tiers, and a module that needs what the policy withholds — its own CSS, an external origin — is refused rather than degraded |
 | `tgc/persist` | a component that has to outlive the page |
-| `tgc/value` | the CBOR and `$`-tagged JSON codecs for the value the format carries |
 
 Loading is two steps and neither is a framework:
 
@@ -128,8 +127,7 @@ for a component to arrive with half of itself.
 ## What a module can do to your page
 
 Summarized from [`../tgc/SECURITY.md`](../tgc/SECURITY.md), which states each
-claim's actual strength and says which ones are weaker than the format it
-replaced:
+claim's actual strength and names the two channels that are open by design:
 
 | channel | reaches | state |
 | --- | --- | --- |

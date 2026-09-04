@@ -186,7 +186,7 @@ pub(all) struct DynComponentDef {
   /// use when nothing above provides it (`""` for none). A lookup names what
   /// it WANTS, not who supplies it.
   lookup : Array[(String, String)]
-  /// Named initial states (the guest's `tutuca/init` fixtures).
+  /// Named initial states (the guest's `tutuca/fixtures` block).
   inits : Array[DynInitDef]
   style : String
 } derive(Debug, Eq)

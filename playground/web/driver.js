@@ -9,7 +9,7 @@
 //
 //   Component  the .mbt the user writes
 //   View       the .html its views live in
-//   Generated  read-only: what `tutuca gen-views` makes of the View tab
+//   Generated  read-only: what `tutuca gen` makes of the View tab
 //
 // Editing the View tab regenerates the module (./viewgen-client.js, over the
 // view generator compiled to JS) and the result is handed to the worker as

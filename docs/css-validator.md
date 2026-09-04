@@ -10,26 +10,21 @@ a value.
 This document says what the subsets are, what each covers and what each leaves
 out, and the two findings that decided the design.
 
-## What it replaced
+## Why a validator rather than a name rule
 
-Before this, CSS was closed by refusing:
+The alternative is to close CSS by refusing: drop the `style` attribute and the
+`<style>` element outright, and refuse `fill`, `stroke`, `clip-path`, `mask`,
+`filter`, `marker-*`, `cursor`, `list-style*` and `background-image` by name for
+an untrusted guest, because CSS accepts `url(...)` in each of those SVG/HTML
+presentation sinks.
 
-- `Sanitizer::without_css()` dropped the `style` attribute everywhere and the
-  `<style>` element in both namespaces. `SafeMarkupFilter::new` applied it on the
-  way in, so `@setinnerhtml` and `@setinnersvg` payloads carried no CSS at all.
-- `tgc/policy/view_authority.mbt` refused `fill`, `stroke`, `clip-path`,
-  `mask`, `filter`, `marker-*`, `cursor`, `list-style*`, `background-image` and
-  `style` **by name** for an untrusted guest, with the comment "CSS accepts
-  `url(...)` in each of these SVG/HTML presentation sinks". A constant
-  `fill="#1da1f2"` was refused because a dynamic `fill="url(//evil.test/p)"`
-  could not be told apart from it.
-- `vdom/filter/markdown/build.mbt` carried **two sanitizers**, because narrowing
-  CSS at the filter took GFM column alignment with it — `style="text-align:left"`,
-  which `build.mbt` writes itself. The split was who authored the value, a
-  question a name rule cannot ask.
+A name rule cannot tell a constant `fill="#1da1f2"` from a dynamic
+`fill="url(//evil.test/p)"`, so it refuses both. It also cannot tell who
+authored the value: GFM column alignment is `style="text-align:left"`, written
+by `vdom/filter/markdown/build.mbt` itself, so a filter that narrows CSS by name
+either loses table alignment or needs a second sanitizer for the values it wrote.
 
-All three are now decided by reading the value. The markdown split is gone;
-`Build` carries one sanitizer again.
+Reading the value answers all of it, and `Build` carries one sanitizer.
 
 ## Two findings
 

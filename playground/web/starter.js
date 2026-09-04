@@ -5,7 +5,7 @@
 // source runs on both backends. Ctrl/⌘+Enter to run.
 //
 // The default idiom is AHEAD-OF-TIME views: the View tab holds the `.html`,
-// `tutuca gen-views` turns it into the module shown in the Generated tab
+// `tutuca gen` turns it into the module shown in the Generated tab
 // (compiled as part of THIS package), and the Component tab references the
 // generated `<comp>_views()` builder and the typed `<Comp>Msg` it declares.
 // An example is `{ view, code }` for that split, or a plain string for the one
@@ -49,7 +49,7 @@ const EXAMPLES = {
   </div>
 </template>
 `,
-    code: `// The view lives in the View tab. \`tutuca gen-views\` turns its three
+    code: `// The view lives in the View tab. \`tutuca gen\` turns its three
 // blocks into the module in the Generated tab, which is compiled as part of
 // THIS package — so CounterState and counter_component() are in scope here.
 //
@@ -154,7 +154,7 @@ fn build() -> @component.ModuleDef {
 // examples above turn the View tab into a checked module instead.
 //
 // No View tab means no generator, so this state writes the three
-// @component.Fields methods by hand — the same contract gen-views emits from
+// @component.Fields methods by hand — the same contract gen emits from
 // a \`tutuca/spec\` block. That is the whole cost of leaving the AOT path.
 struct CounterState {
   count : Int

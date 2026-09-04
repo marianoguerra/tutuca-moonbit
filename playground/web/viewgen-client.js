@@ -1,5 +1,5 @@
 // The view generator, as a page uses it: html -> the MoonBit modules
-// `tutuca gen-views` would write next to the component.
+// `tutuca gen` would write next to the component.
 //
 // The generator itself is viewgen/ compiled to JS (viewgen.js, ~1.3 MB,
 // publishing one global entry point `__tutucaViewgen(html, name) -> JSON`).

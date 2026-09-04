@@ -4,11 +4,11 @@
 // The corpus is DATA (`tscript/conformance`), and the interpreter reads it
 // directly. The MoonBit backend cannot — its answers only exist once `moonc`
 // has compiled them — so the corpus is projected into one `.html` that
-// `gen-views` compiles like any other, and a whitebox test drives the emitted
+// `gen` compiles like any other, and a whitebox test drives the emitted
 // functions case by case.
 //
 // Run via: moon run --target native cmd/dev -- gen-conformance
-// (which then runs `gen-views` over the file it writes).
+// (which then runs `gen` over the file it writes).
 import {
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/tscript/conformance" @corpus,

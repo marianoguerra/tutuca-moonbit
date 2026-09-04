@@ -47,8 +47,8 @@ the installed moonc (`TUTUCA_ALLOW_TOOLCHAIN_MISMATCH=1` overrides that too,
 and the payload will not work).
 
 That is what CI needs: `cli.moonbitlang.com` serves `latest` and nothing else,
-so every toolchain release used to turn the Pages deploy red and freeze the
-site at whatever commit last matched the pin. A self-heal prints the exact
+so without the self-heal every toolchain release turns the Pages deploy red and
+freezes the site at whatever commit last matched the pin. It prints the exact
 `toolchain.json` edit that makes it the fast path again — it does not apply
 it, because a build step that rewrites a pinned file leaves every CI run with
 a dirty tree and nobody deciding anything.

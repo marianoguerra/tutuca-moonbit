@@ -5,9 +5,8 @@ text it did not write into the host's own page, and because
 `tgc/SECURITY.md` §7 promises a port of the [WHATWG Sanitizer
 API](https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#sanitizer)
 without saying what "port" means for a tree that is half description and half
-expression. This says it. Most of it is now built — `anode/sanitize` and
-`vdom/filter` — and each section says which parts shipped and which are still
-only argued for.
+expression. This says it. It lives in `anode/sanitize` and `vdom/filter`, and
+each section marks the parts that are argued for rather than built.
 
 ## What the spec gives, and what it does not
 
@@ -503,8 +502,8 @@ Three things this cost that were not obvious:
 - **`App::new` installs it**, so `@setinnermd` works with no configuration. The
   price is that every app links the ~4.7k-line parser, since the call is
   unconditional and nothing about it is dead.
-  There is no longer a way to trade it away: the seam takes a policy, and the
-  parser is behind a rule the policy does not reach.
+  There is no way to trade it away: the seam takes a policy, and the parser is
+  behind a rule the policy does not reach.
 
 ### HTML and SVG come back the same way, and need no permission either
 

@@ -1,6 +1,6 @@
 // Scenes: what a card's `<script type="tutuca/test">` block says, as data.
 //
-// The same shape `statedef/init_block.mbt` has for `tutuca/init`, and for the
+// The same shape `statedef/init_block.mbt` has for `tutuca/fixtures`, and for the
 // same reason: a block that is JSON is a block a generator can write and an
 // agent can read back, and validating it where the file is split is what puts
 // a mistake on the line of the `.html` the author has open rather than on a

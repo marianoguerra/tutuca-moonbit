@@ -2,7 +2,7 @@
 // every code block tagged `mbt check` is compiled and run by `moon test docs`,
 // so the docs cannot drift from the API. `@tutuca` is the conventional alias
 // for the core package, matching storybook/examples.
-// The tutorial's components live in tutorial.html; `gen-views` compiles them
+// The tutorial's components live in tutorial.html; `gen` compiles them
 // into tutorial_view_gen.mbt / tutorial_view_ir_gen.mbt, which are ordinary
 // sources in this package and need their imports here rather than under
 // `for "test"`.

@@ -3,11 +3,10 @@
 // It is what someone building their first storybook sees, it lives INSIDE the
 // binary (cli/storybook_template_gen.mbt), and nothing else looks at it.
 //
-// Structural only, unlike `check-guest-template`, and the difference is not
-// laziness: a guest's `moon.mod` depends on nothing, so CI can compile one
-// offline. This project depends on the PUBLISHED `marianoguerra/tutuca` — which
-// will not contain the packages its page imports until the release that adds
-// them — so the compile check belongs to `examples/`, run after a release.
+// Structural only, and not out of laziness: this project depends on the
+// PUBLISHED `marianoguerra/tutuca` — which will not contain the packages its
+// page imports until the release that adds them — so the compile check belongs
+// to `examples/`, run after a release.
 // What is checkable here is everything that can be wrong without a compiler:
 //
 //   1. no placeholder survived substitution

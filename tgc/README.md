@@ -10,7 +10,6 @@ Read [`SPEC.md`](SPEC.md) for the format. This page is the tree.
 | | |
 |---|---|
 | `abi/` | the FROZEN preamble, op codes, tag numbers and export names. One table, two renderings (Wax and WAT). Nothing else may spell these. |
-| `value/` | the canonical value host-side, plus CBOR and JSON both ways |
 | `rt/` | `tutuca-rt` — the shared function vocabulary, as a module |
 | `emit/` | card → `tgc` module. The third backend over `tscript`'s one AST. |
 | `host/` | the host side: the `&Obj` wrapper, the manifest, `register_module`, and `values.mjs` — `core.Value` JSON ↔ `tg_val`, the one copy |
@@ -25,9 +24,8 @@ Read [`SPEC.md`](SPEC.md) for the format. This page is the tree.
 node --test tgc/test/compose.test.mjs
 ```
 
-Sixteen assertions, most of them a thing the Component Model format this
-replaced could not do, with the reason named in the comment beside it. The four
-that matter most:
+Sixteen assertions, each with the reason named in the comment beside it. The
+four that matter most:
 
 - a component **holds another module's instance in its own state** and reads a
   field **through** it — one `call_ref`, no host hop and no token table;
@@ -50,10 +48,10 @@ node --test tgc/test/conformance.test.mjs
 `tscript/conformance` is the language's semantics as data, and `tgc/emit` is the
 third implementation of them. **48 of 48**, both tables — the thirty
 transitions, and the seventeen rows about what a block *said* rather than what
-the state became. That second table is where the backend this replaced had its
-worst gap, and it was invisible: `enrich` and `bindWith` appeared nowhere in
-that generator, so a card using them compiled with no refusal to show for it and
-quietly lost its bindings. No transition case was asking.
+the state became. That second table is the one worth having: a generator can
+drop a declaration like `enrich` or `bindWith` entirely and still pass every
+transition case, compiling with no refusal to show for it and quietly losing the
+bindings, because no transition case is asking.
 
 A backend not driven by the corpus is a backend with its own semantics.
 
@@ -64,16 +62,14 @@ with no toolchain.
 
 Mounting reuses the whole existing host. `tutucard/web/card.js` installs the
 `__cardguest[key]` surface, `cardguest.mbt` implements `&Guest` over it, and the
-views, renderer, dispatch and transactor above that are unchanged. **That reuse
-is the claim, not a shortcut**: what the format replaced is the guest boundary
-and nothing above it.
+views, renderer, dispatch and transactor above that are ordinary. **That reuse
+is the claim, not a shortcut**: the format is the guest boundary and nothing
+above it.
 
-Two things are simpler on that boundary than in the format this replaced, and
-both are the format:
+Two things the boundary does not need, and both are the format:
 
-- **there is no arena** — a compound value crossed the old one as a `u64` handle
-  into a host table valid for one call, because WIT has no recursive types.
-  Here a value is a reference;
+- **there is no arena** — a value is a reference, so nothing has to be copied
+  into a host-side table for the duration of a call;
 - **there is nothing to sweep** — an instance is a GC struct and the engine
   collects it. The handle map exists only because MoonBit's js target passes
   integers across the seam.

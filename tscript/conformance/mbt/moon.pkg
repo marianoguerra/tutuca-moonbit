@@ -3,7 +3,7 @@
 // The corpus is DATA and the interpreter reads it directly. This backend
 // cannot: its answers only exist once `moonc` has compiled them. So the corpus
 // is projected into corpus.html by `cmd/dev -- gen-conformance`, compiled by
-// `gen-views` like any other view file, and driven case by case here.
+// `gen` like any other view file, and driven case by case here.
 //
 // A whitebox test, because what it drives is `corpus_inline_update` — a
 // package-private function the generated wrapper composes, and the thing that

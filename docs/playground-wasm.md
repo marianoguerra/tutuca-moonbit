@@ -4,11 +4,6 @@ How the in-browser playground compiles and runs on both backends: the string
 ABI both halves must agree on, the worker-per-target rule, the realm the linked
 module lives in, and how to verify a change to any of it.
 
-This began as a blocker report (2026-07-16, cleared 2026-07-29) under the name
-`playground/WASM_TARGET_STATUS.md`, which is why the CHANGELOG mentions it. The
-investigation is over; what survived it is reference material, so it reads and
-is named as reference material.
-
 ## TL;DR
 
 - **Both backends run.** The target toggle (`js` / `wasm-gc`) compiles, links,

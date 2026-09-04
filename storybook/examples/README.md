@@ -59,9 +59,8 @@ in value positions like `@text="$label"`, where no event exists — and gives
 Every JS docs example: basics, state & updates, collections, rendering,
 macros, graphics, communication, dynamics, drag & drop, styles, lint errors,
 custom collections, the file picker and web-component hosts, and all three big
-apps (`json`, `personal-site`, `visual-wasm`) — 51 modules across 32 files, all
-covered by interaction tests. See `all_examples()` in `examples.mbt` for the
-list, in tutorial order.
+apps (`json`, `personal-site`, `visual-wasm`), all covered by interaction
+tests. See `all_examples()` in `examples.mbt` for the list, in tutorial order.
 
 The big apps needed the runtime patterns the smaller examples established, at
 scale: a `reg` map for the mutual recursion / lookup-table dispatch (`json`'s 8

@@ -7,7 +7,6 @@
 _build/
 target/
 .mooncakes/
-.moonagent/
 
 # npm (happy-dom for js-target tests; fetched playground compiler)
 node_modules/
@@ -19,20 +18,14 @@ dist/
 # never committed (5+ MB, version-coupled; see playground/build/assemble.mjs)
 playground/vendor/moonc-web.cjs
 
-# Playwright-MCP browser session dumps
-.playwright-mcp/
-
 # Per-machine agent settings. Not `.claude/` wholesale: a project may want to
 # check in shared skills or settings, and only this file is personal.
 .claude/settings.local.json
 
-# Throwaway scaffold used by scripts/check-playground-examples.mjs
+# Throwaway scaffolds: scripts/check-playground-examples.mjs and
+# scripts/check-skill-snippets.mjs each write one, compile it, and leave it.
 playground/_examples_check/
-
-# There is no .wit in the tree: the component format is core wasm plus GC, and
-# `gen` emits no interface documents — nothing consumed the ones it used to
-# write.
-*.wit
+skill/_snippets_check/
 
 # The stamp beside the compiler blob: what worker it is, written by
 # playground/build/fetch-compiler.mjs. Gitignored with the blob it describes.

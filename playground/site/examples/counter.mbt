@@ -3,7 +3,7 @@
 // wrapper generated from that file, with the name, the views, the styles, the
 // codec and the schema already filled in.
 //
-// State is declared in the View tab too, in the `<script type="tutuca/state">`
+// State is declared in the View tab too, in the `<script type="tutuca/spec">`
 // block: `CounterState` is generated from it, its fields get generated
 // mutators, and a view that reads a field the schema does not declare fails
 // generation instead of rendering null.

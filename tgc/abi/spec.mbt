@@ -55,8 +55,8 @@ declare pub fn Tag::code(self : Tag) -> Int
 /// The tag for a wire number, or `None` for one this ABI does not define.
 ///
 /// It cannot happen through a reference — a foreign tag would mean a foreign
-/// group, and then no reference crosses at all — but it can happen through
-/// CBOR, which is bytes and believes whoever wrote them.
+/// group, and then no reference crosses at all — but it can happen through the
+/// JSON boundary, which is text and believes whoever wrote it.
 declare pub fn Tag::of_code(code : Int) -> Tag?
 
 ///|

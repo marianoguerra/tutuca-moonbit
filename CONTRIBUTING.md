@@ -112,7 +112,7 @@ are repo-only.
 `storybook/` ships except for `storybook/examples` and `storybook/template`.
 The model, the gallery shell, the panel layer and the two browser halves are how
 a project gets a gallery of its OWN components (see
-[docs/storybook.md](docs/storybook.md)); the corpus is this repo's 52 demos plus
+[docs/storybook.md](docs/storybook.md)); the corpus is this repo's own demos plus
 the fixtures the lint and view-generation sweeps and `benchmarks` run over,
 which is editorial content and not a library, and the template already travels
 inside the CLI binary. Stories are projected from a module's own `examples`, so

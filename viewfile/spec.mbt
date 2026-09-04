@@ -99,7 +99,7 @@ pub(all) struct ViewFile {
   /// language, and whoever parses one has a span relative to the block and
   /// nowhere to put it without the block's own offset.
   state_block : Block?
-  /// The `<script type="tutuca/init">` fixtures, each paired with the
+  /// The `<script type="tutuca/fixtures">` blocks, each paired with the
   /// component whose schema it was checked against.
   init : Array[(String, @statedef.InitState)]
   /// The `<script type="tutuca/script">` blocks, unparsed, in file order.

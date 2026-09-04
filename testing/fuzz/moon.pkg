@@ -13,7 +13,7 @@
 // test helper: a fuzz run you can watch and a fuzz run CI performs have to be
 // the same run, or the one you watched proves nothing about the other.
 //
-// The spec source reaches here through `Component::spec`, which `gen-views`
+// The spec source reaches here through `Component::spec`, which `gen`
 // fills in — see `viewgen/emit_comp.mbt`'s `emit_spec_source`. A component
 // built by hand carries "" and simply has no `Plan`.
 import {

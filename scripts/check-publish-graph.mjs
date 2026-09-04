@@ -47,7 +47,7 @@ function packages(dir, out = []) {
     if (name === "_build" || name === ".mooncakes" || name === ".git") continue;
     if (name === "node_modules" || name === "target" || name === "dist") continue;
     const sub = join(dir, name);
-    // a nested moon.mod is a separate module (examples/*, guests/*): moon's own
+    // a nested moon.mod is a separate module (examples/*): moon's own
     // discovery stops there, so this does too
     if (existsFile(join(sub, "moon.mod")) || existsFile(join(sub, "moon.mod.json"))) {
       continue;

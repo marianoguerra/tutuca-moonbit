@@ -163,7 +163,7 @@ async function init(args, target) {
   return payloads.get(target).summary;
 }
 
-// `viewsCode` is the module `tutuca gen-views` produced from the View tab
+// `viewsCode` is the module `tutuca gen` produced from the View tab
 // (empty when that tab is unused). It joins the user's package as another
 // file rather than another package, which is why the component tab can name
 // CounterMsg / counter_main_view with no import at all — same package, same

@@ -3,7 +3,7 @@
 // typed dispatch decode, $-callable builders, view/field/id tables).
 //
 // Pure and target-agnostic like cli/: source text in -> generated source text
-// out, never touching the filesystem. The `gen-views` CLI command wraps it
+// out, never touching the filesystem. The `gen` CLI command wraps it
 // and cmd/tutuca does the I/O.
 import {
   "marianoguerra/tutuca/core" @tutuca,

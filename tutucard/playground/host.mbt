@@ -77,7 +77,7 @@ fn slot_of(id : String) -> Slot {
 /// same module that serves this page also answers to `node`, which is what a
 /// build step and an agent both are.
 ///
-/// `resetSweep` is the one entry point a PAGE never calls: `card-tgc.js` calls
+/// `resetSweep` is the one entry point a PAGE never calls: `card.js` calls
 /// it when it installs a new instance table under a key, because the collector
 /// records what each app on that key could reach and those records are handles
 /// into the table that just went away.
@@ -85,7 +85,7 @@ fn slot_of(id : String) -> Slot {
 /// `compile` and `mountCompiled` are the two halves of showing a card: a card
 /// is mounted by compiling it and instantiating the module. Instantiation is
 /// `WebAssembly`, which answers a promise, so the sequence lives in
-/// `web/card-tgc.js` as `mountTgcCard` — the one thing on this boundary that
+/// `tutucard/web/card.js` as `mountTgcCard` — the one thing on this boundary that
 /// could not be a synchronous MoonBit call.
 pub fn install() -> Unit {
   publish(
@@ -209,7 +209,7 @@ pub fn unmount_at(id : String) -> Unit {
 ///
 /// MOUNTING is not here any more, and cannot be: a card is mounted by compiling
 /// it and instantiating the module, and instantiation is `WebAssembly` — which
-/// answers a promise. So the three steps live in `web/card-tgc.js` as
+/// answers a promise. So the three steps live in `tutucard/web/card.js` as
 /// `mountTgcCard`, and what is left on this side is the half that needs no page
 /// (`check`) and the half that needs a module already running (`mountCompiled`).
 pub fn check(source : String, name : String) -> String {

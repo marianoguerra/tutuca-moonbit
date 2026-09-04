@@ -660,7 +660,7 @@ str x       lower s     upper s     trim s</code></pre>
           <li>
             <strong>No imports and no closures.</strong> A handler that walks a
             dispatch path, or hands a MoonBit function to the framework, is a
-            handler that needs <code>gen-views</code> and a module.
+            handler that needs <code>gen</code> and a module.
           </li>
           <li>
             <strong>No record literal, but a record.</strong> There is no
@@ -688,7 +688,7 @@ str x       lower s     upper s     trim s</code></pre>
           </li>
           <li>
             <strong>No MoonBit in a refused handler.</strong>
-            <code>gen-views</code> refuses a handler it cannot compile
+            <code>gen</code> refuses a handler it cannot compile
             <em>by name</em> and hands it back as an <code>update~</code>
             argument you write yourself. A card has nowhere to write that
             argument: what the compiler refuses is left out of the module, and

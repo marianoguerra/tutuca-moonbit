@@ -18,8 +18,8 @@
 // every arithmetic function below answers a `tg_num`. That is not the runtime
 // being lossy: `core.Value` has exactly one number, `tscript/conformance` pins
 // the results as doubles, and a card whose `+` sometimes answered an integer
-// would be a second semantics. `tg_int` is for a value that came from CBOR, or
-// from a module that is not a card.
+// would be a second semantics. `tg_int` is for a value that came from a module
+// that is not a card.
 //
 // ── Nothing answers a plausible wrong thing ─────────────────────────────────
 //
@@ -353,8 +353,8 @@ fn tg_map_find(m: &tg_map, key: &tg_bytes) -> i32 {
 // ── numbers ─────────────────────────────────────────────────────────────────
 //
 // A card has ONE number, and every operation below answers a `tg_num`. The
-// format's `tg_int` is for a value that came from CBOR or from a module that is
-// not a card; a card that sometimes answered an integer would be a second
+// format's `tg_int` is for a value that came from a module that is not a card;
+// a card that sometimes answered an integer would be a second
 // semantics for `+`.
 //
 // NOTHING HERE ANSWERS A PLAUSIBLE WRONG THING. An operation with no answer for

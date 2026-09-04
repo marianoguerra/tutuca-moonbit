@@ -78,13 +78,12 @@ pub(all) enum Step {
 ///
 /// Three arms are newer than the rest, and each earns its place:
 ///
-///   - `Int` because CBOR and the wasm-GC types both have a 64-bit integer
-///     natively, and the contract this replaces conceded what its absence cost
-///     ("a 64-bit id is a `str`"). It does NOT make the value language
+///   - `Int` because the wasm-GC types have a 64-bit integer natively and a
+///     double stops being itself past 2^53. It does NOT make the value language
 ///     two-numbered: `tscript` still has exactly one number and every
 ///     arithmetic operation still answers a `Num`. `Int` is for a value that
-///     arrived from somewhere with integers — CBOR, a foreign module — and is
-///     read back out the same way it came in.
+///     arrived from somewhere with integers — a foreign module, a wire format —
+///     and is read back out the same way it came in.
 ///   - `Bin` because a component that holds bytes should not have to spell them
 ///     as base64 inside a `Str` and hope every reader agrees which encoding it
 ///     was.

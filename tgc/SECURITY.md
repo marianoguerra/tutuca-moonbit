@@ -4,12 +4,10 @@ The premise: a component can be
 fetched from anywhere and mounted into a running app, and that is only worth
 building if it is possible to say precisely what such a component may do.
 
-This document says it for `tgc/1`. It is not a port of the older one. Most of
-the argument is unchanged, because most of it was never about the wasm contract
-— views, CSS, event paths and intents are the host's policy and that policy is
-the same object. What changed is the substrate, and it changed in both
-directions: some claims are stronger now, and **two are weaker**. Both are
-named below rather than left for somebody to find.
+This document says it for `tgc/1`. Two of the channels below are **open by
+design** — §3 and §4 — and they are named in the summary rather than left for
+somebody to find, because each is a capability the format was built for and a
+host that does not know about it will assume otherwise.
 
 Everything here was checked against the code.
 
@@ -19,12 +17,12 @@ Everything here was checked against the code.
 |---|---|---|
 | the import section | everything a module can reach | **closed, and legible** — a module declares no memory and no table, so `tut` is the whole of it, and the section names only what the body calls (§1) |
 | a module's own state | itself | **closed by the engine** — `state` is `&?eq` and each module casts it back to a type only it can name; anyone else traps (§2) |
-| an instance a host handed over | that instance's own surface | **bounded, and DURABLE** — bounded by the instance's two-slot vtable, which is the same authority the host has; durable because a reference is not a handle that expires (§3, **weaker than before**) |
+| an instance a host handed over | that instance's own surface | **bounded, and DURABLE** — bounded by the instance's two-slot vtable, which is the same authority the host has; durable because a reference is not a handle that expires (§3, **by design, and not revocable**) |
 | a mutable array a host handed in | that module's state, later | **the host's own foot** — a module stores the array it was given, so a host that keeps one keeps a way in (§3a) |
-| re-entering a module mid-call | the module's own consistency | **open, and narrower than it looks** — core wasm has no re-entrance rule and neither does this, but copy on write makes a reference cycle unreachable by ordinary means (§4, **weaker than before**) |
+| re-entering a module mid-call | the module's own consistency | **open, and narrower than it looks** — core wasm has no re-entrance rule and neither does this, but copy on write makes a reference cycle unreachable by ordinary means (§4, **open by design**) |
 | effects | the host's tree and services | **asked, not performed** — buffered by the host and discarded whole if the transition abandons (§5) |
 | ambient facts (clock, entropy, network) | nothing | **absent** — `tut` has none, so a module asks the host over an intent (§6) |
-| guest views, guest CSS, event paths, host intents | the host's DOM, stylesheet and services | **unchanged** — the same `policy/` decisions, enforced at registration (§7) |
+| guest views, guest CSS, event paths, host intents | the host's DOM, stylesheet and services | **decided by the host** — `policy/`, enforced at registration (§7) |
 
 ## 1. The import section is the authority list, and it is legible
 
@@ -32,8 +30,7 @@ A `tgc` module declares **no memory and no table**. There is nothing to smuggle
 through, no linear address space to corrupt, and no indirect-call table to
 confuse. Everything a module can reach arrives through the namespace `tut`.
 
-That was already the shape of the argument the older contract made about its
-WIT world. What is new is that the section **discriminates**. `tgc/emit` writes
+The section also **discriminates**. `tgc/emit` writes
 the body first and imports what the body turned out to call, so:
 
 - a card that computes and renders imports arithmetic and constructors, and
@@ -43,8 +40,8 @@ the body first and imports what the body turned out to call, so:
   says so.
 
 A host can therefore read a module and know what it does before running a line
-of it. Under the older contract every guest imported the whole world and the
-section said only that it was a guest. `tgc/emit/compile_test.mbt` pins this,
+of it: an import section that says only "this is a guest" would not let it.
+`tgc/emit/compile_test.mbt` pins this,
 and `tgc/test/compose.test.mjs` asserts that every prototype module's imports
 are `tut` and nothing else.
 
@@ -58,22 +55,19 @@ bound, and a tight one; it is not a behaviour.
 its own concrete type with `ref.cast`, and a module that tries to read another
 module's state **traps**.
 
-This is strictly stronger than the handle table it replaces. A handle is an
-integer, and an integer can be guessed, incremented or forged; the old bridge
-was safe because nothing let a guest mint one, which is a property of the bridge
-rather than of the type. Here it is the type: there is no way to write down a
-`tg_inst` whose state you did not create, and no way to read one you did not.
+This is stronger than a handle table, which is the other way to do it. A handle
+is an integer, and an integer can be guessed, incremented or forged; such a
+bridge is safe only as long as nothing lets a guest mint one, which is a
+property of the bridge rather than of the type. Here it is the type: there is no
+way to write down a `tg_inst` whose state you did not create, and no way to read
+one you did not.
 
 `tgc/test/compose.test.mjs` proves it by pointing one module's vtable at
 another's state and catching the trap.
 
-## 3. An instance a host hands over is DURABLE — weaker than before
+## 3. An instance a host hands over is DURABLE, and cannot be revoked
 
-Under the older contract, a compound value crossed as a `u64` handle into a
-host-side arena, **valid only for the duration of one call**. Nothing a guest
-captured stayed reachable after it returned.
-
-Here a value is a reference, and a reference lives as long as somebody holds it.
+A value is a reference, and a reference lives as long as somebody holds it.
 A module handed a child instance can keep it — in a field, in a list, across
 transitions — and call it later.
 
@@ -85,22 +79,19 @@ controls. What bounds it:
   no authority the holder did not already have by being able to ask the host.
 - **A module cannot fabricate one.** `tg_inst` is a GC struct; there is no
   integer, no address and no cast that produces one from nothing.
-- **Revocation is gone, though.** A host that hands over a child cannot take it
-  back — the older arena took everything back at the call boundary, whether the
-  host meant to or not. A host that needs revocation must hand over something it
-  can invalidate (an instance of its own that forwards, and stops), and nothing
-  in the format does that for it.
+- **There is no revocation.** A host that hands over a child cannot take it
+  back. A host that needs revocation must hand over something it can invalidate
+  (an instance of its own that forwards, and stops), and nothing in the format
+  does that for it.
 
-## 4. Re-entrancy is possible — weaker than before
+## 4. Re-entrancy is possible
 
-The Component Model forbids re-entering a component while a call into it is
-active. Core wasm has no such rule, and this format does not add one: a parent
-can read a field of a child that is, at that moment, reading a field of the
-parent.
+Core wasm has no rule against re-entering a module while a call into it is
+active, and this format does not add one: a parent can read a field of a child
+that is, at that moment, reading a field of the parent.
 
 That is a capability the format was built for — it is what lets a component hold
-and traverse another one — and it is also a hazard the older contract did not
-have.
+and traverse another one — and it is also a hazard, so here is its bound.
 
 **Copy on write narrows it further than the design intended.** Writing into A
 answers a NEW A; B still holds the old one. So A-holds-B and B-holds-A cannot
@@ -118,9 +109,8 @@ What is left:
 - **A mutable array handed IN is a channel that stays open** — see §3a. It is
   the one ordinary way to build a real cycle, and `compose.test.mjs` builds one:
   the recursion is unbounded and the engine's stack ends it with a **trap**.
-  That is an answer where the older contract's "runaway guest call" row was a
-  hang, and it is still not a budget: a module that loops without recursing
-  hangs exactly as before.
+  A trap is an answer, but it is not a budget: a module that loops without
+  recursing hangs.
 
 ### 3a. A mutable array handed in is a channel that stays open
 
@@ -149,8 +139,7 @@ would be a guest deciding when its own effects become real.
 
 `sendAt` addresses a place **relative to the dispatching instance**. There is no
 absolute form, so a component addresses its own subtree and never the tree it
-happens to be mounted in — the same property the older contract had, kept for
-the same reason.
+happens to be mounted in.
 
 ## 6. No ambient facts
 
@@ -159,19 +148,19 @@ cannot read the time, which removes the primitive most timing side channels are
 built from, and cannot generate a random number.
 
 A fact a module cannot compute it asks the host for over an intent, and the host
-decides per call. That is unchanged, and it is why `Instant` is a value the
-format carries rather than a call it offers.
+decides per call. That is why `Instant` is a value the format carries rather
+than a call it offers.
 
-## 7. Views, CSS, event paths and host intents are unchanged
+## 7. Views, CSS, event paths and host intents are the host's policy
 
-None of these were ever about the wasm contract. A module's views are **data** —
+None of these is part of the wasm contract. A module's views are **data** —
 HTML the host compiles with its own parser — so a module never touches the DOM,
 and `tgc/policy` decides what a view may reach: unsafe names, direct network
 sinks, raw markup, guest-authored utility CSS and URL-bearing macro arguments
 are refused for an untrusted module; `<img src>` and `<a href>` reopen only for
 an origin settled before render.
 
-Two rows the older document left **open** are still open, for the same reasons:
+Two channels here are **open**, and named rather than claimed:
 
 - **`control.intent` → host handlers** needs caller-aware authorization. The
   plumbing exists (`IntentCall.from`) and no host uses it.

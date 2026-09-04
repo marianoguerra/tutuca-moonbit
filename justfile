@@ -114,18 +114,15 @@ npm-pack:
 # task runner is a native binary living in the `_build` these delete, so a
 # `clean` task would be removing the ground it stands on mid-run.
 #
-# `moon clean` on its own reclaims `_build/` and nothing else. That IS most of
-# the weight — a session's worth of CI across four targets took `_build` past
-# 1.7G here — but it cannot reach the nested moon modules (guests/*, examples/*),
-# because a nested moon.mod stops discovery, the same rule that keeps
-# check/fmt/ci out of them. Nor does it know about the Rust guest's `target/`
-# (159M), `dist/` (51M), or, in clean-all, node_modules (597M across two trees).
+# `moon clean` on its own reclaims `_build/` and nothing else — most of the
+# weight, but it cannot reach the nested moon modules under `examples/`, whose
+# `moon.mod` stops discovery, and it does not know about `dist/` or, in
+# clean-all, `node_modules`.
 #
-# Both walk rather than listing directories, because the list goes stale: this
-# repo gained `guests/table` and `guests/rust-tempconv` since the last time
-# anyone counted. And both delete only what `git check-ignore` agrees is
-# ignored — a destructive recipe should be unable to reach a tracked file even
-# if the walk is wrong.
+# Both walk rather than listing directories, so a new nested module needs no
+# edit here. And both delete only what `git check-ignore` agrees is ignored — a
+# destructive recipe should be unable to reach a tracked file even if the walk
+# is wrong.
 
 # remove build output — offline-safe, nothing here needs the network to rebuild
 clean:
@@ -134,9 +131,9 @@ clean:
     doomed=()
     while IFS= read -r d; do doomed+=("$d"); done < <(
       find . \( -name node_modules -o -name .mooncakes -o -name .git \) -prune \
-           -o \( -name _build -o -name dist -o -name target \) -type d -print
+           -o \( -name _build -o -name dist \) -type d -print
     )
-    doomed+=(.playwright-mcp playground/_examples_check)
+    doomed+=(playground/_examples_check skill/_snippets_check)
     just _rm "${doomed[@]}"
 
 # also remove fetched trees — the next build will need the network
