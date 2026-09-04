@@ -465,3 +465,89 @@ test "a view name that does resolve, or cannot be known, is reported by nothing"
     0,
   )
 }
+
+///|
+/// A generated mutator in an event position becomes an ordinary input, and the
+/// mutator whose name it borrowed does not answer one — so the button is wired,
+/// compiles, and does nothing. This is the shape that reached the landing
+/// page's to-do list.
+test "a generated mutator sent as a message is reported, and names the write" {
+  let hints = gen_hints(
+    board(
+      "state Board { items: Array[String] }", "<div @each=\".items\"><button @on.click=\"removeInItemsAt @key\">x</button></div>",
+    ),
+    "Board",
+  )
+  assert_eq(hints.length(), 1)
+  assert_true(hints[0].contains("mutator-as-message (hint)"))
+  assert_true(hints[0].contains("`removeInItemsAt` is a generated mutator"))
+  assert_true(hints[0].contains("a mutator is not a message"))
+  assert_true(hints[0].contains("write `.items.removeAt <key>`"))
+}
+
+///|
+/// The same rule over the other collection kinds, and over a scalar's setter:
+/// each names the write that reaches it.
+test "the repair names the write for every mutator shape" {
+  let set_hints = gen_hints(
+    board(
+      "state Board { tags: Set[String] }", "<button @on.click=\"addInTags 'x'\">x</button>",
+    ),
+    "Board",
+  )
+  assert_eq(set_hints.length(), 1)
+  assert_true(set_hints[0].contains("write `.tags.add <member>`"))
+  let scalar_hints = gen_hints(
+    board(
+      "state Board { count: Int }", "<button @on.click=\"setCount 1\">x</button>",
+    ),
+    "Board",
+  )
+  assert_eq(scalar_hints.length(), 1)
+  assert_true(scalar_hints[0].contains("write `.count = <value>`"))
+  // A bool's toggle has no path form — `.open.toggle` is not a property action
+  // — so the repair is the expression that says the same thing.
+  let bool_hints = gen_hints(
+    board(
+      "state Board { open: Bool }", "<button @on.click=\"toggleOpen\">x</button>",
+    ),
+    "Board",
+  )
+  assert_eq(bool_hints.length(), 1)
+  assert_true(bool_hints[0].contains("write `.open = not .open`"))
+}
+
+///|
+/// …and the writes themselves are silent. A check that fired on the spelling it
+/// recommends would be worse than no check. Nor does it fire on a name the
+/// component DECLARES: a generated mutator's name can collide with a protocol
+/// operation's, and there the view means the message.
+test "the path form, a real handler name and a declared message are silent" {
+  assert_eq(
+    gen_hints(
+      board(
+        "state Board { items: Array[String] }", "<div @each=\".items\"><button @on.click=\".items.removeAt @key\">x</button></div>",
+      ),
+      "Board",
+    ),
+    [],
+  )
+  assert_eq(
+    gen_hints(
+      board(
+        "state Board { count: Int }", "<button @on.click=\"bump\">x</button>",
+      ),
+      "Board",
+    ),
+    [],
+  )
+  assert_eq(
+    gen_hints(
+      "<script type=\"tutuca/spec\">\n" +
+      "state Board { open: Bool\n  message { setOpen(Bool) } }\n" +
+      "</script>\n<template><button @on.click=\"setOpen true\">x</button></template>",
+      "Board",
+    ),
+    [],
+  )
+}

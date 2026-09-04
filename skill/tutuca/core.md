@@ -721,9 +721,12 @@ first**: several of these become build errors that way. The usual suspects:
 <button @on.click="inc">+</button>
 
 <!-- pass args by name -->
-<input @on.input="setStr e.value" />
-<input @on.input="setN e.valueAsInt" />
+<input @on.input="search e.value" />
+<input @on.input="resize e.valueAsInt" />
 <button @on.click="pick @key e.isAlt">pick</button>
+
+<!-- to WRITE a field, write it: a generated mutator does not answer a message -->
+<input @on.input=".query = e.value" />
 ```
 
 The handler **name** is written bare — a leading `$` is refused in an event

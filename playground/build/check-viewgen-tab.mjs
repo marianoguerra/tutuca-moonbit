@@ -113,7 +113,7 @@ cases.push({
   code: [
     "fn build() -> @component.ModuleDef {",
     "  let ledger = ledger_component(",
-    "    init=LedgerState::{ here: 2, there: 0, total: 2 },",
+    "    initial=LedgerState::{ here: 2, there: 0, total: 2 },",
     "  )",
     "  @component.ModuleDef::new(",
     "    name=\"probe\",",

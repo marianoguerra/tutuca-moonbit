@@ -22,7 +22,7 @@ the child land back on the owner — without forwarding events up by hand.
   <p @text=".text"></p>
 </template>
 <template id="Sheet:edit">
-  <input class="input" :value=".text" @on.input="setText e.value" />
+  <input class="input" :value=".text" @on.input=".text = e.value" />
 </template>
 
 <template id="Toolbar">
@@ -51,8 +51,8 @@ Both calls are wiring — where a value comes from, not what a component does �
 so they are `component()` arguments and no script block states them.
 
 Because `*active` resolves to a value together with its real **path** (not a
-copied value), rendering pushes that path as a continuation. The event fired by
-the `setText` input mutates `Workspace.sheet`; when bubbling reaches the top of
+copied value), rendering pushes that path as a continuation. The write the
+input makes lands on `Workspace.sheet`; when bubbling reaches the top of
 the resumed frame it returns directly to `Toolbar`, the visual caller. The
 owner and any other view of the same value update in lock-step. A `provide` can
 point at a seq-access (`.items[.selectedKey]`) to expose "the selected item".

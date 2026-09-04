@@ -284,7 +284,14 @@ try {
       // snippet shows a block that silently does nothing in a compiled
       // component, which is the opposite of what these recipes teach. Either
       // write the arm the block can compile, or show it as the MoonBit half.
-      const refused = (r.hints ?? []).filter((h) => h.includes("script-refusal"));
+      // …and `mutator-as-message`, for the same reason one rank up: a snippet
+      // teaching `@on.click="removeInItemsAt @key"` teaches a button that does
+      // nothing, because a generated mutator does not answer a message. The
+      // skill is what an agent reads before writing any tutuca code, so a
+      // recipe showing the spelling that fails is worse than no recipe.
+      const refused = (r.hints ?? []).filter(
+        (h) => h.includes("script-refusal") || h.includes("mutator-as-message"),
+      );
       if (refused.length) {
         failures.push([u.name, `${refused.join("\n")}\n`]);
         genFailed = true;

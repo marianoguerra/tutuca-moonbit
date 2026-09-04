@@ -93,7 +93,6 @@ impl @component.Fields for InstanceFieldsState with fn decode(f) {
 pub(all) enum InstanceFieldsMsg {
   NextPage
   PrevPage
-  ToggleIsExpanded
   /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -120,12 +119,10 @@ pub fn InstanceFieldsMsg::from_dispatch(
     match (name, args) {
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
-      ("toggleIsExpanded", []) => ToggleIsExpanded
       _ => {
         match name {
           "nextPage" => @tutuca.bad_payload(name, "", args)
           "prevPage" => @tutuca.bad_payload(name, "", args)
-          "toggleIsExpanded" => @tutuca.bad_payload(name, "", args)
           _ => ()
         }
         Unknown(name, args)
@@ -142,7 +139,6 @@ pub fn InstanceFieldsMsg::to_dispatch(
   match self {
     NextPage => ("nextPage", [])
     PrevPage => ("prevPage", [])
-    ToggleIsExpanded => ("toggleIsExpanded", [])
     Unknown(n, args) => (n, args)
   }
 }
@@ -230,7 +226,7 @@ impl @component.Fields for InstanceFieldsState with fn schema() {
       @component.FieldInfo::new("currentPage", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("typeName", TyText),
     ],
-    view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
+    view_handlers=["nextPage", "prevPage"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageExists", "pageIndicatorText", "showPagination", "typeText",

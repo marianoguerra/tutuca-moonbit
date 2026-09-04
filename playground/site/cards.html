@@ -146,9 +146,10 @@
         <p>
           That card shows two spellings. They are the two halves of every view.
           <code>:value=".name"</code> is a <em>value</em> slot: it reads.
-          <code>@on.input="setName e.value"</code> is a <em>handler</em> slot.
-          The first word is the message to dispatch. The other words are
-          arguments. The arguments are resolved from the event:
+          <code>@on.input=".name = e.value"</code> is a <em>handler</em> slot
+          that writes a field back. A handler slot naming a word instead —
+          <code>@on.click="add"</code> — dispatches that word as a message, and
+          the arguments after it are resolved from the event:
           <code>value</code>, <code>valueAsInt</code>, <code>key</code>,
           <code>isAlt</code>, and more.
         </p>
@@ -223,8 +224,8 @@
         <p>
           <code>@each</code> walks a field. For each row, it binds
           <code>@key</code> and <code>@value</code>. In this card, the remove
-          button calls <code>removeInSongsAt @key</code>. That is a generated
-          mutator, called directly from the view, with no handler between.
+          button writes <code>.songs.removeAt @key</code>. That reaches a
+          generated mutator directly from the view, with no handler between.
           Moving a row is instead a <code>receive</code> handler. It writes two
           positions, and no single mutator does that.
         </p>

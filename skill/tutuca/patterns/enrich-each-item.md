@@ -20,7 +20,7 @@ without storing it on the data.
 <template id="Notes">
   <ul>
     <li @each=".items" @enrich-with="enrichItem">
-      <input type="checkbox" :checked="@picked" @on.click="toggleInPicked @value">
+      <input type="checkbox" :checked="@picked" @on.click=".picked.toggle @value">
       <x text="@value"></x> (<x text="@count"></x> characters)
     </li>
   </ul>

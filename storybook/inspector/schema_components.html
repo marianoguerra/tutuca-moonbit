@@ -176,7 +176,7 @@
       type="button"
       class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
       :disabled="$isItemsEmpty"
-      @on.click="toggleIsExpanded">
+      @on.click=".isExpanded = not .isExpanded">
       <span @hide="$isItemsEmpty" @text="$arrowText"></span>
       <span class="text-success schema-scalar font-semibold" @text="$typeText"></span>
       <span class="text-base-content/50" @text="$countText"></span>
@@ -204,7 +204,7 @@
       type="button"
       class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
       :disabled="$isItemsEmpty"
-      @on.click="toggleIsExpanded">
+      @on.click=".isExpanded = not .isExpanded">
       <span @hide="$isItemsEmpty" @text="$arrowText"></span>
       <span class="text-primary schema-object font-semibold" @text="$typeText"></span>
       <span class="text-base-content/50" @text="$countText"></span>
@@ -232,7 +232,7 @@
       type="button"
       class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
       :disabled="$isItemsEmpty"
-      @on.click="toggleIsExpanded">
+      @on.click=".isExpanded = not .isExpanded">
       <span @hide="$isItemsEmpty" @text="$arrowText"></span>
       <span class="text-primary schema-array font-semibold" @text="$typeText"></span>
       <span class="text-base-content/50" @text="$countText"></span>
@@ -260,7 +260,7 @@
       type="button"
       class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
       :disabled="$isItemsEmpty"
-      @on.click="toggleIsExpanded">
+      @on.click=".isExpanded = not .isExpanded">
       <span @hide="$isItemsEmpty" @text="$arrowText"></span>
       <span class="text-info schema-enum font-semibold" @text="$typeText"></span>
       <span class="text-base-content/50" @text="$countText"></span>
@@ -288,7 +288,7 @@
       type="button"
       class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
       :disabled="$isItemsEmpty"
-      @on.click="toggleIsExpanded">
+      @on.click=".isExpanded = not .isExpanded">
       <span @hide="$isItemsEmpty" @text="$arrowText"></span>
       <span class="text-accent schema-combinator font-semibold" @text="$typeText"></span>
       <span class="text-base-content/50" @text="$countText"></span>

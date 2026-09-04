@@ -315,7 +315,16 @@ fn schema_scalar_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", @tutuca.Expr::name("toggleIsExpanded"))],
+      [
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "isExpanded",
+            @tutuca.Expr::app("not", [@tutuca.Expr::field("isExpanded")]),
+          ),
+        ),
+      ],
       [@anode.on("click", @tutuca.Expr::name("prevPage"))],
       [@anode.on("click", @tutuca.Expr::name("nextPage"))],
     ],
@@ -601,7 +610,16 @@ fn schema_object_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", @tutuca.Expr::name("toggleIsExpanded"))],
+      [
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "isExpanded",
+            @tutuca.Expr::app("not", [@tutuca.Expr::field("isExpanded")]),
+          ),
+        ),
+      ],
       [@anode.on("click", @tutuca.Expr::name("prevPage"))],
       [@anode.on("click", @tutuca.Expr::name("nextPage"))],
     ],
@@ -887,7 +905,16 @@ fn schema_array_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", @tutuca.Expr::name("toggleIsExpanded"))],
+      [
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "isExpanded",
+            @tutuca.Expr::app("not", [@tutuca.Expr::field("isExpanded")]),
+          ),
+        ),
+      ],
       [@anode.on("click", @tutuca.Expr::name("prevPage"))],
       [@anode.on("click", @tutuca.Expr::name("nextPage"))],
     ],
@@ -1168,7 +1195,16 @@ fn schema_enum_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", @tutuca.Expr::name("toggleIsExpanded"))],
+      [
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "isExpanded",
+            @tutuca.Expr::app("not", [@tutuca.Expr::field("isExpanded")]),
+          ),
+        ),
+      ],
       [@anode.on("click", @tutuca.Expr::name("prevPage"))],
       [@anode.on("click", @tutuca.Expr::name("nextPage"))],
     ],
@@ -1453,7 +1489,16 @@ fn schema_combinator_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", @tutuca.Expr::name("toggleIsExpanded"))],
+      [
+        @anode.on(
+          "click",
+          @anode.const_null(),
+          action=@anode.set_property_action(
+            "isExpanded",
+            @tutuca.Expr::app("not", [@tutuca.Expr::field("isExpanded")]),
+          ),
+        ),
+      ],
       [@anode.on("click", @tutuca.Expr::name("prevPage"))],
       [@anode.on("click", @tutuca.Expr::name("nextPage"))],
     ],

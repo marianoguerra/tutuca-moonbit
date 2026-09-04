@@ -84,7 +84,7 @@
     <div class="flex flex-col gap-3 w-full">
       <div @each=".items" class="flex gap-3 justify-center items-center w-full row">
         <x render-it></x>
-        <button class="btn btn-soft btn-sm btn-error btn-circle font-mono rm" @on.click="removeInItemsAt @key">x</button>
+        <button class="btn btn-soft btn-sm btn-error btn-circle font-mono rm" @on.click=".items.removeAt @key">x</button>
       </div>
     </div>
   </div>

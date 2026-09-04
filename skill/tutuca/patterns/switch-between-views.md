@@ -32,7 +32,7 @@ one with no suffix.
 </template>
 
 <template id="Note:edit">
-  <input :value=".title" @on.input="setTitle e.value">
+  <input :value=".title" @on.input=".title = e.value">
 </template>
 ```
 

@@ -63,7 +63,7 @@ const EXAMPLES = {
 
 fn build() -> @component.ModuleDef {
   let counter = counter_component(
-    init=CounterState::{ count: 0, label: "clicks" },
+    initial=CounterState::{ count: 0, label: "clicks" },
   )
   @component.ModuleDef::new(
     name="counter", components=[counter],
@@ -73,9 +73,9 @@ fn build() -> @component.ModuleDef {
 `,
   },
 
-  // A field named 'open' gets a generated $toggleOpen mutator for free, and
-  // compute derives the label — so the component has no @on Input handlers at
-  // all, and no update. The View tab still compiles ahead of time.
+  // The view writes the field directly and a compute derives the label — so
+  // the component has no @on Input handlers at all, and no update. The View tab
+  // still compiles ahead of time.
   Toggle: {
     view: `<script type="tutuca/spec">
   state Panel {
@@ -86,19 +86,19 @@ fn build() -> @component.ModuleDef {
 <template id="Panel">
   <style>font-family:system-ui</style>
   <section>
-    <button @on.click="toggleOpen" @text="\$label"></button>
+    <button @on.click=".open = not .open" @text="\$label"></button>
     <p @show=".open" style="padding:.5rem;border:1px solid #ccc;margin-top:.5rem">
       Now you see me. Toggle again to hide.
     </p>
   </section>
 </template>
 `,
-    code: `// 'open' is a Bool field, so a toggleOpen mutator is generated for it; \$label
-// is a compute. No hand-written handlers, no update — the view drives it all.
+    code: `// The button writes '.open' back inverted; \$label is a compute. No
+// hand-written handlers, no update — the view drives it all.
 
 fn build() -> @component.ModuleDef {
   let panel = panel_component(
-    init=PanelState::{ open: false },
+    initial=PanelState::{ open: false },
     compute=m => match m {
       Label =>
         Some((s, _a, _stack) => Str(
@@ -114,8 +114,8 @@ fn build() -> @component.ModuleDef {
 `,
   },
 
-  // Two-way binding: :value reads the field, @on.input writes it via the
-  // generated $setName mutator. @text mirrors it live. No handlers needed.
+  // Two-way binding: :value reads the field, @on.input writes it back.
+  // @text mirrors it live. No handlers needed.
   "Text input": {
     view: `<script type="tutuca/spec">
   state Greeter {
@@ -125,17 +125,17 @@ fn build() -> @component.ModuleDef {
 
 <template id="Greeter">
   <div style="font-family:system-ui;display:flex;flex-direction:column;gap:.5rem">
-    <input :value=".name" @on.input="setName e.value" placeholder="your name">
+    <input :value=".name" @on.input=".name = e.value" placeholder="your name">
     <p>Hello, <b @text=".name"></b>!</p>
   </div>
 </template>
 `,
-    code: `// :value + @on.input="setName e.value" is a two-way bind through the field's
-// generated setName mutator. @text mirrors it live. No handlers needed.
+    code: `// :value reads the field and @on.input writes it back, which is the whole
+// two-way bind. @text mirrors it live. No handlers needed.
 
 fn build() -> @component.ModuleDef {
   let greeter = greeter_component(
-    init=GreeterState::{ name: "world" },
+    initial=GreeterState::{ name: "world" },
   )
   @component.ModuleDef::new(
     name="greeter", components=[greeter],
@@ -192,7 +192,7 @@ fn build() -> @component.ModuleDef {
     )),
   },
   name="Counter",
-  init=CounterState::{ count: 0 },
+  initial=CounterState::{ count: 0 },
   update=(s : CounterState, msg, _ctx) => match msg {
       Input("dec", _) => Next({ count: s.count - 1 })
       Input("inc", _) => Next({ count: s.count + 1 })

@@ -54,7 +54,7 @@
       <li @each=".items" @when="onlyMatches" @loop-with="tablePage" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>
         <x render-it></x>
-        <button class="btn btn-sm btn-error btn-outline rm" @on.click="removeInItemsAt @key">x</button>
+        <button class="btn btn-sm btn-error btn-outline rm" @on.click=".items.removeAt @key">x</button>
       </li>
     </ul>
     <div class="join">
@@ -72,7 +72,7 @@
       <li @each=".items" @when="onlyMatches" @loop-with="page" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>
         <x render-it></x>
-        <button class="btn btn-sm btn-error btn-outline rm" @on.click="removeInItemsAt @key">x</button>
+        <button class="btn btn-sm btn-error btn-outline rm" @on.click=".items.removeAt @key">x</button>
       </li>
     </ul>
     <div class="join">
@@ -90,7 +90,7 @@
       <li @each=".items" @loop-with="forwardKeys" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>
         <x render-it></x>
-        <button class="btn btn-sm btn-error btn-outline rm" @on.click="removeInItemsAt @key">x</button>
+        <button class="btn btn-sm btn-error btn-outline rm" @on.click=".items.removeAt @key">x</button>
       </li>
     </ul>
     <div class="join">

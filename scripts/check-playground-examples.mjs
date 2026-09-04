@@ -126,6 +126,17 @@ try {
       }
       views = r.module;
       ir = r.ir || "";
+      // The advisory channel, which this used to drop on the floor. A hint is
+      // how `gen` reports the thing that compiles and then does not work — a
+      // mutator named as if it were a message, a child view that resolves to
+      // nothing — and these are the landing page's own examples, so one firing
+      // here is a demo that is wrong in front of a visitor. Fatal for that
+      // reason, and for no other: elsewhere a hint is a hint.
+      if ((r.hints || []).length > 0) {
+        console.log(`FAILED  ${name}`);
+        failures.push([name, r.hints.map((h) => `  ${h}`).join("\n") + "\n"]);
+        continue;
+      }
     }
     writeFileSync(join(SCAFFOLD, "_views.mbt"), views);
     writeFileSync(join(SCAFFOLD, "_views_ir.mbt"), ir);

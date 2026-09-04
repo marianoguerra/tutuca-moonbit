@@ -41,7 +41,7 @@
     @if.class=".value"
     @then="'btn btn-sm btn-soft btn-success font-mono true'"
     @else="'btn btn-sm btn-soft btn-error font-mono false'"
-    @on.click="toggleValue">
+    @on.click=".value = not .value">
     <span @show=".value">true</span>
     <span @hide=".value">false</span>
   </button>
@@ -75,7 +75,7 @@
         data-dragtype="json-list-item" data-droptarget="json-list-item"
         @on.drop="onDropOnItem @key e.dragInfo">
         <x render-it></x>
-        <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click="removeInItemsAt @key">x</button>
+        <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click=".items.removeAt @key">x</button>
       </div>
     </div>
   </section>
@@ -104,7 +104,7 @@
         data-dragtype="json-kv-item" data-droptarget="json-kv-item"
         @on.drop="onDropOnItem @key e.dragInfo">
         <x render-it></x>
-        <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click="removeInItemsAt @key">x</button>
+        <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click=".items.removeAt @key">x</button>
       </div>
     </div>
   </section>

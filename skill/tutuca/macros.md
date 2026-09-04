@@ -71,7 +71,7 @@ fn btn_rm_macro() -> @anode.Macro {
 ```
 
 ```html
-<!-- expands to @on.click="removeInItemsAt @key" -->
+<!-- the `$` resolves to the mutator itself before the handler is parsed -->
 <x:btn-rm :handler="$removeInItemsAt" :arg="@key"></x:btn-rm>
 ```
 

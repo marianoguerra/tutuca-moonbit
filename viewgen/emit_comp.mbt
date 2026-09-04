@@ -117,9 +117,16 @@ fn emit_wrapper(
   )
   out.write_string(wrapper_opt("provide", "Map[String, String]", "Map([])"))
   out.write_string(wrapper_opt("lookup", "Array[@component.LookupSpec]", "[]"))
-  // The block first, the author's `update` second, the generated mutators
-  // last. `Unhandled` is the only answer that hands the name on: `Unchanged`
-  // means the block claimed it and chose not to move, which stops here.
+  // The block first, the author's `update` second. `Unhandled` is the only
+  // answer that hands the name on: `Unchanged` means the block claimed it and
+  // chose not to move, which stops here.
+  //
+  // There is no third link. A generated mutator is NOT reachable as a bare
+  // message — `TypedInstance`'s handler refuses an unclaimed name with
+  // `NoHandler` rather than falling through to the table, so that a typo in a
+  // view cannot silently become a field write. The mutators are reached by
+  // WRITING: `.items.removeAt @key`, `.count = 1`, or `$removeInItemsAt` as a
+  // value. `@on.click="removeInItemsAt @key"` compiles and does nothing.
   let update_arg = match inline {
     Some(f) =>
       "    update=(s, msg, ctx) => match \{f}(s, msg, ctx) {\n" +

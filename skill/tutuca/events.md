@@ -155,7 +155,7 @@ is checked against an allowlist:
 
 ```html
 <button @on.click="pick e.target.dataset.rowId">pick</button>
-<input @on.input="setName e.target.value" />
+<input @on.input="rename e.target.value" />
 <section @on.emoji-click="onEmojiClick e.detail.unicode">…</section>
 <div @on.wheel="zoom e.deltaY">…</div>
 ```
@@ -222,9 +222,15 @@ and nothing narrows it: the DOM property table could answer for a rooted read,
 but not for a path through `detail` or `dataset`, where the shape is the
 application's.
 
-So `@on.click="setTab 'edit'"` generates `SetTab(String)` (unwrapped — match
-`Some(SetTab(tab))`, not `Some(SetTab(Str(tab)))`), `@on.input="setCompleted e.value"` on a checkbox generates `SetCompleted(Bool)`, and
-`@on.click="removeInItemsAt @key"` generates `RemoveInItemsAt(@tutuca.Value)`.
+So `@on.click="chooseTab 'edit'"` generates `ChooseTab(String)` (unwrapped —
+match `Some(ChooseTab(tab))`, not `Some(ChooseTab(Str(tab)))`),
+`@on.input="markDone e.value"` on a checkbox generates `MarkDone(Bool)`, and
+`@on.click="dropRow @key"` generates `DropRow(@tutuca.Value)`.
+
+> These are MESSAGES, and each needs an arm to answer it. A name that happens
+> to be a generated mutator — `setTab`, `removeInItemsAt` — is still only a
+> message here, and no arm answers it: to reach the mutator, WRITE the field
+> (`.tab = 'edit'`, `.items.removeAt @key`). `gen` reports the confusion.
 Two call sites that disagree on an argument's shape join to `@tutuca.Value`. At
 runtime, arguments that don't match the inferred shape land in
 `Unknown(name, args)` with the raw `Array[@tutuca.Value]`.

@@ -119,7 +119,6 @@ impl @component.Fields for SchemaScalarState with fn decode(f) {
 pub(all) enum SchemaScalarMsg {
   NextPage
   PrevPage
-  ToggleIsExpanded
   /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -146,12 +145,10 @@ pub fn SchemaScalarMsg::from_dispatch(
     match (name, args) {
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
-      ("toggleIsExpanded", []) => ToggleIsExpanded
       _ => {
         match name {
           "nextPage" => @tutuca.bad_payload(name, "", args)
           "prevPage" => @tutuca.bad_payload(name, "", args)
-          "toggleIsExpanded" => @tutuca.bad_payload(name, "", args)
           _ => ()
         }
         Unknown(name, args)
@@ -168,7 +165,6 @@ pub fn SchemaScalarMsg::to_dispatch(
   match self {
     NextPage => ("nextPage", [])
     PrevPage => ("prevPage", [])
-    ToggleIsExpanded => ("toggleIsExpanded", [])
     Unknown(n, args) => (n, args)
   }
 }
@@ -260,7 +256,7 @@ impl @component.Fields for SchemaScalarState with fn schema() {
       @component.FieldInfo::new("description", TyText),
       @component.FieldInfo::new("deprecated", TyBool),
     ],
-    view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
+    view_handlers=["nextPage", "prevPage"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageExists", "pageIndicatorText", "showPagination", "typeText",
@@ -386,7 +382,6 @@ impl @component.Fields for SchemaObjectState with fn decode(f) {
 pub(all) enum SchemaObjectMsg {
   NextPage
   PrevPage
-  ToggleIsExpanded
   /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -413,12 +408,10 @@ pub fn SchemaObjectMsg::from_dispatch(
     match (name, args) {
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
-      ("toggleIsExpanded", []) => ToggleIsExpanded
       _ => {
         match name {
           "nextPage" => @tutuca.bad_payload(name, "", args)
           "prevPage" => @tutuca.bad_payload(name, "", args)
-          "toggleIsExpanded" => @tutuca.bad_payload(name, "", args)
           _ => ()
         }
         Unknown(name, args)
@@ -435,7 +428,6 @@ pub fn SchemaObjectMsg::to_dispatch(
   match self {
     NextPage => ("nextPage", [])
     PrevPage => ("prevPage", [])
-    ToggleIsExpanded => ("toggleIsExpanded", [])
     Unknown(n, args) => (n, args)
   }
 }
@@ -527,7 +519,7 @@ impl @component.Fields for SchemaObjectState with fn schema() {
       @component.FieldInfo::new("description", TyText),
       @component.FieldInfo::new("deprecated", TyBool),
     ],
-    view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
+    view_handlers=["nextPage", "prevPage"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageExists", "pageIndicatorText", "showPagination", "typeText",
@@ -653,7 +645,6 @@ impl @component.Fields for SchemaArrayState with fn decode(f) {
 pub(all) enum SchemaArrayMsg {
   NextPage
   PrevPage
-  ToggleIsExpanded
   /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -680,12 +671,10 @@ pub fn SchemaArrayMsg::from_dispatch(
     match (name, args) {
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
-      ("toggleIsExpanded", []) => ToggleIsExpanded
       _ => {
         match name {
           "nextPage" => @tutuca.bad_payload(name, "", args)
           "prevPage" => @tutuca.bad_payload(name, "", args)
-          "toggleIsExpanded" => @tutuca.bad_payload(name, "", args)
           _ => ()
         }
         Unknown(name, args)
@@ -702,7 +691,6 @@ pub fn SchemaArrayMsg::to_dispatch(
   match self {
     NextPage => ("nextPage", [])
     PrevPage => ("prevPage", [])
-    ToggleIsExpanded => ("toggleIsExpanded", [])
     Unknown(n, args) => (n, args)
   }
 }
@@ -791,7 +779,7 @@ impl @component.Fields for SchemaArrayState with fn schema() {
       @component.FieldInfo::new("description", TyText),
       @component.FieldInfo::new("deprecated", TyBool),
     ],
-    view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
+    view_handlers=["nextPage", "prevPage"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageExists", "pageIndicatorText", "showPagination", "typeText",
@@ -917,7 +905,6 @@ impl @component.Fields for SchemaEnumState with fn decode(f) {
 pub(all) enum SchemaEnumMsg {
   NextPage
   PrevPage
-  ToggleIsExpanded
   /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -942,12 +929,10 @@ pub fn SchemaEnumMsg::from_dispatch(d : @component.Dispatch) -> SchemaEnumMsg? {
     match (name, args) {
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
-      ("toggleIsExpanded", []) => ToggleIsExpanded
       _ => {
         match name {
           "nextPage" => @tutuca.bad_payload(name, "", args)
           "prevPage" => @tutuca.bad_payload(name, "", args)
-          "toggleIsExpanded" => @tutuca.bad_payload(name, "", args)
           _ => ()
         }
         Unknown(name, args)
@@ -964,7 +949,6 @@ pub fn SchemaEnumMsg::to_dispatch(
   match self {
     NextPage => ("nextPage", [])
     PrevPage => ("prevPage", [])
-    ToggleIsExpanded => ("toggleIsExpanded", [])
     Unknown(n, args) => (n, args)
   }
 }
@@ -1053,7 +1037,7 @@ impl @component.Fields for SchemaEnumState with fn schema() {
       @component.FieldInfo::new("description", TyText),
       @component.FieldInfo::new("deprecated", TyBool),
     ],
-    view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
+    view_handlers=["nextPage", "prevPage"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageExists", "pageIndicatorText", "showPagination", "typeText",
@@ -1179,7 +1163,6 @@ impl @component.Fields for SchemaCombinatorState with fn decode(f) {
 pub(all) enum SchemaCombinatorMsg {
   NextPage
   PrevPage
-  ToggleIsExpanded
   /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -1206,12 +1189,10 @@ pub fn SchemaCombinatorMsg::from_dispatch(
     match (name, args) {
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
-      ("toggleIsExpanded", []) => ToggleIsExpanded
       _ => {
         match name {
           "nextPage" => @tutuca.bad_payload(name, "", args)
           "prevPage" => @tutuca.bad_payload(name, "", args)
-          "toggleIsExpanded" => @tutuca.bad_payload(name, "", args)
           _ => ()
         }
         Unknown(name, args)
@@ -1228,7 +1209,6 @@ pub fn SchemaCombinatorMsg::to_dispatch(
   match self {
     NextPage => ("nextPage", [])
     PrevPage => ("prevPage", [])
-    ToggleIsExpanded => ("toggleIsExpanded", [])
     Unknown(n, args) => (n, args)
   }
 }
@@ -1322,7 +1302,7 @@ impl @component.Fields for SchemaCombinatorState with fn schema() {
       @component.FieldInfo::new("description", TyText),
       @component.FieldInfo::new("deprecated", TyBool),
     ],
-    view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
+    view_handlers=["nextPage", "prevPage"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageExists", "pageIndicatorText", "showPagination", "typeText",

@@ -169,8 +169,9 @@ let counter = counter_component()</code></pre>
         <p>
           This example shows a list of child <code>Item</code> components. You
           can edit each item. <code>&lt;x render-it&gt;</code> renders the
-          current instance of the loop. The generated
-          <code>$removeInItemsAt</code> mutator deletes an item by key.
+          current instance of the loop. <code>.items.removeAt @key</code>
+          deletes an item by key — a generated mutator, reached by writing to
+          the field, with no handler between.
         </p>
         <mb-playground
           src="./site/examples/todo.mbt"
@@ -180,9 +181,8 @@ let counter = counter_component()</code></pre>
         <h4>Two-way Text Binding</h4>
         <p>
           <code>:value</code> reads a field.
-          <code>@on.input="setName e.value"</code> writes the field through the
-          generated mutator. <code>@text</code> shows the new value
-          immediately.
+          <code>@on.input=".name = e.value"</code> writes it back.
+          <code>@text</code> shows the new value immediately.
         </p>
         <mb-playground
           src="./site/examples/text_input.mbt"

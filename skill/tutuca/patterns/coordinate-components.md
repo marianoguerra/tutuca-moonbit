@@ -91,7 +91,7 @@ not happen is the one outcome nobody can reason about afterwards.
   <section>
     <x render=".status"></x>
     <!-- `submit` addresses the SIBLING, which is the one arm below in MoonBit -->
-    <input :value=".draft" @on.input="setDraft e.value" @on.keydown+send="submit">
+    <input :value=".draft" @on.input=".draft = e.value" @on.keydown+send="submit">
   </section>
 </template>
 <template id="Log">

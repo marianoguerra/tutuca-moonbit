@@ -48,6 +48,10 @@ priv struct Checker {
   def : @statedef.StateDef
   prog : ProgramIndex
   view : String
+  /// The names the component's `tutuca/script` block answers with a `receive`
+  /// or an `answer`. Only `bare_mutator` reads it, and only to stay quiet: a
+  /// handler the block claims is a handler, whatever its name resembles.
+  script_answers : Array[String]
   /// Findings that are ADVISORY rather than fatal. A view name resolves at
   /// render time against whatever component the registration scope actually
   /// holds, and a slot declared as the bare `component` marker takes its
@@ -64,16 +68,142 @@ fn check_views(
   def : @statedef.StateDef,
   prog : ProgramIndex,
   hints : Array[String],
+  script_answers? : Array[String] = [],
 ) -> Unit raise GenError {
   for view in views {
-    let c = Checker::{ def, prog, view: view.raw.name, hints, }
+    let c = Checker::{ def, prog, view: view.raw.name, hints, script_answers, }
     c.node(view.root, { self_ty: SState, item: SOpaque, })
     for events in view.events {
       for handler in events.handlers {
         c.property_action(handler.handler.action)
+        c.bare_mutator(handler)
       }
     }
   }
+}
+
+///|
+/// A generated mutator named as if it were a message.
+///
+/// `@on.click="removeInItemsAt @key"` becomes an ordinary input, and a
+/// generated mutator does not answer one: a mutator is reached by WRITING —
+/// `.items.removeAt @key`, `.count = 1`, or `$removeInItemsAt` as a value.
+/// `TypedInstance`'s handler refuses a name no arm claimed rather than falling
+/// through to the mutator table, so that a typo in a view cannot silently
+/// become a field write. The cost of that rule is this spelling, which looks
+/// exactly like it works.
+///
+/// It reached the landing page's to-do list and stayed: the button was wired,
+/// the message enum had a variant for it, `update` returned `Unhandled` to
+/// "let the mutator answer", and the row never went away.
+///
+/// A HINT and not a raise, because the name is a legal input and a hand-written
+/// `update` may well answer it — MoonBit this generator cannot see. What it
+/// cannot be is answered by the mutator whose name it borrowed, and that is
+/// what an author writing this spelling believes.
+fn Checker::bare_mutator(self : Checker, handler : @anode.NodeEvent) -> Unit {
+  guard handler.handler.action is None else { return }
+  guard handler.handler.handler is EName(name~, ..) else { return }
+  // A DECLARED message wins, always. A generated mutator's name can collide
+  // with one a protocol declares — `open: Bool` generates `setOpen`, and a
+  // protocol may name `setOpen(Bool)` too — and there the view means the
+  // message, which really does have an answerer.
+  guard !self.declares_message(name) && !self.script_answers.contains(name) else {
+    return
+  }
+  guard self.mutator_repair(name) is Some(repair) else { return }
+  self.hints.push(
+    "mutator-as-message (hint) \{self.view}: `@on.\{handler.name}=\"\{name} …\"` — `\{name}` is a generated mutator, and a mutator is not a message: nothing answers it unless `update` does. To reach the mutator, write \{repair}",
+  )
+}
+
+///|
+/// Does this component declare `name` as something a dispatch can reach?
+///
+/// Both buckets, and both spellings of a protocol operation: a handler may be
+/// written with the local name the file imported it under or with the wire
+/// name, and either one is answered. The script block's own `receive` arms are
+/// `script_answers`, checked beside this.
+fn Checker::declares_message(self : Checker, name : String) -> Bool {
+  for m in self.def.receive {
+    if m.name == name || m.source_name == name {
+      return true
+    }
+  }
+  for m in self.def.intent {
+    if m.name == name || m.source_name == name {
+      return true
+    }
+  }
+  false
+}
+
+///|
+/// The write that reaches `name`, when `name` is one of the callables this
+/// component's schema generates. The inverse of `member_mutator_name` in
+/// `component/instance.mbt`, over every shape `gen_mutators` installs.
+///
+/// `set` and `reset` exist for every field; the collection operations depend
+/// on the kind; `<x>Len` and `hasIn<X>` only READ, so they are `$`-callables
+/// and dispatching one does nothing at all.
+fn Checker::mutator_repair(self : Checker, name : String) -> String? {
+  for field in self.def.fields {
+    let f = field.name
+    // Every field, whatever its type.
+    if @tutuca.mutator_name("set", f) == name {
+      return Some("`.\{f} = <value>`")
+    }
+    if @tutuca.mutator_name("reset", f) == name {
+      return Some("`.\{f} = <its default>`")
+    }
+    // A bool's `toggle<X>` has no path form — `.x.toggle` is not a property
+    // action — so the write is the expression that says the same thing.
+    if field.ty is TyBool && @tutuca.mutator_name("toggle", f) == name {
+      return Some("`.\{f} = not .\{f}`")
+    }
+    if f + "Len" == name {
+      return Some(
+        "`$\{f}Len` in a value position — it answers a number rather than a state",
+      )
+    }
+    let ops : Array[(String, String, String)] = match field.ty {
+      TyList(_) =>
+        [
+          ("pushIn", "", "push <value>"),
+          ("insertIn", "At", "insertAt <key> <value>"),
+          ("setIn", "At", "setAt <key> <value>"),
+          ("deleteIn", "At", "deleteAt <key>"),
+          ("removeIn", "At", "removeAt <key>"),
+        ]
+      TyOMap(_) =>
+        [
+          ("setIn", "At", "setAt <key> <value>"),
+          ("deleteIn", "At", "deleteAt <key>"),
+          ("removeIn", "At", "removeAt <key>"),
+        ]
+      TySet | TyFlags(_, _) =>
+        [
+          ("addIn", "", "add <member>"),
+          ("toggleIn", "", "toggle <member>"),
+          ("deleteIn", "", "delete <member>"),
+          ("removeIn", "", "remove <member>"),
+        ]
+      _ => []
+    }
+    for op in ops {
+      let (verb, suffix, path_op) = op
+      if @tutuca.mutator_name(verb, f) + suffix == name {
+        return Some("`.\{f}.\{path_op}`")
+      }
+    }
+    if field.ty is (TySet | TyFlags(_, _)) &&
+      @tutuca.mutator_name("hasIn", f) == name {
+      return Some(
+        "`$\{name}` in a value position — it answers a boolean rather than a state",
+      )
+    }
+  }
+  None
 }
 
 ///|

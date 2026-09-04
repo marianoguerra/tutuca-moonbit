@@ -229,6 +229,27 @@ fn with_script(
 }
 
 ///|
+/// The names this component's script block answers — its `receive` and
+/// `answer` arms.
+///
+/// Read for one reason: a handler the block claims is a handler, whatever its
+/// name resembles, and `bare_mutator` in `check_state.mbt` would otherwise
+/// report a `receive setSeed` as a mutator nobody answers. Parse failures are
+/// swallowed because this is not the place that reports them — `with_script`
+/// runs first and raises `BadScriptBlock` with the line.
+fn script_answers(file : @viewfile.ViewFile, comp : String) -> Array[String] {
+  guard file.script_for(comp) is Some(block) else { return [] }
+  let decls = @tscript.parse_script(block.text) catch { _ => return [] }
+  let out : Array[String] = []
+  for d in decls {
+    if d.kind is (DReceive | DAnswer) && !out.contains(d.name) {
+      out.push(d.name)
+    }
+  }
+  out
+}
+
+///|
 /// The 1-based line of a character offset inside the block.
 fn line_of(text : String, offset : Int) -> Int {
   let mut line = 1
@@ -555,7 +576,13 @@ fn emit_module_compiled(
     let surface = with_script(compiled_comp.surface, file, cname, state)
     let mut answered = Answered::none()
     if state is Some(def) {
-      check_views(compiled_comp.views, def, prog, hints)
+      check_views(
+        compiled_comp.views,
+        def,
+        prog,
+        hints,
+        script_answers=script_answers(file, cname),
+      )
       // The same compile the IR module runs, for the same block — this path
       // wants two things out of it: the refusals, which are a diagnostic, and
       // what it answers, which is what the enums below are trimmed against.

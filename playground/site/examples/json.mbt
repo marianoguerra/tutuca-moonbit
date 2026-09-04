@@ -155,10 +155,6 @@ fn json_array_comp(reg : JsonReg) -> @component.Component {
           Some(items) => Next({ items, })
           None => Unhandled
         }
-      // Served by a generated mutator or another bucket: the view
-      // spells these bare now, so they arrive as Inputs, and
-      // returning None falls through to whatever answers them.
-      Some(RemoveInItemsAt(_)) => Unhandled
       Some(Unknown(_, _)) | None => Unhandled
     },
   )
@@ -190,10 +186,6 @@ fn json_object_comp(reg : JsonReg) -> @component.Component {
           Some(items) => Next({ items, })
           None => Unhandled
         }
-      // Served by a generated mutator or another bucket: the view
-      // spells these bare now, so they arrive as Inputs, and
-      // returning None falls through to whatever answers them.
-      Some(RemoveInItemsAt(_)) => Unhandled
       Some(Unknown(_, _)) | None => Unhandled
     },
   )

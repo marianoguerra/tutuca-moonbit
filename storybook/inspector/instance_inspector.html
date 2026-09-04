@@ -52,7 +52,7 @@
         type="button"
         class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
         :disabled="$isItemsEmpty"
-        @on.click="toggleIsExpanded">
+        @on.click=".isExpanded = not .isExpanded">
         <span @text="$arrowText"></span>
         <span class="font-semibold instance-fields" @text="$typeText"></span>
         <span @text="$countText"></span>
