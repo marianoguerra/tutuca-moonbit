@@ -352,3 +352,69 @@ test "an intent bucket gets an enum, a decode and a dispatch" {
   )
   assert_true(src.contains("ctx.intent(name, args, opts)"))
 }
+
+///|
+/// A view name the schema declares UNDER A PROTOCOL becomes a second message.
+///
+/// `merged_receive` keys the schema's declarations by their runtime names, and
+/// for a protocol operation that is the wire name (`x/Openable@1::setOpen`).
+/// A view writing the bare `setOpen` therefore matches nothing, and gets a
+/// message of its own — so the component answers to both spellings, while
+/// `receives` advertises only the schema's.
+///
+/// Pinned rather than endorsed. It is how a card with no `handle` block works
+/// at all — the views are the declaration — but where the schema HAS declared
+/// the operation, two cases for one operation is a double vocabulary a reader
+/// of the block cannot see. It is also the mechanism behind a dispatch
+/// difference reported across releases: whether the bare name answers depends
+/// on whether some view happens to send it, which is not a property anyone
+/// would think to look for.
+///
+/// See `tgc/SPEC.md`, "A protocol operation has three dispatch names".
+test "a bare view name beside a protocol-qualified declaration is a second message" {
+  let src = @viewgen.generate(
+    "<script type=\"tutuca/spec\">\n" +
+    "protocol Openable = \"x/Openable@1\" { handle { message { setOpen(Bool) } } }\n" +
+    "state Chat implements Openable { open: Bool }\n" +
+    "handle Chat { message { Openable::setOpen(Bool) } }\n" +
+    "</script>\n" +
+    "<template><button @on.click=\"setOpen true\">x</button></template>",
+    name="Chat",
+    source_file="chat.html",
+  )
+  // Two enum cases for one operation…
+  assert_true(src.contains("  OpenableSetOpen(Bool)\n"))
+  assert_true(src.contains("  SetOpen(Bool)\n"))
+  // …and both dispatch.
+  assert_true(
+    src.contains(
+      "(\"x/Openable@1::setOpen\", [Bool(a0)]) => OpenableSetOpen(a0)",
+    ),
+  )
+  assert_true(src.contains("(\"setOpen\", [Bool(a0)]) => SetOpen(a0)"))
+  // The declared surface names only the schema's, which is why reading
+  // `receives` does not reveal the second spelling.
+  assert_true(src.contains("receives=[\"x/Openable@1::setOpen\"]"))
+  assert_true(src.contains("view_handlers=[\"setOpen\"]"))
+}
+
+///|
+/// …and with no view sending it, there is one case and one spelling.
+///
+/// The control for the test above: the difference between them is a view, not
+/// a schema, which is the part that makes the behaviour hard to see.
+test "the same declaration with no view sending it answers one name" {
+  let src = @viewgen.generate(
+    "<script type=\"tutuca/spec\">\n" +
+    "protocol Openable = \"x/Openable@1\" { handle { message { setOpen(Bool) } } }\n" +
+    "state Chat implements Openable { open: Bool }\n" +
+    "handle Chat { message { Openable::setOpen(Bool) } }\n" +
+    "</script>\n" +
+    "<template><p><x text=\".open\"></x></p></template>",
+    name="Chat",
+    source_file="chat.html",
+  )
+  assert_true(src.contains("  OpenableSetOpen(Bool)\n"))
+  assert_false(src.contains("  SetOpen(Bool)\n"))
+  assert_false(src.contains("(\"setOpen\","))
+}

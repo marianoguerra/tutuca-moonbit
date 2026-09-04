@@ -668,12 +668,16 @@ fn bindings_value(bs : Array[@statedef.ProtocolBinding]) -> @tutuca.Value {
 /// One component's half of it — and the whole of what an INSTANCE says about
 /// itself, which is why `<C>_desc()` is this same value.
 fn component_value(c : Comp, refusals : Array[Refusal]) -> @tutuca.Value {
+  // The names the module ANSWERS TO, which for a message or an intent is the
+  // schema's runtime name and not the declaration's own spelling — the same
+  // resolution the dispatch does, because a manifest that advertised a name
+  // the module does not answer would be worse than one that advertised none.
   let names_of = (kinds : Array[@tscript.DeclKind]) => {
     c.decls
     .filter(d => {
       kinds.contains(d.kind) && !refusals.iter().any(r => r.name == d.name)
     })
-    .map(d => @tutuca.Value::Str(d.name))
+    .map(d => @tutuca.Value::Str(wire_name(c, d)))
   }
   let lowered = (kind : @tscript.DeclKind) => {
     @tutuca.Value::List(names_of([kind]))

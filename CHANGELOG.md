@@ -6,6 +6,56 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.49.3] - 2026-09-04
+
+**A protocol operation has one dispatch name.** The deviation 0.49.2 wrote into
+`tgc/SPEC.md` is fixed rather than documented, and the note is gone with it.
+
+### Behaviour change
+
+A card's handler answers the SCHEMA's runtime name, not the declaration's own
+spelling. `receive Holder::hold` answers `x/Holder@1::hold`; it used to answer
+`Holder::hold`, an alias local to the file that no host has ever heard of. The
+manifest's `receives` and `intents` advertise the same string, so what a host
+reads and what the module answers are one thing.
+
+**If you dispatch into a card by a protocol member's local spelling, that stops
+working.** Use the resolved id — which is what a compiled component has always
+answered to, and what the card's own `expressIntents` already used.
+
+`tscript/emit_mbt` has done this since the release that added protocols, and its
+`E::wire_name` carries the comment describing the identical failure: the arm
+listens for one name, every sender emits another, and the handler never runs,
+silently. This backend had it too and worse — three names for one operation,
+none of them the compiled one — so a host holding one card and one compiled
+component that implement the same protocol could not name a message reaching
+both. That is the mix the format exists to allow.
+
+Found by the hmtp migration, against instantiated modules rather than by
+reading.
+
+### Tests
+
+The gaps this and 0.49.2 fixed were reported by a consumer, not caught here, so
+they are pinned:
+
+- One dispatch name, in the module and in the manifest, with an ordinary
+  handler as the control that resolution rewrites nothing it should not.
+- Inbound and outbound names resolve together — the bug was only visible by
+  comparing `receives` against `expressIntents`.
+- A spec-block rule is not its own `RULE_IN_BOTH` duplicate, and a rule written
+  twice still is.
+- One component's views are not another's, which is the per-file/per-component
+  mistake the view check made on its first attempt.
+- `check_card` and `compile` agree about what is fatal — the contract a caller
+  that fails on `issues.length > 0` gets wrong, and both this repo's example
+  gate and the first consumer to try it had that bug.
+- **A bare view name beside a protocol-qualified declaration is a second
+  message.** `merged_receive` keys the schema by runtime name, so a view writing
+  the bare member matches nothing and gets a message of its own — the component
+  answers both spellings while `receives` advertises one. Pinned rather than
+  endorsed, with a control showing the difference is a view and not a schema.
+
 ### Documented
 
 - **A component's manifest `protocols` list is a DICTIONARY, not a claim.** It

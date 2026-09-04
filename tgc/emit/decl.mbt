@@ -501,7 +501,7 @@ fn emit_call(src : Src, c : Comp) -> Unit {
     src.line("let f = \{c.id}_copy(st);")
     for d in arms {
       let prefix = transition_prefix(kind)
-      src.open("if str_eq(name, \{wax_str(d.name)}) != 0 {")
+      src.open("if str_eq(name, \{wax_str(wire_name(c, d))}) != 0 {")
       // A property write is handed its value rather than an argument list, so
       // it arrives as `v` and is spliced in as argument zero.
       if kind is DSet {
@@ -571,7 +571,9 @@ fn emit_call(src : Src, c : Comp) -> Unit {
       } else {
         call
       }
-      src.line("if str_eq(name, \{wax_str(d.name)}) != 0 { return \{answer}; }")
+      src.line(
+        "if str_eq(name, \{wax_str(wire_name(c, d))}) != 0 { return \{answer}; }",
+      )
     }
     src.close("}")
     src.blank()
@@ -612,4 +614,32 @@ fn callable_prefix(kind : @tscript.DeclKind) -> String {
 ///|
 fn op_code(op : @abi.Op) -> Int {
   op.code()
+}
+
+///|
+/// The name a handler ANSWERS TO — the runtime name, always.
+///
+/// A declaration's own spelling is a local one. `receive Holder::hold` names a
+/// protocol by the alias this file imported it under, and `receive hold` names
+/// it by the bare member; the schema resolved both to `x/Holder@1::hold` before
+/// either was read, and that is the only name a host has ever heard of.
+///
+/// Matching on the declaration's spelling instead is the bug `tscript/emit_mbt`
+/// fixed for the ahead-of-time path — see `E::wire_name` there, whose comment
+/// describes this exact failure: the arm listens for one name, every sender
+/// emits another, and the handler never runs, silently. This backend had it
+/// too, and worse: it answered the SCRIPT's spelling, so `receive hold` and
+/// `receive Holder::hold` produced two different dispatch names for one
+/// operation, neither of them the one a compiled component answers to.
+///
+/// Matched against the schema by EITHER spelling, which is what collapses all
+/// three onto one.
+fn wire_name(c : Comp, d : @tscript.Decl) -> String {
+  let cases = if d.kind is DAnswer { c.def.intent } else { c.def.receive }
+  for m in cases {
+    if m.name == d.name || m.source_name == d.name {
+      return m.name
+    }
+  }
+  d.name
 }

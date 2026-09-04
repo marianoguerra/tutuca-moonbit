@@ -236,6 +236,24 @@ has. `tscript/conformance` pins both.
 `tscript/emit_mbt`, and it is held to
 `tscript/conformance` — **48 of 48**, both tables (`tgc/test/conformance.test.mjs`).
 
+### A protocol operation has ONE dispatch name
+
+A handler answers the SCHEMA's runtime name, never the declaration's own
+spelling. `receive Holder::hold` names the protocol by the alias this file
+imported it under; the schema resolved that to `x/Holder@1::hold` before the
+script was read, and that resolved name is the only one a host has ever heard
+of. Both the module's `call` and the manifest's `receives` use it.
+
+That is the same rule `tscript/emit_mbt` follows, and it has to be: a host
+holding one compiled-in component and one card, both implementing the same
+protocol, names a message once and reaches both. A backend answering its own
+local spelling makes the two uninterchangeable, which is the claim the whole
+format rests on.
+
+The outbound direction resolves the same way — `ask Holder::addRequested` raises
+`x/Holder@1::addRequested` — so one protocol crosses in one vocabulary whichever
+way a message is going.
+
 Every declared field is one slot in a `tg_vals`, whatever its type. A
 specialising backend would unbox an `Int` field and save a `struct.new` per
 assignment; this one gets `get_field` and `with_field` for two lines each and no
@@ -318,36 +336,6 @@ worth naming because none of them showed up in the corpus:
   a card writes by hand are exact.
 - **`lower` / `upper` are ASCII.** A case fold that claimed to know Turkish
   would be a bigger promise than this makes.
-
-### A protocol operation has three dispatch names, and should have one
-
-**Known deviation, not a design.** A component that implements a protocol and
-declares `handle B { message { Holder::hold(Any) } }` gets a different runtime
-message name from each backend, and from `tgc/emit` a different one again per
-spelling:
-
-| written | `tscript/emit_mbt` answers to | `tgc/emit` answers to |
-|---|---|---|
-| `receive hold` | `x/Holder@1::hold` | `hold` |
-| `receive Holder::hold` | `x/Holder@1::hold` | `Holder::hold` |
-
-`gen` resolves through the SCHEMA, which is right: `statedef` already stores the
-wire name (`id::member`), and a host that knows the protocol knows that name and
-no other. `tgc/emit` lists and matches the SCRIPT declaration's own name, which
-is a local spelling the host has never seen.
-
-The same card's EXPRESS side is already correct — `expressIntents` comes out
-qualified — so one protocol crosses in two vocabularies depending on direction.
-
-What this costs is the mix the format exists to allow: a host holding one
-compiled-in component and one card, both implementing the same protocol, cannot
-name a message that reaches both. Found by
-[marianoguerra/hmtp](https://github.com/marianoguerra/hmtp) migrating onto 0.49,
-against real instantiated modules rather than by reading.
-
-Fixing it changes a dispatch key, so it is written down here rather than
-slipped into a patch: `tgc/emit` should resolve a receive's name through the
-schema the way `gen` does, and the release that does it says so.
 
 ## 11. What is not here yet
 
