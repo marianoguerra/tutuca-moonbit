@@ -1,0 +1,55 @@
+spec:
+  /// A counter with a rule, and a test block that watches the rule hold.
+  Guarded:
+    /// How far it has counted.
+    field n :: Int
+
+    /// True while there is room left.
+    ///
+    /// The `///` says what the rule IS; the `format` says what went wrong this
+    /// time, and is what reaches a driver through `control.log`.
+    pred room:
+      ~format: @str{the counter is full at @(it.n)}
+      it.n < 3
+
+logic:
+  Guarded:
+    /// Count one more, while there is room.
+    receive bump:
+      ~requires: room
+      it.n += 1
+
+view:
+  Guarded:
+    @div{
+      @button(~on_click: bump){+}
+      @output{@(it.n)}
+    }
+
+fixtures:
+  "nearly full":
+    ~doc: "One press from the rule declining."
+    it.n = 2
+
+tests:
+  "the guard stops it at three":
+    click("button")
+    click("button")
+    click("button")
+    expect text("output") == "3"
+    click("button")
+    expect text("output") == "3"
+    expect log contains "precondition `room` does not hold"
+
+  "a fixture is where a scene starts":
+    ~init: "nearly full"
+    expect text("output") == "2"
+    click("button")
+    expect text("output") == "3"
+    click("button")
+    expect log contains "precondition `room` does not hold"
+
+  "and says nothing while it holds":
+    click("button")
+    expect text("output") == "1"
+    expect log == []

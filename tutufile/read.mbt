@@ -183,6 +183,24 @@ fn bare_decl(
   // one: the section's own kind carries a sub-name where nothing else does.
   let name = name + view_suffix(parts, kind)
   guard last_block(parts) is Some(body) else {
+    // A COMPONENT in `spec:` may declare no members. Its whole content is then
+    // its view, which several of the smallest examples are — and writing `:`
+    // with nothing under it is not a file, so a bare name has to be the form.
+    //
+    // Everywhere else a header with nothing under it is the mistake it looks
+    // like: a view with no content renders nothing, and a handler with no body
+    // does nothing.
+    if kind is Component && section is Spec {
+      return Some({
+        kind,
+        name,
+        options: options_of(parts),
+        header: span_of(head),
+        span: span_of(group),
+        node: group,
+        body: None,
+      })
+    }
     reports.push(
       report_declaration_has_no_body(source, span_of(group), kind, name),
     )

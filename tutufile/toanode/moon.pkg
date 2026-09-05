@@ -1,0 +1,46 @@
+// `.tutu` read straight into the tree the renderer indexes.
+//
+// The other way — `tutufile/lower` — prints each section as the text the old
+// front end reads, and something re-parses it. That detour is where the
+// fidelity bugs live: a printer holds the tree and loses it in the text, and
+// every escape it forgets is a construct that silently changes meaning. This
+// package skips it. Shrubbery in, `@anode.ANode` out, no string in between.
+//
+// Three things follow from going direct, and each is a DECISION rather than a
+// consequence:
+//
+//   - A MACRO IS A TREE. `@anode.Macro` holds source text and re-parses it per
+//     expansion, with `^name` substituted by the value parser. Here a macro
+//     body is the shrubbery block it was read from, and expansion is a
+//     substitution over `Ex` before anything becomes an `Expr`.
+//   - WHITESPACE IS WHAT THE TREE SAYS. The HTML path inherits the tokenizer's
+//     whitespace and then condenses it with a block/inline table
+//     (`anode/whitespace.mbt`). At-notation has no such convention to inherit,
+//     so nothing is inferred: a text node exists where the file writes one.
+//   - THE EXPRESSION LANGUAGE HAS ONE READER. `Ex` (in `tutufile/lower`) is it.
+//     What changes is only where it goes — `@tutuca.Expr` directly, rather than
+//     tscript source that tscript parses back.
+//
+// It imports `tutufile/lower` for the reader and the `Ex` tree, and NOT for the
+// printers. The printers are the thing being replaced; the equivalence tests in
+// `to_expr_test.mbt` and `to_anode_test.mbt` are what say the replacement
+// agrees with them, and they are the reason `lower` stays until stage 6 closes.
+import {
+  "marianoguerra/tutuca/tutufile",
+  "marianoguerra/tutuca/tutufile/lower",
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/tscript",
+  "marianoguerra/shrubbery/ast",
+  "marianoguerra/error-report" @report,
+}
+
+import {
+  "marianoguerra/shrubbery" @shrub,
+  // The readers the printer path prints FOR. They are test dependencies only:
+  // the equivalence tests are the whole reason `tutufile/lower` is still here,
+  // and this package itself imports neither the printer's output format nor the
+  // parsers that read it.
+  "marianoguerra/tutuca/viewfile",
+  "moonbitlang/core/debug",
+} for "test"

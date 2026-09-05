@@ -36,6 +36,8 @@ pub fn plan(argv : Array[String]) -> Outcome {
     "gen-margaui-css" => return run_gen_css(command_args, opts, margaui=true)
     "watch" => return run_watch(command_args, opts)
     "outline" => return run_outline(command_args, opts)
+    "equiv" => return run_equiv(command_args, opts)
+    "to-tutu" => return run_to_tutu(command_args, opts)
     "trace" => return run_trace(command_args, opts)
     _ => ()
   }

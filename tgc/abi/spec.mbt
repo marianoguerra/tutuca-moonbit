@@ -1,10 +1,10 @@
-// The frozen `tgc/1` ABI.
+// The frozen `tgc/2` ABI.
 //
 // READONLY by convention: the public data types plus `declare` stubs for every
 // function. Implementations are in `tag.mbt`, `op.mbt` and `preamble.mbt`.
 //
 // Everything in this file is FROZEN. A tag number, an op number, an export name
-// and — above all — the shape of the rec group in `preamble_wax` are the
+// and — above all — the shape of the types in `preamble_wap` are the
 // identity of the format, not choices it makes. Wasm GC canonicalizes a
 // recursion group structurally: two modules that declare the same group get the
 // SAME runtime type and can pass references to each other with no conversion,
@@ -22,7 +22,7 @@
 /// REFUSES the module rather than adapting to it — there is nothing to adapt
 /// to, because a different group is a different set of types and no reference
 /// can cross between them.
-pub const ABI_VERSION : Int = 1
+pub const ABI_VERSION : Int = 2
 
 ///|
 /// The tag every `tg_val` carries in its first field.
@@ -138,20 +138,99 @@ pub let export_serve : String = "tgc.serve"
 pub let import_namespace : String = "tut"
 
 ///|
-/// The canonical preamble as **Wax** source: the form a generator emits and a
-/// person reads. Every `tgc` module begins with exactly this text.
+/// The canonical preamble as **wap** source: the form a generator emits and a
+/// person reads. Every `tgc` module is compiled with exactly these types.
 ///
-/// Byte-for-byte identity is not REQUIRED — Wax names are local and the group is
-/// canonicalized structurally — but it is what the emitters do. A deliberate
+/// Byte-for-byte identity is not REQUIRED — wap names are local and each group
+/// is canonicalized structurally — but it is what the emitters do. A deliberate
 /// re-spelling is a thing to test (`tgc/proto/clock`) rather than a thing to
 /// leave lying around.
-declare pub fn preamble_wax() -> String
+declare pub fn preamble_wap() -> String
 
 ///|
 /// The same types as **WAT** text, for a hand-written module and for the error
-/// a host prints when a group does not match.
+/// a host prints when a module's types do not match.
 ///
-/// It is not derived from `preamble_wax` and does not have to be: they are two
-/// renderings that must CANONICALIZE the same, which is a stronger claim than
-/// textual correspondence and is what `preamble_agreement_test` checks.
-declare pub fn preamble_wat() -> String
+/// It IS derived from `preamble_wap`, by lowering and printing it. `tgc/1` kept
+/// a second hand-written copy and a test that the two canonicalized the same;
+/// the test could only ever find a drift that had already been committed, so
+/// the second copy is gone and the compiler answers instead.
+declare pub fn preamble_wat() -> String raise PreambleError
+
+///|
+/// The name wap gives the preamble module, and therefore the qualifier a
+/// generated module writes in front of every type it names.
+///
+/// A generated module must name these types NOMINALLY — `tgabi.tg_vals`, never
+/// an inline `[tg_val?]`. wap interns an anonymous array or function type into a
+/// group of its own, which is a different wasm type from the nominal one and
+/// fails to link against a runtime built from this text.
+pub let preamble_module : String = "tgabi"
+
+///|
+/// The preamble failed to compile, which is a bug in this package.
+///
+/// It cannot be an input error: there is no input. A caller that catches this
+/// is catching a broken build, so the message says which stage rather than
+/// offering a remedy.
+pub suberror PreambleError {
+  PreambleBug(String)
+}
+
+///|
+pub impl Show for PreambleError with fn output(self, logger) {
+  match self {
+    PreambleBug(m) => logger.write_string(m)
+  }
+}
+
+///|
+/// The function vocabulary a generated module reaches for, as TYPES.
+///
+/// `tgc/1` kept this as eighty signature STRINGS in `tgc/emit`, spliced into
+/// generated Wax and never compared against what `tgc/rt` actually exported. The
+/// two could disagree, and when they did the first thing to notice was a
+/// browser refusing to instantiate. Here they are wap types, one table, read by
+/// three parties: `tgc/emit` builds its `tut` import block from it, `tgc/rt`'s
+/// test asserts the runtime exports exactly these, and a host names the
+/// offender when a link fails.
+///
+/// ── Why no entry names a frozen FUNCTION type ────────────────────────────
+///
+/// `tgc/1` bound `get_field` and `call_op` to `tg_get` and `tg_call` so the
+/// link would check against the recursion group rather than against a singleton
+/// that looked like it. wap cannot say that — an imported function carries an
+/// inline signature and no named type — and under `tgc/2` it does not need to:
+/// both take a `tg_inst`, `tg_inst` is IN the one recursion group, and a
+/// parameter type carries its group's identity. A module whose group differs
+/// still fails to link, at the parameter instead of at the signature.
+pub(all) enum Supplier {
+  /// `tgc/rt` exports it. A pure function over values, available to any module
+  /// that links the runtime.
+  Runtime
+  /// The HOST supplies it, and the runtime must not. Every effect is here, and
+  /// that is the authority story rather than a division of labour: an effect is
+  /// something done to the world outside the module, so it comes from whoever
+  /// owns that world. A runtime that exported `eff_send` would be a runtime
+  /// that could send.
+  Host
+} derive(Eq, Debug)
+
+///|
+pub(all) struct VocabFn {
+  /// What the generated module calls it.
+  name : String
+  /// Who answers when a card calls it.
+  supplier : Supplier
+  /// What `tut` exports it as. The two differ where a constructor reads better
+  /// from inside a card than from inside the runtime — `tg_num` there is
+  /// `mk_num` here.
+  import_name : String
+  params : Array[(String, @wast.Type)]
+  results : Array[@wast.Type]
+}
+
+///|
+/// The whole vocabulary. The emitter filters it by what a card actually
+/// called, so a module's import section stays a truthful authority list.
+declare pub fn vocab() -> Array[VocabFn]

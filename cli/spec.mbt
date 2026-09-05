@@ -125,6 +125,15 @@ pub(all) enum Outcome {
   /// decides the flags and does the reading — `outline_apply` is text in, text
   /// out — and the shell reads the file and prints the answer.
   Outline(GlobalOpts, plan~ : OutlinePlan)
+  /// Compare a `.tutu` file with the `.html` file it replaces (equiv.mbt). The
+  /// core does the comparing — `equiv_apply` is two texts in, a report out —
+  /// and the shell reads the two files.
+  Equiv(GlobalOpts, plan~ : EquivPlan)
+  /// Convert an `.html` view file into the `.tutu` file that replaces it
+  /// (to_tutu.mbt). The core converts AND checks — `to_tutu_apply` is text in,
+  /// the whole converted file out — and the shell reads one path and writes the
+  /// other.
+  ToTutu(GlobalOpts, plan~ : ToTutuPlan)
 } derive(Debug, Eq)
 
 ///|

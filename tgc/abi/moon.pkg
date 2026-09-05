@@ -1,17 +1,21 @@
-// The frozen `tgc/1` preamble: the canonical wasm-GC type section every module
-// carries verbatim, plus the op codes, export names and import names that go
-// with it. ONE table, two renderings (Wax source and WAT text), because two
-// hand-kept spellings of a structural type are two types.
+// The frozen `tgc/2` preamble: the canonical wasm-GC type section every module
+// carries, plus the op codes, export names, import names and the runtime
+// function vocabulary that go with it.
 //
-// Depends on `wax` for nothing but the check: `preamble_compiles` in the test
-// is what says the Wax source in here is a module a compiler accepts, rather
-// than a string that looks like one.
+// ONE table, ONE rendering. The preamble is wap source and the WAT is DERIVED
+// from it by lowering and printing, because two hand-kept spellings of a
+// structural type are two types — which is the thing this package exists to
+// prevent. `wap` is therefore a real dependency here rather than a test-only
+// one: a caller asking for `preamble_wat` is asking for the answer a compiler
+// gave, not for a string that looks like one.
 import {
+  "marianoguerra/wap",
+  "marianoguerra/wap/ast" @wast,
+  "marianoguerra/wax/compile",
   "moonbitlang/core/debug",
 }
 
 import {
-  "marianoguerra/wax",
-  "marianoguerra/wax/diagnostic",
   "marianoguerra/wax/message",
+  "marianoguerra/error-report",
 } for "test"

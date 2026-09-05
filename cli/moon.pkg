@@ -21,6 +21,8 @@ import {
   // this binary carries a shrubbery parser.
   "marianoguerra/tutuca/tutufile",
   "marianoguerra/tutuca/tutufile/lower",
+  "marianoguerra/tutuca/tutufile/equiv",
+  "marianoguerra/tutuca/tutufile/totutu",
   "marianoguerra/error-report" @report,
   "marianoguerra/error-report/render" @report_render,
   "moonbitlang/core/string",

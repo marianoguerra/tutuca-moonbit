@@ -1,0 +1,58 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tutufile/totutu"
+
+import {
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/scenedef",
+  "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/tscript",
+}
+
+// Values
+pub fn convert(String, name~ : String) -> Converted
+
+pub fn escape_text(String) -> String
+
+pub fn is_type_name(String) -> Bool
+
+pub fn pascal_of(String) -> String
+
+pub fn print_expr(@core.Expr) -> String raise NoSpelling
+
+pub fn print_fixture(@statedef.InitState, StringBuilder) -> Unit raise NoSpelling
+
+pub fn print_lit(@core.Lit) -> String
+
+pub fn print_logic(String, Array[@tscript.Decl], @statedef.StateDef?, StringBuilder) -> Unit raise NoSpelling
+
+pub fn print_num(Double) -> String
+
+pub fn print_scene(@scenedef.Scene, StringBuilder) -> Unit raise NoSpelling
+
+pub fn print_spec(@statedef.StateDef, root~ : Bool, StringBuilder) -> Unit raise NoSpelling
+
+pub fn print_ty(@core.Ty) -> String raise NoSpelling
+
+pub fn print_value(@core.Value) -> String raise NoSpelling
+
+pub fn print_view(@anode.ANode, Array[@anode.NodeEvents], String) -> String raise NoSpelling
+
+pub fn quote(String) -> String
+
+pub fn write_doc(StringBuilder, String?, String) -> Unit
+
+// Errors
+pub(all) suberror NoSpelling {
+  NoSpelling(what~ : String, help~ : String)
+}
+
+// Types and methods
+pub(all) struct Converted {
+  text : String
+  refusals : Array[String]
+}
+
+// Type aliases
+
+// Traits

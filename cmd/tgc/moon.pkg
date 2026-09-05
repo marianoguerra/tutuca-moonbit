@@ -2,9 +2,9 @@
 //
 // Two jobs, and the second is why it exists at all:
 //
-//   `tgc preamble --wax|--wat`  print the canonical type section, for a person
+//   `tgc preamble --wap|--wat`  print the canonical type section, for a person
 //                               writing a module by hand
-//   `tgc build a.wax a.wasm`    prepend that preamble and compile
+//   `tgc build a.wap a.wasm`    compile it against that preamble
 //
 // The point of `build` is not convenience. `tgc/test` needs a module that a
 // REAL COMPILER emitted the preamble for, standing beside modules a person
@@ -13,8 +13,10 @@
 import {
   "marianoguerra/tutuca/tgc/abi",
   "marianoguerra/tutuca/tgc/emit",
-  "marianoguerra/wax",
-  "marianoguerra/wax/diagnostic",
+  "marianoguerra/wap",
+  "marianoguerra/wax/compile",
+  "marianoguerra/error-report" @report,
+  "marianoguerra/wap/resolve",
   "marianoguerra/wax/message",
   "moonbitlang/x/fs",
   "moonbitlang/core/env",

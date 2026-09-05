@@ -2,11 +2,12 @@
 package "marianoguerra/tutuca/tgc/abi"
 
 import {
+  "marianoguerra/wap/ast",
   "moonbitlang/core/debug",
 }
 
 // Values
-pub const ABI_VERSION : Int = 1
+pub const ABI_VERSION : Int = 2
 
 pub fn all_ops() -> Array[Op]
 
@@ -22,11 +23,19 @@ pub let export_serve : String
 
 pub let import_namespace : String
 
-pub fn preamble_wat() -> String
+pub let preamble_module : String
 
-pub fn preamble_wax() -> String
+pub fn preamble_wap() -> String
+
+pub fn preamble_wat() -> String raise PreambleError
+
+pub fn vocab() -> Array[VocabFn]
 
 // Errors
+pub suberror PreambleError {
+  PreambleBug(String)
+}
+pub impl Show for PreambleError
 
 // Types and methods
 pub(all) enum Op {
@@ -50,6 +59,11 @@ pub fn Op::code(Self) -> Int
 pub fn Op::name(Self) -> String
 pub fn Op::of_code(Int) -> Self?
 
+pub(all) enum Supplier {
+  Runtime
+  Host
+} derive(Eq, @debug.Debug)
+
 pub(all) enum Tag {
   TagNull
   TagBool
@@ -67,6 +81,14 @@ pub(all) enum Tag {
 pub fn Tag::code(Self) -> Int
 pub fn Tag::of_code(Int) -> Self?
 pub fn Tag::type_name(Self) -> String
+
+pub(all) struct VocabFn {
+  name : String
+  supplier : Supplier
+  import_name : String
+  params : Array[(String, @ast.Type)]
+  results : Array[@ast.Type]
+}
 
 // Type aliases
 

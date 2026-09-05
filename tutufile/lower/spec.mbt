@@ -46,18 +46,23 @@ pub fn print_state(
   let wheres = []
   let provides = []
   let lookups = []
-  for group in body_groups(decl) {
+  // `prev` is threaded because a doc comment between two members attaches to
+  // the FIRST one's suffix — see `member_doc`. Every member but the first read
+  // its doc as absent without it.
+  let members = body_groups(decl)
+  for at, group in members {
+    let prev = if at > 0 { Some(members[at - 1]) } else { None }
     guard group.it is Group(parts) && parts.length() > 0 else { continue }
     guard parts[0].it is Id(word) else { continue }
     try {
       match word {
-        "field" => print_field(read_member(group), out)
+        "field" => print_field(read_member(group, prev~), out)
         // `property Holder::filled = filled` binds a protocol member to a local
         // one; it is a line of the property section rather than a declaration.
         "property" =>
           match binding_line(parts) {
             Some(text) => props.push(text)
-            None => props.push(print_property(read_member(group), impls))
+            None => props.push(print_property(read_member(group, prev~), impls))
           }
         "view" =>
           match binding_line(parts) {
@@ -69,8 +74,8 @@ pub fn print_state(
                 span=span_of(parts[0]),
               )
           }
-        "pred" | "invariant" => rules.push(read_member(group))
-        "where" => wheres.push(group)
+        "pred" | "invariant" => rules.push(read_member(group, prev~))
+        "where" => wheres.push((group, member_doc(group, prev)))
         "provide" => provides.push(group)
         "lookup" => lookups.push(group)
         // channels and helper types are declarations of the file, not of the
@@ -110,8 +115,8 @@ pub fn print_state(
   for r in rules {
     print_rule(r, out)
   }
-  for g in wheres {
-    print_where(g, out)
+  for w in wheres {
+    print_where(w.0, w.1, out)
   }
   out.write_string("}\n")
 }
@@ -334,7 +339,12 @@ fn print_binding_decl(
 
 ///|
 /// A field domain, whose vocabulary is words in both notations.
-fn print_where(group : @ast.Node, out : StringBuilder) -> Unit raise ExError {
+fn print_where(
+  group : @ast.Node,
+  doc : String?,
+  out : StringBuilder,
+) -> Unit raise ExError {
+  write_doc(out, doc, "  ")
   guard group.it is Group(parts) && parts.length() >= 2 else {
     raise ExError(
       message="a `where` states a relation",
@@ -375,10 +385,13 @@ fn print_where(group : @ast.Node, out : StringBuilder) -> Unit raise ExError {
         words.push(print_ex(read_group(t)))
         i = i + 1
       }
+      // `is one of ["file", "dir"]` — the member list is JSON in the old
+      // state block, not the value language: a state block has no `'`, so the
+      // value language's own quoting would print a list nothing can read.
       Brackets(gs) => {
         let items = []
         for g in gs {
-          items.push(print_ex(read_group(g)))
+          items.push(where_member(read_group(g)))
         }
         words.push("[" + items.join(", ") + "]")
         i = i + 1
@@ -408,6 +421,15 @@ fn print_where(group : @ast.Node, out : StringBuilder) -> Unit raise ExError {
 }
 
 ///|
+/// One member of an `is one of` list, in the state block's own quoting.
+fn where_member(ex : Ex) -> String raise ExError {
+  match ex {
+    EStr(s) => Json::string(s).stringify()
+    other => print_ex(other)
+  }
+}
+
+///|
 /// The relation a domain word spells in the old notation.
 fn where_word(w : String) -> String {
   match w {
@@ -416,6 +438,11 @@ fn where_word(w : String) -> String {
     "is_member_of" => "is member of"
     "is_subset_of" => "is subset of"
     "is_one_of" => "is one of"
+    // `is one of .options` — the members are a sibling list rather than a
+    // written-out set. One relation, two argument shapes, and the state block
+    // spells both with the same words.
+    "is_element_of" => "is one of"
+    "non_empty" => "is nonempty"
     "in_range" => "between"
     other => other
   }

@@ -1,0 +1,26 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tutufile/equiv"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn compare(String, String, name~ : String) -> Array[Difference]
+
+pub fn scrub(String) -> String
+
+// Errors
+
+// Types and methods
+pub(all) struct Difference {
+  section : String
+  what : String
+  html : String
+  tutu : String
+} derive(@debug.Debug)
+pub fn Difference::line(Self) -> String
+
+// Type aliases
+
+// Traits

@@ -39,7 +39,17 @@ pub(all) struct Param {
 
 ///|
 /// Read one group as a member declaration.
-pub fn read_member(group : @ast.Node) -> Member raise ExError {
+///
+/// `prev` is the sibling before this one, and it is here because of where
+/// shrubbery puts a doc comment. `///` lines between two members attach as the
+/// SUFFIX of the one before, not as the prefix of the one after — so a member's
+/// own prefix carries its doc only when nothing precedes it, and every later
+/// member in a block read its doc as `None`. Every doc comment but the first in
+/// a block was being dropped: fields, rules and handlers alike.
+pub fn read_member(
+  group : @ast.Node,
+  prev? : @ast.Node?,
+) -> Member raise ExError {
   guard group.it is Group(parts) && parts.length() > 0 else {
     raise ExError(
       message="this is not a declaration",
@@ -158,7 +168,7 @@ pub fn read_member(group : @ast.Node) -> Member raise ExError {
     stmts,
     rest,
     span: span_of(group),
-    doc: doc_of(group),
+    doc: member_doc(group, prev.bind(x => x)),
   }
 }
 
@@ -271,4 +281,50 @@ pub fn Member::has_option(self : Member, name : String) -> Bool {
 /// The groups of the block under a member, or nothing.
 pub fn Member::block(self : Member) -> Array[@ast.Node] {
   self.stmts
+}
+
+///|
+/// The doc comment for a member, which may be sitting on the member before it.
+///
+/// Shrubbery attaches the whitespace and comments BETWEEN two groups to the
+/// first one's suffix. A doc comment is written above what it documents, so the
+/// `///` lines at the end of one member's suffix are the next member's doc —
+/// and a member that reads only its own prefix finds nothing unless it happens
+/// to be first in its block.
+///
+/// Its own prefix wins when it has one, so nothing here can override a doc the
+/// member really does carry.
+pub fn member_doc(group : @ast.Node, prev : @ast.Node?) -> String? {
+  match doc_of(group) {
+    Some(d) => Some(d)
+    None =>
+      match prev {
+        Some(p) => trailing_doc(p)
+        None => None
+      }
+  }
+}
+
+///|
+/// The `///` lines at the END of a node's suffix — the ones written under it
+/// and therefore above whatever comes next.
+///
+/// Only a RUN that reaches the end counts. A `///` followed by a blank line and
+/// then more text documents nothing that follows it, and taking it would put
+/// one member's trailing note on the next member's declaration.
+fn trailing_doc(node : @ast.Node) -> String? {
+  let lines : Array[String] = []
+  for line in node.meta.suffix.to_text().split("\n") {
+    let t = line.to_owned().trim(chars=" \t").to_owned()
+    if t.has_prefix("///") {
+      lines.push(t[3:].to_owned().trim(chars=" ").to_owned())
+    } else if t != "" {
+      lines.clear()
+    }
+  }
+  if lines.is_empty() {
+    None
+  } else {
+    Some(lines.join("\n"))
+  }
 }

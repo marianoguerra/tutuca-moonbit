@@ -11,9 +11,15 @@ import {
 // Values
 pub fn at_span(ExError, @error-report.Span) -> ExError
 
+pub fn attr_name(String) -> String
+
 pub fn body_groups(@tutufile.Decl) -> Array[@ast.Node]
 
+pub fn body_of(@ast.Node) -> Array[@ast.Node]?
+
 pub fn case_text(Array[@ast.Node], Int) -> String raise ExError
+
+pub fn collection_op(String) -> String?
 
 pub fn decl_doc(@tutufile.Decl) -> String?
 
@@ -25,7 +31,11 @@ pub fn is_tutu_source(String) -> Bool
 
 pub fn json_of(Ex) -> Json raise ExError
 
+pub fn kw_arg(Array[Arg], String) -> Ex?
+
 pub fn lower(String, @error-report.SourceId) -> Lowered
+
+pub fn member_doc(@ast.Node, @ast.Node?) -> String?
 
 pub fn member_name(Array[@ast.Node], Int) -> (String, Int)?
 
@@ -61,17 +71,23 @@ pub fn qualified(Array[@ast.Node], Int) -> (String, Int)?
 
 pub fn quote_str(String) -> String
 
+pub fn read_args(Array[@ast.Node]) -> Array[Arg] raise ExError
+
 pub fn read_ex(ArrayView[@ast.Node]) -> Ex raise ExError
 
 pub fn read_group(@ast.Node) -> Ex raise ExError
 
-pub fn read_member(@ast.Node) -> Member raise ExError
+pub fn read_member(@ast.Node, prev? : @ast.Node?) -> Member raise ExError
 
 pub fn read_meta(@tutufile.Decl) -> ComponentMeta raise ExError
 
 pub fn rename_ex(Ex, Map[String, String]) -> Ex
 
 pub fn span_of(@ast.Node) -> @error-report.Span
+
+pub fn split_binder(Array[@ast.Node]) -> (Array[String], Ex, Int) raise ExError
+
+pub fn split_call(Array[@ast.Node]) -> (Array[@ast.Node], Array[@ast.Node]) raise ExError
 
 pub fn write_doc(StringBuilder, String?, String) -> Unit
 

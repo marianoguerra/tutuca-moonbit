@@ -257,6 +257,72 @@ let commands : Array[CommandSpec] = [
       positional("file", required=true, description="The .tutu file to read."),
     ],
   },
+  // The acceptance check for converting a view file. It exists as a command
+  // rather than as a test because the conversion happens one file at a time,
+  // over a corpus, by whoever is doing it — and a check nobody can run over the
+  // file in front of them is a check nobody runs.
+  {
+    name: "equiv",
+    describe: "Check that a .tutu file means what the .html file it replaces meant.",
+    flags: [
+      flag(
+        "name",
+        type_="string",
+        description="The component name a nameless .html file would be given — the same one `gen --name` supplies.",
+      ),
+      flag(
+        "verbose",
+        type_="boolean",
+        description="Print both sides of every difference instead of one line each.",
+      ),
+      help_flag,
+    ],
+    positionals: [
+      positional(
+        "html",
+        required=true,
+        description="The .html file being replaced.",
+      ),
+      positional(
+        "tutu",
+        required=true,
+        description="The .tutu file replacing it.",
+      ),
+    ],
+  },
+  // The converter. It is one command with the check built in rather than two,
+  // because a conversion nobody held against the file it replaces is a guess —
+  // and a guess that compiles is the worst available outcome.
+  {
+    name: "to-tutu",
+    describe: "Convert an .html view file into the .tutu file that replaces it.",
+    flags: [
+      flag(
+        "name",
+        type_="string",
+        description="The component name a nameless .html file would be given — the same one `gen --name` supplies.",
+      ),
+      flag(
+        "out",
+        type_="string",
+        short="o",
+        description="Where to write the .tutu file (default: the .html path with its extension changed).",
+      ),
+      flag(
+        "dry-run",
+        type_="boolean",
+        description="Print the converted file instead of writing it.",
+      ),
+      help_flag,
+    ],
+    positionals: [
+      positional(
+        "file",
+        required=true,
+        description="The .html view file to convert.",
+      ),
+    ],
+  },
   {
     name: "trace",
     describe: "Read an execution trace, trim it, or cut it down to one component.",

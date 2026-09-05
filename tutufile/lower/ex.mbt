@@ -378,7 +378,7 @@ fn read_map(groups : Array[@ast.Node], at : @ast.Node) -> Ex raise ExError {
 
 ///|
 /// A call's arguments, keyword ones kept where they were written.
-fn read_args(groups : Array[@ast.Node]) -> Array[Arg] raise ExError {
+pub fn read_args(groups : Array[@ast.Node]) -> Array[Arg] raise ExError {
   let out = []
   for g in groups {
     guard g.it is Group(parts) else {
@@ -389,7 +389,16 @@ fn read_args(groups : Array[@ast.Node]) -> Array[Arg] raise ExError {
       if parts.length() == 1 {
         out.push(AFlag(name))
       } else if parts[1].it is Block(bgs) && bgs.length() == 1 {
-        out.push(AKw(name, read_group(bgs[0])))
+        // `~on_keydown: add ~key: "Enter" ~prevent` — the options after the
+        // value are the event's MODIFIERS, and shrubbery nests them in the same
+        // block as the value. They are flattened into siblings here so that
+        // reading a value never has to know about them: whoever consumes the
+        // option decides which of the options after it belong to it.
+        let (value, tail) = split_kw_tail(bgs[0])
+        out.push(AKw(name, value))
+        for extra in tail {
+          out.push(extra)
+        }
       } else {
         raise ExError(
           message="`~\{name}` needs a value",
@@ -407,6 +416,46 @@ fn read_args(groups : Array[@ast.Node]) -> Array[Arg] raise ExError {
     }
   }
   out
+}
+
+///|
+/// A `~name:` value, split from the keyword options written after it.
+///
+/// The value is everything up to the first top-level `~option`; what follows is
+/// read as options in its own right. A value that has none comes back whole,
+/// which is every option but an event's.
+fn split_kw_tail(group : @ast.Node) -> (Ex, Array[Arg]) raise ExError {
+  guard group.it is Group(parts) else { return (read_group(group), []) }
+  let mut at = -1
+  for i, p in parts {
+    if p.it is Kw(_) {
+      at = i
+      break
+    }
+  }
+  guard at > 0 else { return (read_ex(parts[:]), []) }
+  let value = read_ex(parts[:at])
+  let tail = []
+  let mut i = at
+  while i < parts.length() {
+    guard parts[i].it is Kw(name) else {
+      raise ExError(
+        message="`\{node_text(parts[i])}` is not an option",
+        help="the options after an event's handler are its modifiers — `~key: \"Enter\"`, `~prevent`",
+        span=span_of(parts[i]),
+      )
+    }
+    if i + 1 < parts.length() &&
+      parts[i + 1].it is Block(bgs) &&
+      bgs.length() == 1 {
+      tail.push(AKw(name, read_group(bgs[0])))
+      i = i + 2
+    } else {
+      tail.push(AFlag(name))
+      i = i + 1
+    }
+  }
+  (value, tail)
 }
 
 ///|
@@ -458,9 +507,9 @@ fn split_top(
     // an operator directly after another operator is a unary sign, not a split
     let word = match terms[i].it {
       Op(o) => Some(o)
-      // `implies` is a word rather than a symbol, and shrubbery reads a word
-      // as an identifier — so an infix one is matched by name.
-      Id(o) => if o == "implies" { Some(o) } else { None }
+      // `implies` and `mod` are words rather than symbols, and shrubbery reads
+      // a word as an identifier — so an infix one is matched by name.
+      Id(o) => if o is ("implies" | "mod") { Some(o) } else { None }
       _ => None
     }
     if word is Some(o) && ops.contains(o) && !(terms[i - 1].it is Op(_)) {

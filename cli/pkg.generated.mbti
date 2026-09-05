@@ -45,6 +45,8 @@ pub fn command_names() -> Array[String]
 
 pub fn command_spec(String) -> CommandSpec
 
+pub fn equiv_apply(EquivPlan, String, String) -> Emit
+
 pub fn err(String, String, suggestion? : @lint.Suggestion, hint? : String, where_? : String, exit_code? : Int) -> ErrShape
 
 pub let error_codes : Array[String]
@@ -107,6 +109,8 @@ pub let storybook_template_files : Array[(String, String)]
 
 pub fn substitute_storybook_name(String, String) -> String
 
+pub fn to_tutu_apply(ToTutuPlan, String) -> Emit
+
 pub fn trace_apply(TracePlan, String) -> Result[TraceResult, ErrShape]
 
 pub fn watch_banner(Array[String], Array[String]) -> String
@@ -147,6 +151,13 @@ pub(all) struct Emit {
   out : String
   err : String
   exit_code : Int
+} derive(Eq, @debug.Debug)
+
+pub(all) struct EquivPlan {
+  html : String
+  tutu : String
+  name : String
+  verbose : Bool
 } derive(Eq, @debug.Debug)
 
 pub(all) struct ErrShape {
@@ -199,6 +210,8 @@ pub(all) enum Outcome {
   GenCss(GlobalOpts, plan~ : CssPlan)
   Trace(GlobalOpts, plan~ : TracePlan)
   Outline(GlobalOpts, plan~ : OutlinePlan)
+  Equiv(GlobalOpts, plan~ : EquivPlan)
+  ToTutu(GlobalOpts, plan~ : ToTutuPlan)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct OutlinePlan {
@@ -233,6 +246,14 @@ pub(all) struct StorybookScaffoldPlan {
   force : Bool
   files : Array[(String, String)]
 } derive(Eq, @debug.Debug)
+
+pub(all) struct ToTutuPlan {
+  path : String
+  out : String?
+  name : String
+  dry_run : Bool
+} derive(Eq, @debug.Debug)
+pub fn ToTutuPlan::target(Self) -> String
 
 pub(all) enum TraceOp {
   Info

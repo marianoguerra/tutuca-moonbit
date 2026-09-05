@@ -706,7 +706,7 @@ let runtime_imports : Array[(String, String, String)] = [
 
 ///|
 fn compile_wax(wax : String) -> Bytes raise GenError {
-  let preamble = @abi.preamble_wax()
+  let preamble = legacy_preamble_wax()
   let source = preamble + "\n" + wax
   // The stage NAME rather than the rendered error. `Show for CompileError`
   // renders the span, which walks the source — and a source carrying the
@@ -989,17 +989,20 @@ fn component_value(
 /// either compiles or is a bug in this package, so there is no card line to map
 /// to and nothing a card author could act on.
 pub fn compile_runtime() -> Bytes raise GenError {
-  let source = @abi.preamble_wax() + "\n" + @rt.source()
-  let result = @wax.compile_string(source, fname="tutuca-rt.wax") catch {
-    _ => raise BadModule(["the wax compiler stopped on the runtime"])
+  let src = @rt.source()
+  let loader = @resolve.MapLoader::new(entries=[
+    (@abi.preamble_module, @abi.preamble_wap()),
+  ])
+  let result = @wap.compile_program("tutuca-rt.wap", src, loader) catch {
+    _ => raise BadModule(["the wap compiler stopped on the runtime"])
   }
   match result {
     Ok(bytes) => bytes
     Err(_) =>
       raise BadModule([
         "the embedded runtime does not compile — `rt_src_gen.mbt` is stale " +
-        "against `rt.wax`, or `rt.wax` itself is broken. Rerun " +
-        "the `rt-embed` task, then compile `rt.wax` with `tgc build` for " +
+        "against `rt.wap`, or `rt.wap` itself is broken. Rerun " +
+        "the `rt-embed` task, then compile `rt.wap` with `tgc build` for " +
         "the diagnostics this deliberately does not carry",
       ])
   }

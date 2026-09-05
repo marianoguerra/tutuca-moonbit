@@ -8,10 +8,14 @@ pub fn print_logic(
   out : StringBuilder,
 ) -> Map[String, PropImpl] raise ExError {
   let impls = Map([])
-  for group in body_groups(decl) {
+  // See `member_doc`: a doc comment sits on the suffix of the member BEFORE the
+  // one it documents, so reading a handler's doc needs its predecessor.
+  let members = body_groups(decl)
+  for at, group in members {
+    let prev = if at > 0 { Some(members[at - 1]) } else { None }
     guard group.it is Group(parts) && parts.length() > 0 else { continue }
     guard parts[0].it is Id(word) else { continue }
-    let m = read_member(group)
+    let m = read_member(group, prev~)
     // Everything below prints an expression, which has no span of its own —
     // so a failure is re-raised against the member it was printing, which is
     // the narrowest place that does have one.
@@ -254,19 +258,25 @@ pub fn print_stmt(
 ) -> Unit raise ExError {
   guard group.it is Group(parts) && parts.length() > 0 else { return }
   // an `if` statement keeps its two arms
+  // An `if` STATEMENT takes one arm or two. Two is the shape a value `if` has,
+  // and one is the shape a statement often has and a value never can: a
+  // conditional write with nothing to do otherwise. Refusing the one-armed form
+  // would leave the commonest branch in the block language with no spelling.
   if parts[0].it is Id("if") && parts[parts.length() - 1].it is Alts(arms) {
-    guard arms.length() == 2 else {
+    guard arms.length() is (1 | 2) else {
       raise ExError(
-        message="an `if` takes exactly two arms",
-        help="write `if <cond> | <then> | <else>`",
+        message="an `if` takes one arm or two, and this has \{arms.length()}",
+        help="write `if <cond> | <then>`, or `if <cond> | <then> | <else>`",
         span=span_of(group),
       )
     }
     let cond = rename_ex(read_ex(parts[1:parts.length() - 1]), renames)
     out.write_string("\{indent}if (\{print_ex(cond)}) {\n")
     print_arm(arms[0], out, indent + "  ", renames)
-    out.write_string("\{indent}} else {\n")
-    print_arm(arms[1], out, indent + "  ", renames)
+    if arms.length() == 2 {
+      out.write_string("\{indent}} else {\n")
+      print_arm(arms[1], out, indent + "  ", renames)
+    }
     out.write_string("\{indent}}\n")
     return
   }
@@ -346,7 +356,7 @@ fn print_call_stmt(
 
 ///|
 /// The old spelling of a collection operation.
-fn collection_op(name : String) -> String? {
+pub fn collection_op(name : String) -> String? {
   match name {
     "push" => Some("push")
     "insert_at" => Some("insertAt")
@@ -438,7 +448,7 @@ fn route_words(ex : Ex) -> String raise ExError {
 }
 
 ///|
-fn kw_arg(args : Array[Arg], name : String) -> Ex? {
+pub fn kw_arg(args : Array[Arg], name : String) -> Ex? {
   for a in args {
     if a is AKw(n, v) && n == name {
       return Some(v)

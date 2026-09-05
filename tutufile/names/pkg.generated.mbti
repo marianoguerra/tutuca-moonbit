@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tutufile/names"
+
+// Values
+pub fn is_type_name(String) -> Bool
+
+pub fn mutator_of(String) -> String
+
+pub fn rename_member(String) -> String
+
+pub fn snake_of(String) -> String
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

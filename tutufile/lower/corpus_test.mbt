@@ -117,6 +117,12 @@ test "the domain vocabulary the corpus writes 110 times" {
   )
   assert_true(out.text.contains("where current_key is key of .entries"))
   assert_true(out.text.contains("where count between 0 and 100"))
-  assert_true(out.text.contains("where level is one of ['debug', 'info']"))
+  // JSON quoting, not the value language's: a state block has no `'`, and the
+  // single-quoted spelling this test used to assert did not parse. Which is why
+  // the assertion below is here — the printer's own output, read back.
+  assert_true(out.text.contains("where level is one of [\"debug\", \"info\"]"))
   assert_true(out.text.contains("where count >= 0"))
+  let file = @viewfile.split_file(out.text, name="Gallery")
+  assert_eq(file.state.length(), 1)
+  assert_eq(file.state[0].wheres.length(), 5)
 }

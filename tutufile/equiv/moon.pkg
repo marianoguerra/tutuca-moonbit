@@ -1,0 +1,44 @@
+// Does this `.tutu` file mean what the `.html` file beside it meant?
+//
+// The acceptance check for converting a view file, and the reason a conversion
+// can be trusted at all. A `.tutu` file is not "the same file in a new
+// notation" because it LOOKS equivalent; it is the same file because the things
+// the pipeline reads out of it are the same things — the schema, the handlers,
+// the trees, the fixtures and the scenes.
+//
+// So this compares those, not the text. Each section is read by the reader that
+// consumes it downstream, on both sides, and the results are compared:
+//
+//   spec      `@statedef.StateDef`, as the splitter parsed it
+//   logic     `@tscript.Decl`s, as the script parser parsed them
+//   view      `@anode.ANode`, modulo whitespace (`@toanode.strip_ws`)
+//   fixtures  `@statedef.InitState`
+//   tests     the parsed scenes
+//
+// **What it cannot see, and cannot be widened to see.** Every comparison here
+// is between two things a READER produced, so anything that only goes wrong at
+// RENDER time is outside it by construction rather than by oversight. The sharp
+// case is a protocol view binding: `Editable@1::editor` going missing makes the
+// renderer fall back to `main`, which draws something plausible — the trees this
+// compares are equal and the editor role is gone. A conversion that touches
+// protocol bindings has to assert them BY NAME; a clean run here is not evidence
+// about them. The same boundary covers anything else whose failure is a
+// fallback rather than a different tree.
+//
+// The `view` half is deliberately asymmetric: the `.html` side goes through the
+// HTML parser, and the `.tutu` side goes through `tutufile/toanode` — the
+// DIRECT reader, not the printer. That is what makes this check worth running
+// over the corpus twice over: it verifies a conversion, and it exercises the
+// reader that will replace the printer, on every view the repo has.
+import {
+  "marianoguerra/tutuca/tutufile",
+  "marianoguerra/tutuca/tutufile/lower",
+  "marianoguerra/tutuca/tutufile/toanode",
+  "marianoguerra/tutuca/tutufile/names",
+  "marianoguerra/tutuca/viewfile",
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/tscript",
+  "marianoguerra/tutuca/statedef",
+  "marianoguerra/error-report" @report,
+  "moonbitlang/core/debug",
+}

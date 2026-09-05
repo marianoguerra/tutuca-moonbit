@@ -38,10 +38,11 @@ import {
   "marianoguerra/wax@0.2.1",
   // The `.tutu` file reader: shrubbery notation (groups, blocks, alternatives,
   // keyword options) plus the diagnostic reports its errors are carried in.
-  "marianoguerra/shrubbery@0.1.0",
+  "marianoguerra/shrubbery@0.1.1",
   "marianoguerra/error-report@0.1.0",
   "marianoguerra/tailwindcss@0.4.0",
   "moonbitlang/x@0.5.1",
+  "marianoguerra/wap@0.2.1",
 }
 
 // What `moon publish` ships. Consumers get the library packages, the CLI

@@ -1,0 +1,58 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tutufile/toanode"
+
+import {
+  "marianoguerra/error-report",
+  "marianoguerra/shrubbery/ast",
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/tutufile",
+  "marianoguerra/tutuca/tutufile/lower",
+}
+
+// Values
+pub fn collapse_ws(String) -> String
+
+pub fn macros_of(Array[@tutufile.Decl]) -> Map[String, MacroDef] raise @lower.ExError
+
+pub fn strip_ws(@anode.ANode) -> @anode.ANode
+
+pub fn to_expr(@lower.Ex, ExCtx, @error-report.Span) -> @core.Expr raise @lower.ExError
+
+// Errors
+
+// Types and methods
+pub(all) struct ExCtx {
+  binds : Map[String, String]
+  pos : NamePos
+  params : Map[String, @lower.Ex]
+}
+pub fn ExCtx::as_handler(Self) -> Self
+pub fn ExCtx::value() -> Self
+pub fn ExCtx::with_bind(Self, String, String) -> Self
+pub fn ExCtx::with_params(Self, Map[String, @lower.Ex]) -> Self
+
+pub(all) struct MacroDef {
+  name : String
+  params : Array[String]
+  defaults : Map[String, @lower.Ex]
+  body : Array[@ast.Node]
+}
+
+pub(all) enum NamePos {
+  Bound
+  Handler
+}
+
+pub struct ViewBuilder {
+  mut next_id : Int
+  handlers : Array[Array[@anode.NodeEvent]]
+  macros : Map[String, MacroDef]
+  expanding : Array[String]
+}
+pub fn ViewBuilder::new(macros? : Map[String, MacroDef]) -> Self
+pub fn ViewBuilder::view(Self, @tutufile.Decl, style? : String) -> @anode.View raise @lower.ExError
+
+// Type aliases
+
+// Traits

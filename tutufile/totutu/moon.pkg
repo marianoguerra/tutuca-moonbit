@@ -1,0 +1,39 @@
+// `tutuca to-tutu` — an `.html` view file, written out as the `.tutu` file that
+// replaces it.
+//
+// It is the inverse of `tutufile/lower`, and it is built the same way round:
+// from the PARSED file rather than from its text. `@viewfile.split_file` has
+// already turned the blocks into a `StateDef`, a script block, view trees,
+// fixtures and scenes, so what is left is printing each of those as shrubbery.
+// A converter that worked on the text would be a second HTML parser and a
+// second script lexer, both of which exist and neither of which needs a rival.
+//
+// **It refuses rather than guesses.** Every construct it cannot spell in the
+// new notation comes back as a line in `refusals`, and the caller does not
+// write the file. A conversion that silently dropped a handler would be worse
+// than no conversion at all: the card would compile, render, and do less than
+// it did, which reads as a runtime bug rather than as a migration that is not
+// finished.
+//
+// The check that says a conversion is sound is `tutufile/equiv`, not this
+// package. `tutuca to-tutu` runs it before writing, and refuses on any
+// difference — so nothing this prints can reach a file without having been
+// compared against the file it replaces.
+import {
+  "marianoguerra/tutuca/viewfile",
+  "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/scenedef",
+  "marianoguerra/tutuca/tscript",
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/tutufile/names",
+  "moonbitlang/core/json",
+}
+
+import {
+  "marianoguerra/tutuca/tutufile/equiv",
+  // The two properties the reader promises, asserted over what this package
+  // PRODUCES rather than over sources written by hand beside the assertion.
+  "marianoguerra/shrubbery" @shrub,
+  "moonbitlang/core/debug",
+} for "test"

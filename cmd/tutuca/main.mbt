@@ -836,6 +836,8 @@ async fn main {
     GenCss(opts, plan~) => run_gen_css(opts, plan)
     Trace(opts, plan~) => run_trace(opts, plan)
     Outline(opts, plan~) => run_outline(opts, plan)
+    Equiv(opts, plan~) => run_equiv(opts, plan)
+    ToTutu(opts, plan~) => run_to_tutu(opts, plan)
   }
 }
 
@@ -864,6 +866,82 @@ async fn run_outline(
     }
   }
   emit_and_exit(@cli.outline_apply(plan, source))
+}
+
+///|
+/// `tutuca equiv`: read both files, compare what the pipeline reads out of them.
+///
+/// The core does the comparing — `equiv_apply` is two texts in, a report out —
+/// so what is left here is reading the two files.
+async fn run_equiv(
+  opts : @cli.GlobalOpts,
+  plan : @cli.EquivPlan,
+) -> Unit noraise {
+  let html = read_or_exit(opts, plan.html, "the .html file being replaced")
+  guard html is Some(html) else { return }
+  let tutu = read_or_exit(opts, plan.tutu, "the .tutu file replacing it")
+  guard tutu is Some(tutu) else { return }
+  emit_and_exit(@cli.equiv_apply(plan, html, tutu))
+}
+
+///|
+/// `tutuca to-tutu`: read the `.html`, convert it, write the `.tutu`.
+///
+/// The core converts AND checks, so reaching the write here means the file has
+/// already been compared against the one it replaces.
+async fn run_to_tutu(
+  opts : @cli.GlobalOpts,
+  plan : @cli.ToTutuPlan,
+) -> Unit noraise {
+  let source = read_or_exit(opts, plan.path, "an .html view file")
+  guard source is Some(source) else { return }
+  let emit = @cli.to_tutu_apply(plan, source)
+  if emit.exit_code != 0 || plan.dry_run {
+    emit_and_exit(emit)
+    return
+  }
+  let target = plan.target()
+  @fs.write_file(target, emit.out, create_mode=CreateOrTruncate) catch {
+    e => {
+      emit_and_exit(
+        @cli.error_emit(
+          opts,
+          @cli.err(
+            @cli.CODE_INTERNAL,
+            "cannot write \{target}: \{e}",
+            hint="pass a writable path with `--out`",
+          ),
+        ),
+      )
+      return
+    }
+  }
+  emit_and_exit({ out: "wrote \{target}\n", err: "", exit_code: 0, })
+}
+
+///|
+/// One file, or the error that says which one could not be read.
+async fn read_or_exit(
+  opts : @cli.GlobalOpts,
+  path : String,
+  what : String,
+) -> String? noraise {
+  let text = @fs.read_file(path).text() catch {
+    e => {
+      emit_and_exit(
+        @cli.error_emit(
+          opts,
+          @cli.err(
+            @cli.CODE_INTERNAL,
+            "cannot read \{path}: \{e}",
+            hint="pass \{what}",
+          ),
+        ),
+      )
+      return None
+    }
+  }
+  Some(text)
 }
 
 ///|

@@ -326,15 +326,34 @@ test "a struct's fields are its header, so an empty one is caught there" {
 }
 
 ///|
-test "a component with no block declares nothing" {
+/// A COMPONENT in `spec:` may declare no members: its whole content is then its
+/// view, which several of the smallest examples are. `:` with nothing under it
+/// is not a file, so a bare name is the form — and the options on it still read.
+test "a component in `spec:` may declare no members" {
   let src =
     #|spec:
     #|  Todos ~root
     #|
+  let (file, _) = read_one(src)
+  assert_true(file.ok())
+  let sec = file.section(Spec).unwrap()
+  assert_eq(sec.decls.length(), 1)
+  assert_eq(sec.decls[0].name, "Todos")
+  assert_true(sec.decls[0].body is None)
+  assert_true(sec.decls[0].options.contains("root"))
+}
+
+///|
+/// Everywhere else a header with nothing under it is the mistake it looks like.
+test "a view with no block declares nothing" {
+  let src =
+    #|view:
+    #|  Todos
+    #|
   inspect(first_message(src), content="`Todos` declares nothing")
   inspect(
     first_help(src),
-    content="end the line with `:` and indent what the component holds under it",
+    content="end the line with `:` and indent what the view holds under it",
   )
 }
 

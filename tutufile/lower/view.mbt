@@ -15,9 +15,7 @@ pub fn print_view(
   // spells the same pair `Note:edit`.
   let id = decl.name.replace(old=".", new=":")
   out.write_string("<template id=\"\{id}\">\n")
-  for g in body_groups(decl) {
-    print_content(g, out, "  ", Map([]), macros~)
-  }
+  print_items(body_groups(decl), out, "  ", Map([]), macros~)
   out.write_string("</template>\n\n")
 }
 
@@ -37,13 +35,20 @@ fn bound(ex : Ex, renames : Map[String, String]) -> Ex {
 fn bind_names(ex : Ex) -> Ex {
   match ex {
     EName(n) =>
-      if n.has_prefix("@") || n == "true" || n == "false" || n == "null" {
+      // A name that already carries a sigil has been placed by a binder that
+      // knows better: `^param` is substituted at a macro's call site and
+      // `@value` is what a loop put in scope.
+      if n.has_prefix("@") ||
+        n.has_prefix("^") ||
+        n == "true" ||
+        n == "false" ||
+        n == "null" {
         ex
       } else {
         EName("@" + n)
       }
     EMember(EName(n), m) =>
-      if n.has_prefix("@") || n == "e" {
+      if n.has_prefix("@") || n.has_prefix("^") || n == "e" {
         ex
       } else {
         EMember(EName("@" + n), m)
@@ -69,6 +74,103 @@ fn bind_names(ex : Ex) -> Ex {
 }
 
 ///|
+/// Every item of a body, with consecutive text merged into one run.
+///
+/// A body holding an escape comes back as SEVERAL pieces — `@p{a@"@"b}` is
+/// the three strings `a`, `@`, `b` — and printing each on its own line lets
+/// HTML collapse the newlines between them into spaces the author never
+/// wrote. `a@b` became `a @ b`. So text pieces are joined before anything is
+/// printed, and only the whitespace that came from the source's own LAYOUT is
+/// dropped: a run is trimmed at an edge that carries a newline and left alone
+/// at one that does not, because a space on one line is text and a line break
+/// between two elements is indentation.
+fn print_items(
+  items : Array[@ast.Node],
+  out : StringBuilder,
+  indent : String,
+  renames : Map[String, String],
+  macros? : Array[String] = [],
+) -> Unit raise ExError {
+  let run = StringBuilder()
+  let flush = fn() -> Unit {
+    let text = run.to_string()
+    run.reset()
+    let trimmed = trim_layout(text)
+    if trimmed != "" {
+      out.write_string("\{indent}\{escape_text(trimmed)}\n")
+    }
+  }
+  for item in items {
+    match text_piece(item) {
+      Some(text) => run.write_string(text)
+      None => {
+        flush()
+        print_content(item, out, indent, renames, macros~)
+      }
+    }
+  }
+  flush()
+}
+
+///|
+/// The text a body item holds, if it holds text and nothing else.
+fn text_piece(group : @ast.Node) -> String? {
+  guard group.it is Group(parts) && parts.length() == 1 else { return None }
+  match parts[0].it {
+    Lit(Str(text)) => Some(text)
+    _ => None
+  }
+}
+
+///|
+/// Drop the whitespace a source's own layout contributed, and keep the rest.
+fn trim_layout(text : String) -> String {
+  let chars = text.to_array()
+  let mut start = 0
+  let mut saw_newline = false
+  while start < chars.length() &&
+        (
+          chars[start] == ' ' ||
+          chars[start] == '\n' ||
+          chars[start] == '\t' ||
+          chars[start] == '\r'
+        ) {
+    if chars[start] == '\n' {
+      saw_newline = true
+    }
+    start = start + 1
+  }
+  if !saw_newline {
+    start = 0
+  }
+  let mut end = chars.length()
+  saw_newline = false
+  while end > start &&
+        (
+          chars[end - 1] == ' ' ||
+          chars[end - 1] == '\n' ||
+          chars[end - 1] == '\t' ||
+          chars[end - 1] == '\r'
+        ) {
+    if chars[end - 1] == '\n' {
+      saw_newline = true
+    }
+    end = end - 1
+  }
+  if !saw_newline {
+    end = chars.length()
+  }
+  if start >= end {
+    return ""
+  }
+  let outb = StringBuilder()
+  for i in start..<end {
+    outb.write_char(chars[i])
+  }
+  outb.to_string()
+}
+
+///|
 /// One item of an at-notation body: text, a hole, or an element.
 fn print_content(
   group : @ast.Node,
@@ -78,29 +180,59 @@ fn print_content(
   macros? : Array[String] = [],
 ) -> Unit raise ExError {
   guard group.it is Group(parts) && parts.length() > 0 else { return }
-  match parts[0].it {
-    // plain text
-    Lit(Str(text)) => {
-      let t = text.trim(chars=" \n\t").to_owned()
-      if t != "" {
-        out.write_string("\{indent}\{escape_text(t)}\n")
+  // A LINE of an at-notation body is one group, and it may hold several items:
+  // `@(it.label):@span{n}` is a hole, a piece of text and an element with
+  // nothing between them, so nothing separated them into groups.
+  let mut i = 0
+  while i < parts.length() {
+    match parts[i].it {
+      // plain text
+      Lit(Str(text)) => {
+        let t = text.trim(chars=" \n\t").to_owned()
+        if t != "" {
+          out.write_string("\{indent}\{escape_text(t)}\n")
+        }
+        i = i + 1
       }
+      // `@(expr)` — a value with no element around it
+      Parens(gs) => {
+        guard gs.length() == 1 else { return }
+        let ex = bound(read_group(gs[0]), renames)
+        out.write_string(
+          "\{indent}<x text=\"\{attr_escape(print_ex(ex))}\"></x>\n",
+        )
+        i = i + 1
+      }
+      Id(word) => {
+        // The element's own parentheses, and then anything `split_call`
+        // should get the chance to refuse — an option written outside its
+        // element is the mistake a first `.tutu` file makes, and its message
+        // names the repair.
+        let mut take = 1
+        if i + take < parts.length() && parts[i + take].it is Parens(_) {
+          take = take + 1
+        }
+        while i + take < parts.length() &&
+              parts[i + take].it is (Kw(_) | Block(_)) {
+          take = take + 1
+        }
+        print_element(
+          word,
+          parts[i:i + take].to_owned(),
+          out,
+          indent,
+          renames,
+          macros~,
+        )
+        i = i + take
+      }
+      _ =>
+        raise ExError(
+          message="this is not markup",
+          help="a view holds elements, text and `@(…)` holes",
+          span=span_of(group),
+        )
     }
-    // `@(expr)` — a value with no element around it
-    Parens(gs) => {
-      guard gs.length() == 1 else { return }
-      let ex = bound(read_group(gs[0]), renames)
-      out.write_string(
-        "\{indent}<x text=\"\{attr_escape(print_ex(ex))}\"></x>\n",
-      )
-    }
-    Id(word) => print_element(word, parts, out, indent, renames, macros~)
-    _ =>
-      raise ExError(
-        message="this is not markup",
-        help="a view holds elements, text and `@(…)` holes",
-        span=span_of(group),
-      )
   }
 }
 
@@ -170,9 +302,7 @@ fn print_macro_call(
     return
   }
   out.write_string("\{indent}<\{head}>\n")
-  for g in body {
-    print_content(g, out, indent + "  ", renames, macros~)
-  }
+  print_items(body, out, indent + "  ", renames, macros~)
   out.write_string("\{indent}</x:\{name}>\n")
 }
 
@@ -188,11 +318,27 @@ fn print_tag(
   macros? : Array[String] = [],
 ) -> Unit raise ExError {
   let attrs = []
-  for a in args {
+  // An event's MODIFIERS are the options written after its handler, flattened
+  // into siblings by `read_args`. They belong to the `~on_*` before them, so
+  // they are collected here and folded into its name — `@on.keydown.enter+prevent`
+  // is one attribute in the old notation, not three.
+  let mut i = 0
+  while i < args.length() {
+    let a = args[i]
+    i = i + 1
     match a {
       AKw(name, value) =>
-        for one in print_attr(name, value, renames) {
-          attrs.push(one)
+        if name.has_prefix("on_") {
+          let mods = []
+          while i < args.length() && is_modifier(args[i]) {
+            mods.push(args[i])
+            i = i + 1
+          }
+          attrs.push(print_event(name, value, mods, renames))
+        } else {
+          for one in print_attr(name, value, renames) {
+            attrs.push(one)
+          }
         }
       AFlag(name) => attrs.push(attr_name(name))
       AField(name, _) =>
@@ -215,10 +361,53 @@ fn print_tag(
     return
   }
   out.write_string("\{indent}<\{head}>\n")
-  for g in body {
-    print_content(g, out, indent + "  ", renames, macros~)
-  }
+  print_items(body, out, indent + "  ", renames, macros~)
   out.write_string("\{indent}</\{tag}>\n")
+}
+
+///|
+/// Whether an option is one an event takes after its handler.
+///
+/// `~key:` names the key a keydown is about; every bare flag is a behaviour
+/// (`~prevent`, `~stop`, `~once`). Anything with a value that is not `~key` is
+/// the next attribute, not a modifier.
+fn is_modifier(a : Arg) -> Bool {
+  match a {
+    AFlag(_) => true
+    AKw("key", _) => true
+    _ => false
+  }
+}
+
+///|
+/// `@on.<event>.<key>+<flag>="<handler>"` — one attribute, whatever the new
+/// notation spread over several options.
+fn print_event(
+  name : String,
+  value : Ex,
+  mods : Array[Arg],
+  renames : Map[String, String],
+) -> String raise ExError {
+  let event = StringBuilder()
+  event.write_string(name[3:].to_owned())
+  let flags = []
+  for m in mods {
+    match m {
+      AKw("key", EStr(k)) => event.write_string("." + k.to_lower())
+      AKw("key", _) =>
+        raise ExError(
+          message="`~key` names a key",
+          help="write `~key: \"Enter\"`",
+          span=@report.Span::at(0),
+        )
+      AFlag(f) => flags.push(f)
+      _ => ()
+    }
+  }
+  for f in flags {
+    event.write_string("+" + f)
+  }
+  "@on.\{event}=\"\{attr_escape(print_action(value, renames))}\""
 }
 
 ///|
@@ -422,7 +611,7 @@ fn print_each(
 /// two of them and the binder is not one term sequence but several. This is
 /// the one place a view reads NAMES rather than values — the loop introduces
 /// them, which is what makes a member read on one checkable.
-fn split_binder(
+pub fn split_binder(
   raw : Array[@ast.Node],
 ) -> (Array[String], Ex, Int) raise ExError {
   let names = []
@@ -558,9 +747,7 @@ fn print_with_extra(
     return
   }
   out.write_string("\{indent}<\{head}>\n")
-  for g in body {
-    print_content(g, out, indent + "  ", renames, macros~)
-  }
+  print_items(body, out, indent + "  ", renames, macros~)
   out.write_string("\{indent}</\{tag}>\n")
 }
 
@@ -569,7 +756,7 @@ fn print_with_extra(
 ///
 /// The groups come back unparsed because one form reads NAMES out of them:
 /// `@each(item in it.items)` binds `item`, and a binder is not a value.
-fn split_call(
+pub fn split_call(
   parts : Array[@ast.Node],
 ) -> (Array[@ast.Node], Array[@ast.Node]) raise ExError {
   let args = []
@@ -619,7 +806,7 @@ fn args_of(groups : Array[@ast.Node]) -> Array[Arg] raise ExError {
 
 ///|
 /// The bracketed content list an at-notation body arrives as.
-fn body_of(group : @ast.Node) -> Array[@ast.Node]? {
+pub fn body_of(group : @ast.Node) -> Array[@ast.Node]? {
   guard group.it is Group(parts) && parts.length() == 1 else { return None }
   guard parts[0].it is Brackets(items) else { return None }
   Some(items)
@@ -627,7 +814,7 @@ fn body_of(group : @ast.Node) -> Array[@ast.Node]? {
 
 ///|
 /// An underscore is a hyphen; case is preserved.
-fn attr_name(name : String) -> String {
+pub fn attr_name(name : String) -> String {
   let out = StringBuilder()
   for c in name {
     if c == '_' {

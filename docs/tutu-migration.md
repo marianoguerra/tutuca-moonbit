@@ -606,7 +606,22 @@ The rule that gets both right: **join consecutive text pieces, then trim only
 at an edge whose whitespace contains a newline.** A space on one line is text; a
 line break between two elements is indentation. Anything reading or writing
 this notation wants that rule, and `tutufile/lower/text_test.mbt` asserts both
-halves.
+halves — as characters, in a quoted string, because a trailing space at the end
+of a block literal is exactly what a formatter eats.
+
+And the clause that saves the day the spelling alone does not: **write a text
+run containing an escape as one run.** `@p{a@"@"b}`, not a character at a time.
+The per-character form splits the node and eats the whitespace around itself,
+so a tool emitting it loses spacing that was never wrong in the source — which
+is the same bug arriving from the writing side instead of the reading side.
+
+> This is the fourth defect this migration has produced whose check was one
+> step away from what broke: a macro test asserting the call site rather than
+> the body, two suites building their own fixtures instead of meeting at the
+> seam, a lowering asserting its own output instead of parsing it, and a tree
+> comparison that normalises whitespace by design and therefore cannot see a
+> converter dropping it. None of them was a missing test. Each was a test whose
+> subject was adjacent to the thing that could fail.
 
 ## `fixtures:` and `tests:`
 

@@ -19,11 +19,11 @@ fn main raise {
   }
   match rest[0] {
     "preamble" => {
-      let which = if rest.length() >= 2 { rest[1] } else { "--wax" }
+      let which = if rest.length() >= 2 { rest[1] } else { "--wap" }
       match which {
-        "--wax" => println(@abi.preamble_wax())
+        "--wap" => println(@abi.preamble_wap())
         "--wat" => println(@abi.preamble_wat())
-        other => println("unknown form \{other}; --wax or --wat")
+        other => println("unknown form \{other}; --wap or --wat")
       }
     }
     "build" => build(rest)
@@ -51,15 +51,17 @@ fn main raise {
 }
 
 ///|
-/// Compile one `.wax` module with the canonical preamble prepended.
+/// Compile one `.wap` module against the canonical preamble.
 ///
-/// Prepended rather than expected: a module's author writes the module, and the
-/// preamble is not theirs to get right. That is the same argument the format
-/// makes to a HOST — the types are the format's, not the module's — moved one
-/// step earlier, to where a mistake is still cheap.
+/// Against rather than with: `tgc/1` PREPENDED the preamble as text, so every
+/// diagnostic arrived with a line offset subtracted from it and a module could
+/// silently carry a preamble that was not the format's. Here the preamble is a
+/// wap module the input imports, resolved through a loader that only knows one
+/// name — so a module gets the format's types or does not compile, and a
+/// diagnostic names the file the author wrote.
 fn build(rest : ArrayView[String]) -> Unit raise {
   guard rest.length() >= 3 else {
-    println("usage: tgc build <in.wax> <out.wasm>")
+    println("usage: tgc build <in.wap> <out.wasm>")
     return
   }
   let inp = rest[1]
@@ -70,38 +72,56 @@ fn build(rest : ArrayView[String]) -> Unit raise {
       return
     }
   }
-  // The offset is what turns a diagnostic's position back into a line the
-  // author can find: everything before it is the preamble, which they did not
-  // write and cannot fix.
-  let preamble = @abi.preamble_wax()
-  let source = preamble + "\n" + body
-  let preamble_lines = count_lines(preamble) + 1
-  let result = @wax.compile_string(source, fname=inp) catch {
+  let m = match @wap.program_to_wax(inp, body, preamble_loader()) {
+    Ok(m) => m
+    Err(rs) => {
+      println("rejected: \{inp}")
+      for r in rs {
+        println("  " + report_line(r))
+      }
+      process_exit(1)
+      return
+    }
+  }
+  if m.diagnostics.length() > 0 {
+    println("rejected: \{inp}")
+    for r in m.diagnostics {
+      println("  " + report_line(r))
+    }
+    process_exit(1)
+    return
+  }
+  let session = @compile.Session::new(source=body)
+  let checked = session.check(m.fields)
+  let reports = session.reports()
+  if @compile.rejected(reports) {
+    println("rejected: \{inp}")
+    for x in reports {
+      println("  \{x.loc}: " + @message.to_plain_string(x.message))
+    }
+    process_exit(1)
+    return
+  }
+  let bytes = checked.to_bytes() catch {
     e => {
       println("this is a tgc bug rather than an input error: \{e}")
       process_exit(1)
       return
     }
   }
-  match result {
-    Ok(bytes) => {
-      @fs.write_bytes_to_file(outp, bytes)
-      println("\{outp}: \{bytes.length()} bytes")
-    }
-    Err(ds) => {
-      println("rejected: \{inp}")
-      for d in ds {
-        let line = d.loc.start.lnum - preamble_lines
-        let where_ = if line >= 1 {
-          "line \{line}"
-        } else {
-          "in the preamble (\{d.loc}) — which is a tgc bug, not yours"
-        }
-        println("  \{where_}: \{@message.to_plain_string(d.message)}")
-      }
-      process_exit(1)
-    }
-  }
+  @fs.write_bytes_to_file(outp, bytes)
+  println("\{outp}: \{bytes.length()} bytes")
+}
+
+///|
+/// The one module a `tgc` source may import, under the one name it has.
+///
+/// A loader that answers exactly one name is the whole authority story of the
+/// format at compile time, the way the `tut` import namespace is at run time: a
+/// module cannot reach a second source, so a `tgc` module cannot be built
+/// against types that are not the format's.
+fn preamble_loader() -> @resolve.MapLoader {
+  @resolve.MapLoader::new(entries=[(@abi.preamble_module, @abi.preamble_wap())])
 }
 
 ///|
@@ -211,21 +231,19 @@ fn stem_of(path : String) -> String {
 }
 
 ///|
-fn count_lines(s : String) -> Int {
-  let mut n = 0
-  for c in s {
-    if c == '\n' {
-      n = n + 1
-    }
-  }
-  n
+/// A wap report as one line.
+///
+/// The renderer wants a sink and a theme; a terminal that is about to exit
+/// wants the sentence.
+fn report_line(r : @report.Report) -> String {
+  r.message
 }
 
 ///|
 fn usage() -> Unit {
   println("usage:")
-  println("  tgc preamble [--wax|--wat]   print the canonical type section")
-  println("  tgc build <in.wax> <out.wasm>")
+  println("  tgc preamble [--wap|--wat]   print the canonical type section")
+  println("  tgc build <in.wap> <out.wasm>")
   println("  tgc card <card.html> <out.wasm>")
   println("  tgc check <card.html>...          report without compiling")
   println("  tgc runtime [out.wasm]        compile the embedded runtime")

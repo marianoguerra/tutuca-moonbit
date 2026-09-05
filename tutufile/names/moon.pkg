@@ -1,0 +1,8 @@
+// The one rename the `.tutu` migration performs, and the list of what it must
+// not touch.
+//
+// It is its own package because two callers have to agree about it exactly:
+// `tutufile/totutu` applies it when converting a file, and `tutufile/equiv`
+// applies it when checking that the conversion preserved meaning. A converter
+// and a checker with two spellings of the same rule would pass every file and
+// prove nothing.

@@ -1,4 +1,4 @@
-# `tgc/1` — a WebAssembly component format on core wasm + GC
+# `tgc/2` — a WebAssembly component format on core wasm + GC
 
 Everything below is implemented and tested (`tgc/abi`, `tgc/emit`,
 `tgc/test/`). It is core wasm plus the GC proposal and nothing else — no
@@ -31,10 +31,33 @@ negotiated ABI. There is a text file.
 *whole group*. Add a type, reorder, or change one field, and every type in it
 becomes a different type — in every module, retroactively. So:
 
-- The core group is **frozen**. Forever.
-- Anything not mutually recursive with `tg_val` gets its **own** singleton
-  group, so a later addition cannot perturb the core.
+- Every group is **frozen**. Forever.
+- A type gets a group of its own unless it is **mutually recursive** with
+  another, so a later addition cannot perturb anything it does not cycle with.
+  Exactly one group here has more than one member: `tg_get`, `tg_inst`, `tg_vt`
+  and `tg_call`, which genuinely refer to each other. Everything else — the
+  eleven `tg_val` subtypes included — is a group of one.
 - Extension goes through `tg_ext`, never through a new arm.
+
+### What changed at `tgc/2`, and why
+
+`tgc/1` put all twenty types in ONE group, so adding an arm re-typed every
+module that had ever been built and `tg_ext` had to carry the entire extension
+story. The preamble is now wap rather than Wax, and wap emits a group per
+strongly connected component — which is not a detail of the compiler so much as
+the right answer arrived at from the other direction. Adding a type now breaks
+nothing; changing `tg_list` breaks `tg_list`.
+
+The cost is paid once: **every `tgc/1` module stops linking**, because the types
+in a twenty-member group are not the types in a one-member group however
+identically they are spelled. `tgc.abi` answers `2`, and a host that reads `1`
+refuses the module rather than adapting — there is nothing to adapt to.
+
+The property this buys is worth stating as a fact rather than a hope: three
+separately declared `(array (mut i8))` — the preamble's `tg_bytes`, a module's
+own local array alias, and the anonymous array behind a string literal — are
+ONE type at run time. Singleton groups canonicalize structurally, so a module
+may spell its own bytes locally and still hand them to the runtime.
 
 `tgc/test/compose.test.mjs` tests both directions: a module with a
 differently-spelled preamble composes, and a module with one extra type inside
@@ -44,10 +67,13 @@ cast that traps three calls later.
 ## 3. The types
 
 The canonical text lives in [`abi/preamble.mbt`](abi/preamble.mbt) and is
-printed by `tgc preamble --wax` / `--wat`. Never copy it by hand; ask for it.
+printed by `tgc preamble --wap` / `--wat`. Never copy it by hand; ask for it.
+The WAT is DERIVED from the wap by lowering and printing it: `tgc/1` kept a
+second hand-written copy and a test that the two canonicalized the same, which
+could only ever find a drift already committed.
 
 ```
-tg_bytes                      [mut i8]        UTF-8 text AND binary
+tg_bytes                      [u8]            UTF-8 text AND binary
 tg_val      kind:i32          the open base; kind 0 is Null
   tg_bool     value:i32
   tg_num      value:f64

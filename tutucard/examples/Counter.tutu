@@ -1,0 +1,80 @@
+spec:
+  /// A number with buttons that raise and lower it.
+  Counter:
+    /// The current value.
+    field count :: Int
+    /// How much a step moves it.
+    field step :: Int
+
+    property count :: Int ~public:
+      get: it.count
+      set: it.count
+
+    property magnitude :: Int ~public
+    property label :: String
+
+    /// True while the count is above zero.
+    pred positive: it.count > 0
+
+    /// What the host says to this component when it mounts. Declared here
+    /// because no view writes it: the schema is the only place it can be.
+    message init
+
+logic:
+  Counter:
+    /// Add one step.
+    receive inc:
+      it.count += it.step
+
+    /// Take one step off.
+    receive dec:
+      it.count -= it.step
+
+    /// Start with a step of one.
+    receive init:
+      it.step := 1
+
+    /// Back to nothing.
+    receive reset:
+      it.count := 0
+
+    /// The count as a sentence.
+    property label :: String:
+      get: @str{the count is @(it.count)}
+
+    property magnitude :: Int:
+      get: if it.count < 0 | -it.count | it.count
+      set:
+        if it.count < 0
+        | it.count := -value
+        | it.count := value
+
+view:
+  Counter:
+    @div{
+      @button(~on_click: dec){-}
+      @output{@(it.count)}
+      @button(~on_click: inc){+}
+      @p{@(it.label)}
+      @show(positive()){
+        @button(~on_click: reset){reset}
+      }
+    }
+
+tests:
+  "two clicks add two":
+    send("init")
+    click("button", ~nth: 1)
+    click("button", ~nth: 1)
+    expect text("output") == "2"
+    expect text("p") == "the count is 2"
+    expect state it.count == 2
+    expect refused == []
+
+  "reset takes its own button away":
+    send("init")
+    click("button", ~nth: 1)
+    expect count("button") == 3
+    click("button", ~nth: 2)
+    expect text("output") == "0"
+    expect count("button") == 2

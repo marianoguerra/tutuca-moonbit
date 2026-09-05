@@ -82,6 +82,28 @@ let overview_body : String =
   #|      and cannot be: it means running the app, and a CLI does not have your
   #|      compiled components.
   #|
+  #|  to-tutu <file.html> [--name <Name>] [-o <file.tutu>] [--dry-run]
+  #|      Convert an .html view file into the .tutu file that replaces it,
+  #|      renaming what the new notation renames — a component's own fields,
+  #|      handlers, computes, rules and message names become snake_case, and a
+  #|      protocol member does not. It refuses rather than guesses: any
+  #|      construct it cannot spell, and any difference `equiv` finds between
+  #|      what it wrote and what it read, stops the write and is listed.
+  #|        --name    the component name a nameless .html file would be given
+  #|        --out     where to write it (default: the .html path, .tutu)
+  #|        --dry-run print the converted file instead of writing it
+  #|
+  #|  equiv <file.html> <file.tutu> [--name <Name>] [--verbose]
+  #|      Check that a .tutu file means what the .html file it replaces meant.
+  #|      What is compared is what the pipeline reads out of each file — the
+  #|      schema, the handlers, the view trees, the fixtures and the scenes —
+  #|      and not the text: the two notations spell the same thing differently
+  #|      on purpose. Positions, node ids and whitespace are ignored; anything
+  #|      else that differs is listed and the command exits 1.
+  #|        --name    the component name a nameless .html file would be given,
+  #|                  the same one `gen --name` supplies
+  #|        --verbose print both sides of every difference, not one line each
+  #|
   #|  watch [path...] [--name <Name>] [--out <dir>] [--no-ir]
   #|        [--tailwind-css <file> | --margaui-css <file>]
   #|        [--css-entry <file>] [--css-classes <file>]

@@ -216,9 +216,7 @@ fn print_macro(
   let head = if defaults.is_empty() { attrs } else { defaults }
   let joined = if head.is_empty() { "" } else { " " + head.join(" ") }
   out.write_string("<template id=\"macro:\{decl.name}\"\{joined}>\n")
-  for g in body_groups(decl) {
-    print_content(g, out, "  ", {})
-  }
+  print_items(body_groups(decl), out, "  ", params)
   out.write_string("</template>\n\n")
 }
 
