@@ -9,9 +9,9 @@
 
 ///|
 pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
-  let (file, lowered) = split(source, name)
-  let (comps, checked) = prepare(file, name)
-  let issues = lowered + checked
+  let got = split(source, name)
+  let (comps, checked) = prepare(got.file, name, got.meta)
+  let issues = got.issues + checked
   {
     component: if comps.length() > 0 {
       comps[0].name
@@ -25,9 +25,10 @@ pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
 
 ///|
 pub fn compile(source : String, name~ : String) -> Compiled raise GenError {
-  let (file, lowered) = split(source, name)
-  let (comps, checked) = prepare(file, name)
-  let issues = lowered + checked
+  let got = split(source, name)
+  let (comps, checked) = prepare(got.file, name, got.meta)
+  let issues = got.issues + checked
+  let file = got.file
   // ERRORS only. A warning is a thing worth telling an author about a card that
   // RUNS, and refusing to build one would make the two indistinguishable from
   // the outside — which is the whole reason the checker separates them.
@@ -66,15 +67,26 @@ pub fn compile_decls(
 /// lowering that failed still answers the blocks it managed and an author
 /// fixing one report should see the next. `compile` refuses on an error the
 /// same way it refuses on a checker error, and `check_card` prints them.
-fn split(
-  source : String,
-  name : String,
-) -> (@viewfile.ViewFile, Array[Issue]) raise GenError {
-  let (text, issues) = tutu_or_html(source)
+fn split(source : String, name : String) -> Split raise GenError {
+  let (text, issues, meta) = tutu_or_html(source)
   let file = @viewfile.split_file(text, name~) catch {
     e => raise BadCard(e.message())
   }
-  (file, issues)
+  { file, issues, meta, }
+}
+
+///|
+/// What reading a card's source produced, before anything is checked.
+///
+/// A struct rather than a tuple because it has grown twice — once for the
+/// lowering's reports, once for what a component says about itself — and each
+/// time every caller had to be edited to widen a shape nobody had named.
+priv struct Split {
+  file : @viewfile.ViewFile
+  issues : Array[Issue]
+  /// What the `.tutu` notation can say and the blocks cannot, by component
+  /// name. Empty for an `.html` card, which has no syntax for it.
+  meta : Map[String, @lower.ComponentMeta]
 }
 
 ///|
@@ -93,15 +105,17 @@ fn split(
 /// the shape of a dispatch bug rather than a compile error and is read as one.
 /// The reports know the section, the line and the span; only this function was
 /// in a position to lose them.
-fn tutu_or_html(source : String) -> (String, Array[Issue]) {
-  guard @lower.is_tutu_source(source) else { return (source, []) }
+fn tutu_or_html(
+  source : String,
+) -> (String, Array[Issue], Map[String, @lower.ComponentMeta]) {
+  guard @lower.is_tutu_source(source) else { return (source, [], Map([])) }
   let sources = @report.Sources::new()
   let id = sources.add("card.tutu", source)
   let out = @lower.lower(source, id)
   // For the line and column. `Sources` owns the copy the reports point into;
   // this is the same text, read for its line breaks.
   let src = @report.Source::new("card.tutu", source)
-  (out.text, out.reports.map(r => issue_of(r, src)))
+  (out.text, out.reports.map(r => issue_of(r, src)), out.meta)
 }
 
 ///|
@@ -137,6 +151,7 @@ fn comp_of(
   common_style? : String = "",
   inits? : Array[@statedef.InitState] = [],
   siblings? : Array[String] = [],
+  meta? : @lower.ComponentMeta = { category: "", keywords: [], },
 ) -> Comp {
   {
     def,
@@ -153,6 +168,7 @@ fn comp_of(
     common_style,
     inits,
     siblings,
+    meta,
     refusals: [],
   }
 }
@@ -162,6 +178,7 @@ fn comp_of(
 fn prepare(
   file : @viewfile.ViewFile,
   name : String,
+  meta : Map[String, @lower.ComponentMeta],
 ) -> (Array[Comp], Array[Issue]) raise GenError {
   let comps = []
   let issues = []
@@ -223,6 +240,10 @@ fn prepare(
         common_style=style,
         inits~,
         siblings~,
+        // Empty for an `.html` card, and for every component a `.tutu` one did
+        // not annotate. Both read as "said nothing", which is the one state
+        // the catalog's merge asks about.
+        meta=meta.get(def.component).unwrap_or({ category: "", keywords: [], }),
       ),
     )
   }
@@ -857,8 +878,18 @@ fn component_value(
   // schema and renders one component's view over another's fields.
   out["module"] = Str(module_name)
   out["doc"] = Str(c.def.doc.unwrap_or(""))
-  out["keywords"] = List([])
-  out["category"] = Str("")
+  // WHAT THE COMPONENT SAYS, not what a host was told about it. A shipper's
+  // annotation table fills the silence when these are empty and does not
+  // shadow them when they are not — the person who knows a component's
+  // keywords is the person who wrote it, and a host-side row is not versioned
+  // with the card that outgrew it.
+  //
+  // Both are SEARCH TEXT and neither is an identifier: `compose/catalog`
+  // lowercases the category and matches it against what a person typed into a
+  // palette. So they survive spelled as they were written, spaces and capitals
+  // included, the way a protocol id does.
+  out["keywords"] = List(c.meta.keywords.map(k => Str(k)))
+  out["category"] = Str(c.meta.category)
   out["messageDocs"] = List([])
   out["views"] = List(
     c.views.map(v => Map({ "name": Str(v.name), "html": Str(v.source) })),

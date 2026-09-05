@@ -97,10 +97,17 @@ pub(all) struct Preset {
 ///|
 /// The half a card manifest cannot carry, supplied by whoever ships the card.
 ///
-/// `tgc/emit` writes `keywords` and `category` empty and the card spec block
-/// has no syntax for either, so this is where they come from. A card nobody
-/// annotated is still findable — by its name, its doc and its field names —
-/// which is the case every pasted card is in.
+/// WHERE A CARD IS SILENT. A `.tutu` card declares its own `~category` and
+/// `~keywords` and those win; this fills in for the ones that do not, which is
+/// every `.html` card — the blocks have no syntax for either and none is being
+/// added. A card nobody annotated at all is still findable by its name, its
+/// doc and its field names, which is the case every pasted card is in.
+///
+/// `presets` and `hidden` are NOT in that arrangement and never move into a
+/// card. They are facts about how this host offers a component rather than
+/// about what the component is: `vbox` and `hbox` are presets of `Box` here
+/// and might be nothing elsewhere, and `Hole` is hidden because this shell
+/// draws it, not because the card is shy.
 pub(all) struct Annotation {
   keywords : Array[String]
   category : String

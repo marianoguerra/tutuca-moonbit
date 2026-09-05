@@ -37,11 +37,34 @@ pub fn entries_of_manifest(
       fallback
     }
     let note = annotations.get(name).unwrap_or(Annotation::none())
+    let own_keywords = strs_at(c, "keywords")
+    let own_category = str_at(c, "category")
     out.push({
       ref_: { module_: owner, name, },
       doc: str_at(c, "doc"),
-      keywords: note.keywords,
-      category: note.category,
+      // THE CARD FIRST, the annotation only where the card said nothing.
+      //
+      // Not the other way round, which is the obvious design: a shipper is
+      // closer to the palette and can annotate a card it cannot edit. But a
+      // shipper annotates a component BECAUSE the card was silent, so the row
+      // is stale the moment the card speaks — and worse across a version
+      // boundary, where a card ships new keywords and a v1 row keeps winning
+      // with nothing anywhere saying the palette describes a component that no
+      // longer exists.
+      //
+      // Replacement rather than union, per field. A union leaves a shipper no
+      // way to REMOVE a term, and a word in a palette that nothing explains is
+      // worse than a word that is missing.
+      keywords: if own_keywords.is_empty() {
+        note.keywords
+      } else {
+        own_keywords
+      },
+      category: if own_category == "" {
+        note.category
+      } else {
+        own_category
+      },
       fields: fields_of(c),
       implements: strs_at(c, "implements"),
       messages: [

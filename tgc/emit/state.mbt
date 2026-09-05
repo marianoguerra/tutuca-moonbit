@@ -32,6 +32,14 @@ priv struct Comp {
   /// component with no view has nothing to mount.
   views : Array[@viewfile.RawView]
   common_style : String
+  /// What this component says about ITSELF for a catalog: its category and
+  /// its keywords.
+  ///
+  /// Only a `.tutu` card can set it — the blocks have no syntax for either and
+  /// none is being added — so for an `.html` card this is empty and a host's
+  /// annotation table is the only channel. That asymmetry is deliberate: it
+  /// gives a card a reason to convert.
+  meta : @lower.ComponentMeta
   /// Every component the CARD declares, this one included.
   ///
   /// `new Swatch` names a sibling, and whether a name is one is a fact about
