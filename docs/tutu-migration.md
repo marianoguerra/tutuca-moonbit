@@ -672,6 +672,16 @@ admits a comma only immediately inside `(&nbsp;)`, `[&nbsp;]` or `{&nbsp;}`, so
 a comma at the top of a group is `MisplacedComma`. Everything else in the
 language was already a call, so the steps read better for it.
 
+### Two front doors, and the CLI is only one
+
+`tutuca gen card.tutu --dry-run` validates a file in a repo. A card written
+somewhere without a filesystem — a model writing one in a tool call, a
+playground pane, a page compiling a string — never reaches the CLI. There the
+equivalent is to compile it and read the issues: `@cardwasm.check_card` carries
+the lowering's reports into `Checked.issues`, and `compile` refuses on a
+lowering error rather than emitting a module with a section missing. A host
+embedding the runtime inherits those diagnostics and should not re-plumb them.
+
 ### One check to run over a converted view
 
 A stylesheet compiled from the classes a view uses only sees the LITERAL

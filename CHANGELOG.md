@@ -6,6 +6,38 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.53.1] - 2026-09-05
+
+Two silent drops in a `view:` section, both found by writing a `.tutu` file by
+hand rather than by reading one.
+
+### An option outside its element was discarded without a word
+
+```
+@output{@(it.count)} ~class: "stat"
+```
+
+lowered to an `<output>` with no class, zero reports, and a card that renders
+unstyled. The correct spelling is `@output(~class: "stat"){…}`, but the
+notation makes the mistake a natural one: `~opt: value` after a block reads as
+though it attaches to what precedes it, and elsewhere options do trail their
+forms. Every writer of a first `.tutu` file has a good chance of making it
+once, and a model writing one in a tool call will see `ok` and then debug why
+its component has no styling. Refused now, with the parentheses in the message.
+
+### A raw event attribute passed through as script text
+
+`~onclick: inc` lowered to `onclick="inc"` — a raw HTML event attribute whose
+value reaches the DOM as script text and is stripped by the sanitizer two
+layers later, with a message about sanitising rather than about spelling.
+Refused at conversion, naming `~on_click:`.
+
+An attribute this printer does not recognise is still an attribute:
+`~clazz: "typo"` passes, because refusing every unknown name would make the
+notation a smaller HTML rather than the same one. `on…` is the exception
+because a raw event attribute is never what a view means.
+
+
 ## [0.53.0] - 2026-09-05
 
 `.tutu` files build. A card or a view file written in shrubbery notation — five

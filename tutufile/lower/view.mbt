@@ -225,6 +225,17 @@ fn print_attr(
   value : Ex,
   renames : Map[String, String],
 ) -> String raise ExError {
+  // `~onclick:` is a raw HTML event attribute, which a handler never is: the
+  // value would reach the DOM as script text and be stripped two layers later
+  // by a sanitizer, with a message about sanitising rather than about
+  // spelling.
+  if name.has_prefix("on") && !name.has_prefix("on_") {
+    raise ExError(
+      message="`~\{name}` is not how a view names an event",
+      help="write `~on_\{name[2:].to_owned()}:` — a handler is dispatched, and a raw `\{name}` attribute is script text a sanitizer removes",
+      span=@report.Span::at(0),
+    )
+  }
   if name.has_prefix("on_") {
     let event = name[3:].to_owned()
     return "@on.\{event}=\"\{attr_escape(print_action(value, renames))}\""
@@ -522,7 +533,9 @@ fn print_with_extra(
 ///
 /// The groups come back unparsed because one form reads NAMES out of them:
 /// `@each(item in it.items)` binds `item`, and a binder is not a value.
-fn split_call(parts : Array[@ast.Node]) -> (Array[@ast.Node], Array[@ast.Node]) {
+fn split_call(
+  parts : Array[@ast.Node],
+) -> (Array[@ast.Node], Array[@ast.Node]) raise ExError {
   let args = []
   let body = []
   let mut i = 1
@@ -538,6 +551,23 @@ fn split_call(parts : Array[@ast.Node]) -> (Array[@ast.Node], Array[@ast.Node]) 
             None => args.push(g)
           }
         }
+      // An option AFTER the call is the mistake a first `.tutu` file makes:
+      // `~opt: value` reads as though it attaches to what precedes it, and
+      // elsewhere in the notation options do trail their forms. Here it has
+      // nothing to attach to, and dropping it writes a view with no styling
+      // and says nothing.
+      Kw(name) =>
+        raise ExError(
+          message="`~\{name}` is outside the element it belongs to",
+          help="an attribute goes in the parentheses: `@tag(~\{name}: <value>){ … }`",
+          span=span_of(parts[i]),
+        )
+      Block(_) =>
+        raise ExError(
+          message="a block cannot follow an element",
+          help="an element's content goes in braces: `@tag{ … }`",
+          span=span_of(parts[i]),
+        )
       _ => ()
     }
     i = i + 1
