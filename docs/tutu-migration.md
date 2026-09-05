@@ -576,6 +576,38 @@ things: **case is preserved** (`~viewBox:`, `~mapId:`), **an underscore is a
 hyphen** (`~aria_label:` → `aria-label`), and anything else goes through
 `~attrs: {"xml:lang": "en"}`.
 
+### Text, and the one escape
+
+**`@"…"` is the escape. `@@`, `@{` and `@}` are not, and never were.** Three
+sessions reasoned from the belief that they were, and it manufactured a
+compiler crash out of ordinary CSS — a converter escaping `}` as `@}` produced
+files that took the parser down. If you remember one thing from this section,
+remember that a doubled `@` is two at-signs.
+
+Most text needs no escape at all. At-notation counts **balanced** braces, so
+prose, CSS and code pass through untouched:
+
+```
+@style{ .row { color: red; } }
+@p{a { b } c}
+```
+
+The escape is for the unbalanced case and for a literal `@` where a form would
+otherwise start: `@p{write to me @"@" home}`, `@style{ .a { content: @"}" } }`.
+
+**An escape splits a body into pieces**, and that is worth knowing because it
+is where both converters written against this notation had a bug. `@p{a@"@"b}`
+is not one string, it is three: `a`, `@`, `b`. A tool that prints each piece on
+its own line lets HTML collapse the newlines into spaces, so `a@b` renders as
+`a @ b` — spaces nobody wrote. A tool that trims each piece loses the real ones,
+so `write to me @"@" home` renders as `write to me@home`.
+
+The rule that gets both right: **join consecutive text pieces, then trim only
+at an edge whose whitespace contains a newline.** A space on one line is text; a
+line break between two elements is indentation. Anything reading or writing
+this notation wants that rule, and `tutufile/lower/text_test.mbt` asserts both
+halves.
+
 ## `fixtures:` and `tests:`
 
 The two JSON blocks become declarations in the same notation, and the step
