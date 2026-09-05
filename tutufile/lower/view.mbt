@@ -10,7 +10,9 @@ pub fn print_view(
   decl : @tutufile.Decl,
   out : StringBuilder,
 ) -> Unit raise ExError {
-  let id = decl.name
+  // `Note.edit` is one component and one of its views; the old notation
+  // spells the same pair `Note:edit`.
+  let id = decl.name.replace(old=".", new=":")
   out.write_string("<template id=\"\{id}\">\n")
   for g in body_groups(decl) {
     print_content(g, out, "  ", {})
