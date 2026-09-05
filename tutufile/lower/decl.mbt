@@ -195,6 +195,11 @@ fn next_boundary(parts : Array[@ast.Node], from : Int) -> Int {
 
 ///|
 fn read_param(group : @ast.Node) -> Param raise ExError {
+  // A macro's parameter carries a default and is written as an option, which
+  // is what a default IS: `macro badge(~label: "New")`.
+  if group.it is Group(kp) && kp.length() >= 1 && kp[0].it is Kw(name) {
+    return { name, ty: None, }
+  }
   guard group.it is Group(parts) && parts.length() > 0 else {
     raise ExError(
       message="a parameter is a name",

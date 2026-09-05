@@ -9,13 +9,14 @@
 pub fn print_view(
   decl : @tutufile.Decl,
   out : StringBuilder,
+  macros? : Array[String] = [],
 ) -> Unit raise ExError {
   // `Note.edit` is one component and one of its views; the old notation
   // spells the same pair `Note:edit`.
   let id = decl.name.replace(old=".", new=":")
   out.write_string("<template id=\"\{id}\">\n")
   for g in body_groups(decl) {
-    print_content(g, out, "  ", {})
+    print_content(g, out, "  ", Map([]), macros~)
   }
   out.write_string("</template>\n\n")
 }
@@ -74,6 +75,7 @@ fn print_content(
   out : StringBuilder,
   indent : String,
   renames : Map[String, String],
+  macros? : Array[String] = [],
 ) -> Unit raise ExError {
   guard group.it is Group(parts) && parts.length() > 0 else { return }
   match parts[0].it {
@@ -87,12 +89,12 @@ fn print_content(
     // `@(expr)` — a value with no element around it
     Parens(gs) => {
       guard gs.length() == 1 else { return }
-      let ex = rename_ex(read_group(gs[0]), renames)
+      let ex = bound(read_group(gs[0]), renames)
       out.write_string(
         "\{indent}<x text=\"\{attr_escape(print_ex(ex))}\"></x>\n",
       )
     }
-    Id(word) => print_element(word, parts, out, indent, renames)
+    Id(word) => print_element(word, parts, out, indent, renames, macros~)
     _ =>
       raise ExError(
         message="this is not markup",
@@ -111,17 +113,67 @@ fn print_element(
   out : StringBuilder,
   indent : String,
   renames : Map[String, String],
+  macros? : Array[String] = [],
 ) -> Unit raise ExError {
+  if macros.contains(word) {
+    return print_macro_call(word, parts, out, indent, renames)
+  }
   let (raw, body) = split_call(parts)
   match word {
     "show" | "hide" =>
-      print_guard(word, args_of(raw), body, out, indent, renames)
-    "each" => print_each(raw, body, out, indent, renames)
+      print_guard(word, args_of(raw), body, out, indent, renames, macros~)
+    "each" => print_each(raw, body, out, indent, renames, macros~)
     "render" => print_render(args_of(raw), out, indent, renames)
     "slot" => out.write_string("\{indent}<slot></slot>\n")
     "style" => print_style(args_of(raw), body, out, indent)
-    _ => print_tag(word, args_of(raw), body, out, indent, renames)
+    _ => print_tag(word, args_of(raw), body, out, indent, renames, macros~)
   }
+}
+
+///|
+/// A macro call, which is an element call whose name the file declares.
+///
+/// The old notation spells one `<x:name>` — a tag in a namespace of its own,
+/// because markup had no other way to say "this is not an element". Here it is
+/// a call like any other, and the only thing that tells it from an element is
+/// that the file declares it.
+fn print_macro_call(
+  name : String,
+  parts : Array[@ast.Node],
+  out : StringBuilder,
+  indent : String,
+  renames : Map[String, String],
+  macros? : Array[String] = [],
+) -> Unit raise ExError {
+  let (raw, body) = split_call(parts)
+  let attrs = []
+  for a in args_of(raw) {
+    match a {
+      // a literal argument passes as a static attribute, the way the old
+      // notation's `label="Sale"` did; anything else is bound
+      AKw(arg, EStr(text)) =>
+        attrs.push("\{attr_name(arg)}=\"\{attr_escape(text)}\"")
+      AKw(arg, value) =>
+        attrs.push(
+          ":\{attr_name(arg)}=\"\{attr_escape(print_ex(bound(value, renames)))}\"",
+        )
+      _ => ()
+    }
+  }
+  let head = if attrs.is_empty() {
+    "x:" + name
+  } else {
+    "x:" + name + " " + attrs.join(" ")
+  }
+  if body.is_empty() {
+    out.write_string("\{indent}<\{head}></x:\{name}>\n")
+    return
+  }
+  out.write_string("\{indent}<\{head}>\n")
+  for g in body {
+    print_content(g, out, indent + "  ", renames, macros~)
+  }
+  out.write_string("\{indent}</x:\{name}>\n")
 }
 
 ///|
@@ -133,6 +185,7 @@ fn print_tag(
   out : StringBuilder,
   indent : String,
   renames : Map[String, String],
+  macros? : Array[String] = [],
 ) -> Unit raise ExError {
   let attrs = []
   for a in args {
@@ -160,7 +213,7 @@ fn print_tag(
   }
   out.write_string("\{indent}<\{head}>\n")
   for g in body {
-    print_content(g, out, indent + "  ", renames)
+    print_content(g, out, indent + "  ", renames, macros~)
   }
   out.write_string("\{indent}</\{tag}>\n")
 }
@@ -183,6 +236,10 @@ fn print_attr(
       return "@push-view=\"\{attr_escape(print_ex(rename_ex(value, renames)))}\""
     "inner_html" =>
       return "@setinnerhtml=\"\{attr_escape(print_ex(rename_ex(value, renames)))}\""
+    // The one construct whose value reaches the DOM unparsed, and the only
+    // attribute here whose name says so out loud.
+    "dangerously_inner_html" =>
+      return "@dangerouslysetinnerhtml=\"\{attr_escape(print_ex(rename_ex(value, renames)))}\""
     "inner_md" =>
       return "@setinnermd=\"\{attr_escape(print_ex(rename_ex(value, renames)))}\""
     "inner_svg" =>
@@ -245,6 +302,7 @@ fn print_guard(
   out : StringBuilder,
   indent : String,
   renames : Map[String, String],
+  macros? : Array[String] = [],
 ) -> Unit raise ExError {
   let pos = positional(args)
   guard pos.length() == 1 else {
@@ -268,6 +326,7 @@ fn print_guard(
     indent,
     renames,
     "@\{word}=\"\{attr_escape(cond)}\"",
+    macros~,
   )
 }
 
@@ -280,6 +339,7 @@ fn print_each(
   out : StringBuilder,
   indent : String,
   renames : Map[String, String],
+  macros? : Array[String] = [],
 ) -> Unit raise ExError {
   let (names, seq, after) = split_binder(raw)
   let args = args_of(raw[after:].to_owned())
@@ -321,7 +381,7 @@ fn print_each(
       span=@report.Span::at(0),
     )
   }
-  print_with_extra(body[0], out, indent, inner, extra.join(" "))
+  print_with_extra(body[0], out, indent, inner, extra.join(" "), macros~)
 }
 
 ///|
@@ -426,6 +486,7 @@ fn print_with_extra(
   indent : String,
   renames : Map[String, String],
   extra : String,
+  macros? : Array[String] = [],
 ) -> Unit raise ExError {
   guard group.it is Group(parts) && parts.length() > 0 && parts[0].it is Id(tag) else {
     raise ExError(
@@ -451,7 +512,7 @@ fn print_with_extra(
   }
   out.write_string("\{indent}<\{head}>\n")
   for g in body {
-    print_content(g, out, indent + "  ", renames)
+    print_content(g, out, indent + "  ", renames, macros~)
   }
   out.write_string("\{indent}</\{tag}>\n")
 }

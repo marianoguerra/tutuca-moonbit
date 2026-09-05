@@ -117,6 +117,19 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
       }
     None => ()
   }
+  // A macro call and an element call are the same shape; what tells them
+  // apart is that the file declares one. So the names are gathered before any
+  // view is printed.
+  let macros = []
+  match file.section(View) {
+    Some(section) =>
+      for decl in section.decls {
+        if decl.kind is Macro {
+          macros.push(decl.name)
+        }
+      }
+    None => ()
+  }
   match file.section(View) {
     Some(section) =>
       for decl in section.decls {
@@ -124,7 +137,7 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
         match decl.kind {
           View =>
             try {
-              print_view(decl, body)
+              print_view(decl, body, macros~)
               out.write_string(body.to_string())
             } catch {
               e => reports.push(ex_report(e, source, fallback=decl.span))
@@ -170,7 +183,11 @@ fn print_macro(
 ) -> Unit raise ExError {
   let m = read_member(decl.node)
   let attrs = []
+  // Inside the body a parameter is `^name`: it is substituted at the call
+  // site, which is neither a field nor something a loop put in scope.
+  let params : Map[String, String] = Map([])
   for p in m.params {
+    params[p.name] = "^" + p.name
     attrs.push("data-\{attr_name(p.name)}=\"\"")
   }
   // a macro's defaults are written as its parameters' initialisers

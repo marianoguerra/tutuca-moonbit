@@ -55,7 +55,7 @@ pub fn print_struct(@tutufile.Decl, StringBuilder) -> Unit raise ExError
 
 pub fn print_ty(Ex) -> String raise ExError
 
-pub fn print_view(@tutufile.Decl, StringBuilder) -> Unit raise ExError
+pub fn print_view(@tutufile.Decl, StringBuilder, macros? : Array[String]) -> Unit raise ExError
 
 pub fn qualified(Array[@ast.Node], Int) -> (String, Int)?
 
