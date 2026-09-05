@@ -741,9 +741,40 @@ Two things. Everything else in this page is a rewrite rule.
 
 ## The order to migrate the repo in
 
+### The gate, before the order
+
+**A converted card's scenes must pass unchanged.** `run-tests.mjs` drives 76
+scenes across 31 cards, and a scene is the only thing in this repo that asserts
+what a card *does* rather than what it declares — so round-tripping a card and
+leaving its scenes green is the strongest per-file check available, and it
+already exists. Wire it into the conversion loop rather than running it at the
+end: a batch tells you something broke, a per-file gate tells you which file.
+
+Beside it, per file: `tutuca gen-margaui-css --print-classes | wc -l` equal
+before and after, since a class assembled where the collector cannot see it
+leaves the stylesheet with no error anywhere.
+
+And keep the corpus counts in `tutufile/lower/corpus_test.mbt` current as files
+move. A count taken once and trusted afterwards is a fixture, and a fixture
+checked against itself is the failure this whole exercise keeps finding.
+
+### Who converts what
+
+Three files in this repo are claimed, and for reasons worth knowing rather than
+as territory:
+
+| What | Who | Why |
+| --- | --- | --- |
+| `demo/universal/std/std.card.html` | its author | Seven components, three protocols, and ids that are frozen public API with a second host adopting them verbatim. A rename that slips through is not recoverable by editing the card |
+| `tutucard/examples/` | its author, **all of it in one change** | Worked examples an agent authors *from*, so a half-converted directory teaches both notations at once |
+| Anything under another repo | that repo | A snapshot re-keys per renamed field; the owner is who should decide when |
+
+The 86 view files, `storybook/examples/` and `docs/*.html` are unclaimed.
+
+### Then
+
 1. **The converter**: `.html` → `.tutu`, checked by lowering the result back
-   and asserting the typed forms match. It is what converts the 86 files in the
-   repo that carry a `tutuca/` block.
+   and asserting the typed forms match, and by the scene gate above.
 2. **The corpus**: `tutucard/examples/`, `storybook/examples/`,
    `skill/tutuca/patterns/`, `demo/`, `docs/*.mbt.md`, `examples/*`.
 3. **`tutucard` and the playgrounds**, whose checkers and panes read the four
