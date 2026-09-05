@@ -117,6 +117,70 @@ pub fn print_state(
 }
 
 ///|
+/// What a component says about itself for a catalog to find it by.
+///
+/// `~category:` and `~keywords:` lead the component's block, the way every
+/// option that carries a value does. Neither has an old spelling — the card
+/// compiler emitted both keys empty and there was no syntax for either — so
+/// they leave through `Lowered.meta` rather than through the printed text.
+pub fn read_meta(decl : @tutufile.Decl) -> ComponentMeta raise ExError {
+  let mut category = ""
+  let keywords = []
+  for group in body_groups(decl) {
+    guard group.it is Group(parts) && parts.length() > 0 else { continue }
+    guard parts[0].it is Kw(name) else { continue }
+    guard parts.length() >= 2 && parts[1].it is Block(bgs) && bgs.length() == 1 else {
+      raise ExError(
+        message="`~\{name}` needs a value",
+        help="write `~\{name}: <value>` on its own line inside the component",
+        span=span_of(parts[0]),
+      )
+    }
+    let value = read_group(bgs[0])
+    match name {
+      "category" =>
+        match value {
+          EStr(text) => category = text
+          _ =>
+            raise ExError(
+              message="a category is a string",
+              help="write `~category: \"layout\"` — it is matched against what a person types, so it is text and not a name",
+              span=span_of(parts[0]),
+            )
+        }
+      "keywords" =>
+        match value {
+          EList(items) =>
+            for item in items {
+              match item {
+                EStr(text) => keywords.push(text)
+                _ =>
+                  raise ExError(
+                    message="a keyword is a string",
+                    help="write `~keywords: [\"layout\", \"box\"]`",
+                    span=span_of(parts[0]),
+                  )
+              }
+            }
+          _ =>
+            raise ExError(
+              message="`~keywords` takes a list",
+              help="write `~keywords: [\"layout\", \"box\"]` — a comma only separates inside brackets",
+              span=span_of(parts[0]),
+            )
+        }
+      other =>
+        raise ExError(
+          message="`~\{other}` is not something a component declares about itself",
+          help="a component's options are `~category` and `~keywords`",
+          span=span_of(parts[0]),
+        )
+    }
+  }
+  { category, keywords, }
+}
+
+///|
 /// `field n :: Int = 0` → `n: Int`, with the initialiser dropped into the
 /// fixture the old notation would have needed for it.
 fn print_field(m : Member, out : StringBuilder) -> Unit raise ExError {

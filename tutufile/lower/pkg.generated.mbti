@@ -5,9 +5,12 @@ import {
   "marianoguerra/error-report",
   "marianoguerra/shrubbery/ast",
   "marianoguerra/tutuca/tutufile",
+  "moonbitlang/core/debug",
 }
 
 // Values
+pub fn at_span(ExError, @error-report.Span) -> ExError
+
 pub fn body_groups(@tutufile.Decl) -> Array[@ast.Node]
 
 pub fn case_text(Array[@ast.Node], Int) -> String raise ExError
@@ -16,7 +19,7 @@ pub fn decl_doc(@tutufile.Decl) -> String?
 
 pub fn doc_of(@ast.Node) -> String?
 
-pub fn ex_report(ExError, @error-report.SourceId) -> @error-report.Report
+pub fn ex_report(ExError, @error-report.SourceId, fallback? : @error-report.Span) -> @error-report.Report
 
 pub fn is_tutu_source(String) -> Bool
 
@@ -64,6 +67,8 @@ pub fn read_group(@ast.Node) -> Ex raise ExError
 
 pub fn read_member(@ast.Node) -> Member raise ExError
 
+pub fn read_meta(@tutufile.Decl) -> ComponentMeta raise ExError
+
 pub fn rename_ex(Ex, Map[String, String]) -> Ex
 
 pub fn span_of(@ast.Node) -> @error-report.Span
@@ -82,6 +87,11 @@ pub(all) enum Arg {
   AField(String, Ex)
   AFlag(String)
 }
+
+pub(all) struct ComponentMeta {
+  category : String
+  keywords : Array[String]
+} derive(Eq, @debug.Debug)
 
 pub(all) enum Ex {
   ENum(Double)
@@ -106,6 +116,7 @@ pub(all) enum Ex {
 pub(all) struct Lowered {
   text : String
   reports : Array[@error-report.Report]
+  meta : Map[String, ComponentMeta]
 }
 
 pub(all) struct Member {

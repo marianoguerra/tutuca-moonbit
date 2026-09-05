@@ -5,7 +5,26 @@
 pub(all) struct Lowered {
   text : String
   reports : Array[@report.Report]
+  /// What a component says about itself that the old notation has nowhere to
+  /// put, by component name.
+  ///
+  /// The first thing the new notation can say and the old one cannot, so it
+  /// travels beside the text rather than through it. A bridge that had to
+  /// invent an old spelling for every new idea would be extending the notation
+  /// it exists to retire.
+  meta : Map[String, ComponentMeta]
 }
+
+///|
+/// How a component describes itself to a catalog.
+///
+/// Both are SEARCH TEXT rather than identifiers — a person types them into a
+/// palette and they are matched against what is written here — so neither is
+/// touched by any naming convention, the way a protocol id is not.
+pub(all) struct ComponentMeta {
+  category : String
+  keywords : Array[String]
+} derive(Eq, @debug.Debug)
 
 ///|
 /// Lower a `.tutu` source into the `.html` the front end reads.
@@ -16,6 +35,7 @@ pub(all) struct Lowered {
 pub fn lower(text : String, source : @report.SourceId) -> Lowered {
   let file = @tutufile.read(text, source)
   let reports = []
+  let meta : Map[String, ComponentMeta] = Map([])
   for r in file.reports {
     reports.push(r)
   }
@@ -49,8 +69,10 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
         let body = StringBuilder()
         try {
           match decl.kind {
-            Component =>
+            Component => {
+              meta[decl.name] = read_meta(decl)
               print_state(decl, impls.get(decl.name).unwrap_or(Map([])), body)
+            }
             Struct => print_struct(decl, body)
             Enum => print_enum(decl, body)
             Protocol => print_protocol(decl, body)
@@ -126,7 +148,7 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
       }
     None => ()
   }
-  { text: out.to_string(), reports, }
+  { text: out.to_string(), reports, meta, }
 }
 
 ///|

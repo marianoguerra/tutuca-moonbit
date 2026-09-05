@@ -254,6 +254,31 @@ The rest of the spec block converts the same way:
 | `where i is index of .items or none` | `where it.i is_index_of it.items ~or_none` |
 | `state X implements A, B` | `implements A` / `implements B`, one per line |
 
+### What a component says about itself
+
+Two options lead a component's block, and neither has an old spelling — the
+card compiler emitted both keys empty and there was no syntax for either, so a
+shipper had to annotate a component beside the card that already said what it
+was:
+
+```
+spec:
+  Box:
+    ~category: "layout"
+    ~keywords: ["layout", "box", "flex"]
+    field cells :: List.of(Any)
+```
+
+Both are **search text**, matched against what a person types into a palette,
+so neither is touched by any naming convention — `"Form fields"` stays
+`"Form fields"`, the way a protocol id stays a protocol id. A component that
+says nothing is silent rather than empty, and a host's annotation fills the
+silence; a component that speaks outranks the annotation, because a table
+written when the card said nothing is stale the moment it starts speaking.
+
+`~keywords` takes a bracketed list and not a comma-separated run:
+`~keywords: layout, box` does not parse, for the reason a scene step is a call.
+
 ### Protocols
 
 A protocol is a declaration of the spec section, and its id is a quoted string
