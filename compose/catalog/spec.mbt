@@ -1,5 +1,17 @@
 ///|
-/// The protocols the shell speaks, by id.
+/// The protocols a composition speaks, by id.
+///
+/// A SHARED VOCABULARY, and frozen as such. These strings are what a card in
+/// any host declares to be placeable, holdable or configurable, so they are
+/// public API in the way a type name is not: a card compiled against them is a
+/// file somebody else already has. `@1` does not move. A change that would
+/// break a card declaring these mints `@2` beside them and leaves these
+/// answering exactly what they answer now.
+///
+/// They name `universal` because `demo/universal` is the reference
+/// implementation and continues to be — the kit there is the worked example of
+/// every one of them. The id names the vocabulary, not the directory it is
+/// demonstrated in.
 ///
 /// QUALIFIED, and that is not decoration. A protocol operation is dispatched
 /// under `<protocol id>::<member>`, so a card declaring

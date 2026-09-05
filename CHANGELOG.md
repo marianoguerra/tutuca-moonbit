@@ -6,6 +6,78 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.52.0] - 2026-09-05
+
+Composition stops being demo-only. `compose` and `compose/catalog` ship, and the
+three protocol ids they carry are now a frozen shared vocabulary rather than one
+page's spelling. Additive — nothing published changed shape.
+
+### `compose` and `compose/catalog` are shipping packages
+
+They were `demo/universal/{compose,catalog}`, and `demo` is excluded from the
+tarball, so a second host wanting to place components had to copy them. One did,
+and the copy is the argument for the move: **four readers drifted from one
+emitter, silently.** Measured on that fork against 0.51.0's
+`tgc/emit/compile.mbt` —
+
+- `ty` is emitted as a nested tree (`{"k":"list","of":{"k":"comp",…}}`) and was
+  being read as an index into a `types` table the compiler has never emitted, so
+  every field carried `ty: ""`. Downstream that fed an agent-facing type check,
+  which had therefore been accepting every argument it was given.
+- `viewHandlers` was being read and is emitted by nothing in the card path.
+- `module` — added to the descriptor in 0.51.0, and the fix for cross-module
+  composition — was ignored, which is that same bug sitting unfixed one repo
+  over.
+- `expressMessages` / `expressIntents` were not read at all, so a component that
+  RAISES `addRequested` could not be told from one that merely answers `hold`.
+
+This package's correctness is a function of what `tgc/emit` writes. A reader
+living in a different repo from its writer drifts, and nothing fails while it
+does. That is what it ships to stop.
+
+`compose` is the bottom-up builder, which is small and whose ORDER is the part
+everyone gets wrong the same way once. The document walker — validating a whole
+nested composition against the catalog with RFC 6901 pointers, which an
+agent-facing `compose` tool needs — is still not here, and now has a package to
+land in.
+
+`demo/universal/ui` deliberately did **not** move. The shell and picker are one
+page's look and one page's keyboard behaviour, and shipping them would make
+every change to the demo's UI a consumer-visible change.
+
+### The composition protocol ids are frozen
+
+`tutuca.dev/universal/{Holder,Container,Editable}@1` are a shared vocabulary a
+consumer's cards implement verbatim. `@1` does not move; a change that would
+break a card declaring them mints `@2` beside them. They name `universal`
+because `demo/universal` is the reference implementation and stays one — the id
+names the vocabulary, not the directory it is demonstrated in.
+
+### Three documentation defects, all found by a host that is not this repo
+
+**`Policy::allows_raw_markup` governs `@dangerouslysetinnerhtml` and nothing
+else.** Its doc claimed `@markdown.filter_for` reads it "which is how the two
+stay in step". That was false from the day it was written: `filter_for` takes a
+`Sanitizer`, not a `Policy`, and nothing in shipping code reads
+`allows_raw_markup` at all. A downstream host read that sentence and registered
+its layout kit at `Policy::system()` with `raw_markup: Some(true)` so that
+`Markdown` would work — a tier and a permission it did not need, since
+`@setinnermd` is `RawMarkdown` and only the Untrusted tier refuses it.
+
+**`HandleInst` says what its `identity` costs.** The default identity is the
+transport's integer, and a host minting a table per card gives two instances the
+same one — so `DynObj` buckets them together and a redraw silently does not
+happen. Same defect this repo shipped and fixed in 0.51.0, one layer up, in
+someone else's loader. `Inst::identity` already said it; `HandleInst` is where
+it gets read.
+
+**`Inst::release` is not a supersession signal,** and SPEC §11 now says what a
+host with a table has to do instead. 0.51.0 deleted `install_gc` and the
+superseded queue reasoning about a host that HOLDS references, where the engine
+collects. A host that NAMES them pins every predecessor, one per keystroke, and
+`release` does not help because it is called only for a successor the host
+refused. The cadence is `Transactor::on_drained`.
+
 ## [0.51.0] - 2026-09-05
 
 `tgc/host` stopped naming instances by integer and now holds them. That is a

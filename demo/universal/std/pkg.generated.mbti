@@ -2,7 +2,7 @@
 package "marianoguerra/tutuca/demo/universal/std"
 
 import {
-  "marianoguerra/tutuca/demo/universal/catalog",
+  "marianoguerra/tutuca/compose/catalog",
 }
 
 // Values

@@ -1,0 +1,22 @@
+// What can be placed, and how a person finds it.
+//
+// Built from MANIFESTS, which is what makes it testable with no browser and
+// what makes it blind to where a component came from: a host's own kit and a
+// card somebody pasted in thirty seconds ago arrive here as the same shape and
+// rank by the same rules. A palette that could tell them apart would be the
+// one place the format's claim leaked.
+//
+// It ships because its correctness is a function of what `tgc/emit` WRITES.
+// Every field here is a key that file emits, and a reader living in another
+// repo from its writer drifts silently: a downstream copy of this package was
+// found reading `ty` as an index into a table the compiler has never emitted,
+// looking for a `viewHandlers` key that does not exist, and ignoring the
+// `module` a descriptor now carries — three of them answering empty rather
+// than failing. Anyone hosting a `tgc` module has to project a manifest into
+// something placeable and searchable, and nobody can do it correctly for long
+// from outside.
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+}

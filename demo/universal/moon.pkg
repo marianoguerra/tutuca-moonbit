@@ -17,8 +17,8 @@ import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/demo/universal/ui",
   "marianoguerra/tutuca/demo/universal/std",
-  "marianoguerra/tutuca/demo/universal/catalog",
-  "marianoguerra/tutuca/demo/universal/compose",
+  "marianoguerra/tutuca/compose/catalog",
+  "marianoguerra/tutuca/compose",
   // The card compiler, as a LIBRARY in this bundle rather than a payload
   // fetched beside it. A card pasted into the page compiles here.
   "marianoguerra/tutuca/tgc/emit",

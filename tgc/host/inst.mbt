@@ -71,6 +71,12 @@ pub(open) trait Inst {
   /// State as bytes only the guest interprets. Empty means it does not
   /// persist — not a failure, since the host can project declared fields.
   fn persist(Self) -> Bytes
+  /// Called for a successor the host REFUSED — an ill-typed public result, or
+  /// one that could not be adopted — and at no other time. It is not a
+  /// supersession signal: an ordinary transition's predecessor is never
+  /// released, because the host that motivated this trait holds references and
+  /// lets the engine collect them. A transport that keeps a table has to notice
+  /// supersession itself; `tgc/SPEC.md` §11 says how.
   fn release(Self) -> Unit
   /// Publish this instance into whatever crossing slot its own transport
   /// keeps, for a caller that has an `&Inst` and needs the concrete thing.
@@ -153,6 +159,17 @@ pub struct HandleInst {
 }
 
 ///|
+/// The handle names an instance INSIDE ONE TRANSPORT, so a host that mints a
+/// table per module — or per card, or per embed — hands two different
+/// instances the same `identity`, because the default identity is that
+/// integer. `DynObj` seeds its render-cache bucket from it, and two instances
+/// that hash alike are treated as one: a redraw that silently does not happen.
+///
+/// `Inst::identity` says this too and this is where it gets read, so it is said
+/// twice on purpose. Either make the handle page-wide — the runtime is shared,
+/// so a handle can be — or override `identity` to say which module. A
+/// downstream host hit exactly this with a counter per card, and its symptom
+/// was a stale component rather than an error.
 pub fn HandleInst::new(guest : &Guest, handle : Int) -> HandleInst {
   { guest, handle, }
 }

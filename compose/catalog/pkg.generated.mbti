@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "marianoguerra/tutuca/demo/universal/catalog"
+package "marianoguerra/tutuca/compose/catalog"
 
 import {
   "moonbitlang/core/debug",

@@ -368,13 +368,24 @@ pub fn Policy::with_sanitizer(
 ///|
 /// Whether a guest view may use `@dangerouslysetinnerhtml`.
 ///
+/// `@dangerouslysetinnerhtml` AND NOTHING ELSE. `@setinnermd` is `RawMarkdown`,
+/// which this does not govern: markdown has no raw route, and the only tier
+/// that refuses it is Untrusted, in `view_authority.mbt`. A host granting this
+/// so that a card may render Markdown is granting a permission it does not
+/// need — which a downstream host did, reading the sentence this replaces.
+///
 /// False everywhere by default, and always false for Untrusted: even sanitized
 /// HTML can contain a non-script network request. A trusted host that flips it
-/// MUST also install the
-/// markup filter — the payload is a `Expr` at registration, so nothing decided
-/// here can see what it will hold, and without the filter it goes to
-/// `set_inner_html` unchecked. `@markdown.filter_for` reads this and builds the
-/// matching filter, which is how the two stay in step.
+/// MUST also install the markup filter — the payload is a `Expr` at
+/// registration, so nothing decided here can see what it will hold, and
+/// without the filter it goes to `set_inner_html` unchecked.
+///
+/// NOTHING READS THIS but the tests below it, and installing the filter is not
+/// wired to it: `@mdfilter.filter_for` takes a `Sanitizer`, not a `Policy`, and
+/// `App` builds it from its own. So this is a question a host asks and then
+/// acts on, not a switch — and the sentence that used to stand here, claiming
+/// the filter read this and that the two therefore stayed in step, was false
+/// from the day it was written.
 pub fn Policy::allows_raw_markup(self : Policy) -> Bool {
   self.tier != Untrusted && self.sanitizer.raw_markup
 }

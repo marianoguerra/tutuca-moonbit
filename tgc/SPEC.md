@@ -370,5 +370,20 @@ worth naming because none of them showed up in the corpus:
   rather than the `call_ref` §4 describes. A host that imported this runtime's
   functions with preamble-typed signatures and did real `struct.get`s is the
   next thing, and it is what a wasm-gc `tgc/host/wasm` would be.
+- **Supersession, for a host that NAMES instances rather than holding them.**
+  `tgc/host/browser` holds references, so a predecessor a successor replaces is
+  simply unreferenced and the engine collects it — which is why 0.51 deleted the
+  superseded queue and the sweep that drained it. That reasoning does not carry
+  to a transport with a table in it. There, a predecessor stays pinned by its
+  row, one per transition, which is one per keystroke in a text field, forever;
+  and `Inst::release` is not the signal, because the host calls it only for a
+  successor it REFUSED (`dynobj.mbt`, the two `set_property` failure arms) and
+  never on ordinary supersession. Such a host has to notice for itself: mark a
+  predecessor when a successor is minted, unmark it if the host refuses that
+  successor, and sweep on `Transactor::on_drained` — a transaction boundary,
+  because that is the point at which the host tree has settled and what it no
+  longer reaches is genuinely unreachable. Nothing in this repo needs that
+  today, which is why nothing here implements it; a downstream wasm-gc host
+  reconstructed it, and this paragraph is so the next one does not have to.
 - **Worker isolation.** `tgc/SECURITY.md` §7 leaves a runaway call open, and
   nothing here closes it.

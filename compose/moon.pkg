@@ -8,13 +8,17 @@
 // the cell is. Constructing from the inside out dissolves the question: a
 // container is handed its cells as a constructor argument, already finished.
 //
-// There is no document walker here. Validating a whole nested composition
+// It ships because that order is the non-obvious part, and everyone who
+// reaches for it from outside gets it wrong the same way once.
+//
+// There is no document walker here yet. Validating a whole nested composition
 // against the catalog — unknown keys, unknown components, type fits, RFC 6901
-// pointers into the request — is what an agent-facing `compose` tool needs, and
-// this demo has no such tool. What it has is a person clicking `+`, which is
-// one node at a time.
+// pointers into the request — is what an agent-facing `compose` tool needs,
+// and what this answers instead is a person clicking `+`, which is one node at
+// a time. The walker belongs in this package when it arrives.
+
 import {
   "marianoguerra/tutuca/core" @tutuca,
-  "marianoguerra/tutuca/demo/universal/catalog",
+  "marianoguerra/tutuca/compose/catalog",
   "moonbitlang/core/json",
 }

@@ -1,9 +1,9 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "marianoguerra/tutuca/demo/universal/compose"
+package "marianoguerra/tutuca/compose"
 
 import {
+  "marianoguerra/tutuca/compose/catalog",
   "marianoguerra/tutuca/core",
-  "marianoguerra/tutuca/demo/universal/catalog",
 }
 
 // Values
