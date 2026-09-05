@@ -70,7 +70,20 @@ pub fn read_ex(terms : ArrayView[@ast.Node]) -> Ex raise ExError {
   if terms.length() > 0 && terms[0].it is Id("if") {
     return read_if(terms)
   }
-  read_or(terms)
+  read_write(terms)
+}
+
+///|
+/// A write, which is the lowest-precedence thing an expression can be.
+///
+/// An event option carries one — `~on_input: it.query := e.value` — so the
+/// reader has to admit it where a value is expected, and the printer decides
+/// whether the position is one a write belongs in.
+fn read_write(terms : ArrayView[@ast.Node]) -> Ex raise ExError {
+  match split_top(terms, [":=", "+=", "-=", "*=", "/="]) {
+    Some((l, op, r)) => EBin(op, read_or(l), read_write(r))
+    None => read_or(terms)
+  }
 }
 
 ///|

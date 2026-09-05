@@ -159,10 +159,12 @@ test "a quoted role id survives the printer whole" {
 }
 
 ///|
-test "a conditional attribute is a ternary in the value, for any attribute" {
-  // There is no `@if.<attr>` here and no attribute-name special case: a
-  // conditional attribute is an `if` in the value, and `class` and `style`
-  // reach the same printer by the same path.
+test "a conditional attribute is a ternary here and three directives there" {
+  // A conditional value has no spelling in the OLD notation — a bound
+  // attribute cannot carry an `if` — so `~attr: if c | a | b` prints as the
+  // `@if.<attr>` family it was always going to have to become. This test
+  // asserted the wrong output before a seam check caught it: the text read
+  // perfectly and the view parser refused it.
   let src =
     #|spec:
     #|  Row:
@@ -177,8 +179,11 @@ test "a conditional attribute is a ternary in the value, for any attribute" {
     #|
   let out = lower_text(src)
   assert_eq(out.reports.length(), 0)
-  assert_true(
-    out.text.contains(":class=\"if .on { 'arrow open' } else { 'arrow' }\""),
-  )
-  assert_true(out.text.contains(":style=\"if .on {"))
+  assert_true(out.text.contains("@if.class=\".on\""))
+  assert_true(out.text.contains("@then.class=\"'arrow open'\""))
+  assert_true(out.text.contains("@else.class=\"'arrow'\""))
+  // and every one names its attribute, because HTML drops a second bare
+  // `@then=` before anything sees it
+  assert_true(out.text.contains("@if.style=\".on\""))
+  assert_true(out.text.contains("@then.style=\"'display:block'\""))
 }

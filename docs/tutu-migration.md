@@ -276,6 +276,9 @@ says nothing is silent rather than empty, and a host's annotation fills the
 silence; a component that speaks outranks the annotation, because a table
 written when the card said nothing is stale the moment it starts speaking.
 
+Both reach the manifest from **0.53.1** onward; in 0.53.0 they parse, lower,
+and go nowhere, because the emitter was still writing both keys empty.
+
 `~keywords` takes a bracketed list and not a comma-separated run:
 `~keywords: layout, box` does not parse, for the reason a scene step is a call.
 
@@ -671,6 +674,22 @@ top of a group. `type "input.draft", "milk"` does not parse: shrubbery
 admits a comma only immediately inside `(&nbsp;)`, `[&nbsp;]` or `{&nbsp;}`, so
 a comma at the top of a group is `MisplacedComma`. Everything else in the
 language was already a call, so the steps read better for it.
+
+### The check that catches a printer's own output
+
+The strongest assertion available is that the lowered text **compiles**, not
+that it reads correctly. Four bugs got past substring assertions in one
+afternoon because text can read perfectly and not parse: a conditional value
+that no bound attribute can carry, a `$compute` inside a template that reads
+Null where it stands, a `render="@value"` for the op the old notation calls
+`render-it`. Each printed something plausible and each was refused one layer
+on, in a message about a spelling nobody wrote.
+
+So the seam is asserted where it is crossed: `tgc/emit/tutu_seam_test.mbt`
+hands lowered text to the reader that parses attribute values. A printer and a
+reader in two packages with nothing asserting the seam between them is the same
+failure as two suites building their own fixtures — both stay green over a
+check that has stopped running.
 
 ### Two front doors, and the CLI is only one
 

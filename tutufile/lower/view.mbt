@@ -190,7 +190,10 @@ fn print_tag(
   let attrs = []
   for a in args {
     match a {
-      AKw(name, value) => attrs.push(print_attr(name, value, renames))
+      AKw(name, value) =>
+        for one in print_attr(name, value, renames) {
+          attrs.push(one)
+        }
       AFlag(name) => attrs.push(attr_name(name))
       AField(name, _) =>
         raise ExError(
@@ -224,7 +227,7 @@ fn print_attr(
   name : String,
   value : Ex,
   renames : Map[String, String],
-) -> String raise ExError {
+) -> Array[String] raise ExError {
   // `~onclick:` is a raw HTML event attribute, which a handler never is: the
   // value would reach the DOM as script text and be stripped two layers later
   // by a sanitizer, with a message about sanitising rather than about
@@ -238,29 +241,36 @@ fn print_attr(
   }
   if name.has_prefix("on_") {
     let event = name[3:].to_owned()
-    return "@on.\{event}=\"\{attr_escape(print_action(value, renames))}\""
+    return ["@on.\{event}=\"\{attr_escape(print_action(value, renames))}\""]
+  }
+  let bound_as = fn(directive : String) -> Array[String] raise ExError {
+    ["\{directive}=\"\{attr_escape(print_ex(rename_ex(value, renames)))}\""]
   }
   match name {
-    "bind" =>
-      return "@bind=\"\{attr_escape(print_ex(rename_ex(value, renames)))}\""
-    "push_view" =>
-      return "@push-view=\"\{attr_escape(print_ex(rename_ex(value, renames)))}\""
-    "inner_html" =>
-      return "@setinnerhtml=\"\{attr_escape(print_ex(rename_ex(value, renames)))}\""
+    "bind" => return bound_as("@bind")
+    "push_view" => return bound_as("@push-view")
+    "inner_html" => return bound_as("@setinnerhtml")
     // The one construct whose value reaches the DOM unparsed, and the only
     // attribute here whose name says so out loud.
-    "dangerously_inner_html" =>
-      return "@dangerouslysetinnerhtml=\"\{attr_escape(print_ex(rename_ex(value, renames)))}\""
-    "inner_md" =>
-      return "@setinnermd=\"\{attr_escape(print_ex(rename_ex(value, renames)))}\""
-    "inner_svg" =>
-      return "@setinnersvg=\"\{attr_escape(print_ex(rename_ex(value, renames)))}\""
+    "dangerously_inner_html" => return bound_as("@dangerouslysetinnerhtml")
+    "inner_md" => return bound_as("@setinnermd")
+    "inner_svg" => return bound_as("@setinnersvg")
     _ => ()
   }
   let attr = attr_name(name)
   match value {
-    EStr(s) => "\{attr}=\"\{attr_escape(s)}\""
-    other => ":\{attr}=\"\{attr_escape(print_ex(bound(other, renames)))}\""
+    EStr(s) => ["\{attr}=\"\{attr_escape(s)}\""]
+    // A conditional VALUE has no spelling in the old notation — a bound
+    // attribute cannot carry an `if`, which is what `@if.<attr>` with its
+    // `@then` and `@else` is for. Every one names its attribute, because HTML
+    // drops a second `@then=` before anything sees it.
+    EIf(cond, then_, else_) =>
+      [
+        "@if.\{attr}=\"\{attr_escape(print_ex(bound(cond, renames)))}\"",
+        "@then.\{attr}=\"\{attr_escape(print_ex(bound(then_, renames)))}\"",
+        "@else.\{attr}=\"\{attr_escape(print_ex(bound(else_, renames)))}\"",
+      ]
+    other => [":\{attr}=\"\{attr_escape(print_ex(bound(other, renames)))}\""]
   }
 }
 
@@ -281,6 +291,16 @@ fn print_action(
       parts.join(" ")
     }
     EBin(":=", place, v) => print_place(place) + " = " + print_ex(v)
+    EBin(op, place, v) =>
+      if op is ("+=" | "-=" | "*=" | "/=") {
+        print_place(place) + " " + op + " " + print_ex(v)
+      } else {
+        raise ExError(
+          message="an event names a handler or writes a property",
+          help="write `~on_click: inc`, or `~on_input: it.query := e.value`",
+          span=@report.Span::at(0),
+        )
+      }
     ECall(EMember(recv, op), args) => {
       guard collection_op(op) is Some(word) else {
         raise ExError(
@@ -455,6 +475,19 @@ fn print_render(
     )
   }
   let value = print_ex(rename_ex(pos[0], renames))
+  // `@render(item)` where `item` is the loop's own binding is the op the old
+  // notation calls `render-it`: there is no value to name, because the render
+  // position IS the iteration's. `render="@value"` is what the parser refuses.
+  if value == "@value" {
+    let mut only = ""
+    match kw_arg(args, "as") {
+      Some(EStr(v)) => only = " as=\"\{v}\""
+      Some(other) => only = " as=\"\{attr_escape(print_ex(other))}\""
+      None => ()
+    }
+    out.write_string("\{indent}<x render-it\{only}></x>\n")
+    return
+  }
   let mut tail = ""
   match kw_arg(args, "as") {
     Some(EStr(v)) => tail = " as=\"\{v}\""
@@ -511,7 +544,10 @@ fn print_with_extra(
   let attrs = [extra]
   for a in args {
     match a {
-      AKw(name, value) => attrs.push(print_attr(name, value, renames))
+      AKw(name, value) =>
+        for one in print_attr(name, value, renames) {
+          attrs.push(one)
+        }
       AFlag(name) => attrs.push(attr_name(name))
       _ => ()
     }

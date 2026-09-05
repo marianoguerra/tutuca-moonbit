@@ -9,7 +9,53 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [0.53.1] - 2026-09-05
 
 Two silent drops in a `view:` section, both found by writing a `.tutu` file by
-hand rather than by reading one.
+hand rather than by reading one — and the manifest half of what 0.53.0 shipped
+the notation for.
+
+### Three more, and the check that would have caught all of them
+
+Found by converting a seven-component kit by hand rather than by reading it,
+and they are one shape: the lowering printed old-notation text that the
+old-notation reader then refused, so the failure surfaced two layers on as a
+`VIEW_PARSE` about a spelling the author never wrote.
+
+- **A write in an event option did not parse at all** — `~on_input: it.text :=
+  e.value`, which is the migration guide's own spelling, took the whole `view:`
+  section down with it. A write is now an expression at the lowest precedence,
+  which is where an event option carries one.
+- **A `compute` called inside a string template got a `$` it should not have.**
+  A hole is already a call site, so `@str{…@(mode())…}` prints `{mode}`;
+  `$mode` there asks the render stack from a body that runs after it.
+- **A conditional attribute value has no old spelling.** A bound attribute
+  cannot carry an `if` — that is what `@if.<attr>` with `@then` and `@else`
+  is for — so `~style: if c | a | b` prints as those three, each naming its
+  attribute, because HTML drops a second bare `@then=` before anything sees it.
+- **`@render(item)` inside a wrapper element printed `render="@value"`.** The
+  op the old notation calls `render-it` has no value to name, because the
+  render position IS the iteration's. It worked when the render was the loop's
+  only child and broke on every container.
+
+**The check**: the lowering's own tests asserted that its output CONTAINED
+expected substrings, which is a printer checked against itself, and text can
+read perfectly and not parse. `tgc/emit/tutu_seam_test.mbt` now hands lowered
+text to the reader that parses attribute values — the seam asserted where it is
+crossed. It reproduced three of the four before fixing any of them, and it
+caught a test of ours that had been asserting the bug.
+
+### A component's own words reach the catalog
+
+0.53.0 gave a component `~category` and `~keywords` and gave them nowhere to
+go: they parsed, they lowered, and the manifest kept emitting both keys empty.
+Which is this release's own subject — an answer silently smaller than what was
+written. They reach the manifest now, unrenamed, because both are search text
+matched against what a person types rather than identifiers; and
+`compose/catalog` takes the card's words over a host annotation, with the
+annotation filling only what the card leaves silent.
+
+The precedence is that way round because the card's words are versioned with
+the card and a shipper's table is not. A card ships new keywords, the old row
+keeps winning under host-override, and there is no moment at which anyone would
+think to look.
 
 ### An option outside its element was discarded without a word
 

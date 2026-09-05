@@ -153,6 +153,15 @@ fn print_bin(op : String, a : Ex, b : Ex) -> String raise ExError {
         )
     }
   }
+  // A write is not a value: it reaches the printer only from an event
+  // option, which prints it as a property action rather than through here.
+  if op is (":=" | "+=" | "-=" | "*=" | "/=") {
+    raise ExError(
+      message="a write is not a value",
+      help="write to a property in an event — `~on_input: it.query := e.value` — or read one here",
+      span=@report.Span::at(0),
+    )
+  }
   let word = match op {
     "==" => "is"
     "!=" => "is not"
@@ -173,7 +182,15 @@ fn print_template(parts : Array[TPart]) -> String raise ExError {
       TText(t) => out.write_string(escape_in_template(t))
       THole(e) => {
         out.write_string("{")
-        out.write_string(print_ex(e))
+        // A hole is already a call site, so a `compute` in one is named
+        // rather than called: `$name` inside a template would be asking the
+        // render stack from a body that runs after it.
+        out.write_string(
+          match e {
+            ECall(EName(f), args) if positional(args).is_empty() => f
+            other => print_ex(other)
+          },
+        )
         out.write_string("}")
       }
     }
