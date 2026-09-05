@@ -6,6 +6,135 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.51.0] - 2026-09-05
+
+`tgc/host` stopped naming instances by integer and now holds them. That is a
+breaking change to every public type in the package, which is why this takes the
+minor. It also closes `tgc/SPEC.md` §11's first gap, fixes composition across
+modules — which was broken in both directions, silently — and ships the demo
+that found all of it.
+
+### A hole could not hold a stranger, and said nothing about it
+
+Composition across modules was broken **in both directions** through the bridge
+a page actually loads a card with, and neither direction failed loudly.
+
+**Inbound**, the instance table was minted per `loadGuest` and each started at 1,
+so B's handle 1 read inside A answered A's own first instance — or nothing.
+`card-embed.js` mints a key per `<mb-card>`, so two embeds on one page collided
+without any composition being attempted at all.
+
+**Outbound**, the `$dyn` marker said which COMPONENT and not which MODULE, and
+the host resolved that name against whichever module happened to be decoding. A
+note handed back from a hole came back wearing the hole's schema. A component's
+descriptor carries `module` now — `<C>_desc()` is that same value, which makes it
+the only place an instance can say where it came from. `tg_inst.id` cannot stand
+in: it is a per-module counter starting at zero.
+
+**And the part that was not a bridge bug.** `member` and `with_member` both went
+through `tg_map_of`, which wants kind 8, so on a `tg_comp` they answered null.
+Reading or writing through a held instance did nothing, quietly —
+`tutucard/examples/Holder.html`, this repo's own worked example of a holder,
+reported `handled: false` and changed neither the child nor its own `kept`. SPEC
+§4 has listed `.rows[0].text` as solved since the format landed. It is solved
+now: both go through the PROPERTY door, op 8 to read and op 9 to write, never the
+`get` slot — because a holder is exactly the thing that holds components it did
+not write, and reading through the private field slot would make every field of
+every component legible to whoever happened to hold it. The declaration is the
+whole permission.
+
+It shipped because nothing asserted it. `Holder.html` had no `tutuca/test` block
+and the conformance corpus has no read-through case, so the one card whose entire
+subject is this could not fail. It has three scenes now, and a `fill` receive so
+they can seed a child. The corpus is still missing its case: it is built around
+one shared `v2_schema()` and a flat state map, so a held-instance case needs a
+sibling component in that schema and both projections taught to build one.
+
+### The host holds the instance, and the table is gone
+
+`&Guest` was a transport — one object per module, every call carrying an integer
+that names an instance inside it. That is the shape a JSON seam forces, because
+JSON can carry an integer and a reference is the one thing it cannot, and it is
+not the shape SPEC §4 describes. The host had been written in the transport's
+vocabulary rather than the format's, which is why holding another module's
+component was expressible in the format and not in the host.
+
+It speaks `Inst` and `GuestModule` now. `Inst` is ONE INSTANCE and knows how to
+reach itself; `GuestModule` is the module's own exports. `DynObj` holds an
+`&Inst` where it held a `(&Guest, Int)` pair; `InstDispatch.next` and
+`InstPropertyChanged` carry the successor itself rather than a name for it.
+
+`tgc/host/browser` is that `&Inst` written against `tg_inst`. What crosses is the
+`tg_val` itself: no handle, no `$dyn` marker, no base64 for a byte string, no
+RFC-3339 spelling for an instant that two implementations had to agree on
+character for character, and no `{"$":"map"}` escape. Those were never facts
+about values — they are what JSON needs to carry one. `values.mjs` is unchanged
+and still correct for a JS host, which is what SPEC §8 now says it is.
+
+**Deleted, because they only ever served the table:** `superseded`,
+`collect_superseded`, `install_gc`, `superseded_count`, `Guest::drop_instance`,
+`Module::drop_instance`, `child_json`, `retain`, `dropInstance`, `resetSweep`,
+the reachability sweep, and the whole `__cardguest` surface. `card.js` goes 478
+lines to 282. `check-instances` is rewritten rather than deleted and keeps its
+four exact numbers: it counted a TABLE, it counts what the host REACHES now.
+
+`&Guest` survives as one transport rather than the seam — the in-process fake
+names instances by integer and `HandleModule` adapts it. `tgc/host` stays
+target-agnostic and testable with no browser, and is now exercised against both
+shapes, one that names instances and one that holds them.
+
+**Two things found by building it, both the kind that fail quietly.** `tgc.make`
+answers an INSTANCE, not a `tg_comp` wrapping one, so `as_inst` on it is a wasm
+type error — loud, at least. The other was not: `DynObj` seeded its render-cache
+bucket from the transport's integer, and a transport that holds references has
+none, so every instance shared one bucket. `Inst::identity` replaces it, keyed on
+the module AND the instance's own counter.
+
+**Not closed, and SPEC §11 says so:** a wasm-gc MoonBit host still reaches a
+foreign instance through JS, so every call is a wasm→JS→wasm hop rather than the
+`call_ref` the format promises. `tgc/host/wasm` is the follow-up.
+
+### The universal composition demo
+
+`demo/universal` — a `+` opens a palette, you pick something, and it appears in
+the cell you clicked. What makes it worth having is what is not in it: **the
+canvas holds no host components.** The layout kit is a card, loaded through the
+same `register_module` under the same policy as a card pasted into the box at the
+bottom of the page, so the palette cannot tell its own components from a
+stranger's because there is nothing to tell.
+
+`demo/universal/std/std.card.html` declares `Hole`, `Box`, `Grid`, `Tabs`,
+`Text`, `Textarea` and `Markdown`, and three protocols: `Holder@1`, `Container@1`
+— which carries `cellField`, the one thing a bottom-up builder cannot infer — and
+`Editable@1`, a VIEW ROLE rather than a schema, so a component ships its own
+settings UI and the shell never generates a form. A component binding no editor
+view renders `main` and stays visible, which is what makes whole-app editor mode
+safe over arbitrary cards.
+
+The catalog is built from manifests, so it is testable with no browser and blind
+to where a component came from. Search is ranked and every hit carries its
+reasons. The builder goes bottom up, and builds each container twice: `cellField`
+is a property, and only an instance answers a property.
+
+Load routes: the embedded kit, `?loadAll`, a per-row library, paste-and-compile,
+and file drop. Save and restore go through `to_component_json`, and a component
+whose module is not loaded comes back as an empty cell **and says so by name**.
+
+### `tgc card` exits nonzero on a refusal
+
+It printed `rejected:`, exited 0 and wrote no file — so a caller that checks the
+status saw success and read whatever stale `.wasm` was already at that path. A
+stale artifact is worse than none: the build that produced it succeeded once, so
+nothing about it looks wrong.
+
+### The card playground was shipping in the tarball
+
+`moon.mod`'s comment said both playgrounds were excluded. Exclusion matches a
+package path exactly or as a directory prefix, and `"playground"` is neither of
+`tutucard/playground` — so the card playground has been shipping since it was
+written. It is excluded now, along with the new `tutucard/guest`, and
+`check-publish-graph` found it the moment something excluded was imported.
+
 ## [0.50.2] - 2026-09-04
 
 ### `tgc card` prints the warnings it was compiling past
