@@ -18,6 +18,9 @@ import {
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/tscript/check",
   "marianoguerra/tutuca/viewfile",
+  // a `.tutu` card reaches the compiler through the same `split`
+  "marianoguerra/tutuca/tutufile/lower",
+  "marianoguerra/error-report" @report,
   // The VIEW checker, and the surface it answers: `check_component_views` does
   // both, which is why a card's templates are checked at all.
   "marianoguerra/tutuca/viewgen",

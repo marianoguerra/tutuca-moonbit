@@ -20,8 +20,28 @@ pub fn print_state(
   out : StringBuilder,
 ) -> Unit raise ExError {
   write_doc(out, decl_doc(decl), "")
-  out.write_string("state \{decl.name} {\n")
+  let implements = []
+  for group in body_groups(decl) {
+    guard group.it is Group(parts) && parts.length() > 1 else { continue }
+    if parts[0].it is Id("implements") {
+      let mut i = 1
+      while i < parts.length() {
+        match parts[i].it {
+          Id(n) => implements.push(n)
+          _ => ()
+        }
+        i = i + 1
+      }
+    }
+  }
+  let claim = if implements.is_empty() {
+    ""
+  } else {
+    " implements " + implements.join(", ")
+  }
+  out.write_string("state \{decl.name}\{claim} {\n")
   let props = []
+  let view_binds = []
   let rules = []
   let wheres = []
   let provides = []
@@ -31,7 +51,23 @@ pub fn print_state(
     guard parts[0].it is Id(word) else { continue }
     match word {
       "field" => print_field(read_member(group), out)
-      "property" => props.push(read_member(group))
+      // `property Holder::filled = filled` binds a protocol member to a local
+      // one; it is a line of the property section rather than a declaration.
+      "property" =>
+        match binding_line(parts) {
+          Some(text) => props.push(text)
+          None => props.push(print_property(read_member(group), impls))
+        }
+      "view" =>
+        match binding_line(parts) {
+          Some(text) => view_binds.push(text)
+          None =>
+            raise ExError(
+              message="a `view` in a component binds a protocol role",
+              help="write `view <Protocol>::<role> = <local view>`",
+              span=span_of(parts[0]),
+            )
+        }
       "pred" | "invariant" => rules.push(read_member(group))
       "where" => wheres.push(group)
       "provide" => provides.push(group)
@@ -50,7 +86,14 @@ pub fn print_state(
   if !props.is_empty() {
     out.write_string("\n  property {\n")
     for p in props {
-      print_property(p, impls, out)
+      out.write_string(p)
+    }
+    out.write_string("  }\n")
+  }
+  if !view_binds.is_empty() {
+    out.write_string("  view {\n")
+    for v in view_binds {
+      out.write_string(v)
     }
     out.write_string("  }\n")
   }
@@ -89,8 +132,8 @@ fn print_field(m : Member, out : StringBuilder) -> Unit raise ExError {
 fn print_property(
   m : Member,
   impls : Map[String, PropImpl],
-  out : StringBuilder,
-) -> Unit raise ExError {
+) -> String raise ExError {
+  let out = StringBuilder()
   write_doc(out, m.doc, "    ")
   guard m.ty is Some(ty) else {
     raise ExError(
@@ -123,6 +166,20 @@ fn print_property(
     }
   }
   out.write_string("    \{vis}\{m.name}: \{print_ty(ty)} {\{accessors} }\n")
+  out.to_string()
+}
+
+///|
+/// `<Protocol>::<member> = <local>` — the line that binds one of a protocol's
+/// members to something this component has. Nothing about the protocol's
+/// spelling is touched: the name on the left is a wire name.
+fn binding_line(parts : Array[@ast.Node]) -> String? {
+  guard qualified(parts, 1) is Some((name, next)) else { return None }
+  guard next < parts.length() && parts[next].it is Op("=") else { return None }
+  guard next + 1 < parts.length() && parts[next + 1].it is Id(here) else {
+    return None
+  }
+  Some("    \{name} = \{here}\n")
 }
 
 ///|
@@ -378,8 +435,8 @@ pub fn print_channels(
     guard group.it is Group(parts) && parts.length() > 0 else { continue }
     guard parts[0].it is Id(word) else { continue }
     match word {
-      "message" => messages.push(channel_case(read_member(group)))
-      "intent" => intents.push(channel_case(read_member(group)))
+      "message" => messages.push(case_text(parts, 1))
+      "intent" => intents.push(case_text(parts, 1))
       "express" => {
         guard parts.length() >= 2 && parts[1].it is Id(kind) else {
           raise ExError(
@@ -388,11 +445,10 @@ pub fn print_channels(
             span=span_of(parts[0]),
           )
         }
-        let inner = read_member(drop_head(group))
         if kind == "intent" {
-          ex_intents.push(channel_case(inner))
+          ex_intents.push(case_text(parts, 2))
         } else {
-          ex_messages.push(channel_case(inner))
+          ex_messages.push(case_text(parts, 2))
         }
       }
       _ => ()
@@ -417,35 +473,6 @@ pub fn print_channels(
       out.write_string("  intent { \{ex_intents.join(", ")} }\n")
     }
     out.write_string("}\n")
-  }
-}
-
-///|
-/// One declared case: its name, and the payload types it carries.
-fn channel_case(m : Member) -> String raise ExError {
-  if m.params.is_empty() {
-    return m.name
-  }
-  let tys = []
-  for p in m.params {
-    guard p.ty is Some(ty) else {
-      raise ExError(
-        message="a declared payload names its type",
-        help="write `message \{m.name}(Int)` — a payload is decoded at the boundary",
-        span=m.span,
-      )
-    }
-    tys.push(print_ty(ty))
-  }
-  m.name + "(" + tys.join(", ") + ")"
-}
-
-///|
-/// The same group with its first term removed, for `express intent x`.
-fn drop_head(group : @ast.Node) -> @ast.Node {
-  match group.it {
-    Group(parts) => @ast.Node::new(Group(parts[1:].to_owned()), group.span)
-    _ => group
   }
 }
 

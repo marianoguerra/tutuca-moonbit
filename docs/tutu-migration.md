@@ -103,9 +103,23 @@ so do it first and the rest follows.
 | `&.status` | `~to: it.status` | the parameter it is passed to |
 | `state.count` | `it.state.count` | the enclosing component |
 
-Names are `snake_case` throughout, including message names, which cross the
-wire: `loadRowsOk` becomes `load_rows_ok`, and the derived intent answers
-become `<name>_ok` / `_failed` / `_unhandled`.
+Names you own are `snake_case`: fields, handlers, computes, rules, fixtures,
+and a component's own message names. `loadRowsOk` becomes `load_rows_ok`, and
+the derived intent answers become `<name>_ok` / `_failed` / `_unhandled`.
+
+**Names a protocol owns are not yours to rename.** A protocol id and its
+members are a wire vocabulary — `"tutuca.dev/universal/Container@1"` and
+`Container::appendCell`, `Container::cellField` — dispatched by a second host
+as those exact strings, and `@1` is a promise that they do not move. A `.tutu`
+card declaring `Container` under a snake_case rewrite would answer
+`::append_cell` where a `.html` card answers `::appendCell`: the same protocol
+id, the same version, different members, composing with nothing, silently. It
+is not only cards — `compose/build.mbt` reads `"cellField"` as a literal.
+
+So the rule is: **the converter renames nothing.** Everything printed here
+carries the spelling you wrote, and a protocol member keeps its camelCase in a
+file whose own names are snake_case. That wart is correct, and the frozen ids
+are why.
 
 ## Values and operators
 
@@ -231,6 +245,83 @@ The rest of the spec block converts the same way:
 | `where t is member of .tags` | `where it.t is_member_of it.tags` |
 | `where items is nonempty` | `where !it.items.is_empty()` |
 | `where i is index of .items or none` | `where it.i is_index_of it.items ~or_none` |
+| `state X implements A, B` | `implements A` / `implements B`, one per line |
+
+### Protocols
+
+A protocol is a declaration of the spec section, and its id is a quoted string
+because it is a wire name rather than an identifier. Its members are `message`,
+`intent`, `express`, `property` and `view` — the same words a component uses,
+which is the point: a protocol is a component with the bodies removed.
+
+**Before** — `demo/universal/std/std.card.html`:
+
+```html
+<script type="tutuca/spec">
+  protocol Container = "tutuca.dev/universal/Container@1" {
+    handle { message { appendCell, removeAt(Int), insertAt(Int) } }
+    express { intent { insertRequested(Int), removeRequested(Int) } }
+    property { count: Int, cellField: String }
+  }
+
+  protocol Editable = "tutuca.dev/universal/Editable@1" {
+    view { editor }
+  }
+
+  state Box implements Container, Editable {
+    cells : Array[Any]
+    property {
+      pub count : Int { get }
+      Container::count = count
+      Container::cellField = cellField
+    }
+    view { Editable::editor = arrange }
+  }
+
+  handle Box { message { Container::appendCell, Container::removeAt(Int) } }
+  express Box { intent { Container::insertRequested(Int) } }
+</script>
+```
+
+**After**:
+
+```
+spec:
+  protocol Container = "tutuca.dev/universal/Container@1":
+    message appendCell
+    message removeAt(Int)
+    message insertAt(Int)
+    express intent insertRequested(Int)
+    express intent removeRequested(Int)
+    property count :: Int
+    property cellField :: String
+
+  protocol Editable = "tutuca.dev/universal/Editable@1":
+    view editor
+
+  Box:
+    implements Container
+    implements Editable
+    field cells :: List.of(Any)
+    property count :: Int ~public
+    property Container::count = count
+    property Container::cellField = cellField
+    view Editable::editor = arrange
+    message Container::appendCell
+    message Container::removeAt(Int)
+    express intent Container::insertRequested(Int)
+```
+
+Three things to know:
+
+- **One `implements` per line**, and one `message` per line. Shrubbery admits a
+  comma only immediately inside `(`, `[` or `{`, so `implements A, B` does not
+  parse — the same rule that makes a scene step a call.
+- **A protocol property that a holder may WRITE** takes `~writable`:
+  `property value :: Int ~writable` is the old `value: Int set`.
+- **`Container::count = count`** binds the protocol's member to a local one, and
+  `view Editable::editor = arrange` does the same for a view role. Both are
+  lines of the component, and both keep the protocol's spelling on the left.
 
 A `message` declaration survives only for names answered somewhere the file
 cannot see — a hand-written MoonBit `update` arm. A name a `receive` in
@@ -535,10 +626,27 @@ The verbs and readers:
 | `{ "intents": { "rows": { "ok": [...] } } }` | `~intents:` then `rows: ok [...]` |
 | `{ "raw": true }` | `~raw` |
 
-**A step is a call.** `type "input.draft", "milk"` does not parse: shrubbery
+**A step is a call**, and so is anything else that would need a comma at the
+top of a group. `type "input.draft", "milk"` does not parse: shrubbery
 admits a comma only immediately inside `(&nbsp;)`, `[&nbsp;]` or `{&nbsp;}`, so
 a comma at the top of a group is `MisplacedComma`. Everything else in the
 language was already a call, so the steps read better for it.
+
+## What the conversion changes underneath
+
+Two consequences worth knowing before you convert a component people have
+already used.
+
+- **A renamed field re-keys a snapshot.** A compiled card exports no `persist`,
+  so a restore comes back through the declared-field projection, by name. Rename
+  `emptyMessage` to `empty_message` and yesterday's snapshot has no key under
+  the new name: the card comes back at its opening state. No error and no data
+  loss — the source and the transcript survive — but a half-filled form is
+  empty. One-time, per card, at conversion.
+- **Naming an anonymous component re-keys its schema fingerprint.** The
+  fingerprint seeds `ObjId::of`, which the render cache is keyed by, so do not
+  run a converted card and its `.html` original in one process: two components
+  that hash alike are treated as one. Convert one card per commit.
 
 ## What does not convert mechanically
 

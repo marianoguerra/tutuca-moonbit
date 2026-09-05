@@ -6,6 +6,41 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Protocols lower, and the converter renames nothing
+
+Both found by the two sessions that read 0.53.0's guide before converting
+anything, and both are the reason it had not been published.
+
+**A protocol in a `.tutu` file was dropped in silence.** `tutufile/lower`
+printed components, records and enums and walked past a `protocol`
+declaration, an `implements` claim and the `Container::count = count` lines
+that bind a member — so a card whose whole point is a shared vocabulary
+lowered to a card that claimed nothing, and the state parser had no reason to
+complain. They lower now: `protocol Name = "id":` with its `message`,
+`intent`, `express`, `property` and `view` members, `implements` one per line,
+and both kinds of binding, checked by reading the printed block back with
+`@viewfile.split_file`.
+
+**The naming convention does not reach a protocol.** The guide said names are
+snake_case "throughout, including message names, which cross the wire". For a
+protocol that is exactly backwards: `"tutuca.dev/universal/Container@1"` and
+`Container::appendCell` are dispatched as those strings by a second host, `@1`
+promises they do not move, and `compose/build.mbt` reads `"cellField"` as a
+literal. A converter that applied the convention would give a `.tutu` card
+`::append_cell` where an `.html` card has `::appendCell` — same id, same
+version, composing with nothing, silently. The printer never renamed anything;
+the guide now says so, and the test asserts it letter for letter.
+
+### A `.tutu` card compiles
+
+`tgc/emit`'s `split` — the card compiler's front door, and what `tgc card`,
+`tgc check`, the in-browser compile and `tutucard/drive` all go through —
+lowers a `.tutu` source before splitting it. One seam, no second entry point,
+and a host has nothing to choose between: what a page hands `compile` is
+compiled, in whichever notation it arrives. The two are told apart by what the
+text holds rather than by an extension, because nothing at that seam has a
+filename — a page compiles a string a model has just written.
+
 ## [0.53.0] - 2026-09-05
 
 `.tutu` files build. A card or a view file written in shrubbery notation — five

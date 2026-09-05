@@ -53,6 +53,7 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
               print_state(decl, impls.get(decl.name).unwrap_or(Map([])), body)
             Struct => print_struct(decl, body)
             Enum => print_enum(decl, body)
+            Protocol => print_protocol(decl, body)
             _ => ()
           }
           out.write_string(body.to_string())

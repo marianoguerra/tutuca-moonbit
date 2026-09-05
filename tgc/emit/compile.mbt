@@ -59,9 +59,41 @@ pub fn compile_decls(
 
 ///|
 fn split(source : String, name : String) -> @viewfile.ViewFile raise GenError {
-  @viewfile.split_file(source, name~) catch {
+  @viewfile.split_file(tutu_or_html(source), name~) catch {
     e => raise BadCard(e.message())
   }
+}
+
+///|
+/// A `.tutu` source, lowered into the blocks the splitter reads.
+///
+/// The card compiler takes SOURCE TEXT and splits it internally, so this is
+/// the one seam a `.tutu` card has to reach: a page handing the runtime a
+/// card written in the new notation gets it compiled the same way, with no
+/// second entry point and nothing for a host to choose between.
+///
+/// The two are told apart by what the text HOLDS rather than by an extension,
+/// because nothing above this has a filename to go on: a page compiles a
+/// string a model just wrote.
+fn tutu_or_html(source : String) -> String {
+  guard is_tutu(source) else { return source }
+  let sources = @report.Sources::new()
+  let id = sources.add("card.tutu", source)
+  let out = @lower.lower(source, id)
+  // A lowering that failed answers the blocks it managed, and the splitter
+  // reports what is missing against them. The alternative — refusing here —
+  // would replace a reader's message about a component with our message about
+  // a section, which is further from the mistake.
+  out.text
+}
+
+///|
+/// Whether a card is written in the section notation.
+///
+/// A `.tutu` file has no `<script type="tutuca/…">` and no `<template>`; a
+/// `.html` card has at least one of the two or it declares nothing at all.
+fn is_tutu(source : String) -> Bool {
+  !source.contains("<script") && !source.contains("<template")
 }
 
 ///|
