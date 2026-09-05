@@ -6,6 +6,58 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.53.0] - 2026-09-05
+
+`.tutu` files build. A card or a view file written in shrubbery notation — five
+sections, one notation — goes through `tutuca gen` and comes out as the same
+MoonBit the `.html` beside it produced, and through `tgc/emit` as the same
+wasm.
+
+### A `.tutu` card compiled past a broken handler and said nothing
+
+The seam that lowers a `.tutu` source for the card compiler read the text it
+answered and dropped the reports beside it, so a card with a broken `logic:`
+section compiled, wrote a `.wasm`, exited zero, and was missing the handler —
+654 bytes of it. It rendered correctly and did nothing when clicked, which
+reads as a dispatch failure rather than a compile failure and is the same
+shape as the bug 0.50.2 fixed for the `.html` path. `split` now answers its
+issues and both callers merge them, so `tgc check` prints them and `tgc card`
+refuses.
+
+### Every diagnostic points at the line to edit
+
+The reports were `error-report` values with spans in them and the spans were
+degenerate: thirty-five said offset zero, which renders as an arrow at the top
+of the file under a message about something on line 40. The cause is
+structural — a printer works over an expression, and the expression type is
+built from shrubbery nodes and drops theirs — so a failure raised inside one
+is re-raised against the narrowest enclosing thing that has a span: the member,
+then the declaration, then the section. Tested by asserting the LINE, since
+that is the part a reader uses and the part that was wrong.
+
+### And four found by the two hosts that read it before converting anything
+
+- **A protocol was dropped in silence.** `protocol Name = "id":`, `implements`,
+  and both kinds of member binding were walked past — a card whose whole point
+  is a shared vocabulary lowered to one claiming nothing.
+- **The naming convention reached names it does not own.** The guide said
+  snake_case "throughout, including message names, which cross the wire"; for a
+  protocol that is backwards. `Container@1::appendCell` is dispatched as that
+  string by a second host and `compose/build.mbt` reads `"cellField"` as a
+  literal. The printer never renamed anything; the guide claimed it would.
+- **A loop binder with two names and an option did not parse.** A comma
+  separates groups inside parentheses, so `@each(item, i in it.pages,
+  ~enrich_with: tab)` is several of them — which is every tab strip there is.
+- **`none` was refused in a value position.** The script parser has had a
+  `null` literal all along, so `it.child := none` — the entire body of a frozen
+  protocol member — had nothing wrong with it but the printer.
+
+A real kit component now compiles: `Hole` from `demo/universal/std`, with its
+frozen ids, a qualified handler, a computed role id carrying `::` and `@`
+through a notation where both mean something, and no refusals. It found the
+last one: a named view `Hole.chrome` was emitted as `id="Hole.chrome"` where
+the old notation spells that pair `Hole:chrome`.
+
 ### Protocols lower, and the converter renames nothing
 
 Both found by the two sessions that read 0.53.0's guide before converting
@@ -40,12 +92,6 @@ and a host has nothing to choose between: what a page hands `compile` is
 compiled, in whichever notation it arrives. The two are told apart by what the
 text holds rather than by an extension, because nothing at that seam has a
 filename — a page compiles a string a model has just written.
-
-## [0.53.0] - 2026-09-05
-
-`.tutu` files build. A card or a view file written in shrubbery notation — five
-sections, one notation — goes through `tutuca gen` and comes out as the same
-MoonBit the `.html` beside it produced.
 
 ### `.tutu` files compile (`tutufile/lower`)
 
