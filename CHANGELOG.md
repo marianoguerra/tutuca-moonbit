@@ -6,6 +6,102 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.53.0] - 2026-09-05
+
+`.tutu` files build. A card or a view file written in shrubbery notation — five
+sections, one notation — goes through `tutuca gen` and comes out as the same
+MoonBit the `.html` beside it produced.
+
+### `.tutu` files compile (`tutufile/lower`)
+
+The section reader below says what a file DECLARES; this says what it MEANS,
+by printing each section into the block the front end already reads. The spec
+section becomes the `state` block, the logic section the script block, the view
+section the templates, and the two data sections their JSON — so a `.tutu` file
+compiles through the front end that exists rather than waiting on four new
+readers.
+
+It is staging and says so in the package header: the direct readers are the end
+state, and when they land this package is deleted rather than kept as a second
+way in. What it buys meanwhile is that everything downstream works today.
+
+**The check is that what it prints parses.** `tutufile/lower` imports none of
+the readers; its tests import all of them, lower a card, and assert the
+`StateDef`, the script block, the fixture, the scene and the view that come
+back. And the end-to-end version: `tutuca gen` over `storybook/examples/`'s
+counter written as `.tutu` emits a `counter_view_gen.mbt` **byte-identical** to
+the one the `.html` produces, save the source name in its header and the schema
+fingerprint — which differs for the one reason worth knowing about.
+
+**Naming an anonymous component changes its fingerprint.** A `.html` file may
+declare `state { … }` with no name; a `.tutu` file always names its components,
+because the section supplies the keyword and the name is what is left. The
+fields, the views, the codec and the generated MoonBit are identical; the
+fingerprint is not, because the name is in it. A project that persists state
+across the migration re-keys once.
+
+Three things the lowering settles that the proposal had left to taste, each
+found by writing it:
+
+- **A step is a call.** `type("input.draft", "milk")`, not
+  `type "input.draft", "milk"` — shrubbery admits a comma only immediately
+  inside `()`, `[]` or `{}`, so a comma at the top of a group is
+  `MisplacedComma`. The reference's rule, not an implementation limit.
+- **An option on a header is a flag; an option with a value leads the block.**
+  `fixture "x" ~default:` and then `~doc:` on the first line inside it. A
+  header option followed by a block would otherwise be ambiguous with the
+  member's own body.
+- **One accessor per line.** `property count :: Int ~public:` with `get:` and
+  `set(v):` under it. Written on one line, shrubbery's `;` continues the
+  innermost block, so the `set` lands inside the `get`.
+
+### `.tutu` files: the section reader (`tutufile/`)
+
+The first piece of the shrubbery proposal that runs. A `.tutu` file is
+shrubbery notation from the first line to the last — five sections, in this
+order, at most one of each: `spec`, `logic`, `view`, `fixtures`, `tests` —
+and `tutufile.read` says which parts of the parsed tree are sections, which
+are declarations, and what a reader has to fix when they are neither.
+
+It reads the FILE, not the languages inside it. A declaration's body comes
+back as the shrubbery block it parsed to, unread, which is the same asymmetry
+`viewfile` makes for the script block: the section languages have their own
+readers, and a file splitter that also parsed them would be the only thing in
+the pipeline that had to change when any of them did.
+
+One rule carries the format: **the section supplies the keyword for its own
+kind.** A bare name in `spec:` or `logic:` is a component, in `view:` it is a
+view, and in `fixtures:` / `tests:` the name is a string, so it cannot be
+mistaken for either. Everything else names itself — `struct`, `enum`,
+`protocol` in the spec section, `macro` and `@style{…}` in the view section —
+and a declaration in the wrong section is refused by name.
+
+Two new dependencies, both dependency-light and both used only here and by
+`tutuca outline`: `marianoguerra/shrubbery` for the notation and
+`marianoguerra/error-report` for the diagnostics. Reports are values, not
+strings: this package renders nothing, so the CLI prints them for a terminal
+and a playground pane can lay the same spans over an editor.
+
+### `docs/tutu-migration.md`
+
+The conversion, construct by construct, with before/after taken from
+`tutucard/examples/` and `storybook/examples/` rather than invented. It opens
+with what runs and what does not, because a guide that read as if the
+migration were available would send someone to convert a file the toolchain
+cannot yet build — stage 1 (the file's shape) is done, stages 2-6 (the five
+section languages, then the corpus and the deletions) are not, and the order is
+forced: removing the old readers before the new ones exist leaves the compiler
+with no way to read a component at all. Every `.tutu` snippet in it parses;
+the worked example's outline is the one `tutuca outline` prints.
+
+### `tutuca outline`
+
+Says what a `.tutu` file declares — the sections in file order and the
+declarations in each — and exits 1 with the diagnostics rendered against the
+source when the file's shape is wrong. `--json` reports them as JSON instead.
+It deliberately claims no more than `tutufile` knows: a command that printed a
+component's fields would be claiming a section reader that does not exist yet.
+
 ## [0.52.0] - 2026-09-05
 
 Composition stops being demo-only. `compose` and `compose/catalog` ship, and the

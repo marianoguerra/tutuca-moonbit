@@ -91,6 +91,8 @@ pub fn new_storybook_success(String, String) -> String
 
 pub fn new_storybook_target_exists(GlobalOpts, String) -> Emit
 
+pub fn outline_apply(OutlinePlan, String) -> Emit
+
 pub fn overview() -> String
 
 pub fn parse_flags(Array[String], CommandSpec) -> Result[ParsedArgs, ErrShape]
@@ -196,6 +198,12 @@ pub(all) enum Outcome {
   Watch(GlobalOpts, plan~ : WatchPlan)
   GenCss(GlobalOpts, plan~ : CssPlan)
   Trace(GlobalOpts, plan~ : TracePlan)
+  Outline(GlobalOpts, plan~ : OutlinePlan)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct OutlinePlan {
+  path : String
+  json : Bool
 } derive(Eq, @debug.Debug)
 
 pub(all) struct ParsedArgs {

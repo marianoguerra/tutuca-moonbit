@@ -121,6 +121,10 @@ pub(all) enum Outcome {
   /// decides the operation and performs it — `trace_apply` is pure text in,
   /// text out — and the shell reads the file and writes the answer.
   Trace(GlobalOpts, plan~ : TracePlan)
+  /// Read a `.tutu` file and say what it declares (outline.mbt). The core
+  /// decides the flags and does the reading — `outline_apply` is text in, text
+  /// out — and the shell reads the file and prints the answer.
+  Outline(GlobalOpts, plan~ : OutlinePlan)
 } derive(Debug, Eq)
 
 ///|
@@ -150,6 +154,11 @@ pub(all) struct CssPlan {
 ///|
 /// Top-level dispatcher: parse argv into an Outcome for the shell to carry out.
 declare pub fn plan(argv : Array[String]) -> Outcome
+
+///|
+/// Parse `outline` arguments: finishes purely on help and usage errors,
+/// otherwise returns an Outline outcome for the shell to carry out.
+declare fn run_outline(args : Array[String], opts : GlobalOpts) -> Outcome
 
 ///|
 /// Parse `gen` arguments: finishes purely on help and usage errors,

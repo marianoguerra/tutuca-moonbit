@@ -400,7 +400,27 @@ pub fn gen_views_all(
   // makes fixing three problems take three builds to even SEE the three.
   let failures : Array[(String, String)] = []
   for f in files {
-    let views = @viewgen.split_file(f.source, name=f.name) catch {
+    // A `.tutu` file is lowered into the blocks the splitter reads. The
+    // lowering is a printer, so what fails here fails with the message the
+    // section language gave it rather than as a splitter error about a block
+    // nobody wrote.
+    let source = if f.input.has_suffix(".tutu") {
+      let sources = @report.Sources::new()
+      let id = sources.add(f.input, f.source)
+      let lowered = @lower.lower(f.source, id)
+      if lowered.reports.length() > 0 {
+        let lines = []
+        for r in lowered.reports {
+          lines.push(r.message)
+        }
+        failures.push((f.input, lines.join("; ")))
+        continue
+      }
+      lowered.text
+    } else {
+      f.source
+    }
+    let views = @viewgen.split_file(source, name=f.name) catch {
       e => {
         failures.push((f.input, @viewgen.GenError::message(e)))
         continue

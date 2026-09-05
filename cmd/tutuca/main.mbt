@@ -835,7 +835,35 @@ async fn main {
     Watch(opts, plan~) => run_watch(opts, plan)
     GenCss(opts, plan~) => run_gen_css(opts, plan)
     Trace(opts, plan~) => run_trace(opts, plan)
+    Outline(opts, plan~) => run_outline(opts, plan)
   }
+}
+
+///|
+/// `tutuca outline`: read the file, say what it declares.
+///
+/// The core does the reading and the rendering — `outline_apply` is text in,
+/// text out — so what is left here is the one thing nothing pure can do.
+async fn run_outline(
+  opts : @cli.GlobalOpts,
+  plan : @cli.OutlinePlan,
+) -> Unit noraise {
+  let source = @fs.read_file(plan.path).text() catch {
+    e => {
+      emit_and_exit(
+        @cli.error_emit(
+          opts,
+          @cli.err(
+            @cli.CODE_INTERNAL,
+            "cannot read \{plan.path}: \{e}",
+            hint="pass the path to a .tutu file",
+          ),
+        ),
+      )
+      return
+    }
+  }
+  emit_and_exit(@cli.outline_apply(plan, source))
 }
 
 ///|

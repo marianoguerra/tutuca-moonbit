@@ -238,6 +238,25 @@ let commands : Array[CommandSpec] = [
   // the state its prefix produced means RUNNING the app, and a native CLI does
   // not have the user's compiled components — so it is absent rather than
   // half-present.
+  // The `.tutu` file reader. It says what a file DECLARES — its sections and
+  // their declarations — and not what any section means: the section
+  // languages have their own readers, and a command that printed a component's
+  // fields would be claiming one that does not exist yet.
+  {
+    name: "outline",
+    describe: "Say what a .tutu file declares: its sections, and what is in each.",
+    flags: [
+      flag(
+        "json",
+        type_="boolean",
+        description="Report the diagnostics as JSON, one per line, instead of as annotated source.",
+      ),
+      help_flag,
+    ],
+    positionals: [
+      positional("file", required=true, description="The .tutu file to read."),
+    ],
+  },
   {
     name: "trace",
     describe: "Read an execution trace, trim it, or cut it down to one component.",

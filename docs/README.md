@@ -13,6 +13,7 @@ and runs every code block in them.
 | [sanitizer.md](sanitizer.md) | the WHATWG Sanitizer port: what it covers and what it argues for |
 | [css-validator.md](css-validator.md) | why CSS is closed by reading a value rather than refusing a name |
 | [playground-wasm.md](playground-wasm.md) | how the in-browser playground compiles and runs on both backends |
+| [tutu-migration.md](tutu-migration.md) | the `.tutu` format, construct by construct, with what runs today and what does not |
 
 **The authoring reference is elsewhere.** `skill/tutuca/` is what an agent
 reads — the spec and script languages, views, events, testing, protocols,

@@ -1,0 +1,33 @@
+// `.tutu` lowered to the notation the pipeline already reads.
+//
+// The five section languages are shrubbery; everything downstream — the state
+// parser, the script parser, the view compiler, the scene reader — takes the
+// old spellings. This package is the bridge: it prints each section into the
+// block it replaces, so a `.tutu` file compiles through the front end that
+// exists rather than waiting on four new readers.
+//
+// It is a staging decision and says so: the direct readers are the end state,
+// and when they land this package is deleted rather than kept as a second way
+// in. What it buys meanwhile is that every consumer — `gen`, the card
+// runtime, both playgrounds, the storybook — works on a `.tutu` file today,
+// and the lowering is checked by parsing what it prints with the reader it
+// printed for.
+import {
+  "marianoguerra/tutuca/tutufile",
+  "marianoguerra/shrubbery" @shrub,
+  "marianoguerra/shrubbery/ast",
+  "marianoguerra/shrubbery/raw",
+  "marianoguerra/shrubbery/sexp",
+  "marianoguerra/error-report" @report,
+  "moonbitlang/core/debug",
+  "moonbitlang/core/string",
+}
+
+// The readers this package prints FOR, as test dependencies only. The check
+// that means anything here is that what is printed parses — so the test
+// imports the parsers and the package itself imports none of them.
+import {
+  "marianoguerra/tutuca/viewfile",
+  "marianoguerra/tutuca/statedef",
+  "moonbitlang/core/debug",
+} for "test"

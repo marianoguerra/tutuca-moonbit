@@ -152,7 +152,7 @@ fn run_watch(args : Array[String], opts : GlobalOpts) -> Outcome {
 /// watched tree — .mbt, .json, the generated modules themselves — is noise,
 /// and reacting to the modules we just wrote would loop.
 pub fn is_view_path(path : String) -> Bool {
-  path.has_suffix(".html")
+  path.has_suffix(".html") || path.has_suffix(".tutu")
 }
 
 ///|

@@ -1,6 +1,6 @@
 name = "marianoguerra/tutuca"
 
-version = "0.52.0"
+version = "0.53.0"
 
 readme = "README.mbt.md"
 
@@ -36,6 +36,10 @@ import {
   // Dependency-free itself, and MoonBit links per package, so a consumer who
   // never compiles a card pays the fetch and nothing else.
   "marianoguerra/wax@0.2.1",
+  // The `.tutu` file reader: shrubbery notation (groups, blocks, alternatives,
+  // keyword options) plus the diagnostic reports its errors are carried in.
+  "marianoguerra/shrubbery@0.1.0",
+  "marianoguerra/error-report@0.1.0",
   "marianoguerra/tailwindcss@0.4.0",
   "moonbitlang/x@0.5.1",
 }

@@ -1,0 +1,72 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tutufile"
+
+import {
+  "marianoguerra/error-report",
+  "marianoguerra/shrubbery/ast",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn read(String, @error-report.SourceId) -> TutuFile
+
+// Errors
+
+// Types and methods
+pub(all) struct Decl {
+  kind : DeclKind
+  name : String
+  options : Array[String]
+  header : @error-report.Span
+  span : @error-report.Span
+  node : @ast.Node
+  body : @ast.Node?
+}
+
+pub(all) enum DeclKind {
+  Component
+  View
+  Fixture
+  Scene
+  Struct
+  Enum
+  Protocol
+  Macro
+  Style
+} derive(Eq, @debug.Debug)
+pub fn DeclKind::keyword(Self) -> String
+pub fn DeclKind::noun(Self) -> String
+pub fn DeclKind::wants_string_name(Self) -> Bool
+
+pub(all) enum Section {
+  Spec
+  Logic
+  View
+  Fixtures
+  Tests
+} derive(Compare, Eq, Hash, @debug.Debug)
+pub fn Section::all() -> Array[Self]
+pub fn Section::bare_kind(Self) -> DeclKind
+pub fn Section::name(Self) -> String
+pub fn Section::of_name(String) -> Self?
+
+pub(all) struct SectionBlock {
+  section : Section
+  span : @error-report.Span
+  decls : Array[Decl]
+}
+pub fn SectionBlock::names(Self) -> Array[String]
+
+pub(all) struct TutuFile {
+  source : @error-report.SourceId
+  root : @ast.Node?
+  sections : Array[SectionBlock]
+  reports : Array[@error-report.Report]
+}
+pub fn TutuFile::decl(Self, Section, String) -> Decl?
+pub fn TutuFile::ok(Self) -> Bool
+pub fn TutuFile::section(Self, Section) -> SectionBlock?
+
+// Type aliases
+
+// Traits

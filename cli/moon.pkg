@@ -16,6 +16,13 @@ import {
   // but the file
   "marianoguerra/tutuca/trace",
   "marianoguerra/tutuca/viewfile",
+  // The `.tutu` reader, and the renderer for the reports it answers with.
+  // `outline` is the only command that reads one, and it is the only reason
+  // this binary carries a shrubbery parser.
+  "marianoguerra/tutuca/tutufile",
+  "marianoguerra/tutuca/tutufile/lower",
+  "marianoguerra/error-report" @report,
+  "marianoguerra/error-report/render" @report_render,
   "moonbitlang/core/string",
 }
 

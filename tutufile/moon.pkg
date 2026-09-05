@@ -1,0 +1,29 @@
+// The shape of a `.tutu` file: the sections it is made of, and the
+// declarations inside each one.
+//
+// A `.tutu` file is shrubbery notation from the first line to the last, so
+// this package does no scanning of its own: `marianoguerra/shrubbery` reads
+// the source into a tree and this package says which parts of that tree are
+// sections, which are declarations, and what a reader has to fix when they
+// are neither.
+//
+// Pure and target-agnostic like `viewfile`, the `.html` reader it stands
+// beside: source text in, typed sections out, never touching the filesystem.
+// Its diagnostics are `error-report` values rather than strings, so a caller
+// renders them for a terminal, a JSON stream or a browser pane and this
+// package chooses none of the three.
+import {
+  "marianoguerra/shrubbery" @shrub,
+  "marianoguerra/shrubbery/ast",
+  "marianoguerra/shrubbery/basic",
+  "marianoguerra/error-report" @report,
+  "moonbitlang/core/debug",
+}
+
+// The renderer is a TEST dependency only: this package produces reports and
+// chooses no presentation for them. One test renders one, to prove the spans
+// it builds land on the right characters.
+import {
+  "marianoguerra/error-report/render",
+  "marianoguerra/error-report/style",
+} for "test"
