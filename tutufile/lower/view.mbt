@@ -30,7 +30,7 @@ fn print_content(
   match parts[0].it {
     // plain text
     Lit(Str(text)) => {
-      let t = text.trim(chars=" \n\t").to_string()
+      let t = text.trim(chars=" \n\t").to_owned()
       if t != "" {
         out.write_string("\{indent}\{escape_text(t)}\n")
       }
@@ -164,10 +164,10 @@ fn print_action(
       parts.join(" ")
     }
     EBin(":=", place, v) => print_place(place) + " = " + print_ex(v)
-    ECall(EMember(recv, method), args) => {
-      guard collection_op(method) is Some(word) else {
+    ECall(EMember(recv, op), args) => {
+      guard collection_op(op) is Some(word) else {
         raise ExError(
-          message="`\{method}` is not a property action",
+          message="`\{op}` is not a property action",
           help="the actions are `push`, `insert_at`, `set_at`, `delete_at`, `add`, `remove` and `toggle`",
           span=@report.Span::at(0),
         )
@@ -240,8 +240,8 @@ fn print_each(
     )
   }
   let (names, seq) = split_binder(raw[0])
-  let args = args_of(raw[1:].to_array())
-  let inner : Map[String, String] = {}
+  let args = args_of(raw[1:].to_owned())
+  let inner : Map[String, String] = Map([])
   for k in renames {
     inner[k.0] = k.1
   }
@@ -354,7 +354,7 @@ fn print_style(
   body : Array[@ast.Node],
   out : StringBuilder,
   indent : String,
-) -> Unit raise ExError {
+) -> Unit {
   let mut mark = ""
   for a in args {
     if a is AFlag("global") {

@@ -23,7 +23,7 @@ pub fn json_of(ex : Ex) -> Json raise ExError {
       Json::array(out)
     }
     EMap(entries) => {
-      let out = {}
+      let out = Map([])
       for e in entries {
         out[e.0] = json_of(e.1)
       }
@@ -55,7 +55,7 @@ pub fn json_of(ex : Ex) -> Json raise ExError {
 ///|
 /// The `fixtures:` section as its JSON object.
 pub fn print_fixtures(decls : Array[@tutufile.Decl]) -> String raise ExError {
-  let out = {}
+  let out = Map([])
   for d in decls {
     out[d.name] = fixture_json(d)
   }
@@ -64,8 +64,8 @@ pub fn print_fixtures(decls : Array[@tutufile.Decl]) -> String raise ExError {
 
 ///|
 fn fixture_json(decl : @tutufile.Decl) -> Json raise ExError {
-  let env = {}
-  let value = {}
+  let env = Map([])
+  let value = Map([])
   if decl.options.contains("default") {
     env["default"] = Json::boolean(true)
   }
@@ -105,7 +105,7 @@ fn fixture_json(decl : @tutufile.Decl) -> Json raise ExError {
 ///|
 /// The `tests:` section as its JSON object.
 pub fn print_scenes(decls : Array[@tutufile.Decl]) -> String raise ExError {
-  let out = {}
+  let out = Map([])
   for d in decls {
     out[d.name] = scene_json(d)
   }
@@ -114,7 +114,7 @@ pub fn print_scenes(decls : Array[@tutufile.Decl]) -> String raise ExError {
 
 ///|
 fn scene_json(decl : @tutufile.Decl) -> Json raise ExError {
-  let env = {}
+  let env = Map([])
   let steps = []
   for group in body_groups(decl) {
     guard group.it is Group(parts) && parts.length() > 0 else { continue }
@@ -138,7 +138,6 @@ fn scene_json(decl : @tutufile.Decl) -> Json raise ExError {
           }
         }
       }
-      Kw(_) => ()
       _ => steps.push(step_json(group))
     }
   }
@@ -194,7 +193,7 @@ fn step_json(group : @ast.Node) -> Json raise ExError {
   }
   let args = read_args(gs)
   let pos = positional(args)
-  let obj = {}
+  let obj = Map([])
   let arg = fn(i : Int) -> Json raise ExError { json_of(pos[i]) }
   match verb {
     "click" => obj["click"] = arg(0)
@@ -259,7 +258,7 @@ fn expect_json(
       span=span_of(group),
     )
   }
-  let obj = { "expect": Json::string(reader) }
+  let obj = Map([("expect", Json::string(reader))])
   let mut i = 2
   // a reader with a subject: `text("o")`, `attr("a", "href")`
   if i < parts.length() && parts[i].it is Parens(gs) {
@@ -358,7 +357,7 @@ fn kw_arg_of(parts : Array[@ast.Node]) -> (String, Json)? {
 ///|
 /// `~intents:` — the three answers, keyed by the name they answer.
 fn intents_json(groups : Array[@ast.Node]) -> Json raise ExError {
-  let out = {}
+  let out = Map([])
   for g in groups {
     guard g.it is Group(parts) && parts.length() >= 1 && parts[0].it is Id(name) else {
       continue

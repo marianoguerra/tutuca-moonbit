@@ -7,7 +7,7 @@ pub fn print_logic(
   decl : @tutufile.Decl,
   out : StringBuilder,
 ) -> Map[String, PropImpl] raise ExError {
-  let impls = {}
+  let impls = Map([])
   for group in body_groups(decl) {
     guard group.it is Group(parts) && parts.length() > 0 else { continue }
     guard parts[0].it is Id(word) else { continue }
@@ -116,7 +116,7 @@ fn print_bind_with(m : Member, out : StringBuilder) -> Unit raise ExError {
 ///|
 /// `item, i` are the renderer's row and key, whatever the loop called them.
 fn row_renames(m : Member) -> Map[String, String] {
-  let out = {}
+  let out = Map([])
   if m.params.length() > 0 {
     out[m.params[0].name] = "@value"
   }
@@ -147,7 +147,7 @@ fn print_accessors(m : Member, out : StringBuilder) -> PropImpl raise ExError {
       "set" => {
         has_set = true
         // the old notation's setter takes one implicit `value`
-        let renames = {}
+        let renames = Map([])
         if acc.params.length() > 0 {
           renames[acc.params[0].name] = "value"
         }
@@ -296,10 +296,10 @@ fn print_call_stmt(
   }
   match callee {
     EName(verb) => print_effect(verb, args, out, indent)
-    EMember(recv, method) => {
-      guard collection_op(method) is Some(word) else {
+    EMember(recv, op) => {
+      guard collection_op(op) is Some(word) else {
         raise ExError(
-          message="`\{method}` is not a collection operation",
+          message="`\{op}` is not a collection operation",
           help="the operations are `push`, `insert_at`, `set_at`, `delete_at`, `add`, `remove` and `toggle`",
           span=@report.Span::at(0),
         )
@@ -350,7 +350,7 @@ fn print_effect(
     printed.push(print_ex(hoist(a, out, indent)))
   }
   let rest = if printed.length() > 1 {
-    " " + printed[1:].to_array().join(" ")
+    " " + printed[1:].to_owned().join(" ")
   } else {
     ""
   }

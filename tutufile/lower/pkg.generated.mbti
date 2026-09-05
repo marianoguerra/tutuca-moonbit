@@ -1,0 +1,135 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tutufile/lower"
+
+import {
+  "marianoguerra/error-report",
+  "marianoguerra/shrubbery/ast",
+  "marianoguerra/tutuca/tutufile",
+}
+
+// Values
+pub fn body_groups(@tutufile.Decl) -> Array[@ast.Node]
+
+pub fn decl_doc(@tutufile.Decl) -> String?
+
+pub fn doc_of(@ast.Node) -> String?
+
+pub fn ex_report(ExError, @error-report.SourceId) -> @error-report.Report
+
+pub fn json_of(Ex) -> Json raise ExError
+
+pub fn lower(String, @error-report.SourceId) -> Lowered
+
+pub fn node_text(@ast.Node) -> String
+
+pub fn num_text(Double) -> String
+
+pub fn print_channels(@tutufile.Decl, StringBuilder) -> Unit raise ExError
+
+pub fn print_enum(@tutufile.Decl, StringBuilder) -> Unit raise ExError
+
+pub fn print_ex(Ex) -> String raise ExError
+
+pub fn print_fixtures(Array[@tutufile.Decl]) -> String raise ExError
+
+pub fn print_logic(@tutufile.Decl, StringBuilder) -> Map[String, PropImpl] raise ExError
+
+pub fn print_scenes(Array[@tutufile.Decl]) -> String raise ExError
+
+pub fn print_state(@tutufile.Decl, Map[String, PropImpl], StringBuilder) -> Unit raise ExError
+
+pub fn print_stmt(@ast.Node, StringBuilder, String, Map[String, String]) -> Unit raise ExError
+
+pub fn print_struct(@tutufile.Decl, StringBuilder) -> Unit raise ExError
+
+pub fn print_ty(Ex) -> String raise ExError
+
+pub fn print_view(@tutufile.Decl, StringBuilder) -> Unit raise ExError
+
+pub fn quote_str(String) -> String
+
+pub fn read_ex(ArrayView[@ast.Node]) -> Ex raise ExError
+
+pub fn read_group(@ast.Node) -> Ex raise ExError
+
+pub fn read_member(@ast.Node) -> Member raise ExError
+
+pub fn rename_ex(Ex, Map[String, String]) -> Ex
+
+pub fn span_of(@ast.Node) -> @error-report.Span
+
+pub fn write_doc(StringBuilder, String?, String) -> Unit
+
+// Errors
+pub(all) suberror ExError {
+  ExError(message~ : String, help~ : String, span~ : @error-report.Span)
+}
+
+// Types and methods
+pub(all) enum Arg {
+  APos(Ex)
+  AKw(String, Ex)
+  AField(String, Ex)
+  AFlag(String)
+}
+
+pub(all) enum Ex {
+  ENum(Double)
+  EStr(String)
+  EBool(Bool)
+  ENone
+  EName(String)
+  EIt(String)
+  EState(String)
+  EDyn(String)
+  EMember(Ex, String)
+  EIndex(Ex, Ex)
+  ECall(Ex, Array[Arg])
+  EBin(String, Ex, Ex)
+  EUn(String, Ex)
+  EIf(Ex, Ex, Ex)
+  ETemplate(Array[TPart])
+  EList(Array[Ex])
+  EMap(Array[(String, Ex)])
+}
+
+pub(all) struct Lowered {
+  text : String
+  reports : Array[@error-report.Report]
+}
+
+pub(all) struct Member {
+  word : String
+  name : String
+  params : Array[Param]
+  ty : Ex?
+  init : Ex?
+  options : Array[(String, Ex?)]
+  body : @ast.Node?
+  stmts : Array[@ast.Node]
+  rest : Array[@ast.Node]
+  span : @error-report.Span
+  doc : String?
+}
+pub fn Member::block(Self) -> Array[@ast.Node]
+pub fn Member::has_option(Self, String) -> Bool
+pub fn Member::option(Self, String) -> Ex?
+
+pub(all) struct Param {
+  name : String
+  ty : Ex?
+}
+
+pub(all) struct PropImpl {
+  get_ : Bool
+  set_ : Bool
+}
+
+pub(all) enum TPart {
+  TText(String)
+  THole(Ex)
+}
+
+// Type aliases
+
+// Traits

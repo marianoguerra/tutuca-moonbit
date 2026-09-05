@@ -23,21 +23,21 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
   // the logic section is read first: the spec block spells a property with
   // what implements it, and only the logic section knows that
   let logic_text = StringBuilder()
-  let impls : Map[String, Map[String, PropImpl]] = {}
+  let impls : Map[String, Map[String, PropImpl]] = Map([])
   match file.section(Logic) {
     Some(section) =>
       for decl in section.decls {
         let body = StringBuilder()
-        match (try? print_logic(decl, body)) {
-          Ok(found) => {
-            impls[decl.name] = found
-            logic_text.write_string(
-              "<script type=\"tutuca/script\" for=\"\{decl.name}\">\n",
-            )
-            logic_text.write_string(body.to_string())
-            logic_text.write_string("</script>\n\n")
-          }
-          Err(e) => reports.push(ex_report(e, source))
+        try {
+          let found = print_logic(decl, body)
+          impls[decl.name] = found
+          logic_text.write_string(
+            "<script type=\"tutuca/script\" for=\"\{decl.name}\">\n",
+          )
+          logic_text.write_string(body.to_string())
+          logic_text.write_string("</script>\n\n")
+        } catch {
+          e => reports.push(ex_report(e, source))
         }
       }
     None => ()
@@ -47,25 +47,22 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
       out.write_string("<script type=\"tutuca/spec\">\n")
       for decl in section.decls {
         let body = StringBuilder()
-        let ok = match decl.kind {
-          Component =>
-            try? print_state(decl, impls.get(decl.name).unwrap_or({}), body)
-          Struct => try? print_struct(decl, body)
-          Enum => try? print_enum(decl, body)
-          _ => Ok(())
-        }
-        match ok {
-          Ok(_) => {
-            out.write_string(body.to_string())
-            if decl.kind is Component {
-              let ch = StringBuilder()
-              match (try? print_channels(decl, ch)) {
-                Ok(_) => out.write_string(ch.to_string())
-                Err(e) => reports.push(ex_report(e, source))
-              }
-            }
+        try {
+          match decl.kind {
+            Component =>
+              print_state(decl, impls.get(decl.name).unwrap_or(Map([])), body)
+            Struct => print_struct(decl, body)
+            Enum => print_enum(decl, body)
+            _ => ()
           }
-          Err(e) => reports.push(ex_report(e, source))
+          out.write_string(body.to_string())
+          if decl.kind is Component {
+            let ch = StringBuilder()
+            print_channels(decl, ch)
+            out.write_string(ch.to_string())
+          }
+        } catch {
+          e => reports.push(ex_report(e, source))
         }
       }
       out.write_string("</script>\n\n")
@@ -75,25 +72,25 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
   out.write_string(logic_text.to_string())
   match file.section(Fixtures) {
     Some(section) =>
-      match (try? print_fixtures(section.decls)) {
-        Ok(json) => {
-          out.write_string("<script type=\"tutuca/fixtures\">\n")
-          out.write_string(json)
-          out.write_string("\n</script>\n\n")
-        }
-        Err(e) => reports.push(ex_report(e, source))
+      try {
+        let json = print_fixtures(section.decls)
+        out.write_string("<script type=\"tutuca/fixtures\">\n")
+        out.write_string(json)
+        out.write_string("\n</script>\n\n")
+      } catch {
+        e => reports.push(ex_report(e, source))
       }
     None => ()
   }
   match file.section(Tests) {
     Some(section) =>
-      match (try? print_scenes(section.decls)) {
-        Ok(json) => {
-          out.write_string("<script type=\"tutuca/test\">\n")
-          out.write_string(json)
-          out.write_string("\n</script>\n\n")
-        }
-        Err(e) => reports.push(ex_report(e, source))
+      try {
+        let json = print_scenes(section.decls)
+        out.write_string("<script type=\"tutuca/test\">\n")
+        out.write_string(json)
+        out.write_string("\n</script>\n\n")
+      } catch {
+        e => reports.push(ex_report(e, source))
       }
     None => ()
   }
@@ -103,19 +100,25 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
         let body = StringBuilder()
         match decl.kind {
           View =>
-            match (try? print_view(decl, body)) {
-              Ok(_) => out.write_string(body.to_string())
-              Err(e) => reports.push(ex_report(e, source))
+            try {
+              print_view(decl, body)
+              out.write_string(body.to_string())
+            } catch {
+              e => reports.push(ex_report(e, source))
             }
           Style =>
-            match (try? print_file_style(decl, body)) {
-              Ok(_) => out.write_string(body.to_string())
-              Err(e) => reports.push(ex_report(e, source))
+            try {
+              print_file_style(decl, body)
+              out.write_string(body.to_string())
+            } catch {
+              e => reports.push(ex_report(e, source))
             }
           Macro =>
-            match (try? print_macro(decl, body)) {
-              Ok(_) => out.write_string(body.to_string())
-              Err(e) => reports.push(ex_report(e, source))
+            try {
+              print_macro(decl, body)
+              out.write_string(body.to_string())
+            } catch {
+              e => reports.push(ex_report(e, source))
             }
           _ => ()
         }
@@ -153,18 +156,18 @@ fn print_macro(
   for t in parts {
     if t.it is Parens(gs) {
       for g in gs {
-        match (try? read_args([g])) {
-          Ok(args) =>
-            for a in args {
-              match a {
-                AKw(name, value) =>
-                  defaults.push(
-                    "data-\{attr_name(name)}=\"\{attr_escape(print_ex(value))}\"",
-                  )
-                _ => ()
-              }
+        try {
+          for a in read_args([g]) {
+            match a {
+              AKw(name, value) =>
+                defaults.push(
+                  "data-\{attr_name(name)}=\"\{attr_escape(print_ex(value))}\"",
+                )
+              _ => ()
             }
-          Err(_) => ()
+          }
+        } catch {
+          _ => ()
         }
       }
       break

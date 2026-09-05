@@ -192,9 +192,9 @@ pub fn doc_of(node : @ast.Node) -> String? {
   let raw = node.meta.prefix.to_text()
   let lines : Array[String] = []
   for line in raw.split("\n") {
-    let t = line.to_string().trim(chars=" \t").to_string()
+    let t = line.to_owned().trim(chars=" \t").to_owned()
     if t.has_prefix("///") {
-      lines.push(t[3:].to_owned().trim(chars=" ").to_string())
+      lines.push(t[3:].to_owned().trim(chars=" ").to_owned())
     }
   }
   if lines.is_empty() {

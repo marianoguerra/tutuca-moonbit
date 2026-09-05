@@ -444,7 +444,7 @@ fn channel_case(m : Member) -> String raise ExError {
 /// The same group with its first term removed, for `express intent x`.
 fn drop_head(group : @ast.Node) -> @ast.Node {
   match group.it {
-    Group(parts) => @ast.Node::new(Group(parts[1:].to_array()), group.span)
+    Group(parts) => @ast.Node::new(Group(parts[1:].to_owned()), group.span)
     _ => group
   }
 }

@@ -14,7 +14,6 @@
 // printed for.
 import {
   "marianoguerra/tutuca/tutufile",
-  "marianoguerra/shrubbery" @shrub,
   "marianoguerra/shrubbery/ast",
   "marianoguerra/shrubbery/raw",
   "marianoguerra/shrubbery/sexp",
@@ -27,6 +26,8 @@ import {
 // that means anything here is that what is printed parses — so the test
 // imports the parsers and the package itself imports none of them.
 import {
+  // the parser, for the tests that read a snippet before printing it
+  "marianoguerra/shrubbery" @shrub,
   "marianoguerra/tutuca/viewfile",
   "marianoguerra/tutuca/statedef",
   "moonbitlang/core/debug",
