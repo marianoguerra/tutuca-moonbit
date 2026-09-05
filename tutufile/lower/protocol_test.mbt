@@ -74,3 +74,111 @@ test "and the state parser reads back what was written" {
   assert_true(box.property_bindings.length() > 0)
   assert_eq(box.view_bindings.length(), 1)
 }
+
+///|
+test "a handler may answer a protocol's message under its own name" {
+  let src =
+    #|spec:
+    #|  protocol Holder = "tutuca.dev/universal/Holder@1":
+    #|    message hold(Any)
+    #|    express intent addRequested(Bool)
+    #|
+    #|  Hole:
+    #|    implements Holder
+    #|    field child :: Any
+    #|    message Holder::hold(Any)
+    #|    express intent Holder::addRequested(Bool)
+    #|
+    #|logic:
+    #|  Hole:
+    #|    receive Holder::hold(inst):
+    #|      it.child := inst
+    #|
+    #|    receive ask_for_one:
+    #|      ask("Holder::addRequested", true, ~route: dyn)
+    #|
+  let out = lower_text(src)
+  assert_eq(out.reports.length(), 0)
+  // the qualified name survives `::` being the annotation operator beside it
+  assert_true(out.text.contains("receive Holder::hold(inst) {"))
+  assert_true(out.text.contains(".child = inst"))
+  let file = @viewfile.split_file(out.text, name="Hole")
+  assert_true(file.script_for("Hole") is Some(_))
+  assert_eq(file.state[0].implements.length(), 1)
+}
+
+///|
+/// Both arms of the qualified-name path, which is where the risk actually is:
+/// the reader consumes three terms instead of one, and what follows — a
+/// parameter list, a block, or neither — has to still be found.
+test "a qualified receive with no parameters keeps its block" {
+  let src =
+    #|spec:
+    #|  protocol Container = "tutuca.dev/universal/Container@1":
+    #|    message appendCell
+    #|  Box:
+    #|    implements Container
+    #|    field cells :: List.of(Any)
+    #|    message Container::appendCell
+    #|
+    #|logic:
+    #|  Box:
+    #|    receive Container::appendCell:
+    #|      it.cells.push("")
+    #|
+  let out = lower_text(src)
+  assert_eq(out.reports.length(), 0)
+  assert_true(out.text.contains("receive Container::appendCell {"))
+  assert_true(out.text.contains(".cells.push"))
+}
+
+///|
+test "a quoted role id survives the printer whole" {
+  // `::` is an operator here and `@` opens a form, so a role id written as a
+  // STRING is the value most likely to be eaten on the way through.
+  let src =
+    #|spec:
+    #|  Hole:
+    #|    field configuring :: Bool
+    #|
+    #|logic:
+    #|  Hole:
+    #|    compute child_view():
+    #|      "tutuca.dev/universal/Editable@1::editor"
+    #|
+    #|view:
+    #|  Hole:
+    #|    @div(~push_view: child_view()){
+    #|      @span{x}
+    #|    }
+    #|
+  let out = lower_text(src)
+  assert_eq(out.reports.length(), 0)
+  assert_true(out.text.contains("'tutuca.dev/universal/Editable@1::editor'"))
+  assert_true(out.text.contains("@push-view=\"$child_view\""))
+}
+
+///|
+test "a conditional attribute is a ternary in the value, for any attribute" {
+  // There is no `@if.<attr>` here and no attribute-name special case: a
+  // conditional attribute is an `if` in the value, and `class` and `style`
+  // reach the same printer by the same path.
+  let src =
+    #|spec:
+    #|  Row:
+    #|    field on :: Bool
+    #|
+    #|view:
+    #|  Row:
+    #|    @button(
+    #|      ~class: if it.on | "arrow open" | "arrow",
+    #|      ~style: if it.on | "display:block" | "display:none"
+    #|    ){x}
+    #|
+  let out = lower_text(src)
+  assert_eq(out.reports.length(), 0)
+  assert_true(
+    out.text.contains(":class=\"if .on { 'arrow open' } else { 'arrow' }\""),
+  )
+  assert_true(out.text.contains(":style=\"if .on {"))
+}

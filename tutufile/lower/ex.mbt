@@ -171,7 +171,12 @@ fn read_postfix(terms : ArrayView[@ast.Node]) -> Ex raise ExError {
       } else {
         3
       }
-    Id("dyn") => 3
+    Id("dyn") =>
+      if terms.length() >= 3 && terms[1].it is Op(".") {
+        3
+      } else {
+        1
+      }
     _ => 1
   }
   if head.it is Id("it") && terms.length() > 2 && terms[2].it is Id("state") {
@@ -266,13 +271,12 @@ fn read_it_head(terms : ArrayView[@ast.Node]) -> Ex raise ExError {
 }
 
 ///|
-fn read_dyn_head(terms : ArrayView[@ast.Node]) -> Ex raise ExError {
+fn read_dyn_head(terms : ArrayView[@ast.Node]) -> Ex {
+  // `dyn` is a namespace when a name follows it and an ordinary word when one
+  // does not — `~route: dyn` names the leg an intent walks, and a leg is not
+  // a binding.
   guard terms.length() >= 3 && terms[1].it is Op(".") && terms[2].it is Id(a) else {
-    raise ExError(
-      message="`dyn` names a dynamic binding, so a name has to follow it",
-      help="write `dyn.<name>`, and declare it with `lookup <name>`",
-      span=span_of(terms[0]),
-    )
+    return EName("dyn")
   }
   EDyn(a)
 }

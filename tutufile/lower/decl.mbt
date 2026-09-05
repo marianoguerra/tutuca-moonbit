@@ -62,16 +62,32 @@ pub fn read_member(group : @ast.Node) -> Member raise ExError {
   let mut body : @ast.Node? = None
   let rest = []
   let mut i = 1
-  if i < parts.length() && parts[i].it is Id(n) {
-    name = n
-    i = i + 1
-    // a parameter list belongs to the name it follows
-    if i < parts.length() && parts[i].it is Parens(gs) {
-      for g in gs {
-        params.push(read_param(g))
+  // A member may be QUALIFIED — `receive Holder::hold(inst)` answers a
+  // protocol's message rather than one of its own. The name is read whole,
+  // before `::` can be mistaken for the annotation operator beside it.
+  match (if can_qualify(word) { qualified(parts, 1) } else { None }) {
+    Some((q, next)) => {
+      name = q
+      i = next
+      if i < parts.length() && parts[i].it is Parens(gs) {
+        for g in gs {
+          params.push(read_param(g))
+        }
+        i = i + 1
       }
-      i = i + 1
     }
+    None =>
+      if i < parts.length() && parts[i].it is Id(n) {
+        name = n
+        i = i + 1
+        // a parameter list belongs to the name it follows
+        if i < parts.length() && parts[i].it is Parens(gs) {
+          for g in gs {
+            params.push(read_param(g))
+          }
+          i = i + 1
+        }
+      }
   }
   while i < parts.length() {
     let t = parts[i]
@@ -144,6 +160,24 @@ pub fn read_member(group : @ast.Node) -> Member raise ExError {
     span: span_of(group),
     doc: doc_of(group),
   }
+}
+
+///|
+/// Which members may carry a protocol-qualified name.
+///
+/// Not every member can: `field n :: Int` is a name and an annotation, and
+/// `::` is the operator in both — so the two are told apart by what is being
+/// declared rather than by looking at the terms, which cannot tell them apart
+/// at all.
+fn can_qualify(word : String) -> Bool {
+  word
+  is ("receive"
+  | "answer"
+  | "message"
+  | "intent"
+  | "express"
+  | "property"
+  | "view")
 }
 
 ///|

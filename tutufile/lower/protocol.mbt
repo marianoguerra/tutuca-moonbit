@@ -12,6 +12,10 @@
 pub fn qualified(parts : Array[@ast.Node], from : Int) -> (String, Int)? {
   guard from + 2 < parts.length() else { return None }
   guard parts[from].it is Id(a) else { return None }
+  // A protocol name is UpperCamel, which is what tells `Holder::hold` from
+  // the `count :: Int` beside it: `::` is one operator in both places, and
+  // the terms cannot say which is meant.
+  guard is_upper(a) else { return None }
   guard parts[from + 1].it is Op("::") else { return None }
   guard parts[from + 2].it is Id(b) else { return None }
   Some((a + "::" + b, from + 3))

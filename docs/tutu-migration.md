@@ -509,6 +509,7 @@ The directive table:
 | `@show=".is_open"` | `@show(it.is_open){ … }` — a form, so it wraps a body |
 | `@hide="empty? .kind"` | `@hide(it.kind.is_empty()){ … }` |
 | `@if.class=".on" @then="'a'" @else="'b'"` | `~class: if it.on \| "a" \| "b"` |
+| `@if.style` / `@if.<any attr>` | the same: an `if` in that attribute's value |
 | `<li @each=".items">…</li>` | `@each(item in it.items){ @li{…} }` |
 | `@each` + `@when="f"` + `@enrich-with="e"` | `@each(item, i in it.rows, ~when: f, ~enrich_with: e){…}` |
 | `@loop-with="page"` | `~loop_with: page` on the `@each` |
@@ -631,6 +632,20 @@ top of a group. `type "input.draft", "milk"` does not parse: shrubbery
 admits a comma only immediately inside `(&nbsp;)`, `[&nbsp;]` or `{&nbsp;}`, so
 a comma at the top of a group is `MisplacedComma`. Everything else in the
 language was already a call, so the steps read better for it.
+
+### One check to run over a converted view
+
+A stylesheet compiled from the classes a view uses only sees the LITERAL
+fragments of a bound value, so a class that ends up somewhere the collector
+does not look leaves the stylesheet silently and the page renders unstyled in
+whichever branch nobody opened. Count before and count after:
+
+```bash
+tutuca gen-margaui-css src/ --print-classes | wc -l
+```
+
+Equal counts across a conversion is a one-line gate over the whole class of
+that failure, and it is worth running per file rather than per batch.
 
 ## What the conversion changes underneath
 
