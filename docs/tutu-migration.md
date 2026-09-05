@@ -279,6 +279,13 @@ written when the card said nothing is stale the moment it starts speaking.
 `~keywords` takes a bracketed list and not a comma-separated run:
 `~keywords: layout, box` does not parse, for the reason a scene step is a call.
 
+**Converting a card moves its keywords from the shipper to the card.** A host
+annotates a component beside the card because the card said nothing; once it
+speaks, the annotation's rows for those two fields stop having any effect. So a
+palette changes one converted card at a time, which is the incentive working
+rather than a bug — but it is a thing to tell whoever maintains the table
+before they notice it themselves.
+
 ### Protocols
 
 A protocol is a declaration of the spec section, and its id is a quoted string
@@ -678,6 +685,23 @@ tutuca gen-margaui-css src/ --print-classes | wc -l
 
 Equal counts across a conversion is a one-line gate over the whole class of
 that failure, and it is worth running per file rather than per batch.
+
+## What the conversion does NOT change
+
+**Every authority check, by construction.** The sections are lowered into the
+blocks the front end already reads, so by the time a policy, a sanitizer or a
+trust tier sees a `.tutu` card, it *is* an `.html` card — the same text, from
+the same reader. `~dangerously_inner_html` prints `@dangerouslysetinnerhtml`
+because that literal is what `anode/attrs.mbt` matches and what every gate
+under it is keyed on: `Policy::allows_raw_markup`, the sanitizer's raw-markup
+path, the Untrusted walk. A printer that spelled it anything else would make
+the attribute parse as an ordinary unknown one and every gate downstream would
+miss it.
+
+The consequence worth having is the one that saves work: there is nothing to
+re-test on the security side. A second suite asserting that a `.tutu` card is
+refused where an `.html` card is refused would be asserting that two identical
+strings behave identically.
 
 ## What the conversion changes underneath
 
