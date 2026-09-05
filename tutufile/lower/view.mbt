@@ -19,6 +19,53 @@ pub fn print_view(
 }
 
 ///|
+/// A value read in a VIEW, where a bare name is a scope binding.
+///
+/// A property is `it.x`, a method is `name(…)`, and what is left — a name with
+/// nothing on it — is something a loop or an enricher put in scope. The old
+/// notation spells that `@name`, so the sigil goes back on at the last moment
+/// rather than being carried through the reader.
+fn bound(ex : Ex, renames : Map[String, String]) -> Ex {
+  let ex = rename_ex(ex, renames)
+  bind_names(ex)
+}
+
+///|
+fn bind_names(ex : Ex) -> Ex {
+  match ex {
+    EName(n) =>
+      if n.has_prefix("@") || n == "true" || n == "false" || n == "null" {
+        ex
+      } else {
+        EName("@" + n)
+      }
+    EMember(EName(n), m) =>
+      if n.has_prefix("@") || n == "e" {
+        ex
+      } else {
+        EMember(EName("@" + n), m)
+      }
+    EBin(op, a, b) => EBin(op, bind_names(a), bind_names(b))
+    EUn(op, a) => EUn(op, bind_names(a))
+    EIf(c, a, b) => EIf(bind_names(c), bind_names(a), bind_names(b))
+    EIndex(a, b) => EIndex(bind_names(a), bind_names(b))
+    ETemplate(parts) => {
+      let out = []
+      for p in parts {
+        out.push(
+          match p {
+            TText(t) => TText(t)
+            THole(h) => THole(bind_names(h))
+          },
+        )
+      }
+      ETemplate(out)
+    }
+    _ => ex
+  }
+}
+
+///|
 /// One item of an at-notation body: text, a hole, or an element.
 fn print_content(
   group : @ast.Node,
@@ -143,7 +190,7 @@ fn print_attr(
   let attr = attr_name(name)
   match value {
     EStr(s) => "\{attr}=\"\{attr_escape(s)}\""
-    other => ":\{attr}=\"\{attr_escape(print_ex(rename_ex(other, renames)))}\""
+    other => ":\{attr}=\"\{attr_escape(print_ex(bound(other, renames)))}\""
   }
 }
 
@@ -212,7 +259,7 @@ fn print_guard(
       span=@report.Span::at(0),
     )
   }
-  let cond = print_ex(rename_ex(pos[0], renames))
+  let cond = print_ex(bound(pos[0], renames))
   print_with_extra(
     body[0],
     out,
@@ -232,15 +279,8 @@ fn print_each(
   indent : String,
   renames : Map[String, String],
 ) -> Unit raise ExError {
-  guard raw.length() >= 1 else {
-    raise ExError(
-      message="`@each` takes one `<name> in <sequence>`",
-      help="write `@each(item in it.items){ … }`",
-      span=@report.Span::at(0),
-    )
-  }
-  let (names, seq) = split_binder(raw[0])
-  let args = args_of(raw[1:].to_owned())
+  let (names, seq, after) = split_binder(raw)
+  let args = args_of(raw[after:].to_owned())
   let inner : Map[String, String] = Map([])
   for k in renames {
     inner[k.0] = k.1
@@ -285,40 +325,44 @@ fn print_each(
 ///|
 /// `item in xs`, or `item, i in xs`.
 ///
-/// This is the one place a view reads NAMES rather than values: the loop
-/// introduces them, which is what makes a member read on one checkable.
-fn split_binder(group : @ast.Node) -> (Array[String], Ex) raise ExError {
-  guard group.it is Group(parts) else {
-    raise ExError(
-      message="`@each` needs `<name> in <sequence>`",
-      help="write `@each(item in it.items){ … }`",
-      span=span_of(group),
-    )
-  }
+/// A comma separates GROUPS inside parentheses, so `item, i in it.pages` is
+/// two of them and the binder is not one term sequence but several. This is
+/// the one place a view reads NAMES rather than values — the loop introduces
+/// them, which is what makes a member read on one checkable.
+fn split_binder(
+  raw : Array[@ast.Node],
+) -> (Array[String], Ex, Int) raise ExError {
   let names = []
-  let mut i = 0
-  while i < parts.length() {
-    match parts[i].it {
-      Id("in") => {
-        i = i + 1
-        break
+  let mut g = 0
+  while g < raw.length() {
+    guard raw[g].it is Group(parts) else { break }
+    let mut i = 0
+    let mut saw_in = false
+    while i < parts.length() {
+      match parts[i].it {
+        Id("in") => {
+          saw_in = true
+          i = i + 1
+          break
+        }
+        Id(n) => {
+          names.push(n)
+          i = i + 1
+        }
+        _ => i = i + 1
       }
-      Id(n) => {
-        names.push(n)
-        i = i + 1
-      }
-      Op(",") => i = i + 1
-      _ => i = i + 1
     }
+    if saw_in {
+      guard names.length() > 0 && i < parts.length() else { break }
+      return (names, read_ex(parts[i:]), g + 1)
+    }
+    g = g + 1
   }
-  guard names.length() > 0 && i < parts.length() else {
-    raise ExError(
-      message="`@each` needs `<name> in <sequence>`",
-      help="write `@each(item in it.items){ … }`, or `@each(item, i in it.items)`",
-      span=span_of(group),
-    )
-  }
-  (names, read_ex(parts[i:]))
+  raise ExError(
+    message="`@each` needs `<name> in <sequence>`",
+    help="write `@each(item in it.items){ … }`, or `@each(item, i in it.items)`",
+    span=if raw.length() > 0 { span_of(raw[0]) } else { @report.Span::at(0) },
+  )
 }
 
 ///|

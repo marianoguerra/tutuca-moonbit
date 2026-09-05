@@ -137,6 +137,12 @@ are why.
 | `str x` / `int x` / `num x` | `x.to_string()` / `x.to_int()` / `x.to_number()` |
 | `truthy? x` / `null? x` | `x.is_truthy()` / `x == none` |
 | `null` | `none` — a value, so `it.cells.push(none)` works |
+
+`x == none` reads as the shape predicate `null? x` in an expression, because
+that predicate is total where a comparison against a null is not. In a **scene**
+it does not: `expect state it.child == none` is an assertion about a value and
+prints `"is": null`. The two sections have separate printers, which is why the
+fold is where it applies and absent where it would be wrong.
 | `if c { a } else { b }` | `if c \| a \| b` |
 | `a implies b` | `a implies b` (unchanged) |
 

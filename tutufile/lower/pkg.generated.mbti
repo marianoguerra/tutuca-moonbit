@@ -10,15 +10,21 @@ import {
 // Values
 pub fn body_groups(@tutufile.Decl) -> Array[@ast.Node]
 
+pub fn case_text(Array[@ast.Node], Int) -> String raise ExError
+
 pub fn decl_doc(@tutufile.Decl) -> String?
 
 pub fn doc_of(@ast.Node) -> String?
 
 pub fn ex_report(ExError, @error-report.SourceId) -> @error-report.Report
 
+pub fn is_tutu_source(String) -> Bool
+
 pub fn json_of(Ex) -> Json raise ExError
 
 pub fn lower(String, @error-report.SourceId) -> Lowered
+
+pub fn member_name(Array[@ast.Node], Int) -> (String, Int)?
 
 pub fn node_text(@ast.Node) -> String
 
@@ -34,6 +40,8 @@ pub fn print_fixtures(Array[@tutufile.Decl]) -> String raise ExError
 
 pub fn print_logic(@tutufile.Decl, StringBuilder) -> Map[String, PropImpl] raise ExError
 
+pub fn print_protocol(@tutufile.Decl, StringBuilder) -> Unit raise ExError
+
 pub fn print_scenes(Array[@tutufile.Decl]) -> String raise ExError
 
 pub fn print_state(@tutufile.Decl, Map[String, PropImpl], StringBuilder) -> Unit raise ExError
@@ -45,6 +53,8 @@ pub fn print_struct(@tutufile.Decl, StringBuilder) -> Unit raise ExError
 pub fn print_ty(Ex) -> String raise ExError
 
 pub fn print_view(@tutufile.Decl, StringBuilder) -> Unit raise ExError
+
+pub fn qualified(Array[@ast.Node], Int) -> (String, Int)?
 
 pub fn quote_str(String) -> String
 
