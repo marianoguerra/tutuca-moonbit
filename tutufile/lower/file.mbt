@@ -37,7 +37,7 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
           logic_text.write_string(body.to_string())
           logic_text.write_string("</script>\n\n")
         } catch {
-          e => reports.push(ex_report(e, source))
+          e => reports.push(ex_report(e, source, fallback=decl.span))
         }
       }
     None => ()
@@ -63,7 +63,7 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
             out.write_string(ch.to_string())
           }
         } catch {
-          e => reports.push(ex_report(e, source))
+          e => reports.push(ex_report(e, source, fallback=decl.span))
         }
       }
       out.write_string("</script>\n\n")
@@ -79,7 +79,7 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
         out.write_string(json)
         out.write_string("\n</script>\n\n")
       } catch {
-        e => reports.push(ex_report(e, source))
+        e => reports.push(ex_report(e, source, fallback=section.span))
       }
     None => ()
   }
@@ -91,7 +91,7 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
         out.write_string(json)
         out.write_string("\n</script>\n\n")
       } catch {
-        e => reports.push(ex_report(e, source))
+        e => reports.push(ex_report(e, source, fallback=section.span))
       }
     None => ()
   }
@@ -105,21 +105,21 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
               print_view(decl, body)
               out.write_string(body.to_string())
             } catch {
-              e => reports.push(ex_report(e, source))
+              e => reports.push(ex_report(e, source, fallback=decl.span))
             }
           Style =>
             try {
               print_file_style(decl, body)
               out.write_string(body.to_string())
             } catch {
-              e => reports.push(ex_report(e, source))
+              e => reports.push(ex_report(e, source, fallback=decl.span))
             }
           Macro =>
             try {
               print_macro(decl, body)
               out.write_string(body.to_string())
             } catch {
-              e => reports.push(ex_report(e, source))
+              e => reports.push(ex_report(e, source, fallback=decl.span))
             }
           _ => ()
         }
@@ -185,10 +185,18 @@ fn print_macro(
 
 ///|
 /// An expression failure as a report, with the repair it names.
-pub fn ex_report(e : ExError, source : @report.SourceId) -> @report.Report {
+pub fn ex_report(
+  e : ExError,
+  source : @report.SourceId,
+  fallback? : @report.Span = @report.Span::at(0),
+) -> @report.Report {
   let ExError(message~, help~, span~) = e
+  // A printer works over an expression, which carries no span — so a failure
+  // raised inside one points nowhere, and the enclosing declaration is the
+  // narrowest place that does. Better the right line than the first one.
+  let at = if span.start == 0 && span.len == 0 { fallback } else { span }
   @report.Report::error(message)
   .with_code("tutu::lower")
-  .with_label(@report.Label::primary(source, span))
+  .with_label(@report.Label::primary(source, at))
   .with_help(help)
 }

@@ -49,38 +49,42 @@ pub fn print_state(
   for group in body_groups(decl) {
     guard group.it is Group(parts) && parts.length() > 0 else { continue }
     guard parts[0].it is Id(word) else { continue }
-    match word {
-      "field" => print_field(read_member(group), out)
-      // `property Holder::filled = filled` binds a protocol member to a local
-      // one; it is a line of the property section rather than a declaration.
-      "property" =>
-        match binding_line(parts) {
-          Some(text) => props.push(text)
-          None => props.push(print_property(read_member(group), impls))
-        }
-      "view" =>
-        match binding_line(parts) {
-          Some(text) => view_binds.push(text)
-          None =>
-            raise ExError(
-              message="a `view` in a component binds a protocol role",
-              help="write `view <Protocol>::<role> = <local view>`",
-              span=span_of(parts[0]),
-            )
-        }
-      "pred" | "invariant" => rules.push(read_member(group))
-      "where" => wheres.push(group)
-      "provide" => provides.push(group)
-      "lookup" => lookups.push(group)
-      // channels and helper types are declarations of the file, not of the
-      // state body, and are printed after it
-      "message" | "intent" | "express" | "implements" => ()
-      _ =>
-        raise ExError(
-          message="`\{word}` is not a spec member",
-          help="a component declares `field`, `property`, `pred`, `invariant`, `where`, `provide`, `lookup`, `message`, `intent` and `express`",
-          span=span_of(parts[0]),
-        )
+    try {
+      match word {
+        "field" => print_field(read_member(group), out)
+        // `property Holder::filled = filled` binds a protocol member to a local
+        // one; it is a line of the property section rather than a declaration.
+        "property" =>
+          match binding_line(parts) {
+            Some(text) => props.push(text)
+            None => props.push(print_property(read_member(group), impls))
+          }
+        "view" =>
+          match binding_line(parts) {
+            Some(text) => view_binds.push(text)
+            None =>
+              raise ExError(
+                message="a `view` in a component binds a protocol role",
+                help="write `view <Protocol>::<role> = <local view>`",
+                span=span_of(parts[0]),
+              )
+          }
+        "pred" | "invariant" => rules.push(read_member(group))
+        "where" => wheres.push(group)
+        "provide" => provides.push(group)
+        "lookup" => lookups.push(group)
+        // channels and helper types are declarations of the file, not of the
+        // state body, and are printed after it
+        "message" | "intent" | "express" | "implements" => ()
+        _ =>
+          raise ExError(
+            message="`\{word}` is not a spec member",
+            help="a component declares `field`, `property`, `pred`, `invariant`, `where`, `provide`, `lookup`, `message`, `intent` and `express`",
+            span=span_of(parts[0]),
+          )
+      }
+    } catch {
+      e => raise at_span(e, span_of(group))
     }
   }
   if !props.is_empty() {

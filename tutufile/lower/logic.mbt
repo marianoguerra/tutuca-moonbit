@@ -12,22 +12,45 @@ pub fn print_logic(
     guard group.it is Group(parts) && parts.length() > 0 else { continue }
     guard parts[0].it is Id(word) else { continue }
     let m = read_member(group)
-    match word {
-      "receive" | "answer" => print_transition(m, out)
-      "compute" => print_compute(m, out)
-      "pred" => print_row_pred(m, out)
-      "enrich" => print_enrich(m, out)
-      "bind_with" => print_bind_with(m, out)
-      "property" => impls[m.name] = print_accessors(m, out)
-      _ =>
-        raise ExError(
-          message="`\{word}` is not a logic member",
-          help="a component's behaviour is `receive`, `answer`, `compute`, `pred`, `enrich`, `bind_with` and `property`",
-          span=span_of(parts[0]),
-        )
+    // Everything below prints an expression, which has no span of its own —
+    // so a failure is re-raised against the member it was printing, which is
+    // the narrowest place that does have one.
+    let m = { ..m, span: span_of(group), }
+    try {
+      match word {
+        "receive" | "answer" => print_transition(m, out)
+        "compute" => print_compute(m, out)
+        "pred" => print_row_pred(m, out)
+        "enrich" => print_enrich(m, out)
+        "bind_with" => print_bind_with(m, out)
+        "property" => impls[m.name] = print_accessors(m, out)
+        _ =>
+          raise ExError(
+            message="`\{word}` is not a logic member",
+            help="a component's behaviour is `receive`, `answer`, `compute`, `pred`, `enrich`, `bind_with` and `property`",
+            span=span_of(parts[0]),
+          )
+      }
+    } catch {
+      e => raise at_span(e, m.span)
     }
   }
   impls
+}
+
+///|
+/// Re-raise a failure against a place, when it has none of its own.
+///
+/// A printer works over an expression and an expression carries no span, so
+/// the enclosing declaration is the narrowest thing that can point anywhere.
+/// Better the right line than the first one.
+pub fn at_span(e : ExError, at : @report.Span) -> ExError {
+  let ExError(message~, help~, span~) = e
+  if span.start == 0 && span.len == 0 {
+    ExError(message~, help~, span=at)
+  } else {
+    e
+  }
 }
 
 ///|
