@@ -93,3 +93,10 @@ test "a method nobody has is refused by name" {
     content="<error: `sorted` is not a method of a value>",
   )
 }
+
+///|
+test "the absent value is a literal, and a comparison with it is a predicate" {
+  inspect(ex("none"), content="null")
+  inspect(ex("it.x == none"), content="(null? .x)")
+  inspect(ex("it.x != none"), content="(not (null? .x))")
+}

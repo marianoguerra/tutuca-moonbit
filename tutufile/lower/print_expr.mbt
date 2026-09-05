@@ -13,12 +13,10 @@ pub fn print_ex(ex : Ex) -> String raise ExError {
     ENum(n) => num_text(n)
     EStr(s) => quote_str(s)
     EBool(b) => if b { "true" } else { "false" }
-    ENone =>
-      raise ExError(
-        message="`none` is not a value here",
-        help="ask about absence instead: `x == none` reads as `null? x`",
-        span=@report.Span::at(0),
-      )
+    // The absent value has a literal in both notations. `x == none` still
+    // folds into the shape predicate below, because that one is total where a
+    // comparison against a null is not.
+    ENone => "null"
     EName(n) => n
     EIt(f) => "." + f
     EState(f) => "state." + f

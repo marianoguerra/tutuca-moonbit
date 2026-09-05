@@ -9,8 +9,9 @@
 
 ///|
 pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
-  let file = split(source, name)
-  let (comps, issues) = prepare(file, name)
+  let (file, lowered) = split(source, name)
+  let (comps, checked) = prepare(file, name)
+  let issues = lowered + checked
   {
     component: if comps.length() > 0 {
       comps[0].name
@@ -24,8 +25,9 @@ pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
 
 ///|
 pub fn compile(source : String, name~ : String) -> Compiled raise GenError {
-  let file = split(source, name)
-  let (comps, issues) = prepare(file, name)
+  let (file, lowered) = split(source, name)
+  let (comps, checked) = prepare(file, name)
+  let issues = lowered + checked
   // ERRORS only. A warning is a thing worth telling an author about a card that
   // RUNS, and refusing to build one would make the two indistinguishable from
   // the outside — which is the whole reason the checker separates them.
@@ -58,10 +60,21 @@ pub fn compile_decls(
 }
 
 ///|
-fn split(source : String, name : String) -> @viewfile.ViewFile raise GenError {
-  @viewfile.split_file(tutu_or_html(source), name~) catch {
+/// The blocks, and whatever the lowering had to say to get to them.
+///
+/// The issues travel WITH the file rather than being raised here, because a
+/// lowering that failed still answers the blocks it managed and an author
+/// fixing one report should see the next. `compile` refuses on an error the
+/// same way it refuses on a checker error, and `check_card` prints them.
+fn split(
+  source : String,
+  name : String,
+) -> (@viewfile.ViewFile, Array[Issue]) raise GenError {
+  let (text, issues) = tutu_or_html(source)
+  let file = @viewfile.split_file(text, name~) catch {
     e => raise BadCard(e.message())
   }
+  (file, issues)
 }
 
 ///|
@@ -72,28 +85,47 @@ fn split(source : String, name : String) -> @viewfile.ViewFile raise GenError {
 /// card written in the new notation gets it compiled the same way, with no
 /// second entry point and nothing for a host to choose between.
 ///
-/// The two are told apart by what the text HOLDS rather than by an extension,
-/// because nothing above this has a filename to go on: a page compiles a
-/// string a model just wrote.
-fn tutu_or_html(source : String) -> String {
-  guard is_tutu(source) else { return source }
+/// EVERY REPORT COMES BACK. Dropping them was measured rather than argued
+/// about: a card whose whole `logic:` section was garbage compiled to 5158
+/// bytes and `tgc check` answered "0 issues", because the lowering emitted the
+/// blocks it could and the splitter had no reason to complain about the
+/// handler that was never in them. The card rendered and did nothing, which is
+/// the shape of a dispatch bug rather than a compile error and is read as one.
+/// The reports know the section, the line and the span; only this function was
+/// in a position to lose them.
+fn tutu_or_html(source : String) -> (String, Array[Issue]) {
+  guard @lower.is_tutu_source(source) else { return (source, []) }
   let sources = @report.Sources::new()
   let id = sources.add("card.tutu", source)
   let out = @lower.lower(source, id)
-  // A lowering that failed answers the blocks it managed, and the splitter
-  // reports what is missing against them. The alternative — refusing here —
-  // would replace a reader's message about a component with our message about
-  // a section, which is further from the mistake.
-  out.text
+  // For the line and column. `Sources` owns the copy the reports point into;
+  // this is the same text, read for its line breaks.
+  let src = @report.Source::new("card.tutu", source)
+  (out.text, out.reports.map(r => issue_of(r, src)))
 }
 
 ///|
-/// Whether a card is written in the section notation.
+/// One lowering report, as the issue the card path already carries.
 ///
-/// A `.tutu` file has no `<script type="tutuca/…">` and no `<template>`; a
-/// `.html` card has at least one of the two or it declares nothing at all.
-fn is_tutu(source : String) -> Bool {
-  !source.contains("<script") && !source.contains("<template")
+/// `comp` is empty because a section that did not lower has no component to
+/// blame — the file may not have named one yet, and guessing would put the
+/// wrong name in front of an author.
+fn issue_of(r : @report.Report, src : @report.Source) -> Issue {
+  let span = match r.anchor() {
+    Some(label) => label.span
+    None => @report.Span::of_range(0, 0)
+  }
+  {
+    comp: "",
+    code: r.code.unwrap_or("TUTU_LOWER"),
+    message: r.message,
+    severity: match r.severity {
+      Error => "error"
+      Warning | Advice => "warning"
+    },
+    line: src.line_of(span.start) + 1,
+    span: { start: span.start, end_: span.end() },
+  }
 }
 
 ///|

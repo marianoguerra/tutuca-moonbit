@@ -136,6 +136,7 @@ are why.
 | `max 0 (.qty - 1)` | `math.max(0, it.qty - 1)` |
 | `str x` / `int x` / `num x` | `x.to_string()` / `x.to_int()` / `x.to_number()` |
 | `truthy? x` / `null? x` | `x.is_truthy()` / `x == none` |
+| `null` | `none` — a value, so `it.cells.push(none)` works |
 | `if c { a } else { b }` | `if c \| a \| b` |
 | `a implies b` | `a implies b` (unchanged) |
 

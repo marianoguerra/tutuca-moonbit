@@ -124,7 +124,7 @@ test "a qualified receive with no parameters keeps its block" {
     #|logic:
     #|  Box:
     #|    receive Container::appendCell:
-    #|      it.cells.push("")
+    #|      it.cells.push(none)
     #|
   let out = lower_text(src)
   assert_eq(out.reports.length(), 0)
