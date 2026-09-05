@@ -124,7 +124,7 @@ fn issue_of(r : @report.Report, src : @report.Source) -> Issue {
       Warning | Advice => "warning"
     },
     line: src.line_of(span.start) + 1,
-    span: { start: span.start, end_: span.end() },
+    span: { start: span.start, end_: span.end(), },
   }
 }
 
