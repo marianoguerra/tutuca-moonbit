@@ -699,7 +699,7 @@ fn print_comment(
   body : Array[@ast.Node],
   out : StringBuilder,
   indent : String,
-) -> Unit raise ExError {
+) -> Unit {
   let text = StringBuilder()
   for g in body {
     guard g.it is Group(parts) && parts.length() == 1 else { continue }

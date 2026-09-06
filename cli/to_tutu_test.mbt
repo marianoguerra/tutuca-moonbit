@@ -52,14 +52,17 @@ test "a lowercase component name is refused, and names the spelling to use" {
 /// The refusal path: a construct the converter will not guess at stops the
 /// write and says which one.
 test "a construct with no spelling stops the write and names itself" {
-  // A comment NODE reaches the DOM, and at-notation has no spelling for one:
-  // `//` in shrubbery is a comment in the FILE, which is a different thing and
-  // would drop it silently.
+  // `where title len <= 100` states the relation about the value's LENGTH. It
+  // nests, and the nesting has no spelling in the new notation — so it is
+  // refused by name rather than flattened into a claim about the value itself.
   let html =
     #|<script type="tutuca/spec">
-    #|  state Holder { rows: Array[String] }
+    #|  state Holder {
+    #|    title: String
+    #|    where title len <= 100
+    #|  }
     #|</script>
-    #|<template id="Holder"><div><!-- keep me --></div></template>
+    #|<template id="Holder"><div>x</div></template>
     #|
   let emit = @cli.to_tutu_apply(
     { path: "Holder.html", out: None, name: "Holder", dry_run: true, },
@@ -67,7 +70,7 @@ test "a construct with no spelling stops the write and names itself" {
   )
   assert_eq(emit.exit_code, 1)
   assert_true(emit.err.contains("will not guess at"))
-  assert_true(emit.err.contains("comment node"))
+  assert_true(emit.err.contains("about a value's length"))
 }
 
 ///|
