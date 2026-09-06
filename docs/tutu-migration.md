@@ -431,9 +431,14 @@ Point by point:
   fixture entry its value. `+=` and friends are unchanged.
 - Collection statements become method calls: `.items.push cur` →
   `it.items.push(…)`, `deleteAt` → `delete_at`, `setAt` → `set_at`,
-  `insertAt` → `insert_at`, `removeAt` → `delete_at`, `toggle` → `toggle`.
-  The aliases that parsed but only one backend implemented (`clear`, `delete`,
-  `set`, `removeAt`) are not methods, so they do not parse at all.
+  `insertAt` → `insert_at`, `removeAt` → `delete_at`, `clear` → `clear`,
+  `toggle` → `toggle`. `delete` and `set` parsed in the old notation and named
+  no operation, so they do not parse at all.
+
+  `clear` reads like one of those and is not: it is the only spelling for
+  emptying a list, because there is no list literal to assign to the field
+  instead. Dropping it would have taken the operation with it — which is what
+  the universal shell's `clearNotes` found.
 - **`new` / `cur` go away.** Every `struct` and component has a parenthesised
   parameter list, so an aggregate is spelled directly. A `new` block whose
   writes are all straight-line becomes one constructor call; one that branches

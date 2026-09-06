@@ -52,19 +52,23 @@ test "a lowercase component name is refused, and names the spelling to use" {
 /// The refusal path: a construct the converter will not guess at stops the
 /// write and says which one.
 test "a construct with no spelling stops the write and names itself" {
-  // `clear` parsed in the old block language and only one backend implemented
-  // it. The new notation does not have it — a REMOVAL rather than an
-  // unimplemented printer — so a call to one is refused by name rather than
-  // written as a method that does not exist. This is the anchor the earlier
-  // ones were not: `provide`, a comment node and `where … len` each stopped
-  // being refused as the converter learned to print them, and each time this
-  // test went red having proved the opposite of what it claimed.
+  // `delete` is the old block language's second name for `remove`, and `set`
+  // its second for `setAt`. The new notation keeps ONE spelling of each, so a
+  // call to the dropped one is refused by name rather than written as a method
+  // that does not exist.
+  //
+  // This test has gone red four times, each time having proved the opposite of
+  // what it claimed: `provide`, a comment node and `where … len` each stopped
+  // being refused as the converter learned to print them, and `clear` turned
+  // out not to be an alias at all — it is the only spelling for emptying a
+  // list, so removing it removed the operation. An alias with a surviving
+  // spelling is the anchor those were not.
   let html =
     #|<script type="tutuca/spec">
-    #|  state Holder { notes: Array[String] }
+    #|  state Holder { tags: Set[String] }
     #|</script>
     #|<script type="tutuca/script">
-    #|  receive wipe { .notes.clear }
+    #|  receive drop(t) { .tags.delete t }
     #|</script>
     #|<template id="Holder"><div>x</div></template>
     #|

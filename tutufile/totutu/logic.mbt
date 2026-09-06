@@ -559,19 +559,22 @@ fn leg_word(leg : @tutuca.Leg) -> String {
 ///|
 /// A collection mutator the new notation has a method for.
 ///
-/// The old block language had aliases only one backend implemented — `clear`,
-/// `delete`, `set`, `removeAt` — and the new notation keeps the ones that are
-/// methods. `removeAt` is `delete_at`; the other three are not methods at all,
-/// so a call to one is refused rather than printed as a method that does not
-/// exist.
+/// The old block language had two spellings of one operation — `removeAt` and
+/// `deleteAt` — and the new notation keeps `delete_at`. `delete` and `set`
+/// parsed there and named no operation at all, so a call to one is refused
+/// rather than printed as a method that does not exist.
+///
+/// `clear` is a method. It reads like the other two dropped names and is not
+/// one of them: it is the ONLY spelling for emptying a list, because there is
+/// no list literal to assign, so dropping it would take the operation with it.
 pub fn checked_mutator(name : String) -> String raise NoSpelling {
   let m = @names.mutator_of(name)
-  guard ["push", "insert_at", "set_at", "delete_at", "add", "remove", "toggle"].contains(
-    m,
-  ) else {
+  guard [
+    "push", "insert_at", "set_at", "delete_at", "clear", "add", "remove", "toggle",
+  ].contains(m) else {
     raise NoSpelling(
       what="`\{name}`, which is not a collection method",
-      help="the methods are `push`, `insert_at`, `set_at`, `delete_at`, `add`, `remove` and `toggle` — `clear`, `delete` and `set` parsed in the old notation and only one backend implemented them",
+      help="the methods are `push`, `insert_at`, `set_at`, `delete_at`, `clear`, `add`, `remove` and `toggle` — `delete` and `set` parsed in the old notation and named no operation",
     )
   }
   m

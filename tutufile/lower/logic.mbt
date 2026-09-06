@@ -417,7 +417,7 @@ fn print_call_stmt(
       guard collection_op(op) is Some(word) else {
         raise ExError(
           message="`\{op}` is not a collection operation",
-          help="the operations are `push`, `insert_at`, `set_at`, `delete_at`, `add`, `remove` and `toggle`",
+          help="the operations are `push`, `insert_at`, `set_at`, `delete_at`, `clear`, `add`, `remove` and `toggle`",
           span=@report.Span::at(0),
         )
       }
@@ -449,6 +449,10 @@ pub fn collection_op(name : String) -> String? {
     "add" => Some("add")
     "remove" => Some("remove")
     "toggle" => Some("toggle")
+    // Emptying a list. It is the ONLY spelling for the operation — there is no
+    // list literal to assign — so it is a method like the rest rather than an
+    // alias of anything.
+    "clear" => Some("clear")
     _ => None
   }
 }
