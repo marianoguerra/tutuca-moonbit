@@ -287,3 +287,51 @@ test "a literal `@` keeps the text around it" {
   @debug.assert_eq(got.refusals, [])
   assert_true(got.text.contains("@p{@\"a@b\"}"))
 }
+
+///|
+/// The same seam, on the WRITING side, with no escape involved.
+///
+/// A multi-piece body is not a fact about escapes: an element or a hole in the
+/// middle of a text run splits it just as well. The writer used to trim each
+/// printed child before joining them, which ate the space on either side of
+/// every one — so this asserts the ordinary case, which is the one that would
+/// have shown up as a mysteriously missing space in a view with no `@` in it.
+test "spaces survive around an element and a hole in one run" {
+  let html =
+    #|<script type="tutuca/spec">
+    #|  state Card { n: Int }
+    #|</script>
+    #|<template id="Card">
+    #|  <p>one <b>two</b> three <x text=".n"></x> four</p>
+    #|</template>
+    #|
+  let got = convert(html, name="Card")
+  @debug.assert_eq(got.refusals, [])
+  assert_true(got.text.contains("@p{one @b{two} three @(it.n) four}"))
+}
+
+///|
+/// Layout whitespace inside a text node is collapsed, and that is a decision.
+///
+/// `<p>one two\n  three four</p>` has one text node holding a newline and two
+/// columns of source indentation. HTML renders that as one space between the
+/// words, so the newline and the indent are LAYOUT — and the new notation would
+/// carry them as content, since whitespace there is explicit. Collapsing to one
+/// space is what keeps the rendered page identical rather than the byte string.
+///
+/// `equiv` tolerates it because `strip_ws` normalises, so this is the assertion
+/// that says it was chosen rather than merely permitted.
+test "layout whitespace inside a text node collapses to one space" {
+  let html =
+    #|<script type="tutuca/spec">
+    #|  state Card { n: Int }
+    #|</script>
+    #|<template id="Card">
+    #|  <p>one two
+    #|     three four</p>
+    #|</template>
+    #|
+  let got = convert(html, name="Card")
+  @debug.assert_eq(got.refusals, [])
+  assert_true(got.text.contains("@p{one two three four}"))
+}

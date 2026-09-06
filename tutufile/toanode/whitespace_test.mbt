@@ -94,3 +94,53 @@ test "the printer path made its own formatting into text" {
   @debug.assert_eq(direct_view(src).map(texts), Some(["+"]))
   @debug.assert_eq(printed_view(src).map(texts), Some(["\n  +\n"]))
 }
+
+///|
+/// A body that arrives as SEVERAL content pieces still reads as one text node,
+/// with the whitespace at the seams intact.
+///
+/// An escape splits a body — `@p{x @"@" y}` is the three pieces `"x "`, `"@"`,
+/// `" y"` — but so does anything else that interrupts a text run, so this is not
+/// a fact about escapes. The spaces live at the EDGES of the neighbouring
+/// pieces, which is exactly what a per-piece trim or a joining separator would
+/// destroy, and neither is here.
+///
+/// Asserted on the STRING. `strip_ws` collapses whitespace by design, so a
+/// comparison that went through it would agree whether the spaces were there or
+/// not — which is how the same bug reached the writer unnoticed.
+test "a body split into pieces keeps the whitespace at the seams" {
+  @debug.assert_eq(view_texts("  Card:\n    @p{write to me @\"@\" home}"), [
+    "write to me @ home",
+  ])
+  @debug.assert_eq(view_texts("  Card:\n    @p{x @\"@\" y}"), ["x @ y"])
+  @debug.assert_eq(view_texts("  Card:\n    @p{a@\"@\"b}"), ["a@b"])
+}
+
+///|
+/// Wrapped prose, which arrives as more pieces than it looks like.
+///
+/// A continuation line indented deeper than the shared indent contributes the
+/// EXCESS as a piece of its own: `@p{one two\n     three four}` is the four
+/// pieces `"one two"`, `"\n"`, `"  "`, `"three four"`, where a plain two-line
+/// body is three. So the piece count varies with how the prose is laid out, and
+/// anything switching on it — or assuming text-newline-text — sees a different
+/// shape on wrapped prose than on the same content unwrapped.
+///
+/// The rule, as `marianoguerra/shrubbery`'s README states it in doctests: one
+/// piece per run of text on a line, a newline piece per break, a piece for
+/// whatever indentation a line has beyond the shared indent, a piece per escape
+/// result — concatenate them.
+///
+/// Joining with nothing inserted is what makes them come out right, and it is
+/// also what preserves the relative indentation the author wrote. The
+/// de-indentation itself is the notation's specification rather than a loss:
+/// the columns shared with the first line's start are not part of the text.
+test "wrapped prose joins to the text that was written" {
+  @debug.assert_eq(view_texts("  Card:\n    @p{write to me\n       home}"), [
+    "write to me\nhome",
+  ])
+  @debug.assert_eq(
+    view_texts("  Card:\n    @p{one two\n         three four}"),
+    ["one two\n  three four"],
+  )
+}

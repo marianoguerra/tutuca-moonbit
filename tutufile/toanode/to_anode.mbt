@@ -5,9 +5,10 @@
 // back — two grammars and an escaping layer for a translation that is a fold.
 // This is the fold.
 //
-// WHITESPACE IS WHAT THE FILE SAYS. `@p{a @b{c} d}` has a text node `"a "`, an
-// element, and a text node `" d"`, because that is what was written. Nothing is
-// trimmed, nothing is condensed, and there is no block/inline table
+// WHITESPACE IS WHAT THE FILE SAYS. Written `@p{a @b{c} d}`, a paragraph has
+// a text node holding `a` and a trailing space, then an element, then a text
+// node holding a leading space and `d` — because that is what was written.
+// Nothing is trimmed, nothing is condensed, and there is no block/inline table
 // (`anode/whitespace.mbt`) consulted: that table exists to undo the whitespace
 // an HTML tokenizer manufactures from source layout, and at-notation
 // manufactures none. Shrubbery already strips a multi-line body's indentation
