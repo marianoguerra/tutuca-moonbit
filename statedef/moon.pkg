@@ -14,7 +14,19 @@ import {
   // A rule body is an EXPRESSION, and this is what reads one out of the block
   // language. The other front end reads it out of shrubbery.
   "marianoguerra/tutuca/tscript",
+  // The second front end: a `.tutu` file's own shrubbery, and the readers that
+  // turn it into an expression and a member.
+  "marianoguerra/tutuca/tutufile",
+  "marianoguerra/tutuca/tutufile/shrub" @sh,
+  "marianoguerra/shrubbery/ast",
+  "marianoguerra/error-report" @report,
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/string",
 }
+
+import {
+  // The printer this front end is held against, and nothing in the package
+  // itself imports it.
+  "marianoguerra/tutuca/tutufile/lower",
+} for "test"

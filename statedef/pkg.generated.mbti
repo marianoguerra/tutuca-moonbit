@@ -3,6 +3,7 @@ package "marianoguerra/tutuca/statedef"
 
 import {
   "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/tutufile",
   "moonbitlang/core/debug",
 }
 
@@ -22,6 +23,8 @@ pub fn parse_init(String, StateDef) -> Array[InitState] raise InitError
 pub fn parse_state(String, name? : String) -> Array[StateDef] raise DefError
 
 pub fn quote(String) -> String
+
+pub fn state_of_tutu(Array[@tutufile.Decl], name? : String) -> Array[StateDef] raise DefError
 
 pub fn str_cmp(String, String) -> Int
 
