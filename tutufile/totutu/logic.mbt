@@ -122,8 +122,12 @@ fn print_decl(d : @tscript.Decl, out : StringBuilder) -> Unit raise NoSpelling {
     DCompute => print_body_decl(d, "compute \{name}\{params}", out)
     DPred => print_body_decl(d, "pred \{name}\{params}", out)
     DInvariant => print_body_decl(d, "invariant \{name}\{params}", out)
-    DEnrich => print_body_decl(d, "enrich \{name}\{params}", out)
-    DBindWith => print_body_decl(d, "bind_with \{name}", out)
+    // An enricher BINDS: its body is `name = value`, not a write to a place.
+    // `:=` is a write and `=` is a binding, and the two are different
+    // statements in the new notation exactly as they were two different things
+    // in the old one.
+    DEnrich => print_body_decl(d, "enrich \{name}\{params}", out, binds=true)
+    DBindWith => print_body_decl(d, "bind_with \{name}", out, binds=true)
     DReceive => print_body_decl(d, "receive \{name}\{params}", out)
     DAnswer => print_body_decl(d, "intent \{name}\{params}", out)
   }
@@ -135,6 +139,7 @@ fn print_body_decl(
   d : @tscript.Decl,
   head : String,
   out : StringBuilder,
+  binds? : Bool = false,
 ) -> Unit raise NoSpelling {
   let opts = []
   match d.requires_ {
@@ -168,7 +173,7 @@ fn print_body_decl(
       for o in opts {
         out.write_string(o)
       }
-      print_stmts(stmts, "      ", out)
+      print_stmts(stmts, "      ", out, binds~)
     }
   }
 }
@@ -203,11 +208,12 @@ fn print_stmts(
   stmts : Array[@tscript.Stmt],
   indent : String,
   out : StringBuilder,
+  binds? : Bool = false,
 ) -> Unit raise NoSpelling {
   let mut i = 0
   while i < stmts.length() {
     guard stmts[i] is SNew(ty~, ..) else {
-      print_stmt(stmts[i], indent, out)
+      print_stmt(stmts[i], indent, out, binds~)
       i = i + 1
       continue
     }
@@ -312,11 +318,15 @@ fn print_stmt(
   s : @tscript.Stmt,
   indent : String,
   out : StringBuilder,
+  binds? : Bool = false,
 ) -> Unit raise NoSpelling {
   match s {
     SAssign(place~, op~, value~, ..) => {
+      // In an enricher a name is BOUND, not written to: `tag = …` introduces
+      // the binding a view then reads, where `:=` is a write to a place that
+      // already exists. The old notation spelled the first `@tag = …`.
       let word = match op {
-        ASet => ":="
+        ASet => if binds && place.root is PBind(_) { "=" } else { ":=" }
         AAdd => "+="
         ASub => "-="
       }
