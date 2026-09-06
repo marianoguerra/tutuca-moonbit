@@ -51,7 +51,7 @@ pub fn print_ex(Ex) -> String raise ExError
 
 pub fn print_fixtures(Array[@tutufile.Decl]) -> String raise ExError
 
-pub fn print_logic(@tutufile.Decl, StringBuilder) -> Map[String, PropImpl] raise ExError
+pub fn print_logic(@tutufile.Decl, StringBuilder, rows? : Array[String]) -> Map[String, PropImpl] raise ExError
 
 pub fn print_protocol(@tutufile.Decl, StringBuilder) -> Unit raise ExError
 
@@ -82,6 +82,8 @@ pub fn read_member(@ast.Node, prev? : @ast.Node?) -> Member raise ExError
 pub fn read_meta(@tutufile.Decl) -> ComponentMeta raise ExError
 
 pub fn rename_ex(Ex, Map[String, String]) -> Ex
+
+pub fn row_members(Array[@tutufile.Decl]) -> Array[String]
 
 pub fn span_of(@ast.Node) -> @error-report.Span
 

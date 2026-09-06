@@ -107,12 +107,15 @@ fn print_call(callee : Ex, args : Array[Arg]) -> String raise ExError {
             span=@report.Span::at(0),
           )
       }
-    // a bare name: the component's own `compute`
+    // A bare name: the component's own `compute`. With no arguments it is
+    // `$name`, which is what a slot reads; WITH them it is an application, and
+    // `$name a b` parses nowhere — `$` always takes a bare name and has no
+    // place to put an argument.
     EName(f) =>
       if pos.is_empty() {
         "$" + f
       } else {
-        "$" + f + " " + join_args(pos)
+        "(" + f + " " + join_args(pos) + ")"
       }
     _ =>
       raise ExError(

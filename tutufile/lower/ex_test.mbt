@@ -53,7 +53,10 @@ test "a builtin is a method here and a prefix word there" {
 ///|
 test "a compute is called, and prints as the sigil that calls one" {
   inspect(ex("label()"), content="$label")
-  inspect(ex("format(item)"), content="$format item")
+  // With arguments it is an APPLICATION, not `$name` with a list after it:
+  // `$` takes a bare name and has nowhere to put an argument, so `$format item`
+  // parses nowhere.
+  inspect(ex("format(item)"), content="(format item)")
 }
 
 ///|

@@ -186,21 +186,16 @@ test "a compute with no arguments is named" {
 }
 
 ///|
-/// A compute WITH arguments is the second thing the printer path emits and
-/// nothing reads. `compute name(args…)` is a declared construct
-/// (`skill/tutuca/schema.md`), the printer spells the call `$unfinished .rows`,
-/// and no parser in the system accepts that: `$name` always parses as a
-/// zero-argument `EMethod`, with nowhere to put an argument.
+/// A compute WITH arguments, which had no readable spelling until the printer
+/// stopped writing one.
 ///
-/// The body grammar spells the same call `unfinished .rows` — a bare name
-/// applied to arguments, which is `EApp` — so that is what going direct builds.
-/// The construct works now; it did not before.
-test "a compute with arguments, which the printer path spelled unreadably" {
-  assert_true(printed("unfinished(it.rows)", body_parser) is None)
-  @debug.assert_eq(
-    direct("unfinished(it.rows)").map(flatten),
-    body_parser("unfinished .rows", @tscript.ParseCtx::new()).map(flatten),
-  )
+/// `compute name(args…)` is a declared construct, and the printer spelled the
+/// call `$unfinished .rows` — which parses nowhere, because `$` always takes a
+/// bare name and has nowhere to put an argument. The application form
+/// `(unfinished .rows)` is what a body reads, and it is what both paths produce
+/// now.
+test "a compute with arguments is an application on both paths" {
+  agree("unfinished(it.rows)", parser=body_parser)
 }
 
 ///|

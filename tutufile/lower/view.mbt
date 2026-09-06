@@ -747,10 +747,24 @@ fn print_with_extra(
   extra : String,
   macros? : Array[String] = [],
 ) -> Unit raise ExError {
+  // A hole is content rather than an element, and a form may govern one:
+  // `@show(c){@(it.n)}` is a conditional text node. The old notation writes
+  // that as `<x text="…" @show="…">`, which is the same escape hatch it uses
+  // for every op that has no tag of its own.
+  if group.it is Group(hole) &&
+    hole.length() == 1 &&
+    hole[0].it is Parens(gs) &&
+    gs.length() == 1 {
+    let ex = bound(read_group(gs[0]), renames)
+    out.write_string(
+      "\{indent}<x text=\"\{attr_escape(print_ex(ex))}\" \{extra}></x>\n",
+    )
+    return
+  }
   guard group.it is Group(parts) && parts.length() > 0 && parts[0].it is Id(tag) else {
     raise ExError(
-      message="this form wraps an element",
-      help="give it one element to annotate",
+      message="this form wraps an element or a hole",
+      help="give it one element or one `@(…)` to annotate",
       span=span_of(group),
     )
   }

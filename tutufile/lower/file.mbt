@@ -44,12 +44,20 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
   // what implements it, and only the logic section knows that
   let logic_text = StringBuilder()
   let impls : Map[String, Map[String, PropImpl]] = Map([])
+  // …and the VIEW section is read before either, for one fact: which members a
+  // render-time option names. A `pred` with parameters is a row filter when a
+  // `~when:` names it and a parameterised predicate otherwise, and the
+  // declaration cannot say which — see `row_members`.
+  let rows = match file.section(View) {
+    Some(section) => row_members(section.decls)
+    None => []
+  }
   match file.section(Logic) {
     Some(section) =>
       for decl in section.decls {
         let body = StringBuilder()
         try {
-          let found = print_logic(decl, body)
+          let found = print_logic(decl, body, rows~)
           impls[decl.name] = found
           logic_text.write_string(
             "<script type=\"tutuca/script\" for=\"\{decl.name}\">\n",

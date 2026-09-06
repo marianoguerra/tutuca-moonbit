@@ -6,6 +6,7 @@
 pub fn print_logic(
   decl : @tutufile.Decl,
   out : StringBuilder,
+  rows? : Array[String] = [],
 ) -> Map[String, PropImpl] raise ExError {
   let impls = Map([])
   // See `member_doc`: a doc comment sits on the suffix of the member BEFORE the
@@ -24,8 +25,8 @@ pub fn print_logic(
       match word {
         "receive" | "answer" => print_transition(m, out)
         "compute" => print_compute(m, out)
-        "pred" => print_row_pred(m, out)
-        "enrich" => print_enrich(m, out)
+        "pred" => print_row_pred(m, out, rows)
+        "enrich" => print_enrich(m, out, rows)
         "bind_with" => print_bind_with(m, out)
         "property" => impls[m.name] = print_accessors(m, out)
         _ =>
@@ -115,19 +116,42 @@ fn print_compute(m : Member, out : StringBuilder) -> Unit raise ExError {
 ///|
 /// A row filter. Its parameters are what the renderer hands it, so they are
 /// renamed to the bindings the old notation reads them out of.
-fn print_row_pred(m : Member, out : StringBuilder) -> Unit raise ExError {
+fn print_row_pred(
+  m : Member,
+  out : StringBuilder,
+  rows : Array[String],
+) -> Unit raise ExError {
   write_doc(out, m.doc, "")
-  out.write_string("pred " + m.name + " {\n")
-  print_value_body(m, out, row_renames(m))
+  // A row filter takes no parameters in the old notation — it reads the row out
+  // of the air — so the names that ARE the row are not written back out.
+  out.write_string("pred " + m.name + param_text(m, rows) + " {\n")
+  print_value_body(m, out, row_renames(m, rows))
   out.write_string("}\n\n")
 }
 
 ///|
+/// A member's parameter list, or nothing when its parameters are the row.
+fn param_text(m : Member, rows : Array[String]) -> String {
+  if rows.contains(m.name) || m.params.is_empty() {
+    return ""
+  }
+  let names = []
+  for p in m.params {
+    names.push(p.name)
+  }
+  "(" + names.join(", ") + ")"
+}
+
+///|
 /// An in-loop enricher: its statements are bindings rather than writes.
-fn print_enrich(m : Member, out : StringBuilder) -> Unit raise ExError {
+fn print_enrich(
+  m : Member,
+  out : StringBuilder,
+  rows : Array[String],
+) -> Unit raise ExError {
   write_doc(out, m.doc, "")
   out.write_string("enrich " + m.name + " {\n")
-  print_binds(m, out, row_renames(m))
+  print_binds(m, out, row_renames(m, rows))
   out.write_string("}\n\n")
 }
 
@@ -142,8 +166,9 @@ fn print_bind_with(m : Member, out : StringBuilder) -> Unit raise ExError {
 
 ///|
 /// `item, i` are the renderer's row and key, whatever the loop called them.
-fn row_renames(m : Member) -> Map[String, String] {
+fn row_renames(m : Member, rows : Array[String]) -> Map[String, String] {
   let out = Map([])
+  guard rows.contains(m.name) else { return out }
   if m.params.length() > 0 {
     out[m.params[0].name] = "@value"
   }
@@ -152,6 +177,61 @@ fn row_renames(m : Member) -> Map[String, String] {
   }
   if m.params.length() > 2 {
     out[m.params[2].name] = "@iter"
+  }
+  out
+}
+
+///|
+/// The names a view uses as `~when:`, `~enrich_with:` or `~loop_with:`.
+///
+/// A `pred` has two shapes and the old notation told them apart by what it did
+/// not write: a `@when` filter took no parameters and read `@value` / `@key`
+/// out of the air, while `pred containsText(q)` declared one and was CALLED
+/// with it. The new notation names the row on both, so the declaration cannot
+/// say which it is — but the view can, because a row member is exactly one a
+/// render-time option names.
+///
+/// Collected from the view section and handed to the logic printer, which is
+/// the only reason `print_logic` takes it. Without it every parameterised
+/// predicate had its first argument renamed to `@value` and its parameter list
+/// dropped, so it read a row it was never given and lost the argument it was.
+pub fn row_members(decls : Array[@tutufile.Decl]) -> Array[String] {
+  let out = []
+  fn walk(node : @ast.Node) -> Unit {
+    match node.it {
+      Group(parts) => {
+        let mut i = 0
+        while i < parts.length() {
+          if parts[i].it is Kw(name) &&
+            name is ("when" | "enrich_with" | "loop_with") &&
+            i + 1 < parts.length() &&
+            parts[i + 1].it is Block(bgs) &&
+            bgs.length() == 1 &&
+            bgs[0].it is Group(one) &&
+            one.length() == 1 &&
+            one[0].it is Id(who) {
+            if !out.contains(who) {
+              out.push(who)
+            }
+          }
+          walk(parts[i])
+          i = i + 1
+        }
+      }
+      Parens(gs) | Brackets(gs) | Braces(gs) | Block(gs) | Multi(gs) =>
+        for g in gs {
+          walk(g)
+        }
+      Alts(gs) =>
+        for g in gs {
+          walk(g)
+        }
+      _ => ()
+    }
+  }
+
+  for d in decls {
+    walk(d.node)
   }
   out
 }
