@@ -1,0 +1,114 @@
+spec:
+  Counter:
+    field count :: Int
+
+  Profile:
+    field name :: String
+    field waving :: Bool
+
+  Search:
+    field draft :: String
+    field sent :: String
+
+  Toggle:
+    field on :: Bool
+    field message :: Any
+
+  Fruits:
+    field items :: List.of(String)
+
+  Greeting:
+    field name :: String
+
+  Page:
+    field greeting :: Instance.of(Greeting)
+
+  Status:
+    field message :: String
+
+    message flash(String)
+
+  Chat:
+    field draft :: String
+    field status :: Instance.of(Status)
+
+  Quotes:
+    field items :: List.of(String)
+    field is_loading :: Bool
+
+    message init
+
+    message load_quotes_ok(List.of(Any))
+
+    message load_quotes_error(String)
+
+  Features:
+    field status :: String
+
+logic:
+  Counter:
+    /// The counter's whole behaviour, in the file that already holds its state
+    /// and its view. `gen` compiles this into the update the generated
+    /// `counter_component` passes, so the MoonBit side has nothing to answer.
+    receive inc:
+      it.count += 1
+
+    receive dec:
+      it.count -= 1
+
+view:
+  macro badge(~label: "New"):
+    @span(~class: "badge"){@(label)}
+
+  Counter:
+    @div{@button(~class: "dec", ~on_click: dec){-} @span(~class: "count"){@(it.count)} @button(~class: "inc", ~on_click: inc){+}}
+
+  Profile:
+    @section{@input(~class: "who", ~value: it.name, ~on_input: it.name := e.value, ~title: @str{Editing @(it.name)}) @button(~class: "wave", ~on_click: it.waving := !it.waving){wave} @p(~class: "out"){@(@str{Hello, @(it.name)!})}}
+
+  Search:
+    @section{@input(~class: "q", ~value: it.draft, ~on_input: it.draft := e.value, ~on_keydown: it.sent := e.value ~send, ~on_keydown: it.draft := default ~cancel) @p(~class: "sent"){@(it.sent)}}
+
+  Toggle:
+    @section{@button(~class: "flip", ~on_click: it.on := !it.on, ~class: if it.on | "flip is-on" | "flip is-off"){toggle} @show(it.on){
+  @p(~class: "yes"){it is ON}
+} @hide(it.on){
+  @p(~class: "no"){it is OFF}
+} @show(it.message.is_truthy()){
+  @p(~class: "msg"){@(it.message)}
+}}
+
+  Fruits:
+    @ul{
+      @each(value, key in it.items, ~when: not_too_long){
+        @li{@span(~class: "k"){@(key)}@": "@(value)}
+      }
+    }
+
+  Greeting:
+    @p(~class: "hello"){@"Hello, "@strong{@(it.name)}!}
+
+  Greeting.shout:
+    @p(~class: "hello"){@"HELLO, "@strong{@(it.name)}!!!}
+
+  Page:
+    @section{@render(it.greeting) @render(it.greeting, ~as: "shout")}
+
+  Status:
+    @show(it.message.is_truthy()){
+      @p(~class: "status"){@(it.message)}
+    }
+
+  Chat:
+    @section{@render(it.status) @input(~class: "draft", ~value: it.draft, ~on_input: it.draft := e.value) @button(~class: "send", ~on_click: submit){send}}
+
+  Quotes:
+    @section{@show(it.is_loading){
+  @p(~class: "loading"){Loading…}
+} @ul{@each(value, key in it.items){
+  @li{@(value)}
+}}}
+
+  Features:
+    @div{@span{Feature A} @badge() @span{Feature B} @badge(~label: "Beta") @span{Feature C} @badge(~label: it.status)}
+

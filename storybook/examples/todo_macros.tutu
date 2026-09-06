@@ -1,0 +1,8 @@
+spec:
+  TmItem:
+    field completed :: Bool
+    field text :: String
+
+  TmItems:
+    field items :: List.of(Instance.of(TmItem))
+

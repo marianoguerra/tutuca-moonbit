@@ -162,7 +162,7 @@ pub fn Inspector::build_inspector_views(
 /// ExampleDef mounts a component by name + args, not a prebuilt instance).
 ///
 /// The names come from the instance. Each of the eight call sites below used
-/// to spell them out — `["value", "raw", "rawSchema", "showRaw"]` and friends
+/// to spell them out — `["value", "raw", "raw_schema", "show_raw"]` and friends
 /// — and had to be edited whenever the component grew a field, because an
 /// instance could not say what it held.
 fn instance_args(v : @tutuca.Value) -> Map[String, @tutuca.Value] {
@@ -178,7 +178,7 @@ fn rich_sample_comp() -> @component.Component {
       match msg {
         Receive("inc", _) => Next({ ..s, count: s.count + 1, })
         Receive("reset", _) => Next({ ..s, count: 0, })
-        Receive("ping", _) | Intent("onChild", _) | Receive("onData", _) =>
+        Receive("ping", _) | Intent("on_child", _) | Receive("on_data", _) =>
           Next(s)
         _ => Unhandled
       }
@@ -307,7 +307,9 @@ pub fn inspector_module() -> @component.ModuleDef {
 /// must resolve against the same registered components.
 pub fn Inspector::module_(self : Inspector) -> @component.ModuleDef {
   let insp = self
-  let expand_top = (v : @tutuca.Value) => v.with_field("isExpanded", Bool(true))
+  let expand_top = (v : @tutuca.Value) => {
+    v.with_field("is_expanded", Bool(true))
+  }
   let sample_card = sample_card_comp()
   let card = sample_card.make({
     "title": Str("Hello"),
@@ -456,11 +458,11 @@ pub fn Inspector::module_(self : Inspector) -> @component.ModuleDef {
           "origin": Str("view"),
           "name": Str("click"),
           "matched": Str("exact"),
-          "pathLabel": Str("value.rows[1]"),
+          "path_label": Str("value.rows[1]"),
           "time": Str("#1"),
           "before": insp.inspect_value(Num(1)),
           "after": insp.inspect_value(Num(2)),
-          "hasAfter": Bool(true),
+          "has_after": Bool(true),
         },
         view: None,
       },

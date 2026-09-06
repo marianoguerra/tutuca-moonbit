@@ -1,0 +1,14 @@
+spec:
+  LintDemo:
+    field count :: Int
+    field items :: List.of(Any)
+    field kind :: String
+    field is_open :: Bool
+    field child :: Any
+
+  HtmlLintDemo:
+    field count :: Int
+
+  ScopedStyleDemo:
+    field count :: Int
+

@@ -1,0 +1,84 @@
+spec:
+  Status:
+    field message :: String
+    field count :: Int
+
+    message flash(String)
+
+    message clear
+
+    /// A running total that `flash` only ever adds to and `clear` leaves
+    /// alone. `setCount` is generated all the same, so the floor is stated
+    /// here rather than defended in a handler nobody wrote.
+    where it.count >= 0
+
+  SendReceive:
+    field draft :: String
+    field status :: Instance.of(Status)
+
+    message clear_draft
+
+  TreeItem:
+    field type :: String
+    field label :: String
+    field is_open :: Bool
+    field items :: List.of(Instance.of(TreeItem))
+
+    /// The half a `where` cannot say: a leaf has no children. Two fields
+    /// have to agree, and no relation over one of them states it.
+    invariant files_are_leaves:
+      ~format: @str{a file cannot hold @(it.items.length()) children}
+      ((it.type == "file") implies (it.items.length() == 0))
+
+    /// A filesystem node is one of exactly two things, and the views branch
+    /// on nothing else. Stated as a domain rather than as a rule so the
+    /// fuzzer draws `"file"` and `"dir"` instead of drawing a string and
+    /// hoping — a `pred` here would be filtered at odds no run ever meets.
+    where it.type is_one_of ["file", "dir"]
+
+  TreeRoot:
+    field log :: List.of(String)
+    field root :: Instance.of(TreeItem)
+
+logic:
+  Status:
+    /// Show a message, and remember how many have come through.
+    receive flash(m):
+      it.message := m
+      it.count += 1
+
+    /// Stop showing it. The count is a running total and does not reset.
+    receive clear:
+      it.message := ""
+
+  SendReceive:
+    /// Empty the input. `submit` cannot join it here: addressing the sibling by
+    /// path is what that handler is FOR, and a path is what this block does not
+    /// spell.
+    receive clear_draft:
+      it.draft := ""
+
+view:
+  Status:
+    @show(it.message.is_truthy()){
+      @div(~class: "alert alert-info"){@span(~class: "msg"){@(it.message)} @small{@"(flashed "@(it.count)@" times)"}}
+    }
+
+  SendReceive:
+    @section(~class: "flex flex-col gap-2"){@render(it.status) @input(~class: "input", ~value: it.draft, ~on_input: it.draft := e.value, ~on_keydown: submit ~send, ~placeholder: "Type a message and press Enter") @div(~class: "flex gap-2"){@button(~class: "btn btn-primary send", ~on_click: submit){Send} @button(~class: "btn btn-ghost clear", ~on_click: clear_status){Clear status}}}
+
+  TreeItem:
+    @style{user-select: none; .head { cursor: pointer; } .head:before { content: "⏺️"; margin-right: 0.25rem; } .head.type-file:before { content: "📄️"; } .head.open.type-dir:before { content: "📂️"; } .head.closed.type-dir:before { content: "📁️"; }}
+    @section{@p(~class: "head", ~class: if it.is_open | @str{head open type-@(it.type)} | @str{head closed type-@(it.type)}, ~on_click: on_item_click){@(it.label)} @show(are_childs_visible()){
+  @div(~class: "pl-3 pt-1 flex flex-col gap-2 kids"){
+    @each(value, key in it.items){
+      @render(value)
+    }
+  }
+}}
+
+  TreeRoot:
+    @div(~class: "flex flex-col gap-3"){@render(it.root) @ul(~class: "flex flex-col gap-2 max-h-[40vh] overflow-y-auto log"){@each(value, key in it.log){
+  @li{@(value)}
+}}}
+

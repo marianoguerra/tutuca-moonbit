@@ -1,0 +1,32 @@
+spec:
+  SchemaProperty:
+    field key :: String
+    field child :: Any
+    field required :: Bool
+
+    /// A property of an object schema is named. `""` is a legal JSON key and
+    /// an illegal JSON Schema `properties` entry to render — the row would
+    /// draw a required marker beside nothing.
+    where it.key non_empty
+
+  SchemaBranch:
+    field label :: String
+    field child :: Any
+    field label_class :: String
+
+    /// A branch is the label above the subschema it introduces (`if`,
+    /// `then`, `items`, …). A blank one is an unlabelled indent.
+    where it.label non_empty
+
+view:
+  SchemaProperty:
+    @div(~class: "contents"){@span(~class: "font-mono text-sm flex items-center gap-1 leading-tight"){@span(~class: "text-base-content/60 schema-key"){@(it.key)} @show(it.required){
+  @span(~class: "text-error font-bold", ~title: "required"){*}
+} @span(~class: "text-base-content/30"){:}} @render(it.child)}
+
+  SchemaBranch:
+    @div(~class: "contents"){@span(~class: "flex items-center gap-1 leading-tight"){@span(~class: label_css_class()){@(it.label)} @span(~class: "text-base-content/30"){:}} @render(it.child)}
+
+  SchemaBranch._margauiClasses:
+    @p(~class: "text-accent text-secondary text-info text-error")
+

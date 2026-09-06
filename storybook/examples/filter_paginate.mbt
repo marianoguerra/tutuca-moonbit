@@ -67,14 +67,14 @@ fn fp_update() -> (NaivePeopleState, @component.Dispatch, &@tutuca.Ctx) -> @comp
       // strands you on an empty page
       Receive("search", [Str(q), ..]) => Next({ ..s, query: q, page: 0, })
       Receive("prev", _) => {
-        let (_, current) = fp_clamp(s.page, fp_match_count(s), s.pageSize)
+        let (_, current) = fp_clamp(s.page, fp_match_count(s), s.page_size)
         Next({ ..s, page: @cmp.maximum(0, current - 1), })
       }
       Receive("next", _) => {
         let (page_count, current) = fp_clamp(
           s.page,
           fp_match_count(s),
-          s.pageSize,
+          s.page_size,
         )
         Next({ ..s, page: @cmp.minimum(page_count - 1, current + 1), })
       }
@@ -95,7 +95,7 @@ fn fp_only_matches() -> Map[
   ) -> Bool,
 ] {
   {
-    "onlyMatches": (s, _key, person, _iter, _stack) => {
+    "only_matches": (s, _key, person, _iter, _stack) => {
       fp_matches(person, s.query)
     },
   }
@@ -124,12 +124,12 @@ fn person_comp() -> @component.Component {
 /// variant).
 fn fp_pager_info(s : NaivePeopleState) -> Map[String, @tutuca.Value] {
   let total = fp_match_count(s)
-  let (page_count, current) = fp_clamp(s.page, total, s.pageSize)
+  let (page_count, current) = fp_clamp(s.page, total, s.page_size)
   {
-    "currentPage": Num(current.to_double()),
-    "isFirst": Bool(current <= 0),
-    "isLast": Bool(current >= page_count - 1),
-    "pageLabel": Str(fp_pager_label(current, page_count, total)),
+    "current_page": Num(current.to_double()),
+    "is_first": Bool(current <= 0),
+    "is_last": Bool(current >= page_count - 1),
+    "page_label": Str(fp_pager_label(current, page_count, total)),
   }
 }
 
@@ -138,7 +138,7 @@ fn fp_pager_info(s : NaivePeopleState) -> Map[String, @tutuca.Value] {
 /// scans again for the count. Two independent walks, nothing shared.
 fn naive_people_comp() -> @component.Component {
   naive_people_component(
-    initial={ items: [], query: "", page: 0, pageSize: 5, },
+    initial={ items: [], query: "", page: 0, page_size: 5, },
     update=fp_update(),
     when=w => {
       match w {
@@ -161,9 +161,9 @@ fn naive_people_comp() -> @component.Component {
                 all.push(i)
               }
             }
-            let (_, current) = fp_clamp(s.page, all.length(), s.pageSize)
-            let start = current * s.pageSize
-            fp_num_keys(page_slice(all, start, s.pageSize))
+            let (_, current) = fp_clamp(s.page, all.length(), s.page_size)
+            let start = current * s.page_size
+            fp_num_keys(page_slice(all, start, s.page_size))
           })
       }
     },
@@ -178,18 +178,18 @@ fn shared_people_comp() -> @component.Component {
   @component.component(
     views={ "main": shared_people_main_view_ir() },
     name="SharedPeople",
-    initial=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5, },
+    initial=NaivePeopleState::{ items: [], query: "", page: 0, page_size: 5, },
     update=fp_update(),
     when=fp_only_matches(),
-    bind_with={ "pagerInfo": (s, _stack) => fp_pager_info(s) },
+    bind_with={ "pager_info": (s, _stack) => fp_pager_info(s) },
     loop_with={
       "page": (s : NaivePeopleState, seq, ctx) => {
-        let current = match (ctx.lookup)("currentPage") {
+        let current = match (ctx.lookup)("current_page") {
           Num(n) => n.to_int()
           _ => 0
         }
-        let start = current * s.pageSize
-        let end = start + s.pageSize
+        let start = current * s.page_size
+        let end = start + s.page_size
         let keys : Array[Int] = []
         let mut m = 0
         for i, v in seq.list() {
@@ -216,32 +216,32 @@ fn coupled_people_comp() -> @component.Component {
   @component.component(
     views={ "main": coupled_people_main_view_ir() },
     name="CoupledPeople",
-    initial=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5, },
+    initial=NaivePeopleState::{ items: [], query: "", page: 0, page_size: 5, },
     update=fp_update(),
     bind_with={
-      "pagerInfo": (s : NaivePeopleState, _stack) => {
+      "pager_info": (s : NaivePeopleState, _stack) => {
         let all : Array[Int] = []
         for i, p in s.items {
           if fp_matches(p, s.query) {
             all.push(i)
           }
         }
-        let (page_count, current) = fp_clamp(s.page, all.length(), s.pageSize)
-        let start = current * s.pageSize
-        let page_keys = page_slice(all, start, s.pageSize)
+        let (page_count, current) = fp_clamp(s.page, all.length(), s.page_size)
+        let start = current * s.page_size
+        let page_keys = page_slice(all, start, s.page_size)
         {
           // consumed ONLY by the loop-with below
           "__keys__": List(
             page_keys.map(k => (Num(k.to_double()) : @tutuca.Value)),
           ),
-          "isFirst": Bool(current <= 0),
-          "isLast": Bool(current >= page_count - 1),
-          "pageLabel": Str(fp_pager_label(current, page_count, all.length())),
+          "is_first": Bool(current <= 0),
+          "is_last": Bool(current >= page_count - 1),
+          "page_label": Str(fp_pager_label(current, page_count, all.length())),
         }
       },
     },
     loop_with={
-      "forwardKeys": (_s : NaivePeopleState, _seq, ctx) => {
+      "forward_keys": (_s : NaivePeopleState, _seq, ctx) => {
         match (ctx.lookup)("__keys__") {
           List(keys) => @component.LoopWith::new(keys~)
           _ => @component.LoopWith::new(keys=[])

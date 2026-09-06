@@ -1,0 +1,26 @@
+spec:
+  Counter:
+    /// No clause: a counter with `inc` and `dec` and no floor has the whole of
+    /// `Int` for its domain, and a rule this component does not keep would be
+    /// a lie the Fuzz tab would catch.
+    field count :: Int
+
+    message inc
+
+    message dec
+
+logic:
+  Counter:
+    receive inc:
+      it.count += 1
+
+    receive dec:
+      it.count -= 1
+
+view:
+  Counter:
+    @div(~class: "join join-vertical"){@button(~class: "btn btn-error", ~on_click: dec){-} @div(~class: "stats"){@div(~class: "stat text-center"){@div(~class: "stat-title"){Count}@div(~class: "stat-value"){@(it.count)}}} @button(~class: "btn btn-success", ~on_click: inc){+}}
+
+  Counter.compact:
+    @button(~class: "btn btn-sm", ~on_click: inc){@(it.count)}
+

@@ -16,8 +16,8 @@ fn shell() -> @harness.Harness[@memdom.MemNode] raise {
 test "the picker opens closed and shows what it was handed" {
   let h = shell()
   assert_eq(h.find_all("div.picker").length(), 0)
-  h.send_at_root("openPicker")
-  h.send_at_root("pickerHits", args=[
+  h.send_at_root("open_picker")
+  h.send_at_root("picker_hits", args=[
     List(
       @ui.picker_rows([
         {
@@ -64,13 +64,13 @@ test "an empty result says which kind of empty it is" {
 ///|
 test "the cursor moves, clamps, and never wraps" {
   let h = shell()
-  h.send_at_root("openPicker")
+  h.send_at_root("open_picker")
   let hits = @ui.picker_rows([
     { component: "A", module_: "m", preset: "", summary: "", why: "", },
     { component: "B", module_: "m", preset: "", summary: "", why: "", },
     { component: "C", module_: "m", preset: "", summary: "", why: "", },
   ])
-  h.send_at_root("pickerHits", args=[List(hits), Str("")])
+  h.send_at_root("picker_hits", args=[List(hits), Str("")])
   // Which row the cursor is on, read off the state: the class is on the row and
   // the name is on a child, and a harness selector is one compound selector
   // with no descendant combinator.
@@ -100,7 +100,7 @@ test "the cursor moves, clamps, and never wraps" {
 ///|
 test "typing asks, and the pump carries the question out" {
   let h = shell()
-  h.send_at_root("openPicker")
+  h.send_at_root("open_picker")
   h.type_into("input.picker-query", "grid")
   let root = h.drive_value()
   assert_eq(root.field("pending"), Str("search"))
@@ -110,8 +110,8 @@ test "typing asks, and the pump carries the question out" {
 ///|
 test "picking closes the list first, then asks for it to be built" {
   let h = shell()
-  h.send_at_root("openPicker")
-  h.send_at_root("pickerHits", args=[
+  h.send_at_root("open_picker")
+  h.send_at_root("picker_hits", args=[
     List(
       @ui.picker_rows([
         {
@@ -149,7 +149,7 @@ test "dismissing releases the cell; picking leaves it waiting" {
   // A cell is waiting.
   @ui.remember_cell({ frames: [], })
   assert_true(@ui.peek_cell() is Some(_))
-  h.send_at_root("openPicker")
+  h.send_at_root("open_picker")
   h.key_down("input.picker-query", "Escape")
   // Escape is not a pick. One receive for both cost exactly the bug you would
   // expect: a pick closed the picker, closing it forgot the cell, and the built
@@ -201,24 +201,24 @@ test "a path captured in a render is rewritten into a path into the state" {
 ///|
 test "the whole page can be switched into editor mode and back" {
   let h = shell()
-  assert_eq(h.drive_value().field("editView"), Str(""))
+  assert_eq(h.drive_value().field("edit_view"), Str(""))
   assert_eq(h.text("button.act-edit"), "edit")
   h.click("button.act-edit")
   // The QUALIFIED role. A bare `editor` would resolve as a plain view name and
   // reach only components that happen to have called theirs that.
   assert_eq(
-    h.drive_value().field("editView"),
+    h.drive_value().field("edit_view"),
     Str("tutuca.dev/universal/Editable@1::editor"),
   )
   assert_eq(h.text("button.act-edit"), "done")
   h.click("button.act-edit")
-  assert_eq(h.drive_value().field("editView"), Str(""))
+  assert_eq(h.drive_value().field("edit_view"), Str(""))
 }
 
 ///|
 test "the library offers rather than loads, and remembers what was ticked" {
   let h = shell()
-  h.send_at_root("setLibrary", args=[
+  h.send_at_root("set_library", args=[
     List(
       @ui.library_rows([
         ("Counter.html", "cards/Counter.html"),
@@ -244,8 +244,8 @@ test "the library offers rather than loads, and remembers what was ticked" {
 ///|
 test "a note is shown, and an error note is shown differently" {
   let h = shell()
-  h.send_at_root("addNote", args=[Str("could not compile"), Str("error")])
-  h.send_at_root("addNote", args=[Str("loaded std"), Str("")])
+  h.send_at_root("add_note", args=[Str("could not compile"), Str("error")])
+  h.send_at_root("add_note", args=[Str("loaded std"), Str("")])
   assert_eq(h.texts("li.note"), ["could not compile", "loaded std"])
   assert_true(h.html().contains("bg-error/10"))
 }
@@ -261,7 +261,7 @@ test "a note is shown, and an error note is shown differently" {
 /// but the mechanism is the same one, which is the point.
 test "an answer finds its way back to the component that asked" {
   let h = shell()
-  h.send_at_root("setLibrary", args=[
+  h.send_at_root("set_library", args=[
     List(
       @ui.library_rows([("A.html", "cards/A.html"), ("B.html", "cards/B.html")]),
     ),

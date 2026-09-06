@@ -17,7 +17,7 @@ fn selector_entry_comp() -> @component.Component {
 /// `*entries`. The `default` is used only when no producer is in the render
 /// stack.
 fn selector_comp() -> @component.Component {
-  selector_component(initial={ items: [], selectedValue: Null, }, lookup=[
+  selector_component(initial={ items: [], selected_value: Null, }, lookup=[
     @component.lookup_or("entries", ".items"),
   ])
 }

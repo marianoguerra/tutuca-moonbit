@@ -281,8 +281,8 @@ fn Transactor::answer_walk(
   // chain is defined in terms of what the sender DECLARED (section 6) and
   // would be unobservable if it derived a name too.
   let (name, args) = match result {
-    Ok(v) => (w.opts.on_ok_name.unwrap_or(w.name + "Ok"), [v])
-    Err(e) => (w.opts.on_failed_name.unwrap_or(w.name + "Failed"), [e])
+    Ok(v) => (w.opts.on_ok_name.unwrap_or(w.name + "_ok"), [v])
+    Err(e) => (w.opts.on_failed_name.unwrap_or(w.name + "_failed"), [e])
   }
   self.deliver_answer(w, name, args)
 }
@@ -315,7 +315,7 @@ fn Transactor::exhaust_walk(self : Transactor, w : IntentWalk) -> Unit {
         // intent did. A sender that declared nothing asked nothing.
         None =>
           if w.opts.on_ok_name is Some(_) {
-            self.deliver_answer(w, w.name + "Unhandled", w.args)
+            self.deliver_answer(w, w.name + "_unhandled", w.args)
           } else {
             self.release_walk(w)
           }

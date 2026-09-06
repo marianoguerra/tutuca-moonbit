@@ -55,7 +55,7 @@ fn bar_chart_comp() -> @component.Component {
                 binds["h"] = Num(v)
                 binds["y"] = Num(110.0 - v)
                 binds["cx"] = Num(k * step + step / 2.0)
-                binds["labelY"] = Num(110.0 - v - 5.0)
+                binds["label_y"] = Num(110.0 - v - 5.0)
               }
               _ => ()
             }

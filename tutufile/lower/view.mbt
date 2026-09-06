@@ -14,8 +14,8 @@ pub fn print_view(
   // `Note.edit` is one component and one of its views; the old notation
   // spells the same pair `Note:edit`.
   let id = decl.name.replace(old=".", new=":")
-  out.write_string("<template id=\"\{id}\">\n")
-  print_items(body_groups(decl), out, "  ", Map([]), macros~)
+  out.write_string("<template id=\"\{id}\">")
+  print_items(body_groups(decl), out, Map([]), macros~)
   out.write_string("</template>\n\n")
 }
 
@@ -87,7 +87,6 @@ fn bind_names(ex : Ex) -> Ex {
 fn print_items(
   items : Array[@ast.Node],
   out : StringBuilder,
-  indent : String,
   renames : Map[String, String],
   macros? : Array[String] = [],
 ) -> Unit raise ExError {
@@ -97,7 +96,7 @@ fn print_items(
     run.reset()
     let trimmed = trim_layout(text)
     if trimmed != "" {
-      out.write_string("\{indent}\{escape_text(trimmed)}\n")
+      out.write_string("\{escape_text(trimmed)}")
     }
   }
   for item in items {
@@ -105,7 +104,7 @@ fn print_items(
       Some(text) => run.write_string(text)
       None => {
         flush()
-        print_content(item, out, indent, renames, macros~)
+        print_content(item, out, renames, macros~)
       }
     }
   }
@@ -113,8 +112,60 @@ fn print_items(
 }
 
 ///|
+/// An element's body printed on ONE line, when everything in it is inline.
+///
+/// Whitespace is explicit. `@span{disagrees}` has none around the word, so the
+/// element it prints must have none either — and a printer that put the word on
+/// its own indented line would give the parser `"\n      disagrees\n    "`,
+/// which is a different text node from the one the file wrote. The same
+/// invention put a space between the two holes of `@span{@(it.n)@(" items")}`.
+///
+/// `None` when the body holds an element, a loop or a macro call: those are
+/// printed as lines, and the layout between them is the printer's own.
+fn inline_body(
+  items : Array[@ast.Node],
+  renames : Map[String, String],
+) -> String? raise ExError {
+  let out = StringBuilder()
+  let run = StringBuilder()
+  fn flush() -> Unit {
+    let text = trim_layout(run.to_string())
+    run.reset()
+    if text != "" {
+      out.write_string(escape_text(text))
+    }
+  }
+
+  for item in items {
+    match text_piece(item) {
+      Some(text) => run.write_string(text)
+      None => {
+        guard item.it is Group(parts) &&
+          parts.length() == 1 &&
+          parts[0].it is Parens(gs) &&
+          gs.length() == 1 else {
+          return None
+        }
+        flush()
+        let ex = bound(read_group(gs[0]), renames)
+        out.write_string("<x text=\"\{attr_escape(print_ex(ex))}\"></x>")
+      }
+    }
+  }
+  flush()
+  Some(out.to_string())
+}
+
+///|
 /// The text a body item holds, if it holds text and nothing else.
 fn text_piece(group : @ast.Node) -> String? {
+  // A body item is a group of one part, except when the whole item IS the
+  // string: `@" "` on a line of its own — the separator between two inline
+  // elements, written as characters because a bare space between two lines is
+  // layout — arrives unwrapped, and reading only the wrapped form dropped it.
+  if group.it is Lit(Str(bare)) {
+    return Some(bare)
+  }
   guard group.it is Group(parts) && parts.length() == 1 else { return None }
   match parts[0].it {
     Lit(Str(text)) => Some(text)
@@ -124,41 +175,33 @@ fn text_piece(group : @ast.Node) -> String? {
 
 ///|
 /// Drop the whitespace a source's own layout contributed, and keep the rest.
+fn is_layout(c : Char) -> Bool {
+  c is (' ' | '\n' | '\t' | '\r')
+}
+
+///|
 fn trim_layout(text : String) -> String {
+  // The layout is the NEWLINE and the indentation that follows it, and nothing
+  // else: a leading run is cut after its LAST newline, a trailing run before
+  // its FIRST. A space the author wrote before a line break is content — the
+  // space in `You must ` followed by a `@show` on the next line is the space
+  // between two words — and cutting the whole run took it.
   let chars = text.to_array()
   let mut start = 0
-  let mut saw_newline = false
-  while start < chars.length() &&
-        (
-          chars[start] == ' ' ||
-          chars[start] == '\n' ||
-          chars[start] == '\t' ||
-          chars[start] == '\r'
-        ) {
-    if chars[start] == '\n' {
-      saw_newline = true
+  let mut scan = 0
+  while scan < chars.length() && is_layout(chars[scan]) {
+    if chars[scan] == '\n' {
+      start = scan + 1
     }
-    start = start + 1
-  }
-  if !saw_newline {
-    start = 0
+    scan = scan + 1
   }
   let mut end = chars.length()
-  saw_newline = false
-  while end > start &&
-        (
-          chars[end - 1] == ' ' ||
-          chars[end - 1] == '\n' ||
-          chars[end - 1] == '\t' ||
-          chars[end - 1] == '\r'
-        ) {
-    if chars[end - 1] == '\n' {
-      saw_newline = true
+  scan = chars.length()
+  while scan > start && is_layout(chars[scan - 1]) {
+    if chars[scan - 1] == '\n' {
+      end = scan - 1
     }
-    end = end - 1
-  }
-  if !saw_newline {
-    end = chars.length()
+    scan = scan - 1
   }
   if start >= end {
     return ""
@@ -175,7 +218,6 @@ fn trim_layout(text : String) -> String {
 fn print_content(
   group : @ast.Node,
   out : StringBuilder,
-  indent : String,
   renames : Map[String, String],
   macros? : Array[String] = [],
 ) -> Unit raise ExError {
@@ -190,7 +232,7 @@ fn print_content(
       Lit(Str(text)) => {
         let t = text.trim(chars=" \n\t").to_owned()
         if t != "" {
-          out.write_string("\{indent}\{escape_text(t)}\n")
+          out.write_string(escape_text(t))
         }
         i = i + 1
       }
@@ -198,9 +240,7 @@ fn print_content(
       Parens(gs) => {
         guard gs.length() == 1 else { return }
         let ex = bound(read_group(gs[0]), renames)
-        out.write_string(
-          "\{indent}<x text=\"\{attr_escape(print_ex(ex))}\"></x>\n",
-        )
+        out.write_string("<x text=\"\{attr_escape(print_ex(ex))}\"></x>")
         i = i + 1
       }
       Id(word) => {
@@ -216,14 +256,7 @@ fn print_content(
               parts[i + take].it is (Kw(_) | Block(_)) {
           take = take + 1
         }
-        print_element(
-          word,
-          parts[i:i + take].to_owned(),
-          out,
-          indent,
-          renames,
-          macros~,
-        )
+        print_element(word, parts[i:i + take].to_owned(), out, renames, macros~)
         i = i + take
       }
       _ =>
@@ -243,25 +276,24 @@ fn print_element(
   word : String,
   parts : Array[@ast.Node],
   out : StringBuilder,
-  indent : String,
   renames : Map[String, String],
   macros? : Array[String] = [],
 ) -> Unit raise ExError {
   if macros.contains(word) {
-    return print_macro_call(word, parts, out, indent, renames)
+    return print_macro_call(word, parts, out, renames)
   }
   let (raw, body) = split_call(parts)
   match word {
     "show" | "hide" =>
-      print_guard(word, args_of(raw), body, out, indent, renames, macros~)
-    "each" => print_each(raw, body, out, indent, renames, macros~)
-    "render" => print_render(args_of(raw), out, indent, renames)
-    "slot" => out.write_string("\{indent}<slot></slot>\n")
+      print_guard(word, args_of(raw), body, out, renames, macros~)
+    "each" => print_each(raw, body, out, renames, macros~)
+    "render" => print_render(args_of(raw), out, renames)
+    "slot" => out.write_string("<slot></slot>")
     // A comment NODE, which reaches the DOM. `//` is a comment in the FILE and
     // a different thing entirely, so a comment that renders has a form.
-    "comment" => print_comment(body, out, indent)
-    "style" => print_style(args_of(raw), body, out, indent)
-    _ => print_tag(word, args_of(raw), body, out, indent, renames, macros~)
+    "comment" => print_comment(body, out)
+    "style" => print_style(args_of(raw), body, out)
+    _ => print_tag(word, args_of(raw), body, out, renames, macros~)
   }
 }
 
@@ -276,7 +308,6 @@ fn print_macro_call(
   name : String,
   parts : Array[@ast.Node],
   out : StringBuilder,
-  indent : String,
   renames : Map[String, String],
   macros? : Array[String] = [],
 ) -> Unit raise ExError {
@@ -301,12 +332,12 @@ fn print_macro_call(
     "x:" + name + " " + attrs.join(" ")
   }
   if body.is_empty() {
-    out.write_string("\{indent}<\{head}></x:\{name}>\n")
+    out.write_string("<\{head}></x:\{name}>")
     return
   }
-  out.write_string("\{indent}<\{head}>\n")
-  print_items(body, out, indent + "  ", renames, macros~)
-  out.write_string("\{indent}</x:\{name}>\n")
+  out.write_string("<\{head}>")
+  print_items(body, out, renames, macros~)
+  out.write_string("</x:\{name}>")
 }
 
 ///|
@@ -316,7 +347,6 @@ fn print_tag(
   args : Array[Arg],
   body : Array[@ast.Node],
   out : StringBuilder,
-  indent : String,
   renames : Map[String, String],
   macros? : Array[String] = [],
 ) -> Unit raise ExError {
@@ -361,12 +391,16 @@ fn print_tag(
   let tag = tag_name(tag)
   let head = if attrs.is_empty() { tag } else { tag + " " + attrs.join(" ") }
   if body.is_empty() {
-    out.write_string("\{indent}<\{head}></\{tag}>\n")
+    out.write_string("<\{head}>\{close_tag(tag)}")
     return
   }
-  out.write_string("\{indent}<\{head}>\n")
-  print_items(body, out, indent + "  ", renames, macros~)
-  out.write_string("\{indent}</\{tag}>\n")
+  if inline_body(body, renames) is Some(text) {
+    out.write_string("<\{head}>\{text}</\{tag}>")
+    return
+  }
+  out.write_string("<\{head}>")
+  print_items(body, out, renames, macros~)
+  out.write_string("</\{tag}>")
 }
 
 ///|
@@ -474,6 +508,18 @@ fn print_attr(
 
 ///|
 /// An event's value: a handler call, or a property action.
+fn action_arg(a : Ex) -> String raise ExError {
+  // A handler's arguments are separated by SPACES, so a parenthesis has no
+  // meaning there and the parser refuses one. The value language wraps a
+  // negative number so it cannot be read as a subtraction; an argument list
+  // with no infix operators in it has no subtraction to be confused with.
+  match a {
+    ENum(n) => num_text(n)
+    other => print_ex(other)
+  }
+}
+
+///|
 fn print_action(
   value : Ex,
   renames : Map[String, String],
@@ -484,7 +530,7 @@ fn print_action(
     ECall(EName(handler), args) => {
       let parts = [handler]
       for a in positional(args) {
-        parts.push(print_ex(a))
+        parts.push(action_arg(a))
       }
       parts.join(" ")
     }
@@ -503,7 +549,7 @@ fn print_action(
       guard collection_op(op) is Some(word) else {
         raise ExError(
           message="`\{op}` is not a property action",
-          help="the actions are `push`, `insert_at`, `set_at`, `delete_at`, `add`, `remove` and `toggle`",
+          help="the actions are `push`, `insert_at`, `set_at`, `delete_at`, `clear`, `add`, `remove` and `toggle`",
           span=@report.Span::at(0),
         )
       }
@@ -529,7 +575,6 @@ fn print_guard(
   args : Array[Arg],
   body : Array[@ast.Node],
   out : StringBuilder,
-  indent : String,
   renames : Map[String, String],
   macros? : Array[String] = [],
 ) -> Unit raise ExError {
@@ -552,7 +597,6 @@ fn print_guard(
   print_with_extra(
     body[0],
     out,
-    indent,
     renames,
     "@\{word}=\"\{attr_escape(cond)}\"",
     macros~,
@@ -566,7 +610,6 @@ fn print_each(
   raw : Array[@ast.Node],
   body : Array[@ast.Node],
   out : StringBuilder,
-  indent : String,
   renames : Map[String, String],
   macros? : Array[String] = [],
 ) -> Unit raise ExError {
@@ -610,7 +653,27 @@ fn print_each(
       span=@report.Span::at(0),
     )
   }
-  print_with_extra(body[0], out, indent, inner, extra.join(" "), macros~)
+  // A loop whose whole body is `@render(<the binder>)` is the op the old
+  // notation calls `render-each`: one `<x>` that renders each element of the
+  // sequence, with no element around them. `<x render-it>` cannot carry an
+  // `@each` — the parser says so — and a `<render>` tag is not an element that
+  // exists, so this is the only spelling.
+  if renders_the_binder(body[0], names) {
+    let mut tail = ""
+    match kw_arg(args, "as") {
+      Some(EStr(v)) => tail = " as=\"\{v}\""
+      Some(other) => tail = " as=\"\{attr_escape(print_ex(other))}\""
+      None => ()
+    }
+    for e in extra[1:] {
+      tail = tail + " " + e
+    }
+    out.write_string(
+      "<x render-each=\"\{attr_escape(print_ex(rename_ex(seq, renames)))}\"\{tail}></x>",
+    )
+    return
+  }
+  print_with_extra(body[0], out, inner, extra.join(" "), macros~)
 }
 
 ///|
@@ -657,13 +720,33 @@ pub fn split_binder(
 }
 
 ///|
+/// Whether a loop's body is exactly `@render(<the loop's own binder>)`.
+fn renders_the_binder(
+  group : @ast.Node,
+  names : Array[String],
+) -> Bool raise ExError {
+  guard names.length() > 0 else { return false }
+  guard group.it is Group(parts) &&
+    parts.length() > 0 &&
+    parts[0].it is Id("render") else {
+    return false
+  }
+  let (raw, body) = split_call(parts)
+  guard body.is_empty() else { return false }
+  let pos = positional(args_of(raw))
+  guard pos.length() == 1 else { return false }
+  pos[0] is EName(n) && n == names[0]
+}
+
+///|
 /// `@render(value, ~as: view)`.
 fn print_render(
   args : Array[Arg],
   out : StringBuilder,
-  indent : String,
   renames : Map[String, String],
+  extra? : String = "",
 ) -> Unit raise ExError {
+  let extra = if extra == "" { "" } else { " " + extra }
   let pos = positional(args)
   guard pos.length() == 1 else {
     raise ExError(
@@ -683,7 +766,7 @@ fn print_render(
       Some(other) => only = " as=\"\{attr_escape(print_ex(other))}\""
       None => ()
     }
-    out.write_string("\{indent}<x render-it\{only}></x>\n")
+    out.write_string("<x render-it\{only}\{extra}></x>")
     return
   }
   let mut tail = ""
@@ -692,17 +775,13 @@ fn print_render(
     Some(other) => tail = " as=\"\{attr_escape(print_ex(other))}\""
     None => ()
   }
-  out.write_string("\{indent}<x render=\"\{attr_escape(value)}\"\{tail}></x>\n")
+  out.write_string("<x render=\"\{attr_escape(value)}\"\{tail}\{extra}></x>")
 }
 
 ///|
 /// `@comment{ … }` — a comment node, which is content rather than a note about
 /// the file.
-fn print_comment(
-  body : Array[@ast.Node],
-  out : StringBuilder,
-  indent : String,
-) -> Unit {
+fn print_comment(body : Array[@ast.Node], out : StringBuilder) -> Unit {
   let text = StringBuilder()
   for g in body {
     guard g.it is Group(parts) && parts.length() == 1 else { continue }
@@ -710,7 +789,7 @@ fn print_comment(
       text.write_string(t)
     }
   }
-  out.write_string("\{indent}<!--\{text}-->\n")
+  out.write_string("<!--\{text}-->")
 }
 
 ///|
@@ -719,7 +798,6 @@ fn print_style(
   args : Array[Arg],
   body : Array[@ast.Node],
   out : StringBuilder,
-  indent : String,
 ) -> Unit {
   let mut mark = ""
   for a in args {
@@ -735,7 +813,7 @@ fn print_style(
       _ => ()
     }
   }
-  out.write_string("\{indent}<style\{mark}>\{css.join("")}</style>\n")
+  out.write_string("<style\{mark}>\{css.join("")}</style>")
 }
 
 ///|
@@ -743,7 +821,6 @@ fn print_style(
 fn print_with_extra(
   group : @ast.Node,
   out : StringBuilder,
-  indent : String,
   renames : Map[String, String],
   extra : String,
   macros? : Array[String] = [],
@@ -757,9 +834,7 @@ fn print_with_extra(
     hole[0].it is Parens(gs) &&
     gs.length() == 1 {
     let ex = bound(read_group(gs[0]), renames)
-    out.write_string(
-      "\{indent}<x text=\"\{attr_escape(print_ex(ex))}\" \{extra}></x>\n",
-    )
+    out.write_string("<x text=\"\{attr_escape(print_ex(ex))}\" \{extra}></x>")
     return
   }
   guard group.it is Group(parts) && parts.length() > 0 && parts[0].it is Id(tag) else {
@@ -770,6 +845,14 @@ fn print_with_extra(
     )
   }
   let (raw, body) = split_call(parts)
+  // `@render` has no tag of its own: the old notation writes it as the `<x>`
+  // escape hatch, and a loop over it is `<x render-it @each="…">`. Reaching
+  // `print_tag` here printed a literal `<render>` element instead — which
+  // parses, renders nothing, and is what a loop body most often is.
+  if tag == "render" {
+    print_render(args_of(raw), out, renames, extra~)
+    return
+  }
   let args = args_of(raw)
   let attrs = [extra]
   for a in args {
@@ -782,14 +865,23 @@ fn print_with_extra(
       _ => ()
     }
   }
+  // A hyphen in a tag is written as an underscore, the same way it is in an
+  // attribute: `@emoji_picker` is `<emoji-picker>`. The plain element printer
+  // did this and the wrapped one did not, so a custom element under a `@show`
+  // reached the parser as an invalid tag name and came back a comment.
+  let tag = tag_name(tag)
   let head = tag + " " + attrs.join(" ")
   if body.is_empty() {
-    out.write_string("\{indent}<\{head}></\{tag}>\n")
+    out.write_string("<\{head}>\{close_tag(tag)}")
     return
   }
-  out.write_string("\{indent}<\{head}>\n")
-  print_items(body, out, indent + "  ", renames, macros~)
-  out.write_string("\{indent}</\{tag}>\n")
+  if inline_body(body, renames) is Some(text) {
+    out.write_string("<\{head}>\{text}</\{tag}>")
+    return
+  }
+  out.write_string("<\{head}>")
+  print_items(body, out, renames, macros~)
+  out.write_string("</\{tag}>")
 }
 
 ///|
@@ -906,3 +998,25 @@ fn attr_escape(s : String) -> String {
   }
   out.to_string()
 }
+
+///|
+/// An element's closing tag, or nothing when it has none.
+///
+/// A VOID element — `<input>`, `<br>`, `<img>` — takes no children and takes no
+/// end tag: HTML has nowhere to put one, and a linter says so. The `.tutu`
+/// notation has no void/non-void distinction to write, so an `@input(…)` with
+/// no body is one and the printer is where that is known.
+fn close_tag(tag : String) -> String {
+  if void_elements.contains(tag) {
+    ""
+  } else {
+    "</" + tag + ">"
+  }
+}
+
+///|
+/// The HTML elements that take no end tag.
+let void_elements : Array[String] = [
+  "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source",
+  "track", "wbr",
+]

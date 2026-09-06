@@ -38,7 +38,7 @@ pub fn url_request_handlers(
   theme_base_url? : String = default_theme_base_url,
 ) -> Map[String, Array[@component.IntentFn]] {
   {
-    "loadState": [
+    "load_state": [
       IntentFn((_call, answer) => {
         let params = parse_query(
           @core.global_this()._get("location")._get("search").to_string(),
@@ -65,7 +65,7 @@ pub fn url_request_handlers(
         )
       }),
     ],
-    "persistState": [
+    "persist_state": [
       IntentFn((call, answer) => {
         match call.args {
           [Map(m), push] => write_url(m, push is Bool(true))
@@ -76,7 +76,7 @@ pub fn url_request_handlers(
     ],
     // Switch the margaui palette: load its stylesheet (if not bundled) and flip
     // document.documentElement's data-theme.
-    "applyTheme": [
+    "apply_theme": [
       IntentFn((call, answer) => {
         match call.args {
           [Str(name), ..] => apply_theme(name, theme_base_url)

@@ -1,0 +1,41 @@
+spec:
+  Counter:
+    /// No clause. A counter with `inc` and `dec` and no floor has the whole
+    /// of `Int` for its domain, and `where count >= 0` would be a rule this
+    /// component does not keep — `dec` walks straight past it.
+    ///
+    /// A domain is worth writing when it is TRUE. The empty spec block is
+    /// the honest answer here, and the counter is the example that says so.
+    field count :: Int
+
+    /// Direct public storage: the compact form needs no script body.
+    property count :: Int ~public:
+      get: it.count
+      set: it.count
+
+    /// An abstract property: its implementation preserves the sign while
+    /// exposing and accepting a non-negative magnitude.
+    property magnitude :: Int ~public
+
+logic:
+  Counter:
+    /// One step up, one step down. Both are `@on` names the views write, and
+    /// neither reads anything but the field it moves — which is the whole of
+    /// what a counter is.
+    receive inc:
+      it.count += 1
+
+    receive dec:
+      it.count -= 1
+
+    property magnitude :: Int:
+      get: if (it.count < 0) | -it.count | it.count
+      set:
+        if (it.count < 0)
+        | it.count := -value
+        | it.count := value
+
+view:
+  Counter:
+    @div(~class: "join join-vertical"){@button(~class: "btn btn-error", ~on_click: dec){-} @div(~class: "stats"){@div(~class: "stat text-center"){@div(~class: "stat-title"){Count}@div(~class: "stat-value"){@(it.count)}@div(~class: "stat-desc"){Current Count}}} @button(~class: "btn btn-success", ~on_click: inc){+}}
+

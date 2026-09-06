@@ -184,7 +184,7 @@ fn print_file_style(
   out : StringBuilder,
 ) -> Unit raise ExError {
   guard decl.node.it is Group(parts) else { return }
-  print_element("style", parts, out, "", {})
+  print_element("style", parts, out, {})
   out.write_string("\n")
 }
 
@@ -229,7 +229,7 @@ fn print_macro(
   let head = if defaults.is_empty() { attrs } else { defaults }
   let joined = if head.is_empty() { "" } else { " " + head.join(" ") }
   out.write_string("<template id=\"macro:\{decl.name}\"\{joined}>\n")
-  print_items(body_groups(decl), out, "  ", params)
+  print_items(body_groups(decl), out, params)
   out.write_string("</template>\n\n")
 }
 

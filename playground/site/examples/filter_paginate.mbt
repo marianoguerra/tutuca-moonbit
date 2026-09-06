@@ -93,7 +93,7 @@ fn fp_only_matches() -> Map[
   (NaivePeopleState, @tutuca.Value, @tutuca.Value, @tutuca.Value, &@tutuca.Stack) -> Bool,
 ] {
   {
-    "onlyMatches": (s, _key, person, _iter, _stack) => fp_matches(person, s.query),
+    "only_matches": (s, _key, person, _iter, _stack) => fp_matches(person, s.query),
   }
 }
 
@@ -121,10 +121,10 @@ fn fp_pager_info(s : NaivePeopleState) -> Map[String, @tutuca.Value] {
   let total = fp_match_count(s)
   let (page_count, current) = fp_clamp(s.page, total, s.pageSize)
   {
-    "currentPage": Num(current.to_double()),
-    "isFirst": Bool(current <= 0),
-    "isLast": Bool(current >= page_count - 1),
-    "pageLabel": Str(fp_pager_label(current, page_count, total)),
+    "current_page": Num(current.to_double()),
+    "is_first": Bool(current <= 0),
+    "is_last": Bool(current >= page_count - 1),
+    "page_label": Str(fp_pager_label(current, page_count, total)),
   }
 }
 
@@ -174,10 +174,10 @@ fn shared_people_comp() -> @component.Component {
     initial=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
     update=fp_update(),
     when=fp_only_matches(),
-    bind_with={ "pagerInfo": (s, _stack) => fp_pager_info(s) },
+    bind_with={ "pager_info": (s, _stack) => fp_pager_info(s) },
     loop_with={
       "page": (s, seq, ctx) => {
-        let current = match (ctx.lookup)("currentPage") {
+        let current = match (ctx.lookup)("current_page") {
           Num(n) => n.to_int()
           _ => 0
         }
@@ -213,7 +213,7 @@ fn coupled_people_comp() -> @component.Component {
     initial=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
     update=fp_update(),
     bind_with={
-      "pagerInfo": (s, _stack) => {
+      "pager_info": (s, _stack) => {
         let all : Array[Int] = []
         for i, p in s.items {
           if fp_matches(p, s.query) {
@@ -228,14 +228,14 @@ fn coupled_people_comp() -> @component.Component {
           "__keys__": List(
             page_keys.map(k => (Num(k.to_double()) : @tutuca.Value)),
           ),
-          "isFirst": Bool(current <= 0),
-          "isLast": Bool(current >= page_count - 1),
-          "pageLabel": Str(fp_pager_label(current, page_count, all.length())),
+          "is_first": Bool(current <= 0),
+          "is_last": Bool(current >= page_count - 1),
+          "page_label": Str(fp_pager_label(current, page_count, all.length())),
         }
       },
     },
     loop_with={
-      "forwardKeys": (_s, _seq, ctx) => match
+      "forward_keys": (_s, _seq, ctx) => match
         (ctx.lookup)("__keys__") {
         List(keys) => @component.LoopWith::new(keys~)
         _ => @component.LoopWith::new(keys=[])

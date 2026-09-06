@@ -52,9 +52,9 @@ fn ps_sort(
 ) -> Array[@tutuca.Value] {
   let out = entries.copy()
   let year = (e : @tutuca.Value) => {
-    let start = e.field("startYear").int()
+    let start = e.field("start_year").int()
     if by_end {
-      let end = e.field("endYear").int()
+      let end = e.field("end_year").int()
       if end != 0 {
         end
       } else {
@@ -90,7 +90,12 @@ fn ps_sort(
 fn ps_resort(s : RootState) -> RootState {
   {
     ..s,
-    allEntries: ps_sort(s.allEntries, s.sortByEnd, s.sortAsc, s.featuredFirst),
+    all_entries: ps_sort(
+      s.all_entries,
+      s.sort_by_end,
+      s.sort_asc,
+      s.featured_first,
+    ),
   }
 }
 
@@ -182,7 +187,7 @@ fn ps_entry_comp() -> @component.Component {
           Some((_s, binds, _key, value, _iter, _stack) => {
             match value {
               Str(cat) =>
-                binds["badgeClass"] = Str(
+                binds["badge_class"] = Str(
                   "badge badge-sm \{ps_category_color(cat, true)} cat",
                 )
               _ => ()
@@ -194,12 +199,12 @@ fn ps_entry_comp() -> @component.Component {
       title: "?",
       description: "",
       lang: "en",
-      startYear: None,
-      endYear: None,
+      start_year: None,
+      end_year: None,
       role: None,
       featured: false,
       url: "#",
-      altUrls: [],
+      alt_urls: [],
       categories: [],
     },
     compute=m => {
@@ -215,9 +220,9 @@ fn ps_entry_comp() -> @component.Component {
         IsSpanish => Some((s, _args, _stack) => Bool(s.lang == "es"))
         YearDisplay =>
           Some((s, _args, _stack) => {
-            match s.startYear {
+            match s.start_year {
               Some(start) =>
-                match s.endYear {
+                match s.end_year {
                   Some(e) => Str("\{start}-\{e}")
                   None => Str("\{start}")
                 }
@@ -248,8 +253,8 @@ fn entry_from_data(
   entry.make({
     "title": Str(title),
     "description": Str(description),
-    "startYear": Num(start_year.to_double()),
-    "endYear": Num(end_year.to_double()),
+    "start_year": Num(start_year.to_double()),
+    "end_year": Num(end_year.to_double()),
     "role": if role == "" {
       Null
     } else {
@@ -257,7 +262,7 @@ fn entry_from_data(
     },
     "featured": Bool(featured),
     "categories": List(cats.map(c => Str(c))),
-    "altUrls": List(
+    "alt_urls": List(
       alt_urls.map(a => alt_url.make({ "label": Str(a.0), "url": Str(a.1) })),
     ),
   })
@@ -288,22 +293,22 @@ fn root_comp() -> @component.Component {
     // ones plus a runtime-built decoy. Everything else the wrapper fills.
     views=root_views_with_decoy(),
     initial={
-      allEntries: [],
-      allCategories: [],
-      allRoles: [],
-      selectedCategories: Map([]),
-      selectedRoles: Map([]),
-      featuredFirst: true,
-      sortByEnd: false,
-      sortAsc: false,
+      all_entries: [],
+      all_categories: [],
+      all_roles: [],
+      selected_categories: Map([]),
+      selected_roles: Map([]),
+      featured_first: true,
+      sort_by_end: false,
+      sort_asc: false,
     },
     compute=m => {
       match m {
         HasActiveFilters =>
           Some((s, _args, _stack) => {
             Bool(
-              s.selectedCategories.length() != s.allCategories.length() ||
-              s.selectedRoles.length() != s.allRoles.length(),
+              s.selected_categories.length() != s.all_categories.length() ||
+              s.selected_roles.length() != s.all_roles.length(),
             )
           })
       }
@@ -322,10 +327,10 @@ fn root_comp() -> @component.Component {
           Some((s, binds, _key, value, _iter, _stack) => {
             match value {
               Str(cat) => {
-                let selected = s.selectedCategories.contains(cat)
+                let selected = s.selected_categories.contains(cat)
                 binds["isSelected"] = Bool(selected)
                 let state = if selected { "on" } else { "off" }
-                binds["btnClass"] = Str(
+                binds["btn_class"] = Str(
                   "btn btn-xs border-0 \{ps_category_color(cat, selected)} cat-btn \{state}",
                 )
               }
@@ -339,8 +344,8 @@ fn root_comp() -> @component.Component {
           Some((s, binds, _key, value, _iter, _stack) => {
             match value {
               Str(role) => {
-                let selected = s.selectedRoles.contains(role)
-                binds["btnClass"] = Str(
+                let selected = s.selected_roles.contains(role)
+                binds["btn_class"] = Str(
                   if selected {
                     "btn btn-xs btn-neutral font-bold ring-1 ring-neutral-content/30 role-btn on"
                   } else {
@@ -355,36 +360,36 @@ fn root_comp() -> @component.Component {
     },
     update=(s, msg, _ctx) => {
       match msg {
-        Receive("clearFilters", _) =>
+        Receive("clear_filters", _) =>
           Next({
             ..s,
-            selectedCategories: ps_set_of(s.allCategories),
-            selectedRoles: ps_set_of(s.allRoles),
+            selected_categories: ps_set_of(s.all_categories),
+            selected_roles: ps_set_of(s.all_roles),
           })
-        Receive("onCategoryToggle", args) =>
+        Receive("on_category_toggle", args) =>
           Next({
             ..s,
-            selectedCategories: ps_facet_toggle(
-              s.allCategories,
-              s.selectedCategories,
+            selected_categories: ps_facet_toggle(
+              s.all_categories,
+              s.selected_categories,
               args,
             ),
           })
-        Receive("onRoleToggle", args) =>
+        Receive("on_role_toggle", args) =>
           Next({
             ..s,
-            selectedRoles: ps_facet_toggle(s.allRoles, s.selectedRoles, args),
+            selected_roles: ps_facet_toggle(s.all_roles, s.selected_roles, args),
           })
-        Receive("onToggleSortByEnd", _) =>
-          Next(ps_resort({ ..s, sortByEnd: !s.sortByEnd, }))
-        Receive("onToggleSortAsc", _) =>
-          Next(ps_resort({ ..s, sortAsc: !s.sortAsc, }))
-        Receive("onToggleFeaturedFirst", _) =>
-          Next(ps_resort({ ..s, featuredFirst: !s.featuredFirst, }))
+        Receive("on_toggle_sort_by_end", _) =>
+          Next(ps_resort({ ..s, sort_by_end: !s.sort_by_end, }))
+        Receive("on_toggle_sort_asc", _) =>
+          Next(ps_resort({ ..s, sort_asc: !s.sort_asc, }))
+        Receive("on_toggle_featured_first", _) =>
+          Next(ps_resort({ ..s, featured_first: !s.featured_first, }))
         // The ANSWER, named for its outcome and carrying only what it is
         // about: three arms, three payloads, and no arm handed both a result
         // and an error to tell apart.
-        Receive("loadDataOk", args) => {
+        Receive("load_data_ok", args) => {
           let entries = match args {
             [List(a), ..] => a
             _ => []
@@ -418,16 +423,16 @@ fn root_comp() -> @component.Component {
           roles.sort_by((a, b) => a.lexical_compare(b))
           Next({
             ..s,
-            allEntries: ps_sort(
+            all_entries: ps_sort(
               entries,
-              s.sortByEnd,
-              s.sortAsc,
-              s.featuredFirst,
+              s.sort_by_end,
+              s.sort_asc,
+              s.featured_first,
             ),
-            allCategories: cats,
-            selectedCategories: ps_set_of(cats),
-            allRoles: roles,
-            selectedRoles: ps_set_of(roles),
+            all_categories: cats,
+            selected_categories: ps_set_of(cats),
+            all_roles: roles,
+            selected_roles: ps_set_of(roles),
           })
         }
         _ => Unhandled
@@ -440,9 +445,9 @@ fn root_comp() -> @component.Component {
 /// The `filterEntry` @when: keep an entry when its role and at least one of
 /// its categories are selected.
 fn ps_filter_entry(s : RootState, entry : @tutuca.Value) -> Bool {
-  if s.selectedRoles.length() > 0 {
+  if s.selected_roles.length() > 0 {
     let r = entry.field("role").str()
-    if !s.selectedRoles.contains(r) {
+    if !s.selected_roles.contains(r) {
       return false
     }
   }
@@ -454,10 +459,10 @@ fn ps_filter_entry(s : RootState, entry : @tutuca.Value) -> Bool {
       }
     _ => []
   }
-  if s.selectedCategories.length() > 0 && entry_cats.length() > 0 {
+  if s.selected_categories.length() > 0 && entry_cats.length() > 0 {
     let mut hit = false
     for c in entry_cats {
-      if c is Str(cs) && s.selectedCategories.contains(cs) {
+      if c is Str(cs) && s.selected_categories.contains(cs) {
         hit = true
         break
       }
@@ -567,7 +572,7 @@ pub fn personal_site_module() -> @component.ModuleDef {
   // A LIST per name, because the `lex` leg walks: a declining handler hands
   // the intent to the next one in the scope chain.
   let intents : Map[String, Array[@component.IntentFn]] = {
-    "loadData": [
+    "load_data": [
       IntentFn((_call, answer) => answer(Ok(ps_fixture(entry, alt_url)))),
     ],
   }

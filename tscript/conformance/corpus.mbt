@@ -460,7 +460,7 @@ pub(all) struct Case {
 ///|
 /// The v2 schema: the same fields, with the three message variants down to
 /// two. `SaveDraftOk` and `SaveDraftFailed` are declared because declaring them
-/// is what makes `saveDraft` a request rather than a notification (design
+/// is what makes `save_draft` a request rather than a notification (design
 /// section 6), and a row below turns on that being visible in the schema.
 ///
 /// `saveDraftError` is the RETIRED spelling of the failure arm, kept beside its
@@ -481,8 +481,8 @@ fn v2_schema() -> String {
     #|  note   : String?
     #|}
     #|handle C {
-    #|  message { resetTo(Int), saveDraftOk(Int), saveDraftFailed(String), saveDraftError(String) }
-    #|  intent { saveDraft(String), picked(Int) }
+    #|  message { resetTo(Int), save_draft_ok(Int), save_draft_failed(String), saveDraftError(String) }
+    #|  intent { save_draft(String), picked(Int) }
     #|}
   )
 }
@@ -607,8 +607,8 @@ pub fn cases() -> Array[Case] {
     // under one word.
     recv_case(
       "a bare ask with no legs takes the default route",
-      "receive saveDraft(text) { ask }",
-      "saveDraft",
+      "receive save_draft(text) { ask }",
+      "save_draft",
       args=[Str("hi")],
       after=Some(counter_state()),
       effects=[effect("forward", route="dyn lex")],
@@ -623,32 +623,32 @@ pub fn cases() -> Array[Case] {
     ),
     recv_case(
       "a bare ask lex walks the registered handlers only",
-      "receive saveDraft(text) { ask lex }",
-      "saveDraft",
+      "receive save_draft(text) { ask lex }",
+      "save_draft",
       args=[Str("hi")],
       after=Some(counter_state()),
       effects=[effect("forward", route="lex")],
     ),
     recv_case(
       "a bare ask lex dyn walks the legs in the order written",
-      "receive saveDraft(text) { ask lex dyn }",
-      "saveDraft",
+      "receive save_draft(text) { ask lex dyn }",
+      "save_draft",
       args=[Str("hi")],
       after=Some(counter_state()),
       effects=[effect("forward", route="lex dyn")],
     ),
     recv_case(
       "a bare ask amends the arguments and keeps the name and the route",
-      "receive saveDraft(text) { ask .name }",
-      "saveDraft",
+      "receive save_draft(text) { ask .name }",
+      "save_draft",
       args=[Str("hi")],
       after=Some(counter_state()),
       effects=[effect("forward", args=[Str("ada")], route="dyn lex")],
     ),
     recv_case(
       "a handler may run and then ask",
-      "receive saveDraft(text) {\n  .count += 1\n  ask\n}",
-      "saveDraft",
+      "receive save_draft(text) {\n  .count += 1\n  ask\n}",
+      "save_draft",
       args=[Str("hi")],
       after=Some(with_fields({ "count": Num(1) })),
       effects=[effect("forward", route="dyn lex")],
@@ -679,11 +679,11 @@ pub fn cases() -> Array[Case] {
     // -- intent: the routed dispatch ---------------------------------------
     recv_case(
       "an ask with no legs takes the default route",
-      "receive go { ask 'saveDraft' .name }",
+      "receive go { ask 'save_draft' .name }",
       "go",
       after=Some(counter_state()),
       effects=[
-        effect("ask", name="saveDraft", args=[Str("ada")], route="dyn lex"),
+        effect("ask", name="save_draft", args=[Str("ada")], route="dyn lex"),
       ],
     ),
     recv_case(
@@ -696,18 +696,18 @@ pub fn cases() -> Array[Case] {
     ),
     recv_case(
       "ask lex is what v1 spelled request",
-      "receive go { ask lex 'loadRows' .name }",
+      "receive go { ask lex 'load_rows' .name }",
       "go",
       after=Some(counter_state()),
-      effects=[effect("ask", name="loadRows", args=[Str("ada")], route="lex")],
+      effects=[effect("ask", name="load_rows", args=[Str("ada")], route="lex")],
     ),
     recv_case(
       "ask lex dyn reverses the legs",
-      "receive go { ask lex dyn 'saveDraft' .name }",
+      "receive go { ask lex dyn 'save_draft' .name }",
       "go",
       after=Some(counter_state()),
       effects=[
-        effect("ask", name="saveDraft", args=[Str("ada")], route="lex dyn"),
+        effect("ask", name="save_draft", args=[Str("ada")], route="lex dyn"),
       ],
     ),
     recv_case(
@@ -732,11 +732,11 @@ pub fn cases() -> Array[Case] {
     ),
     recv_case(
       "effects come out in order, with the state",
-      "receive go {\n  ask lex 'loadRows'\n  .ok = true\n  send 'flash' .name\n  drop\n}",
+      "receive go {\n  ask lex 'load_rows'\n  .ok = true\n  send 'flash' .name\n  drop\n}",
       "go",
       after=Some(with_fields({ "ok": Bool(true) })),
       effects=[
-        effect("ask", name="loadRows", route="lex"),
+        effect("ask", name="load_rows", route="lex"),
         effect("send", name="flash", args=[Str("ada")]),
         effect("drop"),
       ],
@@ -744,16 +744,16 @@ pub fn cases() -> Array[Case] {
     // -- answering an intent ------------------------------------------------
     intent_case(
       "an intent answered where it arrives",
-      "answer saveDraft(text) {\n  .count += 1\n  reply .count\n}",
-      "saveDraft",
+      "answer save_draft(text) {\n  .count += 1\n  reply .count\n}",
+      "save_draft",
       args=[Str("hi")],
       after=Some(with_fields({ "count": Num(1) })),
       effects=[effect("reply", args=[Num(1)])],
     ),
     intent_case(
       "fail answers with an error and ends the walk",
-      "answer saveDraft(text) { fail 'disk full' }",
-      "saveDraft",
+      "answer save_draft(text) { fail 'disk full' }",
+      "save_draft",
       args=[Str("hi")],
       after=Some(counter_state()),
       effects=[effect("fail", args=[Str("disk full")])],
@@ -782,16 +782,16 @@ pub fn cases() -> Array[Case] {
     // why it is pinned there and not here.
     intent_case(
       "a body may queue two replies, and both come out of it",
-      "answer saveDraft(text) {\n  reply 1\n  reply 2\n}",
-      "saveDraft",
+      "answer save_draft(text) {\n  reply 1\n  reply 2\n}",
+      "save_draft",
       args=[Str("hi")],
       after=Some(counter_state()),
       effects=[effect("reply", args=[Num(1)]), effect("reply", args=[Num(2)])],
     ),
     intent_case(
       "drop ends the walk before any reply, and answers nothing",
-      "answer saveDraft(text) {\n  .count += 1\n  drop\n}",
-      "saveDraft",
+      "answer save_draft(text) {\n  .count += 1\n  drop\n}",
+      "save_draft",
       args=[Str("hi")],
       after=Some(with_fields({ "count": Num(1) })),
       effects=[effect("drop")],
@@ -801,37 +801,37 @@ pub fn cases() -> Array[Case] {
     // half of the same rule.
     intent_case(
       "a requires that does not hold takes the reply with it",
-      "pred hasSome { .count > 0 }\nanswer saveDraft(text) requires hasSome {\n  .count += 1\n  reply .count\n}",
-      "saveDraft",
+      "pred hasSome { .count > 0 }\nanswer save_draft(text) requires hasSome {\n  .count += 1\n  reply .count\n}",
+      "save_draft",
       args=[Str("hi")],
       after=None,
       effects=[],
     ),
     intent_case(
       "an ensures that does not hold takes the reply with it",
-      "pred small { .count > 5 }\nanswer saveDraft(text) ensures small {\n  .count += 1\n  reply .count\n}",
-      "saveDraft",
+      "pred small { .count > 5 }\nanswer save_draft(text) ensures small {\n  .count += 1\n  reply .count\n}",
+      "save_draft",
       args=[Str("hi")],
       after=None,
       effects=[],
     ),
     // -- an answer is a message ---------------------------------------------
     //
-    // Nothing here says "an answer". `saveDraftOk` is dispatched into the
+    // Nothing here says "an answer". `save_draft_ok` is dispatched into the
     // receive bucket like every other message, and the arm cannot tell that
     // the runtime wrote it rather than a parent. That is the design's claim,
     // and this row is what makes it a claim a backend can fail.
     recv_case(
       "an answer arrives as an ordinary message",
-      "receive saveDraftOk(n) { .count = n }",
-      "saveDraftOk",
+      "receive save_draft_ok(n) { .count = n }",
+      "save_draft_ok",
       args=[Num(7)],
       after=Some(with_fields({ "count": Num(7) })),
     ),
     recv_case(
       "a failure answer arrives as an ordinary message too",
-      "receive saveDraftFailed(why) { .name = why }",
-      "saveDraftFailed",
+      "receive save_draft_failed(why) { .name = why }",
+      "save_draft_failed",
       args=[Str("disk full")],
       after=Some(with_fields({ "name": Str("disk full") })),
     ),

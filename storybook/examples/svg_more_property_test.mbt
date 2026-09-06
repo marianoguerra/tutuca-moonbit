@@ -28,7 +28,7 @@
 /// when that handler applies. `statedef` records the rules and `tscript`
 /// records the clauses, and the property below needs both.
 fn contracts() -> Array[(String, String)] {
-  [("addBar", "hasRoom"), ("removeBar", "hasSpare")]
+  [("add_bar", "has_room"), ("remove_bar", "has_spare")]
 }
 
 ///|
@@ -109,7 +109,7 @@ test "the component carries the block it was declared in" {
   let p = bar_chart_plan()
   assert_eq(p.component, "BarChart")
   assert_eq(p.def.fields.map(f => f.name), ["values"])
-  assert_eq(p.def.invariants(), ["neverEmpty"])
+  assert_eq(p.def.invariants(), ["never_empty"])
   // The generated schema lists the same invariant by name — two projections of
   // one declaration, which is the sync this file is really about.
   let h = @harness.mount_example(svg_bar_chart_module(), "Default")
@@ -235,9 +235,9 @@ test "a declined precondition says the rule's own sentence" {
     nine.push(Num(1.0))
   }
   p.step(h, SetField("values", List(nine))) |> ignore
-  let refused = @harness.refusals_while(() => h.send_at_root("addBar"))
+  let refused = @harness.refusals_while(() => h.send_at_root("add_bar"))
   assert_eq(refused.length(), 1)
-  assert_eq(refused[0].rule, "hasRoom")
+  assert_eq(refused[0].rule, "has_room")
   inspect(
     refused[0].sentence,
     content="nine bars is the cap, and there are already 9",

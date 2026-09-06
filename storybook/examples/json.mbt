@@ -62,7 +62,7 @@ fn json_string_comp() -> @component.Component {
 ///|
 fn json_number_comp() -> @component.Component {
   json_number_component(
-    initial={ strValue: "0", value: 0, },
+    initial={ str_value: "0", value: 0, },
     // Keep the raw string always, update the numeric value only when finite.
     // The payload is typed `String` by the generator, so the arg no longer
     // has to be unpacked from an untyped list.
@@ -74,8 +74,8 @@ fn json_number_comp() -> @component.Component {
           }
           Next(
             match parsed {
-              Some(n) => { strValue: raw, value: n, }
-              None => { ..s, strValue: raw, }
+              Some(n) => { str_value: raw, value: n, }
+              None => { ..s, str_value: raw, }
             },
           )
         }
@@ -93,15 +93,15 @@ fn json_number_comp() -> @component.Component {
 fn json_selector_comp(reg : JsonReg) -> @component.Component {
   json_selector_component(update=(_s, msg, _ctx) => {
     match msg {
-      Receive("setToNull", _) => Replace(reg.make_("JsonNull"))
-      Receive("setToBool", args) => {
+      Receive("set_to_null", _) => Replace(reg.make_("JsonNull"))
+      Receive("set_to_bool", args) => {
         let is_ctrl = args.get(0) is Some(Bool(true))
         Replace(reg.make_("JsonBool", args={ "value": Bool(!is_ctrl) }))
       }
-      Receive("setToNumber", _) => Replace(reg.make_("JsonNumber"))
-      Receive("setToString", _) => Replace(reg.make_("JsonString"))
-      Receive("setToArray", _) => Replace(reg.make_("JsonArray"))
-      Receive("setToObject", _) => Replace(reg.make_("JsonObject"))
+      Receive("set_to_number", _) => Replace(reg.make_("JsonNumber"))
+      Receive("set_to_string", _) => Replace(reg.make_("JsonString"))
+      Receive("set_to_array", _) => Replace(reg.make_("JsonArray"))
+      Receive("set_to_object", _) => Replace(reg.make_("JsonObject"))
       _ => Unhandled
     }
   })
@@ -249,7 +249,7 @@ pub fn json_module() -> @component.ModuleDef {
       {
         component: "JsonNumber",
         title: "Number",
-        args: { "value": Num(42), "strValue": Str("42") },
+        args: { "value": Num(42), "str_value": Str("42") },
         view: None,
       },
     ],

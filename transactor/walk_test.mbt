@@ -35,7 +35,7 @@ impl @tutuca.Obj for WItem with fn handler(_self, bucket, name) {
     (Receive, "go") =>
       Some(
         Handler((args, ctx) => {
-          ctx.intent("saveDraft", args, @tutuca.IntentOpts::new())
+          ctx.intent("save_draft", args, @tutuca.IntentOpts::new())
           None
         }),
       )
@@ -43,12 +43,12 @@ impl @tutuca.Obj for WItem with fn handler(_self, bucket, name) {
       Some(
         Handler((args, ctx) => {
           ctx.intent(
-            "saveDraft",
+            "save_draft",
             args,
             @tutuca.IntentOpts::new(
-              on_ok_name="saveDraftOk",
-              on_failed_name="saveDraftFailed",
-              on_unhandled_name="saveDraftUnhandled",
+              on_ok_name="save_draft_ok",
+              on_failed_name="save_draft_failed",
+              on_unhandled_name="save_draft_unhandled",
             ),
           )
           None
@@ -58,9 +58,9 @@ impl @tutuca.Obj for WItem with fn handler(_self, bucket, name) {
       Some(
         Handler((args, ctx) => {
           ctx.intent(
-            "saveDraft",
+            "save_draft",
             args,
-            @tutuca.IntentOpts::new(on_failed_name="saveDraftFailed"),
+            @tutuca.IntentOpts::new(on_failed_name="save_draft_failed"),
           )
           None
         }),
@@ -69,9 +69,9 @@ impl @tutuca.Obj for WItem with fn handler(_self, bucket, name) {
       Some(
         Handler((args, ctx) => {
           ctx.intent(
-            "saveDraft",
+            "save_draft",
             args,
-            @tutuca.IntentOpts::new(route=[Lex], on_ok_name="saveDraftOk"),
+            @tutuca.IntentOpts::new(route=[Lex], on_ok_name="save_draft_ok"),
           )
           None
         }),
@@ -80,16 +80,19 @@ impl @tutuca.Obj for WItem with fn handler(_self, bucket, name) {
       Some(
         Handler((args, ctx) => {
           ctx.intent(
-            "saveDraft",
+            "save_draft",
             args,
-            @tutuca.IntentOpts::new(route=[Lex, Dyn], on_ok_name="saveDraftOk"),
+            @tutuca.IntentOpts::new(
+              route=[Lex, Dyn],
+              on_ok_name="save_draft_ok",
+            ),
           )
           None
         }),
       )
     // The bridge: a message this component does not answer, let out as an
     // intent from this component's own position.
-    (Receive, "saveDraft") =>
+    (Receive, "save_draft") =>
       Some(
         Handler((_args, ctx) => {
           ctx.forward(None, None)
@@ -98,13 +101,14 @@ impl @tutuca.Obj for WItem with fn handler(_self, bucket, name) {
       )
     // A component may not answer its own intent: the `dyn` leg starts at the
     // parent, so this arm must never fire for an intent this node dispatched.
-    (Intent, "saveDraft") => Some(Handler((_args, _ctx) => Some(witem("SELF"))))
+    (Intent, "save_draft") =>
+      Some(Handler((_args, _ctx) => Some(witem("SELF"))))
     // The answers, which arrive as ordinary messages.
-    (Receive, "saveDraftOk") =>
+    (Receive, "save_draft_ok") =>
       Some(Handler((args, _ctx) => Some(witem("ok:" + show_args(args)))))
-    (Receive, "saveDraftFailed") =>
+    (Receive, "save_draft_failed") =>
       Some(Handler((args, _ctx) => Some(witem("failed:" + show_args(args)))))
-    (Receive, "saveDraftUnhandled") =>
+    (Receive, "save_draft_unhandled") =>
       Some(Handler((args, _ctx) => Some(witem("unhandled:" + show_args(args)))))
     _ => None
   }
@@ -149,7 +153,7 @@ impl @tutuca.Obj for WPanel with fn with_field(self, name, v) {
 
 ///|
 impl @tutuca.Obj for WPanel with fn handler(self, bucket, name) {
-  guard (bucket, name) is (Intent, "saveDraft") else { return None }
+  guard (bucket, name) is (Intent, "save_draft") else { return None }
   match self.role {
     // Runs, changes state, does not answer. The design's one rule: a handler
     // that runs does not consume the intent.
@@ -224,7 +228,7 @@ impl @tutuca.Obj for WRoot with fn with_field(self, name, v) {
 
 ///|
 impl @tutuca.Obj for WRoot with fn handler(self, bucket, name) {
-  guard (bucket, name) is (Intent, "saveDraft") else { return None }
+  guard (bucket, name) is (Intent, "save_draft") else { return None }
   match self.role {
     "reply" =>
       Some(
@@ -296,7 +300,7 @@ test "a walk of N hops produces N queued transactions and one answer" {
   // receive:go-answered, then one intent hop per ancestor, then the answer.
   inspect(
     seen.join(" "),
-    content="receive:go-answered intent:saveDraft intent:saveDraft answer:saveDraftOk",
+    content="receive:go-answered intent:save_draft intent:save_draft answer:save_draft_ok",
   )
   assert_eq(panel_seen(tx.root), "observed")
   assert_eq(root_seen(tx.root), "replied")
@@ -336,7 +340,7 @@ test "a reply ends the walk, so the position above it never runs" {
   assert_eq(root_seen(tx.root), "")
   inspect(
     seen.join(" "),
-    content="receive:go-answered intent:saveDraft answer:saveDraftOk",
+    content="receive:go-answered intent:save_draft answer:save_draft_ok",
   )
 }
 
@@ -416,16 +420,16 @@ test "the dyn leg starts at the parent, so a component never re-enters itself" {
 
 ///|
 test "forward from a receive body lets the name out as an intent" {
-  // The bridge. Item answers `saveDraft` with `forward`, so the same name
+  // The bridge. Item answers `save_draft` with `forward`, so the same name
   // reaches Root as an intent, from Item's own position — which is where the
   // answer comes back to.
   let tx = @transactor.Transactor::new(tree("observe", "reply"))
   let seen = trace(tx)
-  let _ = tx.push_send(item_at(), "saveDraft", [Str("d")])
+  let _ = tx.push_send(item_at(), "save_draft", [Str("d")])
   tx.settle() |> ignore
   inspect(
     seen.join(" "),
-    content="receive:saveDraft intent:saveDraft intent:saveDraft answer:saveDraftOk",
+    content="receive:save_draft intent:save_draft intent:save_draft answer:save_draft_ok",
   )
   assert_eq(root_seen(tx.root), "replied")
 }
@@ -454,7 +458,7 @@ struct Registry {
 
 ///|
 pub impl @transactor.Intents for Registry with fn intents_for(self, _leaf, name) {
-  if name == "saveDraft" {
+  if name == "save_draft" {
     self.handlers
   } else {
     []
@@ -515,7 +519,7 @@ test "a declining lex handler hands the intent to the next one, and costs no tra
   // handlers; this counts them from outside, which is where a devtool stands.
   inspect(
     seen.join(" "),
-    content="intent:saveDraft intent:saveDraft intent:saveDraft receive:go-lex answer:saveDraftOk",
+    content="intent:save_draft intent:save_draft intent:save_draft receive:go-lex answer:save_draft_ok",
   )
 }
 
@@ -579,7 +583,7 @@ test "INTENT_DEPTH cuts a walk that will not end, and the sender is told" {
   // not frames of one leg, which is the only reading that catches a cycle
   // spanning both.
   assert_eq(passed.val, @transactor.INTENT_DEPTH - 2)
-  assert_true(refusals.contains("INTENT_DEPTH:saveDraft"))
+  assert_true(refusals.contains("INTENT_DEPTH:save_draft"))
   assert_eq(item_seen(tx.root), "unhandled:RStr(\"d\")")
 }
 
@@ -592,7 +596,7 @@ test "a sender that declared Ok alone hears the derived Unhandled" {
   // exhausted outcome — and it is derived, the way `Ok` and `Failed` are, and
   // carries the intent's own arguments the way a declared `Unhandled` does. A
   // sender that has no arm for it hears a `NO_HANDLER` refusal naming
-  // `saveDraftUnhandled`, which says more than one naming the intent did.
+  // `save_draft_unhandled`, which says more than one naming the intent did.
   assert_eq(item_seen(tx.root), "unhandled:RStr(\"d\")")
 }
 

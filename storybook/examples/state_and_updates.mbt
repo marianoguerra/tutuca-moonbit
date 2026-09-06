@@ -17,7 +17,7 @@
 /// a hand-written `setRawNumber` that parses and validates first.
 fn attribute_binding_comp() -> @component.Component {
   attribute_binding_component(
-    initial={ str: "hello", num: 42, bool: true, notSet: Null, },
+    initial={ str: "hello", num: 42, bool: true, not_set: Null, },
     update=(
       // Parse-and-validate before writing: a bad number leaves state untouched.
       // The payload is typed
@@ -62,7 +62,7 @@ pub fn attribute_binding_module() -> @component.ModuleDef {
 /// single @if the @then/@else infer the attribute name; with several, the extra
 /// ones must name it (`@then.title`) — HTML forbids duplicate attribute names.
 fn conditional_attributes_comp() -> @component.Component {
-  conditional_attributes_component(initial={ isActive: true, })
+  conditional_attributes_component(initial={ is_active: true, })
 }
 
 ///|
@@ -74,13 +74,13 @@ pub fn conditional_attributes_module() -> @component.ModuleDef {
       {
         component: "ConditionalAttributes",
         title: "Active",
-        args: { "isActive": Bool(true) },
+        args: { "is_active": Bool(true) },
         view: None,
       },
       {
         component: "ConditionalAttributes",
         title: "Inactive",
-        args: { "isActive": Bool(false) },
+        args: { "is_active": Bool(false) },
         view: None,
       },
     ],
@@ -91,7 +91,7 @@ pub fn conditional_attributes_module() -> @component.ModuleDef {
 /// Modifiers filter events: `+send` fires only on Enter, `+cancel` only on
 /// Escape. `truthy?` is a built-in unary predicate, written predicate-first.
 fn event_modifiers_comp() -> @component.Component {
-  event_modifiers_component(initial={ query: "", lastSentSearch: Null, }, update=(
+  event_modifiers_component(initial={ query: "", last_sent_search: Null, }, update=(
     s,
     msg,
     _ctx,
@@ -118,7 +118,7 @@ pub fn event_modifiers_module() -> @component.ModuleDef {
       {
         component: "EventModifiers",
         title: "With Sent Search",
-        args: { "query": Str("tutuca"), "lastSentSearch": Str("tutuca") },
+        args: { "query": Str("tutuca"), "last_sent_search": Str("tutuca") },
         view: None,
       },
     ],
@@ -138,11 +138,11 @@ pub fn event_modifiers_module() -> @component.ModuleDef {
 /// `compute` is answered by the render stack, which is not what that block
 /// compiles.
 fn show_hide_comp() -> @component.Component {
-  show_hide_component(initial={ isOpen: false, count: 0, }, compute=m => {
+  show_hide_component(initial={ is_open: false, count: 0, }, compute=m => {
     match m {
       Label =>
         Some((s, _args, _stack) => {
-          if s.isOpen {
+          if s.is_open {
             Str("Hide details")
           } else {
             Str("Show details")
@@ -159,7 +159,7 @@ pub fn show_hide_module() -> @component.ModuleDef {
     {
       component: "ShowHide",
       title: "Open",
-      args: { "isOpen": Bool(true) },
+      args: { "is_open": Bool(true) },
       view: None,
     },
   ])

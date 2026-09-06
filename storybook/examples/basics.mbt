@@ -62,7 +62,7 @@ pub fn static_view_module() -> @component.ModuleDef {
 /// renders: strings, numbers, booleans, null.
 fn text_directive_comp() -> @component.Component {
   text_directive_component(
-    initial={ str: "hello", num: 42, bool: true, notSet: Null, },
+    initial={ str: "hello", num: 42, bool: true, not_set: Null, },
     compute=m => {
       match m {
         GetStrUpper => Some((s, _args, _stack) => Str(s.str.to_upper()))

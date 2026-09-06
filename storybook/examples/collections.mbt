@@ -98,7 +98,7 @@ pub fn list_filter_enrich_module() -> @component.ModuleDef {
 }
 
 ///|
-/// `@loop-with="getIterData"` runs ONCE before the loop and its `iter_data` is
+/// `@loop-with="get_iter_data"` runs ONCE before the loop and its `iter_data` is
 /// handed to every when / enrich call. `queryLower` is lowercased once
 /// instead of per item, and `totalChars` is summed over the WHOLE sequence,
 /// before any filtering.

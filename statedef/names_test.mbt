@@ -27,10 +27,19 @@ test "the three name shapes, and where the keyword escape lands" {
   assert_eq(@statedef.camel_name("set-label"), "setLabel")
   assert_eq(@statedef.camel_name("reset"), "reset")
   assert_eq(@statedef.camel_name("with-history"), "withHistory")
-  // Separators are anything non-alphanumeric, and the first character is
-  // lowered whatever it was.
-  assert_eq(@statedef.camel_name("Set_Label"), "setLabel")
+  // Separators are anything non-alphanumeric EXCEPT `_`, and the first
+  // character is lowered whatever it was.
   assert_eq(@statedef.camel_name("a-1-b"), "a1B")
+
+  // An underscore is part of a name, not a separator: `snake_case` is the
+  // spelling a `.tutu` file writes its own names in — its views, its handlers
+  // and its message declarations all — so a declaration collapsed here would
+  // have a runtime name no view in the same file spells.
+  assert_eq(@statedef.camel_name("pick_place"), "pick_place")
+  assert_eq(@statedef.camel_name("Set_Label"), "set_Label")
+  // and a variant name still folds it, because `PickPlace` is what MoonBit
+  // wants and the collision check is what keeps two spellings apart
+  assert_eq(@statedef.upper_name("pick_place"), "PickPlace")
 
   // kebab -> UpperCamel: a MoonBit type or enum-variant name
   assert_eq(@statedef.upper_name("set-label"), "SetLabel")
@@ -48,7 +57,7 @@ test "the three name shapes, and where the keyword escape lands" {
   assert_eq(@statedef.binding_name("package"), "package_")
   // Everything else passes through untouched.
   assert_eq(@statedef.binding_name("label"), "label")
-  assert_eq(@statedef.binding_name("isOpen"), "isOpen")
+  assert_eq(@statedef.binding_name("is_open"), "is_open")
 }
 
 ///|

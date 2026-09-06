@@ -8,7 +8,7 @@
 /// answers one name once. A `receive` case keeps its name, because the schema
 /// is what declares those and there is exactly one.
 ///
-/// Two files come out: the `.html` (which `gen` then compiles) and a
+/// Two files come out: the `.tutu` (which `gen` then compiles) and a
 /// table pairing each case index with the NAME it was emitted under, which is
 /// the one thing a test cannot work out for itself once the rename has
 /// happened.
@@ -46,9 +46,20 @@ fn main raise {
   }
   let cases = @corpus.cases()
   let (html, table) = project(cases)
-  @fs.write_string_to_file(out_dir + "/corpus.html", html)
+  // The projection is written in the notation the corpus SPECIFIES, which is
+  // the old block language, and converted before it is checked in: the file
+  // `gen` reads is a `.tutu` like every other view file in the repo.
+  let converted = @totutu.convert(html, name=COMP)
+  if !converted.refusals.is_empty() {
+    println("conformance: the projection did not convert:")
+    for r in converted.refusals {
+      println("  " + r)
+    }
+    exit(1)
+  }
+  @fs.write_string_to_file(out_dir + "/corpus.tutu", converted.text)
   @fs.write_string_to_file(out_dir + "/table_gen.mbt", table)
-  println("conformance: \{cases.length()} case(s) -> \{out_dir}/corpus.html")
+  println("conformance: \{cases.length()} case(s) -> \{out_dir}/corpus.tutu")
 }
 
 ///|

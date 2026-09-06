@@ -21,16 +21,7 @@ test "the spaces between text pieces survive" {
   inspect(
     parts[parts.length() - 1].to_owned(),
     content=(
-      #| id="T">
-      #|  <p>
-      #|    a@b
-      #|  </p>
-      #|  <span>
-      #|    a 
-      #|    <x text=".n"></x>
-      #|     b
-      #|  </span>
-      #|</template>
+      #| id="T"><p>a@b</p><span>a <x text=".n"></x> b</span></template>
       #|
       #|
     ),
@@ -56,9 +47,9 @@ test "the spaces around a hole are characters, pinned where nothing trims" {
     #|
   let out = lower_text(src)
   assert_eq(out.reports.length(), 0)
-  // a trailing space before the newline, and a leading one after it
-  assert_true(out.text.contains("a \n"))
-  assert_true(out.text.contains("\n     b\n"))
+  // a space before the hole and a space after it, both as characters
+  assert_true(out.text.contains(">a <x text=\".n\">"))
+  assert_true(out.text.contains("</x> b</span>"))
   // and the run that must NOT gain a space
   let joined = lower_text(
     (

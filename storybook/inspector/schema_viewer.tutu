@@ -1,0 +1,22 @@
+spec:
+  SchemaViewer:
+    field value :: Any
+    field raw :: Any
+    field raw_schema :: Any
+    field show_raw :: Bool
+
+    /// The raw pane has something behind it whenever it is showing. `raw` is
+    /// the JSON the viewer switches to, and toggling onto an empty one is a
+    /// blank panel with no way back but the toggle.
+    invariant raw_pane_has_something_in_it:
+      ~format: "the raw pane is showing and there is nothing behind it"
+      (it.show_raw implies !((it.raw == none)))
+
+view:
+  SchemaViewer:
+    @div(~class: "inline-flex flex-col items-start gap-1 schema-viewer"){@button(~type: "button", ~class: "btn btn-xs btn-ghost self-end raw-toggle", ~on_click: it.show_raw := !it.show_raw){@(toggle_label())} @hide(it.show_raw){
+  @render(it.value)
+} @show(it.show_raw){
+  @render(it.raw)
+}}
+

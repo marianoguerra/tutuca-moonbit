@@ -1,0 +1,48 @@
+spec:
+  /// A sample descriptor exercising every summary channel (RichSample in
+  /// component-inspector.dev.js). Only introspected, never rendered — its
+  /// point is that every panel of the component inspector has something to
+  /// show, which is why it declares one of everything.
+  RichSample:
+    field title :: String
+    field count :: Int
+    field tags :: List.of(String)
+    field open :: Bool
+
+    message ping
+
+    /// An ANSWER, which in v2 is an ordinary message and lands here with
+    /// everything else. v1 gave it a bucket of its own, and a handler could
+    /// not tell one from the other anyway.
+    message on_data
+
+    intent on_child
+
+    /// A sample carrying one of everything — a domain included, so the
+    /// inspector's own panels have a `where` to show.
+    where it.count >= 0
+
+  SampleCard:
+    field title :: String
+    field count :: Int
+    field tags :: List.of(String)
+    field open :: Bool
+
+    where it.count >= 0
+
+view:
+  RichSample:
+    @div(~on_click: inc){@span{@(it.title)} @each(value, key in it.tags, ~loop_with: rows){
+  @span{@(value)}
+}}
+
+  RichSample.compact:
+    @span(~on_click: reset){
+      @i{@(it.title)}
+      @i{@(label())}
+      @i{@(double())}
+    }
+
+  SampleCard:
+    @div(~class: "card", ~on_click: bump){@(label())}
+

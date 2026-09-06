@@ -51,11 +51,11 @@ fn send_receive_comp() -> @component.Component {
             Str(text),
           ])
           // …and message SELF, reusing the `clearDraft` receive handler
-          ctx.send("clearDraft", []) // this handler changes nothing directly; the messages do
+          ctx.send("clear_draft", []) // this handler changes nothing directly; the messages do
         }
         Unchanged
       }
-      Receive("clearStatus", _) => {
+      Receive("clear_status", _) => {
         ctx.send_at_path(ctx.path().concat([FieldStep("status")]), "clear", [])
         Unchanged
       }
@@ -85,11 +85,11 @@ pub fn send_receive_module() -> @component.ModuleDef {
 /// they are plain functions.
 fn tree_item_comp() -> @component.Component {
   tree_item_component(
-    initial={ type_: "dir", label: "A Tree Item", isOpen: true, items: [], },
+    initial={ type_: "dir", label: "A Tree Item", is_open: true, items: [], },
     compute=m => {
       match m {
         AreChildsVisible =>
-          Some((s, _args, _stack) => Bool(s.isOpen && s.items.length() > 0))
+          Some((s, _args, _stack) => Bool(s.is_open && s.items.length() > 0))
       }
     },
     update=(s, msg, ctx) => {
@@ -97,7 +97,7 @@ fn tree_item_comp() -> @component.Component {
         // emit an event any ancestor may observe, then toggle self. The event
         // carries this item's own instance value, read off the dispatch path
         // (its leaf is self).
-        Receive("onItemClick", _) => {
+        Receive("on_item_click", _) => {
           let mut self_v : @tutuca.Value = Null
           ctx.walk_path((_id, inst) => {
             self_v = inst // stop at the leaf: self
@@ -108,7 +108,7 @@ fn tree_item_comp() -> @component.Component {
             [self_v],
             @tutuca.IntentOpts::new(route=[Dyn]),
           )
-          Next({ ..s, isOpen: !s.isOpen, })
+          Next({ ..s, is_open: !s.is_open, })
         }
         // a TreeItem between the source and the root sees the event and passes
         // it on unchanged (returning None = no change)
@@ -159,7 +159,7 @@ fn tree_item_from_data(
   comp.make({
     "type": Str(type_),
     "label": Str(label),
-    "isOpen": Bool(true),
+    "is_open": Bool(true),
     "items": List(items),
   })
 }

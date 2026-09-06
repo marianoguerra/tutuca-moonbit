@@ -1,0 +1,213 @@
+spec:
+  Corpus:
+    field name :: String
+    field count :: Int
+    field ratio :: Double
+    field ok :: Bool
+    field items :: List.of(String)
+    field labels :: List.of(Label)
+    field tags :: Set.of(String)
+    field page :: Int
+    field note :: maybe(String)
+
+    message case0
+
+    message case1
+
+    message case2(Int)
+
+    message case3(String)
+
+    message case4(Int)
+
+    message case5(String)
+
+    message case6(String)
+
+    message case7(String)
+
+    message case8(String)
+
+    message case9(String)
+
+    message case10
+
+    message case11
+
+    message case12(Int)
+
+    message case13
+
+    message case14
+
+    message case15
+
+    message case16
+
+    message case17
+
+    message case26(Int)
+
+    message case27(String)
+
+    message case28(String)
+
+    intent case18(String)
+
+    intent case19(String)
+
+    intent case20(Int)
+
+    intent case21(Int)
+
+    intent case22(String)
+
+    intent case23(String)
+
+    intent case24(String)
+
+    intent case25(String)
+
+  struct Label(text :: String, done :: Bool)
+
+logic:
+  Corpus:
+    /// case 0: a message answered at home
+    receive case0:
+      it.count += 1
+
+    /// case 1: a message no arm answers produces no successor
+    receive case1:
+      it.count += 1
+
+    /// case 2: a view name and a schema-declared name share one bucket
+    receive case2(n):
+      it.count := n
+
+    /// case 3: a bare ask with no legs takes the default route
+    receive case3(text):
+      ask()
+
+    /// case 4: a bare ask dyn walks the ancestors only
+    receive case4(k):
+      ask(~route: dyn)
+
+    /// case 5: a bare ask lex walks the registered handlers only
+    receive case5(text):
+      ask(~route: lex)
+
+    /// case 6: a bare ask lex dyn walks the legs in the order written
+    receive case6(text):
+      ask(~route: [lex, dyn])
+
+    /// case 7: a bare ask amends the arguments and keeps the name and the route
+    receive case7(text):
+      ask(it.name)
+
+    /// case 8: a handler may run and then ask
+    receive case8(text):
+      it.count += 1
+      ask()
+
+    /// case 9: a bare value fills a nullable field
+    receive case9(t):
+      it.note := t
+
+    /// case 10: null empties one, and is the one literal the wanted type names
+    receive case10:
+      it.note := "hi"
+      it.note := none
+
+    /// case 11: an ask with no legs takes the default route
+    receive case11:
+      ask("save_draft", it.name)
+
+    /// case 12: ask dyn is what v1 spelled bubble
+    receive case12(k):
+      ask("picked", k, ~route: dyn)
+
+    /// case 13: ask lex is what v1 spelled request
+    receive case13:
+      ask("load_rows", it.name, ~route: lex)
+
+    /// case 14: ask lex dyn reverses the legs
+    receive case14:
+      ask("save_draft", it.name, ~route: [lex, dyn])
+
+    /// case 15: a reply to a message names itself
+    receive case15:
+      reply("pong", it.name)
+
+    /// case 16: a reply is an effect like the rest, and buffers with them
+    receive case16:
+      it.count += 1
+      reply("pong", it.count)
+      send("flash", it.name)
+
+    /// case 17: effects come out in order, with the state
+    receive case17:
+      ask("load_rows", ~route: lex)
+      it.ok := true
+      send("flash", it.name)
+      drop()
+
+    /// case 18: an intent answered where it arrives
+    answer case18(text):
+      it.count += 1
+      reply(it.count)
+
+    /// case 19: fail answers with an error and ends the walk
+    answer case19(text):
+      fail("disk full")
+
+    /// case 20: a handler that does not reply is an observer
+    answer case20(k):
+      it.page := k
+
+    /// case 21: an intent handler may run and then continue the walk
+    answer case21(k):
+      it.page := k
+      forward()
+
+    /// case 22: a body may queue two replies, and both come out of it
+    answer case22(text):
+      reply(1)
+      reply(2)
+
+    /// case 23: drop ends the walk before any reply, and answers nothing
+    answer case23(text):
+      it.count += 1
+      drop()
+
+    pred has_some: (it.count > 0)
+
+    /// case 24: a requires that does not hold takes the reply with it
+    answer case24(text):
+      ~requires: has_some
+      it.count += 1
+      reply(it.count)
+
+    pred small: (it.count > 5)
+
+    /// case 25: an ensures that does not hold takes the reply with it
+    answer case25(text):
+      ~ensures: small
+      it.count += 1
+      reply(it.count)
+
+    /// case 26: an answer arrives as an ordinary message
+    receive case26(n):
+      it.count := n
+
+    /// case 27: a failure answer arrives as an ordinary message too
+    receive case27(why):
+      it.name := why
+
+    /// case 28: a parameter named `s` is the argument, not the state
+    receive case28(s):
+      it.name := s
+
+view:
+  Corpus:
+    @div{@(it.name)}
+

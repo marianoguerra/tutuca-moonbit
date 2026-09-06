@@ -6,13 +6,13 @@
 
 ///|
 fn emoji_picker_comp() -> @component.Component {
-  emoji_picker_component(initial={ current: Null, isPickerVisible: false, }, update=(
+  emoji_picker_component(initial={ current: Null, is_picker_visible: false, }, update=(
     s,
     msg,
     _ctx,
   ) => {
     match msg {
-      Receive("onEmojiClick", [Map(detail), ..]) =>
+      Receive("on_emoji_click", [Map(detail), ..]) =>
         Next({ ..s, current: detail.get("unicode").unwrap_or(Null), })
       _ => Unhandled
     }

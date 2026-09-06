@@ -25,7 +25,7 @@ let activity_cap : Int = 50
 fn activity_entry_comp() -> @component.Component {
   activity_entry_component(initial={
     ..ActivityEntryState::zero(),
-    hasAfter: true,
+    has_after: true,
   })
 }
 
@@ -45,7 +45,7 @@ fn activity_log_comp() -> @component.Component {
           }
           out.push(e)
         }
-        Next({ events: out, hasEvents: true, })
+        Next({ events: out, has_events: true, })
       }
       Some(Unknown(_, _)) | None => Unhandled
     }
@@ -82,14 +82,14 @@ pub fn Inspector::record_to_entry(
     "kind": Str(record.kind_label()),
     "origin": Str(record.origin.label()),
     "name": Str(record.name),
-    "handlerName": Str(""),
+    "handler_name": Str(""),
     "matched": Str(record.matched.label()),
-    "pathLabel": Str(
+    "path_label": Str(
       path_label.unwrap_or(@tutuca.step_keys_label(record.path_keys)),
     ),
     "time": Str(time.unwrap_or("#\{seq}")),
     "before": before,
     "after": after,
-    "hasAfter": Bool(has_after),
+    "has_after": Bool(has_after),
   })
 }

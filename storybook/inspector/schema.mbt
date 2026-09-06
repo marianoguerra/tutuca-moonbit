@@ -168,7 +168,7 @@ fn Inspector::schema_branch(
   self.make_("SchemaBranch", args={
     "label": Str(label),
     "child": child,
-    "labelClass": Str(label_class),
+    "label_class": Str(label_class),
   })
 }
 
@@ -274,12 +274,12 @@ fn schema_property_comp() -> @component.Component {
 /// $defs entries and embedded values).
 fn schema_branch_comp() -> @component.Component {
   schema_branch_component(
-    initial={ ..SchemaBranchState::zero(), labelClass: "text-accent", },
+    initial={ ..SchemaBranchState::zero(), label_class: "text-accent", },
     compute=m => {
       match m {
         LabelCssClass =>
           Some((s, _args, _stack) => {
-            Str("font-mono text-sm schema-branch-label \{s.labelClass}")
+            Str("font-mono text-sm schema-branch-label \{s.label_class}")
           })
       }
     },

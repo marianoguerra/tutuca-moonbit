@@ -57,7 +57,7 @@ fn item_comp() -> @component.Component {
     update=(_s : ItemState, msg, _ctx) => {
       match msg {
         Receive("pick", [Str(l)]) => Next({ label: l, })
-        Receive("loadOk", [Str(l), ..]) => Next({ label: l, })
+        Receive("load_ok", [Str(l), ..]) => Next({ label: l, })
         _ => Unhandled
       }
     },
@@ -190,7 +190,7 @@ test "a view raises a message, and the lexical leg answers an intent" {
   let asked : Array[String] = []
   let scope = @component.ComponentStack::new()
   scope.register_intent_handlers({
-    "loadRows": [
+    "load_rows": [
       IntentFn((_call, answer) => {
         asked.push("first")
         answer(Pass)
@@ -215,14 +215,14 @@ test "a view raises a message, and the lexical leg answers an intent" {
         // The view's name arrives as a MESSAGE now.
         Receive("go", _) => {
           ctx.intent(
-            "loadRows",
+            "load_rows",
             [],
-            @tutuca.IntentOpts::new(route=[Lex], on_ok_name="loadRowsOk"),
+            @tutuca.IntentOpts::new(route=[Lex], on_ok_name="load_rows_ok"),
           )
           Unchanged
         }
         // ...and the answer arrives as one too.
-        Receive("loadRowsOk", [v]) => Next({ seen: v.to_repr().to_string(), })
+        Receive("load_rows_ok", [v]) => Next({ seen: v.to_repr().to_string(), })
         _ => Unhandled
       }
     },

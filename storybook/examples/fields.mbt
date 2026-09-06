@@ -14,8 +14,8 @@
 /// method answers Null, which is falsy — so the `true` here is a deliberate
 /// "no filter to apply", not a swallowed miss.
 fn contains_text_filter(query : String, item : @tutuca.Value) -> Bool {
-  match item.field("containsText") {
-    Fn(_) => item.call_field("containsText", [Str(query)]).is_truthy()
+  match item.field("contains_text") {
+    Fn(_) => item.call_field("contains_text", [Str(query)]).is_truthy()
     _ => true
   }
 }

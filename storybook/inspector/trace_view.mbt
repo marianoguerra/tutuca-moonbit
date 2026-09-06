@@ -134,14 +134,14 @@ pub fn Inspector::trace_row(
     "seq": Num(e.seq.to_double()),
     "turn": Num(e.turn.to_double()),
     "walk": Num(e.walk.to_double()),
-    "hasWalk": Bool(e.walk != 0),
+    "has_walk": Bool(e.walk != 0),
     "verb": Str(verb),
-    "verbClass": Str(verb_class),
+    "verb_class": Str(verb_class),
     "name": Str(name_of(e.op)),
     "place": Str(if e.at.label() == "" { "(root)" } else { e.at.label() }),
     "args": Str(args_of(e.op)),
     "input": Bool(e.input),
-    "rowClass": Str(
+    "row_class": Str(
       "trace-row flex flex-col gap-1 rounded border px-2 py-1 text-sm " +
       (if e.input {
         "border-primary/40 bg-primary/5"
@@ -152,7 +152,7 @@ pub fn Inspector::trace_row(
     "depth": Num(depth.to_double()),
     "current": Bool(current),
     "after": after,
-    "hasAfter": Bool(e.after is Some(_)),
+    "has_after": Bool(e.after is Some(_)),
     "open": Bool(false),
   })
 }
@@ -185,10 +185,10 @@ pub fn Inspector::trace_log(
   }
   self.make_("TraceLog", args={
     "rows": List(rows),
-    "hasRows": Bool(!rows.is_empty()),
-    "inputsOnly": Bool(inputs_only),
+    "has_rows": Bool(!rows.is_empty()),
+    "inputs_only": Bool(inputs_only),
     "turn": Num(turn.to_double()),
-    "emptyHint": Str(
+    "empty_hint": Str(
       if t.events.is_empty() {
         "Nothing was recorded."
       } else {
@@ -218,8 +218,8 @@ pub fn Inspector::trace_header(
     "events": Num(t.events.length().to_double()),
     "inputs": Num(t.input_count().to_double()),
     "turns": Num(t.turns().length().to_double()),
-    "relocatedFrom": Str(t.relocated_from.map(p => p.label()).join(" › ")),
-    "isRelocated": Bool(!t.relocated_from.is_empty()),
+    "relocated_from": Str(t.relocated_from.map(p => p.label()).join(" › ")),
+    "is_relocated": Bool(!t.relocated_from.is_empty()),
     "compacted": Bool(t.compacted),
   })
 }
@@ -267,7 +267,7 @@ pub fn Inspector::trace_places(
         // default of `""` would show the whole thing as chosen before anybody
         // chose anything.
         "selected": Bool(selected is Some(sel) && sel == label),
-        "rowClass": Str(
+        "row_class": Str(
           "trace-place text-left rounded px-2 py-1 text-sm flex items-center gap-2 hover:bg-base-200 " +
           (if selected is Some(sel) && sel == label {
             "bg-primary/10 ring-1 ring-primary/40"
@@ -281,10 +281,10 @@ pub fn Inspector::trace_places(
   }
   self.make_("TracePlaces", args={
     "places": List(places),
-    "hasPlaces": Bool(!places.is_empty()),
+    "has_places": Bool(!places.is_empty()),
     "selected": Str(selected.unwrap_or("")),
     "heading": Str(heading),
-    "emptyHint": Str(empty_hint),
+    "empty_hint": Str(empty_hint),
   })
 }
 
@@ -326,7 +326,7 @@ pub fn Inspector::place_candidates(
         // default of `""` would show the whole thing as chosen before anybody
         // chose anything.
         "selected": Bool(selected is Some(sel) && sel == label),
-        "rowClass": Str(
+        "row_class": Str(
           "trace-place text-left rounded px-2 py-1 text-sm flex items-center gap-2 hover:bg-base-200 " +
           (if selected is Some(sel) && sel == label {
             "bg-primary/10 ring-1 ring-primary/40"
@@ -340,10 +340,10 @@ pub fn Inspector::place_candidates(
   }
   self.make_("TracePlaces", args={
     "places": List(places),
-    "hasPlaces": Bool(!places.is_empty()),
+    "has_places": Bool(!places.is_empty()),
     "selected": Str(selected.unwrap_or("")),
     "heading": Str("Components under what you clicked"),
-    "emptyHint": Str("Nothing the app rendered is there."),
+    "empty_hint": Str("Nothing the app rendered is there."),
   })
 }
 
@@ -379,13 +379,13 @@ pub fn Inspector::recorder_bar(
   self.make_("RecorderBar", args={
     "recording": Bool(recording),
     "scope": Str(scope),
-    "scopeLabel": Str(trace_scope_label(scope)),
-    "allClass": Str(pick_class(scope, "all")),
-    "sectionClass": Str(pick_class(scope, "section")),
-    "exampleClass": Str(pick_class(scope, "example")),
+    "scope_label": Str(trace_scope_label(scope)),
+    "all_class": Str(pick_class(scope, "all")),
+    "section_class": Str(pick_class(scope, "section")),
+    "example_class": Str(pick_class(scope, "example")),
     "events": Num(events.to_double()),
     "turns": Num(turns.to_double()),
-    "hasTrace": Bool(has_trace),
+    "has_trace": Bool(has_trace),
     "picking": Bool(picking),
   })
 }
@@ -437,35 +437,35 @@ pub fn Inspector::trace_panel(
     "places": places.unwrap_or(self.trace_places(t, selected?=selected_place)),
     "log": self.trace_log(t, at~, inputs_only~),
     "tab": Str(tab),
-    "hasTrace": Bool(has_trace),
-    "showTrace": Bool(has_trace && tab == "trace"),
-    "showReplay": Bool(has_trace && tab == "replay"),
+    "has_trace": Bool(has_trace),
+    "show_trace": Bool(has_trace && tab == "trace"),
+    "show_replay": Bool(has_trace && tab == "replay"),
     // Import lives on the Record pane, which is also where a reader with no
     // recording lands: the person who has nothing to show is exactly the
     // person who wants to load somebody else's.
-    "showImport": Bool(has_trace && tab == "record"),
+    "show_import": Bool(has_trace && tab == "record"),
     "selecting": Bool(selecting),
-    "selectLabel": Str(
+    "select_label": Str(
       if selecting {
         "Click an element…"
       } else {
         "Pick a component"
       },
     ),
-    "recordTabClass": Str(tab_class("record", tab == "record")),
-    "traceTabClass": Str(tab_class("trace", tab == "trace")),
-    "replayTabClass": Str(tab_class("replay", tab == "replay")),
-    "selectTabClass": Str(tab_class("select", selecting)),
+    "record_tab_class": Str(tab_class("record", tab == "record")),
+    "trace_tab_class": Str(tab_class("trace", tab == "trace")),
+    "replay_tab_class": Str(tab_class("replay", tab == "replay")),
+    "select_tab_class": Str(tab_class("select", selecting)),
     "at": Num((at + 1).to_double()),
     "total": Num(t.events.length().to_double()),
     "notice": Str(notice),
-    "hasNotice": Bool(notice != ""),
+    "has_notice": Bool(notice != ""),
     "draft": Str(draft),
     // A rerun needs a recording to be a rerun OF, so the flag the invariant
     // holds against `hasTrace` is computed from both rather than trusted from
     // the caller — a host that got it wrong would trip the invariant rather
     // than show dead buttons, and this is the cheaper answer.
-    "canReplay": Bool(can_replay && has_trace),
+    "can_replay": Bool(can_replay && has_trace),
     "replaying": Bool(replaying && can_replay && has_trace),
   })
 }

@@ -9,7 +9,7 @@
 // RootMsg cannot type them.
 
 // Reads of an entry's fields go straight through `@tutuca.Value::field` plus a
-// coercer — `e.field("startYear").int()`.
+// coercer — `e.field("start_year").int()`.
 
 // --- personal_site (adapted from examples/personal_site.mbt) ---
 
@@ -48,9 +48,9 @@ fn ps_sort(
 ) -> Array[@tutuca.Value] {
   let out = entries.copy()
   let year = (e : @tutuca.Value) => {
-    let start = e.field("startYear").int()
+    let start = e.field("start_year").int()
     if by_end {
-      let end = e.field("endYear").int()
+      let end = e.field("end_year").int()
       if end != 0 {
         end
       } else {
@@ -181,7 +181,7 @@ fn ps_entry_comp() -> @component.Component {
       EnrichCategoryBadge =>
         Some((_s, binds, _key, value, _iter, _stack) => match value {
           Str(cat) =>
-            binds["badgeClass"] = Str(
+            binds["badge_class"] = Str(
               "badge badge-sm \{ps_category_color(cat, true)} cat",
             )
           _ => ()
@@ -239,8 +239,8 @@ fn entry_from_data(
   entry.make({
     "title": Str(title),
     "description": Str(description),
-    "startYear": Num(start_year.to_double()),
-    "endYear": Num(end_year.to_double()),
+    "start_year": Num(start_year.to_double()),
+    "end_year": Num(end_year.to_double()),
     "role": if role == "" {
       Null
     } else {
@@ -248,7 +248,7 @@ fn entry_from_data(
     },
     "featured": Bool(featured),
     "categories": List(cats.map(c => Str(c))),
-    "altUrls": List(
+    "alt_urls": List(
       alt_urls.map(a => alt_url.make({ "label": Str(a.0), "url": Str(a.1) })),
     ),
   })
@@ -285,23 +285,23 @@ fn root_comp() -> @component.Component {
         sortAsc: false,
       },
     compute={
-      "hasActiveFilters": (s : RootState, _args, _stack) => Bool(
+      "has_active_filters": (s : RootState, _args, _stack) => Bool(
         s.selectedCategories.length() != s.allCategories.length() ||
         s.selectedRoles.length() != s.allRoles.length(),
       ),
     },
     when={
-      "filterEntry": (s : RootState, _key, e, _iter, _stack) => ps_filter_entry(s, e),
+      "filter_entry": (s : RootState, _key, e, _iter, _stack) => ps_filter_entry(s, e),
     },
     enrich={
       // The badge classes compose `btn btn-xs border-0` with the category
       // color; the trailing `cat-btn on|off` tokens are the MB test hooks.
-      "enrichCategoryBindings": (s : RootState, binds, _key, value, _iter, _stack) => match value {
+      "enrich_category_bindings": (s : RootState, binds, _key, value, _iter, _stack) => match value {
           Str(cat) => {
             let selected = s.selectedCategories.contains(cat)
             binds["isSelected"] = Bool(selected)
             let state = if selected { "on" } else { "off" }
-            binds["btnClass"] = Str(
+            binds["btn_class"] = Str(
               "btn btn-xs border-0 \{ps_category_color(cat, selected)} cat-btn \{state}",
             )
           }
@@ -310,10 +310,10 @@ fn root_comp() -> @component.Component {
       // JS: selected -> `btn btn-xs btn-neutral font-bold ring-1
       // ring-neutral-content/30`, else `btn btn-xs btn-ghost font-bold
       // opacity-40`; the trailing `role-btn on|off` tokens are the MB hooks.
-      "enrichRoleBindings": (s : RootState, binds, _key, value, _iter, _stack) => match value {
+      "enrich_role_bindings": (s : RootState, binds, _key, value, _iter, _stack) => match value {
           Str(role) => {
             let selected = s.selectedRoles.contains(role)
-            binds["btnClass"] = Str(
+            binds["btn_class"] = Str(
               if selected {
                 "btn btn-xs btn-neutral font-bold ring-1 ring-neutral-content/30 role-btn on"
               } else {
@@ -325,13 +325,13 @@ fn root_comp() -> @component.Component {
         },
     },
     update=(s : RootState, msg, ctx) => match msg {
-        Receive("clearFilters", _) =>
+        Receive("clear_filters", _) =>
           Next({
             ..s,
             selectedCategories: ps_set_of(s.allCategories),
             selectedRoles: ps_set_of(s.allRoles),
           })
-        Receive("onCategoryToggle", args) =>
+        Receive("on_category_toggle", args) =>
           Next({
             ..s,
             selectedCategories: ps_facet_toggle(
@@ -340,21 +340,21 @@ fn root_comp() -> @component.Component {
               args,
             ),
           })
-        Receive("onRoleToggle", args) =>
+        Receive("on_role_toggle", args) =>
           Next({
             ..s,
             selectedRoles: ps_facet_toggle(s.allRoles, s.selectedRoles, args),
           })
-        Receive("onToggleSortByEnd", _) =>
+        Receive("on_toggle_sort_by_end", _) =>
           Next(ps_resort({ ..s, sortByEnd: !s.sortByEnd }))
-        Receive("onToggleSortAsc", _) =>
+        Receive("on_toggle_sort_asc", _) =>
           Next(ps_resort({ ..s, sortAsc: !s.sortAsc }))
-        Receive("onToggleFeaturedFirst", _) =>
+        Receive("on_toggle_featured_first", _) =>
           Next(ps_resort({ ..s, featuredFirst: !s.featuredFirst }))
         // The ANSWER, named for its outcome and carrying only what it is
         // about: three arms, three payloads, and no arm handed both a result
         // and an error to tell apart.
-        Receive("loadDataOk", args) => {
+        Receive("load_data_ok", args) => {
           let entries = match args {
             [List(a), ..] => a
             _ => []
@@ -399,7 +399,7 @@ fn root_comp() -> @component.Component {
           // `lex`: the answer comes from a handler registered in the SCOPE, not
           // from a component up the tree. `loadDataOk` above is the arm it
           // lands in, named for the outcome rather than for the ask.
-          ctx.intent("loadData", [], @tutuca.IntentOpts::new(route=[Lex]))
+          ctx.intent("load_data", [], @tutuca.IntentOpts::new(route=[Lex]))
           Next(s)
         }
         _ => Unhandled
@@ -538,7 +538,7 @@ pub fn personal_site_module() -> @component.ModuleDef {
   // A LIST per name, because the `lex` leg walks: a declining handler hands
   // the intent to the next one in the scope chain.
   let intents : Map[String, Array[@component.IntentFn]] = {
-    "loadData": [
+    "load_data": [
       IntentFn((_call, answer) => answer(Ok(ps_fixture(entry, alt_url)))),
     ],
   }

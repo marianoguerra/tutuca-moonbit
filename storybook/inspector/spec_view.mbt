@@ -76,7 +76,7 @@ fn Inspector::spec_field_rows(
   fields.map(f => {
     self.make_("SpecField", args={
       "name": Str(f.name),
-      "typeName": Str(f.ty.show_source()),
+      "type_name": Str(f.ty.show_source()),
       "attrs": Str(spec_attrs_of(f.attrs)),
       "doc": Str(spec_doc_of(f.doc)),
     })
@@ -112,7 +112,7 @@ fn Inspector::spec_rule_rows(
     let (word, klass) = spec_rule_kind(r.kind)
     self.make_("SpecRule", args={
       "kind": Str(word),
-      "kindClass": Str(klass),
+      "kind_class": Str(klass),
       "name": Str(r.name),
       "source": Str(r.source),
       "format": Str(r.format),
@@ -158,7 +158,7 @@ fn Inspector::spec_section(
     self.make_("CompSection", args={
       "label": Str(label),
       "items": List(rows),
-      "isExpanded": Bool(expanded),
+      "is_expanded": Bool(expanded),
     }),
   )
 }
@@ -244,7 +244,7 @@ fn Inspector::spec_def_section(
       def.provide.map(p => {
         self.make_("SpecField", args={
           "name": Str(p.name),
-          "typeName": Str(p.source),
+          "type_name": Str(p.source),
         })
       }),
     ),
@@ -255,7 +255,7 @@ fn Inspector::spec_def_section(
       def.lookup.map(l => {
         self.make_("SpecField", args={
           "name": Str(l.name),
-          "typeName": Str(l.default.unwrap_or("")),
+          "type_name": Str(l.default.unwrap_or("")),
         })
       }),
     ),
@@ -265,7 +265,7 @@ fn Inspector::spec_def_section(
     "items": List(self.spec_with_doc(def.doc, inner)),
     // The story's own component is the arm it was opened for; the others are
     // the children the file happens to declare beside it.
-    "isExpanded": Bool(root),
+    "is_expanded": Bool(root),
   })
 }
 
@@ -348,14 +348,14 @@ pub fn Inspector::spec_panel(
     }
   }
   self.make_("SpecViewer", args={
-    "compName": Str(
+    "comp_name": Str(
       match comp {
         Some(c) => c.name
         None => ""
       },
     ),
     "sections": List(sections),
-    "hasSpec": Bool(!sections.is_empty()),
+    "has_spec": Bool(!sections.is_empty()),
     "hint": Str(hint),
     "note": Str(spec_note_of(comp)),
   })
@@ -373,7 +373,7 @@ pub fn Inspector::spec_source_panel(
   }
   self.make_("SpecSource", args={
     "source": Str(source),
-    "hasSource": Bool(source != ""),
+    "has_source": Bool(source != ""),
     "hint": Str(spec_absent_hint(comp)),
     "note": Str(spec_note_of(comp)),
   })
@@ -487,7 +487,9 @@ fn spec_viewer_comp() -> @component.Component {
       Some(ToggleAllSections(on)) =>
         Next({
           ..s,
-          sections: s.sections.map(sec => sec.with_field("isExpanded", Bool(on))),
+          sections: s.sections.map(sec => {
+            sec.with_field("is_expanded", Bool(on))
+          }),
         })
       Some(Unknown(_, _)) | None => Unhandled
     }

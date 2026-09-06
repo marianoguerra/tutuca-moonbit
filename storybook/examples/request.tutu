@@ -1,0 +1,66 @@
+spec:
+  RequestExample:
+    field items :: List.of(Instance.of(Entry))
+    field query :: String
+    field view :: String
+    field is_loading :: Bool
+    field error :: maybe(String)
+
+    /// The three outcomes are exclusive, and this is the pair that a reader
+    /// of the handlers has to hold in their head otherwise: a request that
+    /// is still in flight has not failed yet. `loadDataFailed` clears the
+    /// flag as it sets the message, and this is what says why.
+    invariant not_failed_while_loading:
+      ~format: "the spinner is up and an error is already showing"
+      (it.is_loading implies (it.error == none))
+
+    message init
+
+    message load_data_ok(Any)
+
+    message load_data_failed(String)
+
+    message load_data_unhandled
+
+    /// `@push-view=".view"` falls back to `main` for a name it cannot find,
+    /// so a third value is not an error — it is a toggle that stops toggling.
+    where it.view is_one_of ["main", "edit"]
+
+logic:
+  RequestExample:
+    /// Flip the pushed view name.
+    receive toggle_view:
+      it.view := if (it.view == "main") | "edit" | "main"
+
+    /// Dispatch the intent and say so. `intent` is an effect here, which means
+    /// it goes out only if the whole body finished — a message sent beside a
+    /// transition that did not happen is the one outcome nobody can reason
+    /// about afterwards.
+    ///
+    /// `lex` is the leg: the answer comes from a handler REGISTERED IN THE
+    /// SCOPE, not from a component up the tree. That is what v1 spelled
+    /// `request`, and writing it as a route is the whole change — the verb no
+    /// longer decides which scope answers.
+    ///
+    /// No opts here. The three answer arms are in the schema, so the generator
+    /// already knows where the answer goes.
+    receive init:
+      ask("load_data", ~route: lex)
+      it.is_loading := true
+
+view:
+  RequestExample:
+    @section(~class: "flex flex-col gap-3"){@show(it.is_loading){
+  @div(~class: "alert alert-info alert-outline loading"){Loading}
+} @hide(it.is_loading){
+  @div(~class: "flex justify-between"){@input(~type: "search", ~class: "input", ~value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := default ~cancel, ~placeholder: "Filter entries") @button(~class: "btn bnt-sm btn-primary btn-outline another", ~on_click: load_another_way){Load Another Way} @button(~class: "btn bnt-sm btn-primary toggle-btn", ~on_click: toggle_view){@(it.view)}}
+} @hide(it.is_loading){
+  @div(~push_view: it.view, ~class: "flex flex-col gap-3 max-h-[40vh] overflow-y-auto pr-3 rows"){
+    @each(value, key in it.items, ~when: filter_item){
+      @render(value)
+    }
+  }
+} @show(it.error.is_truthy()){
+  @div(~class: "error"){@(it.error)}
+}}
+

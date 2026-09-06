@@ -3,7 +3,7 @@
 //
 // The corpus is DATA (`tscript/conformance`), and the interpreter reads it
 // directly. The MoonBit backend cannot — its answers only exist once `moonc`
-// has compiled them — so the corpus is projected into one `.html` that
+// has compiled them — so the corpus is projected into one `.tutu` that
 // `gen` compiles like any other, and a whitebox test drives the emitted
 // functions case by case.
 //
@@ -16,6 +16,10 @@ import {
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/tscript/conformance" @corpus,
+  // The corpus is projected in the OLD block notation — that is the language
+  // it specifies — and converted here, so what is checked in is a `.tutu` like
+  // every other view file in the repo.
+  "marianoguerra/tutuca/tutufile/totutu",
   "moonbitlang/x/fs",
   "moonbitlang/core/env",
 }

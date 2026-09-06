@@ -55,28 +55,28 @@ impl Composite for InstanceFieldsState with fn items(self) {
 
 ///|
 impl Composite for InstanceFieldsState with fn is_expanded(self) {
-  self.isExpanded
+  self.is_expanded
 }
 
 ///|
 impl Composite for InstanceFieldsState with fn per_page(self) {
-  self.itemsPerPage
+  self.items_per_page
 }
 
 ///|
 impl Composite for InstanceFieldsState with fn current_page(self) {
-  self.currentPage
+  self.current_page
 }
 
 ///|
 impl Composite for InstanceFieldsState with fn with_current_page(self, p) {
-  { ..self, currentPage: p, }
+  { ..self, current_page: p, }
 }
 
 ///|
 fn instance_fields_comp() -> @component.Component {
   instance_fields_component(
-    initial={ ..InstanceFieldsState::zero(), itemsPerPage: 10, },
+    initial={ ..InstanceFieldsState::zero(), items_per_page: 10, },
     update=(s, msg, _ctx) => composite_update(s, msg),
     compute=m => {
       match m {
@@ -86,7 +86,7 @@ fn instance_fields_comp() -> @component.Component {
         CannotPrevPage => Some(composite_cannot_prev_page)
         CannotNextPage => Some(composite_cannot_next_page)
         PageIndicatorText => Some(composite_page_indicator_text)
-        TypeText => Some((s, _args, _stack) => Str(s.typeName))
+        TypeText => Some((s, _args, _stack) => Str(s.type_name))
         CountText => Some((s, _args, _stack) => Str("{\{s.items.length()}}"))
       }
     },
@@ -129,9 +129,9 @@ fn Inspector::instance_fields_from(
   }
   // Start expanded — the field → value rows are the point of this view.
   self.make_("InstanceFields", args={
-    "typeName": d.get("name").unwrap_or(Str("")),
+    "type_name": d.get("name").unwrap_or(Str("")),
     "items": List(rows),
-    "isExpanded": Bool(true),
+    "is_expanded": Bool(true),
   })
 }
 
@@ -175,7 +175,7 @@ fn Inspector::inspect_value_as_instance(
 fn instance_explorer_comp() -> @component.Component {
   instance_explorer_component(initial={
     ..InstanceExplorerState::zero(),
-    activeTab: "instance",
+    active_tab: "instance",
   })
 }
 
@@ -187,9 +187,9 @@ fn Inspector::explore_instance(
   comp : @component.Component,
 ) -> @tutuca.Value {
   self.make_("InstanceExplorer", args={
-    "instanceView": self.inspect_instance(v, comp),
-    "componentView": self.inspect_component(comp),
-    "hasComponent": Bool(true),
+    "instance_view": self.inspect_instance(v, comp),
+    "component_view": self.inspect_component(comp),
+    "has_component": Bool(true),
   })
 }
 
@@ -207,8 +207,8 @@ pub fn Inspector::explore_value(
 ) -> @tutuca.Value {
   let views = self.build_inspector_views(v, comps?)
   self.make_("InstanceExplorer", args={
-    "instanceView": views.instance_view,
-    "componentView": views.component_view,
-    "hasComponent": Bool(views.has_component),
+    "instance_view": views.instance_view,
+    "component_view": views.component_view,
+    "has_component": Bool(views.has_component),
   })
 }

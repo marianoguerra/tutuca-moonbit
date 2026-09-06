@@ -1,0 +1,66 @@
+spec:
+  TrafficLight:
+    field light_index :: Int
+
+    message next_light
+
+    /// Three lights, so three positions — the same `mod 3` the handler
+    /// applies, said once where a reader and a generator can both see it.
+    /// `nextLight` cannot leave the cycle, and a fuzzer drawing this field
+    /// never asks `$light` about a colour that does not exist.
+    where it.light_index in_range(0, 2)
+
+  TabbedUI:
+    field tab :: String
+
+    /// The tab strip is CLOSED: three buttons, three panels, and a fourth
+    /// name would render a page with nothing on it. `setTab` is generated, so
+    /// this is the only place the closed set can be stated.
+    where it.tab is_one_of ["overview", "features", "pricing"]
+
+  ListAndFilter:
+    field items :: List.of(String)
+    field query :: String
+
+logic:
+  TrafficLight:
+    /// Step to the next colour, wrapping at the end of the cycle.
+    ///
+    /// The three names are the `$light` method's business, not this one's: the
+    /// handler only ever moves an index, so `mod 3` is all it needs to know.
+    receive next_light:
+      it.light_index := ((it.light_index + 1) mod 3)
+
+view:
+  TrafficLight:
+    @section(~class: "flex flex-col gap-2"){@button(~class: "btn btn-primary", ~on_click: next_light){Next light} @p{@"Light is: "@code{@(light())}}@p(~class: "advice"){@" You must "@show((light() == "red")){
+  @span{STOP}
+} @show((light() == "orange")){
+  @span{SLOW DOWN}
+} @show((light() == "green")){
+  @span{GO}
+}}}
+
+  TabbedUI:
+    @section(~class: "flex flex-col gap-3"){@div(~role: "tablist", ~class: "tabs tabs-border"){@button(~role: "tab", ~id: "t-overview", ~class: if (it.tab == "overview") | "tab tab-active" | "tab", ~on_click: it.tab := "overview"){Overview} @button(~role: "tab", ~id: "t-features", ~class: if (it.tab == "features") | "tab tab-active" | "tab", ~on_click: it.tab := "features"){Features} @button(~role: "tab", ~id: "t-pricing", ~class: if (it.tab == "pricing") | "tab tab-active" | "tab", ~on_click: it.tab := "pricing"){Pricing}} @show((it.tab == "overview")){
+  @div(~class: "card p-3 border panel"){
+    @h4{Overview}
+    @p{A short summary of what this product does.}
+  }
+} @show((it.tab == "features")){
+  @div(~class: "card p-3 border panel"){
+    @h4{Features}
+    @p{The list of features lives on this tab.}
+  }
+} @show((it.tab == "pricing")){
+  @div(~class: "card p-3 border panel"){
+    @h4{Pricing}
+    @p{What it costs.}
+  }
+}}
+
+  ListAndFilter:
+    @section(~class: "flex flex-col gap-3"){@input(~type: "search", ~class: "input", ~value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := default ~cancel, ~placeholder: "Filter entries") @ul{@each(value, key in it.items, ~when: filter_item){
+  @li{@span{@(key)}@": "@(value)}
+}}}
+

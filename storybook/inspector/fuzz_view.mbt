@@ -86,25 +86,25 @@ pub fn Inspector::fuzz_row(
     "name": Str(fuzz_name_of(step.dispatch)),
     "args": Str(fuzz_args_of(step.dispatch)),
     "verb": Str(verb),
-    "verbClass": Str(verb_class),
+    "verb_class": Str(verb_class),
     "renders": Num(step.renders.to_double()),
     "refused": Bool(refused),
     // A refusal does not always name a rule: a dispatch nothing claims is
     // refused too, with `Unhandled` and an empty `rule`. The badge falls back
     // to the CODE there, because a badge with no text is a badge a reader
     // cannot read and looks like a rendering bug rather than a finding.
-    "refusedRule": Str(
+    "refused_rule": Str(
       if refused {
         refusal_label(step.refused[0])
       } else {
         ""
       },
     ),
-    "refusedSentence": Str(if refused { step.refused[0].sentence } else { "" }),
+    "refused_sentence": Str(if refused { step.refused[0].sentence } else { "" }),
     "broke": Bool(broke),
-    "brokeRule": Str(if broke { step.broke[0] } else { "" }),
+    "broke_rule": Str(if broke { step.broke[0] } else { "" }),
     "disagreed": Bool(disagreed),
-    "rowClass": Str(
+    "row_class": Str(
       "fuzz-row flex flex-col gap-1 rounded border px-2 py-1 text-sm " +
       border +
       (if current { " bg-base-200" } else { "" }),
@@ -129,8 +129,8 @@ pub fn Inspector::fuzz_log(
   }
   self.make_("FuzzLog", args={
     "rows": List(rows),
-    "hasRows": Bool(!rows.is_empty()),
-    "emptyHint": Str(
+    "has_rows": Bool(!rows.is_empty()),
+    "empty_hint": Str(
       if planned > 0 {
         "A script of \{planned} dispatches is drawn. Press Play, Step or Burst."
       } else {
@@ -157,20 +157,20 @@ pub fn Inspector::fuzz_controls(
     "seed": Str(seed),
     "steps": Str(steps),
     "source": Str(source),
-    "publicClass": Str(source_class("public", source)),
-    "messagesClass": Str(source_class("messages", source)),
-    "propertiesClass": Str(source_class("properties", source)),
-    "fieldsClass": Str(source_class("fields", source)),
+    "public_class": Str(source_class("public", source)),
+    "messages_class": Str(source_class("messages", source)),
+    "properties_class": Str(source_class("properties", source)),
+    "fields_class": Str(source_class("fields", source)),
     "playing": Bool(playing),
-    "canRun": Bool(can_run),
-    "noPlanHint": Str(no_plan_hint),
+    "can_run": Bool(can_run),
+    "no_plan_hint": Str(no_plan_hint),
     // The two states NEST: no plan is also nothing to draw, so a caller that
     // says the first need not say the second. Derived here rather than asked
     // of every caller, because the pair is what the panel's own invariants are
     // written against — a `canRun: false, canDraw: true` panel would offer
     // buttons for a plan that does not exist.
-    "canDraw": Bool(can_run && can_draw),
-    "noDrawHint": Str(if can_run { no_draw_hint } else { no_plan_hint }),
+    "can_draw": Bool(can_run && can_draw),
+    "no_draw_hint": Str(if can_run { no_draw_hint } else { no_plan_hint }),
   })
 }
 
@@ -231,15 +231,15 @@ pub fn Inspector::fuzz_verdict(
   }
   self.make_("FuzzVerdict", args={
     "kind": Str(kind),
-    "badgeClass": Str("badge badge-sm verdict-kind \{colour}"),
+    "badge_class": Str("badge badge-sm verdict-kind \{colour}"),
     "headline": Str(headline),
     "sentence": Str(sentence),
     "rule": Str(rule),
     "at": Num(at.to_double()),
     "unchecked": Str(unchecked.map(u => "\{u.0} (\{u.1})").join(", ")),
-    "hasUnchecked": Bool(!unchecked.is_empty()),
+    "has_unchecked": Bool(!unchecked.is_empty()),
     "reproducer": List(lines),
-    "hasReproducer": Bool(!lines.is_empty()),
+    "has_reproducer": Bool(!lines.is_empty()),
   })
 }
 
@@ -275,7 +275,7 @@ pub fn Inspector::fuzz_panel(
     ),
     "verdict": self.fuzz_verdict(outcome?, unchecked~, reproducer~),
     "log": self.fuzz_log(run_steps, at~, planned~),
-    "hasRun": Bool(!run_steps.is_empty()),
+    "has_run": Bool(!run_steps.is_empty()),
     // 1-based for display: a reader counting steps starts at one.
     "at": Num((at + 1).to_double()),
     "total": Num(planned.to_double()),

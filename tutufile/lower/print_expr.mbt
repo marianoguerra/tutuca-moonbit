@@ -58,11 +58,24 @@ pub fn print_ex(ex : Ex) -> String raise ExError {
 }
 
 ///|
+/// A binding's name with its sigil, added only if it is not already there.
+fn sigil(name : String) -> String {
+  if name.has_prefix("@") || name.has_prefix("^") {
+    name
+  } else {
+    "@" + name
+  }
+}
+
+///|
 /// `e.value` reads the DOM event; every other member is a binding's.
 fn print_member(base : Ex, m : String) -> String raise ExError {
   match base {
     EName("e") => "e." + m
-    EName(b) => "@" + b + "." + m
+    // The sigil goes on once. A name that already carries one was placed by a
+    // binder that knows better — a loop's `@value`, a macro's `^param` — and
+    // adding a second gives `@@value`, which reaches no reader.
+    EName(b) => sigil(b) + "." + m
     EMember(EName("e"), a) => "e." + a + "." + m
     // A field BELOW an index: `it.rows[i].inner`. The old notation writes the
     // same path, and a `&` reference is the one position that takes one — the

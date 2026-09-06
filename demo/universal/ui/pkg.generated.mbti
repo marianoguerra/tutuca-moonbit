@@ -122,7 +122,7 @@ pub(all) struct ComponentPickerState {
   hits : Array[@core.Value]
   cursor : Int
   open : Bool
-  emptyMessage : String
+  empty_message : String
 }
 pub fn ComponentPickerState::zero() -> Self
 
@@ -184,7 +184,7 @@ pub fn ShellMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct ShellState {
   canvas : @core.Value
   picker : @core.Value
-  editView : String
+  edit_view : String
   library : Array[@core.Value]
   source : String
   notes : Array[@core.Value]

@@ -174,7 +174,7 @@ pub fn tasks() -> Array[Task] {
     },
     {
       name: "gen",
-      about: "regenerate the checked-in *_view_gen.mbt from their .html sources",
+      about: "regenerate the checked-in *_view_gen.mbt from their .tutu sources",
       commands: gen_views_commands(),
     },
     {
@@ -225,7 +225,7 @@ pub fn tasks() -> Array[Task] {
       name: "check-examples",
       about: "compile-check the playground's editable examples (no moon package includes them)",
       commands: [
-        // Each example's views live in a sibling .html that the page compiles
+        // Each example's views live in a sibling .tutu that the page compiles
         // in the browser, so the check generates them the same way: with the
         // view generator built to js (the payload the playground ships).
         moon("build · js view generator", [
@@ -448,7 +448,7 @@ pub fn tasks() -> Array[Task] {
         },
         moon("fmt", ["fmt"]),
         {
-          label: "drift check · demo/universal/std/std_card_gen.mbt matches std.card.html",
+          label: "drift check · demo/universal/std/std_card_gen.mbt matches std.card.tutu",
           prog: "git",
           args: [
             "diff", "--exit-code", "--", "demo/universal/std/std_card_gen.mbt",
@@ -524,7 +524,7 @@ pub fn tasks() -> Array[Task] {
 /// Two steps because the second is `gen`: the corpus is DATA and the
 /// wasm backend reads it as JSON, but the MoonBit backend's answers only exist
 /// once `moonc` has compiled them — so the corpus becomes a view file and
-/// takes the ordinary path from there. `gen` already lists corpus.html,
+/// takes the ordinary path from there. `gen` already lists corpus.tutu,
 /// so `ci` re-runs and drift-checks the second half on its own; this task is
 /// what to run after ADDING a case.
 fn gen_conformance_commands() -> Array[Command] {
@@ -537,7 +537,7 @@ fn gen_conformance_commands() -> Array[Command] {
 }
 
 ///|
-/// One entry per repo-owned view file. Run after editing an .html view; it ends
+/// One entry per repo-owned view file. Run after editing a .tutu view; it ends
 /// in its own `git diff --exit-code`, which is what lets `ci` include it to
 /// catch a generated module that has drifted from its source. A file whose
 /// components carry template ids needs no `--name`; a bare single-component
@@ -546,59 +546,59 @@ fn gen_conformance_commands() -> Array[Command] {
 /// The CLI emits unformatted source, so the run ends with `moon fmt` — that is
 /// what makes the checked-in pair reproducible and the drift check meaningful.
 fn gen_views_commands() -> Array[Command] {
-  // (relative .html path, --name override or None)
+  // (relative .tutu path, --name override or None)
   let files : Array[(String, String?)] = [
-    ("demo/counterlib/counter.html", Some("Counter")),
-    ("demo/universal/ui/shell.html", Some("Shell")),
-    ("tscript/conformance/mbt/corpus.html", Some("Corpus")),
-    ("storybook/inspector/activity.html", None),
-    ("storybook/inspector/json.html", None),
-    ("storybook/inspector/component_inspector.html", None),
-    ("storybook/inspector/instance_inspector.html", None),
-    ("storybook/inspector/state_editor.html", None),
-    ("storybook/inspector/schema_components.html", None),
-    ("storybook/inspector/schema.html", None),
-    ("storybook/inspector/module.html", None),
-    ("storybook/inspector/fuzz_view.html", None),
-    ("storybook/inspector/spec_view.html", None),
-    ("storybook/inspector/trace_view.html", None),
-    ("docs/tutorial.html", None),
-    ("docs/first_principles.html", None),
-    ("storybook/inspector/schema_viewer.html", Some("SchemaViewer")),
-    ("storybook/examples/basics.html", None),
-    ("storybook/examples/collections.html", None),
-    ("storybook/examples/communication.html", None),
-    ("storybook/examples/composability.html", Some("Composability")),
-    ("storybook/examples/conditionals.html", None),
-    ("storybook/examples/counter.html", Some("Counter")),
-    ("storybook/examples/custom_collection.html", None),
-    ("storybook/examples/dnd.html", Some("DnDExample")),
-    ("storybook/examples/dynamic.html", None),
-    ("storybook/examples/dynamic_selected_edit.html", None),
-    ("storybook/examples/file_picker.html", Some("FilePicker")),
-    ("storybook/examples/filter_paginate.html", None),
-    ("storybook/examples/graphics.html", None),
-    ("storybook/examples/json.html", None),
-    ("storybook/examples/lint_errors.html", None),
-    ("storybook/examples/list_iteration.html", Some("ListIteration")),
-    ("storybook/examples/macros.html", None),
-    ("storybook/examples/nested_state.html", Some("NestedState")),
-    ("storybook/examples/personal_site.html", None),
-    ("storybook/examples/pseudo_x.html", None),
-    ("storybook/examples/render_child.html", None),
-    ("storybook/examples/rendering.html", None),
-    ("storybook/examples/request.html", Some("RequestExample")),
-    ("storybook/examples/state_and_updates.html", None),
-    ("storybook/examples/styles.html", None),
-    ("storybook/examples/svg_more.html", None),
-    ("storybook/examples/todo.html", None),
-    ("storybook/examples/todo_macros.html", None),
-    ("storybook/examples/visual_wasm.html", None),
-    ("storybook/examples/web_component.html", Some("EmojiPicker")),
+    ("demo/counterlib/counter.tutu", Some("Counter")),
+    ("demo/universal/ui/shell.tutu", Some("Shell")),
+    ("tscript/conformance/mbt/corpus.tutu", Some("Corpus")),
+    ("storybook/inspector/activity.tutu", None),
+    ("storybook/inspector/json.tutu", None),
+    ("storybook/inspector/component_inspector.tutu", None),
+    ("storybook/inspector/instance_inspector.tutu", None),
+    ("storybook/inspector/state_editor.tutu", None),
+    ("storybook/inspector/schema_components.tutu", None),
+    ("storybook/inspector/schema.tutu", None),
+    ("storybook/inspector/module.tutu", None),
+    ("storybook/inspector/fuzz_view.tutu", None),
+    ("storybook/inspector/spec_view.tutu", None),
+    ("storybook/inspector/trace_view.tutu", None),
+    ("docs/tutorial.tutu", None),
+    ("docs/first_principles.tutu", None),
+    ("storybook/inspector/schema_viewer.tutu", Some("SchemaViewer")),
+    ("storybook/examples/basics.tutu", None),
+    ("storybook/examples/collections.tutu", None),
+    ("storybook/examples/communication.tutu", None),
+    ("storybook/examples/composability.tutu", Some("Composability")),
+    ("storybook/examples/conditionals.tutu", None),
+    ("storybook/examples/counter.tutu", Some("Counter")),
+    ("storybook/examples/custom_collection.tutu", None),
+    ("storybook/examples/dnd.tutu", Some("DnDExample")),
+    ("storybook/examples/dynamic.tutu", None),
+    ("storybook/examples/dynamic_selected_edit.tutu", None),
+    ("storybook/examples/file_picker.tutu", Some("FilePicker")),
+    ("storybook/examples/filter_paginate.tutu", None),
+    ("storybook/examples/graphics.tutu", None),
+    ("storybook/examples/json.tutu", None),
+    ("storybook/examples/lint_errors.tutu", None),
+    ("storybook/examples/list_iteration.tutu", Some("ListIteration")),
+    ("storybook/examples/macros.tutu", None),
+    ("storybook/examples/nested_state.tutu", Some("NestedState")),
+    ("storybook/examples/personal_site.tutu", None),
+    ("storybook/examples/pseudo_x.tutu", None),
+    ("storybook/examples/render_child.tutu", None),
+    ("storybook/examples/rendering.tutu", None),
+    ("storybook/examples/request.tutu", Some("RequestExample")),
+    ("storybook/examples/state_and_updates.tutu", None),
+    ("storybook/examples/styles.tutu", None),
+    ("storybook/examples/svg_more.tutu", None),
+    ("storybook/examples/todo.tutu", None),
+    ("storybook/examples/todo_macros.tutu", None),
+    ("storybook/examples/visual_wasm.tutu", None),
+    ("storybook/examples/web_component.tutu", Some("EmojiPicker")),
     // Not a package of this module — it is the demo component inside the
     // project `tutuca new-storybook` writes. It is swept here so the generated
     // module the template hands a stranger is the one this generator produces.
-    ("storybook/template/page/counter.html", None),
+    ("storybook/template/page/counter.tutu", None),
   ]
   // Snapshot the generated modules BEFORE regenerating, so the check at the end
   // can ask whether regenerating changed anything rather than whether the tree
@@ -625,7 +625,7 @@ fn gen_views_commands() -> Array[Command] {
   // It compares the generated modules BEFORE this run against the same modules
   // after, which is the question the check means to ask: did regenerating change
   // anything? This used to ask git whether they matched `HEAD`, which is a
-  // different question and only the same one on a clean tree. Edit a `.html`,
+  // different question and only the same one on a clean tree. Edit a `.tutu`,
   // regenerate its module, and the pair is perfectly consistent while neither
   // half is committed — the git form failed the whole of `ci` on correct work,
   // which made `ci` unrunnable during exactly the kind of change it guards.
@@ -645,7 +645,7 @@ fn gen_views_commands() -> Array[Command] {
   // hide in.
   commands.push(view_drift_snapshot(VIEW_DRIFT_AFTER))
   commands.push({
-    label: "drift check · generated view modules match their .html",
+    label: "drift check · generated view modules match their .tutu",
     prog: "diff",
     args: [VIEW_DRIFT_BEFORE, VIEW_DRIFT_AFTER],
   })
@@ -807,7 +807,7 @@ fn composites() -> Array[(String, String, Array[String])] {
     // `gen` runs FIRST, and for its drift check rather than its output:
     // every `*_view_gen.mbt` is checked in and compiled as an ordinary source,
     // so a stale one type-checks and tests green while no longer describing the
-    // .html beside it. Catching that before `check` also means the rest of CI
+    // .tutu beside it. Catching that before `check` also means the rest of CI
     // runs against modules that provably match their sources.
     //
     // `skill-embed` is here for exactly the same reason:

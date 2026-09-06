@@ -1,7 +1,7 @@
 // Dynamic bindings used as render targets — a single item and a whole
-// sequence. `Root` owns a keyed map of entries and a `selectedKey`; it
+// sequence. `Root` owns a keyed map of entries and a `selected_key`; it
 // PRODUCES two dynamics: `items` = `.items` (the whole sequence) and
-// `selected` = `.items[.selectedKey]` (a seq-access to the selected entry).
+// `selected` = `.items[.selected_key]` (a seq-access to the selected entry).
 // The child `Editor` CONSUMES both: it iterates `*items` and renders the
 // `*selected` entry with its `edit` view. The edited entry physically lives
 // in `Root.items`, so edits in the child TELEPORT back to the owner — both
@@ -29,12 +29,12 @@ fn dse_editor_comp() -> @component.Component {
 fn dse_root_comp() -> @component.Component {
   dse_root_component(
     name="Root",
-    initial={ ..DseRootState::zero(), items: Map([]), selectedKey: "", },
+    initial={ ..DseRootState::zero(), items: Map([]), selected_key: "", },
     // Producer: the whole sequence, plus a seq-access to the selected entry.
-    provide={ "items": ".items", "selected": ".items[.selectedKey]" },
+    provide={ "items": ".items", "selected": ".items[.selected_key]" },
     update=(s, msg, _ctx) => {
       match DseRootMsg::from_dispatch(msg) {
-        Some(SelectItem(Str(key))) => Next({ ..s, selectedKey: key, })
+        Some(SelectItem(Str(key))) => Next({ ..s, selected_key: key, })
         Some(SelectItem(_)) | Some(Unknown(_, _)) | None => Unhandled
       }
     },
@@ -60,13 +60,13 @@ pub fn dynamic_selected_edit_module() -> @component.ModuleDef {
       {
         component: "Root",
         title: "First selected",
-        args: { "items": dse_items(entry), "selectedKey": Str("a") },
+        args: { "items": dse_items(entry), "selected_key": Str("a") },
         view: None,
       },
       {
         component: "Root",
         title: "Second selected",
-        args: { "items": dse_items(entry), "selectedKey": Str("b") },
+        args: { "items": dse_items(entry), "selected_key": Str("b") },
         view: None,
       },
     ],

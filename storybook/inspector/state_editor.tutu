@@ -1,0 +1,54 @@
+spec:
+  /// One field of the edited instance. `kind` picks the control; `text`,
+  /// `num` and `flag` are the three editable shapes, and `readonly` carries
+  /// the rendering for a field no control fits.
+  StateEditorRow:
+    field name :: String
+    field type :: String
+    field kind :: String
+    field text :: String
+    field num :: Double
+    field flag :: Bool
+    field readonly :: String
+    field editable :: Bool
+
+    /// `editable` is `kind` asked as a question, and the one kind that
+    /// answers no is the one no control fits.
+    invariant editable_tracks_kind:
+      ~format: @str{a @(it.kind) row says editable is @(it.editable)}
+      (it.editable == (it.kind != "readonly"))
+
+    /// The four controls `control_for` picks between. A fifth name renders
+    /// a row with no control on it at all — every `@show` misses.
+    where it.kind is_one_of ["text", "num", "bool", "readonly"]
+
+    /// A field always has a name and a declared type; a row without them is
+    /// a form field nobody can address.
+    where it.name non_empty
+
+    where it.type non_empty
+
+  /// `target` is the instance being edited — the source of truth, replaced
+  /// wholesale by every edit. `rows` is its schema, projected.
+  StateEditor:
+    field target :: Instance
+    field rows :: List.of(Instance.of(StateEditorRow))
+    field name :: String
+
+view:
+  StateEditorRow:
+    @label(~class: "flex items-center gap-2 leading-tight state-editor-row"){@span(~class: "font-mono text-xs w-32 shrink-0 text-right opacity-70 row-name"){@(it.name)} @span(~class: "font-mono text-[0.65rem] w-24 shrink-0 opacity-40 row-type"){@(it.type)} @show((it.kind == "bool")){
+  @input(~type: "checkbox", ~class: "checkbox checkbox-xs row-bool", ~checked: it.flag, ~on_input: edit(e.value))
+} @show((it.kind == "num")){
+  @input(~type: "number", ~class: "input input-xs input-bordered w-40 row-num", ~value: it.num, ~on_input: edit(e.valueAsFloat))
+} @show((it.kind == "text")){
+  @input(~type: "text", ~class: "input input-xs input-bordered w-64 row-text", ~value: it.text, ~on_input: edit(e.value))
+} @hide(it.editable){
+  @span(~class: "font-mono text-xs opacity-50 row-readonly"){@(it.readonly)}
+}}
+
+  StateEditor:
+    @div(~class: "flex flex-col gap-1 state-editor"){@div(~class: "font-mono text-sm font-semibold editor-name"){@(it.name)} @each(value, key in it.rows){
+  @render(value)
+}}
+

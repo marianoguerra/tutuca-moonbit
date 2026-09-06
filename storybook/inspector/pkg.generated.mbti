@@ -501,13 +501,13 @@ pub(all) struct ActivityEntryState {
   kind : String
   origin : String
   name : String
-  handlerName : String
+  handler_name : String
   matched : String
-  pathLabel : String
+  path_label : String
   time : String
   before : @core.Value?
   after : @core.Value?
-  hasAfter : Bool
+  has_after : Bool
 }
 pub fn ActivityEntryState::zero() -> Self
 
@@ -521,13 +521,13 @@ pub fn ActivityLogMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct ActivityLogState {
   events : Array[@core.Value]
-  hasEvents : Bool
+  has_events : Bool
 }
 pub fn ActivityLogState::zero() -> Self
 
 pub(all) struct CompFieldState {
   name : String
-  typeName : String
+  type_name : String
   child : @core.Value
 }
 pub fn CompFieldState::zero() -> Self
@@ -566,9 +566,9 @@ pub fn CompSectionMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct CompSectionState {
   items : Array[@core.Value]
-  isExpanded : Bool
-  itemsPerPage : Int
-  currentPage : Int
+  is_expanded : Bool
+  items_per_page : Int
+  current_page : Int
   label : String
 }
 pub fn CompSectionState::zero() -> Self
@@ -588,8 +588,8 @@ pub fn CompViewMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct CompViewState {
   name : String
-  rawView : String
-  isExpanded : Bool
+  raw_view : String
+  is_expanded : Bool
 }
 pub fn CompViewState::zero() -> Self
 
@@ -608,8 +608,8 @@ pub fn ComponentInspectorIntent::from_dispatch(@core.Dispatch) -> Self?
 pub fn ComponentInspectorIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct ComponentInspectorState {
-  compName : String
-  compId : Int
+  comp_name : String
+  comp_id : Int
   sections : Array[@core.Value]
 }
 pub fn ComponentInspectorState::zero() -> Self
@@ -638,22 +638,22 @@ pub(all) struct FuzzControlsState {
   seed : String
   steps : String
   source : String
-  publicClass : String
-  messagesClass : String
-  propertiesClass : String
-  fieldsClass : String
+  public_class : String
+  messages_class : String
+  properties_class : String
+  fields_class : String
   playing : Bool
-  canRun : Bool
-  noPlanHint : String
-  canDraw : Bool
-  noDrawHint : String
+  can_run : Bool
+  no_plan_hint : String
+  can_draw : Bool
+  no_draw_hint : String
 }
 pub fn FuzzControlsState::zero() -> Self
 
 pub(all) struct FuzzLogState {
   rows : Array[@core.Value]
-  hasRows : Bool
-  emptyHint : String
+  has_rows : Bool
+  empty_hint : String
 }
 pub fn FuzzLogState::zero() -> Self
 
@@ -661,7 +661,7 @@ pub(all) struct FuzzPanelState {
   controls : @core.Value
   verdict : @core.Value
   log : @core.Value
-  hasRun : Bool
+  has_run : Bool
   at : Int
   total : Int
 }
@@ -680,15 +680,15 @@ pub(all) struct FuzzRowState {
   name : String
   args : String
   verb : String
-  verbClass : String
+  verb_class : String
   renders : Int
   refused : Bool
-  refusedRule : String
-  refusedSentence : String
+  refused_rule : String
+  refused_sentence : String
   broke : Bool
-  brokeRule : String
+  broke_rule : String
   disagreed : Bool
-  rowClass : String
+  row_class : String
   current : Bool
   after : @core.Value?
   open : Bool
@@ -705,15 +705,15 @@ pub fn FuzzVerdictMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct FuzzVerdictState {
   kind : String
-  badgeClass : String
+  badge_class : String
   headline : String
   sentence : String
   rule : String
   at : Int
   unchecked : String
-  hasUnchecked : Bool
+  has_unchecked : Bool
   reproducer : Array[@core.Value]
-  hasReproducer : Bool
+  has_reproducer : Bool
 }
 pub fn FuzzVerdictState::zero() -> Self
 
@@ -757,10 +757,10 @@ pub struct InspectorViews {
 }
 
 pub(all) struct InstanceExplorerState {
-  activeTab : String
-  instanceView : @core.Value
-  componentView : @core.Value
-  hasComponent : Bool
+  active_tab : String
+  instance_view : @core.Value
+  component_view : @core.Value
+  has_component : Bool
 }
 pub fn InstanceExplorerState::zero() -> Self
 
@@ -792,10 +792,10 @@ pub fn InstanceFieldsMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct InstanceFieldsState {
   items : Array[@core.Value]
-  isExpanded : Bool
-  itemsPerPage : Int
-  currentPage : Int
-  typeName : String
+  is_expanded : Bool
+  items_per_page : Int
+  current_page : Int
+  type_name : String
 }
 pub fn InstanceFieldsState::zero() -> Self
 
@@ -832,9 +832,9 @@ pub fn JsonArrayMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct JsonArrayState {
   items : Array[@core.Value]
-  isExpanded : Bool
-  itemsPerPage : Int
-  currentPage : Int
+  is_expanded : Bool
+  items_per_page : Int
+  current_page : Int
 }
 pub fn JsonArrayState::zero() -> Self
 
@@ -891,9 +891,9 @@ pub fn JsonObjectMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct JsonObjectState {
   items : Array[@core.Value]
-  isExpanded : Bool
-  itemsPerPage : Int
-  currentPage : Int
+  is_expanded : Bool
+  items_per_page : Int
+  current_page : Int
 }
 pub fn JsonObjectState::zero() -> Self
 
@@ -929,13 +929,13 @@ pub fn RecorderBarMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct RecorderBarState {
   recording : Bool
   scope : String
-  scopeLabel : String
-  allClass : String
-  sectionClass : String
-  exampleClass : String
+  scope_label : String
+  all_class : String
+  section_class : String
+  example_class : String
   events : Int
   turns : Int
-  hasTrace : Bool
+  has_trace : Bool
   picking : Bool
 }
 pub fn RecorderBarState::zero() -> Self
@@ -1027,10 +1027,10 @@ pub fn SchemaArrayMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct SchemaArrayState {
   items : Array[@core.Value]
-  isExpanded : Bool
-  itemsPerPage : Int
-  currentPage : Int
-  typeLabel : String
+  is_expanded : Bool
+  items_per_page : Int
+  current_page : Int
+  type_label : String
   badges : Array[String]
   title : String
   description : String
@@ -1057,7 +1057,7 @@ pub fn SchemaBranchCompute::name(Self) -> String
 pub(all) struct SchemaBranchState {
   label : String
   child : @core.Value
-  labelClass : String
+  label_class : String
 }
 pub fn SchemaBranchState::zero() -> Self
 
@@ -1089,10 +1089,10 @@ pub fn SchemaCombinatorMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct SchemaCombinatorState {
   items : Array[@core.Value]
-  isExpanded : Bool
-  itemsPerPage : Int
-  currentPage : Int
-  typeLabel : String
+  is_expanded : Bool
+  items_per_page : Int
+  current_page : Int
+  type_label : String
   badges : Array[String]
   title : String
   description : String
@@ -1101,9 +1101,9 @@ pub(all) struct SchemaCombinatorState {
 pub fn SchemaCombinatorState::zero() -> Self
 
 pub(all) struct SchemaConditionalState {
-  ifNode : @core.Value
-  thenNode : @core.Value
-  elseNode : @core.Value
+  if_node : @core.Value
+  then_node : @core.Value
+  else_node : @core.Value
   title : String
   description : String
   deprecated : Bool
@@ -1143,10 +1143,10 @@ pub fn SchemaEnumMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct SchemaEnumState {
   items : Array[@core.Value]
-  isExpanded : Bool
-  itemsPerPage : Int
-  currentPage : Int
-  typeLabel : String
+  is_expanded : Bool
+  items_per_page : Int
+  current_page : Int
+  type_label : String
   badges : Array[String]
   title : String
   description : String
@@ -1187,10 +1187,10 @@ pub fn SchemaObjectMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct SchemaObjectState {
   items : Array[@core.Value]
-  isExpanded : Bool
-  itemsPerPage : Int
-  currentPage : Int
-  typeLabel : String
+  is_expanded : Bool
+  items_per_page : Int
+  current_page : Int
+  type_label : String
   badges : Array[String]
   title : String
   description : String
@@ -1238,10 +1238,10 @@ pub fn SchemaScalarMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct SchemaScalarState {
   items : Array[@core.Value]
-  isExpanded : Bool
-  itemsPerPage : Int
-  currentPage : Int
-  typeLabel : String
+  is_expanded : Bool
+  items_per_page : Int
+  current_page : Int
+  type_label : String
   badges : Array[String]
   title : String
   description : String
@@ -1257,8 +1257,8 @@ pub fn SchemaViewerCompute::name(Self) -> String
 pub(all) struct SchemaViewerState {
   value : @core.Value
   raw : @core.Value
-  rawSchema : @core.Value
-  showRaw : Bool
+  raw_schema : @core.Value
+  show_raw : Bool
 }
 pub fn SchemaViewerState::zero() -> Self
 
@@ -1269,7 +1269,7 @@ pub fn SpecDocState::zero() -> Self
 
 pub(all) struct SpecFieldState {
   name : String
-  typeName : String
+  type_name : String
   attrs : String
   doc : String
 }
@@ -1284,7 +1284,7 @@ pub fn SpecMsgState::zero() -> Self
 
 pub(all) struct SpecRuleState {
   kind : String
-  kindClass : String
+  kind_class : String
   name : String
   source : String
   format : String
@@ -1294,7 +1294,7 @@ pub fn SpecRuleState::zero() -> Self
 
 pub(all) struct SpecSourceState {
   source : String
-  hasSource : Bool
+  has_source : Bool
   hint : String
   note : String
 }
@@ -1309,9 +1309,9 @@ pub fn SpecViewerIntent::from_dispatch(@core.Dispatch) -> Self?
 pub fn SpecViewerIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct SpecViewerState {
-  compName : String
+  comp_name : String
   sections : Array[@core.Value]
-  hasSpec : Bool
+  has_spec : Bool
   hint : String
   note : String
 }
@@ -1352,8 +1352,8 @@ pub(all) struct TraceHeaderState {
   events : Int
   inputs : Int
   turns : Int
-  relocatedFrom : String
-  isRelocated : Bool
+  relocated_from : String
+  is_relocated : Bool
   compacted : Bool
 }
 pub fn TraceHeaderState::zero() -> Self
@@ -1369,10 +1369,10 @@ pub fn TraceLogMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct TraceLogState {
   rows : Array[@core.Value]
-  hasRows : Bool
-  inputsOnly : Bool
+  has_rows : Bool
+  inputs_only : Bool
   turn : Int
-  emptyHint : String
+  empty_hint : String
 }
 pub fn TraceLogState::zero() -> Self
 
@@ -1397,24 +1397,24 @@ pub(all) struct TracePanelState {
   header : @core.Value
   places : @core.Value
   log : @core.Value
-  recordTabClass : String
-  traceTabClass : String
-  selectTabClass : String
-  selectLabel : String
+  record_tab_class : String
+  trace_tab_class : String
+  select_tab_class : String
+  select_label : String
   tab : String
-  hasTrace : Bool
+  has_trace : Bool
   selecting : Bool
-  showTrace : Bool
-  showReplay : Bool
-  showImport : Bool
+  show_trace : Bool
+  show_replay : Bool
+  show_import : Bool
   at : Int
   total : Int
   notice : String
-  hasNotice : Bool
+  has_notice : Bool
   draft : String
-  canReplay : Bool
+  can_replay : Bool
   replaying : Bool
-  replayTabClass : String
+  replay_tab_class : String
 }
 pub fn TracePanelState::zero() -> Self
 
@@ -1433,17 +1433,17 @@ pub(all) struct TracePlaceState {
   events : Int
   depth : Int
   selected : Bool
-  rowClass : String
+  row_class : String
   mountable : Bool
 }
 pub fn TracePlaceState::zero() -> Self
 
 pub(all) struct TracePlacesState {
   places : Array[@core.Value]
-  hasPlaces : Bool
+  has_places : Bool
   selected : String
   heading : String
-  emptyHint : String
+  empty_hint : String
 }
 pub fn TracePlacesState::zero() -> Self
 
@@ -1459,18 +1459,18 @@ pub(all) struct TraceRowState {
   seq : Int
   turn : Int
   walk : Int
-  hasWalk : Bool
+  has_walk : Bool
   verb : String
-  verbClass : String
+  verb_class : String
   name : String
   place : String
   args : String
   input : Bool
-  rowClass : String
+  row_class : String
   depth : Int
   current : Bool
   after : @core.Value?
-  hasAfter : Bool
+  has_after : Bool
   open : Bool
 }
 pub fn TraceRowState::zero() -> Self

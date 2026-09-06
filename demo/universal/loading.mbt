@@ -33,7 +33,7 @@ let library : Ref[Array[(String, String)]] = Ref([])
 /// because a demo that loads eleven cards before it draws anything is a demo
 /// about waiting.
 extern "js" fn wants_load_all() -> Bool =
-  #|() => new URLSearchParams(location.search).has("loadAll")
+  #|() => new URLSearchParams(location.search).has("load_all")
 
 ///|
 /// The library index, handed over by the page at boot.
@@ -49,7 +49,7 @@ pub fn set_library(names_csv : String, paths_csv : String) -> Unit {
   library.val = rows
   match live.val {
     Some(app) =>
-      app.send_at_root("setLibrary", args=[List(@ui.library_rows(rows))])
+      app.send_at_root("set_library", args=[List(@ui.library_rows(rows))])
       |> ignore
     None => ()
   }

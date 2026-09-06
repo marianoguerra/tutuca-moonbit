@@ -1,0 +1,78 @@
+spec:
+  BarChart:
+    field values :: List.of(Int)
+
+    /// The two limits, named. A `pred` reads the state and nothing else, which
+    /// is what lets it sit in a handler's header instead of at the top of its
+    /// body — and what puts it HERE, beside the field it is about, rather than
+    /// among the handlers that ask it.
+    ///
+    /// Each carries the sentence it says when it does NOT hold. The comment
+    /// says what the rule is; the `format` says what went wrong this time,
+    /// with the count that made it go wrong — which is the half nobody can
+    /// reconstruct afterwards from a chart that simply did not change.
+    pred has_room:
+      ~format: @str{nine bars is the cap, and there are already @(it.values.length())}
+      (it.values.length() < 9)
+
+    pred has_spare:
+      ~format: "one bar has to stay, or there is no chart left to look at"
+      (it.values.length() > 1)
+
+    /// What the chart KEEPS, as opposed to what a handler asks before it acts.
+    /// It is checked after every dispatch — the two handlers below, the
+    /// generated `setValues` and `pushInValues` nobody wrote, and anything
+    /// added later that never mentions it.
+    ///
+    /// `hasSpare` is the same sentence attached at a different moment, and the
+    /// difference is the point: a precondition can decline, an invariant
+    /// cannot be declined into. There is no way to reach an empty chart.
+    invariant never_empty:
+      ~format: "the chart lost its last bar"
+      (it.values.length() > 0)
+
+    message add_bar
+
+    message remove_bar
+
+    message randomize
+
+  IconGallery:
+    field size :: Int
+
+    /// The slider's own range, in the schema rather than only in the markup.
+    /// `<input type="range" min="16" max="80">` bounds what a PERSON can send;
+    /// `setSize` bounds nothing, and a 0-pixel icon renders as an empty box.
+    where it.size in_range(16, 80)
+
+logic:
+  BarChart:
+    /// Add a bar, up to nine. The height is derived from the length rather than
+    /// drawn at random, so the picture is the same on every run — a test can
+    /// look at it.
+    ///
+    /// The cap is a PRECONDITION rather than an `if` around the whole body: both
+    /// refuse the same presses, but a refusal with a name is REPORTED — the
+    /// tenth press says `contract: addBar declined — its precondition hasRoom
+    /// does not hold: nine bars is the cap, and there are already 9` through
+    /// `warn_hook`, where an `if` that did not fire looks exactly like a chart
+    /// that had nothing to add. A host that wants the record rather than the
+    /// line calls `@tutuca.on_runtime_notice` and gets the rule, path and state
+    /// that was rejected with it.
+    receive add_bar:
+      ~requires: has_room
+      it.values.push(((((it.values.length() * 17) + 23) mod 90) + 10))
+
+    /// Drop the last bar, never the last one standing.
+    receive remove_bar:
+      ~requires: has_spare
+      it.values.delete_at((it.values.length() - 1))
+
+view:
+  BarChart:
+    @div(~class: "flex flex-col gap-3"){@svg(~viewBox: "0 0 300 120", ~role: "img"){@line(~class: "axis", ~x1: "0", ~y1: "110", ~x2: "300", ~y2: "110", ~stroke: "#cbd5e1", ~stroke_width: "1") @each(value, key in it.values, ~enrich_with: bar, ~loop_with: layout){
+  @rect(~x: x, ~y: y, ~width: w, ~height: h, ~rx: "3", ~fill: "#6366f1")
+} @each(value, key in it.values, ~enrich_with: bar, ~loop_with: layout){
+  @text(~x: cx, ~y: label_y, ~text_anchor: "middle", ~font_size: "10", ~fill: "#475569"){@(value)}
+}} @div(~class: "join"){@button(~class: "btn btn-primary join-item randomize", ~on_click: randomize){Randomize} @button(~class: "btn join-item add", ~on_click: add_bar){Add bar} @button(~class: "btn join-item remove", ~on_click: remove_bar){Remove bar}}}
+

@@ -1,0 +1,103 @@
+spec:
+  AltUrl:
+    field label :: String
+    field url :: String
+
+    /// A badge that links somewhere, with a word on it.
+    where it.label non_empty
+
+    where it.url non_empty
+
+  PsEntry:
+    field title :: String
+    field description :: String
+    field lang :: String
+    field start_year :: maybe(Int)
+    field end_year :: maybe(Int)
+    field role :: maybe(String)
+    field featured :: Bool
+    field url :: String
+    field alt_urls :: List.of(Instance.of(AltUrl))
+    field categories :: List.of(String)
+
+    /// The site is bilingual, and `$isSpanish` branches on nothing else.
+    where it.lang is_one_of ["en", "es"]
+
+    /// An entry is a link with a name on it: the card's heading and its
+    /// `:href` are both required for the card to be anything at all.
+    where it.title non_empty
+
+    where it.url non_empty
+
+  Root:
+    field all_entries :: List.of(Instance.of(PsEntry))
+    field all_categories :: List.of(String)
+    field all_roles :: List.of(String)
+    field selected_categories :: Set.of(String)
+    field selected_roles :: Set.of(String)
+    field featured_first :: Bool
+    field sort_by_end :: Bool
+    field sort_asc :: Bool
+
+    message init
+
+    message load_data_ok(List.of(Any))
+
+logic:
+  Root:
+    /// Ask for the data. Nothing else moves — the entries arrive as an ordinary
+    /// message, `loadDataOk`, which sorts them and collects the facets, and that
+    /// is a MoonBit handler.
+    ///
+    /// `lex` is the leg: the answer comes from a handler registered in the
+    /// SCOPE, which is where the module puts its fixture.
+    receive init:
+      ask("load_data", ~route: lex)
+
+view:
+  AltUrl:
+    @a(~class: "badge badge-ghost badge-sm cursor-pointer gap-1 no-underline hover:bg-base-200 alt-url", ~href: it.url, ~target: "_blank"){@"🔗 "@span{@(it.label)}}
+
+  PsEntry:
+    @div(~class: "card bg-base-200 shadow-sm p-2 sm:p-3 flex flex-col gap-2 ps-entry"){@div(~class: "flex gap-1 sm:gap-2 flex-wrap items-center"){@show(it.featured){
+  @span(~class: "star"){⭐}
+} @show(is_spanish()){
+  @span(~class: "flag"){@(lang_flag())}
+} @show(it.start_year.is_truthy()){
+  @span(~class: "badge badge-ghost badge-sm border-0 font-bold years"){@(year_display())}
+} @show(it.role){
+  @span(~class: "badge badge-neutral badge-sm border-0 font-bold role"){@(it.role)}
+}} @a(~href: it.url, ~target: "_blank", ~class: "link link-hover"){@h2(~class: "font-bold title"){@(it.title)}} @p(~class: "text-sm opacity-70 desc"){@(it.description)}@div(~class: "flex gap-1 sm:gap-2 flex-wrap cats"){@each(value, key in it.categories, ~enrich_with: enrich_category_badge){
+  @span(~class: badge_class){@(value)}
+}} @hide(it.alt_urls.is_empty()){
+  @div(~class: "alts"){
+    @ul{
+      @each(value, key in it.alt_urls){
+        @li{@render(value)}
+      }
+    }
+  }
+}}
+
+  Root:
+    @section(~class: "ps-root flex flex-col gap-4"){
+      @div(~class: "card bg-base-200 p-4 controls"){
+        @p(~class: "text-sm mb-4"){@"💡 Click tags to toggle. Solo / unsolo toggle with "@kbd(~class: "text-mono"){alt/option + click}.}
+        @div(~class: "grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-y-1 sm:gap-x-3 sm:gap-y-3 items-start"){@span(~class: "font-semibold text-sm pt-1"){Categories} @div(~class: "cat-facets flex flex-wrap gap-2"){@each(value, key in it.all_categories, ~enrich_with: enrich_category_bindings){
+  @button(~class: btn_class, ~on_click: on_category_toggle(key, e.isAlt)){@(value)}
+}} @span(~class: "font-semibold text-sm pt-1"){Roles} @div(~class: "role-facets flex flex-wrap gap-2"){@each(value, key in it.all_roles, ~enrich_with: enrich_role_bindings){
+  @button(~class: btn_class, ~on_click: on_role_toggle(key, e.isAlt)){@(value)}
+}} @span(~class: "font-semibold text-sm pt-1"){Sort By} @div(~class: "flex flex-wrap items-center gap-2"){@label(~class: "swap btn btn-xs btn-outline btn-primary"){@input(~type: "checkbox", ~class: "sort-end", ~checked: it.sort_by_end, ~on_change: on_toggle_sort_by_end) @span(~class: "swap-on"){End Year} @span(~class: "swap-off"){Start Year}} @label(~class: "swap btn btn-xs btn-outline btn-primary"){@input(~type: "checkbox", ~class: "sort-asc", ~checked: it.sort_asc, ~on_change: on_toggle_sort_asc) @span(~class: "swap-on"){↑ Oldest first} @span(~class: "swap-off"){↓ Newest first}} @label(~class: "flex items-center gap-2 cursor-pointer"){@input(~type: "checkbox", ~class: "toggle toggle-sm feat-first", ~checked: it.featured_first, ~on_change: on_toggle_featured_first) @span(~class: "text-sm"){Featured first}}}}
+        @div(~class: "flex flex-wrap items-center gap-4 mt-4"){
+          @show(has_active_filters()){
+            @button(~class: "btn btn-outline btn-sm clear-filters", ~on_click: clear_filters){Clear Filters}
+          }
+        }
+      }
+      @div(~class: "entries flex flex-col gap-3"){
+        @each(value, key in it.all_entries, ~when: filter_entry){
+          @div(~class: "entry-row"){@render(value)}
+        }
+      }
+    }
+

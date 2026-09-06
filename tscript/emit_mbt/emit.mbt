@@ -1671,23 +1671,13 @@ fn E::outcomes(self : E, msg : String) -> String {
   let parts : Array[String] = []
   for
     pair in [
-      ("Ok", "on_ok_name"),
-      ("Failed", "on_failed_name"),
-      ("Unhandled", "on_unhandled_name"),
+      ("_ok", "on_ok_name"),
+      ("_failed", "on_failed_name"),
+      ("_unhandled", "on_unhandled_name"),
     ] {
     let arm = msg + pair.0
     if self.answer_arms.contains(arm) {
       parts.push("\{pair.1}=\{quote(arm)}")
-      continue
-    }
-    // The retired spelling, wired to the same parameter for one release. A
-    // block that says `receive saveDraftError` still hears the failure; what
-    // it loses is the word, and `@tutuca.retired` is where that is said.
-    if pair.0 == "Failed" {
-      let old = msg + "Error"
-      if self.answer_arms.contains(old) {
-        parts.push("\{pair.1}=\{quote(old)}")
-      }
     }
   }
   parts.join(", ")

@@ -1,0 +1,95 @@
+spec:
+  CompName:
+    field name :: String
+
+    where it.name non_empty
+
+  CompField:
+    field name :: String
+    field type_name :: String
+    field child :: Instance
+
+    /// A declared field is a name and a type. Both come off the schema, so
+    /// a row missing either is a projection that lost something.
+    where it.name non_empty
+
+    where it.type_name non_empty
+
+  CompView:
+    field name :: String
+    field raw_view :: String
+    field is_expanded :: Bool
+
+    /// Every view a component registers is registered under a name — `main`
+    /// when nothing else — and the expander's header reads it.
+    where it.name non_empty
+
+  CompSection:
+    field items :: List.of(Instance)
+    field is_expanded :: Bool
+    field items_per_page :: Int
+    field current_page :: Int
+    field label :: String
+
+    /// Where the window actually falls. `itemsPerPage` is at least 1 by the
+    /// clause above, so the multiplication is safe wherever this is asked —
+    /// and page 0 is legal over an empty list, which is what the first
+    /// disjunct is for.
+    invariant page_exists:
+      ~format: @str{page @(it.current_page) is past the end of @(it.items.length()) items}
+      ((it.current_page == 0) || ((it.current_page * it.items_per_page) < it.items.length()))
+
+    /// A page is a window onto `items`, and both numbers that place it are
+    /// counts. A size of zero divides the list into no pages at all and the
+    /// pager silently shows nothing; the ceiling keeps a generated
+    /// `setItemsPerPage` from asking for a page nothing could paint.
+    where it.items_per_page in_range(1, 500)
+
+    where it.current_page >= 0
+
+  ComponentInspector:
+    field comp_name :: String
+    field comp_id :: Int
+    field sections :: List.of(Instance.of(CompSection))
+
+    intent toggle_all_sections(Bool)
+
+    intent toggle_all_views(Bool)
+
+    /// A component's registration id, handed out in order from zero.
+    where it.comp_id >= 0
+
+    where it.comp_name non_empty
+
+view:
+  CompName:
+    @span(~class: "font-mono text-sm leading-tight badge badge-sm badge-ghost comp-name"){@(it.name)}
+
+  CompField:
+    @div(~class: "flex items-center gap-2 leading-tight comp-field"){@span(~class: "text-base-content/70 font-mono text-sm"){@(it.name)} @span(~class: "text-base-content/30"){:} @span(~class: "text-base-content/50 font-mono text-xs"){@(it.type_name)} @span(~class: "text-base-content/30"){=} @render(it.child)}
+
+  CompView:
+    @div(~class: "flex flex-col gap-0.5 leading-tight comp-view"){@button(~type: "button", ~class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1 self-start", ~on_click: toggle(e.isCtrl)){@span{@(arrow_text())} @span(~class: "font-mono text-sm comp-view-name"){@(it.name)}} @show(it.is_expanded){
+  @div{@show(it.raw_view.is_truthy()){
+  @pre(~class: "text-xs bg-base-200 rounded p-2 overflow-x-auto whitespace-pre-wrap"){@code{@(it.raw_view)}}
+} @hide(it.raw_view.is_truthy()){
+  @div(~class: "text-xs text-base-content/40 italic px-2 comp-view-aot"){compiled ahead of time — the source is in the view file}
+}}
+}}
+
+  CompSection:
+    @span(~class: "font-mono text-sm leading-tight inline-block"){@span(~class: "inline-flex items-center gap-2"){@button(~type: "button", ~class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", ~disabled: is_items_empty(), ~on_click: toggle(e.isCtrl)){@span{@(arrow_text())} @span(~class: "font-semibold comp-section"){@(type_text())} @span{@(count_text())}} @show(show_pagination()){
+  @div(~class: "join"){@button(~type: "button", ~class: "join-item btn btn-xs pg-prev", ~disabled: cannot_prev_page(), ~on_click: prev_page){«} @span(~class: "join-item badge font-mono text-xs pg-label"){@(page_indicator_text())} @button(~type: "button", ~class: "join-item btn btn-xs pg-next", ~disabled: cannot_next_page(), ~on_click: next_page){»}}
+}} @show(it.is_expanded){
+  @div(~class: "ml-1 flex flex-col gap-0.5 border-l border-base-content/15 pl-2 mt-0.5"){
+    @each(value, key in it.items, ~loop_with: get_page_range){
+      @render(value)
+    }
+  }
+}}
+
+  ComponentInspector:
+    @div(~class: "font-mono text-sm leading-tight flex flex-col gap-1 component-inspector"){@div(~class: "inline-flex items-center gap-2"){@span(~class: "font-semibold comp-title"){@(it.comp_name)} @span(~class: "text-base-content/40 text-xs"){@(id_text())}} @each(value, key in it.sections){
+  @render(value)
+}}
+

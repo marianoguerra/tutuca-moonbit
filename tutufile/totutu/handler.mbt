@@ -95,9 +95,14 @@ fn print_call(h : @tscript.HandlerParse) -> String raise NoSpelling {
 /// so telling them apart is a closed list of the behaviours — everything else
 /// in that position was a key.
 fn is_key_name(m : String) -> Bool {
-  !["prevent", "stop", "once", "capture", "passive", "self", "trusted"].contains(
-    m,
-  )
+  // `send` and `cancel` name a KEY without naming it — Enter and Escape — and
+  // `ctrl`/`cmd`/`meta`/`alt`/`shift` name a chord rather than a key. All of
+  // them are behaviours the runtime already knows (`app/app.mbt`), so writing
+  // one as `~key: "Cancel"` asks for a key nothing presses.
+  ![
+    "prevent", "stop", "once", "capture", "passive", "self", "trusted", "send", "cancel",
+    "ctrl", "cmd", "meta", "alt", "shift",
+  ].contains(m)
 }
 
 ///|

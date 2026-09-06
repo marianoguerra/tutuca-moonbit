@@ -102,7 +102,7 @@ test "a routed effect prints its route between the verb and the name" {
   inspect(
     printed("an ask with no legs takes the default route"),
     content=(
-      #|ask dyn lex saveDraft RStr("ada")
+      #|ask dyn lex save_draft RStr("ada")
     ),
   )
   inspect(

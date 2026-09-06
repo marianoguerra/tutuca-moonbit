@@ -114,7 +114,7 @@ test "render workload shape" {
   inspect(
     at_sizes(@benchmarks.render_people),
     content=(
-      #|552 1204 3822 3823 3825 3827
+      #|552 1198 3792 3793 3795 3797
     ),
   )
   inspect(
@@ -135,7 +135,7 @@ test "render workload shape" {
   inspect(
     @benchmarks.render_all_examples(),
     content=(
-      #|80814
+      #|80449
     ),
   )
 }

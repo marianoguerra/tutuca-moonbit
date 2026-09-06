@@ -222,7 +222,7 @@ pub fn QuotesMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct QuotesState {
   items : Array[String]
-  isLoading : Bool
+  is_loading : Bool
 }
 pub fn QuotesState::zero() -> Self
 

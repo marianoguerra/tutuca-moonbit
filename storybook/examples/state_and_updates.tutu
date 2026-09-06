@@ -1,0 +1,56 @@
+spec:
+  AttributeBinding:
+    field str :: String
+    field num :: Int
+    field bool :: Bool
+    field not_set :: Any
+
+  ConditionalAttributes:
+    field is_active :: Bool
+
+  EventModifiers:
+    field query :: String
+    field last_sent_search :: Any
+
+  ShowHide:
+    field is_open :: Bool
+    field count :: Int
+
+    /// A click tally: `inc` only adds, and nothing subtracts. The generated
+    /// `setCount` is the path that could, so the floor is stated here.
+    where it.count >= 0
+
+logic:
+  ShowHide:
+    /// The panel's own counter. `toggleIsOpen` is not here because it is not
+    /// written anywhere: a Bool field generates its own toggle.
+    receive inc_count:
+      it.count += 1
+
+view:
+  AttributeBinding:
+    @section(~class: "flex flex-col gap-3"){@input(~class: "input s", ~value: it.str, ~on_input: it.str := e.value, ~title: @str{Content is @(it.str)}) @input(~class: "input n", ~type: "number", ~value: it.num, ~on_input: set_raw_number(e.value)) @input(~class: "checkbox b", ~type: "checkbox", ~checked: it.bool, ~on_input: it.bool := e.value) @p{@"String: "@span(~class: "o-str"){@(it.str)}}@p{@"Number: "@span(~class: "o-num"){@(it.num)}}@p{@"Boolean: "@span(~class: "o-bool"){@(it.bool)}}}
+
+  ConditionalAttributes:
+    @section{
+      @button(~class: if it.is_active | "btn btn-success" | "btn btn-ghost", ~title: if it.is_active | "Click to disable" | "Click to enable", ~on_click: it.is_active := !it.is_active){@show(it.is_active){
+  @span(~class: "on"){Enabled}
+} @hide(it.is_active){
+  @span(~class: "off"){Disabled}
+}}
+    }
+
+  EventModifiers:
+    @section(~class: "flex flex-col gap-3"){@input(~type: "search", ~class: "input", ~value: it.query, ~on_input: on_input(e.value), ~on_keydown: it.last_sent_search := e.value ~send, ~on_keydown: it.query := default ~cancel, ~placeholder: "Search Query (Enter to send, Esc to clear)") @show(it.last_sent_search.is_truthy()){
+  @p(~class: "sent"){@" Search: \""@span(~class: "sent-q"){@(it.last_sent_search)}@"\" "}
+}}
+
+  ShowHide:
+    @section(~class: "flex flex-col gap-2"){@button(~class: "btn btn-primary toggle-btn", ~on_click: it.is_open := !it.is_open){@(label())} @show(it.is_open){
+  @div(~class: "card p-3 border details"){@p{@"Details panel — only visible when "@code{isOpen}@" is true."} @button(~class: "btn btn-sm bump", ~on_click: inc_count){Click me} @p{@"Clicked "@(it.count)@" times."}}
+} @hide(it.is_open){
+  @p(~class: "text-sm opacity-60 hint"){(details are hidden)}
+} @p(~class: "peek"){@"Count, only when open: "@show(it.is_open){
+  @(it.count)
+}}}
+

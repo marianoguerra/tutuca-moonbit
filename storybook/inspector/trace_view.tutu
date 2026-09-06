@@ -1,0 +1,555 @@
+spec:
+  /// One line of a recording.
+  ///
+  /// Flat, and deliberately so: everything here was decided when the trace was
+  /// written, and a row that recomputed any of it would be a second opinion
+  /// about what happened. `verb` is the word, `input` is the line between what
+  /// happened TO the app and what the app did about it, and `depth` is the
+  /// causal nesting the `parent` links already describe.
+  TraceRow:
+    field seq :: Int
+    field turn :: Int
+    field walk :: Int
+    field has_walk :: Bool
+    field verb :: String
+
+    /// The badge's WHOLE class list, colour and all.
+    ///
+    /// Whole because `:class` replaces the static `class` rather than adding
+    /// to it, so a computed class and a written one cannot both be on the same
+    /// element — and on the row rather than in the template because it is a
+    /// four-way dispatch on a value the builder already has in hand.
+    field verb_class :: String
+    field name :: String
+    field place :: String
+    field args :: String
+    field input :: Bool
+
+    /// The row's whole class list, its border decided by whether a rerun feeds
+    /// it. Whole for the same reason `verbClass` is: a computed `:class`
+    /// replaces the written one.
+    field row_class :: String
+    field depth :: Int
+
+    /// Set for the row a viewer is parked on, so a step slider has something
+    /// to point at.
+    field current :: Bool
+
+    /// The state the handler produced, prebuilt as a value inspector, or Null
+    /// when the recording did not keep one.
+    field after :: maybe(Instance)
+    field has_after :: Bool
+    field open :: Bool
+
+    /// `hasWalk` is not a second fact — it is `walk` asked as a question, and
+    /// a row where the two disagree hides a link the recording made.
+    invariant has_walk_tracks_walk:
+      ~format: @str{hasWalk says @(it.has_walk) for walk @(it.walk)}
+      (it.has_walk == (it.walk != 0))
+
+    message toggle
+
+    /// The five words `verb_of` produces, and nothing else. A sixth would
+    /// render as a badge with a word no reader of the trace format knows.
+    where it.verb is_one_of ["send", "intent", "offered", "answer", "refused"]
+
+    /// Counters into a recording. `seq` is a position, `turn` groups them and
+    /// `walk` links a cascade; `depth` is how far the causal nesting goes.
+    /// All four are counts, and none of them runs backwards.
+    where it.seq >= 0
+
+    where it.turn >= 0
+
+    where it.walk >= 0
+
+    where it.depth >= 0
+
+  /// The rows, and the two questions a reader asks of them: show me only what
+  /// a rerun would feed, and show me one turn at a time.
+  TraceLog:
+    field rows :: List.of(Instance.of(TraceRow))
+    field has_rows :: Bool
+    field inputs_only :: Bool
+
+    /// 0 shows every turn.
+    field turn :: Int
+    field empty_hint :: String
+
+    /// The flag the empty hint hangs off. It is derived from `rows` and
+    /// stored anyway — a template picks a value, it does not decide one — so
+    /// this is where the two are held to being the same answer.
+    invariant has_rows_tracks_rows:
+      ~format: @str{hasRows says @(it.has_rows) for @(it.rows.length()) rows}
+      (it.has_rows == (it.rows.length() > 0))
+
+    message set_turn(Int)
+
+    message show_all_turns
+
+    /// 0 is "every turn", so the filter is a turn number or that sentinel.
+    where it.turn >= 0
+
+  /// What a recording says about itself, before any of its events.
+  TraceHeader:
+    field component :: String
+    field module :: String
+    field example :: String
+    field fingerprint :: String
+    field events :: Int
+    field inputs :: Int
+    field turns :: Int
+    field relocated_from :: String
+    field is_relocated :: Bool
+    field compacted :: Bool
+
+    /// An input is an event — the ones a rerun would feed — so the count of
+    /// them cannot exceed the whole. Two fields, so no type states it.
+    invariant inputs_are_events:
+      ~format: @str{@(it.inputs) inputs out of @(it.events) events}
+      (it.inputs <= it.events)
+
+    /// Same relation for turns: a turn is a group of events, and a recording
+    /// with no events has no turns to group.
+    invariant turns_are_events:
+      ~format: @str{@(it.turns) turns out of @(it.events) events}
+      (it.turns <= it.events)
+
+    /// The flag and the list it summarises.
+    invariant is_relocated_tracks_from:
+      ~format: "isRelocated and relocatedFrom disagree"
+      (it.is_relocated == (it.relocated_from.length() > 0))
+
+    where it.events >= 0
+
+    where it.inputs >= 0
+
+    where it.turns >= 0
+
+  /// One candidate for relocation: a place the recording touched, with how
+  /// much of the recording is about it.
+  TracePlace:
+    field label :: String
+    field display :: String
+    field component :: String
+    field events :: Int
+    field depth :: Int
+    field selected :: Bool
+    field row_class :: String
+
+    /// Whether cutting here yields something mountable. A list is a correct
+    /// cut and an unmountable trace, and saying so before the click is
+    /// cheaper than saying it after.
+    field mountable :: Bool
+
+    message pick_place(String)
+
+    where it.events >= 0
+
+    where it.depth >= 0
+
+  /// The places a recording is ABOUT, offered as relocation targets.
+  TracePlaces:
+    field places :: List.of(Instance.of(TracePlace))
+    field has_places :: Bool
+    field selected :: String
+
+    /// What this list IS. The same component serves two lists — the places a
+    /// recording touched, and the components under something somebody just
+    /// clicked — because they are the same list of the same things offered for
+    /// the same reason, and only the sentence above them differs.
+    field heading :: String
+    field empty_hint :: String
+
+    /// The flag and the list, held to one answer — the same pairing
+    /// `TraceLog` makes, and the reason both are `invariant`s rather than
+    /// computes: the host decides them and a template only reads them.
+    invariant has_places_tracks_places:
+      ~format: @str{hasPlaces says @(it.has_places) for @(it.places.length()) places}
+      (it.has_places == (it.places.length() > 0))
+
+  /// The recorder, as a control. Off is the default and the whole point:
+  /// nothing is recorded until somebody asks.
+  RecorderBar:
+    field recording :: Bool
+
+    /// What the next recording will cover: `all`, `section` or `example`.
+    field scope :: String
+    field scope_label :: String
+
+    /// The three buttons' classes. Precomputed for the same reason every other
+    /// class here is: a template picks a value, it does not decide one.
+    field all_class :: String
+    field section_class :: String
+    field example_class :: String
+    field events :: Int
+    field turns :: Int
+
+    /// Set once a recording exists and has been stopped — the moment the
+    /// trace view is worth switching to.
+    field has_trace :: Bool
+
+    /// Whether the picker is open. Asked BEFORE recording starts, because
+    /// what a recording covers is not something it can be told afterwards.
+    field picking :: Bool
+
+    invariant turns_are_events:
+      ~format: @str{@(it.turns) turns out of @(it.events) events}
+      (it.turns <= it.events)
+
+    message set_scope(String)
+
+    message open_picker
+
+    message close_picker
+
+    message start_recording
+
+    message stop_recording
+
+    message clear_recording
+
+    /// The three buttons, as the closed set they are. `setScope` is a
+    /// declared message rather than a generated mutator, so nothing else
+    /// checks its argument.
+    where it.scope is_one_of ["all", "section", "example"]
+
+    where it.events >= 0
+
+    where it.turns >= 0
+
+  /// Recording, in one control and one place.
+  ///
+  /// A viewer, a picker and a recorder bar are three components and one
+  /// screen; this is the screen. Nothing here holds a trace — the host does,
+  /// and it hands down the three instances already built.
+  TracePanel:
+    field bar :: Instance.of(RecorderBar)
+    field header :: Instance.of(TraceHeader)
+    field places :: Instance.of(TracePlaces)
+    field log :: Instance.of(TraceLog)
+    field record_tab_class :: String
+    field trace_tab_class :: String
+    field select_tab_class :: String
+
+    /// The word the selection-mode button reads as.
+    field select_label :: String
+
+    /// `record`, `trace` or `pick`. Recording and reading are two modes
+    /// because they are two activities: while a session is being recorded
+    /// nobody is reading it, and a reader is not about to click the app.
+    field tab :: String
+    field has_trace :: Bool
+
+    /// Selection mode: click anything on the page and the component tree it
+    /// belongs to comes back as relocation candidates.
+    field selecting :: Bool
+
+    /// Which pane is the one showing. One field EACH rather than an expression
+    /// over `tab`, because "there is a trace" and "the reader asked for this
+    /// pane" are decided by the host and by a click, and neither belongs in a
+    /// template. Three flags because there are three panes and at most one of
+    /// them is ever right.
+    field show_trace :: Bool
+    field show_replay :: Bool
+    field show_import :: Bool
+
+    /// How far through the recording the viewer is parked.
+    field at :: Int
+    field total :: Int
+
+    /// Whatever the last thing the reader asked for had to say for itself: a
+    /// file that would not parse, a cut that could not carry something across,
+    /// a rerun that diverged. ONE field for all three because they are one
+    /// thing to a reader — the sentence explaining why what they just asked
+    /// for did not do what they expected — and three fields would be three
+    /// places to forget to clear.
+    field notice :: String
+    field has_notice :: Bool
+
+    /// The draft a trace is pasted into. A textarea is the import path that
+    /// needs nothing of the host but the text, so it works on every backend
+    /// and in `moon test`; a file picker is the same message with a nicer way
+    /// to fill it in.
+    field draft :: String
+
+    /// Whether a rerun is loaded and has somewhere to go.
+    field can_replay :: Bool
+
+    /// Whether it is mid-run. A run steps on the animation frame, so this is
+    /// what says a frame is already armed.
+    field replaying :: Bool
+    field replay_tab_class :: String
+
+    /// The flag and the sentence it summarises — the same pairing every other
+    /// flag here makes.
+    invariant has_notice_tracks_notice:
+      ~format: @str{hasNotice says @(it.has_notice) for a notice of @(it.notice.length())}
+      (it.has_notice == (it.notice.length() > 0))
+
+    /// Nothing to rerun without a recording to rerun.
+    invariant can_replay_needs_a_trace:
+      ~format: "the replay controls are live without a trace behind them"
+      (it.can_replay implies it.has_trace)
+
+    /// A run is a run OF something.
+    invariant replaying_needs_a_replay:
+      ~format: "a rerun is playing that was never mounted"
+      (it.replaying implies it.can_replay)
+
+    /// The cursor is inside the recording it is a cursor into.
+    invariant at_within_total:
+      ~format: @str{parked at @(it.at) of @(it.total)}
+      (it.at <= it.total)
+
+    /// `showTrace` is the conjunction the host computes, and the reader of
+    /// this block should not have to find the handler that computes it.
+    invariant show_trace_needs_a_trace:
+      ~format: "the trace pane is showing without a trace behind it"
+      (it.show_trace implies it.has_trace)
+
+    /// Same for the rerun's pane: there is nothing to rerun without one.
+    invariant show_replay_needs_a_trace:
+      ~format: "the replay pane is showing without a trace behind it"
+      (it.show_replay implies it.has_trace)
+
+    message set_tab(String)
+
+    message set_at(Int)
+
+    message toggle_selecting
+
+    message export_trace
+
+    message import_draft
+
+    message cut_to_place
+
+    message replay_step
+
+    message replay_run
+
+    message replay_reset
+
+    /// Four panes, four names. `setTab` carries a `String` and is answered
+    /// by the host, so this clause is the only check its argument gets.
+    where it.tab is_one_of ["record", "trace", "pick", "replay"]
+
+    /// 1-based for display, and 0 for "parked before the first row".
+    where it.at >= 0
+
+    where it.total >= 0
+
+logic:
+  TracePanel:
+    /// Selection mode on and off. At the HOST, for the same reason recording is:
+    /// what makes a click on the page mean "pick this" is a document listener,
+    /// and a component cannot install one.
+    receive toggle_selecting:
+      ask("trace_select", ~route: lex)
+
+    /// Which pane is showing.
+    ///
+    /// Set here AND sent on, which looks redundant and is not. The pane
+    /// visibility and the tab classes are the HOST's — it is the only thing that
+    /// knows whether there is a recording to show — so a click that only changed
+    /// `.tab` would move the highlight and leave the panes where they were.
+    /// Setting it locally too is what keeps the button responsive on the frame
+    /// the click landed on, rather than a round trip later.
+    receive set_tab(t):
+      it.tab := t
+      ask("trace_set_tab", t, ~route: lex)
+
+    /// `draft` has no arm of its own: `@bind` synthesises the mutator that
+    /// fills it, which is the point of writing the textarea that way. A
+    /// half-typed recording is this component's business and never the host's —
+    /// asking the host to hold every keystroke would rebuild the panel on each
+    /// one.
+    /// Everything else leaves. A recording lives on the host — the component was
+    /// handed a rendering of one and never the thing itself — so every verb that
+    /// acts on it is a message to whoever holds it.
+    receive export_trace:
+      ask("trace_export", ~route: lex)
+
+    receive import_draft:
+      ask("trace_import", it.draft, ~route: lex)
+
+    receive cut_to_place:
+      ask("trace_relocate", ~route: lex)
+
+    receive replay_step:
+      ask("trace_replay_step", ~route: lex)
+
+    receive replay_run:
+      ask("trace_replay_run", ~route: lex)
+
+    receive replay_reset:
+      ask("trace_replay_reset", ~route: lex)
+
+  TracePlace:
+    /// Which candidate the reader chose.
+    ///
+    /// On the ROW and not on the list, because the button is in the row's view
+    /// and a view's `@on` is a message to the component that owns it — an arm on
+    /// the list would never be reached. At the host, because choosing a place is
+    /// only worth anything to the thing that holds the recording.
+    receive pick_place(p):
+      ask("trace_pick", p, ~route: lex)
+
+  TraceRow:
+    /// Open one line to see its arguments and the state it produced. A row is
+    /// closed by default because a recording is read by scanning it, and forty
+    /// expanded rows is not a thing anybody scans.
+    receive toggle:
+      it.open := !it.open
+
+  RecorderBar:
+    /// Which scope the next recording will cover.
+    ///
+    /// The classes are set here rather than left to the builder because this is
+    /// the one field on the bar a CLICK changes: everything else the bar shows is
+    /// the host's, handed down when it rebuilds. A precomputed class that a click
+    /// can invalidate is a class that goes stale, so the arm that invalidates it
+    /// is the arm that sets it.
+    receive set_scope(s):
+      it.scope := s
+      it.scope_label := if (s == "section") | "the active section" | (if (s == "example") | "this example" | "the whole storybook")
+      it.all_class := if (s == "all") | "btn btn-sm pick-all btn-primary" | "btn btn-sm pick-all btn-outline"
+      it.section_class := if (s == "section") | "btn btn-sm pick-section btn-primary" | "btn btn-sm pick-section btn-outline"
+      it.example_class := if (s == "example") | "btn btn-sm pick-example btn-primary" | "btn btn-sm pick-example btn-outline"
+
+    /// Open and close the picker. Asked BEFORE recording starts, because what a
+    /// recording covers is not something it can be told afterwards.
+    receive open_picker:
+      it.picking := true
+
+    receive close_picker:
+      it.picking := false
+
+    /// The three that leave the component.
+    ///
+    /// Raised AT THE HOST rather than handled here, and it is not a stylistic
+    /// choice: recording is installing a `Recorder` on a transactor, and a
+    /// transactor is the one thing a component cannot reach. What the bar owns is
+    /// which scope is selected and whether the picker is open; everything that
+    /// actually records is the host's.
+    ///
+    /// `lex` is the leg, so the answer comes from a handler registered in the
+    /// scope — which is exactly where a host puts one.
+    receive start_recording:
+      it.picking := false
+      ask("trace_start", it.scope, ~route: lex)
+
+    receive stop_recording:
+      ask("trace_stop", ~route: lex)
+
+    receive clear_recording:
+      ask("trace_discard", ~route: lex)
+
+  TraceLog:
+    /// Which turn a reader is looking at, and `0` for all of them. A toggle
+    /// rather than a filter box because the interesting question is almost
+    /// always "this turn, and what it caused".
+    receive set_turn(t):
+      it.turn := t
+
+    receive show_all_turns:
+      it.turn := 0
+
+view:
+  TraceRow:
+    @div(~class: it.row_class){@div(~class: "row-head flex items-center gap-2 flex-wrap cursor-pointer", ~on_click: toggle){@span(~class: "badge badge-xs tabular-nums opacity-50 row-seq"){@(it.seq)} @span(~title: "What this was: a message, an intent, an offer to the host, the host's answer, or a refusal", ~class: it.verb_class){@(it.verb)} @span(~class: "font-mono font-semibold row-name"){@(it.name)} @span(~title: "Where it landed", ~class: "text-xs opacity-40 font-mono row-place"){@(it.place)} @show(it.input){
+  @span(~title: "A rerun feeds this one; everything else it produces for itself", ~class: "badge badge-xs badge-primary badge-outline row-input"){input}
+} @show(it.has_walk){
+  @span(~title: "Every hop of one intent shares this", ~class: "badge badge-xs badge-ghost row-walk"){@("walk ")@(it.walk)}
+} @span(~class: "ml-auto text-xs opacity-40 tabular-nums row-turn"){@("turn ")@(it.turn)}} @show(it.open){
+  @div(~class: "pl-6 flex flex-col gap-1 font-mono text-xs row-detail"){@show(it.args.is_truthy()){
+  @div(~class: "opacity-60 row-args"){@("args ")@(it.args)}
+} @show(it.has_after){
+  @div{@div(~class: "opacity-50"){after} @render(it.after)}
+} @hide(it.has_after){
+  @div(~class: "opacity-40 row-noafter"){no state was kept for this one}
+}}
+}}
+
+  TraceLog:
+    @div(~class: "trace-log flex flex-col gap-1 max-h-[50vh] overflow-y-auto p-2"){@hide(it.has_rows){
+  @div(~class: "text-xs opacity-40 empty-hint"){@(it.empty_hint)}
+} @each(value, key in it.rows){
+  @render(value)
+}}
+
+  TraceHeader:
+    @div(~class: "trace-header flex flex-col gap-1 p-2 text-sm"){
+      @div(~class: "flex items-center gap-2 flex-wrap"){@span(~class: "badge badge-sm badge-primary header-component"){@(it.component)} @show(it.module.is_truthy()){
+  @span(~class: "text-xs opacity-50 font-mono header-module"){@(it.module)}
+} @show(it.example.is_truthy()){
+  @span(~class: "text-xs opacity-50 header-example"){@(it.example)}
+} @show(it.is_relocated){
+  @span(~title: "This trace was cut down to a subtree; every path in it was rewritten", ~class: "badge badge-xs badge-warning header-relocated"){@("relocated from ")@(it.relocated_from)}
+} @show(it.compacted){
+  @span(~title: "The derived events were dropped: this trace can no longer be relocated or scripted", ~class: "badge badge-xs badge-ghost header-compacted"){compacted}
+}}
+      @div(~class: "flex gap-3 text-xs opacity-60 tabular-nums"){@span(~class: "header-events"){@(it.events)@(" events")} @span(~class: "header-inputs"){@(it.inputs)@(" fed on a rerun")} @span(~class: "header-turns"){@(it.turns)@(" turns")} @show(it.fingerprint.is_truthy()){
+  @span(~class: "opacity-40 font-mono header-fp"){@(it.fingerprint)}
+}}
+    }
+
+  TracePlace:
+    @button(~class: it.row_class, ~on_click: pick_place(it.label)){@span(~class: "font-mono place-label"){@(it.display)} @show(it.component.is_truthy()){
+  @span(~class: "badge badge-xs badge-ghost place-component"){@(it.component)}
+} @hide(it.mountable){
+  @span(~title: "Cutting here would not yield a component, so the trace could not be mounted", ~class: "badge badge-xs badge-warning place-unmountable"){not a component}
+} @span(~class: "ml-auto text-xs opacity-40 tabular-nums place-count"){@(it.events)}}
+
+  TracePlaces:
+    @div(~class: "trace-places flex flex-col gap-1 p-2"){@div(~class: "text-xs opacity-50 places-heading"){@(it.heading)} @hide(it.has_places){
+  @div(~class: "text-xs opacity-40 empty-hint"){@(it.empty_hint)}
+} @each(value, key in it.places){
+  @render(value)
+}}
+
+  RecorderBar:
+    @div(~class: "flex flex-col gap-1"){@div(~class: "recorder-bar flex items-center gap-2 p-2 flex-wrap"){@show(it.recording){
+  @button(~class: "btn btn-sm btn-error rec-stop", ~on_click: stop_recording){@" Stop recording "}
+} @hide(it.recording){
+  @button(~class: "btn btn-sm btn-primary rec-start", ~on_click: open_picker){@" Record "}
+} @span(~class: "badge badge-sm badge-ghost rec-scope"){@(it.scope_label)} @show(it.recording){
+  @span(~class: "text-xs opacity-60 tabular-nums rec-count"){@(it.events)@(" events · ")@(it.turns)@(" turns")}
+} @show(it.has_trace){
+  @hide(it.recording){
+    @button(~class: "btn btn-sm btn-ghost rec-clear", ~on_click: clear_recording){@" Discard "}
+  }
+}} @comment{ Inline rather than a view of its own: what a recording covers has to be asked in the place the Record button is, and a second template holding the same three buttons is a second place for them to drift. } @show(it.picking){
+  @div(~class: "recorder-picker flex flex-col gap-2 p-2"){
+    @div(~class: "text-sm"){What should this recording cover?}
+    @div(~class: "flex gap-2 flex-wrap"){@button(~class: it.all_class, ~on_click: set_scope("all")){The whole storybook} @button(~class: it.section_class, ~on_click: set_scope("section")){The active section} @button(~class: it.example_class, ~on_click: set_scope("example")){This example only}}
+    @div(~class: "text-xs opacity-50"){@" A narrower scope is not a filter applied afterwards — it is what gets mounted with a recorder on it, so nothing else is ever captured. You can still cut a recording down to one component when you stop. "}
+    @div(~class: "flex gap-2"){@button(~class: "btn btn-sm btn-primary picker-go", ~on_click: start_recording){Start} @button(~class: "btn btn-sm btn-ghost picker-cancel", ~on_click: close_picker){Cancel}}
+  }
+}}
+
+  TracePanel:
+    @div(~class: "trace-panel flex flex-col gap-2"){@div(~class: "flex items-center gap-2 border-b border-base-content/10 px-2"){@button(~class: it.record_tab_class, ~on_click: set_tab("record")){Record} @show(it.has_trace){
+  @button(~class: it.trace_tab_class, ~on_click: set_tab("trace")){Trace}
+} @show(it.has_trace){
+  @button(~class: it.replay_tab_class, ~on_click: set_tab("replay")){Replay}
+} @show(it.has_trace){
+  @button(~class: it.select_tab_class, ~on_click: toggle_selecting){@(it.select_label)}
+} @show(it.has_trace){
+  @span(~class: "ml-auto text-xs opacity-40 tabular-nums panel-pos"){@(it.at)@(" / ")@(it.total)}
+}} @comment{ Above every pane, because it is about the thing the reader just did and not about the pane they happen to be looking at. A parse error on import belongs where they can see it without changing tabs. } @show(it.has_notice){
+  @div(~class: "trace-notice alert alert-warning text-xs mx-2 py-1"){@(it.notice)}
+} @render(it.bar) @show(it.show_trace){
+  @div(~class: "panel-trace flex flex-col gap-2"){@div(~class: "flex items-center gap-2 px-2 flex-wrap"){@button(~class: "btn btn-sm btn-ghost trace-export", ~on_click: export_trace){@" Download "} @comment{ Enabled by a pick, and the pick is a separate press for the reason the host's comment gives: choosing a place is the thing a person does several times before they mean it. } @button(~class: "btn btn-sm btn-ghost trace-cut", ~on_click: cut_to_place){@" Cut to the picked place "}} @render(it.header) @render(it.places) @render(it.log)}
+} @comment{ The rerun. It drives the STORY, not a preview of one: the gallery is a single transactor with every story mounted under it, so the events go into the instance already on screen and the reader watches it move. } @show(it.show_replay){
+  @div(~class: "panel-replay flex flex-col gap-2 p-2"){@show(it.can_replay){
+  @div(~class: "flex gap-2 flex-wrap"){@button(~class: "btn btn-sm btn-primary replay-step", ~on_click: replay_step){Step} @button(~class: "btn btn-sm replay-run", ~on_click: replay_run){Run} @button(~class: "btn btn-sm btn-ghost replay-reset", ~on_click: replay_reset){Reset} @span(~class: "text-xs opacity-60 tabular-nums replay-pos self-center"){@(it.at)@(" of ")@(it.total)}}
+} @show(it.can_replay){
+  @div(~class: "text-xs opacity-50"){@" The story above is the one being driven. A step feeds one whole turn — what the recording drained together — so the app is never left mid-cascade in a state it was never in. "}
+}}
+} @comment{ Import lives on the empty pane as well as the full one: the reader who has no recording is exactly the reader who wants to load somebody else's. } @show(it.show_import){
+  @div(~class: "panel-import flex flex-col gap-2 p-2"){@div(~class: "text-xs opacity-50"){Paste a .trace.jsonl to load it.} @textarea(~class: "textarea textarea-sm trace-draft", ~rows: "3", ~bind: it.draft) @div{@button(~class: "btn btn-sm trace-import", ~on_click: import_draft){Load}}}
+} @hide(it.has_trace){
+  @div(~class: "panel-empty flex flex-col gap-2 px-2 pb-2"){@div(~class: "text-xs opacity-40"){@" Nothing recorded yet. Press Record, use the component, then stop — or paste a recording somebody else made. "} @textarea(~class: "textarea textarea-sm trace-draft-empty", ~rows: "3", ~bind: it.draft) @div{@button(~class: "btn btn-sm trace-import-empty", ~on_click: import_draft){Load}}}
+}}
+

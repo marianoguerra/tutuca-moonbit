@@ -369,7 +369,7 @@ fn[N] fuzz_handlers(
     // A knob moved. Every one of them invalidates the drawn script, so all
     // three arrive together and the script is redrawn whole — a seed that no
     // longer describes the rows under it is the one state this must not have.
-    "fuzzConfig": [
+    "fuzz_config": [
       IntentFn((call, answer) => {
         match call.args {
           [Str(seed), Str(steps), Str(source), ..] => {
@@ -399,7 +399,7 @@ fn[N] fuzz_handlers(
     // The three run buttons ARM a mode and nothing more. The work happens on
     // the next tick, outside this dispatch — see `FuzzSession::mode` for why
     // that is a correctness requirement and not a scheduling choice.
-    "fuzzStep": [
+    "fuzz_step": [
       IntentFn((_call, answer) => {
         with_app(app => arm_run(app, insp, session, fx, "step", sections))
         answer(Ok(Str("step")))
@@ -407,7 +407,7 @@ fn[N] fuzz_handlers(
     ],
     // The whole script with no yield. What a flame chart wants: settle,
     // render and morph back to back, with no scheduler noise between them.
-    "fuzzBurst": [
+    "fuzz_burst": [
       IntentFn((_call, answer) => {
         with_app(app => arm_run(app, insp, session, fx, "burst", sections))
         answer(Ok(Str("burst")))
@@ -416,13 +416,13 @@ fn[N] fuzz_handlers(
     // One dispatch per frame, until the script runs out or something breaks.
     // What a person wants, and what makes a DevTools recording show real
     // layout and paint rather than one blocking call.
-    "fuzzPlay": [
+    "fuzz_play": [
       IntentFn((_call, answer) => {
         with_app(app => arm_run(app, insp, session, fx, "play", sections))
         answer(Ok(Bool(true)))
       }),
     ],
-    "fuzzStop": [
+    "fuzz_stop": [
       IntentFn((_call, answer) => {
         session.playing = false
         session.mode = ""
@@ -433,7 +433,7 @@ fn[N] fuzz_handlers(
     // Back to the story's initial state, script and all. Remounting is what
     // makes it exact: rewinding a component by sending it the reverse of what
     // it received is not a thing that exists.
-    "fuzzReset": [
+    "fuzz_reset": [
       IntentFn((_call, answer) => {
         session.playing = false
         with_app(app => {
@@ -451,7 +451,7 @@ fn[N] fuzz_handlers(
     // and why it ends by putting the story back: shrinking drives the
     // component dozens of times, and what is on screen afterwards must be the
     // reproducer's own result rather than wherever the last candidate landed.
-    "fuzzShrink": [
+    "fuzz_shrink": [
       IntentFn((_call, answer) => {
         with_app(app => {
           guard session.plan is Some(plan) else { return }

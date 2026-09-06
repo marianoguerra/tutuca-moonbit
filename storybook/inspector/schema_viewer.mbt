@@ -3,14 +3,14 @@
 
 ///|
 /// Holds the classified high-level tree in `value` and a DataInspector of the
-/// original schema in `raw`; `showRaw` toggles between them. `rawSchema`
+/// original schema in `raw`; `show_raw` toggles between them. `raw_schema`
 /// keeps the plain schema for inspection.
 ///
 /// The state and the view live in schema_viewer.html; `SchemaViewerState` and
 /// `schema_viewer_component` are generated from it.
 fn schema_viewer_comp() -> @component.Component {
   schema_viewer_component(
-    initial={ value: Null, raw: Null, rawSchema: Null, showRaw: false, },
+    initial={ value: Null, raw: Null, raw_schema: Null, show_raw: false, },
     update=(
       // A raw `match msg`: `toggleIsExpanded` is raised inside the rendered
       // child, so no view of THIS component declares it and SchemaViewerMsg
@@ -29,7 +29,7 @@ fn schema_viewer_comp() -> @component.Component {
       match m {
         ToggleLabel =>
           Some((s, _args, _stack) => {
-            Str(if s.showRaw { "high-level view" } else { "raw schema" })
+            Str(if s.show_raw { "high-level view" } else { "raw schema" })
           })
       }
     },
@@ -122,6 +122,6 @@ pub fn Inspector::schema_view(
   self.make_("SchemaViewer", args={
     "value": self.classify_schema(schema),
     "raw": self.inspect_value(schema),
-    "rawSchema": schema,
+    "raw_schema": schema,
   })
 }

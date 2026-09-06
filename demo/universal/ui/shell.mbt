@@ -45,6 +45,9 @@ fn picker_comp_new() -> @component.Component {
   component_picker_component(update=(s, msg, ctx) => {
     let with_cursor = cursor => {
       let hits = s.hits.mapi((i, row) => {
+        // `setSelected` is the AUTO-MUTATOR for the field `selected`, not the
+        // component's `receive set_selected`: `call_field` reaches the
+        // generated callables and never a handler.
         row.call_field("setSelected", [Bool(i == cursor)])
       })
       (Next({ ..s, hits, cursor, }) : @component.Update[ComponentPickerState])
@@ -53,7 +56,7 @@ fn picker_comp_new() -> @component.Component {
       // Refused by `gen`: `Array[Any]` does not fit `Array[Instance[PickerRow]]`
       // at the declared type, and the rows arrive already built.
       Some(SetHits(hits, message)) =>
-        Next({ ..s, hits, cursor: 0, emptyMessage: message, })
+        Next({ ..s, hits, cursor: 0, empty_message: message, })
       Some(SetCursor(at)) => with_cursor(at)
       Some(Navigate(key)) =>
         match key {
@@ -69,7 +72,7 @@ fn picker_comp_new() -> @component.Component {
             }
             let row = s.hits[s.cursor]
             ctx.intent(
-              "componentPicked",
+              "component_picked",
               [row.field("module"), row.field("component"), row.field("preset")],
               @tutuca.IntentOpts::new(route=[Dyn]),
             )
@@ -106,15 +109,15 @@ pub fn shell_comp() -> @component.Component {
   ) => {
     match msg {
       // --- the picker, relayed down ---
-      Receive("openPicker", _) => {
+      Receive("open_picker", _) => {
         ctx.at().field("picker").send("opened", [])
         Unchanged
       }
-      Receive("pickerHits", args) => {
+      Receive("picker_hits", args) => {
         ctx
         .at()
         .field("picker")
-        .send("setHits", [
+        .send("set_hits", [
           args.get(0).unwrap_or(Null),
           args.get(1).unwrap_or(Str("")),
         ])
@@ -136,7 +139,7 @@ pub fn shell_comp() -> @component.Component {
       }
 
       // --- what the picker asks, answered by the pump ---
-      Intent("queryChanged", args) => {
+      Intent("query_changed", args) => {
         ctx.stop_propagation()
         Next({
           ..s,
@@ -147,7 +150,7 @@ pub fn shell_comp() -> @component.Component {
           },
         })
       }
-      Intent("componentPicked", args) => {
+      Intent("component_picked", args) => {
         ctx.stop_propagation()
         let str_at = i => {
           match args.get(i) {
@@ -164,21 +167,21 @@ pub fn shell_comp() -> @component.Component {
           argument: pick_argument(str_at(0), str_at(1), str_at(2)),
         })
       }
-      Intent("pickerClosed", _) => {
+      Intent("picker_closed", _) => {
         ctx.stop_propagation()
         forget_cell()
         Unchanged
       }
 
       // --- the library ---
-      Intent("loadOne", args) => {
+      Intent("load_one", args) => {
         ctx.stop_propagation()
         // Marked from the row's OWN path, which is the same mechanism a `+`
         // uses to be filled: the intent carries where it came from, and the
         // answer goes back there. Compiling a card takes long enough to be
         // worth saying so, and it pins the path round trip where a test can
         // see it.
-        ctx.send_at_path(ctx.target_path(), "setLoaded", [Bool(true)])
+        ctx.send_at_path(ctx.target_path(), "set_loaded", [Bool(true)])
         Next({
           ..s,
           pending: "load",
@@ -188,7 +191,7 @@ pub fn shell_comp() -> @component.Component {
           },
         })
       }
-      Intent("toggleChosen", args) => {
+      Intent("toggle_chosen", args) => {
         ctx.stop_propagation()
         let path = match args.get(0) {
           Some(Str(p)) => p
@@ -239,7 +242,7 @@ pub fn shell_comp() -> @component.Component {
       }
 
       // --- the answer coming back ---
-      Receive("placeBuilt", args) => {
+      Receive("place_built", args) => {
         let built = args.get(0).unwrap_or(Null)
         // No cell waiting means this is the whole arrangement — a restore, or
         // the first hole at boot — and the canvas is where it goes.
@@ -265,7 +268,7 @@ pub fn shell_comp() -> @component.Component {
         }
         Next({ ..s, status: "placed in the cell you clicked", })
       }
-      Receive("addNote", args) => {
+      Receive("add_note", args) => {
         let text = match args.get(0) {
           Some(Str(t)) => t
           _ => ""
@@ -278,8 +281,8 @@ pub fn shell_comp() -> @component.Component {
         notes.push(note_of(text, tone))
         Next({ ..s, notes, })
       }
-      Receive("clearNotes", _) => Next({ ..s, notes: [], })
-      Receive("setLibrary", args) => {
+      Receive("clear_notes", _) => Next({ ..s, notes: [], })
+      Receive("set_library", args) => {
         let rows = match args.get(0) {
           Some(List(items)) => items
           _ => []
@@ -304,7 +307,7 @@ pub fn picker_node() -> @tutuca.Value {
     "hits": List([]),
     "cursor": Num(0),
     "open": Bool(false),
-    "emptyMessage": Str(""),
+    "empty_message": Str(""),
   })
 }
 

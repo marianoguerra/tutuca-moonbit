@@ -1,0 +1,14 @@
+spec:
+  ListIteration:
+    field items :: List.of(String)
+
+view:
+  ListIteration:
+    @section{
+      @ul{
+        @each(value, key in it.items){
+          @li{@span(~class: "k"){@(key)}@": "@(value)}
+        }
+      }
+    }
+

@@ -1,0 +1,64 @@
+spec:
+  TableRow:
+    field name :: String
+    field qty :: Int
+    field price :: Double
+
+    /// A line item on an invoice: you cannot order fewer than none of
+    /// something, and a negative price is a different document.
+    where it.qty >= 0
+
+    where it.price >= 0
+
+  ItemTable:
+    field rows :: List.of(Instance.of(TableRow))
+
+  SelectOption:
+    field value :: String
+    field label :: String
+
+  ItemSelect:
+    field options :: List.of(Instance.of(SelectOption))
+    field current :: String
+
+  PseudoXDemo:
+    field table :: Instance.of(ItemTable)
+    field select :: Instance.of(ItemSelect)
+
+view:
+  TableRow:
+    @tr{
+      @td(~class: "name"){@(it.name)}
+      @td(~class: "qty"){@(it.qty)}
+      @td(~class: "price"){@(it.price)}
+    }
+
+  ItemTable:
+    @table(~class: "table"){
+      @thead{
+        @tr{
+          @th{Name}
+          @th{Qty}
+          @th{Price}
+        }
+      }
+      @tbody{
+        @each(value, key in it.rows){
+          @render(value)
+        }
+      }
+    }
+
+  SelectOption:
+    @option(~value: it.value){@(it.label)}
+
+  ItemSelect:
+    @select(~class: "select", ~value: it.current, ~on_input: it.current := e.value){
+      @each(value, key in it.options){
+        @render(value)
+      }
+    }
+
+  PseudoXDemo:
+    @div{@render(it.table) @render(it.select)}
+

@@ -302,7 +302,7 @@ fn C::notified_names(self : C, decls : Array[@tscript.Decl]) -> Unit {
     if self.asked.contains(name) {
       continue
     }
-    for suffix in ["Ok", "Failed", "Unhandled"] {
+    for suffix in ["_ok", "_failed", "_unhandled"] {
       if answers.contains(name + suffix) {
         self.say(
           "ANSWERS_A_NOTIFY",

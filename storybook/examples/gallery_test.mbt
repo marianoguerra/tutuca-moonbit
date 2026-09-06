@@ -76,7 +76,7 @@ fn url_fixture(
   theme? : String = "",
 ) -> Map[String, Array[@component.IntentFn]] {
   {
-    "loadState": [
+    "load_state": [
       IntentFn((_call, answer) => {
         answer(
           Ok(
@@ -90,7 +90,7 @@ fn url_fixture(
         )
       }),
     ],
-    "persistState": [IntentFn((_call, answer) => answer(Ok(Null)))],
+    "persist_state": [IntentFn((_call, answer) => answer(Ok(Null)))],
   }
 }
 
@@ -242,7 +242,7 @@ test "each story pane offers a live Instance tab" {
   assert_true(opened.field("i0") is Obj(_))
   // ...and it is the InstanceExplorer, with the Component tab beside the
   // fields because the gallery's registry resolved the story's descriptor
-  assert_true(opened.field("i0").field("hasComponent") is Bool(true))
+  assert_true(opened.field("i0").field("has_component") is Bool(true))
 
   // LIVE: a story dispatch writes `s0` through the shell, and the explorer is
   // rebuilt in the same successor rather than showing the state as of the
@@ -741,7 +741,7 @@ test "a run reaches the dispatches the invariant has to decline" {
   // button's own chain would show an empty column here and a green verdict —
   // which is exactly what a component with no invariant at all looks like.
   let declined = h.texts(".row-refused")
-  assert_true(declined.contains("neverEmpty"))
+  assert_true(declined.contains("never_empty"))
   // …and the chart still has bars, which is what the rule is for.
   assert_true(h.find_all("rect").length() > 0)
 }
@@ -927,15 +927,17 @@ test "each story pane shows the block it was declared in" {
   let spec = shell_input(root, "onStoryTab", [Num(0), Str("spec")])
   assert_true(spec.field("t0") is Str("spec"))
   assert_true(spec.field("d0") is Obj(_))
-  assert_true(spec.field("d0").field("hasSpec") is Bool(true))
+  assert_true(spec.field("d0").field("has_spec") is Bool(true))
 
   let raw = shell_input(spec, "onStoryTab", [Num(0), Str("raw")])
   assert_true(raw.field("w0") is Obj(_))
-  // Verbatim, so it is the file's own bare `state { … }` and not the name the
-  // parse gave it.
+  // Verbatim — the block as the pipeline read it. That is still the LOWERED
+  // form: a `.tutu` reaches `gen`, is lowered, and the spec source embedded is
+  // what it lowered to. The author's own `spec:` section is what belongs here,
+  // and it arrives when the readers go direct.
   let src = raw.field("w0").field("source").str(default="")
-  assert_true(src.contains("state {"))
-  assert_true(src.contains("count : Int"))
+  assert_true(src.contains("state Counter {"))
+  assert_true(src.contains("count: Int"))
 
   // A declaration cannot go stale — the component behind a story is the one
   // thing about it that never changes — so leaving keeps both panels rather
@@ -966,7 +968,7 @@ test "the Spec tab renders the declaration, not a blank pane" {
   assert_true(h.texts(".comp-section").contains("Counter"))
   assert_true(h.texts(".spec-field-name").contains("count"))
   h.click(".raw-tab")
-  assert_true(h.text(".spec-source-text").contains("count : Int"))
+  assert_true(h.text(".spec-source-text").contains("count: Int"))
 }
 
 ///|

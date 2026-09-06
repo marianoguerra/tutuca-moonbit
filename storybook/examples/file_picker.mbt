@@ -1,6 +1,6 @@
 // Teaches: reading a file input. `@on.change="onPickFile e.value"` — the app
 // glue turns the chosen File's synchronously-available metadata
-// (name/size/type/lastModified) into a Value::Map, which is what
+// (name/size/type/last_modified) into a Value::Map, which is what
 // `onPickFile` reads. No file selected -> Null.
 
 ///|
@@ -61,10 +61,10 @@ fn with_file(s : FilePickerState, file : @tutuca.Value) -> FilePickerState {
         name: meta.get("name").unwrap_or(Str("")).str(),
         size: meta.get("size").unwrap_or(Num(0)).num(),
         type_: meta.get("type").unwrap_or(Str("")).str(),
-        lastModified: meta.get("lastModified").unwrap_or(Num(0)).num(),
-        hasFile: true,
+        last_modified: meta.get("last_modified").unwrap_or(Num(0)).num(),
+        has_file: true,
       }
-    _ => { ..s, hasFile: false, }
+    _ => { ..s, has_file: false, }
   }
 }
 
@@ -72,11 +72,11 @@ fn with_file(s : FilePickerState, file : @tutuca.Value) -> FilePickerState {
 fn file_picker_comp() -> @component.Component {
   file_picker_component(
     // The File metadata is flattened into plain fields so the view can bind
-    // each piece reactively. `hasFile` gates summary vs. empty-state.
-    initial={ name: "", size: 0, type_: "", lastModified: 0, hasFile: false, },
+    // each piece reactively. `has_file` gates summary vs. empty-state.
+    initial={ name: "", size: 0, type_: "", last_modified: 0, has_file: false, },
     update=(s, msg, _ctx) => {
       match msg {
-        Receive("onPickFile", args) =>
+        Receive("on_pick_file", args) =>
           Next(with_file(s, args.get(0).unwrap_or(Null)))
         _ => Unhandled
       }
@@ -92,7 +92,7 @@ fn file_picker_comp() -> @component.Component {
             }
           })
         LastModifiedLabel =>
-          Some((s, _args, _stack) => Str(format_epoch_ms(s.lastModified)))
+          Some((s, _args, _stack) => Str(format_epoch_ms(s.last_modified)))
       }
     },
   )
@@ -112,8 +112,8 @@ pub fn file_picker_module() -> @component.ModuleDef {
           "name": Str("report.pdf"),
           "size": Num(245678),
           "type": Str("application/pdf"),
-          "lastModified": Num(1700000000000),
-          "hasFile": Bool(true),
+          "last_modified": Num(1700000000000),
+          "has_file": Bool(true),
         },
         view: None,
       },

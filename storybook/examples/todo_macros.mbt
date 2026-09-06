@@ -91,7 +91,7 @@ fn tm_item_comp() -> @component.Component {
 }
 
 ///|
-/// `:handler="onAddItem"` passes the handler NAME through the macro; the handler
+/// `:handler="on_add_item"` passes the handler NAME through the macro; the handler
 /// itself captures the `Item` component in its closure (the value language has
 /// no component-reference, so a `:arg="Item"` would degrade to a harmless
 /// ignored argument).
@@ -102,7 +102,7 @@ fn tm_items_comp(item : @component.Component) -> @component.Component {
         "main",
         raw_view=(
           #|<x:vbox>
-          #|  <x:btn-action label="Add Task" :handler="onAddItem"></x:btn-action>
+          #|  <x:btn-action label="Add Task" :handler="on_add_item"></x:btn-action>
           #|  <x:vbox class="w-full">
           #|    <div @each=".items" class="flex gap-3 justify-center items-center w-full entry">
           #|      <x render-it></x>
@@ -132,7 +132,7 @@ fn tm_items_comp(item : @component.Component) -> @component.Component {
           }
           Next({ items: kept, })
         }
-        Receive("onAddItem", _) =>
+        Receive("on_add_item", _) =>
           Next({
             items: s.items +
             [

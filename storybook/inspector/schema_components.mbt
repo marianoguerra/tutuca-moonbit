@@ -9,22 +9,22 @@ impl Composite for SchemaScalarState with fn items(self) {
 
 ///|
 impl Composite for SchemaScalarState with fn is_expanded(self) {
-  self.isExpanded
+  self.is_expanded
 }
 
 ///|
 impl Composite for SchemaScalarState with fn per_page(self) {
-  self.itemsPerPage
+  self.items_per_page
 }
 
 ///|
 impl Composite for SchemaScalarState with fn current_page(self) {
-  self.currentPage
+  self.current_page
 }
 
 ///|
 impl Composite for SchemaScalarState with fn with_current_page(self, p) {
-  { ..self, currentPage: p, }
+  { ..self, current_page: p, }
 }
 
 ///|
@@ -34,22 +34,22 @@ impl Composite for SchemaObjectState with fn items(self) {
 
 ///|
 impl Composite for SchemaObjectState with fn is_expanded(self) {
-  self.isExpanded
+  self.is_expanded
 }
 
 ///|
 impl Composite for SchemaObjectState with fn per_page(self) {
-  self.itemsPerPage
+  self.items_per_page
 }
 
 ///|
 impl Composite for SchemaObjectState with fn current_page(self) {
-  self.currentPage
+  self.current_page
 }
 
 ///|
 impl Composite for SchemaObjectState with fn with_current_page(self, p) {
-  { ..self, currentPage: p, }
+  { ..self, current_page: p, }
 }
 
 ///|
@@ -59,22 +59,22 @@ impl Composite for SchemaArrayState with fn items(self) {
 
 ///|
 impl Composite for SchemaArrayState with fn is_expanded(self) {
-  self.isExpanded
+  self.is_expanded
 }
 
 ///|
 impl Composite for SchemaArrayState with fn per_page(self) {
-  self.itemsPerPage
+  self.items_per_page
 }
 
 ///|
 impl Composite for SchemaArrayState with fn current_page(self) {
-  self.currentPage
+  self.current_page
 }
 
 ///|
 impl Composite for SchemaArrayState with fn with_current_page(self, p) {
-  { ..self, currentPage: p, }
+  { ..self, current_page: p, }
 }
 
 ///|
@@ -84,22 +84,22 @@ impl Composite for SchemaEnumState with fn items(self) {
 
 ///|
 impl Composite for SchemaEnumState with fn is_expanded(self) {
-  self.isExpanded
+  self.is_expanded
 }
 
 ///|
 impl Composite for SchemaEnumState with fn per_page(self) {
-  self.itemsPerPage
+  self.items_per_page
 }
 
 ///|
 impl Composite for SchemaEnumState with fn current_page(self) {
-  self.currentPage
+  self.current_page
 }
 
 ///|
 impl Composite for SchemaEnumState with fn with_current_page(self, p) {
-  { ..self, currentPage: p, }
+  { ..self, current_page: p, }
 }
 
 ///|
@@ -109,29 +109,29 @@ impl Composite for SchemaCombinatorState with fn items(self) {
 
 ///|
 impl Composite for SchemaCombinatorState with fn is_expanded(self) {
-  self.isExpanded
+  self.is_expanded
 }
 
 ///|
 impl Composite for SchemaCombinatorState with fn per_page(self) {
-  self.itemsPerPage
+  self.items_per_page
 }
 
 ///|
 impl Composite for SchemaCombinatorState with fn current_page(self) {
-  self.currentPage
+  self.current_page
 }
 
 ///|
 impl Composite for SchemaCombinatorState with fn with_current_page(self, p) {
-  { ..self, currentPage: p, }
+  { ..self, current_page: p, }
 }
 
 ///|
 /// Primitive type(s): string / number / integer / boolean / null / multi-type.
 fn schema_scalar_comp() -> @component.Component {
   schema_scalar_component(
-    initial={ ..SchemaScalarState::zero(), itemsPerPage: 10, },
+    initial={ ..SchemaScalarState::zero(), items_per_page: 10, },
     update=(s, msg, _ctx) => composite_update(s, msg),
     compute=m => {
       match m {
@@ -141,7 +141,7 @@ fn schema_scalar_comp() -> @component.Component {
         CannotPrevPage => Some(composite_cannot_prev_page)
         CannotNextPage => Some(composite_cannot_next_page)
         PageIndicatorText => Some(composite_page_indicator_text)
-        TypeText => Some((s, _args, _stack) => Str(s.typeLabel))
+        TypeText => Some((s, _args, _stack) => Str(s.type_label))
         CountText => Some((_s, _args, _stack) => Str(""))
       }
     },
@@ -159,7 +159,7 @@ fn Inspector::schema_scalar_from(
   m : Map[String, @tutuca.Value],
 ) -> @tutuca.Value {
   let args : Map[String, @tutuca.Value] = {
-    "typeLabel": Str(display_type(m, "any")),
+    "type_label": Str(display_type(m, "any")),
     "badges": List(collect_badges(m)),
     "items": List(self.collect_extras(m, "scalar")),
   }
@@ -172,7 +172,7 @@ fn Inspector::schema_scalar_from(
 /// branches (additionalProperties / patternProperties / propertyNames).
 fn schema_object_comp() -> @component.Component {
   schema_object_component(
-    initial={ ..SchemaObjectState::zero(), itemsPerPage: 10, },
+    initial={ ..SchemaObjectState::zero(), items_per_page: 10, },
     update=(s, msg, _ctx) => composite_update(s, msg),
     compute=m => {
       match m {
@@ -182,7 +182,7 @@ fn schema_object_comp() -> @component.Component {
         CannotPrevPage => Some(composite_cannot_prev_page)
         CannotNextPage => Some(composite_cannot_next_page)
         PageIndicatorText => Some(composite_page_indicator_text)
-        TypeText => Some((s, _args, _stack) => Str(s.typeLabel))
+        TypeText => Some((s, _args, _stack) => Str(s.type_label))
         CountText =>
           Some((s, _args, _stack) => {
             let n = s.items.length()
@@ -258,7 +258,7 @@ fn Inspector::schema_object_from(
   }
   items.append(self.collect_extras(m, "object"))
   let args : Map[String, @tutuca.Value] = {
-    "typeLabel": Str(display_type(m, "object")),
+    "type_label": Str(display_type(m, "object")),
     "badges": List(collect_badges(m)),
     "items": List(items),
   }
@@ -271,7 +271,7 @@ fn Inspector::schema_object_from(
 /// tuple, plus `contains` and array constraints (as badges).
 fn schema_array_comp() -> @component.Component {
   schema_array_component(
-    initial={ ..SchemaArrayState::zero(), itemsPerPage: 10, },
+    initial={ ..SchemaArrayState::zero(), items_per_page: 10, },
     update=(s, msg, _ctx) => composite_update(s, msg),
     compute=m => {
       match m {
@@ -281,7 +281,7 @@ fn schema_array_comp() -> @component.Component {
         CannotPrevPage => Some(composite_cannot_prev_page)
         CannotNextPage => Some(composite_cannot_next_page)
         PageIndicatorText => Some(composite_page_indicator_text)
-        TypeText => Some((s, _args, _stack) => Str(s.typeLabel))
+        TypeText => Some((s, _args, _stack) => Str(s.type_label))
         CountText =>
           Some((s, _args, _stack) => {
             let n = s.items.length()
@@ -349,7 +349,7 @@ fn Inspector::schema_array_from(
     }
   }
   let args : Map[String, @tutuca.Value] = {
-    "typeLabel": Str(type_label),
+    "type_label": Str(type_label),
     "badges": List(collect_badges(m)),
     "items": List(items),
   }
@@ -361,7 +361,7 @@ fn Inspector::schema_array_from(
 /// Enumerated allowed values — each rendered with the value inspector.
 fn schema_enum_comp() -> @component.Component {
   schema_enum_component(
-    initial={ ..SchemaEnumState::zero(), itemsPerPage: 10, },
+    initial={ ..SchemaEnumState::zero(), items_per_page: 10, },
     update=(s, msg, _ctx) => composite_update(s, msg),
     compute=m => {
       match m {
@@ -371,7 +371,7 @@ fn schema_enum_comp() -> @component.Component {
         CannotPrevPage => Some(composite_cannot_prev_page)
         CannotNextPage => Some(composite_cannot_next_page)
         PageIndicatorText => Some(composite_page_indicator_text)
-        TypeText => Some((s, _args, _stack) => Str(s.typeLabel))
+        TypeText => Some((s, _args, _stack) => Str(s.type_label))
         CountText =>
           Some((s, _args, _stack) => {
             let n = s.items.length()
@@ -399,7 +399,7 @@ fn Inspector::schema_enum_from(
   let items = members.map(v => self.inspect_value(v))
   items.append(self.collect_extras(m, "enum"))
   let args : Map[String, @tutuca.Value] = {
-    "typeLabel": Str("enum"),
+    "type_label": Str("enum"),
     "badges": List(collect_badges(m)),
     "items": List(items),
   }
@@ -417,7 +417,7 @@ fn schema_const_comp() -> @component.Component {
 /// Combinator: allOf / anyOf / oneOf, subschemas listed without keys.
 fn schema_combinator_comp() -> @component.Component {
   schema_combinator_component(
-    initial={ ..SchemaCombinatorState::zero(), itemsPerPage: 10, },
+    initial={ ..SchemaCombinatorState::zero(), items_per_page: 10, },
     update=(s, msg, _ctx) => composite_update(s, msg),
     compute=m => {
       match m {
@@ -427,7 +427,7 @@ fn schema_combinator_comp() -> @component.Component {
         CannotPrevPage => Some(composite_cannot_prev_page)
         CannotNextPage => Some(composite_cannot_next_page)
         PageIndicatorText => Some(composite_page_indicator_text)
-        TypeText => Some((s, _args, _stack) => Str(s.typeLabel))
+        TypeText => Some((s, _args, _stack) => Str(s.type_label))
         CountText =>
           Some((s, _args, _stack) => {
             let n = s.items.length()
@@ -462,7 +462,7 @@ fn Inspector::schema_combinator_from(
   }
   items.append(self.collect_extras(m, "combinator"))
   let args : Map[String, @tutuca.Value] = {
-    "typeLabel": Str(combinator_phrasing(kind)),
+    "type_label": Str(combinator_phrasing(kind)),
     "badges": List(collect_badges(m)),
     "items": List(items),
   }
@@ -488,9 +488,9 @@ fn Inspector::schema_conditional_from(
     }
   }
   let args : Map[String, @tutuca.Value] = {
-    "ifNode": node("if"),
-    "thenNode": node("then"),
-    "elseNode": node("else"),
+    "if_node": node("if"),
+    "then_node": node("then"),
+    "else_node": node("else"),
   }
   schema_meta_into(args, m)
   self.make_("SchemaConditional", args~)

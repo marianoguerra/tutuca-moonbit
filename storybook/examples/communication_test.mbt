@@ -8,7 +8,7 @@ test "send-receive: a message reaches a sibling child by path" {
   // ctx.send_at_path(...field("status"), "flash", [text]) landed on the child
   inspect(h.text(".msg"), content="hello there")
   inspect(h.text(".alert"), content="hello there (flashed 1 times)")
-  // ctx.send("clearDraft") landed on SELF
+  // ctx.send("clear_draft") landed on SELF
   inspect(h.value_of("input"), content="")
 }
 

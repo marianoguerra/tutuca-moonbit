@@ -93,6 +93,11 @@ pub fn picker_rows(hits : Array[PickerHit]) -> Array[@tutuca.Value] {
   // by the picker, because the picker is handed a finished list and a list that
   // arrived with no cursor in it would render one keystroke behind.
   if rows.length() > 0 {
+    // `setSelected` is the AUTO-MUTATOR for the field `selected`, not the
+    // component's `receive set_selected` — `call_field` reaches the generated
+    // callables and never a handler. The mutator vocabulary is still
+    // `set<Field>` (`core/schema.mbt`, `mutator_name`); it has not been through
+    // the rename the notation went through.
     rows[0] = rows[0].call_field("setSelected", [Bool(true)])
   }
   rows

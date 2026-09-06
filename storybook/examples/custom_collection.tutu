@@ -1,0 +1,18 @@
+spec:
+  Song:
+    field title :: String
+
+  Playlist:
+    field songs :: Any
+
+view:
+  Playlist:
+    @ul(~class: "flex flex-col gap-1"){
+      @each(value, key in it.songs){
+        @li(~class: "flex gap-2 items-center"){@render(value) @button(~class: "btn btn-xs rm", ~on_click: remove_song(key)){remove}}
+      }
+    }
+
+  Song:
+    @span(~class: "song"){@(it.title)}
+

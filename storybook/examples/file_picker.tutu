@@ -1,0 +1,48 @@
+spec:
+  FilePicker:
+    field name :: String
+    field size :: Double
+    field type :: String
+    field last_modified :: Double
+    field has_file :: Bool
+
+    /// `hasFile` is the flag every row in the table hangs off, and the four
+    /// fields beside it are what it promises are filled in. The one that
+    /// cannot be empty is the name — a picked file always has one, and a
+    /// table saying otherwise means the flag and the fields disagreed.
+    invariant picked_file_is_described:
+      ~format: "the file table is showing, but no file name came with it"
+      (it.has_file implies (it.name.length() > 0))
+
+    /// A file has a length and an epoch timestamp; neither runs backwards.
+    where it.size >= 0
+
+    where it.last_modified >= 0
+
+view:
+  FilePicker:
+    @section(~class: "flex flex-col gap-3"){@label(~class: "flex flex-col gap-1"){@span{Pick a file} @input(~type: "file", ~class: "file-input", ~on_change: on_pick_file(e.value))} @show(it.has_file){
+  @table(~class: "table"){
+    @tbody{
+      @tr{
+        @th{Name}
+        @td(~class: "fname"){@(it.name)}
+      }
+      @tr{
+        @th{Size}
+        @td(~class: "fsize"){@(size_label())}
+      }
+      @tr{
+        @th{Type}
+        @td(~class: "ftype"){@(type_label())}
+      }
+      @tr{
+        @th{Last modified}
+        @td(~class: "fmodified"){@(last_modified_label())}
+      }
+    }
+  }
+} @hide(it.has_file){
+  @p(~class: "empty"){No file selected yet — pick one above.}
+}}
+

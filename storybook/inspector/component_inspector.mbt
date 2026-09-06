@@ -37,7 +37,7 @@ fn name_list(keys : Array[String]) -> @tutuca.Value {
 fn view_rows(comp : @component.Component) -> @tutuca.Value {
   let views : Array[@tutuca.Value] = []
   for _name, view in comp.views {
-    views.push(Map({ "name": Str(view.name), "rawView": Str(view.raw_view) }))
+    views.push(Map({ "name": Str(view.name), "raw_view": Str(view.raw_view) }))
   }
   List(views)
 }
@@ -123,7 +123,7 @@ fn comp_view_comp() -> @component.Component {
       match m {
         ArrowText =>
           Some((s, _args, _stack) => {
-            Str(if s.isExpanded { "▼" } else { "▶" })
+            Str(if s.is_expanded { "▼" } else { "▶" })
           })
       }
     },
@@ -132,13 +132,13 @@ fn comp_view_comp() -> @component.Component {
         Receive("toggle", args) =>
           if args.get(0) is Some(Bool(true)) {
             ctx.intent(
-              "toggleAllViews",
-              [Bool(!s.isExpanded)],
+              "toggle_all_views",
+              [Bool(!s.is_expanded)],
               @tutuca.IntentOpts::new(route=[Dyn]),
             )
             Unhandled
           } else {
-            Next({ ..s, isExpanded: !s.isExpanded, })
+            Next({ ..s, is_expanded: !s.is_expanded, })
           }
         _ => Unhandled
       }
@@ -158,28 +158,28 @@ impl Composite for CompSectionState with fn items(self) {
 
 ///|
 impl Composite for CompSectionState with fn is_expanded(self) {
-  self.isExpanded
+  self.is_expanded
 }
 
 ///|
 impl Composite for CompSectionState with fn per_page(self) {
-  self.itemsPerPage
+  self.items_per_page
 }
 
 ///|
 impl Composite for CompSectionState with fn current_page(self) {
-  self.currentPage
+  self.current_page
 }
 
 ///|
 impl Composite for CompSectionState with fn with_current_page(self, p) {
-  { ..self, currentPage: p, }
+  { ..self, current_page: p, }
 }
 
 ///|
 fn comp_section_comp() -> @component.Component {
   comp_section_component(
-    initial={ ..CompSectionState::zero(), itemsPerPage: 10, },
+    initial={ ..CompSectionState::zero(), items_per_page: 10, },
     compute=m => {
       match m {
         ArrowText => Some(composite_arrow_text)
@@ -204,13 +204,13 @@ fn comp_section_comp() -> @component.Component {
         Receive("toggle", args) =>
           if args.get(0) is Some(Bool(true)) {
             ctx.intent(
-              "toggleAllSections",
-              [Bool(!s.isExpanded)],
+              "toggle_all_sections",
+              [Bool(!s.is_expanded)],
               @tutuca.IntentOpts::new(route=[Dyn]),
             )
             Unhandled
           } else {
-            Next({ ..s, isExpanded: !s.isExpanded, })
+            Next({ ..s, is_expanded: !s.is_expanded, })
           }
         // The shared prev/next page arms.
         _ => composite_update(s, msg)
@@ -226,7 +226,7 @@ fn set_all_sections(
 ) -> ComponentInspectorState {
   {
     ..s,
-    sections: s.sections.map(sec => sec.with_field("isExpanded", Bool(state))),
+    sections: s.sections.map(sec => sec.with_field("is_expanded", Bool(state))),
   }
 }
 
@@ -243,7 +243,7 @@ fn set_all_views(
           Some(List(views)) =>
             sec.with_field(
               "items",
-              List(views.map(v => v.with_field("isExpanded", Bool(state)))),
+              List(views.map(v => v.with_field("is_expanded", Bool(state)))),
             )
           _ => sec
         }
@@ -260,7 +260,7 @@ fn component_inspector_comp() -> @component.Component {
   component_inspector_component(
     compute=m => {
       match m {
-        IdText => Some((s, _args, _stack) => Str("#\{s.compId}"))
+        IdText => Some((s, _args, _stack) => Str("#\{s.comp_id}"))
       }
     },
     update=(s, msg, _ctx) => {
@@ -317,7 +317,7 @@ fn Inspector::component_view(
         }
         self.make_("CompField", args={
           "name": name,
-          "typeName": type_name,
+          "type_name": type_name,
           "child": self.inspect_value(dflt),
         })
       })
@@ -325,7 +325,7 @@ fn Inspector::component_view(
         self.make_("CompSection", args={
           "label": Str("Fields"),
           "items": List(rows),
-          "isExpanded": Bool(true),
+          "is_expanded": Bool(true),
         }),
       )
     }
@@ -354,7 +354,7 @@ fn Inspector::component_view(
           Map(vm) =>
             self.make_("CompView", args={
               "name": vm.get("name").unwrap_or(Str("")),
-              "rawView": vm.get("rawView").unwrap_or(Str("")),
+              "raw_view": vm.get("raw_view").unwrap_or(Str("")),
             })
           _ => Null
         }
@@ -369,8 +369,8 @@ fn Inspector::component_view(
     _ => ()
   }
   self.make_("ComponentInspector", args={
-    "compName": d.get("name").unwrap_or(Str("")),
-    "compId": d.get("id").unwrap_or(Num(0)),
+    "comp_name": d.get("name").unwrap_or(Str("")),
+    "comp_id": d.get("id").unwrap_or(Num(0)),
     "sections": List(sections),
   })
 }

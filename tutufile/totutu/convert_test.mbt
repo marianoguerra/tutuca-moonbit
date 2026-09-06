@@ -91,10 +91,7 @@ test "the file it writes" {
       #|
       #|view:
       #|  Guarded:
-      #|    @div{
-      #|      @button(~on_click: bump){+}
-      #|      @output{@(it.n)}
-      #|    }
+      #|    @div{@button(~on_click: bump){+} @output{@(it.n)}}
       #|
       #|fixtures:
       #|  "nearly full":
@@ -267,7 +264,10 @@ test "the spaces around a hole survive" {
     #|
   let got = convert(html, name="Card")
   @debug.assert_eq(got.refusals, [])
-  assert_true(got.text.contains("@span{a @(it.n) b}"))
+  // The quoted form, because a space at the END of a text run is the thing at
+  // risk: written bare it sits next to a line break, and the reader cuts the
+  // layout around one. Quoted, the characters are the characters.
+  assert_true(got.text.contains("@span{@\"a \"@(it.n)@\" b\"}"))
   assert_false(got.text.contains("@span{a@(it.n)b}"))
 }
 
@@ -307,7 +307,9 @@ test "spaces survive around an element and a hole in one run" {
     #|
   let got = convert(html, name="Card")
   @debug.assert_eq(got.refusals, [])
-  assert_true(got.text.contains("@p{one @b{two} three @(it.n) four}"))
+  assert_true(
+    got.text.contains("@p{@\"one \"@b{two}@\" three \"@(it.n)@\" four\"}"),
+  )
 }
 
 ///|

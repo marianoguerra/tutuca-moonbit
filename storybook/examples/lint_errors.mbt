@@ -89,7 +89,7 @@ fn lint_demo_comp() -> @component.Component {
           #|  <x @text=".count"></x>
           #|
           #|  <!-- MAYBE_ADD_AT_PREFIX: 'show' written as a plain attribute -->
-          #|  <div show=".isOpen">missing @ on host directive</div>
+          #|  <div show=".is_open">missing @ on host directive</div>
           #|
           #|  <!-- BAD_VALUE on attr: '.123bad' is not a valid identifier -->
           #|  <p :title=".123bad">bad attr value</p>
@@ -109,13 +109,13 @@ fn lint_demo_comp() -> @component.Component {
           #|  </ul>
           #|
           #|  <!-- UNSUPPORTED_EXPR_SYNTAX (ternary) -->
-          #|  <p :class=".isOpen ? 'on' : 'off'">ternary in :class</p>
+          #|  <p :class=".is_open ? 'on' : 'off'">ternary in :class</p>
           #|
           #|  <!-- UNSUPPORTED_EXPR_SYNTAX (comparison) -->
           #|  <p :class=".kind === 'foo'">comparison in :class</p>
           #|
           #|  <!-- UNSUPPORTED_EXPR_SYNTAX (logical) -->
-          #|  <p :class=".isOpen && .kind">logical in :class</p>
+          #|  <p :class=".is_open && .kind">logical in :class</p>
           #|
           #|  <!-- UNSUPPORTED_EXPR_SYNTAX (call-with-args) -->
           #|  <p :class="$doClick 'foo'">call-with-args in :class</p>
@@ -132,12 +132,12 @@ fn lint_demo_comp() -> @component.Component {
           #|
           #|  <!-- DUPLICATE_ATTR_DEFINITION: "class" set by :class AND @if.class
           #|       (the literal+@if pair alone is the port's allowed fallback idiom) -->
-          #|  <div class="literal" :class=".kind" @if.class=".isOpen" @then="'on'" @else="'off'">
+          #|  <div class="literal" :class=".kind" @if.class=".is_open" @then="'on'" @else="'off'">
           #|    duplicate class
           #|  </div>
           #|
           #|  <!-- IF_NO_BRANCH_SET: @if.class without @then or @else -->
-          #|  <div @if.class=".isOpen">if without then or else</div>
+          #|  <div @if.class=".is_open">if without then or else</div>
           #|
           #|  <p @text=".count">0</p>
           #|</div>
@@ -149,7 +149,7 @@ fn lint_demo_comp() -> @component.Component {
       count: 0,
       items: [],
       kind: "",
-      isOpen: false,
+      is_open: false,
       child: Null,
     },
     // This component builds its views at runtime, so there is no generated

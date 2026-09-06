@@ -25,7 +25,7 @@ fn tree_item_comp() -> @component.Component {
       // raise an intent along the `dyn` leg — the ancestors, from this
       // component's PARENT up (payload: this item's own instance value, read
       // off the dispatch path, whose leaf is self) — then toggle self
-      Receive("onItemClick", _) => {
+      Receive("on_item_click", _) => {
         let mut self_v : @tutuca.Value = Null
         ctx.walk_path((_id, inst) => {
           self_v = inst
@@ -77,7 +77,7 @@ fn tree_item_from_data(
   comp.make({
     "type": Str(type_),
     "label": Str(label),
-    "isOpen": Bool(true),
+    "is_open": Bool(true),
     "items": List(items),
   })
 }

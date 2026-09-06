@@ -352,7 +352,7 @@ fn ShellInst::handler_for(
             _ => ""
           }
           ctx.intent(
-            "persistState",
+            "persist_state",
             [snapshot(self, filter=value), Bool(false)],
             @tutuca.IntentOpts::new(route=[Lex]),
           )
@@ -489,7 +489,7 @@ fn ShellInst::handler_for(
       Some(
         Handler((_args, ctx) => {
           ctx.intent(
-            "persistState",
+            "persist_state",
             [snapshot(self, filter=""), Bool(false)],
             @tutuca.IntentOpts::new(route=[Lex]),
           )
@@ -506,7 +506,7 @@ fn ShellInst::handler_for(
             _ => ""
           }
           ctx.intent(
-            "persistState",
+            "persist_state",
             [snapshot(self, story=id), Bool(true)],
             @tutuca.IntentOpts::new(route=[Lex]),
           )
@@ -523,7 +523,7 @@ fn ShellInst::handler_for(
           match self.spec.id_to_field.get(id) {
             Some(fld) => {
               ctx.intent(
-                "persistState",
+                "persist_state",
                 [snapshot(self, focus=id), Bool(true)],
                 @tutuca.IntentOpts::new(route=[Lex]),
               )
@@ -542,7 +542,7 @@ fn ShellInst::handler_for(
       Some(
         Handler((_args, ctx) => {
           ctx.intent(
-            "persistState",
+            "persist_state",
             [snapshot(self, focus=""), Bool(false)],
             @tutuca.IntentOpts::new(route=[Lex]),
           )
@@ -566,12 +566,12 @@ fn ShellInst::handler_for(
             _ => ""
           }
           ctx.intent(
-            "applyTheme",
+            "apply_theme",
             [Str(value)],
             @tutuca.IntentOpts::new(route=[Lex]),
           )
           ctx.intent(
-            "persistState",
+            "persist_state",
             [snapshot(self, theme=value), Bool(false)],
             @tutuca.IntentOpts::new(route=[Lex]),
           )
@@ -585,7 +585,7 @@ fn ShellInst::handler_for(
     (Receive, "init") =>
       Some(
         Handler((_args, ctx) => {
-          ctx.intent("loadState", [], @tutuca.IntentOpts::new(route=[Lex]))
+          ctx.intent("load_state", [], @tutuca.IntentOpts::new(route=[Lex]))
           for f in self.spec.init_fields {
             ctx.send_at_path(ctx.path().concat([FieldStep(f)]), "init", [])
           }
@@ -600,7 +600,7 @@ fn ShellInst::handler_for(
     // this component declares no `loadStateUnhandled` — so nothing arrives and
     // the defaults stand, which is what the paragraph above always meant by
     // "404s harmlessly".
-    (Receive, "loadStateOk") =>
+    (Receive, "load_state_ok") =>
       Some(
         Handler((args, _ctx) => {
           match args {

@@ -1,0 +1,94 @@
+spec:
+  PushView:
+    field items :: List.of(Instance.of(Entry))
+    field query :: String
+    field view :: String
+
+    /// `@push-view=".view"` looks a view up by this name and falls back to
+    /// `main` when it finds nothing — so a third name is not an error, it is
+    /// a component that silently stops switching. Two views exist; say so.
+    where it.view is_one_of ["main", "edit"]
+
+  SeqItemAccess:
+    field by_key :: Map.of(String, Instance.of(Entry))
+    field by_index :: List.of(Instance.of(Entry))
+    field current_key :: Any
+    field current_index :: Int
+
+    /// The two selections, each said against the collection it selects from.
+    /// This is the pair no type can state: `Int` and `String` are both true
+    /// and both useless, and `<x render=".byIndex[.currentIndex]">` renders
+    /// nothing at all when the relation does not hold.
+    ///
+    /// `or none` because the ZERO of this component is an empty catalogue
+    /// with the slider parked at 0 — a real state, and one the generator has
+    /// to be allowed to draw.
+    where it.current_index is_index_of it.by_index ~or_none
+
+    where it.current_key is_key_of it.by_key
+
+  Pagination:
+    field items :: List.of(String)
+    field page :: Int
+    field page_size :: Int
+
+    /// What `prev` and `next` already clamp to, said once for the paths that
+    /// do not go through them — `setPage`, and anything added later.
+    /// `pageSize` is at least 1 by the clause above, so the division is safe
+    /// wherever this rule is asked.
+    invariant page_exists:
+      ~format: @str{page @(it.page) is past the last one}
+      ((it.page == 0) || ((it.page * it.page_size) < it.items.length()))
+
+    /// A page size of zero divides by zero in `next`, and a negative one
+    /// asks `@loop-with` for a slice that runs backwards. The floor is the
+    /// interesting half; the ceiling keeps a generated `setPageSize` from
+    /// drawing a slice nothing could paginate.
+    where it.page_size in_range(1, 100)
+
+    where it.page >= 0
+
+logic:
+  PushView:
+    /// Flip the pushed view name. The label under the button is `$getToggleLabel`
+    /// and stays in MoonBit — a `compute` is answered while rendering, and this
+    /// runs after.
+    receive toggle_view:
+      it.view := if (it.view == "main") | "edit" | "main"
+
+  Pagination:
+    /// Step back, never past the first page.
+    receive prev:
+      it.page := math.max(0, (it.page - 1))
+
+    /// Step forward, never past the last one.
+    ///
+    /// `((len .items) - 1) / .pageSize` is the last page's index with its
+    /// fraction still on it — the field is an Int and takes the whole part, so
+    /// the division needs no ceiling of its own.
+    receive next:
+      it.page := math.min((it.page + 1), ((it.items.length() - 1) / it.page_size))
+
+view:
+  PushView:
+    @section(~class: "flex flex-col gap-3"){@div(~class: "flex justify-between"){@input(~type: "search", ~class: "input", ~value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := default ~cancel, ~placeholder: "Filter entries") @button(~class: "btn bnt-sm btn-primary toggle-btn", ~on_click: toggle_view){@(get_toggle_label())}} @div(~push_view: it.view, ~class: "flex flex-col gap-3 max-h-[40vh] overflow-y-auto pr-3 rows"){
+  @each(value, key in it.items, ~when: filter_item){
+    @render(value)
+  }
+}}
+
+  SeqItemAccess:
+    @section(~class: "flex flex-col gap-3"){@input(~type: "range", ~min: "0", ~max: get_max_index(), ~value: it.current_index, ~on_input: it.current_index := e.valueAsInt) @render(it.by_index[it.current_index]) @select(~class: "select", ~value: it.current_key, ~on_input: it.current_key := e.value){@each(value, key in it.by_key){
+  @option(~value: key){@(value.title)}
+}} @render(it.by_key[it.current_key])}
+
+  Pagination:
+    @section(~class: "flex flex-col gap-3"){
+      @div(~class: "join"){@button(~class: "btn join-item prev", ~on_click: prev, ~disabled: is_first_page()){‹ Prev} @button(~class: "btn join-item btn-disabled label"){@(page_label())} @button(~class: "btn join-item next", ~on_click: next, ~disabled: is_last_page()){Next ›}}
+      @ul(~class: "flex flex-col gap-1"){
+        @each(value, key in it.items, ~loop_with: paginate){
+          @li(~class: "flex gap-2 items-center"){@span(~class: "badge badge-neutral"){@(key)} @(value)}
+        }
+      }
+    }
+

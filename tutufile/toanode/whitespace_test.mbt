@@ -86,13 +86,17 @@ test "an empty element has no text node" {
 }
 
 ///|
-/// The printer path's own indentation, as content. This is what the direct path
-/// stops doing, stated as the thing it is: the same source, through the two
-/// paths, and only one of them adds characters nobody wrote.
-test "the printer path made its own formatting into text" {
+/// The printer path used to make its own indentation into content: the same
+/// source through the two paths, and one of them added characters nobody
+/// wrote. It now prints an all-inline body on one line, so both answer `"+"`.
+///
+/// Kept as an equality between the paths rather than deleted, because that is
+/// the property that was broken and the one worth watching: whichever path a
+/// consumer takes, the text it reads is the text the file holds.
+test "neither path makes its own formatting into text" {
   let src = card("  Card:\n    @button{+}")
   @debug.assert_eq(direct_view(src).map(texts), Some(["+"]))
-  @debug.assert_eq(printed_view(src).map(texts), Some(["\n  +\n"]))
+  @debug.assert_eq(printed_view(src).map(texts), Some(["+"]))
 }
 
 ///|

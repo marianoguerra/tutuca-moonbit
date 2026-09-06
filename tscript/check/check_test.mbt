@@ -42,7 +42,7 @@ fn schema() -> String {
     #|}
     #|handle Counter {
     #|  message { resetTo(Int), rename(String, Int) }
-    #|  intent { rowPicked(Int), save(String) }
+    #|  intent { row_picked(Int), save(String) }
     #|}
     #|import protocol "example/Bus@1" as Bus
     #|express Counter {
@@ -161,12 +161,12 @@ test "a handler for a message the schema does not declare" {
     "the schema declares no `receive` case `resetTP` — did you mean `resetTo`?",
   ])
   // The buckets are separate questions: an `intent` case is not a `receive`.
-  // `rowPicked` is one, and answering it as a message is answering a name
+  // `row_picked` is one, and answering it as a message is answering a name
   // nothing addresses.
-  assert_eq(messages_with_views("receive rowPicked(i) { .count = i }", []), [
-    "the schema declares no `receive` case `rowPicked`; add it to `variant receive` in the <script type=\"tutuca/spec\"> block",
+  assert_eq(messages_with_views("receive row_picked(i) { .count = i }", []), [
+    "the schema declares no `receive` case `row_picked`; add it to `variant receive` in the <script type=\"tutuca/spec\"> block",
   ])
-  assert_eq(codes("answer rowPicked(i) { .count = i }"), [])
+  assert_eq(codes("answer row_picked(i) { .count = i }"), [])
 }
 
 ///|
@@ -776,7 +776,7 @@ fn codes_with_views(
 test "reply answers whoever asked, in either bucket" {
   // An intent's raiser declared arms, so the walk names the answer and the one
   // argument is the value.
-  assert_eq(codes("answer rowPicked(k) { reply .count }"), [])
+  assert_eq(codes("answer row_picked(k) { reply .count }"), [])
   // A message's sender declared none, so the replier names it: the first
   // argument is a message name, and a value there is reported as one.
   assert_eq(codes("receive resetTo(n) { reply 'wasReset' .count }"), [])
@@ -794,7 +794,7 @@ test "reply answers whoever asked, in either bucket" {
 /// message down is a `reply` that says so — which the sender reads as an
 /// ordinary message, because that is what it is.
 test "fail ends the walk an intent is on, and a message is not on one" {
-  assert_eq(codes("answer rowPicked(k) { fail 'no' }"), [])
+  assert_eq(codes("answer row_picked(k) { fail 'no' }"), [])
   assert_eq(messages("receive click { fail 'no' }"), [
     "`fail` ends the walk an intent is on, and `receive click` is not on one — to turn a message down, answer the sender with a `reply` that says so",
   ])
@@ -808,7 +808,7 @@ test "fail ends the walk an intent is on, and a message is not on one" {
 /// which body it sat in, so a reader had to look up three lines to find out
 /// whether it was starting something or continuing it.
 test "forward hands on a walk, and a bare ask starts one" {
-  assert_eq(codes("answer rowPicked(k) { forward dyn }"), [])
+  assert_eq(codes("answer row_picked(k) { forward dyn }"), [])
   assert_eq(codes("receive resetTo(n) { ask }"), [])
   // The retired spelling in a `receive` body normalises to `ask`, so it is the
   // legal one and reports nothing.
@@ -818,8 +818,8 @@ test "forward hands on a walk, and a bare ask starts one" {
     "`forward` hands on the walk this body is answering, and `enrich row` is not on one — to turn a message into an intent, write a bare `ask`",
   ])
   // A bare `ask` needs a question already in hand, which only a `receive` has.
-  assert_eq(messages("answer rowPicked(k) { ask }"), [
-    "a bare `ask` asks the question this body was handed, and `answer rowPicked` was handed none — the walk here is already running, and `forward` hands it on",
+  assert_eq(messages("answer row_picked(k) { ask }"), [
+    "a bare `ask` asks the question this body was handed, and `answer row_picked` was handed none — the walk here is already running, and `forward` hands it on",
   ])
 }
 
@@ -830,9 +830,9 @@ test "reply and fail are not dynamic message names" {
   // `forward` name none — an answer is addressed by the walk and a `forward`
   // re-dispatches the name that arrived — so asking would report `reply 1` as
   // a dynamic message name.
-  assert_eq(codes("answer rowPicked(k) { reply 1 }"), [])
-  assert_eq(codes("answer rowPicked(k) { reply .count }"), [])
-  assert_eq(codes("answer rowPicked(k) { fail .name }"), [])
+  assert_eq(codes("answer row_picked(k) { reply 1 }"), [])
+  assert_eq(codes("answer row_picked(k) { reply .count }"), [])
+  assert_eq(codes("answer row_picked(k) { fail .name }"), [])
   // `ask .name` is not a dynamic message name: a name has to be a literal or a
   // protocol operation, so a first argument that is neither is amending the
   // question that arrived rather than naming a new one.
@@ -858,7 +858,7 @@ test "a view name the block neither answers nor forwards is a warning" {
 ///|
 test "NO_VIEW_HANDLER names both fixes, and is not fatal" {
   let inputs : Map[String, Array[@tutuca.Ty?]] = Map([])
-  inputs["saveDraft"] = [None]
+  inputs["save_draft"] = [None]
   let found = @check.check(
     @tscript.parse_script("receive resetTo(n) { .count = n }"),
     def_of(schema()),
@@ -868,7 +868,7 @@ test "NO_VIEW_HANDLER names both fixes, and is not fatal" {
   assert_eq(found[0].severity, SWarning)
   assert_eq(
     found[0].message,
-    "the view sends `saveDraft`, and this block neither answers it nor forwards it — write `receive saveDraft(…) { forward }` to dispatch it as an intent, or `receive saveDraft(…) { … }` to answer it here",
+    "the view sends `save_draft`, and this block neither answers it nor forwards it — write `receive save_draft(…) { forward }` to dispatch it as an intent, or `receive save_draft(…) { … }` to answer it here",
   )
 }
 
@@ -882,7 +882,7 @@ test "a mutator spelling is reported, and names the property action" {
     ["NO_VIEW_HANDLER"],
   )
   assert_eq(
-    codes_with_views("receive resetTo(n) { .count = n }", ["toggleOk"]),
+    codes_with_views("receive resetTo(n) { .count = n }", ["toggle_ok"]),
     ["NO_VIEW_HANDLER"],
   )
   // `At` is part of the generated name, not of the verb.
@@ -1033,19 +1033,19 @@ test "a rule declared in both blocks is reported rather than silently resolved" 
 /// of the promise is this: an answer arm for a name only ever notified is an
 /// arm that can never fire, and a promise nothing enforces is a comment.
 test "an answer arm for a notified name never fires, and is reported" {
-  assert_eq(codes("receive x { notify 'rowPicked' .count }"), [])
+  assert_eq(codes("receive x { notify 'row_picked' .count }"), [])
   assert_eq(
     codes(
-      "receive x { notify 'rowPicked' }\nreceive rowPickedOk(v) { .count = 1 }",
+      "receive x { notify 'row_picked' }\nreceive row_picked_ok(v) { .count = 1 }",
     ),
     ["ANSWERS_A_NOTIFY"],
   )
   assert_eq(
     messages(
-      "receive x { notify 'rowPicked' }\nreceive rowPickedFailed(v) { .count = 1 }",
+      "receive x { notify 'row_picked' }\nreceive row_picked_failed(v) { .count = 1 }",
     ),
     [
-      "`receive rowPickedFailed` answers a question, and `notify 'rowPicked'` asks none — a notification has no answer channel, so this arm never fires. Write `ask 'rowPicked'` if an answer was meant",
+      "`receive row_picked_failed` answers a question, and `notify 'row_picked'` asks none — a notification has no answer channel, so this arm never fires. Write `ask 'row_picked'` if an answer was meant",
     ],
   )
   // A name that is BOTH asked and notified has an answer channel: one call
@@ -1053,7 +1053,7 @@ test "an answer arm for a notified name never fires, and is reported" {
   // not wrong.
   assert_eq(
     codes(
-      "receive x { notify 'rowPicked' }\nreceive y { ask 'rowPicked' }\nreceive rowPickedOk(v) { .count = 1 }",
+      "receive x { notify 'row_picked' }\nreceive y { ask 'row_picked' }\nreceive row_picked_ok(v) { .count = 1 }",
     ),
     [],
   )

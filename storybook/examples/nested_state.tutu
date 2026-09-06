@@ -1,0 +1,30 @@
+spec:
+  NestedState:
+    field title :: String
+    field labels :: List.of(Label)
+    field priority :: Priority
+    field due :: Due
+    field note :: maybe(String)
+    field size :: Tuple.of(Int, Int)
+
+    /// The card's heading. `priority` and `due` need no clause — their
+    /// closed sets are already the TYPE, which is where a closed set belongs
+    /// when a type can hold it.
+    where it.title non_empty
+
+  enum Due:
+    Unscheduled
+    OnDay(Int)
+
+  struct Label(text :: String, done :: Bool)
+
+  enum Priority:
+    Low
+    High
+
+view:
+  NestedState:
+    @div(~class: "card bg-base-200 p-4"){@h3(~class: "card-title"){@(it.title)}@ul(~class: "menu"){@each(value, key in it.labels){
+  @li{@button(~class: "btn btn-xs", ~on_click: toggle_label(key)){@span{@(value.text)}}}
+}} @button(~class: "btn btn-sm btn-primary", ~on_click: bump_priority){@" bump priority "}}
+

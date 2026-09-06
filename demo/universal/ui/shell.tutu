@@ -1,0 +1,267 @@
+spec:
+  /// One row of the palette.
+  PickerRow:
+    field component :: String
+    field module :: String
+
+    /// The preset this row offers, or "" for the component's own row.
+    field preset :: String
+    field summary :: String
+
+    /// Why it ranked here. A list nobody can account for is one people stop
+    /// trusting, so the reasons are on the row rather than in a log.
+    field why :: String
+
+    /// Where the keyboard is. Held PER ROW rather than as one index on the
+    /// picker, so moving the cursor touches two rows instead of redrawing the
+    /// list — and redrawing it would replace the `<input>` being typed in.
+    field selected :: Bool
+
+    message set_selected(Bool)
+
+    express intent component_picked(String, String, String)
+
+  /// The list a `+` opens: search as you type, over everything registered.
+  ///
+  /// It knows nothing about the catalog. It reports what was typed and gets
+  /// rows back, which is what lets the same list rank the kit's own components
+  /// and a card compiled ten seconds ago without knowing there is a difference.
+  ComponentPicker:
+    field query :: String
+    field hits :: List.of(Instance.of(PickerRow))
+    field cursor :: Int
+    field open :: Bool
+    field empty_message :: String
+
+    message set_cursor(Int)
+
+    message dismissed
+
+    message set_hits(List.of(Any), String)
+
+    message opened
+
+    message closed
+
+    express intent query_changed(String)
+
+    express intent component_picked(String, String, String)
+
+    express intent picker_closed
+
+  /// One card in the library, offered rather than loaded.
+  CardRow:
+    field name :: String
+    field path :: String
+    field loaded :: Bool
+    field chosen :: Bool
+
+    /// What went wrong compiling it, where it went wrong.
+    field error :: String
+
+    message set_loaded(Bool)
+
+    message set_error(String)
+
+    express intent load_one(String)
+
+    express intent toggle_chosen(String, Bool)
+
+  /// Something the page has to say. Diagnostics, refusals, and the notices the
+  /// renderer raises when a component has no view for a role it was asked for.
+  Note:
+    field text :: String
+    field tone :: String
+
+  /// The page.
+  Shell:
+    /// The arrangement. ONE component, and it starts as an empty hole — the
+    /// component tree IS the layout, so there is no document beside it that
+    /// could disagree with it.
+    field canvas :: Instance
+
+    /// The list a `+` opens. Always present and usually closed: a picker built
+    /// when it is needed cannot animate in, and one field holding a closed
+    /// component costs nothing.
+    field picker :: Instance.of(ComponentPicker)
+
+    /// The view role every component is drawn under, or "" for normal.
+    ///
+    /// A FIELD and not a literal, because `@push-view` takes a text expression
+    /// with no literal fallback — and because the whole point is that it is
+    /// toggled. "" is not a view name, so it falls through to `main`.
+    field edit_view :: String
+    field library :: List.of(Instance.of(CardRow))
+
+    /// The paste-and-compile box.
+    field source :: String
+    field notes :: List.of(Instance.of(Note))
+
+    /// The one-slot pump to the shell outside. `pending` is a verb and
+    /// `argument` is its one argument; the encoder and the decoder are written
+    /// in one file so they cannot disagree.
+    field pending :: String
+    field argument :: String
+    field status :: String
+
+    message open_picker
+
+    message picker_hits(List.of(Any), String)
+
+    message place_built(Any, Bool, Bool)
+
+    message add_note(String, String)
+
+    message set_library(List.of(Any))
+
+    message set_status(String)
+
+    message pumped
+
+logic:
+  PickerRow:
+    compute label: if (it.preset == "") | it.component | it.preset
+
+    receive set_selected(on):
+      it.selected := on
+
+    /// The row raises and the shell answers. It carries all three names because
+    /// the shell would otherwise have to find the row again to learn them, and a
+    /// row that has scrolled is a row it would find by index.
+    receive pick:
+      ask(component_picked, it.module, it.component, it.preset)
+
+  ComponentPicker:
+    /// Typing writes through and asks at once.
+    receive typed(text):
+      it.query := text
+      ask(query_changed, text)
+
+    receive set_hits(rows, message):
+      it.hits := rows
+      it.cursor := 0
+      it.empty_message := message
+
+    receive set_cursor(at):
+      it.cursor := at
+
+    receive opened:
+      it.open := true
+      it.query := ""
+      it.cursor := 0
+
+    /// Shut, having picked something. The cell that asked is still waiting.
+    receive closed:
+      it.open := false
+
+    /// Shut, having picked NOTHING - Escape, or a click on the backdrop.
+    ///
+    /// One receive for both cost exactly the bug you would expect: a pick closed
+    /// the picker, closing it forgot the cell, and by the time the built
+    /// component came back there was nowhere to put it.
+    receive dismissed:
+      it.open := false
+      ask(picker_closed)
+
+  CardRow:
+    receive set_loaded(on):
+      it.loaded := on
+
+    receive set_error(e):
+      it.error := e
+
+    receive load:
+      ask(load_one, it.path)
+
+    receive choose(on):
+      ask(toggle_chosen, it.path, on)
+
+  Shell:
+    compute editing: !((it.edit_view == ""))
+
+    compute edit_label: if editing | "done" | "edit"
+
+    receive add_note(text, tone):
+      it.notes.push(Note(text: text, tone: tone))
+
+    receive set_status(s):
+      it.status := s
+
+    receive clear_notes:
+      it.notes.clear()
+
+    receive type_source(s):
+      it.source := s
+
+    /// The pump is drained by the page outside, which then sends this back.
+    receive pumped:
+      it.pending := ""
+      it.argument := ""
+
+    receive toggle_edit:
+      if editing
+      | it.edit_view := ""
+      | it.edit_view := "tutuca.dev/universal/Editable@1::editor"
+
+    receive compile_source:
+      it.pending := "compile"
+      it.argument := it.source
+
+    receive load_all:
+      it.pending := "loadAll"
+      it.argument := ""
+
+    receive load_chosen:
+      it.pending := "loadChosen"
+      it.argument := ""
+
+    receive save:
+      it.pending := "save"
+      it.argument := ""
+
+    receive restore:
+      it.pending := "restore"
+      it.argument := ""
+
+    receive clear_canvas:
+      it.pending := "clear"
+      it.argument := ""
+
+view:
+  PickerRow:
+    @div(~class: if it.selected | "picker-row row-selected flex flex-col gap-0.5 px-2 py-1 rounded cursor-pointer bg-base-300" | "picker-row flex flex-col gap-0.5 px-2 py-1 rounded cursor-pointer hover:bg-base-200", ~on_click: pick){@span(~class: "flex items-baseline gap-2"){@span(~class: "row-name font-medium"){@(label())} @span(~class: "row-module text-xs opacity-50"){@(it.module)}} @span(~class: "row-summary text-xs opacity-70"){@(it.summary)} @span(~class: "row-why text-xs opacity-40"){@(it.why)}}
+
+  ComponentPicker:
+    @show(it.open){
+      @div(~class: "picker-backdrop fixed inset-0 z-50 flex items-start justify-center bg-black/20 pt-24", ~on_click: dismissed){
+        @div(~class: "picker w-[32rem] max-w-[90vw] rounded-lg border border-base-300 bg-base-100 shadow-xl flex flex-col gap-2 p-3"){@input(~class: "picker-query input input-bordered w-full", ~autofocus: true, ~placeholder: "what goes here?", ~value: it.query, ~on_input: typed(e.value), ~on_keydown: navigate(e.key)) @div(~class: "picker-hits flex flex-col gap-0.5 max-h-80 overflow-y-auto"){@each(value, key in it.hits){
+  @render(value)
+}} @show(it.hits.is_empty()){
+  @p(~class: "picker-empty text-sm opacity-60 px-2"){@(it.empty_message)}
+}}
+      }
+    }
+
+  CardRow:
+    @li(~class: "card-row flex items-center gap-2 text-sm"){@input(~type: "checkbox", ~class: "row-chosen checkbox checkbox-xs", ~checked: it.chosen, ~on_input: choose(e.value)) @span(~class: "row-name grow"){@(it.name)} @show(it.loaded){
+  @span(~class: "row-loaded badge badge-xs badge-success"){loaded}
+} @hide(it.error.is_empty()){
+  @span(~class: "row-error text-xs text-error"){@(it.error)}
+} @hide(it.loaded){
+  @button(~class: "row-load btn btn-xs", ~on_click: load){load}
+}}
+
+  Note:
+    @li(~class: if it.tone | "note text-xs px-2 py-1 rounded bg-error/10" | "note text-xs px-2 py-1 rounded bg-base-200"){@(it.text)}
+
+  Shell:
+    @div(~class: "universal flex flex-col gap-3 p-4 min-h-screen"){@header(~class: "flex items-center gap-2 flex-wrap"){@h1(~class: "text-lg font-semibold grow"){universal} @span(~class: "shell-status text-xs opacity-60"){@(it.status)} @button(~class: "act-edit btn btn-sm", ~on_click: toggle_edit){@(edit_label())} @button(~class: "act-save btn btn-sm btn-ghost", ~on_click: save){save} @button(~class: "act-restore btn btn-sm btn-ghost", ~on_click: restore){restore} @button(~class: "act-clear btn btn-sm btn-ghost", ~on_click: clear_canvas){clear}} @main(~push_view: it.edit_view, ~class: "canvas grow rounded border border-base-300 p-2"){@render(it.canvas)} @section(~class: "library flex flex-col gap-1"){@div(~class: "flex items-center gap-2"){@h2(~class: "text-sm font-medium grow"){library} @button(~class: "act-load-chosen btn btn-xs", ~on_click: load_chosen){load selected} @button(~class: "act-load-all btn btn-xs btn-ghost", ~on_click: load_all){load all}}@ul(~class: "flex flex-col gap-1"){@each(value, key in it.library){
+  @render(value)
+}}}@section(~class: "paste flex flex-col gap-1"){@h2(~class: "text-sm font-medium"){write a card} @textarea(~class: "src textarea textarea-bordered w-full font-mono text-xs", ~rows: "6", ~placeholder: "paste a card here", ~value: it.source, ~on_input: type_source(e.value)) @div{@button(~class: "act-compile btn btn-sm", ~on_click: compile_source){compile and add}}} @hide(it.notes.is_empty()){
+  @ul(~class: "notes flex flex-col gap-1"){
+    @each(value, key in it.notes){
+      @render(value)
+    }
+  }
+} @render(it.picker)}
+

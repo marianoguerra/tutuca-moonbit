@@ -35,14 +35,14 @@ test "the three outcome names are carried separately, not as one pair" {
   // result-or-error arm for a handler to read the wrong half of.
   let opts = @core.IntentOpts::new(
     route=[Dyn],
-    on_ok_name="saveDraftOk",
-    on_failed_name="saveDraftFailed",
-    on_unhandled_name="saveDraftUnhandled",
+    on_ok_name="save_draft_ok",
+    on_failed_name="save_draft_failed",
+    on_unhandled_name="save_draft_unhandled",
     live_path=true,
   )
-  assert_eq(opts.on_ok_name, Some("saveDraftOk"))
-  assert_eq(opts.on_failed_name, Some("saveDraftFailed"))
-  assert_eq(opts.on_unhandled_name, Some("saveDraftUnhandled"))
+  assert_eq(opts.on_ok_name, Some("save_draft_ok"))
+  assert_eq(opts.on_failed_name, Some("save_draft_failed"))
+  assert_eq(opts.on_unhandled_name, Some("save_draft_unhandled"))
   assert_true(opts.live_path)
 }
 
@@ -51,10 +51,10 @@ test "a handler with no dispatcher can reply, and nothing happens" {
   let ctx : &@core.Ctx = @core.NullCtx::{ }
   // None of these has a transactor under it. Each is a no-op, and the test is
   // that the call returns at all.
-  ctx.intent("saveDraft", [Str("x")], @core.IntentOpts::new())
+  ctx.intent("save_draft", [Str("x")], @core.IntentOpts::new())
   ctx.intent_at_path(
     @core.DispatchPath::new(),
-    "saveDraft",
+    "save_draft",
     [],
     @core.IntentOpts::new(),
   )

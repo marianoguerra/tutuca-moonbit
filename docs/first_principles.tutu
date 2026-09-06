@@ -1,0 +1,22 @@
+spec:
+  FpGreeting:
+    field name :: String
+
+  Note:
+    field text :: String
+
+    message write(String)
+
+  Mailbox:
+    field note :: Instance.of(Note)
+
+view:
+  FpGreeting:
+    @p{@(it.name)}
+
+  Note:
+    @p(~class: "note"){@(it.text)}
+
+  Mailbox:
+    @section{@render(it.note)}
+

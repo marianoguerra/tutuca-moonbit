@@ -19,16 +19,35 @@ fn print_node(
   events : Array[@anode.NodeEvents],
   indent : String,
   out : StringBuilder,
+  inline? : Bool = false,
 ) -> Unit raise NoSpelling {
   match node {
     // Whitespace the HTML tokenizer made out of the file's LAYOUT is not
     // content and is not printed: the new notation writes the whitespace it
     // means, so carrying the old file's indentation across would be carrying a
     // tokenizer artifact into a file that has no tokenizer.
-    Text(d) =>
-      if d.val.trim(chars=" \n\t\r") != "" {
-        out.write_string("\{indent}\{escape_text(collapse(d.val))}\n")
+    // A text node that survived the parser's condensing pass is CONTENT, even
+    // when it holds nothing but a space: the space between `<span>` and
+    // `<small>` is what separates two words on the page. The pass has already
+    // taken out the ones that were the old file's layout, so anything left is
+    // the author's.
+    Text(d) => {
+      // `collapse` answers "" for a run that is all whitespace, because it
+      // writes a space only before a character it kept. A node that IS the
+      // separator has one character, and it is that space.
+      let collapsed = collapse(d.val)
+      let text = if collapsed == "" { " " } else { collapsed }
+      // A space at either END of a text node is content — it is what
+      // separates `You must` from the `<span>STOP</span>` beside it — and a
+      // text run written across lines cannot hold one: the newline and the
+      // indentation around it are layout, and the reader cuts them. The
+      // quoted form says the characters outright, so nothing trims them.
+      if text.has_prefix(" ") || text.has_suffix(" ") {
+        out.write_string("\{indent}@\{quote(text)}\n")
+      } else {
+        out.write_string("\{indent}\{escape_text(text)}\n")
       }
+    }
     // A comment is a NODE — it reaches the DOM — and at-notation has no
     // spelling for one: `//` in shrubbery is a comment in the FILE, which is
     // not the same thing and would silently drop it.
@@ -45,7 +64,7 @@ fn print_node(
         out.write_string("\{indent}@comment{\{escape_text(collapse(d.val))}}\n")
       }
     RenderText(d) => out.write_string("\{indent}@(\{print_expr(d.val)})\n")
-    Dom(d) => print_element(d, events, indent, out)
+    Dom(d) => print_element(d, events, indent, out, inline~)
     Fragment(d) =>
       for c in d.childs {
         print_node(c, events, indent, out)

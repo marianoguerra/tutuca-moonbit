@@ -2,7 +2,7 @@
 //
 // MoonBit's Value has no component-reference variant, so the handler
 // CAPTURES the `Item` component in its closure and the view just calls
-// `@on.click="onAddItem"`. Same result, one less thing in the value language.
+// `@on.click="on_add_item"`. Same result, one less thing in the value language.
 
 ///|
 fn todo_item_comp() -> @component.Component {

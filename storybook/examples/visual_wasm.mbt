@@ -116,7 +116,7 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
       ),
     },
     name~,
-    initial=VwImmState::{ value: 0, rawValue: "0", },
+    initial=VwImmState::{ value: 0, raw_value: "0", },
     // Runtime views throughout this file (the tree is assembled in MoonBit),
     // so there is no generated Msg and every arm names the dispatch directly.
     update=(s : VwImmState, msg, _ctx) => {
@@ -129,8 +129,8 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
           let parsed : Int? = Some(@string.parse_int(raw)) catch { _ => None }
           Next(
             match parsed {
-              Some(v) => { value: v, rawValue: raw, }
-              None => { ..s, rawValue: raw, }
+              Some(v) => { value: v, raw_value: raw, }
+              None => { ..s, raw_value: raw, }
             },
           )
         }
@@ -139,7 +139,7 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
     },
     compute={
       "getInputWidth": (s : VwImmState, _args, _stack) => {
-        Str("\{s.rawValue.length() + 2}em")
+        Str("\{s.raw_value.length() + 2}em")
       },
     },
   )
@@ -545,23 +545,23 @@ fn vw_if_comp(reg : VwReg) -> @component.Component {
           #|  <div class="flex gap-3 items-center group header">
           #|    <x:btn-toggle-expand></x:btn-toggle-expand>
           #|    <span class="text-sm text-gray-400 kw">if</span>
-          #|    <div @hide=".editingIf"><x render=".blockType"></x></div>
-          #|    <x:btn-toggle-edit :value=".editingIf" :handler="$toggleEditingIf"></x:btn-toggle-edit>
+          #|    <div @hide=".editing_if"><x render=".blockType"></x></div>
+          #|    <x:btn-toggle-edit :value=".editing_if" :handler="$toggleEditingIf"></x:btn-toggle-edit>
           #|  </div>
-          #|  <div @show=".editingIf"><x render=".blockType" as="editor"></x></div>
+          #|  <div @show=".editing_if"><x render=".blockType" as="editor"></x></div>
           #|  <div class="border-l border-l-gray-400 pl-3 ml-3" @show=".expanded">
           #|    <div class="flex gap-3 items-center group header">
           #|      <span class="text-sm text-slate-400 kw">then</span>
-          #|      <x:btn-toggle-edit :value=".editingThn" :handler="$toggleEditingThn"></x:btn-toggle-edit>
+          #|      <x:btn-toggle-edit :value=".editing_thn" :handler="$toggleEditingThn"></x:btn-toggle-edit>
           #|    </div>
-          #|    <div class="my-3 pl-3 flex flex-col gap-3 ro-thn" @hide=".editingThn"><x render-each=".thn"></x></div>
-          #|    <x:items-editing :showval=".editingThn" :items=".thn" :onadd="$addThnAt" :onremove="$removeInThnAt" :onappend="$appendInThn"></x:items-editing>
+          #|    <div class="my-3 pl-3 flex flex-col gap-3 ro-thn" @hide=".editing_thn"><x render-each=".thn"></x></div>
+          #|    <x:items-editing :showval=".editing_thn" :items=".thn" :onadd="$addThnAt" :onremove="$removeInThnAt" :onappend="$appendInThn"></x:items-editing>
           #|    <div class="flex gap-3 items-center group header">
           #|      <span class="text-sm text-slate-400 kw">else</span>
-          #|      <x:btn-toggle-edit :value=".editingElse" :handler="$toggleEditingElse"></x:btn-toggle-edit>
+          #|      <x:btn-toggle-edit :value=".editing_else" :handler="$toggleEditingElse"></x:btn-toggle-edit>
           #|    </div>
-          #|    <div class="my-3 pl-3 flex flex-col gap-3 ro-else" @hide=".editingElse"><x render-each=".else"></x></div>
-          #|    <x:items-editing :showval=".editingElse" :items=".else" :onadd="$addElseAt" :onremove="$removeInElseAt" :onappend="$appendInElse"></x:items-editing>
+          #|    <div class="my-3 pl-3 flex flex-col gap-3 ro-else" @hide=".editing_else"><x render-each=".else"></x></div>
+          #|    <x:items-editing :showval=".editing_else" :items=".else" :onadd="$addElseAt" :onremove="$removeInElseAt" :onappend="$appendInElse"></x:items-editing>
           #|    <span class="text-sm text-slate-400 kw">end</span>
           #|  </div>
           #|</section>
@@ -577,9 +577,9 @@ fn vw_if_comp(reg : VwReg) -> @component.Component {
       thn: [],
       else_: [],
       expanded: true,
-      editingIf: false,
-      editingThn: false,
-      editingElse: false,
+      editing_if: false,
+      editing_thn: false,
+      editing_else: false,
     },
     slots={ "blockType": "BlockType" },
     update=(s : VwIfState, msg, _ctx) => {
@@ -625,12 +625,12 @@ fn vw_section_comp() -> @component.Component {
       name: "Section",
       items: [],
       expanded: true,
-      defaultItem: Null,
+      default_item: Null,
     },
     update=(s : VwSectionState, msg, _ctx) => {
       match msg {
         Receive("addDefaultItem", _) =>
-          Next({ ..s, items: s.items + [vw_with_editing(s.defaultItem)], })
+          Next({ ..s, items: s.items + [vw_with_editing(s.default_item)], })
         _ => Unhandled
       }
     },
@@ -746,10 +746,10 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
       } else {
         cats.get(section).unwrap_or([])
       }
-      { ..s, currentSection: section, instructions: list, }
+      { ..s, current_section: section, instructions: list, }
     }
     compute["currentIs" + cap(section)] = (s, _args, _stack) => {
-      Bool(s.currentSection == section)
+      Bool(s.current_section == section)
     }
   }
   @component.component(
@@ -768,7 +768,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
     },
     name="InstructionPicker",
     initial=VwPickerState::{
-      currentSection: "all",
+      current_section: "all",
       instructions: vw_all_ids(),
       filter: "",
     },

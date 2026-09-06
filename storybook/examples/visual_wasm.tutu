@@ -1,0 +1,60 @@
+spec:
+  VwEmpty
+
+  VwImm:
+    field value :: Int
+    field raw_value :: String
+
+  VwTypes:
+    field items :: List.of(Instance)
+
+  VwContainer:
+    field items :: List.of(Instance)
+    field expanded :: Bool
+    field editing :: Bool
+
+  VwIf:
+    field thn :: List.of(Instance)
+    field else :: List.of(Instance)
+    field expanded :: Bool
+    field editing_if :: Bool
+    field editing_thn :: Bool
+    field editing_else :: Bool
+
+  VwSection:
+    field id :: Int
+    field name :: String
+    field items :: List.of(Instance)
+    field expanded :: Bool
+    field default_item :: Instance
+
+    /// A wasm section id is a byte the binary format assigns, 0 (custom)
+    /// through 12 (data count). Nothing outside that range names a section.
+    where it.id in_range(0, 12)
+
+    where it.name non_empty
+
+  VwMemory:
+    field n :: Int
+    field m :: Int
+
+    /// A wasm memory type is a page range. The unit is a 64 KiB page and the
+    /// 32-bit address space holds 65536 of them, so both ends are facts about
+    /// wasm rather than a taste in limits — and `m >= .n` is the relation
+    /// between two fields that makes the pair a TYPE instead of two numbers.
+    where it.n in_range(0, 65536)
+
+    where it.m in_range(0, 65536)
+
+    where it.m >= it.n
+
+  VwPicker:
+    field current_section :: String
+    field instructions :: List.of(String)
+    field filter :: String
+
+    /// The radio row, as a closed set. Every name here answers a
+    /// `$setCurrent…` and fills `instructions` from its category; a name
+    /// outside it leaves the list showing whatever was there before.
+    where it.current_section is_one_of ["all", "i32", "i64", "f32", "f64", "control", "vars"]
+

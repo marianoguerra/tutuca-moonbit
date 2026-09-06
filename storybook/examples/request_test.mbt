@@ -31,7 +31,7 @@ test "request-example: the SAME component with a failing handler takes the error
   )
   h.send_at_root("init")
   inspect(h.find_all(".card-title").length(), content="0")
-  // The answer arrives as `loadDataFailed`, which is its OWN name and its own
+  // The answer arrives as `load_data_failed`, which is its OWN name and its own
   // shape. A combined `[res, err]` payload on a default arm would mean a
   // split arm that matched it read the wrong slot.
   inspect(h.find_all(".loading").length(), content="0")
@@ -43,7 +43,7 @@ test "request-example: a scope that DECLINES is not a scope that failed" {
   // with nothing to contribute could only invent an error; an `IntentFn`
   // answers `Pass`, the walk goes on, and the route runs out.
   //
-  // The sender hears `loadDataUnhandled` — "nothing claimed it" — which is a
+  // The sender hears `load_data_unhandled` — "nothing claimed it" — which is a
   // different sentence from "a handler refused it", and the distinction is the
   // one the refusal taxonomy already draws everywhere else.
   let h = @harness.mount(
@@ -51,7 +51,7 @@ test "request-example: a scope that DECLINES is not a scope that failed" {
     "RequestExample",
   )
   h.send_at_root("init")
-  inspect(h.text(".error"), content="nothing in the scope answers `loadData`")
+  inspect(h.text(".error"), content="nothing in the scope answers `load_data`")
   inspect(h.find_all(".loading").length(), content="0")
 }
 
@@ -62,7 +62,7 @@ test "request-example: onOkName / onFailedName route to different handlers" {
     "RequestExample",
   )
   // "Load Another Way" names its own three outcomes in `IntentOpts`, where
-  // the block's `intent lex 'loadData'` had them filled in from the schema.
+  // the block's `intent lex 'load_data'` had them filled in from the schema.
   h.click(".another")
   inspect(h.text(".error"), content="network is down")
   inspect(h.find_all(".loading").length(), content="0")

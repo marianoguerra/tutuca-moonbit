@@ -153,7 +153,12 @@ fn arg_kind_word(t : ArgType) -> String {
 /// payload: `activate @key` and `activate @key e.isCtrl` are two call sites of
 /// one name, and a case that took nothing would decode both to `Unknown`.
 fn msg_of_sig(sig : InputSig) -> @statedef.MsgDef {
-  let capped = sig.name[0:1].to_owned().to_upper() + sig.name[1:].to_owned()
+  // `upper_name`, the same function the declared cases go through and the same
+  // one `variants_for` checks for collisions with. Uppercasing the first
+  // character alone agreed with it for as long as every view name was
+  // lowerCamel; a `snake_case` one turns into `Remove_song`, which is not the
+  // variant anything else in the module spells.
+  let capped = @statedef.upper_name(sig.name)
   {
     // As the view wrote it, which is what `source_name` means everywhere else
     // — a schema declares a case in the spelling its call sites use, and a

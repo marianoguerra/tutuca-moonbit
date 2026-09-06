@@ -38,7 +38,7 @@ test "the lex chain declines its way to an answer" {
   for n in [0, 4, 48] {
     let h = @benchmarks.mount_lex_chain(n)
     let _ = @benchmarks.intent_lex(h)
-    // The fixture answers one row, and `loadDataOk` turns it into one Entry.
+    // The fixture answers one row, and `load_data_ok` turns it into one Entry.
     inspect(h.find_all(".card-title").length(), content="1")
     // …and the loading flag is back off, so the round trip completed.
     inspect(h.find_all(".loading").length(), content="0")
@@ -49,14 +49,14 @@ test "the lex chain declines its way to an answer" {
 ///|
 test "a scope that declines all the way answers Unhandled" {
   // The other end of the same chain, and the one v1 could not reach: every
-  // handler passes, the route runs out, and the sender hears `loadDataUnhandled`
+  // handler passes, the route runs out, and the sender hears `load_data_unhandled`
   // rather than an error somebody invented.
   let h = @harness.mount(
     @examples.request_module(intents=@benchmarks.declining_scope(8)),
     "RequestExample",
   )
   h.send_at_root("init")
-  inspect(h.text(".error"), content="nothing in the scope answers `loadData`")
+  inspect(h.text(".error"), content="nothing in the scope answers `load_data`")
   inspect(h.find_all(".card-title").length(), content="0")
   h.destroy()
 }
@@ -96,12 +96,12 @@ test "INTENT_DEPTH bounds the whole route, and it counts hops" {
   let h = @benchmarks.mount_lex_chain(64)
   let _ = @benchmarks.intent_lex(h)
   inspect(h.find_all(".card-title").length(), content="0")
-  // What the sender hears is `loadDataUnhandled` — the same message an honest
+  // What the sender hears is `load_data_unhandled` — the same message an honest
   // exhaustion sends. Deliberate (`transactor/walk.mbt`: a sender that asked
   // for an answer learns something rather than waiting forever), and the
   // refusal channel is where the two are told apart: this one also raises
   // `RefusalCode::IntentDepth`, and a plain exhaustion does not.
-  inspect(h.text(".error"), content="nothing in the scope answers `loadData`")
+  inspect(h.text(".error"), content="nothing in the scope answers `load_data`")
   h.destroy()
 }
 

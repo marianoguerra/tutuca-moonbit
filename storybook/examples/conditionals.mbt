@@ -8,7 +8,7 @@ let traffic_lights : Array[String] = ["red", "orange", "green"]
 
 ///|
 /// The React traffic-light exercise. The colour is DERIVED from a single
-/// `lightIndex` field by the `light` method; per-colour visibility uses the
+/// `light_index` field by the `light` method; per-colour visibility uses the
 /// built-in binary predicate `equals?` (written predicate-first) in place of
 /// React's inline `&&`.
 ///
@@ -17,11 +17,11 @@ let traffic_lights : Array[String] = ["red", "orange", "green"]
 /// follow it: naming the colours means indexing `traffic_lights`, and the
 /// block has no way to name a MoonBit value.
 fn traffic_light_comp() -> @component.Component {
-  traffic_light_component(initial={ lightIndex: 0, }, compute=m => {
+  traffic_light_component(initial={ light_index: 0, }, compute=m => {
     match m {
       Light =>
         Some((s, _args, _stack) => {
-          Str(traffic_lights[s.lightIndex % traffic_lights.length()])
+          Str(traffic_lights[s.light_index % traffic_lights.length()])
         })
     }
   })
@@ -37,13 +37,13 @@ pub fn traffic_light_module() -> @component.ModuleDef {
       {
         component: "TrafficLight",
         title: "Orange",
-        args: { "lightIndex": Num(1) },
+        args: { "light_index": Num(1) },
         view: None,
       },
       {
         component: "TrafficLight",
         title: "Green",
-        args: { "lightIndex": Num(2) },
+        args: { "light_index": Num(2) },
         view: None,
       },
     ],
@@ -72,7 +72,7 @@ pub fn tabbed_ui_module() -> @component.ModuleDef {
 }
 
 ///|
-/// `@when="filterItem"` calls the `when.filterItem` predicate per entry;
+/// `@when="filter_item"` calls the `when.filterItem` predicate per entry;
 /// returning false skips the item. `when` handlers receive the typed state,
 /// so the predicate reads `s.query` to filter against the live search string.
 ///

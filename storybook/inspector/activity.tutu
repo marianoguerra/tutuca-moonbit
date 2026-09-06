@@ -1,0 +1,72 @@
+spec:
+  ActivityEntry:
+    field kind :: String
+    field origin :: String
+    field name :: String
+    field handler_name :: String
+    field matched :: String
+    field path_label :: String
+    field time :: String
+    field before :: maybe(Instance)
+    field after :: maybe(Instance)
+    field has_after :: Bool
+
+    /// `after` is absent — not null — when the handler made no change, and
+    /// that distinction is what the whole no-op path turns on. The flag has
+    /// to mean it.
+    invariant has_after_tracks_after:
+      ~format: "hasAfter is set and there is no successor state on the row"
+      (it.has_after implies !((it.after == none)))
+
+    /// `ObserveMatch::label` produces these two and nothing else.
+    where it.matched is_one_of ["exact", "none"]
+
+    /// `ObserveRecord::kind_label` produces these three and nothing else: the
+    /// bucket's own word, or `answer` for a message the runtime wrote.
+    where it.kind is_one_of ["receive", "intent", "answer"]
+
+    /// `Origin::label` produces these three. It says WHO raised the dispatch,
+    /// which is a different question from which bucket it went through — a
+    /// `receive` from a view and a `receive` from a handler are one row kind
+    /// and two very different things to be reading in a log.
+    where it.origin is_one_of ["host", "view", "handler"]
+
+    /// A dispatch is addressed to a name; a record without one is a row with
+    /// nothing to say what happened.
+    where it.name non_empty
+
+  ActivityLog:
+    field events :: List.of(Instance.of(ActivityEntry))
+    field has_events :: Bool
+
+    /// The flag the empty hint hangs off.
+    invariant has_events_tracks_events:
+      ~format: @str{hasEvents says @(it.has_events) for @(it.events.length()) events}
+      (it.has_events == (it.events.length() > 0))
+
+    message append_entry(Any)
+
+    /// Newest-first and CAPPED — `appendEntry` drops the tail, and the cap
+    /// is a property of the log rather than of the handler that keeps it.
+    where it.events len <= 50
+
+view:
+  ActivityEntry:
+    @div(~class: "rounded border border-base-content/15 p-2 text-sm flex flex-col gap-1 activity-entry"){
+      @div(~class: "flex items-center gap-2 flex-wrap"){@span(~title: "Which bucket it went through: receive, intent — or answer, for a message the runtime wrote", ~class: "badge badge-sm badge-neutral entry-kind"){@(it.kind)} @span(~title: "Who raised it: host (something outside the tree), view (a component's own @on), or handler (a dispatch another handler pushed)", ~class: "badge badge-sm badge-ghost entry-origin"){@(it.origin)} @span(~title: "Message name dispatched — for a DOM input, the event type (click, input, change, keydown, …)", ~class: "font-mono font-semibold entry-name"){@(it.name)} @show(it.handler_name.is_truthy()){
+  @span(~title: "Actual handler that ran — shown only when it differs from the name", ~class: "text-xs opacity-60 font-mono"){@(it.handler_name)}
+} @span(~title: "Path to the target component", ~class: "text-xs opacity-40 font-mono entry-path"){@(it.path_label)} @show(it.matched.is_truthy()){
+  @span(~title: "Handler resolution — exact: matched by name · none: no handler (no-op)", ~class: "badge badge-xs badge-ghost entry-matched"){@(it.matched)}
+} @span(~title: "When this event ran", ~class: "ml-auto text-xs opacity-40 font-mono tabular-nums entry-time"){@(it.time)}}
+      @div(~class: "flex gap-3 items-start font-mono text-xs"){@div(~class: "flex-1 min-w-0"){@div(~class: "opacity-50", ~title: "Target state before the handler ran"){before} @render(it.before)} @show(it.has_after){
+  @div(~class: "flex-1 min-w-0"){@div(~class: "opacity-50", ~title: "Target state after the handler ran"){after} @render(it.after)}
+}}
+    }
+
+  ActivityLog:
+    @div(~class: "p-3 flex flex-col gap-2 max-h-[60vh] overflow-y-auto activity-log"){@hide(it.has_events){
+  @div(~class: "text-xs opacity-40 empty-hint"){@" No activity yet — interact with the component. "}
+} @each(value, key in it.events){
+  @render(value)
+}}
+

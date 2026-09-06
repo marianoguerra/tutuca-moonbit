@@ -385,9 +385,14 @@ fn print_consumer(
       )
     }
     SEffect(name~, args~, route~, ..) => {
+      let msg_at = if name == "sendAt" { 1 } else { 0 }
       let parts = []
-      for a in args {
-        parts.push(one(a))
+      for i, a in args {
+        if i == msg_at && a.as_lit() is Some(LStr(who)) {
+          parts.push(quote(@names.rename_member(who)))
+        } else {
+          parts.push(one(a))
+        }
       }
       print_effect_text(name, parts, route, indent, out)
     }
@@ -490,9 +495,18 @@ fn print_effect(
   indent : String,
   out : StringBuilder,
 ) -> Unit raise NoSpelling {
+  // The message an effect carries is a name the component OWNS — `ask
+  // 'loadData'` is answered as `load_data_ok`, and the two have to be spelled
+  // the same way or the answer arm never fires. A qualified one is a wire name
+  // and `rename_member` leaves it alone.
+  let msg_at = if name == "sendAt" { 1 } else { 0 }
   let printed = []
-  for a in args {
-    printed.push(print_expr(a))
+  for i, a in args {
+    if i == msg_at && a.as_lit() is Some(LStr(who)) {
+      printed.push(quote(@names.rename_member(who)))
+    } else {
+      printed.push(print_expr(a))
+    }
   }
   print_effect_text(name, printed, route, indent, out)
 }

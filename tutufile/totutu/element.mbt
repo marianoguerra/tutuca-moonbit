@@ -14,6 +14,7 @@ fn print_element(
   indent : String,
   out : StringBuilder,
   extra? : Array[String] = [],
+  inline? : Bool = false,
 ) -> Unit raise NoSpelling {
   let opts = []
   // A wrapper's own option, written first so it reads before the element's own.
@@ -119,9 +120,16 @@ fn print_element(
       // has the text nodes `"a "` and `" b"`, and the spaces around the hole
       // are what the page renders. A trim takes them and `equiv` cannot see it,
       // because it compares trees modulo whitespace.
-      let bare = StringBuilder()
-      print_node(c, events, "", bare)
-      flat.push(drop_newline(bare.to_string()))
+      // A separator prints as the character it is when it sits between its
+      // neighbours on one line — `@span{a} @small{b}`. The quoted form the
+      // block layout needs is read as layout there and disappears.
+      if c is Text(t) && t.val.trim(chars=" \n\t\r") == "" {
+        flat.push(" ")
+      } else {
+        let bare = StringBuilder()
+        print_node(c, events, "", bare)
+        flat.push(drop_newline(bare.to_string()))
+      }
     }
   }
   if kids.is_empty() {
@@ -143,9 +151,17 @@ fn print_element(
   // in the old file too — the HTML tokenizer made text nodes of it and
   // `anode/whitespace.mbt` took them out again — so writing it as layout here
   // is what it was.
-  if kids.length() > 0 &&
-    all_one_line(kids) &&
-    (has_text(d.childs) || kids.length() == 1) {
+  // A body with TEXT in it is written on one line whatever its children look
+  // like. The separator between two inline elements is a space, and a space on
+  // a line of its own is layout — the reader cuts it, and the two words run
+  // together. `flat_children` is what makes the multi-line ones fit.
+  if kids.length() > 0 && (inline || has_text(d.childs)) {
+    out.write_string(
+      "\{indent}\{head}{\{flat_children(d.childs, events).join("")}}\n",
+    )
+    return
+  }
+  if kids.length() > 0 && all_one_line(kids) && kids.length() == 1 {
     out.write_string("\{indent}\{head}{\{flat.join("")}}\n")
     return
   }
@@ -180,9 +196,10 @@ fn drop_newline(s : String) -> String {
 fn has_text(childs : Array[@anode.ANode]) -> Bool {
   for c in childs {
     match c {
-      // A text node the condensing pass emptied is not text: it is what is
-      // LEFT of the layout the tokenizer made, and it prints as nothing.
-      Text(d) => if d.val.trim(chars=" \n\t\r") != "" { return true }
+      // Every text node that survived the condensing pass, INCLUDING one that
+      // is only a space: that space separates the two inline elements around
+      // it, and a body written across lines cannot hold one.
+      Text(_) => return true
       RenderText(_) => return true
       _ => ()
     }
@@ -277,4 +294,28 @@ fn handlers_at(
     }
   }
   []
+}
+
+///|
+/// Every child printed with no layout of its own, for a body that has to sit on
+/// one line. Nesting stays inline all the way down: a child printed across
+/// lines cannot be spliced into a line.
+fn flat_children(
+  childs : Array[@anode.ANode],
+  events : Array[@anode.NodeEvents],
+) -> Array[String] raise NoSpelling {
+  let out = []
+  for c in childs {
+    if c is Text(t) && t.val.trim(chars=" \n\t\r") == "" {
+      out.push(" ")
+      continue
+    }
+    let piece = StringBuilder()
+    print_node(c, events, "", piece, inline=true)
+    let text = drop_newline(piece.to_string())
+    if text != "" {
+      out.push(text)
+    }
+  }
+  out
 }

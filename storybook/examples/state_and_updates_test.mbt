@@ -124,7 +124,7 @@ test "show-hide: @show / @hide add and remove the node" {
 ///|
 test "show-hide: the revealed panel's button is live" {
   let h = @harness.mount(show_hide_module(), "ShowHide", args={
-    "isOpen": Bool(true),
+    "is_open": Bool(true),
   })
   h.click(".bump")
   h.click(".bump")

@@ -1,0 +1,32 @@
+spec:
+  MinimumViableComponent
+
+  StaticViewComponent
+
+  TextDirective:
+    field str :: String
+    field num :: Int
+    field bool :: Bool
+    field not_set :: Any
+
+  DangerSetInnerHtml:
+    field content :: String
+
+  SetInnerMd:
+    field source :: String
+
+view:
+  MinimumViableComponent
+
+  StaticViewComponent:
+    @p{Hello, world!}
+
+  TextDirective:
+    @div(~class: "grid grid-cols-[auto_auto] gap-x-4 gap-y-2 items-center"){@span{String:} @span(~class: "v-str"){@(it.str)} @span{Number:} @span(~class: "v-num"){@(it.num)@" <- text directive is prepended"} @span{Boolean:} @(it.bool) @span{notSet:} @span(~class: "v-notset"){@(it.not_set)} @span{Method Call:} @span(~class: "v-method"){@(get_str_upper())}}
+
+  DangerSetInnerHtml:
+    @section{@div(~class: "raw", ~dangerously_inner_html: it.content)}
+
+  SetInnerMd:
+    @section{@div(~class: "md", ~inner_md: it.source)}
+

@@ -1,0 +1,16 @@
+spec:
+  MacrosNo
+
+  MacroParams:
+    field status :: String
+
+    /// `:label=".status"` hands this straight to the badge macro, and the two
+    /// values the example shows are the two the badge has words for.
+    where it.status is_one_of ["active", "archived"]
+
+  MacroSlots:
+    field count :: Int
+
+  MacroNamedSlots:
+    field count :: Int
+

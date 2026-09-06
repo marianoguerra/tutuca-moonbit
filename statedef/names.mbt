@@ -38,12 +38,18 @@ fn lower(c : Char) -> Char {
 ///|
 /// "set-label" -> "setLabel". The tutuca runtime name: what a view writes as
 /// `.setLabel` and what the JSON encoding carries.
+///
+/// An UNDERSCORE is part of a name, not a separator. `snake_case` is the
+/// spelling a `.tutu` file writes its own names in — its views, its handlers
+/// and its message declarations all — so collapsing one here would give a
+/// declaration a runtime name no view in the same file spells. That is how
+/// `receive pick_place` and `~on_click: pick_place(…)` came to be two names.
 pub fn camel_name(name : String) -> String {
   let sb = StringBuilder()
   let mut cap = false
   let mut first = true
   for c in name.to_array() {
-    if is_alnum(c) {
+    if is_alnum(c) || c == '_' {
       sb.write_char(if first { lower(c) } else if cap { upper(c) } else { c })
       cap = false
       first = false

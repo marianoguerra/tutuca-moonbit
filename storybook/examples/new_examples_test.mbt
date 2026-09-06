@@ -96,7 +96,7 @@ test "file-picker: empty state, then metadata summary" {
         "name": Str("photo.png"),
         "size": Num(2048),
         "type": Str("image/png"),
-        "lastModified": Num(1700000000000),
+        "last_modified": Num(1700000000000),
       }),
     ),
   )

@@ -1,0 +1,70 @@
+spec:
+  InstanceFields:
+    field items :: List.of(Instance)
+    field is_expanded :: Bool
+    field items_per_page :: Int
+    field current_page :: Int
+    field type_name :: String
+
+    /// Where the window actually falls. `itemsPerPage` is at least 1 by the
+    /// clause above, so the multiplication is safe wherever this is asked —
+    /// and page 0 is legal over an empty list, which is what the first
+    /// disjunct is for.
+    invariant page_exists:
+      ~format: @str{page @(it.current_page) is past the end of @(it.items.length()) items}
+      ((it.current_page == 0) || ((it.current_page * it.items_per_page) < it.items.length()))
+
+    /// A page is a window onto `items`, and both numbers that place it are
+    /// counts. A size of zero divides the list into no pages at all and the
+    /// pager silently shows nothing; the ceiling keeps a generated
+    /// `setItemsPerPage` from asking for a page nothing could paint.
+    where it.items_per_page in_range(1, 500)
+
+    where it.current_page >= 0
+
+  InstanceInspector:
+    field value :: Instance
+
+  InstanceExplorer:
+    field active_tab :: String
+    field instance_view :: Instance
+    field component_view :: Instance
+    field has_component :: Bool
+
+    /// The component tab is hidden when there is no component behind it, so
+    /// parking on it would show an empty pane with no tab to leave by.
+    invariant component_tab_needs_a_component:
+      ~format: "the component tab is selected and there is no component"
+      ((it.active_tab == "component") implies it.has_component)
+
+    /// Two tabs, two panes.
+    where it.active_tab is_one_of ["instance", "component"]
+
+view:
+  InstanceFields:
+    @span(~class: "font-mono text-sm leading-tight inline-block"){@span(~class: "inline-flex items-center gap-2"){@button(~type: "button", ~class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", ~disabled: is_items_empty(), ~on_click: it.is_expanded := !it.is_expanded){@span{@(arrow_text())} @span(~class: "font-semibold instance-fields"){@(type_text())} @span{@(count_text())}} @show(show_pagination()){
+  @div(~class: "join"){@button(~type: "button", ~class: "join-item btn btn-xs pg-prev", ~disabled: cannot_prev_page(), ~on_click: prev_page){«} @span(~class: "join-item badge font-mono text-xs pg-label"){@(page_indicator_text())} @button(~type: "button", ~class: "join-item btn btn-xs pg-next", ~disabled: cannot_next_page(), ~on_click: next_page){»}}
+}} @show(it.is_expanded){
+  @div(~class: "ml-1 flex flex-col gap-0.5 border-l border-base-content/15 pl-2 mt-0.5"){
+    @each(value, key in it.items, ~loop_with: get_page_range){
+      @render(value)
+    }
+  }
+}}
+
+  InstanceInspector:
+    @span(~class: "contents"){@render(it.value)}
+
+  InstanceExplorer:
+    @div(~class: "font-mono text-sm leading-snug flex flex-col gap-3 instance-explorer"){@div(~role: "tablist", ~class: "tabs"){@a(~role: "tab", ~class: if (it.active_tab == "instance") | "tab tab-active tab-instance" | "tab tab-instance", ~on_click: it.active_tab := "instance"){@" Instance "} @show(it.has_component){
+  @a(~role: "tab", ~class: if (it.active_tab == "component") | "tab tab-active tab-component" | "tab tab-component", ~on_click: it.active_tab := "component"){@" Component "}
+}} @show((it.active_tab == "instance")){
+  @div{@render(it.instance_view)}
+} @show((it.active_tab == "component")){
+  @div{@show(it.has_component){
+  @div{@render(it.component_view)}
+} @hide(it.has_component){
+  @div(~class: "text-base-content/50 text-xs"){@" Pass the Component descriptor to inspect its definition. "}
+}}
+}}
+

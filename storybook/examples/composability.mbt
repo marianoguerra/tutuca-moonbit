@@ -23,7 +23,7 @@ fn composability_comp(
   dnd_args : Map[String, @tutuca.Value],
 ) -> @component.Component {
   composability_component(
-    initial={ ..ComposabilityState::zero(), activeSection: "todo", },
+    initial={ ..ComposabilityState::zero(), active_section: "todo", },
     // The component each slot holds is part of its declared type; the
     // arguments it is BUILT with are a value, which no type states.
     // `DnDExample` has adjacent capitals, which kebab-case cannot round-trip
@@ -37,7 +37,7 @@ fn composability_comp(
         // its data through a request handler
         Receive("init", _) => {
           ctx.send_at_path(
-            ctx.path().concat([FieldStep("personalSite")]),
+            ctx.path().concat([FieldStep("personal_site")]),
             "init",
             [],
           )
@@ -92,13 +92,13 @@ pub fn composability_module() -> @component.ModuleDef {
       {
         component: "Composability",
         title: "JSON Editor Selected",
-        args: { "activeSection": Str("json") },
+        args: { "active_section": Str("json") },
         view: None,
       },
       {
         component: "Composability",
         title: "Tree Selected",
-        args: { "activeSection": Str("tree") },
+        args: { "active_section": Str("tree") },
         view: None,
       },
     ],

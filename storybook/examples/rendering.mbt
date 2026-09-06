@@ -80,17 +80,22 @@ pub fn push_view_module() -> @component.ModuleDef {
 }
 
 ///|
-/// `<x render=".byIndex[.currentIndex]">` resolves the inner expression as a key
+/// `<x render=".by_index[.current_index]">` resolves the inner expression as a key
 /// into the outer collection — by index for a List, by string key for a Map.
 /// `@text="@value.title"` is the one-level bind-member access.
 fn seq_item_access_comp() -> @component.Component {
   seq_item_access_component(
-    initial={ byKey: Map([]), byIndex: [], currentKey: Null, currentIndex: 0, },
+    initial={
+      by_key: Map([]),
+      by_index: [],
+      current_key: Null,
+      current_index: 0,
+    },
     compute=m => {
       match m {
         GetMaxIndex =>
           Some((s, _args, _stack) => {
-            Num(@cmp.maximum(0, s.byIndex.length() - 1).to_double())
+            Num(@cmp.maximum(0, s.by_index.length() - 1).to_double())
           })
       }
     },
@@ -113,9 +118,9 @@ pub fn seq_item_access_module() -> @component.ModuleDef {
         component: "SeqItemAccess",
         title: "Default",
         args: {
-          "byIndex": List(by_index),
-          "byKey": Map(by_key),
-          "currentKey": Str("key-0"),
+          "by_index": List(by_index),
+          "by_key": Map(by_key),
+          "current_key": Str("key-0"),
         },
         view: None,
       },
@@ -134,7 +139,7 @@ pub fn seq_item_access_module() -> @component.ModuleDef {
 /// labels, which are `compute`s.
 fn pagination_comp() -> @component.Component {
   pagination_component(
-    initial={ items: [], page: 0, pageSize: 5, },
+    initial={ items: [], page: 0, page_size: 5, },
     compute=m => {
       match m {
         // No `PageCount`: nothing called `$pageCount`, in a view or out of one.
@@ -157,11 +162,11 @@ fn pagination_comp() -> @component.Component {
               List(a) => a.length()
               _ => 0
             }
-            let start = s.page * s.pageSize
+            let start = s.page * s.page_size
             @component.LoopWith::new(
               iter_data=Map({ "total": Num(total.to_double()) }),
               start~,
-              end=start + s.pageSize,
+              end=start + s.page_size,
             )
           })
       }
@@ -172,7 +177,7 @@ fn pagination_comp() -> @component.Component {
 ///|
 fn page_count(s : PaginationState) -> Int {
   let size = s.items.length()
-  let per = @cmp.maximum(1, s.pageSize)
+  let per = @cmp.maximum(1, s.page_size)
   @cmp.maximum(1, (size + per - 1) / per) // ceil
 }
 

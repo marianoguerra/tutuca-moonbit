@@ -106,7 +106,7 @@ fn restore() -> Unit {
     return
   }
   @ui.forget_cell()
-  app.send_at_root("placeBuilt", args=[canvas, Bool(false), Bool(false)])
+  app.send_at_root("place_built", args=[canvas, Bool(false), Bool(false)])
   |> ignore
   note("restored")
 }
@@ -120,6 +120,6 @@ fn clear_canvas() -> Unit {
     return
   }
   @ui.forget_cell()
-  app.send_at_root("placeBuilt", args=[hole, Bool(false), Bool(false)])
+  app.send_at_root("place_built", args=[hole, Bool(false), Bool(false)])
   |> ignore
 }

@@ -1,0 +1,152 @@
+spec:
+  /// The declaration a component was built from, as something to READ.
+  ///
+  /// Every row here is a projection of a `@statedef.StateDef` — the block
+  /// re-parsed out of `Component::spec` — and none of it is recomputed from
+  /// the schema beside it. The schema is the block's lossy projection: a rule
+  /// reaches it as a bare name and a message as a name with no payload, and
+  /// those two are exactly what a reader of a declaration came for.
+  /// One declared field: `name : type`, with the doc its author wrote.
+  SpecField:
+    field name :: String
+
+    /// The author's own WIT spelling — `list<card>`, not `list`.
+    field type_name :: String
+
+    /// `@attr` / `@attr=value` on the field, on one line. Empty when it has
+    /// none, which is the common case.
+    field attrs :: String
+    field doc :: String
+
+  /// One declared message: `name(Int, String)`.
+  SpecMsg:
+    /// The name a dispatch is addressed to.
+    field name :: String
+
+    /// Its payload types in parens, or empty for a message that carries none.
+    field payload :: String
+    field doc :: String
+
+  /// One `pred` or `invariant`, with the expression as written.
+  ///
+  /// The expression is carried rather than summarised because it is the whole
+  /// oracle: the Fuzz tab holds the component to exactly these words, so a
+  /// reader deciding whether a green run means anything has to see them.
+  SpecRule:
+    /// `pred` or `invariant`.
+    field kind :: String
+    field kind_class :: String
+    field name :: String
+
+    /// The rule expression, as written.
+    field source :: String
+
+    /// The sentence its author wrote for the moment it fails.
+    field format :: String
+    field doc :: String
+
+    /// Two kinds of rule and no third. The word is what the badge reads and
+    /// what `kindClass` colours, so a third value paints an unlabelled chip.
+    where it.kind is_one_of ["pred", "invariant"]
+
+    /// A rule is a name and an expression. A row missing either is a row
+    /// that says a component promises something, without saying what.
+    where it.name non_empty
+
+    where it.source non_empty
+
+  /// A doc comment standing on its own — a component's or a named type's.
+  SpecDoc:
+    field text :: String
+
+  /// The whole declaration, one collapsible section per component the block
+  /// declares. A block is FILE-level, so a file declaring three components
+  /// carries all three arms in every one of its wrappers; the story's own
+  /// component is the section that starts open.
+  SpecViewer:
+    field comp_name :: String
+    field sections :: List.of(Instance)
+    field has_spec :: Bool
+
+    /// Why there is nothing to show, when there is nothing to show.
+    field hint :: String
+
+    /// A caveat about the block itself — that `gen` shipped it without
+    /// its prose, say. Empty for a block that reached the runtime whole.
+    field note :: String
+
+    /// The hint exists to answer "why is there nothing here", so it is
+    /// present exactly when there is nothing here.
+    invariant hint_explains_the_empty_view:
+      ~format: "there is no declaration to show, and the view does not say why"
+      (!it.has_spec implies (it.hint.length() > 0))
+
+    intent toggle_all_sections(Bool)
+
+  /// The same block, verbatim.
+  ///
+  /// Beside the parsed view rather than instead of it: the parse is what the
+  /// runtime reads, and the source is what the author edits. A reader
+  /// reconciling a surprising Fuzz verdict with the file open in their editor
+  /// wants the second one.
+  SpecSource:
+    field source :: String
+    field has_source :: Bool
+    field hint :: String
+    field note :: String
+
+    /// The flag and the text it summarises, held to one answer — and the
+    /// hint standing in for the text when there is none.
+    invariant has_source_tracks_source:
+      ~format: "hasSource and the source disagree"
+      (it.has_source == (it.source.length() > 0))
+
+    invariant hint_explains_the_empty_source:
+      ~format: "there is no block to show, and the view does not say why"
+      (!it.has_source implies (it.hint.length() > 0))
+
+view:
+  SpecField:
+    @div(~class: "flex flex-col gap-0.5 leading-tight spec-field"){@div(~class: "flex items-center gap-2 flex-wrap"){@span(~class: "text-base-content/70 font-mono text-sm spec-field-name"){@(it.name)} @show(it.type_name.is_truthy()){
+  @span(~class: "text-base-content/30"){:}
+} @span(~class: "text-base-content/50 font-mono text-xs spec-field-type"){@(it.type_name)} @show(it.attrs.is_truthy()){
+  @span(~class: "badge badge-xs badge-ghost font-mono spec-field-attrs"){@(it.attrs)}
+}} @show(it.doc.is_truthy()){
+  @div(~class: "text-xs opacity-50 pl-2 spec-doc"){@(it.doc)}
+}}
+
+  SpecMsg:
+    @div(~class: "flex flex-col gap-0.5 leading-tight spec-msg"){@div(~class: "flex items-center gap-2 flex-wrap"){@span(~class: "font-mono text-sm spec-msg-name"){@(it.name)} @show(it.payload.is_truthy()){
+  @span(~class: "text-base-content/50 font-mono text-xs spec-msg-payload"){@(it.payload)}
+}} @show(it.doc.is_truthy()){
+  @div(~class: "text-xs opacity-50 pl-2 spec-doc"){@(it.doc)}
+}}
+
+  SpecRule:
+    @div(~class: "flex flex-col gap-0.5 leading-tight spec-rule"){@div(~class: "flex items-center gap-2 flex-wrap"){@span(~class: it.kind_class){@(it.kind)} @span(~class: "font-mono text-sm font-semibold spec-rule-name"){@(it.name)}} @code(~class: "text-xs font-mono opacity-70 pl-2 break-all spec-rule-source"){@(it.source)} @show(it.format.is_truthy()){
+  @div(~class: "text-xs opacity-50 pl-2 spec-rule-format"){@(it.format)}
+} @show(it.doc.is_truthy()){
+  @div(~class: "text-xs opacity-50 pl-2 spec-doc"){@(it.doc)}
+}}
+
+  SpecDoc:
+    @div(~class: "text-xs opacity-60 italic whitespace-pre-wrap spec-doc-block"){@(it.text)}
+
+  SpecViewer:
+    @div(~class: "font-mono text-sm leading-tight flex flex-col gap-1 spec-viewer"){@hide(it.has_spec){
+  @div(~class: "text-xs opacity-50 spec-hint"){@(it.hint)}
+} @show(it.note.is_truthy()){
+  @div(~class: "text-xs opacity-40 italic spec-note"){@(it.note)}
+} @each(value, key in it.sections){
+  @render(value)
+}}
+
+  SpecSource:
+    @div(~class: "flex flex-col gap-1 spec-source"){@hide(it.has_source){
+  @div(~class: "text-xs opacity-50 spec-source-hint"){@(it.hint)}
+} @show(it.note.is_truthy()){
+  @div(~class: "text-xs opacity-40 italic spec-note"){@(it.note)}
+} @show(it.has_source){
+  @pre(~class: "text-xs bg-base-200 rounded p-2 overflow-x-auto whitespace-pre-wrap"){@code(~class: "spec-source-text"){@(it.source)}}
+}}
+

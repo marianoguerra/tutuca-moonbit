@@ -23,7 +23,7 @@ test "todo-macros: the completed item disables its text input via ^disabled" {
 test "todo-macros: btn-action's ^handler adds an item, btn-rm's removes one" {
   let h = @harness.mount_example(todo_macros_module(), "Empty List")
   inspect(h.find_all(".entry").length(), content="0")
-  // <x:btn-action :handler="onAddItem"> -> @on.click="onAddItem ..."
+  // <x:btn-action :handler="on_add_item"> -> @on.click="onAddItem ..."
   h.click(".add")
   h.click(".add")
   inspect(h.find_all(".entry").length(), content="2")

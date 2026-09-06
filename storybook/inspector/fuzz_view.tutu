@@ -1,0 +1,337 @@
+spec:
+  /// One dispatch of a generated script, and what it did.
+  ///
+  /// Flat, like a trace row and for the same reason: everything here was
+  /// decided when the step ran, and a row that recomputed any of it would be a
+  /// second opinion about what happened.
+  FuzzRow:
+    /// Position in the script, 0-based, as the driver numbers it.
+    field at :: Int
+
+    /// The dispatch, as `name arg, arg`.
+    field name :: String
+    field args :: String
+
+    /// `send` or `intent`, with the badge's WHOLE class list — whole because
+    /// `:class` replaces the written one rather than adding to it.
+    field verb :: String
+    field verb_class :: String
+
+    /// How many renders it caused. 0 is a dispatch that changed nothing, which
+    /// is a different thing from one that was declined.
+    field renders :: Int
+
+    /// The runtime declined it. Not a failure: a rule doing its job, and the
+    /// only place a decline is visible at all.
+    field refused :: Bool
+    field refused_rule :: String
+    field refused_sentence :: String
+
+    /// A rule the block declares does not hold in the state this step settled
+    /// at, and nothing stopped it. THE finding.
+    field broke :: Bool
+    field broke_rule :: String
+
+    /// The interpreted rule and the compiled one disagreed here.
+    field disagreed :: Bool
+
+    /// The row's whole class list, its border decided by the worst thing that
+    /// happened on it.
+    field row_class :: String
+
+    /// Where the cursor is parked, so stepping has something to point at.
+    field current :: Bool
+
+    /// The settled state, prebuilt as a value inspector.
+    field after :: maybe(Instance)
+    field open :: Bool
+
+    /// The three findings each pair a flag with the words behind it. A flag
+    /// set with nothing to say renders an empty badge, which reads as a
+    /// rendering bug rather than as the finding it is — and that is exactly
+    /// the case `refusal_label` exists to prevent.
+    invariant refusal_names_something:
+      ~format: "the row says it was refused and has nothing to show for it"
+      (it.refused implies (it.refused_rule.length() > 0))
+
+    invariant break_names_a_rule:
+      ~format: "the row says a rule broke and does not say which"
+      (it.broke implies (it.broke_rule.length() > 0))
+
+    /// The three public operation shapes (plus a direct write to a field).
+    where it.verb is_one_of ["send", "intent", "set", "write"]
+
+    /// A position in the script and a count of renders. Neither runs
+    /// backwards, and `renders` reaching 0 is the interesting case rather
+    /// than an impossible one — which is why the floor is 0 and not 1.
+    where it.at >= 0
+
+    where it.renders >= 0
+
+  /// The script, as something to scan.
+  FuzzLog:
+    field rows :: List.of(Instance.of(FuzzRow))
+    field has_rows :: Bool
+    field empty_hint :: String
+
+    /// The flag and the list it summarises, held to one answer.
+    invariant has_rows_tracks_rows:
+      ~format: @str{hasRows says @(it.has_rows) for @(it.rows.length()) rows}
+      (it.has_rows == (it.rows.length() > 0))
+
+  /// What a run is addressed by, and what came of it.
+  ///
+  /// The seed is editable because reproducibility is the whole point: a run
+  /// somebody wants to profile has to be the same run twice, and the four
+  /// values here are its whole address.
+  FuzzControls:
+    /// Text, not numbers, and for two reasons. A seed is 64-bit — `Int` would
+    /// truncate one — and `e.value` off an `<input>` is a string, so parsing
+    /// here would mean a `String` where an `Int` is wanted and the arm falling
+    /// back to MoonBit. The host parses both, which is where the plan they
+    /// address lives anyway.
+    field seed :: String
+    field steps :: String
+
+    /// `public`, `messages`, `properties` or `fields`.
+    field source :: String
+    field public_class :: String
+    field messages_class :: String
+    field properties_class :: String
+    field fields_class :: String
+
+    /// A run is in flight, one step per frame.
+    field playing :: Bool
+
+    /// The component declares a block, so there is a plan behind the knobs.
+    field can_run :: Bool
+
+    /// Why not, when it cannot.
+    field no_plan_hint :: String
+
+    /// The chosen SOURCE draws something. A component can declare a block —
+    /// state, rules, the lot — and still have an empty public API, and the
+    /// difference matters at the button: with no plan there is nothing to
+    /// configure either, but with a plan and an empty source the switcher is
+    /// exactly what is wanted, because another source may draw.
+    field can_draw :: Bool
+
+    /// Why this source draws nothing, when it draws nothing.
+    field no_draw_hint :: String
+
+    /// The hint exists to answer "why is Run disabled", so it is there when
+    /// the button is and gone when it is not.
+    invariant hint_explains_the_disabled_button:
+      ~format: "nothing can be generated, and the panel does not say why"
+      (!it.can_run implies (it.no_plan_hint.length() > 0))
+
+    /// Nothing plays when there is nothing to play.
+    invariant playing_needs_a_plan:
+      ~format: "a run is in flight with no plan behind it"
+      (it.playing implies it.can_run)
+
+    /// The same rule one level down: a source that draws nothing says so, and
+    /// nothing runs against it.
+    invariant draw_hint_explains_the_hidden_buttons:
+      ~format: "this source generates nothing, and the panel does not say why"
+      (!it.can_draw implies (it.no_draw_hint.length() > 0))
+
+    invariant playing_needs_something_to_draw:
+      ~format: "a run is in flight with nothing to draw from"
+      (it.playing implies it.can_draw)
+
+    /// The four radio buttons, as the closed set they are.
+    where it.source is_one_of ["public", "messages", "properties", "fields"]
+
+  /// The verdict, in the words the declaration used.
+  FuzzVerdict:
+    /// `held`, `broke`, `disagreed` or `none`.
+    field kind :: String
+    field badge_class :: String
+    field headline :: String
+
+    /// The rule's own `format` — the sentence its author wrote for exactly
+    /// this moment, which is why it is carried rather than recomposed.
+    field sentence :: String
+    field rule :: String
+    field at :: Int
+
+    /// Rules the block declares that `@core.Expr` could not lower, so the run
+    /// is quieter than a green verdict looks.
+    field unchecked :: String
+    field has_unchecked :: Bool
+
+    /// The shrunk reproducer, as dispatch lines.
+    field reproducer :: List.of(Instance.of(FuzzRow))
+    field has_reproducer :: Bool
+
+    /// A finding names the rule it is about; the verdicts that are not
+    /// findings name none.
+    invariant findings_name_their_rule:
+      ~format: @str{a @(it.kind) verdict with no rule on it}
+      (((it.kind == "broke") || (it.kind == "disagreed")) implies (it.rule.length() > 0))
+
+    /// The flag and the list, the same pairing `FuzzLog` makes.
+    invariant has_reproducer_tracks_reproducer:
+      ~format: "hasReproducer and the reproducer disagree"
+      (it.has_reproducer == (it.reproducer.length() > 0))
+
+    invariant has_unchecked_tracks_unchecked:
+      ~format: "hasUnchecked and the unchecked list disagree"
+      (it.has_unchecked == (it.unchecked.length() > 0))
+
+    /// The five verdicts `fuzz_verdict` produces. `none` is the one before a
+    /// run, and it is a verdict rather than an absence for the same reason
+    /// the badge is always rendered.
+    where it.kind is_one_of ["none", "held", "broke", "disagreed", "stuck"]
+
+    /// `-1` is "no position" — the answer for every verdict that is not
+    /// about one particular step — so the floor is one below the first step
+    /// rather than at it.
+    where it.at >= -1
+
+  FuzzPanel:
+    field controls :: Instance.of(FuzzControls)
+    field verdict :: Instance.of(FuzzVerdict)
+    field log :: Instance.of(FuzzLog)
+    field has_run :: Bool
+
+    /// Cursor position, 1-based for display.
+    field at :: Int
+    field total :: Int
+
+    /// The cursor is inside the run it is a cursor into. Two fields, so no
+    /// type states it and a `where` cannot draw it — this is the shape that
+    /// is an `invariant` rather than a domain.
+    invariant at_within_total:
+      ~format: @str{parked at step @(it.at) of @(it.total)}
+      (it.at <= it.total)
+
+    /// 1-based, with 0 for "parked before the first step".
+    where it.at >= 0
+
+    where it.total >= 0
+
+logic:
+  FuzzControls:
+    /// The three knobs, and each one invalidates the drawn script — so each
+    /// tells the host rather than only moving a field. The host holds the plan;
+    /// a control that changed its own field and nothing else would show a seed
+    /// that no longer describes the rows underneath it.
+    receive set_seed(s):
+      it.seed := s
+      ask("fuzz_config", s, it.steps, it.source, ~route: lex)
+
+    receive set_steps(n):
+      it.steps := n
+      ask("fuzz_config", it.seed, n, it.source, ~route: lex)
+
+    receive set_source(s):
+      it.source := s
+      ask("fuzz_config", it.seed, it.steps, s, ~route: lex)
+
+    /// Draw a script and run it whole, with no yield. What a profiler wants: one
+    /// flame chart over settle + render + morph, with no scheduler noise in it.
+    receive burst:
+      ask("fuzz_burst", ~route: lex)
+
+    /// One dispatch per frame. What a person wants: the component visibly
+    /// mutating, and a DevTools recording in which layout and paint actually
+    /// land between steps.
+    receive play:
+      ask("fuzz_play", ~route: lex)
+
+    receive stop:
+      ask("fuzz_stop", ~route: lex)
+
+    /// One dispatch, now.
+    receive step:
+      ask("fuzz_step", ~route: lex)
+
+    /// Back to the story's initial state, script and all.
+    receive reset:
+      ask("fuzz_reset", ~route: lex)
+
+  FuzzRow:
+    /// Open one line to see the state it settled at. Closed by default because a
+    /// script is read by scanning it.
+    receive toggle:
+      it.open := !it.open
+
+  FuzzVerdict:
+    /// Shrink the failing script to the dispatches that actually cause it. At
+    /// the host, because shrinking remounts the component many times and a
+    /// component cannot mount another.
+    receive shrink:
+      ask("fuzz_shrink", ~route: lex)
+
+view:
+  FuzzRow:
+    @div(~class: it.row_class){@div(~class: "row-head flex items-center gap-2 flex-wrap cursor-pointer", ~on_click: toggle){@span(~class: "badge badge-xs tabular-nums opacity-50 row-at"){@(it.at)} @span(~title: "A message or an intent", ~class: it.verb_class){@(it.verb)} @span(~class: "font-mono font-semibold row-name"){@(it.name)} @show(it.args.is_truthy()){
+  @span(~class: "text-xs opacity-40 font-mono row-args"){@(it.args)}
+} @show(it.broke){
+  @span(~title: "A rule the block declares does not hold here, and nothing stopped it", ~class: "badge badge-xs badge-error row-broke"){@(it.broke_rule)}
+} @show(it.refused){
+  @span(~title: "The runtime declined this — a rule doing its job, not a failure", ~class: "badge badge-xs badge-warning badge-outline row-refused"){@(it.refused_rule)}
+} @show(it.disagreed){
+  @span(~title: "The block's reading of the rule and the compiled one do not agree", ~class: "badge badge-xs badge-secondary row-disagreed"){disagrees}
+} @span(~title: "Renders this dispatch caused", ~class: "ml-auto text-xs opacity-40 tabular-nums row-renders"){@(it.renders)@(" render")}} @show(it.open){
+  @div(~class: "pl-6 flex flex-col gap-1 font-mono text-xs row-detail"){@show(it.refused){
+  @div(~class: "opacity-70 row-sentence"){@(it.refused_sentence)}
+} @div(~class: "opacity-50"){after} @render(it.after)}
+}}
+
+  FuzzLog:
+    @div(~class: "fuzz-log flex flex-col gap-1 max-h-[50vh] overflow-y-auto p-2"){@hide(it.has_rows){
+  @div(~class: "text-xs opacity-40 empty-hint"){@(it.empty_hint)}
+} @each(value, key in it.rows){
+  @render(value)
+}}
+
+  FuzzControls:
+    @div(~class: "fuzz-controls flex flex-col gap-2 p-2"){@hide(it.can_run){
+  @div(~class: "text-xs opacity-50 no-plan"){@(it.no_plan_hint)}
+} @show(it.can_run){
+  @div(~class: "flex items-center gap-2 flex-wrap"){@label(~class: "text-xs opacity-60"){seed} @input(~class: "input input-xs input-bordered w-24 tabular-nums ctl-seed", ~type: "number", ~value: it.seed, ~on_input: set_seed(e.value)) @label(~class: "text-xs opacity-60"){steps} @input(~class: "input input-xs input-bordered w-20 tabular-nums ctl-steps", ~type: "number", ~value: it.steps, ~on_input: set_steps(e.value))}
+} @show(it.can_run){
+  @div(~class: "flex gap-2 flex-wrap"){@button(~class: it.public_class, ~on_click: set_source("public")){Public API} @button(~class: it.messages_class, ~on_click: set_source("messages")){Messages} @button(~class: it.properties_class, ~on_click: set_source("properties")){Properties} @button(~class: it.fields_class, ~on_click: set_source("fields")){Fields}}
+} @show(it.can_run){
+  @div(~class: "text-xs opacity-50"){@" Public API is the default: declared messages and writable properties. Writing straight to a field reaches the private ones too, and appears only in the explicit diagnostic mode. The same seed always draws the same script. "}
+} @show(it.can_run){
+  @div{
+    @hide(it.can_draw){
+      @div(~class: "text-xs opacity-50 no-draw"){@(it.no_draw_hint)}
+    }
+  }
+} @show(it.can_draw){
+  @div(~class: "flex gap-2 flex-wrap"){@hide(it.playing){
+  @button(~class: "btn btn-sm btn-primary ctl-play", ~on_click: play){Play}
+} @show(it.playing){
+  @button(~class: "btn btn-sm btn-error ctl-stop", ~on_click: stop){Stop}
+} @button(~class: "btn btn-sm ctl-step", ~on_click: step){Step} @button(~class: "btn btn-sm ctl-burst", ~on_click: burst){Burst} @button(~class: "btn btn-sm btn-ghost ctl-reset", ~on_click: reset){Reset}}
+}}
+
+  FuzzVerdict:
+    @show(!((it.kind == "none"))){
+      @div(~class: "fuzz-verdict flex flex-col gap-1 p-2"){@div(~class: "flex items-center gap-2 flex-wrap"){@span(~class: it.badge_class){@(it.kind)} @span(~class: "text-sm verdict-headline"){@(it.headline)} @show(it.rule.is_truthy()){
+  @span(~class: "text-xs opacity-40 font-mono verdict-rule"){@(it.rule)}
+}} @show(it.sentence.is_truthy()){
+  @div(~class: "text-sm opacity-80 verdict-sentence"){@(it.sentence)}
+} @show(it.has_unchecked){
+  @div(~class: "text-xs opacity-60 verdict-unchecked"){@("not checked: ")@(it.unchecked)}
+} @show(it.has_reproducer){
+  @div(~class: "flex flex-col gap-1"){@div(~class: "text-xs opacity-50"){the shortest script that still does it} @each(value, key in it.reproducer){
+  @render(value)
+}}
+} @show(!((it.kind == "held"))){
+  @hide(it.has_reproducer){
+    @button(~class: "btn btn-xs btn-ghost verdict-shrink", ~on_click: shrink){Shrink it}
+  }
+}}
+    }
+
+  FuzzPanel:
+    @div(~class: "fuzz-panel flex flex-col gap-2"){@div(~class: "flex items-center gap-2 border-b border-base-content/10 px-2 pb-1"){@span(~class: "text-xs opacity-60"){Property run} @show(it.has_run){
+  @span(~class: "ml-auto text-xs opacity-40 tabular-nums panel-pos"){@(it.at)@(" / ")@(it.total)}
+}} @render(it.controls) @render(it.verdict) @render(it.log)}
+

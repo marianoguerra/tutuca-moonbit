@@ -787,7 +787,7 @@ pub(all) struct AttributeBindingState {
   str : String
   num : Int
   bool : Bool
-  notSet : @core.Value
+  not_set : @core.Value
 }
 pub fn AttributeBindingState::zero() -> Self
 
@@ -817,18 +817,18 @@ pub(all) struct BarChartState {
 pub fn BarChartState::zero() -> Self
 
 pub(all) struct ComposabilityState {
-  activeSection : String
+  active_section : String
   todo : @core.Value
   json : @core.Value
   tree : @core.Value
-  personalSite : @core.Value
-  visualWasm : @core.Value
+  personal_site : @core.Value
+  visual_wasm : @core.Value
   dnd : @core.Value
 }
 pub fn ComposabilityState::zero() -> Self
 
 pub(all) struct ConditionalAttributesState {
-  isActive : Bool
+  is_active : Bool
 }
 pub fn ConditionalAttributesState::zero() -> Self
 
@@ -910,7 +910,7 @@ pub fn DseRootMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct DseRootState {
   items : Map[String, @core.Value]
-  selectedKey : String
+  selected_key : String
   editor : @core.Value
 }
 pub fn DseRootState::zero() -> Self
@@ -925,7 +925,7 @@ pub fn EmojiPickerMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct EmojiPickerState {
   current : @core.Value
-  isPickerVisible : Bool
+  is_picker_visible : Bool
 }
 pub fn EmojiPickerState::zero() -> Self
 
@@ -959,7 +959,7 @@ pub fn EventModifiersMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct EventModifiersState {
   query : String
-  lastSentSearch : @core.Value
+  last_sent_search : @core.Value
 }
 pub fn EventModifiersState::zero() -> Self
 
@@ -991,8 +991,8 @@ pub(all) struct FilePickerState {
   name : String
   size : Double
   type_ : String
-  lastModified : Double
-  hasFile : Bool
+  last_modified : Double
+  has_file : Bool
 }
 pub fn FilePickerState::zero() -> Self
 
@@ -1073,7 +1073,7 @@ pub fn JsonNumberMsg::send(Self, &@core.Ctx) -> Unit
 pub fn JsonNumberMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct JsonNumberState {
-  strValue : String
+  str_value : String
   value : Double
 }
 pub fn JsonNumberState::zero() -> Self
@@ -1124,7 +1124,7 @@ pub(all) struct LintDemoState {
   count : Int
   items : Array[@core.Value]
   kind : String
-  isOpen : Bool
+  is_open : Bool
   child : @core.Value
 }
 pub fn LintDemoState::zero() -> Self
@@ -1234,7 +1234,7 @@ pub(all) struct NaivePeopleState {
   items : Array[@core.Value]
   query : String
   page : Int
-  pageSize : Int
+  page_size : Int
 }
 pub fn NaivePeopleState::zero() -> Self
 
@@ -1306,7 +1306,7 @@ pub fn PaginationMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct PaginationState {
   items : Array[String]
   page : Int
-  pageSize : Int
+  page_size : Int
 }
 pub fn PaginationState::zero() -> Self
 
@@ -1351,12 +1351,12 @@ pub(all) struct PsEntryState {
   title : String
   description : String
   lang : String
-  startYear : Int?
-  endYear : Int?
+  start_year : Int?
+  end_year : Int?
   role : String?
   featured : Bool
   url : String
-  altUrls : Array[@core.Value]
+  alt_urls : Array[@core.Value]
   categories : Array[String]
 }
 pub fn PsEntryState::zero() -> Self
@@ -1432,7 +1432,7 @@ pub(all) struct RequestExampleState {
   items : Array[@core.Value]
   query : String
   view : String
-  isLoading : Bool
+  is_loading : Bool
   error : String?
 }
 pub fn RequestExampleState::zero() -> Self
@@ -1469,14 +1469,14 @@ pub fn RootMsg::send(Self, &@core.Ctx) -> Unit
 pub fn RootMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct RootState {
-  allEntries : Array[@core.Value]
-  allCategories : Array[String]
-  allRoles : Array[String]
-  selectedCategories : Map[String, Bool]
-  selectedRoles : Map[String, Bool]
-  featuredFirst : Bool
-  sortByEnd : Bool
-  sortAsc : Bool
+  all_entries : Array[@core.Value]
+  all_categories : Array[String]
+  all_roles : Array[String]
+  selected_categories : Map[String, Bool]
+  selected_roles : Map[String, Bool]
+  featured_first : Bool
+  sort_by_end : Bool
+  sort_asc : Bool
 }
 pub fn RootState::zero() -> Self
 
@@ -1504,7 +1504,7 @@ pub fn SelectorEntryState::zero() -> Self
 
 pub(all) struct SelectorState {
   items : Array[@core.Value]
-  selectedValue : @core.Value
+  selected_value : @core.Value
 }
 pub fn SelectorState::zero() -> Self
 
@@ -1530,10 +1530,10 @@ pub(all) enum SeqItemAccessCompute {
 pub fn SeqItemAccessCompute::name(Self) -> String
 
 pub(all) struct SeqItemAccessState {
-  byKey : Map[String, @core.Value]
-  byIndex : Array[@core.Value]
-  currentKey : @core.Value
-  currentIndex : Int
+  by_key : Map[String, @core.Value]
+  by_index : Array[@core.Value]
+  current_key : @core.Value
+  current_index : Int
 }
 pub fn SeqItemAccessState::zero() -> Self
 
@@ -1586,7 +1586,7 @@ pub fn ShowHideMsg::send(Self, &@core.Ctx) -> Unit
 pub fn ShowHideMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct ShowHideState {
-  isOpen : Bool
+  is_open : Bool
   count : Int
 }
 pub fn ShowHideState::zero() -> Self
@@ -1663,7 +1663,7 @@ pub(all) struct TextDirectiveState {
   str : String
   num : Int
   bool : Bool
-  notSet : @core.Value
+  not_set : @core.Value
 }
 pub fn TextDirectiveState::zero() -> Self
 
@@ -1696,7 +1696,7 @@ pub fn TrafficLightMsg::send(Self, &@core.Ctx) -> Unit
 pub fn TrafficLightMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct TrafficLightState {
-  lightIndex : Int
+  light_index : Int
 }
 pub fn TrafficLightState::zero() -> Self
 
@@ -1716,7 +1716,7 @@ pub fn TreeItemMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct TreeItemState {
   type_ : String
   label : String
-  isOpen : Bool
+  is_open : Bool
   items : Array[@core.Value]
 }
 pub fn TreeItemState::zero() -> Self
@@ -1742,15 +1742,15 @@ pub(all) struct VwIfState {
   thn : Array[@core.Value]
   else_ : Array[@core.Value]
   expanded : Bool
-  editingIf : Bool
-  editingThn : Bool
-  editingElse : Bool
+  editing_if : Bool
+  editing_thn : Bool
+  editing_else : Bool
 }
 pub fn VwIfState::zero() -> Self
 
 pub(all) struct VwImmState {
   value : Int
-  rawValue : String
+  raw_value : String
 }
 pub fn VwImmState::zero() -> Self
 
@@ -1761,7 +1761,7 @@ pub(all) struct VwMemoryState {
 pub fn VwMemoryState::zero() -> Self
 
 pub(all) struct VwPickerState {
-  currentSection : String
+  current_section : String
   instructions : Array[String]
   filter : String
 }
@@ -1772,7 +1772,7 @@ pub(all) struct VwSectionState {
   name : String
   items : Array[@core.Value]
   expanded : Bool
-  defaultItem : @core.Value
+  default_item : @core.Value
 }
 pub fn VwSectionState::zero() -> Self
 

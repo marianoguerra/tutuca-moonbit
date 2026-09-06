@@ -476,7 +476,7 @@ fn[N] trace_handlers(
   }
 
   {
-    "traceStart": [
+    "trace_start": [
       IntentFn((call, answer) => {
         let scope = match call.args {
           [Str(s), ..] => s
@@ -494,7 +494,7 @@ fn[N] trace_handlers(
         answer(Ok(Str(scope)))
       }),
     ],
-    "traceStop": [
+    "trace_stop": [
       IntentFn((_call, answer) => {
         with_app(app => {
           stop_recording(app, session)
@@ -503,7 +503,7 @@ fn[N] trace_handlers(
         answer(Ok(Null))
       }),
     ],
-    "traceDiscard": [
+    "trace_discard": [
       IntentFn((_call, answer) => {
         session.taken = None
         session.selected_place = None
@@ -517,7 +517,7 @@ fn[N] trace_handlers(
     // Selection mode on and off. Turning it OFF puts the recording's own
     // places back, because a stale list of candidates from a click nobody
     // remembers making is worse than no list.
-    "traceSelect": [
+    "trace_select": [
       IntentFn((_call, answer) => {
         session.selecting = !session.selecting
         selecting_now.val = session.selecting
@@ -559,7 +559,7 @@ fn[N] trace_handlers(
     // JSONL and not the single-JSON form, because this is the artifact: the
     // CLI reads `.trace.jsonl`, every shortening operation is a line
     // operation, and a recording of a real session is mostly a list of events.
-    "traceExport": [
+    "trace_export": [
       IntentFn((_call, answer) => {
         with_app(app => ensure_story(app, session, sections))
         match session.current() {
@@ -591,7 +591,7 @@ fn[N] trace_handlers(
     // file is wrong" and "this file is wrong on line 412" — so a parse that
     // fails puts the message on the panel and changes nothing else. A trace
     // half-loaded over a good one would be worse than no import at all.
-    "traceImport": [
+    "trace_import": [
       IntentFn((call, answer) => {
         with_app(app => ensure_story(app, session, sections))
         let text = match call.args {
@@ -654,7 +654,7 @@ fn[N] trace_handlers(
     // the result rather than failing — because a relocated trace missing
     // something is usually missing something that did not matter, and is still
     // worth having.
-    "traceRelocate": [
+    "trace_relocate": [
       IntentFn((_call, answer) => {
         with_app(app => ensure_story(app, session, sections))
         guard session.current() is Some(t) else {
@@ -709,7 +709,7 @@ fn[N] trace_handlers(
     // rerun" and "take the first step" are one thing a reader wants, and a
     // mount that has to be asked for separately is a mode nobody remembers
     // they are in.
-    "traceReplayStep": [
+    "trace_replay_step": [
       IntentFn((_call, answer) => {
         with_app(app => {
           match replay_step(app, session) {
@@ -721,7 +721,7 @@ fn[N] trace_handlers(
         answer(Ok(Null))
       }),
     ],
-    "traceReplayRun": [
+    "trace_replay_run": [
       IntentFn((_call, answer) => {
         with_app(app => ensure_story(app, session, sections))
         with_app(app => {
@@ -741,7 +741,7 @@ fn[N] trace_handlers(
       }),
     ],
     // Put the story back the way it was before the rerun touched it.
-    "traceReplayReset": [
+    "trace_replay_reset": [
       IntentFn((_call, answer) => {
         with_app(app => {
           match session.driver {
@@ -766,7 +766,7 @@ fn[N] trace_handlers(
     // way past; this is what makes the panes and the tab classes agree with it,
     // both of which are computed here because only the host knows whether
     // there is a recording behind them.
-    "traceSetTab": [
+    "trace_set_tab": [
       IntentFn((call, answer) => {
         let want = match call.args {
           [Str(s), ..] => s
@@ -782,7 +782,7 @@ fn[N] trace_handlers(
     // Which candidate the reader chose. Kept rather than acted on: cutting the
     // recording is a separate press, and choosing a place is the thing a person
     // does several times before they mean it.
-    "tracePick": [
+    "trace_pick": [
       IntentFn((call, answer) => {
         session.selected_place = match call.args {
           [Str(p), ..] => Some(p)

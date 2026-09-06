@@ -45,22 +45,22 @@ impl Composite for JsonArrayState with fn items(self) {
 
 ///|
 impl Composite for JsonArrayState with fn is_expanded(self) {
-  self.isExpanded
+  self.is_expanded
 }
 
 ///|
 impl Composite for JsonArrayState with fn per_page(self) {
-  self.itemsPerPage
+  self.items_per_page
 }
 
 ///|
 impl Composite for JsonArrayState with fn current_page(self) {
-  self.currentPage
+  self.current_page
 }
 
 ///|
 impl Composite for JsonArrayState with fn with_current_page(self, p) {
-  { ..self, currentPage: p, }
+  { ..self, current_page: p, }
 }
 
 ///|
@@ -70,22 +70,22 @@ impl Composite for JsonObjectState with fn items(self) {
 
 ///|
 impl Composite for JsonObjectState with fn is_expanded(self) {
-  self.isExpanded
+  self.is_expanded
 }
 
 ///|
 impl Composite for JsonObjectState with fn per_page(self) {
-  self.itemsPerPage
+  self.items_per_page
 }
 
 ///|
 impl Composite for JsonObjectState with fn current_page(self) {
-  self.currentPage
+  self.current_page
 }
 
 ///|
 impl Composite for JsonObjectState with fn with_current_page(self, p) {
-  { ..self, currentPage: p, }
+  { ..self, current_page: p, }
 }
 
 ///|
@@ -205,7 +205,7 @@ fn[S : Composite] composite_update(
   msg : @component.Dispatch,
 ) -> @component.Update[S] {
   match msg {
-    Receive("prevPage", _) => {
+    Receive("prev_page", _) => {
       let cur = s.current_page()
       if cur > 0 {
         Next(s.with_current_page(cur - 1))
@@ -213,7 +213,7 @@ fn[S : Composite] composite_update(
         Unchanged
       }
     }
-    Receive("nextPage", _) => {
+    Receive("next_page", _) => {
       let cur = s.current_page()
       if cur < page_count_of(s) - 1 {
         Next(s.with_current_page(cur + 1))
@@ -309,7 +309,7 @@ fn value_obj_comp() -> @component.Component {
 ///|
 fn json_array_comp() -> @component.Component {
   json_array_component(
-    initial={ ..JsonArrayState::zero(), itemsPerPage: 10, },
+    initial={ ..JsonArrayState::zero(), items_per_page: 10, },
     update=(s, msg, _ctx) => composite_update(s, msg),
     compute=m => {
       match m {
@@ -334,7 +334,7 @@ fn json_array_comp() -> @component.Component {
 ///|
 fn json_object_comp() -> @component.Component {
   json_object_component(
-    initial={ ..JsonObjectState::zero(), itemsPerPage: 10, },
+    initial={ ..JsonObjectState::zero(), items_per_page: 10, },
     update=(s, msg, _ctx) => composite_update(s, msg),
     compute=m => {
       match m {
@@ -369,10 +369,10 @@ fn json_property_comp() -> @component.Component {
 ///|
 /// Delegate an expand/collapse toggle
 /// to the wrapped value when it supports one; leaf values have no
-/// `isExpanded` so the wrapper stays as-is.
+/// `is_expanded` so the wrapper stays as-is.
 fn toggle_wrapped(value : @tutuca.Value) -> @tutuca.Value {
-  match value.field_opt("isExpanded") {
-    Some(cur) => value.with_field("isExpanded", Bool(!cur.is_truthy()))
+  match value.field_opt("is_expanded") {
+    Some(cur) => value.with_field("is_expanded", Bool(!cur.is_truthy()))
     None => value
   }
 }
@@ -452,7 +452,7 @@ pub fn Inspector::classify(
       }
       // ...under the name it CALLS itself (`instance_snapshot` reads the same
       // name off the same schema). `InstanceFields` is JsonObject's twin plus
-      // the `typeName` this needs.
+      // the `type_name` this needs.
       let name = match o.schema() {
         Some(s) => s.name
         None => ""
@@ -461,7 +461,7 @@ pub fn Inspector::classify(
         self.make_("JsonObject", args={ "items": List(rows) })
       } else {
         self.make_("InstanceFields", args={
-          "typeName": Str(name),
+          "type_name": Str(name),
           "items": List(rows),
         })
       }
@@ -494,11 +494,11 @@ fn Inspector::inspect_value(
 pub fn deep_expand(v : @tutuca.Value) -> @tutuca.Value {
   guard v is Obj(_) else { return v }
   let mut cur = v
-  if cur.field_opt("isExpanded") is Some(_) {
-    cur = cur.with_field("isExpanded", Bool(true))
+  if cur.field_opt("is_expanded") is Some(_) {
+    cur = cur.with_field("is_expanded", Bool(true))
   }
   for name in cur.field_names() {
-    if name == "isExpanded" {
+    if name == "is_expanded" {
       continue
     }
     match cur.field(name) {

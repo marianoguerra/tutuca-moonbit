@@ -170,29 +170,28 @@ test "an each with a filter and an index" {
 }
 
 ///|
-/// Reading a MEMBER of a loop's binding is where the printer path silently
-/// loses the node, and it is the most ordinary thing a loop body does.
+/// Reading a MEMBER of a loop's binding: the most ordinary thing a loop body
+/// does, and where the printer path used to lose the node silently.
 ///
-/// Two sigil rules meet and neither knows about the other. `rename_ex` maps the
+/// Two sigil rules met and neither knew about the other. `rename_ex` maps the
 /// file's binder `row` onto the renderer's binding, giving the name `@value`;
-/// then `print_member` prefixes `@` unconditionally, giving `@@value.title`.
-/// Nothing parses that, so the value is dropped, so the `<x text>` element is
-/// dropped — and the loop renders empty rows with no diagnostic anywhere.
+/// `print_member` then prefixed `@` unconditionally, giving `@@value.title`.
+/// Nothing parsed that, so the value was dropped, so the `<x text>` element was
+/// dropped — and the loop rendered empty rows with no diagnostic anywhere.
+/// `print_member` now adds the sigil only when it is not already there.
 ///
-/// Going direct there is no sigil to apply twice. A binder maps to a binding
-/// once, in `ExCtx`, and a member read is a `Place` with one step.
-test "a loop binding's member, which the printer path drops" {
+/// Going direct there is no sigil to apply twice: a binder maps to a binding
+/// once, in `ExCtx`, and a member read is a `Place` with one step. Both are
+/// asserted, because the two paths agreeing is the whole claim.
+test "a loop binding's member, read the same way down both paths" {
   let src = card("  Card:\n    @ul{@each(row in it.rows){@li{@(row.title)}}}")
-  // the printed text carries the doubled sigil...
   let sources = @report.Sources::new()
   let id = sources.add("card.tutu", src)
-  assert_true(@lower.lower(src, id).text.contains("@@value.title"))
-  // ...so the parsed tree has an empty `li`, while the direct one reads it
+  let text = @lower.lower(src, id).text
+  assert_true(text.contains("@value.title") && !text.contains("@@"))
   let printed = @debug.to_string(printed_view(src).map(strip_ws))
   let direct = @debug.to_string(direct_view(src).map(strip_ws))
-  assert_true(
-    printed.contains("tag: \"li\"") && !printed.contains("RenderText"),
-  )
+  assert_true(printed.contains("RenderText"))
   assert_true(direct.contains("PBind(\"value\"), steps: [PField(\"title\")]"))
 }
 

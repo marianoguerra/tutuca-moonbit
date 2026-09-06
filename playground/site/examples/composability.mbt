@@ -53,7 +53,7 @@ fn cx_tree_item_comp() -> @component.Component {
     // a raw `match msg`: an Intent arrives because a walk routed here, so the
     // views cannot declare it and TreeItemMsg cannot type it
     update=(s, msg, ctx) => match msg {
-      Receive("onItemClick", _) => {
+      Receive("on_item_click", _) => {
         let mut self_v : @tutuca.Value = Null
         ctx.walk_path((_id, inst) => {
           self_v = inst
@@ -100,7 +100,7 @@ fn cx_tree_item_from_data(
   comp.make({
     "type": Str(type_),
     "label": Str(label),
-    "isOpen": Bool(true),
+    "is_open": Bool(true),
     "items": List(items),
   })
 }

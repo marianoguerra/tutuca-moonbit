@@ -37,7 +37,7 @@ let live : Ref[@app.App[@bdom.BrowserNode]?] = Ref(None)
 fn note(text : String, tone? : String = "") -> Unit {
   match live.val {
     Some(app) =>
-      app.send_at_root("addNote", args=[Str(text), Str(tone)]) |> ignore
+      app.send_at_root("add_note", args=[Str(text), Str(tone)]) |> ignore
     None => println(text)
   }
 }
@@ -45,7 +45,7 @@ fn note(text : String, tone? : String = "") -> Unit {
 ///|
 fn status(text : String) -> Unit {
   match live.val {
-    Some(app) => app.send_at_root("setStatus", args=[Str(text)]) |> ignore
+    Some(app) => app.send_at_root("set_status", args=[Str(text)]) |> ignore
     None => ()
   }
 }
@@ -194,7 +194,7 @@ fn place_pick(argument : String) -> Unit {
   // `markEditable` is the HOLE's message and the thing being placed is a Grid,
   // which does not answer it — calling it there answers null, and a hole handed
   // null holds nothing, silently.
-  app.send_at_root("placeBuilt", args=[
+  app.send_at_root("place_built", args=[
     instance,
     Bool(entry.is_editable()),
     // Whether it declares `init`. A card may put its starting state there
@@ -221,7 +221,7 @@ fn send_hits(query : String) -> Unit {
           why: hit.why.join(", "),
         } : @ui.PickerHit)
     })
-  app.send_at_root("pickerHits", args=[
+  app.send_at_root("picker_hits", args=[
     List(@ui.picker_rows(hits)),
     Str(@ui.empty_message(query, total=catalog.all().length())),
   ])
@@ -238,8 +238,8 @@ pub fn drain(verb : String, argument : String) -> Unit {
     "search" => send_hits(argument)
     "place" => place_pick(argument)
     "load" => load_path(argument)
-    "loadAll" => load_all()
-    "loadChosen" => load_chosen()
+    "load_all" => load_all()
+    "load_chosen" => load_chosen()
     "compile" => if load_card(argument, "pasted") { status("compiling") }
     "save" => save()
     "restore" => restore()

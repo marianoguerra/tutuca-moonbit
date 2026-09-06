@@ -13,9 +13,9 @@
 //    handler with nothing to contribute DECLINES, and the walk goes on to the
 //    next one instead of it having to invent an error.
 //
-//    The component side dispatches `intent lex 'loadData'`, and the answer
-//    arrives as an ordinary message — `loadDataOk`, `loadDataFailed` or
-//    `loadDataUnhandled` — in the same `receive` bucket everything else lands
+//    The component side dispatches `intent lex 'load_data'`, and the answer
+//    arrives as an ordinary message — `load_data_ok`, `load_data_failed` or
+//    `load_data_unhandled` — in the same `receive` bucket everything else lands
 //    in. A handler cannot tell an answer from a message a parent sent, and
 //    does not need to.
 //
@@ -36,51 +36,51 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
       items: [],
       query: "",
       view: "main",
-      isLoading: false,
+      is_loading: false,
       error: None,
     },
     update=(s, msg, ctx) => {
       match msg {
         // The same intent, dispatched from MoonBit rather than from the block
         // — which is what `IntentOpts` is for. The block's `intent lex
-        // 'loadData'` gets these three names filled in by the generator, from
+        // 'load_data'` gets these three names filled in by the generator, from
         // the schema; writing them here is how a sender names its own.
-        Receive("loadAnotherWay", _) => {
+        Receive("load_another_way", _) => {
           ctx.intent(
-            "loadData",
+            "load_data",
             [],
             @tutuca.IntentOpts::new(
               route=[Lex],
-              on_ok_name="loadDataOk",
-              on_failed_name="loadDataFailed",
-              on_unhandled_name="loadDataUnhandled",
+              on_ok_name="load_data_ok",
+              on_failed_name="load_data_failed",
+              on_unhandled_name="load_data_unhandled",
             ),
           )
-          Next({ ..s, isLoading: true, })
+          Next({ ..s, is_loading: true, })
         }
         // THREE outcomes, three arms, each with its own shape.
         //
         // There is deliberately no fourth. A combined `[res, err]` payload is
         // one an arm has to tell apart, which is one an arm can read the wrong
         // slot of; no arm here can be handed both.
-        Receive("loadDataOk", [res, ..]) =>
+        Receive("load_data_ok", [res, ..]) =>
           Next(entries_from_response(s, entry, res))
-        Receive("loadDataFailed", args) => {
+        Receive("load_data_failed", args) => {
           let err = match args {
             [Str(e), ..] => e
             [_, ..] => "the intent failed"
             _ => "the intent failed"
           }
-          Next({ ..s, isLoading: false, error: Some(err), })
+          Next({ ..s, is_loading: false, error: Some(err), })
         }
         // The third outcome, and v2's own: the route ran out and NOBODY
         // answered. Not the same as a handler failing, which is why it has its
         // own name — "nothing claimed it" is not "a rule refused it".
-        Receive("loadDataUnhandled", _) =>
+        Receive("load_data_unhandled", _) =>
           Next({
             ..s,
-            isLoading: false,
-            error: Some("nothing in the scope answers `loadData`"),
+            is_loading: false,
+            error: Some("nothing in the scope answers `load_data`"),
           })
         _ => Unhandled
       }
@@ -118,7 +118,7 @@ fn entries_from_response(
       })
     _ => []
   }
-  { ..s, isLoading: false, items, }
+  { ..s, is_loading: false, items, }
 }
 
 ///|
@@ -129,7 +129,7 @@ fn entries_from_response(
 /// intent to the next one, and the scope chain can hold several for a name.
 fn fixture_request_handlers() -> Map[String, Array[@component.IntentFn]] {
   {
-    "loadData": [
+    "load_data": [
       IntentFn((_call, answer) => {
         answer(
           Ok(
@@ -159,7 +159,7 @@ fn fixture_request_handlers() -> Map[String, Array[@component.IntentFn]] {
 /// routing.
 pub fn failing_request_handlers() -> Map[String, Array[@component.IntentFn]] {
   {
-    "loadData": [
+    "load_data": [
       IntentFn((_call, answer) => answer(Failed(Str("network is down")))),
     ],
   }
@@ -170,10 +170,10 @@ pub fn failing_request_handlers() -> Map[String, Array[@component.IntentFn]] {
 ///
 /// A handler that MUST respond has no way to decline, so one with nothing to contribute could
 /// only invent an error. An `IntentFn` answers `Pass`, the walk goes on, and
-/// when the route runs out the sender hears `loadDataUnhandled` — which is a
+/// when the route runs out the sender hears `load_data_unhandled` — which is a
 /// different sentence from "it failed" and is what the third arm above draws.
 pub fn declining_request_handlers() -> Map[String, Array[@component.IntentFn]] {
-  { "loadData": [IntentFn((_call, answer) => answer(Pass))] }
+  { "load_data": [IntentFn((_call, answer) => answer(Pass))] }
 }
 
 ///|
@@ -195,7 +195,7 @@ pub fn request_module(
       {
         component: "RequestExample",
         title: "Loading",
-        args: { "isLoading": Bool(true) },
+        args: { "is_loading": Bool(true) },
         view: None,
       },
     ],

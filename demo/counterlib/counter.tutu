@@ -1,0 +1,56 @@
+spec:
+  Counter:
+    field label :: String
+    field count :: Int
+    field history :: List.of(Int)
+
+    /// A named question about the state, asked in one place and used in two.
+    pred recorded: (it.history.length() > 0)
+
+    /// An invariant that CALLS a pred rather than restating it — the shape
+    /// that used to generate code no compiler would take: the guard woven into
+    /// a handler arm constructs a `@tutuca.CtxStack(ctx)` to call the pred
+    /// with, and that type was read-only outside `core`, so `gen`
+    /// reported nothing and `moon check` failed afterwards. This file is where
+    /// that stays fixed: the demo is compiled by `check`, and the arm below is
+    /// the one the guard lands in.
+    invariant history_follows_count:
+      ~format: "the counter moved and the history did not"
+      (recorded || (it.count == 0))
+
+    message reset_to(Int)
+
+logic:
+  Counter:
+    /// Move the counter by `d`, remembering where it landed.
+    ///
+    /// `.count` reads the value the line above wrote: a statement rebinds the
+    /// state, so the push records where the counter ENDED rather than where it
+    /// started.
+    receive add(d):
+      it.count += d
+      it.history.push(it.count)
+
+    /// The same move, addressed by name rather than by a click.
+    receive reset_to(n):
+      it.count := n
+      it.history.push(it.count)
+
+view:
+  Counter:
+    @style{font-family: sans-serif}
+    @div(~class: "counter"){@h1{@(it.label)@": "@span(~id: "count"){@(it.count)}} @button(~id: "inc", ~on_click: add(1)){+1} @button(~id: "dec", ~on_click: add(-1)){-1} @button(~id: "reset", ~on_click: it.count := default){reset} @input(~id: "label", ~value: it.label, ~on_input: it.label := e.value, ~on_keydown: it.label := "sent!" ~send) @ul(~id: "history"){@each(value, key in it.history){
+  @li{@(value)}
+}}}
+
+fixtures:
+  "fresh" ~default:
+    ~doc: "A counter nobody has pressed yet."
+    it.label = "Counter"
+
+  "with-history":
+    ~doc: "What it looks like after three presses, without pressing three times."
+    it.label = "Demo"
+    it.count = 3
+    it.history = [1, 2, 3]
+

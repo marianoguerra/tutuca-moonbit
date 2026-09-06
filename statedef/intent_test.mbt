@@ -15,13 +15,13 @@ test "intent declares a bucket beside receive" {
     (
       #|state Board { rows: Array[Any] }
       #|handle Board {
-      #|  message { reset, loadRowsOk(Array[Any]) }
-      #|  intent { rowPicked(Int), saveDraft(String) }
+      #|  message { reset, load_rows_ok(Array[Any]) }
+      #|  intent { rowPicked(Int), save_draft(String) }
       #|}
     ),
   )
-  assert_eq(d.receive.map(m => m.name), ["reset", "loadRowsOk"])
-  assert_eq(d.intent.map(m => m.name), ["rowPicked", "saveDraft"])
+  assert_eq(d.receive.map(m => m.name), ["reset", "load_rows_ok"])
+  assert_eq(d.intent.map(m => m.name), ["rowPicked", "save_draft"])
   assert_eq(d.intent[1].payload.length(), 1)
 }
 

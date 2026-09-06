@@ -150,8 +150,8 @@ test "component inspector: sections toggle one by one and all at once" {
   assert_true(names.contains("inc"))
   assert_true(names.contains("reset"))
   assert_true(names.contains("ping")) // Receive
-  assert_true(names.contains("onChild")) // Bubble
-  assert_true(names.contains("onData")) // Response
+  assert_true(names.contains("on_child")) // Bubble
+  assert_true(names.contains("on_data")) // Response
   assert_true(names.contains("rows")) // Alter, still reflected
   inspect(h.find_all(".comp-view").length(), content="2")
 }
@@ -233,7 +233,7 @@ test "activity log: observe entries land newest-first via appendEntry" {
     walk: 0,
     parent_seq: 0,
   }
-  h.send_at_root("appendEntry", args=[insp.record_to_entry(record)])
+  h.send_at_root("append_entry", args=[insp.record_to_entry(record)])
   inspect(h.find_all(".empty-hint").length(), content="0")
   inspect(h.find_all(".activity-entry").length(), content="1")
   inspect(
@@ -252,7 +252,7 @@ test "activity log: observe entries land newest-first via appendEntry" {
     { ..record, name: "keydown", seq: 2, },
     time="#2",
   )
-  h.send_at_root("appendEntry", args=[second])
+  h.send_at_root("append_entry", args=[second])
   assert_true(h.texts(".entry-name") == ["keydown", "click"])
 }
 
@@ -353,7 +353,7 @@ test "spec viewer: the block's arms, the story's own expanded" {
   // dispatch is addressed to
   assert_eq(h.find_all(".spec-msg").length(), 0)
   h.click(".comp-section", nth=2)
-  @debug.assert_eq(h.texts(".spec-msg-name"), ["ping", "onData"])
+  @debug.assert_eq(h.texts(".spec-msg-name"), ["ping", "on_data"])
   // `gen` shipped this block without its prose, and the pane says so
   // rather than leaving a reader to wonder where the file's comments went.
   assert_eq(h.find_all(".spec-doc-block").length(), 0)
@@ -424,8 +424,13 @@ test "spec source: the block as written" {
     "Spec source: Rich Sample",
   )
   let src = h.text(".spec-source-text")
+  // What the panel shows is the block the PIPELINE read, which is still the
+  // lowered form: `gen` reads a `.tutu`, lowers it, and `emit_spec_source`
+  // embeds what it lowered to. The author's own `spec:` section is what belongs
+  // here, and it arrives when the readers go direct and the lowering seam goes
+  // — the last place in the repo that shows the old notation to a reader.
   assert_true(src.contains("state RichSample {"))
-  assert_true(src.contains("count : Int"))
+  assert_true(src.contains("count: Int"))
   assert_true(src.contains("state SampleCard {"))
   assert_eq(h.find_all(".spec-source-hint").length(), 0)
 }

@@ -77,7 +77,7 @@ test "the component takes its kinds from the schema, not the seed value" {
   // outright (`.count = default`, `.label = e.value`), so they raise no name
   // at all and nothing has to answer for them.
   assert_eq(si.view_handlers, ["add"])
-  assert_eq(si.receives, ["resetTo"])
+  assert_eq(si.receives, ["reset_to"])
   assert_eq(si.init_names, ["fresh", "with-history"])
   assert_eq(si.view_names, ["main"])
   // `count` seeds at 0, which `FieldSpec::of_default` would also call FInt —

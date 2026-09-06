@@ -98,7 +98,7 @@ fn declining_chain(n : Int) -> Map[String, Array[@component.IntentFn]] {
       answer(Ok(List([Map({ "title": Str("row"), "description": Str("") })])))
     }),
   )
-  { "loadData": fns }
+  { "load_data": fns }
 }
 
 ///|
@@ -113,10 +113,10 @@ pub fn mount_lex_chain(n : Int) -> @harness.MemHarness {
 }
 
 ///|
-/// Raise `intent lex 'loadData'` and settle the answer.
+/// Raise `intent lex 'load_data'` and settle the answer.
 ///
 /// `receive init` is what raises it, so this is one `send_at_root` and then the
-/// whole walk plus the `loadDataOk` that comes back — which is the round trip a
+/// whole walk plus the `load_data_ok` that comes back — which is the round trip a
 /// caller actually pays for, not the leg on its own.
 pub fn intent_lex(h : @harness.MemHarness) -> Int {
   h.send_at_root("init")
@@ -160,5 +160,5 @@ pub fn declining_scope(n : Int) -> Map[String, Array[@component.IntentFn]] {
   for _ in 0..<n {
     fns.push(IntentFn((_call, answer) => answer(Pass)))
   }
-  { "loadData": fns }
+  { "load_data": fns }
 }
