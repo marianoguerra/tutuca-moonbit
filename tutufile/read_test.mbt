@@ -344,17 +344,31 @@ test "a component in `spec:` may declare no members" {
 }
 
 ///|
-/// Everywhere else a header with nothing under it is the mistake it looks like.
-test "a view with no block declares nothing" {
+/// A VIEW with no block is an empty view. `<template id="X"></template>` is a
+/// real thing in the corpus and renders nothing, so it has a form rather than
+/// being the mistake it looks like.
+test "a view with no block is an empty view" {
   let src =
     #|view:
     #|  Todos
     #|
+  let (file, _) = read_one(src)
+  assert_true(file.ok())
+  let sec = file.section(View).unwrap()
+  assert_eq(sec.decls.length(), 1)
+  assert_eq(sec.decls[0].name, "Todos")
+  assert_true(sec.decls[0].body is None)
+}
+
+///|
+/// Everywhere else a header with nothing under it IS the mistake it looks like:
+/// a handler with no body does nothing.
+test "a handler with no block declares nothing" {
+  let src =
+    #|logic:
+    #|  Todos
+    #|
   inspect(first_message(src), content="`Todos` declares nothing")
-  inspect(
-    first_help(src),
-    content="end the line with `:` and indent what the view holds under it",
-  )
 }
 
 ///|

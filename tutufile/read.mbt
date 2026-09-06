@@ -190,7 +190,10 @@ fn bare_decl(
     // Everywhere else a header with nothing under it is the mistake it looks
     // like: a view with no content renders nothing, and a handler with no body
     // does nothing.
-    if kind is Component && section is Spec {
+    // A VIEW with no block is an empty view — `<template id="X"></template>`
+    // is a real thing in the corpus and renders nothing. A COMPONENT in `spec:`
+    // with none declares no members: its whole content is its view.
+    if (kind is Component && section is Spec) || kind is View {
       return Some({
         kind,
         name,

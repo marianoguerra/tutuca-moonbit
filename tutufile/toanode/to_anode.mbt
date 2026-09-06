@@ -167,7 +167,15 @@ pub fn ViewBuilder::view(
     }
   }
   let style = if css.to_string() == "" { style } else { css.to_string() }
-  let root = if childs.length() == 1 { childs[0] } else { @anode.frag(childs) }
+  // A view with no content is the comment `ANode::parse` answers one with, so
+  // that a view declared empty and a `<template>` left empty are one tree.
+  let root = if childs.is_empty() {
+    @anode.comment("Empty View in ANode.parse")
+  } else if childs.length() == 1 {
+    childs[0]
+  } else {
+    @anode.frag(childs)
+  }
   @anode.View::from_ir(view_name(decl.name), root, self.handlers, style~)
 }
 

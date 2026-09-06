@@ -177,14 +177,12 @@ fn section_view(
       if v.style != "" {
         print_style(v.style, "", style, indent="    ")
       }
-      // A view with nothing in it has no block to write, and a `:` with nothing
-      // under it is not a declaration. `<template id="X"></template>` is a
-      // real thing in the corpus and the notation has no form for it.
+      // A view with nothing in it is declared with no block: `:` and nothing
+      // under it is not a declaration, and `<template id="X"></template>` is a
+      // real thing in the corpus that renders nothing.
       guard body != "" || style.to_string() != "" else {
-        raise NoSpelling(
-          what="a view with no content (`\{declared}`)",
-          help="an empty `<template>` has no spelling in the new notation — give it content, or drop the view",
-        )
+        out.write_string("  \{declared}\n")
+        continue
       }
       out.write_string("  \{declared}:\n")
       out.write_string(style.to_string())
