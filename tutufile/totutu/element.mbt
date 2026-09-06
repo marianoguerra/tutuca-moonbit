@@ -13,8 +13,13 @@ fn print_element(
   events : Array[@anode.NodeEvents],
   indent : String,
   out : StringBuilder,
+  extra? : Array[String] = [],
 ) -> Unit raise NoSpelling {
   let opts = []
+  // A wrapper's own option, written first so it reads before the element's own.
+  for e in extra {
+    opts.push(e)
+  }
   let extra : Array[(String, String)] = []
   let mut eid : Int? = None
   for item in attr_items(d.attrs) {

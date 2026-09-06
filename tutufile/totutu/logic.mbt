@@ -68,9 +68,7 @@ fn print_property(
         // indentation — goes in the block under it, or its arms would be
         // written at a column that closes the block they belong to.
         let body = StringBuilder()
-        for st in stmts {
-          print_stmt(st, "        ", body)
-        }
+        print_stmts(stmts, "        ", body)
         let text = body.to_string()
         if stmts.length() == 1 && is_one_line(text) {
           out.write_string(
@@ -170,9 +168,7 @@ fn print_body_decl(
       for o in opts {
         out.write_string(o)
       }
-      for s in stmts {
-        print_stmt(s, "      ", out)
-      }
+      print_stmts(stmts, "      ", out)
     }
   }
 }
@@ -190,6 +186,124 @@ fn param_list(params : Array[@tscript.Param]) -> String {
     parts.push(@names.snake_of(p.name))
   }
   "(" + parts.join(", ") + ")"
+}
+
+///|
+/// A statement list, with each `new` folded into the call that consumes it.
+///
+/// `new Todo` opens an argument map at `cur`, the assignments under it fill the
+/// map in, and the value is MADE at the moment `cur` is read. The new notation
+/// has no `new` and no `cur`: every `struct` and component has a parenthesised
+/// parameter list, so the aggregate is spelled directly at the point it is used.
+///
+/// So the three-statement run becomes one call, and the fold is over a RUN
+/// rather than a statement — which is why this exists beside `print_stmt`
+/// rather than inside it.
+fn print_stmts(
+  stmts : Array[@tscript.Stmt],
+  indent : String,
+  out : StringBuilder,
+) -> Unit raise NoSpelling {
+  let mut i = 0
+  while i < stmts.length() {
+    guard stmts[i] is SNew(ty~, ..) else {
+      print_stmt(stmts[i], indent, out)
+      i = i + 1
+      continue
+    }
+    let fields = []
+    let mut j = i + 1
+    while j < stmts.length() &&
+          stmts[j] is SAssign(place~, ..) &&
+          place.root is PTarget {
+      guard stmts[j] is SAssign(place~, op~, value~, ..) else { break }
+      guard op is ASet && place.steps is [PField(f)] else {
+        raise NoSpelling(
+          what="a `new` block that writes `cur` with `\{if op is ASet { "a path" } else { "+=" }}`",
+          help="an aggregate is spelled directly in the new notation, so each field is written once — this one has to be rewritten by hand",
+        )
+      }
+      fields.push((f, value))
+      j = j + 1
+    }
+    guard j < stmts.length() else {
+      raise NoSpelling(
+        what="a `new \{ty.name}` that nothing reads",
+        help="the value is made where `cur` is read, and nothing here reads it",
+      )
+    }
+    print_consumer(stmts[j], ctor_text(ty, fields), indent, out)
+    i = j + 1
+  }
+}
+
+///|
+/// The constructor call a `new` run builds.
+fn ctor_text(
+  ty : @tscript.TyRef,
+  fields : Array[(String, @tutuca.Expr)],
+) -> String raise NoSpelling {
+  let parts = []
+  for f in fields {
+    parts.push("\{@names.snake_of(f.0)}: \{print_expr(f.1)}")
+  }
+  "\{ty.name}(\{parts.join(", ")})"
+}
+
+///|
+/// The statement that reads `cur`, with the constructor written where it was.
+///
+/// Three shapes, which is what the corpus writes: a collection method
+/// (`.items.push cur`), an assignment, and an effect. Anything else is refused
+/// rather than guessed at — a `cur` this does not find is a value silently
+/// dropped.
+fn print_consumer(
+  stmt : @tscript.Stmt,
+  ctor : String,
+  indent : String,
+  out : StringBuilder,
+) -> Unit raise NoSpelling {
+  fn one(e : @tutuca.Expr) -> String raise NoSpelling {
+    if e is ERead(place~, ..) && place.root is PTarget && place.steps.is_empty() {
+      ctor
+    } else {
+      print_expr(e)
+    }
+  }
+
+  match stmt {
+    SMethod(place~, call~, args~, ..) => {
+      let parts = []
+      for a in args {
+        parts.push(one(a))
+      }
+      out.write_string(
+        "\{indent}\{print_stmt_place(place)}.\{@names.mutator_of(call)}(\{parts.join(", ")})\n",
+      )
+    }
+    SAssign(place~, op~, value~, ..) => {
+      let word = match op {
+        ASet => ":="
+        AAdd => "+="
+        ASub => "-="
+      }
+      out.write_string(
+        "\{indent}\{print_stmt_place(place)} \{word} \{one(value)}\n",
+      )
+    }
+    SEffect(name~, args~, route~, ..) => {
+      let parts = []
+      for a in args {
+        parts.push(one(a))
+      }
+      print_effect_text(name, parts, route, indent, out)
+    }
+    _ =>
+      raise NoSpelling(
+        what="a `new` whose value is read by a statement this does not know",
+        help="the value is made where `cur` is read — a collection method, an assignment or an effect",
+      )
+  }
 }
 
 ///|
@@ -249,9 +363,7 @@ fn print_arm(
   out : StringBuilder,
 ) -> Unit raise NoSpelling {
   let body = StringBuilder()
-  for s in stmts {
-    print_stmt(s, indent + "    ", body)
-  }
+  print_stmts(stmts, indent + "    ", body)
   let text = body.to_string()
   if stmts.length() == 1 && is_one_line(text) {
     out.write_string(text.trim(chars=" \n").to_owned() + "\n")
@@ -281,6 +393,26 @@ fn print_effect(
   indent : String,
   out : StringBuilder,
 ) -> Unit raise NoSpelling {
+  let printed = []
+  for a in args {
+    printed.push(print_expr(a))
+  }
+  print_effect_text(name, printed, route, indent, out)
+}
+
+///|
+/// An effect whose arguments are already printed.
+///
+/// Split from `print_effect` so that a `new` folded into an effect can hand the
+/// constructor text in as one of them — the shape of the call is the same
+/// whichever way its arguments were arrived at.
+fn print_effect_text(
+  name : String,
+  args : Array[String],
+  route : Array[@tutuca.Leg],
+  indent : String,
+  out : StringBuilder,
+) -> Unit raise NoSpelling {
   let parts = []
   let opts = []
   // `sendAt &.status 'flash' 'Ready'` puts the ADDRESS first; the new spelling
@@ -292,14 +424,14 @@ fn print_effect(
         help="`sendAt` takes the place to send to first",
       )
     }
-    opts.push("~to: " + print_expr(args[0]))
+    opts.push("~to: " + args[0])
     for a in args[1:] {
-      parts.push(print_expr(a))
+      parts.push(a)
     }
     "send"
   } else {
     for a in args {
-      parts.push(print_expr(a))
+      parts.push(a)
     }
     @names.snake_of(name)
   }

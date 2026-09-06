@@ -67,18 +67,25 @@ fn print_node(
       out.write_string("\{indent}@render(value\{tail})\n")
     }
     Slot(_) => out.write_string("\{indent}@slot\n")
-    // `@push-view` and `<x scope>` are wrappers the new notation has no form
-    // for yet. Refusing names the construct rather than dropping the subtree
-    // under it.
-    PushView(_) =>
-      raise NoSpelling(
-        what="a `@push-view` wrapper",
-        help="the `.tutu` notation spells this as a `~push_view:` attribute; a wrapper form is not defined",
+    // Both are OPTIONS on the element they wrap rather than forms around it:
+    // `~push_view:` pushes a view for the subtree, and a loop-less
+    // `~enrich_with:` opens a scope frame. The wrapper node is what the parser
+    // builds out of the attribute, so printing it back as one closes the loop.
+    PushView(d) =>
+      print_wrapped(
+        d.node,
+        "~push_view: " + print_expr(d.val),
+        events,
+        indent,
+        out,
       )
-    Scope(_) =>
-      raise NoSpelling(
-        what="an `<x scope>` / `@enrich-scope` wrapper",
-        help="the `.tutu` notation has no scope form yet — the enricher is declared in `logic:`, but nothing spells the wrapper",
+    Scope(d) =>
+      print_wrapped(
+        d.node,
+        "~enrich_with: " + print_trigger(d.val),
+        events,
+        indent,
+        out,
       )
     MacroCall(d) => print_macro_call(d, events, indent, out)
   }
@@ -95,6 +102,29 @@ fn is_parse_artifact(text : String) -> Bool {
   t.has_prefix("Empty View") ||
   t.has_prefix("bad macro:") ||
   t.has_prefix("Error:")
+}
+
+///|
+/// The element a wrapper wraps, with the wrapper's own option on it.
+///
+/// A wrapper node is what the parser BUILDS out of an attribute, so the way
+/// back is the attribute — not a form around the element, which the notation
+/// does not have and which would put a node in the tree the author did not
+/// write.
+fn print_wrapped(
+  inner : @anode.ANode,
+  option : String,
+  events : Array[@anode.NodeEvents],
+  indent : String,
+  out : StringBuilder,
+) -> Unit raise NoSpelling {
+  guard inner is Dom(d) else {
+    raise NoSpelling(
+      what="a wrapper around something that is not an element",
+      help="`~push_view:` and `~enrich_with:` are options ON an element, so the thing wrapped has to be one",
+    )
+  }
+  print_element(d, events, indent, out, extra=[option])
 }
 
 ///|

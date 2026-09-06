@@ -437,6 +437,9 @@ fn print_attr(
   }
   match name {
     "bind" => return bound_as("@bind")
+    // A loop-less enricher wraps the node in a scope frame; on an `@each` it is
+    // the loop's own option and `print_each` has already taken it.
+    "enrich_with" => return bound_as("@enrich-with")
     "push_view" => return bound_as("@push-view")
     "inner_html" => return bound_as("@setinnerhtml")
     // The one construct whose value reaches the DOM unparsed, and the only

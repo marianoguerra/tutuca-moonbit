@@ -31,12 +31,23 @@ pub fn print_fixture(
   for k, v in f.args {
     out.write_string("    it.\{@names.snake_of(k)} = \{print_value(v)}\n")
   }
-  // A fixture with no `drive` carries an empty array, not a null.
+  // A fixture arrived at by DOING: the same step language a scene writes, under
+  // `~drive:`. It is kept as JSON by the splitter and validated as steps on the
+  // way in, so parsing it here reads what was already checked.
   guard f.drive is (Null | Array([])) else {
-    raise NoSpelling(
-      what="a fixture with a `drive` block (`\{f.name}`)",
-      help="a driven fixture holds the step language, which the converter does not print yet — convert this one by hand",
-    )
+    let steps = @scenedef.parse_steps(f.drive, "fixture `\{f.name}`") catch {
+      _ =>
+        raise NoSpelling(
+          what="a fixture whose `drive` block does not read as steps (`\{f.name}`)",
+          help="fix it in the `.html` file before converting",
+        )
+    }
+    out.write_string("    ~drive:\n")
+    for step in steps {
+      out.write_string("      \{print_step(step)}\n")
+    }
+    guard f.intents is (Null | Object(_)) else { return }
+    return
   }
 }
 
