@@ -33,7 +33,7 @@ fn print_ty_arg(
   args : Array[@sh.Arg],
   what : String,
 ) -> String raise @sh.ExError {
-  let pos = positional(args)
+  let pos = @sh.positional(args)
   guard pos.length() == 1 else {
     raise @sh.ExError(
       message="`\{what}` takes one type",
@@ -46,7 +46,7 @@ fn print_ty_arg(
 
 ///|
 fn print_map_ty(args : Array[@sh.Arg]) -> String raise @sh.ExError {
-  let pos = positional(args)
+  let pos = @sh.positional(args)
   guard pos.length() == 2 else {
     raise @sh.ExError(
       message="`Map.of` takes a key type and a value type",
@@ -59,7 +59,7 @@ fn print_map_ty(args : Array[@sh.Arg]) -> String raise @sh.ExError {
 
 ///|
 fn print_tuple_ty(args : Array[@sh.Arg]) -> String raise @sh.ExError {
-  let pos = positional(args)
+  let pos = @sh.positional(args)
   let parts = []
   for p in pos {
     parts.push(print_ty(p))
@@ -70,7 +70,7 @@ fn print_tuple_ty(args : Array[@sh.Arg]) -> String raise @sh.ExError {
 ///|
 /// `Instance.of(Name)`, or `Instance.of(P && Q)` for a protocol set.
 fn print_instance_arg(args : Array[@sh.Arg]) -> String raise @sh.ExError {
-  let pos = positional(args)
+  let pos = @sh.positional(args)
   guard pos.length() == 1 else {
     raise @sh.ExError(
       message="`Instance.of` takes one component or protocol set",

@@ -793,7 +793,7 @@ fn ViewBuilder::each(
   }
   let val = @sh.to_expr(seq, ctx, span)
   let trigger = fn(opt : String) -> @tutuca.Expr? raise ExError {
-    match @lower.kw_arg(args, opt) {
+    match @sh.kw_arg(args, opt) {
       Some(EName(f)) => Some(@tutuca.Expr::name(f))
       Some(_) =>
         raise ExError(
@@ -877,7 +877,7 @@ fn ViewBuilder::render(
       span~,
     )
   }
-  let view = match @lower.kw_arg(args, "as") {
+  let view = match @sh.kw_arg(args, "as") {
     Some(v) => Some(@sh.to_expr(v, ctx, span))
     None => None
   }

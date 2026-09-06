@@ -97,7 +97,7 @@ fn print_call(
   callee : @sh.Ex,
   args : Array[@sh.Arg],
 ) -> String raise @sh.ExError {
-  let pos = positional(args)
+  let pos = @sh.positional(args)
   match callee {
     // `math.max(a, b)` and friends: a namespace, because they have no receiver
     @sh.EMember(@sh.EName("math"), name) => {
@@ -217,7 +217,8 @@ fn print_template(parts : Array[@sh.TPart]) -> String raise @sh.ExError {
         // render stack from a body that runs after it.
         out.write_string(
           match e {
-            @sh.ECall(@sh.EName(f), args) if positional(args).is_empty() => f
+            @sh.ECall(@sh.EName(f), args) if @sh.positional(args).is_empty() =>
+              f
             other => print_ex(other)
           },
         )
@@ -227,19 +228,6 @@ fn print_template(parts : Array[@sh.TPart]) -> String raise @sh.ExError {
   }
   out.write_string("'")
   out.to_string()
-}
-
-///|
-/// The positional arguments of a call, refusing a keyword one — a value
-/// position has no place for an option.
-fn positional(args : Array[@sh.Arg]) -> Array[@sh.Ex] {
-  let out = []
-  for a in args {
-    if a is @sh.APos(e) {
-      out.push(e)
-    }
-  }
-  out
 }
 
 ///|

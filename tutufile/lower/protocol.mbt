@@ -35,7 +35,7 @@ pub fn print_protocol(
   // it. `decl_doc` alone sees a protocol's own leading doc and nothing else,
   // which is right for the first declaration in a section and wrong for the
   // rest.
-  write_doc(out, doc.unwrap_or(decl_doc(decl)), "")
+  write_doc(out, doc.unwrap_or(@sh.decl_doc(decl)), "")
   guard decl.node.it is Group(parts) else { return }
   guard parts.length() >= 4 && parts[2].it is Op("=") else {
     raise @sh.ExError(

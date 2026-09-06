@@ -564,3 +564,32 @@ pub fn find_op(parts : Array[@ast.Node], ops : Array[String]) -> Int? {
   }
   None
 }
+
+///|
+pub fn kw_arg(args : Array[Arg], name : String) -> Ex? {
+  for a in args {
+    if a is AKw(n, v) && n == name {
+      return Some(v)
+    }
+  }
+  None
+}
+
+///|
+/// The positional arguments of a call, refusing a keyword one — a value
+/// position has no place for an option.
+pub fn positional(args : Array[Arg]) -> Array[Ex] {
+  let out = []
+  for a in args {
+    if a is APos(e) {
+      out.push(e)
+    }
+  }
+  out
+}
+
+///|
+/// The `///` above a declaration.
+pub fn decl_doc(decl : @tutufile.Decl) -> String? {
+  doc_of(decl.node)
+}

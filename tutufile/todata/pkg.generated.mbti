@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tutufile/todata"
+
+import {
+  "marianoguerra/tutuca/tutufile",
+  "marianoguerra/tutuca/tutufile/shrub",
+}
+
+// Values
+pub fn fixtures_json(Array[@tutufile.Decl]) -> Json raise @shrub.ExError
+
+pub fn json_of(@shrub.Ex) -> Json raise @shrub.ExError
+
+pub fn scenes_json(Array[@tutufile.Decl]) -> Json raise @shrub.ExError
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

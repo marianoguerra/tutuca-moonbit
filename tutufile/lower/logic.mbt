@@ -430,7 +430,7 @@ fn print_call_stmt(
           span=@report.Span::at(0),
         )
       }
-      let pos = positional(args)
+      let pos = @sh.positional(args)
       let printed = []
       for a in pos {
         printed.push(print_ex(hoist(a, out, indent)))
@@ -474,7 +474,7 @@ fn print_effect(
   out : StringBuilder,
   indent : String,
 ) -> Unit raise @sh.ExError {
-  let pos = positional(args)
+  let pos = @sh.positional(args)
   let printed = []
   for a in pos {
     printed.push(print_ex(hoist(a, out, indent)))
@@ -487,7 +487,7 @@ fn print_effect(
   let name = if printed.is_empty() { "" } else { printed[0] }
   match verb {
     "send" =>
-      match kw_arg(args, "to") {
+      match @sh.kw_arg(args, "to") {
         Some(place) =>
           out.write_string(
             "\{indent}sendAt &\{print_place(place)} \{name}\{rest}\n",
@@ -495,7 +495,7 @@ fn print_effect(
         None => out.write_string("\{indent}send \{name}\{rest}\n")
       }
     "ask" | "notify" => {
-      let route = match kw_arg(args, "route") {
+      let route = match @sh.kw_arg(args, "route") {
         Some(r) => " " + route_words(r)
         None => ""
       }
@@ -542,16 +542,6 @@ fn route_words(ex : @sh.Ex) -> String raise @sh.ExError {
         span=@report.Span::at(0),
       )
   }
-}
-
-///|
-pub fn kw_arg(args : Array[@sh.Arg], name : String) -> @sh.Ex? {
-  for a in args {
-    if a is @sh.AKw(n, v) && n == name {
-      return Some(v)
-    }
-  }
-  None
 }
 
 ///|

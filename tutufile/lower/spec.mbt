@@ -19,7 +19,7 @@ pub fn print_state(
   impls : Map[String, PropImpl],
   out : StringBuilder,
 ) -> Unit raise @sh.ExError {
-  write_doc(out, decl_doc(decl), "")
+  write_doc(out, @sh.decl_doc(decl), "")
   let implements = []
   for group in @sh.body_groups(decl) {
     guard group.it is Group(parts) && parts.length() > 1 else { continue }
@@ -614,12 +614,6 @@ pub fn print_channels(
     }
     out.write_string("}\n")
   }
-}
-
-///|
-/// The `///` above a declaration.
-pub fn decl_doc(decl : @tutufile.Decl) -> String? {
-  @sh.doc_of(decl.node)
 }
 
 ///|

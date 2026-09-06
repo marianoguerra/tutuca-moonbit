@@ -1,0 +1,23 @@
+// The `fixtures:` and `tests:` sections, read into the JSON their parsers
+// take.
+//
+// JSON rather than the parsed shapes, and that is not a half-measure: both
+// blocks were JSON in the old notation, `@statedef.parse_init` and
+// `@scenedef.parse_scenes` read one, and what they do with it — checking a
+// fixture against the schema, reading a step's verb — is the same work
+// whichever notation the file was written in. What changes here is only where
+// the JSON comes from.
+import {
+  "marianoguerra/tutuca/tutufile",
+  "marianoguerra/tutuca/tutufile/shrub" @sh,
+  "marianoguerra/shrubbery/ast",
+  "marianoguerra/error-report" @report,
+  "moonbitlang/core/json",
+}
+
+import {
+  // The printer this reader is held against, and nothing in the package itself
+  // imports it.
+  "marianoguerra/tutuca/tutufile/lower",
+  "moonbitlang/core/debug",
+} for "test"

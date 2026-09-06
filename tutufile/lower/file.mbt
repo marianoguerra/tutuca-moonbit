@@ -109,7 +109,7 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
   match file.section(Fixtures) {
     Some(section) =>
       try {
-        let json = print_fixtures(section.decls)
+        let json = @todata.fixtures_json(section.decls).stringify(indent=2)
         out.write_string("<script type=\"tutuca/fixtures\">\n")
         out.write_string(json)
         out.write_string("\n</script>\n\n")
@@ -121,7 +121,7 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
   match file.section(Tests) {
     Some(section) =>
       try {
-        let json = print_scenes(section.decls)
+        let json = @todata.scenes_json(section.decls).stringify(indent=2)
         out.write_string("<script type=\"tutuca/test\">\n")
         out.write_string(json)
         out.write_string("\n</script>\n\n")

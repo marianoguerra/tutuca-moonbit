@@ -16,6 +16,7 @@ import {
   "marianoguerra/tutuca/tutufile",
   // The shrubbery readers: `Ex`, `Member`, the doc above one.
   "marianoguerra/tutuca/tutufile/shrub" @sh,
+  "marianoguerra/tutuca/tutufile/todata",
   "marianoguerra/shrubbery/ast",
   "marianoguerra/shrubbery/sexp",
   "marianoguerra/error-report" @report,

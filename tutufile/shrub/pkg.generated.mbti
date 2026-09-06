@@ -13,6 +13,8 @@ pub fn args_to_exprs(Array[Ex], ExCtx, @error-report.Span) -> Array[@core.Expr] 
 
 pub fn body_groups(@tutufile.Decl) -> Array[@ast.Node]
 
+pub fn decl_doc(@tutufile.Decl) -> String?
+
 pub fn doc_of(@ast.Node) -> String?
 
 pub fn find_op(Array[@ast.Node], Array[String]) -> Int?
@@ -21,11 +23,15 @@ pub fn from_macro(@core.Expr) -> @core.Expr
 
 pub fn is_upper(String) -> Bool
 
+pub fn kw_arg(Array[Arg], String) -> Ex?
+
 pub fn member_doc(@ast.Node, @ast.Node?) -> String?
 
 pub fn member_name(Array[@ast.Node], Int) -> (String, Int)?
 
 pub fn node_text(@ast.Node) -> String
+
+pub fn positional(Array[Arg]) -> Array[Ex]
 
 pub fn positional_args(Array[Arg]) -> Array[Ex]
 

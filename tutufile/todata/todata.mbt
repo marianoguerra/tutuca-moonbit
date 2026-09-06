@@ -1,5 +1,4 @@
-// The `fixtures:` and `tests:` sections, printed as the JSON blocks their
-// readers take.
+// The `fixtures:` and `tests:` sections, read as the JSON their parsers take.
 //
 // One step language, printed twice: a fixture's `~drive` and a scene's steps
 // are the same statements, which is the thing the two JSON blocks could never
@@ -31,7 +30,7 @@ pub fn json_of(ex : @sh.Ex) -> Json raise @sh.ExError {
     }
     @sh.ECall(@sh.EName(name), args) => {
       // `ok [...]`, `failed "…"` and `pass` are an intent's three answers
-      let pos = positional(args)
+      let pos = @sh.positional(args)
       match (name, pos.length()) {
         ("ok", 1) => Json::object({ "ok": json_of(pos[0]) })
         ("failed", 1) => Json::object({ "failed": json_of(pos[0]) })
@@ -54,14 +53,12 @@ pub fn json_of(ex : @sh.Ex) -> Json raise @sh.ExError {
 
 ///|
 /// The `fixtures:` section as its JSON object.
-pub fn print_fixtures(
-  decls : Array[@tutufile.Decl],
-) -> String raise @sh.ExError {
+pub fn fixtures_json(decls : Array[@tutufile.Decl]) -> Json raise @sh.ExError {
   let out = Map([])
   for d in decls {
     out[d.name] = fixture_json(d)
   }
-  Json::object(out).stringify(indent=2)
+  Json::object(out)
 }
 
 ///|
@@ -71,7 +68,7 @@ fn fixture_json(decl : @tutufile.Decl) -> Json raise @sh.ExError {
   if decl.options.contains("default") {
     env["default"] = Json::boolean(true)
   }
-  match decl_doc(decl) {
+  match @sh.decl_doc(decl) {
     Some(d) => env["doc"] = Json::string(d)
     None => ()
   }
@@ -106,12 +103,12 @@ fn fixture_json(decl : @tutufile.Decl) -> Json raise @sh.ExError {
 
 ///|
 /// The `tests:` section as its JSON object.
-pub fn print_scenes(decls : Array[@tutufile.Decl]) -> String raise @sh.ExError {
+pub fn scenes_json(decls : Array[@tutufile.Decl]) -> Json raise @sh.ExError {
   let out = Map([])
   for d in decls {
     out[d.name] = scene_json(d)
   }
-  Json::object(out).stringify(indent=2)
+  Json::object(out)
 }
 
 ///|
@@ -199,7 +196,7 @@ fn step_json(group : @ast.Node) -> Json raise @sh.ExError {
     )
   }
   let args = @sh.read_args(gs)
-  let pos = positional(args)
+  let pos = @sh.positional(args)
   let obj = Map([])
   let arg = fn(i : Int) -> Json raise @sh.ExError { json_of(pos[i]) }
   match verb {
@@ -245,7 +242,7 @@ fn step_json(group : @ast.Node) -> Json raise @sh.ExError {
         span=@sh.span_of(parts[0]),
       )
   }
-  match kw_arg(args, "nth") {
+  match @sh.kw_arg(args, "nth") {
     Some(n) => obj["nth"] = json_of(n)
     None => ()
   }
@@ -269,7 +266,7 @@ fn expect_json(
   let mut i = 2
   // a reader with a subject: `text("o")`, `attr("a", "href")`
   if i < parts.length() && parts[i].it is Parens(gs) {
-    let pos = positional(@sh.read_args(gs))
+    let pos = @sh.positional(@sh.read_args(gs))
     if pos.length() > 0 {
       obj["at"] = json_of(pos[0])
     }

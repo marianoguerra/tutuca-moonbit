@@ -529,7 +529,7 @@ fn print_action(
     @sh.EName(handler) => handler
     @sh.ECall(@sh.EName(handler), args) => {
       let parts = [handler]
-      for a in positional(args) {
+      for a in @sh.positional(args) {
         parts.push(action_arg(a))
       }
       parts.join(" ")
@@ -554,7 +554,7 @@ fn print_action(
         )
       }
       let parts = [print_place(recv) + "." + word]
-      for a in positional(args) {
+      for a in @sh.positional(args) {
         parts.push(print_ex(a))
       }
       parts.join(" ")
@@ -578,7 +578,7 @@ fn print_guard(
   renames : Map[String, String],
   macros? : Array[String] = [],
 ) -> Unit raise @sh.ExError {
-  let pos = positional(args)
+  let pos = @sh.positional(args)
   guard pos.length() == 1 else {
     raise @sh.ExError(
       message="`@\{word}` takes one condition",
@@ -626,7 +626,7 @@ fn print_each(
     inner[names[1]] = "@key"
   }
   let extra = ["@each=\"\{attr_escape(print_ex(rename_ex(seq, renames)))}\""]
-  match kw_arg(args, "when") {
+  match @sh.kw_arg(args, "when") {
     Some(@sh.EName(f)) => extra.push("@when=\"\{f}\"")
     Some(_) =>
       raise @sh.ExError(
@@ -636,12 +636,12 @@ fn print_each(
       )
     None => ()
   }
-  match kw_arg(args, "enrich_with") {
+  match @sh.kw_arg(args, "enrich_with") {
     Some(@sh.EName(f)) => extra.push("@enrich-with=\"\{f}\"")
     Some(_) => ()
     None => ()
   }
-  match kw_arg(args, "loop_with") {
+  match @sh.kw_arg(args, "loop_with") {
     Some(@sh.EName(f)) => extra.push("@loop-with=\"\{f}\"")
     Some(_) => ()
     None => ()
@@ -660,7 +660,7 @@ fn print_each(
   // exists, so this is the only spelling.
   if renders_the_binder(body[0], names) {
     let mut tail = ""
-    match kw_arg(args, "as") {
+    match @sh.kw_arg(args, "as") {
       Some(@sh.EStr(v)) => tail = " as=\"\{v}\""
       Some(other) => tail = " as=\"\{attr_escape(print_ex(other))}\""
       None => ()
@@ -737,7 +737,7 @@ fn renders_the_binder(
   }
   let (raw, body) = split_call(parts)
   guard body.is_empty() else { return false }
-  let pos = positional(args_of(raw))
+  let pos = @sh.positional(args_of(raw))
   guard pos.length() == 1 else { return false }
   pos[0] is @sh.EName(n) && n == names[0]
 }
@@ -751,7 +751,7 @@ fn print_render(
   extra? : String = "",
 ) -> Unit raise @sh.ExError {
   let extra = if extra == "" { "" } else { " " + extra }
-  let pos = positional(args)
+  let pos = @sh.positional(args)
   guard pos.length() == 1 else {
     raise @sh.ExError(
       message="`@render` takes one value",
@@ -765,7 +765,7 @@ fn print_render(
   // position IS the iteration's. `render="@value"` is what the parser refuses.
   if value == "@value" {
     let mut only = ""
-    match kw_arg(args, "as") {
+    match @sh.kw_arg(args, "as") {
       Some(@sh.EStr(v)) => only = " as=\"\{v}\""
       Some(other) => only = " as=\"\{attr_escape(print_ex(other))}\""
       None => ()
@@ -774,7 +774,7 @@ fn print_render(
     return
   }
   let mut tail = ""
-  match kw_arg(args, "as") {
+  match @sh.kw_arg(args, "as") {
     Some(@sh.EStr(v)) => tail = " as=\"\{v}\""
     Some(other) => tail = " as=\"\{attr_escape(print_ex(other))}\""
     None => ()

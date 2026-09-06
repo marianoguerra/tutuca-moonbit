@@ -20,15 +20,9 @@ pub fn case_text(Array[@ast.Node], Int) -> String raise @shrub.ExError
 
 pub fn collection_op(String) -> String?
 
-pub fn decl_doc(@tutufile.Decl) -> String?
-
 pub fn ex_report(@shrub.ExError, @error-report.SourceId, fallback? : @error-report.Span) -> @error-report.Report
 
 pub fn is_tutu_source(String) -> Bool
-
-pub fn json_of(@shrub.Ex) -> Json raise @shrub.ExError
-
-pub fn kw_arg(Array[@shrub.Arg], String) -> @shrub.Ex?
 
 pub fn lower(String, @error-report.SourceId) -> Lowered
 
@@ -40,13 +34,9 @@ pub fn print_enum(@tutufile.Decl, StringBuilder, doc? : String?) -> Unit raise @
 
 pub fn print_ex(@shrub.Ex) -> String raise @shrub.ExError
 
-pub fn print_fixtures(Array[@tutufile.Decl]) -> String raise @shrub.ExError
-
 pub fn print_logic(@tutufile.Decl, StringBuilder, rows? : Array[String]) -> Map[String, PropImpl] raise @shrub.ExError
 
 pub fn print_protocol(@tutufile.Decl, StringBuilder, doc? : String?) -> Unit raise @shrub.ExError
-
-pub fn print_scenes(Array[@tutufile.Decl]) -> String raise @shrub.ExError
 
 pub fn print_state(@tutufile.Decl, Map[String, PropImpl], StringBuilder) -> Unit raise @shrub.ExError
 
