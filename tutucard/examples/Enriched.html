@@ -16,7 +16,7 @@
   /// compiled one could not read until now.
   pred matches { contains (str @value) .needle }
 
-  /// A filter with no arguments at all still sees the row.
+  /// A second filter, on the key rather than on the value.
   pred second { @key is 1 }
 
   /// An in-loop enricher: binds what the row does not carry.
@@ -35,6 +35,9 @@
 
 <template id="Enriched">
   <ul>
-    <li x:each=".rows" @when="matches" @enrich-with="row" @text="@echo"></li>
+    <li @each=".rows" @when="matches" @enrich-with="row" @text="@echo"></li>
+  </ul>
+  <ul>
+    <li @each=".rows" @when="second" @text="@value"></li>
   </ul>
 </template>

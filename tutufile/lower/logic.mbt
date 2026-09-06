@@ -325,6 +325,10 @@ fn print_binds(
     }
     let value = rename_ex(read_ex(parts[at + 1:]), renames)
     out.write_string("  @\{name} = \{print_ex(value)}\n")
+    // A name this body bound is a BINDING from here on: a later line reading
+    // it reads the bind, not a free name. The old notation wrote the sigil on
+    // both sides, so the read has to carry it back too.
+    renames[name] = "@" + name
   }
 }
 

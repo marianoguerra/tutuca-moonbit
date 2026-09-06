@@ -62,7 +62,7 @@ fn print_element(
         guard option_name(a.name) is Some(opt) else {
           raise NoSpelling(
             what="a conditional `\{a.name}` attribute",
-            help="an attribute whose name needs `~attrs:` cannot also carry an `if`",
+            help="a conditional attribute is written `~name: if cond | a | b`, and this name cannot be written as a name",
           )
         }
         opts.push("~\{opt}: if \{print_expr(a.cond_val)} | \{then_} | \{else_}")
@@ -77,14 +77,15 @@ fn print_element(
     Some(b) => opts.push("~bind: \{print_expr(b.target)}")
     None => ()
   }
-  // A name the option syntax cannot spell — `xml:lang`, `xlink:href` — goes
-  // through the escape hatch the notation has for exactly this.
-  if !extra.is_empty() {
-    let entries = []
-    for e in extra {
-      entries.push("\{quote(e.0)}: \{e.1}")
-    }
-    opts.push("~attrs: {\{entries.join(", ")}}")
+  // A name the option syntax cannot spell — anything with a colon in it — has
+  // no spelling in the new notation, and inventing one here would write a file
+  // no reader accepts. The corpus holds exactly one such attribute and it is a
+  // typo (`x:each` for `@each`), so the honest answer is to name it and stop.
+  if extra is [(name, _), ..] {
+    raise NoSpelling(
+      what="an attribute named `\{name}`",
+      help="an attribute is a name with hyphens written as underscores; a colon has no spelling",
+    )
   }
   // A hyphen in a tag is written as an underscore, the same way it is in an
   // attribute name: shrubbery reads `emoji-picker` as three terms.
