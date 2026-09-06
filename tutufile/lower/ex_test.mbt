@@ -85,7 +85,7 @@ test "a sequence access keeps its key" {
 test "a nested read is refused, and the message names the two repairs" {
   inspect(
     ex("it.user.name"),
-    content="<error: a member read needs a binding or the event to read it from>",
+    content="<error: a member read needs a binding, an index or the event to read it from>",
   )
 }
 

@@ -64,9 +64,14 @@ fn print_member(base : Ex, m : String) -> String raise ExError {
     EName("e") => "e." + m
     EName(b) => "@" + b + "." + m
     EMember(EName("e"), a) => "e." + a + "." + m
+    // A field BELOW an index: `it.rows[i].inner`. The old notation writes the
+    // same path, and a `&` reference is the one position that takes one — the
+    // runtime `Path` is field-then-key, so a key followed by a field is a step
+    // it has.
+    EIndex(_, _) => print_ex(base) + "." + m
     _ =>
       raise ExError(
-        message="a member read needs a binding or the event to read it from",
+        message="a member read needs a binding, an index or the event to read it from",
         help="`it.a.b` is refused: render the child as a component, or name the value with a `compute`",
         span=@report.Span::at(0),
       )

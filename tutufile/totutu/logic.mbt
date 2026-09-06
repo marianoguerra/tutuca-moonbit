@@ -120,13 +120,19 @@ fn print_decl(d : @tscript.Decl, out : StringBuilder) -> Unit raise NoSpelling {
     // printed by `print_accessors`, and reaching one here is a caller's error.
     DGet | DSet => return
     DCompute => print_body_decl(d, "compute \{name}\{params}", out)
-    DPred => print_body_decl(d, "pred \{name}\{params}", out)
+    DPred => print_body_decl(d, "pred \{name}\{row_params(d, params)}", out)
     DInvariant => print_body_decl(d, "invariant \{name}\{params}", out)
     // An enricher BINDS: its body is `name = value`, not a write to a place.
     // `:=` is a write and `=` is a binding, and the two are different
     // statements in the new notation exactly as they were two different things
     // in the old one.
-    DEnrich => print_body_decl(d, "enrich \{name}\{params}", out, binds=true)
+    DEnrich =>
+      print_body_decl(
+        d,
+        "enrich \{name}\{row_params(d, params)}",
+        out,
+        binds=true,
+      )
     DBindWith => print_body_decl(d, "bind_with \{name}", out, binds=true)
     DReceive => print_body_decl(d, "receive \{name}\{params}", out)
     // A routed name is answered with `answer`, which is the word the logic
@@ -179,6 +185,84 @@ fn print_body_decl(
       print_stmts(stmts, "      ", out, binds~)
     }
   }
+}
+
+///|
+/// A row member's parameter list.
+///
+/// The old notation gave a `@when` filter and an in-loop enricher NO
+/// parameters: they read `@value` and `@key` out of the air. The new notation
+/// names the row, so a member whose body reads those bindings declares them —
+/// and the reader maps the names back, which is the only way the body's reads
+/// resolve to the row again.
+///
+/// Only when the body actually reads one: a predicate that takes no arguments
+/// and reads no row is a predicate about the component, and giving it two
+/// parameters would change what it is.
+fn row_params(d : @tscript.Decl, declared : String) -> String {
+  if declared != "" {
+    return declared
+  }
+  if reads_row(d.body) {
+    "(value, key)"
+  } else {
+    ""
+  }
+}
+
+///|
+/// Whether a body reads the row bindings.
+fn reads_row(b : @tscript.Body) -> Bool {
+  let found = []
+  fn look(e : @tutuca.Expr) -> Unit {
+    if e.as_bind() is Some(n) && n is ("value" | "key" | "iter") {
+      found.push(n)
+    }
+    if e.as_bind_member() is Some((n, _)) && n is ("value" | "key" | "iter") {
+      found.push(n)
+    }
+  }
+
+  fn walk_expr(e : @tutuca.Expr) -> Unit {
+    look(e)
+    match e {
+      EApp(args~, ..) => args.each(walk_expr)
+      EChain(operands~, ..) => operands.each(walk_expr)
+      EUnary(operand~, ..) => walk_expr(operand)
+      EIf(cond~, then_~, else_~, ..) => {
+        walk_expr(cond)
+        walk_expr(then_)
+        walk_expr(else_)
+      }
+      ETpl(parts~, ..) =>
+        for p in parts {
+          if p is TExpr(v) {
+            walk_expr(v)
+          }
+        }
+      _ => ()
+    }
+  }
+
+  fn walk_stmt(s : @tscript.Stmt) -> Unit {
+    match s {
+      SAssign(value~, ..) => walk_expr(value)
+      SMethod(args~, ..) => args.each(walk_expr)
+      SEffect(args~, ..) => args.each(walk_expr)
+      SIf(cond~, then_~, else_~, ..) => {
+        walk_expr(cond)
+        then_.each(walk_stmt)
+        else_.each(walk_stmt)
+      }
+      _ => ()
+    }
+  }
+
+  match b {
+    Value(e) => walk_expr(e)
+    Stmts(ss) => ss.each(walk_stmt)
+  }
+  !found.is_empty()
 }
 
 ///|
