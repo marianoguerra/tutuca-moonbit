@@ -29,14 +29,17 @@ The migration is **done through stage 5. Every view file in the repo is a
 
 ### Stage 6, and what is left of it
 
-The four sections need four readers. Two exist:
+All four sections read directly:
 
-| Section | Reader | State |
+| Section | Reader | Answers |
 | --- | --- | --- |
-| `view:` | `tutufile/toanode` | done — an `@anode.ANode` and its event table, macros expanded |
-| `logic:` | `tutufile/tologic` | done — `@tscript.Decl`s, held to the printer by a differential test |
-| `spec:` | — | not started — `@statedef.StateDef`: fields, properties, rules, `where`s, channels, protocols, `struct`/`enum`, `provide`/`lookup` |
-| `fixtures:` / `tests:` | — | not started — `@statedef.InitState` and `@scenedef.Scene` |
+| `view:` | `tutufile/toanode` | an `@anode.ANode` and its event table, macros expanded |
+| `logic:` | `tutufile/tologic` | `@tscript.Decl`s |
+| `spec:` | `statedef/from_tutu*.mbt` | the same `RawDecl`s the block parser builds, handed to the same `defs_of` |
+| `fixtures:` / `tests:` | `tutufile/todata` | the JSON `parse_init` and `parse_scenes` take |
+
+Each is held to the printer by a differential test — the same source read both
+ways, compared as trees. That is what makes a printer safe to delete.
 
 Then, in order:
 
@@ -46,24 +49,23 @@ Then, in order:
    seam — it turns raw text into `(root, events)`, which is exactly what
    `toanode` answers.
 2. **Switch the consumers.** `cli/gen_views.mbt` lowers a `.tutu` before
-   splitting it (`f.input.has_suffix(".tutu")`); so does `benchmarks`. Both
-   read the direct path instead.
+   splitting it (`f.input.has_suffix(".tutu")`); so does `benchmarks`, and so
+   does `tgc/emit`. All three read the direct path instead.
 3. **Delete.** `tutufile/lower`'s printers, `viewfile`'s HTML splitter,
    `tutuca to-tutu` and `tutufile/equiv` — the converter and the equivalence
    check exist only to move the repo across, and the repo is across.
 
-Three things the readers must keep producing, because a consumer still reads
-them in the old spelling — each is a rename of its own and none is stage 6's:
+Two things a reader still cannot answer, and both are wire formats with another
+side to them rather than gaps in the reader:
 
-- a collection method's name in a `Stmt` (`deleteAt`, not `delete_at`), which
-  `tscript/check`, `tscript/emit_mbt` and the card backend match on
+- `provide` and `lookup` carry their value as SOURCE into a compiled card's
+  manifest, and the host parses it there with the block grammar. The `spec:`
+  reader raises on them by name. One example card uses them.
 - the auto-mutator vocabulary (`set<Field>`, `<field>Len`), which
   `core/schema.mbt` builds and 272 call sites spell
-- `InitState.fields`, which is MoonBit source rather than values, because the
-  generator writes it into a `make` call
 
-The old notation itself — what `docs/` and `skill/` show a reader — is the
-other half of "no traces", and it is prose rather than code.
+`InitState.fields` is MoonBit source and stays that way: the generator writes
+it into a `make` call, and the data reader hands over JSON rather than fields.
 
 ### How it is checked
 
