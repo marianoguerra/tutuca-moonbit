@@ -73,7 +73,12 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
   match file.section(Spec) {
     Some(section) => {
       out.write_string("<script type=\"tutuca/spec\">\n")
-      for decl in section.decls {
+      // A doc comment between two declarations attaches to the FIRST one's
+      // suffix — see `member_doc` — so a section's declarations are read with
+      // their predecessor in hand, exactly as a component's members are.
+      for at, decl in section.decls {
+        let prev = if at > 0 { Some(section.decls[at - 1].node) } else { None }
+        let doc = member_doc(decl.node, prev)
         let body = StringBuilder()
         try {
           match decl.kind {
@@ -81,8 +86,8 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
               meta[decl.name] = read_meta(decl)
               print_state(decl, impls.get(decl.name).unwrap_or(Map([])), body)
             }
-            Struct => print_struct(decl, body)
-            Enum => print_enum(decl, body)
+            Struct => print_struct(decl, body, doc~)
+            Enum => print_enum(decl, body, doc~)
             Protocol => print_protocol(decl, body)
             _ => ()
           }

@@ -45,7 +45,7 @@ pub fn num_text(Double) -> String
 
 pub fn print_channels(@tutufile.Decl, StringBuilder) -> Unit raise ExError
 
-pub fn print_enum(@tutufile.Decl, StringBuilder) -> Unit raise ExError
+pub fn print_enum(@tutufile.Decl, StringBuilder, doc? : String?) -> Unit raise ExError
 
 pub fn print_ex(Ex) -> String raise ExError
 
@@ -61,7 +61,7 @@ pub fn print_state(@tutufile.Decl, Map[String, PropImpl], StringBuilder) -> Unit
 
 pub fn print_stmt(@ast.Node, StringBuilder, String, Map[String, String]) -> Unit raise ExError
 
-pub fn print_struct(@tutufile.Decl, StringBuilder) -> Unit raise ExError
+pub fn print_struct(@tutufile.Decl, StringBuilder, doc? : String?) -> Unit raise ExError
 
 pub fn print_ty(Ex) -> String raise ExError
 

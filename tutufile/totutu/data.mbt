@@ -86,25 +86,25 @@ pub fn print_scene(
 /// One step, which is a call.
 fn print_step(step : @scenedef.Step) -> String raise NoSpelling {
   match step {
-    Click(sel~, nth~) => "click(\{quote(sel)}\{nth_opt(nth)})"
+    Click(sel~, nth~) => "click(\{quote(sel)}\{step_nth(nth)})"
     Type(sel~, value~, nth~) =>
-      "type(\{quote(sel)}, \{quote(value)}\{nth_opt(nth)})"
+      "type(\{quote(sel)}, \{quote(value)}\{step_nth(nth)})"
     Key(sel~, key~, value~, nth~) => {
       let v = match value {
         Some(v) => ", \{print_value(v)}"
         None => ""
       }
-      "key(\{quote(sel)}, \{quote(key)}\{v}\{nth_opt(nth)})"
+      "key(\{quote(sel)}, \{quote(key)}\{v}\{step_nth(nth)})"
     }
     Check(sel~, checked~, nth~) =>
-      "check(\{quote(sel)}, \{if checked { "true" } else { "false" }}\{nth_opt(nth)})"
+      "check(\{quote(sel)}, \{if checked { "true" } else { "false" }}\{step_nth(nth)})"
     Fire(sel~, event~, value~, key~, nth~) => {
       let v = match value {
         Some(v) => ", \{print_value(v)}"
         None => ""
       }
       let k = if key == "" { "" } else { ", ~key: \{quote(key)}" }
-      "fire(\{quote(sel)}, \{quote(event)}\{v}\{k}\{nth_opt(nth)})"
+      "fire(\{quote(sel)}, \{quote(event)}\{v}\{k}\{step_nth(nth)})"
     }
     Drag(sel~, from~, to~) => "drag(\{quote(sel)}, \{from}, \{to})"
     Send(name~, args~) => {
@@ -120,6 +120,16 @@ fn print_step(step : @scenedef.Step) -> String raise NoSpelling {
 
 ///|
 fn nth_opt(nth : Int) -> String {
+  if nth == 0 {
+    ""
+  } else {
+    " ~nth: \{nth}"
+  }
+}
+
+///|
+/// `~nth:` as a STEP takes, which is an argument of the call.
+fn step_nth(nth : Int) -> String {
   if nth == 0 {
     ""
   } else {
@@ -139,16 +149,18 @@ fn print_expect(e : @scenedef.Expect) -> String raise NoSpelling {
         "state " + place_text(e.place)
       }
     RHtml | RRenders | RRefused | RLog => e.reader.word()
-    RAttr | RProp =>
-      "\{e.reader.word()}(\{quote(e.sel)}, \{quote(e.name)}\{nth_opt(e.nth)})"
-    _ => "\{e.reader.word()}(\{quote(e.sel)}\{nth_opt(e.nth)})"
+    RAttr | RProp => "\{e.reader.word()}(\{quote(e.sel)}, \{quote(e.name)})"
+    _ => "\{e.reader.word()}(\{quote(e.sel)})"
   }
+  // `~nth:` trails the whole EXPECTATION rather than sitting in the reader's
+  // arguments: it says which of the matched elements to read, not what to read.
+  let nth = nth_opt(e.nth)
   match e.want {
-    Some(WIs(v)) => "expect \{subject} == \{print_value(v)}"
-    Some(WContains(s)) => "expect \{subject} contains \{quote(s)}"
+    Some(WIs(v)) => "expect \{subject} == \{print_value(v)}\{nth}"
+    Some(WContains(s)) => "expect \{subject} contains \{quote(s)}\{nth}"
     // A read with nothing to compare against is a RECORDING: the runner reads
     // it and hands the answer back rather than judging it.
-    None => "expect \{subject}"
+    None => "expect \{subject}\{nth}"
   }
 }
 

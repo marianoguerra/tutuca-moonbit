@@ -276,11 +276,21 @@ fn expect_json(
     obj["at"] = Json::string(place_text(parts[i:stop]))
     i = stop
   }
+  // A trailing `~nth:` is an option of the EXPECTATION — which of the matched
+  // elements to read — rather than part of the value being compared against, so
+  // the value stops where it starts.
+  let mut stop = parts.length()
+  for at, p in parts {
+    if at > i && p.it is Kw(_) {
+      stop = at
+      break
+    }
+  }
   // the comparison, if there is one; without it the step records instead
-  if i < parts.length() {
+  if i < stop {
     match parts[i].it {
-      Op("==") => obj["is"] = json_of(read_ex(parts[i + 1:]))
-      Id("contains") => obj["contains"] = json_of(read_ex(parts[i + 1:]))
+      Op("==") => obj["is"] = json_of(read_ex(parts[i + 1:stop]))
+      Id("contains") => obj["contains"] = json_of(read_ex(parts[i + 1:stop]))
       _ =>
         raise ExError(
           message="an expectation compares with `==` or `contains`",

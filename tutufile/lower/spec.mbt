@@ -463,8 +463,9 @@ fn has_kw(terms : ArrayView[@ast.Node], name : String) -> Bool {
 pub fn print_struct(
   decl : @tutufile.Decl,
   out : StringBuilder,
+  doc? : String?,
 ) -> Unit raise ExError {
-  write_doc(out, decl_doc(decl), "")
+  write_doc(out, doc.bind(x => x), "")
   guard decl.node.it is Group(parts) && parts.length() >= 3 else {
     raise ExError(
       message="`\{decl.name}` declares no fields",
@@ -499,8 +500,9 @@ pub fn print_struct(
 pub fn print_enum(
   decl : @tutufile.Decl,
   out : StringBuilder,
+  doc? : String?,
 ) -> Unit raise ExError {
-  write_doc(out, decl_doc(decl), "")
+  write_doc(out, doc.bind(x => x), "")
   let cases = []
   for g in body_groups(decl) {
     guard g.it is Group(parts) && parts.length() >= 1 && parts[0].it is Id(c) else {
