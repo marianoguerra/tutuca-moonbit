@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.54.0] - 2026-09-07
 
 ### The skill is written in `.tutu`, and five holes the writing found
 
@@ -7983,7 +7983,13 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.47.1...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.54.0...HEAD
+[0.54.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.53.1...v0.54.0
+[0.53.1]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.53.0...v0.53.1
+[0.53.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.52.0...v0.53.0
+[0.52.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.51.0...v0.52.0
+[0.51.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.50.2...v0.51.0
+[0.47.1]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.47.0...v0.47.1
 [0.47.1]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.47.0...v0.47.1
 [0.47.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.46.0...v0.47.0
 [0.46.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.45.0...v0.46.0
