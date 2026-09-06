@@ -1,3 +1,17 @@
+///|
+/// The reader's own shapes, in scope here the way they were when `to_expr`
+/// lived in this package.
+using @sh {type Ex}
+
+///|
+using @sh {type ExError}
+
+///|
+using @sh {type Arg}
+
+///|
+using @sh {type ExCtx}
+
 // The `view:` section, read straight into `@anode.ANode`.
 //
 // At-notation is already a tree of elements, attributes and content. The
@@ -277,7 +291,7 @@ fn ViewBuilder::content(
       Parens(gs) => {
         guard gs.length() == 1 else { return out }
         let ex = @sh.read_group(gs[0])
-        out.push(@anode.dyn_text(to_expr(ex, ctx, span), id=self.alloc()))
+        out.push(@anode.dyn_text(@sh.to_expr(ex, ctx, span), id=self.alloc()))
         i = i + 1
       }
       // An element is its name and the parentheses after it, which carry both
@@ -537,11 +551,11 @@ fn ViewBuilder::attribute(
     // and registers the event that writes back. `tag` finishes it, because
     // which property and which event depend on the element it is written on.
     "bind" => {
-      binds.push(to_expr(value, ctx, span))
+      binds.push(@sh.to_expr(value, ctx, span))
       return
     }
     "push_view" => {
-      wrappers.push(("push_view", to_expr(value, ctx, span)))
+      wrappers.push(("push_view", @sh.to_expr(value, ctx, span)))
       return
     }
     // A loop-less `~enrich_with:` opens a SCOPE frame around the element: the
@@ -549,25 +563,25 @@ fn ViewBuilder::attribute(
     // with. On an `@each` the option belongs to the loop and `print_each` has
     // already taken it, so reaching here means there is no loop.
     "enrich_with" => {
-      wrappers.push(("scope", to_expr(value, ctx.as_handler(), span)))
+      wrappers.push(("scope", @sh.to_expr(value, ctx.as_handler(), span)))
       return
     }
     "inner_html" => {
-      attrs.push(@anode.set_inner_html(val=to_expr(value, ctx, span)))
+      attrs.push(@anode.set_inner_html(val=@sh.to_expr(value, ctx, span)))
       return
     }
     // The one construct whose value reaches the DOM unparsed, and the only
     // attribute here whose name says so out loud.
     "dangerously_inner_html" => {
-      attrs.push(@anode.raw_html(val=to_expr(value, ctx, span)))
+      attrs.push(@anode.raw_html(val=@sh.to_expr(value, ctx, span)))
       return
     }
     "inner_md" => {
-      attrs.push(@anode.set_inner_md(val=to_expr(value, ctx, span)))
+      attrs.push(@anode.set_inner_md(val=@sh.to_expr(value, ctx, span)))
       return
     }
     "inner_svg" => {
-      attrs.push(@anode.set_inner_svg(val=to_expr(value, ctx, span)))
+      attrs.push(@anode.set_inner_svg(val=@sh.to_expr(value, ctx, span)))
       return
     }
     _ => ()
@@ -593,12 +607,12 @@ fn ViewBuilder::attribute(
       attrs.push(
         @anode.if_attr(
           attr,
-          to_expr(cond, ctx, span),
-          then_val=to_expr(then_, ctx, span),
-          else_val=to_expr(else_, ctx, span),
+          @sh.to_expr(cond, ctx, span),
+          then_val=@sh.to_expr(then_, ctx, span),
+          else_val=@sh.to_expr(else_, ctx, span),
         ),
       )
-    other => attrs.push(@anode.dyn_attr(attr, to_expr(other, ctx, span)))
+    other => attrs.push(@anode.dyn_attr(attr, @sh.to_expr(other, ctx, span)))
   }
 }
 
@@ -622,8 +636,8 @@ fn ViewBuilder::event(
     EName(handler) => @anode.on(spec, @tutuca.Expr::name(handler), modifiers~)
     ECall(EName(handler), args) => {
       let out = []
-      for a in positional_args(args) {
-        out.push(to_expr(a, hctx, span))
+      for a in @sh.positional_args(args) {
+        out.push(@sh.to_expr(a, hctx, span))
       }
       @anode.on(spec, @tutuca.Expr::name(handler), args=out, modifiers~)
     }
@@ -652,8 +666,8 @@ fn ViewBuilder::event(
         )
       }
       let out = []
-      for a in positional_args(args) {
-        out.push(to_expr(a, hctx, span))
+      for a in @sh.positional_args(args) {
+        out.push(@sh.to_expr(a, hctx, span))
       }
       @anode.on(
         spec,
@@ -693,7 +707,7 @@ fn ViewBuilder::property_write(
   if op == ":=" && v is EName("default") {
     return @anode.reset_property_action(field)
   }
-  let rhs = to_expr(v, ctx, span)
+  let rhs = @sh.to_expr(v, ctx, span)
   let assigned = match op {
     "+=" => @tutuca.Expr::app("+", [@tutuca.Expr::field(field), rhs])
     "-=" => @tutuca.Expr::app("-", [@tutuca.Expr::field(field), rhs])
@@ -740,7 +754,7 @@ fn ViewBuilder::guard_(
   ctx : ExCtx,
   span : @report.Span,
 ) -> @anode.ANode raise ExError {
-  let pos = positional_args(@sh.read_args(raw))
+  let pos = @sh.positional_args(@sh.read_args(raw))
   guard pos.length() == 1 else {
     raise ExError(
       message="`@\{word}` takes one condition",
@@ -748,7 +762,7 @@ fn ViewBuilder::guard_(
       span~,
     )
   }
-  let cond = to_expr(pos[0], ctx, span)
+  let cond = @sh.to_expr(pos[0], ctx, span)
   let inner = self.wrapped_body(word, body, ctx, span)
   if word == "show" {
     @anode.show(cond, inner)
@@ -777,7 +791,7 @@ fn ViewBuilder::each(
   if names.length() > 1 {
     inner = inner.with_bind(names[1], "key")
   }
-  let val = to_expr(seq, ctx, span)
+  let val = @sh.to_expr(seq, ctx, span)
   let trigger = fn(opt : String) -> @tutuca.Expr? raise ExError {
     match @lower.kw_arg(args, opt) {
       Some(EName(f)) => Some(@tutuca.Expr::name(f))
@@ -855,7 +869,7 @@ fn ViewBuilder::render(
   span : @report.Span,
 ) -> @anode.ANode raise ExError {
   let args = @sh.read_args(raw)
-  let pos = positional_args(args)
+  let pos = @sh.positional_args(args)
   guard pos.length() == 1 else {
     raise ExError(
       message="`@render` takes one value",
@@ -864,10 +878,10 @@ fn ViewBuilder::render(
     )
   }
   let view = match @lower.kw_arg(args, "as") {
-    Some(v) => Some(to_expr(v, ctx, span))
+    Some(v) => Some(@sh.to_expr(v, ctx, span))
     None => None
   }
-  let val = to_expr(pos[0], ctx, span)
+  let val = @sh.to_expr(pos[0], ctx, span)
   // `@render(row)` where `row` is the loop's own binder is RENDER-IT: the node
   // renders the item the loop is on and carries no value of its own. The old
   // notation had two spellings for that — `<x render-it>` and a `<x render>`

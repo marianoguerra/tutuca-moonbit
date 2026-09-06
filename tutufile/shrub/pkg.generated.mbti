@@ -4,10 +4,15 @@ package "marianoguerra/tutuca/tutufile/shrub"
 import {
   "marianoguerra/error-report",
   "marianoguerra/shrubbery/ast",
+  "marianoguerra/tutuca/core",
 }
 
 // Values
+pub fn args_to_exprs(Array[Ex], ExCtx, @error-report.Span) -> Array[@core.Expr] raise ExError
+
 pub fn doc_of(@ast.Node) -> String?
+
+pub fn from_macro(@core.Expr) -> @core.Expr
 
 pub fn is_upper(String) -> Bool
 
@@ -16,6 +21,8 @@ pub fn member_doc(@ast.Node, @ast.Node?) -> String?
 pub fn member_name(Array[@ast.Node], Int) -> (String, Int)?
 
 pub fn node_text(@ast.Node) -> String
+
+pub fn positional_args(Array[Arg]) -> Array[Ex]
 
 pub fn qualified(Array[@ast.Node], Int) -> (String, Int)?
 
@@ -30,6 +37,8 @@ pub fn read_member(@ast.Node, prev? : @ast.Node?) -> Member raise ExError
 pub fn read_param(@ast.Node) -> Param raise ExError
 
 pub fn span_of(@ast.Node) -> @error-report.Span
+
+pub fn to_expr(Ex, ExCtx, @error-report.Span) -> @core.Expr raise ExError
 
 // Errors
 pub(all) suberror ExError {
@@ -64,6 +73,16 @@ pub(all) enum Ex {
   EMap(Array[(String, Ex)])
 }
 
+pub(all) struct ExCtx {
+  binds : Map[String, String]
+  pos : NamePos
+  params : Map[String, Ex]
+}
+pub fn ExCtx::as_handler(Self) -> Self
+pub fn ExCtx::value() -> Self
+pub fn ExCtx::with_bind(Self, String, String) -> Self
+pub fn ExCtx::with_params(Self, Map[String, Ex]) -> Self
+
 pub(all) struct Member {
   word : String
   name : String
@@ -80,6 +99,11 @@ pub(all) struct Member {
 pub fn Member::block(Self) -> Array[@ast.Node]
 pub fn Member::has_option(Self, String) -> Bool
 pub fn Member::option(Self, String) -> Ex?
+
+pub(all) enum NamePos {
+  Bound
+  Handler
+}
 
 pub(all) struct Param {
   name : String

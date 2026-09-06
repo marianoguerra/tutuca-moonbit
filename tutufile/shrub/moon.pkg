@@ -10,6 +10,9 @@ import {
   "marianoguerra/shrubbery/raw",
   "marianoguerra/shrubbery/sexp",
   "marianoguerra/error-report" @report,
+  // `Ex` is read here and every section reader wants it as the ONE expression
+  // tree the rest of the compiler works over.
+  "marianoguerra/tutuca/core" @tutuca,
   "moonbitlang/core/string",
 }
 

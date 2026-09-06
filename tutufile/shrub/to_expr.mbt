@@ -18,16 +18,12 @@
 // fold.
 
 ///|
-using @sh {type Ex}
 
 ///|
-using @sh {type ExError}
 
 ///|
-using @sh {type Arg}
 
 ///|
-using @sh {type TPart}
 
 ///|
 /// Where a name is being read, which is the one thing the `Ex` tree does not
@@ -182,7 +178,7 @@ fn name_expr(n : String, ctx : ExCtx, sp : @tutuca.Span) -> @tutuca.Expr {
 /// a constant may pin a URL origin (`tgc/policy/external_url.mbt`), because the
 /// caller's source and the component's own are different provenances. A
 /// substitution that dropped it would widen what a guest may point at.
-fn from_macro(e : @tutuca.Expr) -> @tutuca.Expr {
+pub fn from_macro(e : @tutuca.Expr) -> @tutuca.Expr {
   match e {
     ELit(lit~, span~, ..) => ELit(lit~, from_macro=true, span~)
     ETpl(parts~, span~) =>
@@ -480,7 +476,7 @@ fn trim_bookends(parts : Array[@tutuca.TplPart]) -> Unit {
 ///|
 /// The positional arguments of a call. A keyword one has no place in a value
 /// position, and is dropped here the way the printer dropped it.
-fn positional_args(args : Array[Arg]) -> Array[Ex] {
+pub fn positional_args(args : Array[Arg]) -> Array[Ex] {
   let out = []
   for a in args {
     if a is APos(e) {
@@ -491,7 +487,7 @@ fn positional_args(args : Array[Arg]) -> Array[Ex] {
 }
 
 ///|
-fn args_to_exprs(
+pub fn args_to_exprs(
   args : Array[Ex],
   ctx : ExCtx,
   span : @report.Span,

@@ -12,7 +12,7 @@
 // the reason the comparison is possible at all.
 
 ///|
-/// Read one group of shrubbery as an `@sh.Ex`.
+/// Read one group of shrubbery as an `Ex`.
 fn read_one_ex(src : String) -> @sh.Ex? {
   let parsed = @shrub.parse(src + "\n") catch { _ => return None }
   guard parsed.root().it is Multi(gs) && gs.length() == 1 else { return None }
@@ -25,7 +25,7 @@ fn direct(src : String) -> @tutuca.Expr? {
   let ex = read_one_ex(src)
   guard ex is Some(ex) else { return None }
   Some(
-    to_expr(ex, ExCtx::value(), @report.Span::at(0)) catch {
+    @sh.to_expr(ex, @sh.ExCtx::value(), @report.Span::at(0)) catch {
       _ => return None
     },
   )
@@ -247,8 +247,12 @@ test "a template's holes and its bookend trim" {
 /// and as a handler name in a handler slot with nothing spelled in between.
 test "a bare name reads by position, which the printer could not do" {
   let ex = read_one_ex("item").unwrap()
-  let as_value = to_expr(ex, ExCtx::value(), @report.Span::at(0))
-  let as_handler = to_expr(ex, ExCtx::value().as_handler(), @report.Span::at(0))
+  let as_value = @sh.to_expr(ex, @sh.ExCtx::value(), @report.Span::at(0))
+  let as_handler = @sh.to_expr(
+    ex,
+    @sh.ExCtx::value().as_handler(),
+    @report.Span::at(0),
+  )
   @debug.assert_eq(as_value.as_bind(), Some("item"))
   @debug.assert_eq(as_handler, @tutuca.Expr::name("item"))
 }
@@ -256,14 +260,14 @@ test "a bare name reads by position, which the printer could not do" {
 ///|
 test "a loop's binder becomes the binding the renderer answers with" {
   let ex = read_one_ex("row.title").unwrap()
-  let ctx = ExCtx::value().with_bind("row", "value")
-  let out = to_expr(ex, ctx, @report.Span::at(0))
+  let ctx = @sh.ExCtx::value().with_bind("row", "value")
+  let out = @sh.to_expr(ex, ctx, @report.Span::at(0))
   @debug.assert_eq(out.as_bind_member(), Some(("value", "title")))
 }
 
 ///|
 test "the span is the one it was read with, not an offset into printed text" {
   let ex = read_one_ex("it.count").unwrap()
-  let out = to_expr(ex, ExCtx::value(), @report.Span::of_range(12, 20))
+  let out = @sh.to_expr(ex, @sh.ExCtx::value(), @report.Span::of_range(12, 20))
   @debug.assert_eq(out.span(), { start: 12, end_: 20, })
 }
