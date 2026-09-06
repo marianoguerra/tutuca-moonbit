@@ -192,15 +192,15 @@ fn compare_rules(
       out,
       "spec",
       "\{a.component} rule `\{ra.name}` body",
-      expr_of(ra.source),
-      expr_of(rb.source),
+      ra.body,
+      rb.body,
     )
     diff_debug(
       out,
       "spec",
       "\{a.component} rule `\{ra.name}` format",
-      expr_of(ra.format),
-      expr_of(rb.format),
+      ra.format,
+      rb.format,
     )
   }
 }

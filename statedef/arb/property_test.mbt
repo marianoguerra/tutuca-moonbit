@@ -392,24 +392,19 @@ test "property: shrinking a script only ever shortens it" {
 }
 
 ///|
-/// Where this reading of a rule stops, said out loud.
+/// A rule the EVALUATOR has no builtin for is reported, not dropped.
 ///
-/// `@tscript.parse_bool` lowers the block language to a `@core.Expr`, and a
-/// `Expr` is what a SLOT holds — so it admits exactly the slot vocabulary:
-/// comparisons, `and` / `or` / `not` / `implies`, `is`, the `empty?` family,
-/// `len`, `min` / `max` / `clamp`, `has` / `contains`, the converters and the
-/// string verbs. It has no arithmetic, deliberately: "a slot has no arithmetic
-/// — name the value with a `compute`".
+/// `invariant conserved { (.here + .there) is .total }` — the form the skill's
+/// own example uses — compiles in both shipping backends and does not evaluate
+/// here: `+` is not a builtin, so the application answers Null and the rule
+/// would silently read `false`. That is a bound on this package, not a bug in
+/// it, and the bound is pinned rather than described.
 ///
-/// So a rule that adds two fields — `invariant conserved { (.here + .there) is
-/// .total }`, which is the form the skill's own example uses — compiles in
-/// both shipping backends and does NOT lower here. That is a bound on this
-/// package, not a bug in it, and the bound is pinned rather than described:
-/// `unlowerable` names the rule and quotes the grammar's own sentence, so a
-/// caller can see which rules it is holding a component to and which it is
-/// not. A rule that reaches for arithmetic should name the sum with a
-/// `compute` and compare against `$name`, which lowers.
-test "a rule the slot grammar has no operator for is reported, not dropped" {
+/// The question is put to the builtin table the evaluator dispatches on. It
+/// used to be put to the SLOT PARSER, by re-parsing the rule's source with a
+/// narrower grammar — a second opinion about what evaluates, which happened to
+/// agree. A rule carries its expression now, so the table is asked directly.
+test "a rule the evaluator has no builtin for is reported, not dropped" {
   let def = one(
     (
       #|state Ledger {
@@ -425,7 +420,7 @@ test "a rule the slot grammar has no operator for is reported, not dropped" {
   assert_false(rules.usable())
   inspect(
     rules.unlowerable.map(u => "\{u.0}: \{u.1}").join("\n"),
-    content="conserved: `+` is not a slot operator",
+    content="conserved: `+` is not a builtin",
   )
   // The rule that DOES lower is unaffected — one refusal does not take the
   // others with it, which is the same treatment a card's refused handler gets.

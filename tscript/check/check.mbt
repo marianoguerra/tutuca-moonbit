@@ -123,23 +123,19 @@ pub fn check_rules(def : @statedef.StateDef) -> Array[Finding] {
     // the same rule every other condition is — not a stricter one, since a
     // string and a number are boolish in tutuca and a `pred` that invented a
     // narrower truthiness would be a second one to learn.
-    if c.parse_rule(r.source, r.source_span) is Some(e) {
-      c.condition(e)
-    }
+    c.condition(r.body)
     // The sentence. Walked like any other expression, so a field that is not
     // there is reported where it is written rather than turning into an empty
     // sentence at the moment somebody most wants to read one.
-    if r.format != "" {
-      if c.parse_rule(r.format, r.format_span) is Some(e) {
-        match definite(c.expr(e)) {
-          Some(TyText) | None => ()
-          Some(t) =>
-            c.say(
-              "FORMAT_TYPE",
-              "a `format` is the sentence a reader is shown, and this one answers \{t.show_source()} — write a string, or a `$'…'` template that puts it in one",
-              r.format_span |> rebase,
-            )
-        }
+    if r.format is Some(e) {
+      match definite(c.expr(e)) {
+        Some(TyText) | None => ()
+        Some(t) =>
+          c.say(
+            "FORMAT_TYPE",
+            "a `format` is the sentence a reader is shown, and this one answers \{t.show_source()} — write a string, or a `$'…'` template that puts it in one",
+            r.name_span |> rebase,
+          )
       }
     }
   }
@@ -151,31 +147,6 @@ pub fn check_rules(def : @statedef.StateDef) -> Array[Finding] {
 /// character range and differ only in which package declares them.
 fn rebase(s : @statedef.Span) -> @tutuca.Span {
   { start: s.start, end_: s.end_, }
-}
-
-///|
-/// Parse one rule's source, answering a finding rather than raising.
-///
-/// The span comes from the SPEC block and the parse error's span from inside
-/// the rule, so the two are added: `parse_expr_source` is handed a slice and
-/// counts from its start.
-fn C::parse_rule(
-  self : C,
-  source : String,
-  at : @statedef.Span,
-) -> @tutuca.Expr? {
-  Some(@tscript.parse_expr_source(source)) catch {
-    err => {
-      let inner = err.span()
-      self.out.push({
-        code: "RULE_SYNTAX",
-        message: err.message(),
-        severity: SError,
-        span: { start: at.start + inner.start, end_: at.start + inner.end_, },
-      })
-      None
-    }
-  }
 }
 
 ///|
@@ -1663,24 +1634,9 @@ pub fn rule_decls(
     // Spec-block spans, which are positions in a DIFFERENT block from the one
     // every other span on a `Decl` comes from. They reach only a backend's
     // refusal hint, which reports by name; nothing rebases them onto a file.
-    let at : @tutuca.Span = {
-      start: r.source_span.start,
-      end_: r.source_span.end_,
-    }
-    let body = Some(@tscript.parse_expr_source(r.source)) catch { _ => None }
-    guard body is Some(body) else {
-      unreadable.push(r.name)
-      continue
-    }
-    // A sentence that cannot be evaluated is DROPPED and the rule still holds:
-    // a refusal that cannot describe itself is still a refusal.
-    let format = if r.format == "" {
-      None
-    } else {
-      Some(@tscript.parse_expr_source(r.format)) catch {
-        _ => None
-      }
-    }
+    let at : @tutuca.Span = { start: r.span.start, end_: r.span.end_, }
+    let body = r.body
+    let format = r.format
     out.push({
       kind: if r.kind is RInvariant {
         DInvariant

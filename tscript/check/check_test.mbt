@@ -973,14 +973,18 @@ test "a format that answers a number is reported, and one that answers a string 
 }
 
 ///|
-test "a rule that does not parse is reported where it broke, not where it started" {
-  let out = rule_findings(
-    "state Counter { count : Int  pred ok { .a + .b * .c } }",
-  )
-  assert_eq(out.length(), 1)
-  // The block language refuses two operator families in one unparenthesized
-  // chain, which is the whole reason it has no precedence table.
-  assert_true(out[0].contains("parenthes") || out[0].contains("`*`"))
+/// A rule that does not parse never reaches the checker.
+///
+/// The refusal moved: a `RuleDecl` carries the EXPRESSION, parsed where the
+/// declaration is read, so a body the grammar cannot accept fails the SPEC
+/// BLOCK. That is earlier and stricter than a finding — and the message is
+/// still the grammar's own, pointed at where inside the rule it broke.
+test "a rule that does not parse fails the block it is written in" {
+  let broke = (try? @statedef.parse_state(
+      "state Counter { count : Int  pred ok { .a + .b * .c } }",
+    ))
+    is Err(_)
+  assert_true(broke)
 }
 
 ///|

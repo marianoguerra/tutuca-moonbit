@@ -222,6 +222,7 @@ pub fn Expr::lit(Lit, from_macro? : Bool, span? : Span) -> Self
 pub fn Expr::method_(String, span? : Span) -> Self
 pub fn Expr::name(String, span? : Span) -> Self
 pub fn Expr::seq_access(String, String, span? : Span) -> Self
+pub fn Expr::show_source(Self) -> String
 pub fn Expr::span(Self) -> Span
 pub fn Expr::to_path_item(Self) -> Step?
 pub fn Expr::to_source(Self) -> String

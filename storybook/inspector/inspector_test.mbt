@@ -390,17 +390,19 @@ test "spec viewer: rules, named types and prose" {
   assert_true(
     h.text(".spec-doc-block").contains("two things that must stay true"),
   )
-  // Rules start expanded beside Fields: the expression is carried verbatim,
-  // and so is the sentence its author wrote for the moment it fails.
+  // Rules start expanded beside Fields. The panel shows the expression as the
+  // NOTATION spells it — a rule carries the tree, and `show_source` writes it
+  // back — so a reader sees `it.weightKg` where the field is `weightKg`.
   @debug.assert_eq(h.texts(".rule-kind"), ["pred", "invariant"])
   @debug.assert_eq(h.texts(".spec-rule-name"), ["loadable", "addressed"])
   @debug.assert_eq(h.texts(".spec-rule-source"), [
-    ".weightKg > 0", "not (.to is '')",
+    "it.weightKg > 0", "!it.to is \"\"",
   ])
-  // the sentence as SOURCE, quotes and all: a `format` may be a `$'…{expr}'`
-  // template, and half-unquoting one would be a lie about what was written.
+  // the sentence as SOURCE, quotes and all: a `format` may be a template with
+  // an expression in it, and half-unquoting one would be a lie about what was
+  // written.
   @debug.assert_eq(h.texts(".spec-rule-format"), [
-    "'weight must be above zero'", "'a booked shipment must name a destination'",
+    "\"weight must be above zero\"", "\"a booked shipment must name a destination\"",
   ])
   // a message's payload, which the schema cannot carry either
   h.click(".comp-section", nth=2)

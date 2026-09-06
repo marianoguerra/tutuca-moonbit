@@ -181,10 +181,8 @@ pub(all) struct ProvideDecl {
 pub(all) struct RuleDecl {
   kind : RuleKind
   name : String
-  source : String
-  source_span : @core.Span
-  format : String
-  format_span : @core.Span
+  body : @core.Expr
+  format : @core.Expr?
   doc : String?
   span : @core.Span
   name_span : @core.Span

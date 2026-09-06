@@ -212,6 +212,11 @@ pub(all) struct StateDef {
 /// question; this records what was written and where.
 pub(all) struct ProvideDecl {
   name : String
+  /// The path that produces it, as SOURCE.
+  ///
+  /// Text rather than a tree, unlike a rule's body: a compiled card carries
+  /// this verbatim in its manifest and the host parses it there, so it is a
+  /// wire format and not an internal one.
   source : String
   span : Span
 } derive(Eq, @debug.Debug)
@@ -221,6 +226,7 @@ pub(all) struct ProvideDecl {
 /// above provides it. There is no alias — the local name IS the provided name.
 pub(all) struct LookupDecl {
   name : String
+  /// The fallback, as SOURCE — a manifest carries it, same as a provide's.
   default : String?
   span : Span
 } derive(Eq, @debug.Debug)
@@ -259,20 +265,21 @@ pub(all) enum RuleKind {
 pub(all) struct RuleDecl {
   kind : RuleKind
   name : String
-  /// The one expression, without its braces.
-  source : String
-  /// Where `source` came from, so a caller that parses it can rebase a span
-  /// from the block language onto the file exactly.
-  source_span : Span
-  /// The `format` expression's source, or "". The sentence to say when the
-  /// rule does NOT hold, evaluated against the state that was rejected.
+  /// The one expression.
+  ///
+  /// The EXPRESSION, not the text of one. It used to be source, deferred so a
+  /// package that could not parse an expression did not have to — and every
+  /// consumer parsed it again, in the notation the source happened to be
+  /// written in. A file has two front ends now, and a tree is what they can
+  /// both answer.
+  body : @tutuca.Expr
+  /// The sentence to say when the rule does NOT hold, evaluated against the
+  /// state that was rejected. `None` when the rule names none.
   ///
   /// Describes the FALSE case, because a predicate is true when things are
   /// fine. The `///` comment and this do different jobs: the comment says what
   /// the rule IS, statically; the format says what went wrong THIS time.
-  format : String
-  /// Where `format` came from. The empty span when there is none.
-  format_span : Span
+  format : @tutuca.Expr?
   doc : String?
   /// The whole declaration, from its keyword to its closing brace.
   span : Span

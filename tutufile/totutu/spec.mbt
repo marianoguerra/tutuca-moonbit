@@ -105,12 +105,12 @@ pub fn print_spec(
       RPred => "pred"
       RInvariant => "invariant"
     }
-    let body = expr_text(r.source)
-    if r.format == "" {
+    let body = print_expr(r.body)
+    if r.format is None {
       out.write_string("    \{word} \{@names.snake_of(r.name)}: \{body}\n")
     } else {
       out.write_string("    \{word} \{@names.snake_of(r.name)}:\n")
-      out.write_string("      ~format: \{expr_text(r.format)}\n")
+      out.write_string("      ~format: \{print_expr(r.format.unwrap())}\n")
       out.write_string("      \{body}\n")
     }
   }

@@ -43,29 +43,75 @@ pub(all) struct Rules {
 pub fn rules_of(def : @statedef.StateDef) -> Rules {
   let preds : Map[String, @tutuca.Expr] = Map([])
   let invariants : Map[String, @tutuca.Expr] = Map([])
+  // A `RuleDecl` carries the EXPRESSION now, parsed where the declaration was
+  // read — so nothing here parses. What is still asked is whether the
+  // evaluator can ANSWER it: a rule reaching for `+` parses fine and evaluates
+  // to nothing, and a rule silently answering `false` is worse than one that
+  // says it could not be read.
+  //
+  // The question is put to the builtin table the evaluator itself dispatches
+  // on, so the two cannot drift.
   let unlowerable : Array[(String, String)] = []
   for r in def.rules {
-    let ctx = @tscript.ParseCtx::new()
-    match @tscript.parse_bool(r.source, ctx) {
-      Some(val) =>
+    match unknown_name(r.body) {
+      Some(name) => unlowerable.push((r.name, "`\{name}` is not a builtin"))
+      None =>
         match r.kind {
-          RPred => preds[r.name] = val
-          RInvariant => invariants[r.name] = val
+          RPred => preds[r.name] = r.body
+          RInvariant => invariants[r.name] = r.body
         }
-      None => {
-        // `parse_bool` records why on the context rather than raising, so the
-        // reason is there to carry. Empty when the source was blank, which is
-        // its own answer and a truthful one.
-        let why = if ctx.issues.is_empty() {
-          "the rule's source is empty"
-        } else {
-          ctx.issues.map(issue_why).join("; ")
-        }
-        unlowerable.push((r.name, why))
-      }
     }
   }
   { preds, invariants, unlowerable, }
+}
+
+///|
+/// The first name in an expression the evaluator has no builtin for, if there
+/// is one.
+///
+/// An operator is an application under the skin — `eval_chain` rewrites `a + b`
+/// into `EApp("+")` — so one table answers for both.
+fn unknown_name(e : @tutuca.Expr) -> String? {
+  let found : Array[String] = []
+  walk_names(e, found)
+  found.get(0)
+}
+
+///|
+fn walk_names(e : @tutuca.Expr, found : Array[String]) -> Unit {
+  match e {
+    EApp(name~, args~, ..) => {
+      if @tutuca.builtin(name) is None {
+        found.push(name)
+      }
+      for a in args {
+        walk_names(a, found)
+      }
+    }
+    EChain(ops~, operands~, ..) => {
+      for op in ops {
+        if @tutuca.builtin(op) is None {
+          found.push(op)
+        }
+      }
+      for o in operands {
+        walk_names(o, found)
+      }
+    }
+    EUnary(operand~, ..) => walk_names(operand, found)
+    EIf(cond~, then_~, else_~, ..) => {
+      walk_names(cond, found)
+      walk_names(then_, found)
+      walk_names(else_, found)
+    }
+    ETpl(parts~, ..) =>
+      for p in parts {
+        if p is TExpr(v) {
+          walk_names(v, found)
+        }
+      }
+    _ => ()
+  }
 }
 
 ///|
@@ -202,24 +248,5 @@ impl @tutuca.Stack for RuleStack with fn lookup_bare(self, name) {
   match self.rules.lookup(name) {
     Some(val) => val.eval(self)
     None => Null
-  }
-}
-
-///|
-/// Why one parse issue happened, as a sentence.
-///
-/// `BadExpression` already carries the block grammar's own words, which is the
-/// whole reason that role holds a `why` rather than a code; the rest are named
-/// after what was wrong with them, because no sentence is stored to quote.
-fn issue_why(i : @tscript.Issue) -> String {
-  match i.role {
-    BadExpression(why~) => why
-    UnknownPredicate => "`\{i.value}` is not a name a rule can call"
-    PredicateArity(name~, want~) => "`\{name}` takes \{want} argument(s) here"
-    BadPredicateArg => "`\{i.value}` is not an argument that call can take"
-    BadHandlerName | BadHandlerArg =>
-      "a rule is a value, and `\{i.value}` names a handler"
-    BadMacroVar | BadConfigVar =>
-      "`\{i.value}` is a substitution, and a rule is parsed with none bound"
   }
 }

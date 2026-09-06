@@ -28,32 +28,13 @@ test "a pred and an invariant, with their bodies taken whole" {
   assert_eq(def.rules.length(), 2)
   assert_eq(def.rules[0].name, "canPush")
   assert_eq(def.rules[0].kind, RPred)
-  assert_eq(def.rules[0].source, " .here > 0 ")
+  @debug.assert_eq(def.rules[0].body, ex(" .here > 0 "))
   assert_eq(def.rules[1].name, "conserved")
   assert_eq(def.rules[1].kind, RInvariant)
-  assert_eq(def.rules[1].source, " (.here + .there) is .total ")
+  @debug.assert_eq(def.rules[1].body, ex(" (.here + .there) is .total "))
   // The fields are untouched: a rule is not a field, and reading one did not
   // consume the other.
   assert_eq(def.fields.length(), 3)
-}
-
-///|
-test "the body's span rebases onto the block exactly" {
-  let src =
-    #|state L {
-    #|  n : Int
-    #|  pred ok { .n > 0 }
-    #|}
-  let def = one(src)
-  let chars = src.to_array()
-  let sp = def.rules[0].source_span
-  let text = StringBuilder()
-  for i in sp.start..<sp.end_ {
-    text.write_char(chars[i])
-  }
-  // The INNER range: just past `{`, just before the matching `}`. Which is
-  // what a caller parsing the block language rebases its own span onto.
-  assert_eq(text.to_string(), " .n > 0 ")
 }
 
 ///|
@@ -67,14 +48,14 @@ test "a format sentence runs to the body's brace, braces in the template include
       #|}
     ),
   )
-  assert_eq(def.rules[0].format, "$'{.n} is not above zero'")
-  assert_eq(def.rules[0].source, " .n > 0 ")
+  @debug.assert_eq(def.rules[0].format, Some(ex("$'{.n} is not above zero'")))
+  @debug.assert_eq(def.rules[0].body, ex(" .n > 0 "))
 }
 
 ///|
 test "a rule with no format says so with an empty string, not an absence" {
   let def = one("state L { n : Int  pred ok { .n > 0 } }")
-  assert_eq(def.rules[0].format, "")
+  @debug.assert_eq(def.rules[0].format, None)
 }
 
 ///|
@@ -87,7 +68,7 @@ test "a `}` inside a string does not close the body" {
       #|}
     ),
   )
-  assert_eq(def.rules[0].source, " .s is '}' ")
+  @debug.assert_eq(def.rules[0].body, ex(" .s is '}' "))
 }
 
 ///|
@@ -100,7 +81,10 @@ test "a nested brace is matched, not the first one found" {
       #|}
     ),
   )
-  assert_eq(def.rules[0].source, " if (.n > 0) { true } else { false } ")
+  @debug.assert_eq(
+    def.rules[0].body,
+    ex(" if (.n > 0) { true } else { false } "),
+  )
 }
 
 ///|
@@ -251,7 +235,7 @@ test "a rule reading a render binding is reported, not silently answered" {
   let def = @statedef.parse_state(
       "state Row { needle : String  pred matches { contains (str @value) .needle } }",
     )[0]
-  assert_eq(def.rules[0].source, " contains (str @value) .needle ")
+  @debug.assert_eq(def.rules[0].body, ex(" contains (str @value) .needle "))
 }
 
 // -- section words are not reserved field names -----------------------------
@@ -303,4 +287,16 @@ test "the sections themselves still parse beside a field of the same name" {
   assert_eq(def.fields.map(f => f.name), ["handle"])
   assert_eq(def.receive.map(m => m.name), ["refresh"])
   assert_eq(def.express_intent.map(m => m.name), ["wantsMore"])
+}
+
+///|
+/// The same text, as the expression a rule now carries.
+///
+/// A rule used to hold its body as SOURCE and every consumer parsed it again;
+/// it holds the tree. These assertions still say "this text became this rule",
+/// which is what they were always about.
+fn ex(src : String) -> @tutuca.Expr {
+  @tscript.parse_expr_source(src) catch {
+    _ => @tutuca.Expr::lit(LNull)
+  }
 }

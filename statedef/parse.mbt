@@ -570,6 +570,20 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
         if rules.iter().any(r => r.name == rname) {
           raise DuplicateRule(name=rname, span=rname_span)
         }
+        // The body is parsed HERE rather than carried as text. A rule is an
+        // expression, and a consumer that had to parse it was a consumer that
+        // had to know which notation the text was written in.
+        let body = @tscript.parse_expr_source(source) catch {
+          err => raise Syntax(msg=err.message(), span=inside(source_span, err))
+        }
+        let fmt = if format == "" {
+          None
+        } else {
+          Some(@tscript.parse_expr_source(format)) catch {
+            err =>
+              raise Syntax(msg=err.message(), span=inside(format_span, err))
+          }
+        }
         rules.push({
           kind: if w == "invariant" {
             RInvariant
@@ -577,10 +591,8 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
             RPred
           },
           name: rname,
-          source,
-          source_span,
-          format,
-          format_span,
+          body,
+          format: fmt,
           doc: member_doc,
           span: { start: kw_at.start, end_: source_span.end_ + 1, },
           name_span: rname_span,
@@ -1335,7 +1347,21 @@ pub fn parse_state(
   name? : String = "",
 ) -> Array[StateDef] raise DefError {
   let p : P = { toks: tokenize(source), at: 0, }
-  let raw = parse_decls(p)
+  defs_of(parse_decls(p), name)
+}
+
+///|
+/// The declarations a front end read, as the components they describe.
+///
+/// Split from the parser above so a SECOND front end can hand it the same
+/// declarations: `from_tutu.mbt` reads them out of a `.tutu` file's shrubbery.
+/// Everything that decides what a declaration MEANS — which names resolve,
+/// what a bare `state` is called, whether a surface names a component that
+/// exists — is here, where one copy of it can be.
+fn defs_of(
+  raw : Array[RawDecl],
+  name : String,
+) -> Array[StateDef] raise DefError {
   // Which components this file declares, so a field can name a sibling
   // before its `state` appears.
   let comps : Map[String, String] = Map([])
@@ -1999,4 +2025,14 @@ fn walk_inline(
     | TyCompProtocols(_)
     | TyAny => ()
   }
+}
+
+///|
+/// A parse failure inside a rule's body, as a position in the FILE.
+///
+/// The body was handed to the expression parser as a slice, so what comes back
+/// is measured from the slice's own start.
+fn inside(at : Span, err : @tscript.ScriptError) -> Span {
+  let e = err.span()
+  { start: at.start + e.start, end_: at.start + e.end_, }
 }

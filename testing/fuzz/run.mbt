@@ -348,35 +348,16 @@ pub fn[N] Plan::run_live(
 pub fn Plan::sentence_of(self : Plan, rule : String) -> String {
   for r in self.def.rules {
     if r.name == rule {
-      return if r.format != "" {
-        unquote(r.format)
-      } else if r.source != "" {
-        r.source
-      } else {
-        rule
+      // A rule carries the EXPRESSION rather than its text, so the sentence is
+      // what the format literally says. A format that interpolates has no
+      // static rendering — the values it names come from the state that failed
+      // — and the rule's own name is a better answer than a half-substituted
+      // template.
+      return match r.format {
+        Some(ELit(lit=LStr(s), ..)) => s
+        _ => rule
       }
     }
   }
   rule
-}
-
-///|
-/// A block-language string literal, as the sentence it spells.
-///
-/// A `format` is kept as SOURCE — `'…'`, or `$'…'` for one that interpolates —
-/// because that is what the block says and `statedef` does not evaluate. The
-/// delimiters are not part of the sentence, so they go.
-///
-/// An interpolated format keeps its `{…}` placeholders: filling them in is the
-/// runtime's job, and the runtime already did it on the `Refusal` when there
-/// was one to fill. What this answers is the case where there was NOT one —
-/// a rule nothing enforced — and there the template is the honest answer.
-fn unquote(s : String) -> String {
-  let body = if s.has_prefix("$") { s[1:].to_owned() } else { s }
-  for q in ["'", "\""] {
-    if body.has_prefix(q) && body.has_suffix(q) && body.length() >= 2 {
-      return body[1:body.length() - 1].to_owned()
-    }
-  }
-  body
 }

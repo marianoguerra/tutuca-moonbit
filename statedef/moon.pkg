@@ -11,6 +11,9 @@
 import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/scenedef",
+  // A rule body is an EXPRESSION, and this is what reads one out of the block
+  // language. The other front end reads it out of shrubbery.
+  "marianoguerra/tutuca/tscript",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/string",

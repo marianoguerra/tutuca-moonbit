@@ -114,8 +114,15 @@ fn Inspector::spec_rule_rows(
       "kind": Str(word),
       "kind_class": Str(klass),
       "name": Str(r.name),
-      "source": Str(r.source),
-      "format": Str(r.format),
+      // The rule carries the EXPRESSION; what a reader wants to see is the
+      // notation it was written in, which is what `show_source` answers.
+      "source": Str(r.body.show_source()),
+      "format": Str(
+        match r.format {
+          Some(f) => f.show_source()
+          None => ""
+        },
+      ),
       "doc": Str(spec_doc_of(r.doc)),
     })
   })
