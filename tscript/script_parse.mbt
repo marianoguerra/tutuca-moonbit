@@ -220,9 +220,7 @@ pub fn effect_min_arity(name : String) -> Int? {
     "send" => Some(1)
     // A place, then a name, then the payload.
     "sendAt" => Some(2)
-    // `intent` takes a name after its leg words; `forward` takes none, because
-    // it re-dispatches the one that arrived.
-    "intent" => Some(1)
+    // `forward` takes no name, because it re-dispatches the one that arrived.
     "forward" => Some(0)
     // `fail` takes the one value it answers with. So does `reply` in an
     // `intent` body — and in a `receive` body its first argument is the NAME,
@@ -249,9 +247,9 @@ pub fn effect_min_arity(name : String) -> Int? {
 ///|
 /// Whether an effect may be written with leg words before its arguments.
 ///
-/// Two of them, and the same two the design gives a route: `intent` chooses one
-/// for a new dispatch, and `forward` chooses one for a message that has not had
-/// one yet — or narrows the one a walk is already on.
+/// The ones the design gives a route: `ask` and `notify` choose one for a new
+/// dispatch, and `forward` chooses one for a message that has not had one yet
+/// — or narrows the one a walk is already on.
 pub fn ask_names_a_question(args : Array[@tutuca.Expr]) -> Bool {
   match args.get(0) {
     Some(ELit(lit=LStr(_), ..)) | Some(EName(..)) => true
@@ -261,7 +259,7 @@ pub fn ask_names_a_question(args : Array[@tutuca.Expr]) -> Bool {
 
 ///|
 pub fn takes_route(name : String) -> Bool {
-  name is ("ask" | "notify" | "forward" | "intent")
+  name is ("ask" | "notify" | "forward")
 }
 
 ///|

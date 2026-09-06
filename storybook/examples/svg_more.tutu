@@ -21,7 +21,7 @@ spec:
 
     /// What the chart KEEPS, as opposed to what a handler asks before it acts.
     /// It is checked after every dispatch — the two handlers below, the
-    /// generated `setValues` and `pushInValues` nobody wrote, and anything
+    /// generated `set_values` and `push_in_values` nobody wrote, and anything
     /// added later that never mentions it.
     ///
     /// `hasSpare` is the same sentence attached at a different moment, and the

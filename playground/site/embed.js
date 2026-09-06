@@ -278,7 +278,7 @@ class MbPlayground extends HTMLElement {
         parent: this.pane("view"),
         root: this.shadowRoot,
         doc: this._viewSrc,
-        lang: "html",
+        lang: "tutu",
         onRun: () => this.run(),
         onChange: (text) => {
           this._viewSrc = text;

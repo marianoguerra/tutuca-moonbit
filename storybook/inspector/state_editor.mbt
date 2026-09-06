@@ -2,7 +2,7 @@
 //
 // No per-component code: the editor is handed an instance, asks it what fields
 // it has (`schema`), picks a control per declared kind, and writes an edit
-// back through the mutator every field already gets (`setTitle`, `setCount`,
+// back through the mutator every field already gets (`set_title`, `set_count`,
 // …) — reached by name through the Obj trait, because there is no downcast to
 // the concrete state type and none is needed.
 //

@@ -21,7 +21,7 @@ reading a handler.
 | --- | --- |
 | `state`, `struct`, `enum`, `property` — data and private-by-default abstract state | `receive`, `intent`, property `get`/`set` — the transitions |
 | `protocol`, `implements`, `handle`, `express` — the boundary | `enrich`, `enrich-scope` — render-time bindings |
-| `provide` / `lookup` — the wiring | parameterized `compute` — a `$name args…` a view calls |
+| `provide` / `lookup` — the wiring | parameterized `compute` — a `name(args…)` a view calls |
 | `pred`, `invariant` — the rules it keeps | — |
 | `where` — the domains its fields are drawn from | — |
 
@@ -29,10 +29,10 @@ A `where` sits beside them because it is the same kind of statement about the
 state, narrowed to one field — and because it is the half a generator can read
 BACKWARDS, which is what separates it from a rule. See *Field domains* below.
 
-A rule sits in the spec block because it has no statements, no effects and no
+A rule sits in `spec:` because it has no statements, no effects and no
 arguments: it is a fact about the state, not a step. A `compute` stays in the
-script block because it is not declared to answer yes or no — and so does a
-`pred` that takes an argument or reads `@value`, which is a render-time filter
+`logic:` section because it is not declared to answer yes or no — and so does a
+`pred` that takes an argument or reads the loop binder, which is a render-time filter
 about one row rather than a rule about the component.
 
 ## The block
@@ -61,7 +61,7 @@ whose implicit protocol they describe. A named component may also declare
 `state` body, sections say how protocol properties, views, and dynamic bindings
 are implemented — see *Dynamic bindings* below.
 
-The schema goes in a `<script>` and not a `<template>`, because script content
+The schema goes in a `spec:` section and not a `view:` one, because script content
 is raw text to an HTML parser and template content is markup — an `Array[Int]`
 inside a template would be read as an `<Int>` element.
 
@@ -103,7 +103,7 @@ spec:
     field items :: List.of(Instance.of(Item))
 ```
 
-Iterate it with `<div @each=".items"><x render-it></x></div>` and append
+Iterate it with `@each(value, key in it.items){@render(value)}` and append
 instances with `Some({ items: s.items + [item.make(Map([]))] })` (the complete
 pairing is in [patterns/todo-list.md](./patterns/todo-list.md)). `Array[Item]`
 and `Array[Any]` generate the SAME field — `items : Array[@tutuca.Value]` —
@@ -125,9 +125,9 @@ object's key is a string), and a type that contains itself with no `?` or
 `Array` in between (it has no size and no zero).
 
 Behaviour is not declared here. A parameterized observation is still a method:
-declare it as `compute name(args…)` and call it with `$name …`. Predicates and
+declare it as `compute name(args…)` and call it with `name(…)`. Predicates and
 invariants remain named boolean rules because contracts attach to them.
-A zero-argument derivation that depends on render context (`@value`, an
+A zero-argument derivation that depends on render context (the loop binder, an
 enriched binding, or `*lookup`) also remains a `compute`: its answer belongs to
 one render position, not to the component as an independently readable member.
 Semantic commands, messages/intents, and asynchronous work remain handlers.
@@ -195,9 +195,9 @@ An implementing state binds those names in its `property` section. Public
 fuzzing derives writes only from properties marked `pub`. A protocol binding
 may expose a private local property under the protocol's public member name.
 
-Views read properties with `.name`; an explicit property wins over a same-named
+Views read properties with `it.name`; an explicit property wins over a same-named
 field. Inside script bodies, use `state.name` when the raw stored field is what
-you mean. The legacy `.name` spelling in a script body remains the canonical
+you mean. The legacy `it.name` spelling in a script body remains the canonical
 printed form for raw state, but new code should prefer `state.name` wherever a
 same-named property could make the distinction unclear.
 
@@ -257,7 +257,7 @@ place is what the handler language is for.
 
 Emptiness / truthiness / null checks are not generated — use the boolean
 predicates `empty?`, `truthy?`, `null?` in a conditional slot instead (e.g.
-`@hide="empty? .x"`, `@show=".view is 'detail'"`).
+`@hide(it.x.is_empty())`, `@show(it.view == "detail")`).
 
 > **The kind is declared, not chosen at the call site.** There is no way for a
 > `component()` caller to say a field is a set when the schema says it is a map:
@@ -362,15 +362,15 @@ spec:
 ```
 
 Declare a case the way it is **used**: `focusRow`, not `FocusRow`. The same
-name reappears as `receive focusRow(n)` in the script block. A deliberately
-raw outbound name is quoted (`send 'focusRow' 3`); an operation declared in
-`express` is unquoted (`intent saveRows`). The generator makes the UpperCamel
+name reappears as `receive focusRow(n)` in `logic:`. A deliberately
+raw outbound name is quoted (`send("focus_row", 3)`); an operation declared in
+`express` is unquoted (`intent save_rows`). The generator makes the UpperCamel
 MoonBit variant (`BoardReceive::FocusRow`) from it — the capital belongs to
 the generated code, not to what you write. An UpperCamel declaration still
 parses, but `gen` reports it as a `message-case` warning.
 
 `message` is what something `send`s to this component **by address**; `intent`
-is what reaches it because a walk routed here — a descendant's `ask dyn`, or
+is what reaches it because a walk routed here — a descendant's `ask(~route: dyn)`, or
 an intent that took the default `dyn lex` route. A bucket the component has no
 use for is simply absent. What a parent asks of a child goes through `receive`
 — a slot is a handle, not a channel.
@@ -391,7 +391,7 @@ shape you mean.
 
 Note the three `LoadRows…` names in the `message` list. An intent's **answers**
 are ordinary messages, so they are declared where every other message is; and
-declaring them is what makes `intent lex 'loadRows'` a *request* rather than a
+declaring them is what makes `ask("load_rows", ~route: lex)` a *request* rather than a
 notification. Nobody writes that down twice — the generator reads this list and
 fills the intent's opts in. Channel semantics are in
 [messages-and-intents.md](./messages-and-intents.md).
@@ -430,13 +430,13 @@ view:
 
 A **`provide`** publishes a name to the whole subtree below the component,
 re-evaluated every time it renders. A lowercase name publishes a VALUE, and its
-expression must be **addressable** — `.field` or `.seq[.key]` and nothing else
-— because a provide doubles as the path a `<x render="*name">` resumes
+expression must be **addressable** — `it.field` or `it.seq[key]` and nothing else
+— because a provide doubles as the path a `@render(dyn.name)` resumes
 through. There is no shorthand for "the field of the same name": write
-`theme = .theme`.
+`theme = it.theme`.
 
 A **`lookup`** names what it WANTS, not who supplies it. `theme` is the whole
-declaration; `color = 'gray'` adds the fallback used when nothing above
+declaration; `color = "gray"` adds the fallback used when nothing above
 provides it (without one, a miss reads as null). The local name IS the provided
 name — there is no alias. Multiple providers may use the same name; the nearest
 one in the live render ancestry shadows the others.
@@ -445,16 +445,30 @@ An **uppercase** name publishes a component TYPE rather than a value, and
 `self` is the only thing it can be: `Cell = self` injects this component as
 `Cell` for its whole subtree, so something below that builds a `Cell` gets this
 one rather than whatever is registered under that name. A published type is not
-a render target — it has no path, so `<x render="*Cell">` resolves to nothing.
+a render target — it has no path, so `@render(dyn.Cell)` resolves to nothing.
 
-**A body reads one too — any body, in either block.** `*name` is the same
+**A body reads one too — any body, in either block.** `dyn.<name>` is the same
 question the view asks, answered at the same position, whether the body is a
 transition, a value, or a rule:
 
-```
-receive stamp { .label = $'{.label} ({*theme})' }   // script block
-compute themeLabel { *theme }                       // script block
-pred    onBrand { .accent is *theme }               // spec block
+```tutu
+spec:
+  Card:
+    field label :: String
+    field accent :: String
+
+    message stamp
+
+    lookup theme
+
+    pred on_brand: it.accent == dyn.theme
+
+logic:
+  Card:
+    receive stamp:
+      it.label := @str{@(it.label) (@(dyn.theme))}
+
+    compute theme_label: dyn.theme
 ```
 
 A transition is answered from its DISPATCH position, along the same `dyn`/`lex`
@@ -467,12 +481,12 @@ so the two agree.
 The host resolves this component's declared lookups before it enters the card
 and the body reads one of the answers — from the dispatch position for a
 handler, from the render chain for a `compute` / `pred` / `~when` / `enrich`.
-So a `*name` a body writes and a `*name` a template writes get the same value,
-in a card exactly as in a MoonBit component. A `*name` the `state` block does
+So a `dyn.<name>` a body writes and a `dyn.<name>` a template writes get the same value,
+in a card exactly as in a MoonBit component. A `dyn.<name>` the `spec:` section does
 not declare is `DYN_NOT_DECLARED`: whether a producer is above you at render
 time is a runtime fact, but whether you ever asked for the name is not.
 
-`$name` is render-only where `*name` is not, and the reason is the difference
+`name(…)` is render-only where `dyn.<name>` is not, and the reason is the difference
 between them: a `compute` really is the render stack's answer, and a body calls
 one bare.
 
@@ -482,18 +496,18 @@ exactly as it does for a component written in MoonBit. Only the handler-side
 read costs the module an import (`control.lookup`), and only a card that writes
 one has it.
 
-`provide` and `lookup` are **not reserved field names** — the section opens on
-the word followed by a brace, so `provide: String` is still a field.
+`provide` and `lookup` are **not reserved field names** — a declaration opens
+on `field`, so `field provide :: String` is still a field.
 
 Runtime mechanics, and the `dyn`/`lex` routes a handler resolves a name along:
 [semantics.md](./semantics.md) *Name lookup*. Authoring the MoonBit side:
 [advanced.md](./advanced.md) *Dynamic bindings*.
 
-## Methods no view calls (`$`-callables)
+## Methods no view calls
 
-The bucket enums are built from the names the views reference, so a `$`-callable
+The bucket enums are built from the names the views reference, so a callable
 **no view of this component calls** — a method a PARENT asks of it, say — would
-have no constructor. Name it in the script block, which is where callables live:
+have no constructor. Name it in `logic:`, which is where callables live:
 
 ```tutu
 logic:
@@ -502,9 +516,9 @@ logic:
     pred contains_text(q): ((it.title.lower()).contains(q.lower()) || (it.description.lower()).contains(q.lower()))
 ```
 
-The spec block declares no BEHAVIOUR — no statements and no effects. It does
+The `spec:` section declares no BEHAVIOUR — no statements and no effects. It does
 declare the component's RULES, which are neither: see *Contracts* below.
-`for=` names the component the way a `<template id>` does, and is needed
+a `logic:` entry names the component the way a `view:` entry does, and is needed
 only in a file that declares more than one.
 
 ## The reading vocabulary
@@ -539,7 +553,7 @@ and `if c { a } else { b }` is an expression — both arms required, because an
 expression has to have a value.
 
 **This table is the CONDITIONAL SLOT's vocabulary too.** `@show`, `@hide` and
-`@if.<attr>` parse through the same grammar and resolve against the same
+a conditional attribute parse through the same grammar and resolve against the same
 table, so `truthy? .items` cannot mean one thing in a `pred` and another in a
 `@show`, and `not (empty? .kind)` is written the same way in both. What a slot
 does not take is the half that needs a body: a nested read, an `if`,
@@ -547,7 +561,7 @@ arithmetic, and a bare parameter — see
 [core.md](./core.md#conditional-display).
 
 `is` compares and `not` negates, and each meaning keeps one spelling: `is` is
-written INFIX (`.tab is 'a'`), `not` in front of its operand.
+written INFIX (`it.tab == "a"`), `not` in front of its operand.
 
 ## Changing a collection
 
@@ -681,9 +695,9 @@ methods (`set_at` / `delete_at`) carry their own and are the way to say it.
 Elsewhere, three things a body may otherwise say:
 
 - **a path into a binding** — `@value.completed`, which is what a `~when` over
-  a list of child component *instances* wants. `@value` whole is fine
+  a list of child component *instances* wants. the loop binder whole is fine
   (`lower @value`, `len (str @value)`, `has .picked @value`).
-- **`sendAt`** — an addressed send. The position is what the backend does not
+- **`send(…, ~to: …)`** — an addressed send. The position is what the backend does not
   emit; `send` (to self) and `intent` compile.
 - **a coercion `num` cannot make** — `num` converts a number, so a number
   arriving inside an `Any` (a file input's metadata `Map`, say) is unpacked in
@@ -771,9 +785,9 @@ Three doors, and they catch different things:
 
 | when | what it covers |
 | --- | --- |
-| at the field write | the field being written — `.currentIndex = 99` is turned down and the instance is unchanged |
-| in the arm, before its effects flush | every field, for a handler the script block declares — the same place an `invariant`'s guard sits, so an arm that raises effects and then leaves a field out of domain sends nothing |
-| after the transition | every field, for every path — a property write, a hand-written `update~` arm — including `.items = []`, which says nothing about `currentIndex` and leaves it stranded |
+| at the field write | the field being written — `it.current_index := 99` is turned down and the instance is unchanged |
+| in the arm, before its effects flush | every field, for a handler `logic:` declares — the same place an `invariant`'s guard sits, so an arm that raises effects and then leaves a field out of domain sends nothing |
+| after the transition | every field, for every path — a property write, a hand-written `update~` arm — including `it.items.clear()`, which says nothing about `currentIndex` and leaves it stranded |
 
 Any of the three **abandons** the transition and raises a `Refusal` with code
 `OUT_OF_RANGE`, carrying the **field** where a rule's refusal carries its name.
@@ -804,7 +818,7 @@ refuses every write.
 
 ### Why not an invariant
 
-`invariant inRange { .currentIndex >= 0 and .currentIndex < $itemsLen }` checks
+`invariant in_range: it.current_index >= 0 && it.current_index < items_len()` checks
 exactly the same thing, and for checking alone it is the right tool. The
 difference is what a **generator** can do with each.
 
@@ -899,7 +913,7 @@ logic:
 
 **Why the rule and the clause live in different blocks.** The clause is local —
 it says when THIS handler applies — so it sits on the handler's header. The
-rule is not: `canPush` is a fact about the ledger, `$canPush` reads it from a
+rule is not: `canPush` is a fact about the ledger, `can_push()` reads it from a
 view, and an `invariant`'s attachment point is the component itself. Declaring
 them beside the fields is what lets a reader learn what a component promises
 without opening the handlers.
@@ -927,32 +941,32 @@ Four things to know about the clauses themselves:
 - At most one `requires` and one `ensures` per handler. Two rules become one by
   naming their `and`: `pred canMove { canPush and (not .busy) }`.
 - Contracts attach to transitions only — `on`, `receive`, `intent`. An `enrich` writes bindings, and a `compute` is a value.
-- An `invariant` is a `pred` with a role, so `$conserved` still reads from a
+- An `invariant` is a `pred` with a role, so `conserved()` still reads from a
   view and `~when="conserved"` still filters a row. It covers **every**
   dispatch, in three degrees:
 
   | dispatch | when the rule is asked | effects if it fails |
   | --- | --- | --- |
-  | a handler the script block declares | inline, before the effect queue flushes | never fire — the transition is whole or not at all |
-  | a property write (`.here = 3`, `.items.push v`) | after the successor is built | there are none to fire |
+  | a handler `logic:` declares | inline, before the effect queue flushes | never fire — the transition is whole or not at all |
+  | a property write (`it.here := 3`, `it.items.push(v)`) | after the successor is built | there are none to fire |
   | a hand-written MoonBit `update~` arm | after the successor is built | **may already have fired** — the state is rolled back, they are not |
 
   Only the first carries the rule's `format` sentence, because a `format` is
   compiled beside the rule at the moment it fails. The other two report the
   rule's NAME and the state that was rejected.
 
-- **An `invariant` that reads a `*name` decides nothing on the two new paths.**
+- **An `invariant` that reads a `dyn.<name>` decides nothing on the two new paths.**
   The runtime asks it after a property write or a hand-written `update~`
   arm, which is not a render position, so a dynamic binding reads null there
   and the rule answers neither true nor false. Unknown is not wrong: the
-  transition goes through. Read as `$name` from a view it still works
-  normally. Keep an invariant on `.field`s if you want it enforced everywhere.
+  transition goes through. Read as `name(…)` from a view it still works
+  normally. Keep an invariant on `it.field`s if you want it enforced everywhere.
 
-- **A rule in the spec block takes no arguments and reads no `@`-binding.** One
+- **A rule in `spec:` takes no arguments and reads no `@`-binding.** One
   that needs either is about a particular render rather than about the
-  component — a `~when` filter over `@value`, or a `pred containsText(q)` a
-  parent calls. Those stay in the script block, where the other render-time
-  callables are, and a parameterised rule in the spec block is refused by name.
+  component — a `~when` filter over the loop binder, or a `pred containsText(q)` a
+  parent calls. Those stay in `logic:`, where the other render-time
+  callables are, and a parameterised rule in `spec:` is refused by name.
 
 - **The declared initial states are checked at build time.** Every
   `fixtures:` fixture is asserted against every invariant by a test
@@ -964,7 +978,7 @@ Four things to know about the clauses themselves:
 ### `format` — what the rule says when it fails
 
 A rule may carry the sentence to say when it does **not** hold. It is an
-ordinary expression, almost always a `$'…'` template, evaluated against the
+ordinary expression, almost always a `@str{…}` template, evaluated against the
 state that was rejected — so the values in it are the ones that made the rule
 false:
 
@@ -1035,7 +1049,7 @@ assert_eq(refused[0].sentence, "Cannot publish \"draft-2\": the title is empty."
 
 ## Schema without templates
 
-A file may carry a schema and **no** `<template>` at all. That is how a
+A file may carry a `spec:` section and **no** `view:` section at all. That is how a
 component whose views are built in MoonBit — a macro user, a dynamically
 assembled tree — still gets a generated state type: the schema lives in a view
 file, so it needs a view file even when it has no views. Such a file emits the

@@ -59,7 +59,7 @@ test "counter: simple and abstract properties are synchronous" {
 test "counter: a host cannot dispatch the generated field mutator" {
   let h = @harness.mount(counter_module(), "Counter")
   let refused = @harness.refusals_while(() => {
-    h.send_at_root("setCount", args=[Num(7)])
+    h.send_at_root("set_count", args=[Num(7)])
   })
   assert_eq(h.drive_value().field("count"), Num(0))
   assert_eq(refused.length(), 1)

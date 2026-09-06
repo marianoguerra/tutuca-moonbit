@@ -285,7 +285,7 @@ test "a bare name in an argument slot is a build error" {
   // it. The message names all three sigils rather than assuming the event.
   assert_eq(
     view_err("<input @on.input=\"setIt value\">"),
-    "view \"main\": `@on.input=\"… value\"` — an argument needs a sigil saying where it reads from. Write `e.value` for the event, `.value` for state, or `@value` for a binding",
+    "view \"main\": `@on.input` passes `value`, and nothing says where it reads from. Write `e.value` for the event, `it.value` for state, or the name a loop or an enricher bound",
   )
   // The three prefixed spellings are accepted, and say nothing.
   assert_eq(view_hints("<input @on.input=\"setIt e.value\">"), [])

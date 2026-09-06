@@ -106,9 +106,7 @@ test "@bind requires a direct root field and a schema" {
   } catch {
     e => e.message()
   }
-  assert_true(
-    no_schema.contains("needs a `<script type=\"tutuca/spec\">` schema"),
-  )
+  assert_true(no_schema.contains("needs a `spec:` section"))
 }
 
 ///|

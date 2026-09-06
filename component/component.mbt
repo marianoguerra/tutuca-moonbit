@@ -567,7 +567,7 @@ pub fn schema_mutators(
 /// `schema_mutators` is every generated callable, and that is one table with
 /// two kinds of thing in it: names that build a successor, and names that
 /// merely read. `<field>Len` and `hasIn<Field>` answer a scalar — they are
-/// `$`-callables a view writes as `$tabLen`, and dispatching one as a message
+/// callables a view writes as `tab_len()`, and dispatching one as a message
 /// does nothing at all. The runtime already knows this and says so: the
 /// receive path takes a generated entry's result only when it is `Obj(_)`
 /// (see `TypedInstance`'s dispatch), so a reader falls through to `Unhandled`.
@@ -622,8 +622,8 @@ fn gen_mutators(
     // READS. `size_of` and `contains` answer a scalar and touch nothing, so
     // unlike everything else here these are `$`-callables for a view and not
     // messages — see `schema_writers`.
-    readers.push(name + "Len")
-    into[name + "Len"] = (inst, _args) => {
+    readers.push(name + "_len")
+    into[name + "_len"] = (inst, _args) => {
       match @tutuca.size_of((inst.get)(name)) {
         Some(n) => Num(n.to_double())
         None => Null
@@ -687,7 +687,7 @@ fn gen_mutators(
         }
         // insertIn<X>At(i, v): insert v BEFORE index i.
         // List-only upstream; harmless on the (currently absent) map case.
-        into[mut_name("insertIn", name) + "At"] = (inst, args) => {
+        into[mut_name("insertIn", name) + "_at"] = (inst, args) => {
           match ((inst.get)(name), args) {
             (List(a), [Num(i), v, ..]) => {
               let out = a.copy()
@@ -702,17 +702,17 @@ fn gen_mutators(
             _ => (inst.value)()
           }
         }
-        into[mut_name("setIn", name) + "At"] = (inst, args) => {
+        into[mut_name("setIn", name) + "_at"] = (inst, args) => {
           seq_set(inst, name, args)
         }
         // The At suffix distinguishes the KEYED-field deleteIn<X>At /
         // removeIn<X>At spellings; the bare deleteIn<X> / removeIn<X> spelling
         // is the SET-field variant, generated in the FSet arm above. Views
-        // like `$removeInItemsAt @key` depend on it.
-        into[mut_name("deleteIn", name) + "At"] = (inst, args) => {
+        // like `remove_in_items_at(key)` depend on it.
+        into[mut_name("deleteIn", name) + "_at"] = (inst, args) => {
           seq_delete(inst, name, args)
         }
-        into[mut_name("removeIn", name) + "At"] = (inst, args) => {
+        into[mut_name("removeIn", name) + "_at"] = (inst, args) => {
           seq_delete(inst, name, args)
         }
       }

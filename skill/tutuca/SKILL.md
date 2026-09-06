@@ -1,13 +1,13 @@
 ---
 name: tutuca
-description: Author, review, debug, and test Tutuca MoonBit components and Tutucard single-file UI cards. Use for Tutuca HTML views, spec and script blocks, state schemas, rules and contracts, generated view modules, ModuleDef wiring, events, messages and intents, component tests, card scenes, styling, playgrounds, and the tutuca CLI.
+description: Author, review, debug, and test Tutuca MoonBit components and Tutucard single-file UI cards. Use for `.tutu` view files, `spec:` and `logic:` sections, state schemas, rules and contracts, generated view modules, ModuleDef wiring, events, messages and intents, component tests, card scenes, styling, playgrounds, and the tutuca CLI.
 ---
 
 # Tutuca and Tutucard
 
-Tutuca is an immutable-state UI framework for MoonBit. A view file holds what a
-component IS — its typed state schema and the rules it keeps — alongside its
-templates, styles, and optionally a small handler language for what it DOES.
+Tutuca is an immutable-state UI framework for MoonBit. A `.tutu` file holds
+what a component IS — its typed `spec:` and the rules it keeps — alongside its
+`view:`, its styles, and a `logic:` section for what it DOES.
 There are two authoring paths over that same file format:
 
 | Path | Choose it when | Build and test |
@@ -36,10 +36,10 @@ references needed for the task.
 
 - State is immutable. A handler returns a successor; the transactor commits it
   and rerenders.
-- `.name` reads a property (state fields are implicit private properties),
-  `$name args…` calls a parameterized method in a value position, and `@name`
-  reads the current render binding. Event handler names are bare; direct
-  property actions begin with `.`, such as `.name = e.value`.
+- `it.name` reads a property (state fields are implicit private properties),
+  `name(args…)` calls a parameterized method in a value position, and a bare
+  name reads a render binding. Event handler names are bare; a property action
+  is a write or a collection operation, such as `it.name := e.value`.
 - Semantic event handlers belong in `update` on the compiled path. End its
   dispatch match with `_ => Unhandled`; `Unchanged` vetoes while `Unhandled`
   declines the message. Simple writes belong in property actions instead.
@@ -50,11 +50,11 @@ references needed for the task.
   the view, regenerate, then implement the new arm. An `invariant` is the one
   exception: it gets a body whether or not a view names it, because the runtime
   asks it after every dispatch.
-- The two blocks split by what they say, not by how they look. `spec:`
+- The two sections split by what they say, not by how they look. `spec:`
   says what a component IS — fields, types, channels, wiring, and the `pred` /
   `invariant` rules it keeps. `logic:` says what it DOES. A rule about
-  the state goes in the spec block; one that takes an argument or reads
-  `@value` is a render-time filter and stays in the script block.
+  the state goes in `spec:`; one that takes an argument or reads the loop
+  binder is a render-time filter and stays in `logic:`.
 - Literal class names can be collected for Tailwind/MargaUI. Runtime-assembled
   class names cannot.
 
@@ -74,8 +74,8 @@ references needed for the task.
 ### Views, state, and behavior
 
 - [schema.md](./schema.md) — state types, properties and visibility, records,
-  enums, flags, slots, property actions, `fixtures:`, the script language,
-  `new` and `cur`, contracts, and script refusals.
+  enums, flags, slots, property actions, `fixtures:`, the statement language,
+  constructor calls, contracts, and handler refusals.
 - [events.md](./events.md) — event payloads, generated message types,
   modifiers, safe event paths, files, and custom events.
 - [iteration.md](./iteration.md) — `@each`, filtering, enrichment,

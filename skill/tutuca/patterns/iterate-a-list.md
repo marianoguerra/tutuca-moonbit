@@ -15,10 +15,10 @@ view:
 There is no MoonBit half: the field is declared in the schema block and the
 loop is a directive, so nothing is left for a handler to do.
 
-`@each` accepts a `.field` or a `*dynamic` (not a `$handler` — a computed
-result has no addressable path for event dispatch). `@key`/`@value` are
-auto-bound on host-element loops; under `render-each` / `render-it` each
-item is rendered as its own component (no `@value`). Use `render-each` for
+`@each` accepts a `it.field` or a `dyn.<name>` (not a `handler()` — a computed
+result has no addressable path for event dispatch). `@key`/the loop binder are
+auto-bound on host-element loops; under `@each(…){@render(value)}` / `@render(value)` in a loop each
+item is rendered as its own component (no the loop binder). Use `@each(…){@render(value)}` for
 lists of components (instance `Value`s built with `comp.make({...})`),
 `@each` for plain values. `List` iterates by index, `Map` by key in insertion order; a custom
 `Obj` iterates its `seq_entries` (see [iteration.md](../iteration.md)).

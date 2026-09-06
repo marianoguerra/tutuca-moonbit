@@ -16,11 +16,11 @@ view:
 ```
 
 `%type` is a MoonBit keyword, so the generated struct binds it as `type_`
-while the view keeps reading `.type` — the codec keys by the runtime name.
+while the view keeps reading `it.type` — the codec keys by the runtime name.
 
 This handler stays in MoonBit, and the reason is narrow enough to state: a
-script block CAN take the argument apart — `receive onPickFile(meta)` with
-`.name = str meta.name` compiles, since `str` renders any value — but the
+`logic:` section CAN take the argument apart — `receive onPickFile(meta)` with
+`it.name := meta.name.str()` compiles, since `str` renders any value — but the
 metadata's `size` is a number inside an `Any`, and `num` converts a number
 rather than coercing a `Value`, so `gen` refuses that arm. Unpacking a
 dynamic payload into typed fields is what the MoonBit half is for.
@@ -54,7 +54,7 @@ not in the metadata. To read them, use `@files.FileService` — `read_text(id~,
 then~)` takes the `id` a dropped or picked file's descriptor carries and
 answers the text through a continuation; see
 [tracing.md](../tracing.md#files). Feed the result back in through an
-`ask lex` or `app.send_at_root`. Flatten
+`ask(~route: lex)` or `app.send_at_root`. Flatten
 what you need into fields so the view can bind each piece (`type` is a
 MoonBit keyword, so the struct field is `type_` with a `rename` in the
 derive); gate the summary on a `has_file` flag with `@show`/`@hide`.

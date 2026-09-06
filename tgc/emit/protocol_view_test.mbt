@@ -437,9 +437,9 @@ test "a component that implements nothing is held to nothing" {
 ///|
 /// A declared message that used to be answered by a generated mutator.
 ///
-/// Before 0.48 a component got `setX` / `toggleX` / `resetX` per field from its
+/// Before 0.48 a component got `set_x` / `toggle_x` / `reset_x` per field from its
 /// kind alone, and a dispatch no arm claimed fell through to one. So
-/// `handle B { message { setView(String) } }` was a complete declaration —
+/// `handle B { message { set_view(String) } }` was a complete declaration —
 /// nothing had to answer it. 0.48 removed the fallback and left the
 /// declaration, which still advertises the name on `receives` and still lets an
 /// outside sender send it, so the send refuses at run time with `NO_HANDLER`.
@@ -449,7 +449,7 @@ test "a component that implements nothing is held to nothing" {
 test "a message named for a removed generated mutator is reported" {
   let spec =
     #|state B { view: String, done: Bool }
-    #|handle B { message { setView(String), toggleDone, realOne } }
+    #|handle B { message { set_view(String), toggle_done, realOne } }
   let c = @emit.check_card(
     card(spec, "receive realOne { .done = true }"),
     name="b",
@@ -460,19 +460,19 @@ test "a message named for a removed generated mutator is reported" {
   // `update~`. What it can see is the mutator spelling for a member the
   // component declares, which is what makes it a leftover and not a name.
   assert_true(stale.iter().all(i => i.severity == "warning"))
-  // The repair, named. `setView` writes a field, `toggleDone` flips one, and
+  // The repair, named. `set_view` writes a field, `toggle_done` flips one, and
   // "declares a message nothing answers" with no next step is a finding an
   // author has to go and derive.
-  guard stale.iter().find_first(i => i.message.contains("`setView`"))
+  guard stale.iter().find_first(i => i.message.contains("`set_view`"))
     is Some(set_) else {
-    fail("no finding for setView")
+    fail("no finding for set_view")
   }
-  assert_true(set_.message.contains(".view = v"))
-  guard stale.iter().find_first(i => i.message.contains("`toggleDone`"))
+  assert_true(set_.message.contains("it.view := v"))
+  guard stale.iter().find_first(i => i.message.contains("`toggle_done`"))
     is Some(tog) else {
-    fail("no finding for toggleDone")
+    fail("no finding for toggle_done")
   }
-  assert_true(tog.message.contains(".done = not .done"))
+  assert_true(tog.message.contains("it.done := !it.done"))
   // …and it compiles, because a warning is a thing to say and not a build to
   // stop.
   let out = @emit.compile(
@@ -491,7 +491,7 @@ test "a message named for a removed generated mutator is reported" {
 test "an ordinary declared message is not reported as a stale mutator" {
   let spec =
     #|state B { view: String }
-    #|handle B { message { refresh, setSomethingElse(String) } }
+    #|handle B { message { refresh, set_somethingElse(String) } }
   let c = @emit.check_card(
     card(spec, "receive refresh { .view = 'x' }"),
     name="b",
@@ -503,16 +503,16 @@ test "an ordinary declared message is not reported as a stale mutator" {
 /// A mutator-named message the block DOES answer is not reported.
 ///
 /// The control that matters most, and the one this repo's own
-/// `tut-6-messages` card supplied: it declares `setMode(String)` and answers it
-/// with a `receive setMode(m)` that also appends to a log. The first version of
+/// `tut-6-messages` card supplied: it declares `set_mode(String)` and answers it
+/// with a `receive set_mode(m)` that also appends to a log. The first version of
 /// this check keyed on the spelling alone and flagged that card — a warning
 /// that fires on correct code is a warning nobody reads.
 test "a mutator-named message the script answers is left alone" {
   let spec =
     #|state B { mode: String, log: Array[String] }
-    #|handle B { message { setMode(String) } }
+    #|handle B { message { set_mode(String) } }
   let c = @emit.check_card(
-    card(spec, "receive setMode(m) { .mode = m\n  .log.push m }"),
+    card(spec, "receive set_mode(m) { .mode = m\n  .log.push m }"),
     name="b",
   )
   assert_eq(c.issues.filter(i => i.code == "STALE_MUTATOR_MESSAGE"), [])

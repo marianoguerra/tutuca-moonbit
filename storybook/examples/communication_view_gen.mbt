@@ -428,7 +428,7 @@ pub let tree_item_common_style : String = ""
 pub let tree_item_global_style : String = ""
 
 ///|
-/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: files_are_leaves.
 /// The block's own handlers are merged into this bucket, so an arm for one of

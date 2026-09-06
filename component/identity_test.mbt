@@ -67,7 +67,7 @@ fn send(
 ///
 /// Beside `send`, and the pair is the point: a dispatch ASKS a component to
 /// decide something and a write says what a member is now. They used to be one
-/// call — a bare `setCount` sent as a message reached the generated setter
+/// call — a bare `set_count` sent as a message reached the generated setter
 /// through a fallback in the dispatch path — and only the NAME told them apart.
 fn write(
   v : @tutuca.Value,
@@ -104,11 +104,11 @@ test "a write that changes nothing returns the ORIGINAL instance" {
 test "a field set to the value it already holds returns the same instance" {
   let v = seeded()
   guard! v is Obj(o)
-  // $setTitle with the current title — the shape a re-fired `input` event takes
+  // $set_title with the current title — the shape a re-fired `input` event takes
   guard! o.with_field("title", Str("hello")) is Some(same)
   assert_true(physical_equal(same, v))
   // …and via the generated mutator the views actually call
-  guard! o.field("setTitle") is Some(Fn(set_title))
+  guard! o.field("set_title") is Some(Fn(set_title))
   assert_true(physical_equal(set_title([Null, Str("hello")]), v))
 }
 
@@ -166,7 +166,7 @@ test "identity is preserved through a nested list, not just at the top" {
   let v = parent.make({ "items": List(kids) })
   guard! v is Obj(o)
   // rewrite the middle child through the parent's list mutator
-  guard! o.field("setInItemsAt") is Some(Fn(set_at))
+  guard! o.field("set_in_items_at") is Some(Fn(set_at))
   let renamed = send(kids[1], "rename", [Str("TWO")])
   let after = set_at([Null, Num(1), renamed])
   guard! after is Obj(o2)
@@ -192,7 +192,7 @@ test "writing a list back unchanged leaves the parent instance alone" {
   let kids = [child.make({ "title": Str("one") })]
   let v = parent.make({ "items": List(kids) })
   guard! v is Obj(o)
-  guard! o.field("setInItemsAt") is Some(Fn(set_at))
+  guard! o.field("set_in_items_at") is Some(Fn(set_at))
   // Core's COW item write recognizes the same object before copying the list,
   // and the unchanged container keeps the parent instance unchanged too.
   assert_true(physical_equal(set_at([Null, Num(0), kids[0]]), v))
@@ -302,7 +302,7 @@ test "a parent's own bucket moves when a child is written through it" {
   let v = parent.make({ "items": List(kids) })
   let before = id_of(v)
   guard! v is Obj(o)
-  guard! o.field("setInItemsAt") is Some(Fn(set_at))
+  guard! o.field("set_in_items_at") is Some(Fn(set_at))
   let renamed = send(kids[0], "rename", [Str("ONE")])
   let after = id_of(set_at([Null, Num(0), renamed]))
   assert_eq(after.to_hex(), before.to_hex())
@@ -364,7 +364,7 @@ test "a child instance is replaced by a successor that looks identical" {
   // opaque instance produces when it keeps more than it declares.
   let next = first.successor("a draft nobody declared")
   assert_true(@tutuca.Obj::eq(next, first))
-  guard! o.field("setInItemsAt") is Some(Fn(set_at))
+  guard! o.field("set_in_items_at") is Some(Fn(set_at))
   let after = set_at([Null, Num(0), next.to_value()])
   guard! after is Obj(o2)
   guard! o2.field("items") is Some(List(items))
@@ -384,7 +384,7 @@ test "writing the same child back leaves the parent alone" {
   let kid = child.make({ "title": Str("one") })
   let v = parent.make({ "items": List([kid]) })
   guard! v is Obj(o)
-  guard! o.field("setInItemsAt") is Some(Fn(set_at))
+  guard! o.field("set_in_items_at") is Some(Fn(set_at))
   // the SAME instance back: nothing changed, so nothing is rebuilt and a
   // no-op interaction stays free
   let after = set_at([Null, Num(0), kid])

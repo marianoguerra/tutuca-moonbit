@@ -18,7 +18,7 @@
 // data-cid onto it.
 
 ///|
-/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// This file's `spec:` section, as source, with its
 /// doc comments removed.
 ///
 /// The schema each component carries is this block's PROJECTION, and the
@@ -207,7 +207,7 @@ fn instance_fields_compute_page_exists(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn instance_fields_inline_compute() -> Map[
   String,
@@ -503,7 +503,7 @@ fn instance_explorer_compute_component_tab_needs_a_component(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn instance_explorer_inline_compute() -> Map[
   String,

@@ -90,7 +90,7 @@ fn value_issue_sentence(role : @tscript.IssueRole, value : String) -> String? {
     UnknownPredicate => {
       let tail = "a conditional takes a name applied to values, and the vocabulary is " +
         @tutuca.builtin_names().map(n => "`\{n}`").join(" ") +
-        " — name anything else with a `pred` or a `compute` and spell it `$name`"
+        " — name anything else with a `pred` or a `compute` and call it as `name(…)`"
       Some("`\{value}` is not in the vocabulary: \{tail}")
     }
     BadExpression(why~) => Some("`\{value}` — \{why}")
@@ -720,7 +720,7 @@ fn check_macros_resolved(
     if node is MacroCall(d) && !scope.by_name.contains(d.name) {
       raise ViewParseIssue(
         view=vname,
-        issue="no macro named '\{d.name}' — declare it as <template id=\"macro:\{d.name}\">",
+        issue="no macro named '\{d.name}' — declare it as `macro \{d.name}(…):` in the `view:` section",
       )
     }
   }

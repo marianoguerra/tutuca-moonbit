@@ -45,7 +45,7 @@ fn declined_step() -> @fuzz.Step {
       {
         code: Invariant,
         rule: "covered",
-        asked: "setHeld",
+        asked: "set_held",
         sentence: "more is owed than the drawer holds",
         path: @tutuca.Path::new(),
         // The state the runtime turned down — the successor, which was
@@ -163,7 +163,7 @@ pub fn Inspector::fuzz_examples(
         steps="12",
         source="fields",
         can_run=false,
-        no_plan_hint="This story's component declares no <script type=\"tutuca/spec\"> block, so there is nothing to derive generators from.",
+        no_plan_hint="This story's component declares no `spec:` section, so there is nothing to derive generators from.",
       )
       .snapshot(),
       view: None,

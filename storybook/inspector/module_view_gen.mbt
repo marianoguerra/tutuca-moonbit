@@ -229,7 +229,7 @@ pub let rich_sample_common_style : String = ""
 pub let rich_sample_global_style : String = ""
 
 ///|
-/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 pub(all) enum RichSampleCompute {
   Double
   Label
@@ -415,7 +415,7 @@ pub let sample_card_common_style : String = ""
 pub let sample_card_global_style : String = ""
 
 ///|
-/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 pub(all) enum SampleCardCompute {
   Label
 } derive(Eq, @debug.Debug)

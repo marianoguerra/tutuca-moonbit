@@ -29,10 +29,10 @@ handler runs against — a **position**, not a captured reference (see
 
 | Step                | Addresses                          | Source syntax            |
 | ------------------- | ---------------------------------- | ------------------------ |
-| `FieldStep`         | a named field                      | `.field`                 |
+| `FieldStep`         | a named field                      | `it.field`                 |
 | `SeqStep(field~, key~)` | a sequence entry by **literal** key/index | `.items[2]`      |
 | `SeqAccessStep(seq_field~, key_field~)` | a sequence entry whose key is **read from another field** | `.sheets[.selId]` |
-| `EachRenderItStep(field~, key~)` | an iterated `render-it` item | `<x render-it>` per iter |
+| `EachRenderItStep(field~, key~)` | an iterated `@render(value)` in a loop item | `@render(value)` in a loop per iter |
 | `BindStep` / `ScopeBindStep` / `EachBindStep` | nothing — frame-only (carry scope binds, no addressing) | `@each`, `~enrich_with` |
 
 Dispatch additionally keeps the steps in a `DispatchPath`, a stack of render
@@ -121,7 +121,7 @@ the sender's **parent**; the `Lex` leg queues each registered `IntentFn`
 in turn and waits for its `answer` callback. A hop that replies ends the
 walk and the answer is dispatched back at the originator's path as an
 ordinary `Receive`; a walk whose route runs out dispatches
-`<name>Unhandled` there instead. `target_path` (the originator's path)
+`<name>_unhandled` there instead. `target_path` (the originator's path)
 stays fixed as `path` shortens, which is how the answer finds its way
 home, and is also what an intent handler can address directly with
 `ctx.send_at_path(ctx.target_path(), name, args)`.
@@ -133,7 +133,7 @@ refuses with `RefusalCode::IntentDepth` rather than looping.
 
 A provider evaluates both halves of a lowercase binding: its value and the
 absolute path of that value. The pair is pushed into the dynamic render stack
-under the provided name. A descendant `<x render="*sel">` retrieves the nearest
+under the provided name. A descendant `@render(dyn.sel)` retrieves the nearest
 pair and renders the value after pushing its path as a continuation frame.
 There is no producer search, producer id, interior list, portal, or teleport
 rewrite during event reconstruction.
@@ -159,8 +159,8 @@ published below it is located under that.
 
 The path half can be **absent**. A provider whose own render position cannot be
 written down as an address — a constant `lookup` default, or a sequence that is
-not a plain field — publishes the value with no path. `*name` still READS it;
-`<x render="*name">` renders it in place and enters no continuation frame, so
+not a plain field — publishes the value with no path. `dyn.<name>` still READS it;
+`@render(dyn.name)` renders it in place and enters no continuation frame, so
 an event inside it belongs to the enclosing component rather than to a guessed
 address. This is deliberate: the empty path names the ROOT, so publishing an
 address that does not resolve back to the value being rendered would silently

@@ -15,8 +15,9 @@ file, top to bottom.
 
 ## Status — read this first
 
-The migration is **done through stage 5. Every view file in the repo is a
-`.tutu`; the lowering seam is what is left.**
+The migration is **done through stage 5. Every view file in the repo, and
+every view block in the skill, is a `.tutu`; the lowering seam is what is
+left.**
 
 | Stage | What it is | State |
 | --- | --- | --- |
@@ -25,6 +26,7 @@ The migration is **done through stage 5. Every view file in the repo is a
 | 3 | Convert the repo's 85 view files and cards | **done** — no `.html` in the tree declares a component |
 | 4 | The card runtime, both playgrounds, the benchmarks and the generated corpora | **done** |
 | 5 | The MoonBit beside each view: fields, message names, hook keys, binding names | **done** |
+| 5b | The docs: the skill's 90 view blocks and its prose, `README`, `docs/`, and every diagnostic an author reads | **done** |
 | 6 | Direct readers, replacing the lowering; then delete `viewfile/` and the old parsers | **in progress** — the view and `logic:` readers are in |
 
 ### Stage 6, and what is left of it
@@ -855,16 +857,21 @@ already used.
 
 ## What does not convert mechanically
 
-Two things. Everything else in this page is a rewrite rule.
+Four things. Everything else in this page is a rewrite rule.
 
 - **A macro that assembles a handler NAME from parameters.** Macro parameters
   substitute as source text today, which is what makes
-  `<x:btn-rm :handler="$remove_in_items_at" :arg="@key">` work: the call site
+  `<x:btn-rm :handler="$removeInItemsAt" :arg="@key">` work: the call site
   hands over a handler and its argument as text and the macro body writes
   `@on.click="^handler ^arg"`. Hygienic parameters cannot do that by
   definition. The replacement is to pass the action —
   `@btn_rm(~on_click: it.items.delete_at(i))` — which covers the documented
   idiom; a macro that builds a name out of parts has to be rewritten.
+- **A macro with a slot.** The parser grafts `<x:slot>` away before the
+  converter sees the body — with no call frame it collapses to its own default
+  children — so a macro with one is refused by name rather than printed as a
+  macro with no slot. Write it by hand: `@slot` and `@slot("name")` in the
+  body, `@fill("name"){ … }` at the call site.
 - **A property with both accessors on one line.** Shrubbery's `;` continues the
   innermost block, so `property count :: Int ~public: get: it.count; set(v): …`
   puts the `set` inside the `get`. Write one accessor per line.

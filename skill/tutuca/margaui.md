@@ -152,7 +152,7 @@ tutuca gen-margaui-css  src/ -o public/app.css   # Tailwind + margaui components
 tutuca gen-tailwind-css src/ -o public/app.css   # stock Tailwind only
 ```
 
-Paths follow `watch`'s rule: a directory contributes the `.html` files that
+Paths follow `watch`'s rule: a directory contributes the `.tutu` files that
 already have a generated sibling, so pointing it at a project root does not try
 to compile `index.html`. Defaults to the current directory. The stylesheets are
 compiled into the binary — no Node, no CDN, no margaui checkout.
@@ -160,7 +160,7 @@ compiled into the binary — no Node, no CDN, no margaui checkout.
 The same literal-only limit applies (see "What the collector cannot see" below).
 `--print-classes` shows exactly what was collected, one name per line, and
 `--classes <file>` feeds back the names a view assembles at run time. Note that
-an interpolated `$'badge badge-{.kind}'` contributes its literal prefix
+an interpolated `@str{badge badge-@(it.kind)}` contributes its literal prefix
 `badge-`, which compiles to nothing — a stub in the list, not the real name.
 
 Other flags: `--entry <file>` compiles your own CSS entry instead of the
@@ -212,16 +212,17 @@ templates. It cannot see a class name that is assembled rather than
 written out verbatim, so the margaui CSS for that class is never emitted
 and it renders unstyled. Two cases:
 
-- **Interpolated templates** — `:class="$'bg-{.color}'"` contributes only the
-  constant prefix `bg-`, never `bg-red` / `bg-blue`. Same for any `{…}` segment.
+- **Interpolated templates** — `~class: @str{bg-@(it.color)}` contributes only
+  the constant prefix `bg-`, never `bg-red` / `bg-blue`. Same for any `@(…)`
+  hole.
 - **Classes built in a handler** — anything a `compute` entry returns
   (e.g. a `headerClass` that builds `"progress-" + color`) is never
   scanned at all; the collector only reads view templates, not MoonBit
   bodies.
 
-(Literal `@then` / `@else` strings on `@if.class` — e.g.
-`@if.class=".active" @then="'btn-success'" @else="'btn-ghost'"` — **are**
-collected, so those don't need the workaround.)
+(Literal branches in a conditional `~class` — e.g.
+`~class: if it.active | "btn-success" | "btn-ghost"` — **are** collected, so
+those don't need the workaround.)
 
 Workaround: add a hidden "decoy"/palette view on the component that lists every
 possible assembled class as a real literal, so the collector picks them up:
@@ -280,7 +281,7 @@ Buttons compose a kind (`btn-primary` / `btn-success` / `btn-error` /
 `btn-sm`) onto the base `btn`; `input`, `checkbox`, `badge` and `card`
 follow the same base-plus-modifier pattern. For state-dependent styling,
 remember the collector rule above: switch between **full literals** with
-`@if.class` (`@then="'opacity-60 line-through'" @else="''"`), never
+a conditional `~class` (`if … | "opacity-60 line-through" | ""`), never
 assemble a class name from parts. If a dedicated margaui skill is
 available in your environment it has the full component catalogue; this
 vocabulary is enough when it isn't.

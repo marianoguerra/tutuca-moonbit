@@ -1,6 +1,6 @@
 # Tabbed interface
 
-**Problem:** build tabs — a single `currentView` field decides which panel
+**Problem:** build tabs — a single `current_view` field decides which panel
 shows, and the active tab button is highlighted.
 
 `tabs.html`:
@@ -19,7 +19,7 @@ fixtures:
     it.current_view = "overview"
 ```
 
-There is no script block and there are no handlers: each tab WRITES the field,
+There is no `logic:` section and there are no handlers: each tab WRITES the field,
 in the view, and a write needs nobody to answer it. The starting value is a
 **named initial state** — a default is a value, so it goes in a block of its own
 and the generator turns it into `TabsState::fresh()`.
@@ -33,16 +33,16 @@ fn tabs_comp() -> @component.Component {
 }
 ```
 
-One string field is the whole state machine. `.currentView is 'overview'`
-drives both the panel's `@show` and the active-tab class via `@if.class` /
-`@then` / `@else`. A tab click writes the field with a string literal
-(`~on_click=".currentView = 'pricing'"`).
+One string field is the whole state machine. `it.current_view == "overview"`
+drives both the panel's `@show` and the active-tab class through a conditional
+`~class`. A tab click writes the field with a string literal
+(`~on_click: it.current_view := "pricing"`).
 
-A field has ONE spelling now — the one a view reads — so the schema writes
-`currentView` and so does every read of it. The name is yours to pick (`tab`,
-`currentView`, …).
+A field has ONE spelling — the one a view reads — so the `spec:` section
+writes `current_view` and so does every read of it. The name is yours to pick
+(`tab`, `current_view`, …).
 
 This toggles **sibling panels** by predicate; to swap a *component's own*
 rendered view instead, see [Switch between views](switch-between-views.md). The
 same shape scales up to tabs over whole sub-apps — each panel a component
-rendered with `<x render=".field">`.
+rendered with `@render(it.field)`.

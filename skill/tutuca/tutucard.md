@@ -17,7 +17,7 @@ when you need to name a MoonBit value: imports, closures, custom `Obj`
 implementations, hand-written view functions, host adapters, or `ModuleDef`
 composition beyond what the card file declares.
 
-Do not infer the path from `.html` alone. A view file with an adjacent
+Do not infer the path from the file extension alone. A view file with an adjacent
 generated module and a MoonBit component builder is the ahead-of-time path.
 
 ## Card anatomy
@@ -104,8 +104,8 @@ handler compiled.
 
 Current language boundaries that matter when authoring are:
 
-- a transition has no render row or render stack, so `~binding`, `$method`,
-  and `*dynamic` reads are refused there;
+- a transition has no render row or render stack, so `~binding`, `method()`,
+  and `dyn.<name>` reads are refused there;
 - `send_at` accepts literal and parameter keys, but a path whose key is reread
   from live state cannot be represented by the guest ABI and is refused;
 - collection mutations are `push`, `insert_at`, `set_at`, `delete_at`,

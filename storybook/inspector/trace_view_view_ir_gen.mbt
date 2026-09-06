@@ -18,7 +18,7 @@
 // data-cid onto it.
 
 ///|
-/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// This file's `spec:` section, as source, with its
 /// doc comments removed.
 ///
 /// The schema each component carries is this block's PROJECTION, and the
@@ -353,7 +353,7 @@ pub fn trace_row_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// The dispatches the `<script type="tutuca/script">` block answers.
+/// The dispatches the file's `logic:` section answers.
 ///
 /// Composed AHEAD of the author's `update~`, which stays optional and is
 /// consulted only for a name this does not answer. GENERATED — edit the
@@ -441,7 +441,7 @@ fn trace_row_compute_has_walk_tracks_walk(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn trace_row_inline_compute() -> Map[
   String,
@@ -541,7 +541,7 @@ pub fn trace_log_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// The dispatches the `<script type="tutuca/script">` block answers.
+/// The dispatches the file's `logic:` section answers.
 ///
 /// Composed AHEAD of the author's `update~`, which stays optional and is
 /// consulted only for a name this does not answer. GENERATED — edit the
@@ -643,7 +643,7 @@ fn trace_log_compute_has_rows_tracks_rows(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn trace_log_inline_compute() -> Map[
   String,
@@ -862,7 +862,7 @@ fn trace_header_compute_is_relocated_tracks_from(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn trace_header_inline_compute() -> Map[
   String,
@@ -985,7 +985,7 @@ pub fn trace_place_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// The dispatches the `<script type="tutuca/script">` block answers.
+/// The dispatches the file's `logic:` section answers.
 ///
 /// Composed AHEAD of the author's `update~`, which stays optional and is
 /// consulted only for a name this does not answer. GENERATED — edit the
@@ -1142,7 +1142,7 @@ fn trace_places_compute_has_places_tracks_places(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn trace_places_inline_compute() -> Map[
   String,
@@ -1371,7 +1371,7 @@ pub fn recorder_bar_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// The dispatches the `<script type="tutuca/script">` block answers.
+/// The dispatches the file's `logic:` section answers.
 ///
 /// Composed AHEAD of the author's `update~`, which stays optional and is
 /// consulted only for a name this does not answer. GENERATED — edit the
@@ -1707,7 +1707,7 @@ fn recorder_bar_compute_turns_are_events(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn recorder_bar_inline_compute() -> Map[
   String,
@@ -2110,7 +2110,7 @@ pub fn trace_panel_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// The dispatches the `<script type="tutuca/script">` block answers.
+/// The dispatches the file's `logic:` section answers.
 ///
 /// Composed AHEAD of the author's `update~`, which stays optional and is
 /// consulted only for a name this does not answer. GENERATED — edit the
@@ -3030,7 +3030,7 @@ fn trace_panel_compute_show_replay_needs_a_trace(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn trace_panel_inline_compute() -> Map[
   String,

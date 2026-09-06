@@ -60,29 +60,35 @@ Event attributes may instead contain a direct property action:
 ## Your first component
 
 A component is a **view file** plus whatever that file cannot state. The file
-holds three blocks: the state schema, the behaviour, and the templates.
-`tutuca gen` turns all three into `counter_component`. That value
+holds three sections: `spec:` (what it is), `logic:` (what it does) and
+`view:` (how it draws). `tutuca gen` turns all three into `counter_component`. That value
 already carries the name, the compiled views, the styles, the codec, the
 schema, and the compiled handlers:
 
-```html
-<!-- tutorial.html -->
-<script type="tutuca/spec">
-  state Counter { count : Int }
-</script>
+```
+# tutorial.tutu
+spec:
+  Counter:
+    field count :: Int
 
-<script type="tutuca/script">
-  receive inc { .count += 1 }
-  receive dec { .count -= 1 }
-</script>
+    message inc
+    message dec
 
-<template id="Counter">
-  <div>
-    <button class="dec" @on.click="dec">-</button>
-    <span class="count" @text=".count"></span>
-    <button class="inc" @on.click="inc">+</button>
-  </div>
-</template>
+logic:
+  Counter:
+    receive inc:
+      it.count += 1
+
+    receive dec:
+      it.count -= 1
+
+view:
+  Counter:
+    @div{
+      @button(~class: "dec", ~on_click: dec){-}
+      @span(~class: "count"){@(it.count)}
+      @button(~class: "inc", ~on_click: inc){+}
+    }
 ```
 
 The MoonBit side of the counter then needs no more code:
@@ -90,11 +96,11 @@ The MoonBit side of the counter then needs no more code:
 ```mbt check
 ///|
 test "the generated counter is a complete component" {
-  // Views call update by bare name: @on.click="dec". Both names are answered
-  // in the file's `tutuca/script` block, which `gen` compiles and
-  // composes AHEAD of the `update~` this does not pass.
+  // Views call update by bare name: `~on_click: dec`. Both names are answered
+  // in the file's `logic:` section, which `gen` compiles and composes AHEAD
+  // of the `update~` this does not pass.
   //
-  // Write a handler that block cannot compile — one that walks a path, or
+  // Write a handler that section cannot compile — one that walks a path, or
   // builds a child component — and `gen` says which one, by name. That
   // one comes back here as an `update~`, and the rest stay where they are.
   counter_component() |> ignore
@@ -104,12 +110,12 @@ test "the generated counter is a complete component" {
 Things to notice:
 
 - **The view file declares the state.** `CounterState` is generated from the
-  `<script type="tutuca/spec">` block, together with its zero value and its
-  codec. Thus no MoonBit here writes a field list twice.
+  `spec:` section, together with its zero value and its codec. Thus no MoonBit
+  here writes a field list twice.
 - **The view file declares the behaviour too.** The checker reads the
-  `<script type="tutuca/script">` block against that schema: `.count` has to
-  be a field, and `+=` has to be arithmetic. The compiler turns the block
-  into a match over the same dispatch that a hand-written arm takes.
-- **What is left is what neither block can state.** A seed value, an intent's
+  `logic:` section against that spec: `it.count` has to be a field, and `+=`
+  has to be arithmetic. The compiler turns the section into a match over the
+  same dispatch that a hand-written arm takes.
+- **What is left is what neither section can state.** A seed value, an intent's
   options, and a handler that reaches for a path or builds a child are
   arguments to `counter_component(...)`. Everything else is in the file.

@@ -27,19 +27,19 @@ logic:
 
 view:
   Counter:
-    @div{@button(~on_click: inc){+} @comment{ bare name = a handler } @button(~on_click: dec){-} @comment{ pass args by name } @input(~on_input: it.str := e.value) @input(~on_input: it.n := e.valueAsInt) @comment{ modifiers: keydown +send (Enter) / +cancel (Esc), and +ctrl/+cmd/+alt } @input(~on_keydown: submit(e.value) ~send, ~on_keydown: reset ~cancel) @comment{@" custom elements: any CustomEvent reaches @on.<name>, detail is `e.value` "} @emoji_picker(~on_emoji_click: it.str := e.value)}
+    @div{@button(~on_click: inc){+} @comment{ bare name = a handler } @button(~on_click: dec){-} @comment{ pass args by name } @input(~on_input: it.str := e.value) @input(~on_input: it.n := e.valueAsInt) @comment{ modifiers: keydown +send (Enter) / +cancel (Esc), and +ctrl/+cmd/+alt } @input(~on_keydown: submit(e.value) ~send, ~on_keydown: reset ~cancel) @comment{@" custom elements: any CustomEvent reaches ~on_<name>, detail is `e.value` "} @emoji_picker(~on_emoji_click: it.str := e.value)}
 ```
 
 An `@on` value is either a property action beginning with `.` or a semantic
-handler. Use `.str = e.value`, `.done = not .done`, or
-`.items.removeAt @key` for a direct synchronous member operation; it dispatches
+handler. Use `it.str := e.value`, `it.done := !it.done`, or
+`it.items.delete_at(key)` for a direct synchronous member operation; it dispatches
 no message and needs no handler. Use a bare name when the action has domain
 meaning, several effects, messaging, or asynchronous work.
 
 Written args arrive in template order. The first slot is a handler name —
 always bare in an event position, and dispatched as `Receive(name, args)`;
-`$name` belongs in a VALUE position and is a generation error here. Later slots
-carry a sigil for where they read from: `e.…` the event, `.field` state,
+`name(…)` belongs in a VALUE position and is a generation error here. Later slots
+carry a sigil for where they read from: `e.…` the event, `it.field` state,
 `~bind` a binding. (A bare name names none of the three, so it is a generation
 error.) The computed accessors are `e.value`,
 `e.valueAsInt`/`e.valueAsFloat`, `e.key`, `e.keyCode`,
@@ -51,11 +51,11 @@ event itself — `e.target.dataset.rowId`, `e.detail.x` — through six allowlis
 steps. There is no `event` / `ctx` arg: a DOM object is not a `Value`, so asking
 for one silently yields `Null`.
 
-Bind events declaratively with `@on.` rather than reaching for the node and
+Bind events declaratively with `~on_*` rather than reaching for the node and
 `addEventListener` — an outside listener bypasses the transactor.
 
 Sending a message or raising an intent does **not** need MoonBit: `send`,
-`sendAt`, `intent <route>` and `forward` are effects the block spells, queued so
+`send(…, ~to: …)`, `intent <route>` and `forward` are effects the block spells, queued so
 they go out only if the whole transition finished — see
 [coordinate-components.md](coordinate-components.md).
 

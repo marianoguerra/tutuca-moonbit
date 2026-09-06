@@ -1,6 +1,6 @@
 // Personal site: a filterable list of entries with category/role facets,
 // sorting, and a solo/unsolo (alt-click) interaction; fixture data loads
-// through an `intent lex` raised on `init` after mount.
+// through an `ask(…, ~route: lex)` raised on `init` after mount.
 //
 // The three components' views live in the View tab (personal_site.tutu) and
 // arrive compiled — alt_url_views(), p_s_entry_views(), root_views(). Root's

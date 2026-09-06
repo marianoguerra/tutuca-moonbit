@@ -94,7 +94,7 @@ test "an unknown field is named, and the message guesses" {
     "`.coutn` is not a field of the Counter state — did you mean `.count`?",
   ])
   assert_eq(messages("receive x { .wildlyDifferent = 1 }"), [
-    "`.wildlyDifferent` is not a field of the Counter state; declare it in the <script type=\"tutuca/spec\"> block",
+    "`.wildlyDifferent` is not a field of the Counter state; declare it in the `spec:` section",
   ])
   assert_eq(codes("receive x { .count = 1 }"), [])
 }
@@ -164,7 +164,7 @@ test "a handler for a message the schema does not declare" {
   // `row_picked` is one, and answering it as a message is answering a name
   // nothing addresses.
   assert_eq(messages_with_views("receive row_picked(i) { .count = i }", []), [
-    "the schema declares no `receive` case `row_picked`; add it to `variant receive` in the <script type=\"tutuca/spec\"> block",
+    "the schema declares no `receive` case `row_picked`; add it to `variant receive` in the `spec:` section",
   ])
   assert_eq(codes("answer row_picked(i) { .count = i }"), [])
 }
@@ -369,7 +369,7 @@ test "a `$name` in a body is reported, and the message names the spelling that w
       ),
     ),
     [
-      "`$over` is answered by the render stack, and a body runs after one, so it reads Null here — this block declares `over`, so call it bare: `over`",
+      "`over(…)` is answered by the render stack, and a body runs after one, so it reads Null here — this block declares `over`, so call it bare: `over`",
     ],
   )
   // The bare spelling is the one that works, and stays silent.
@@ -385,7 +385,7 @@ test "a `$name` in a body is reported, and the message names the spelling that w
   // A name nothing declares still reads Null, and the message says what a
   // body can call instead.
   assert_eq(messages("compute a { $summary }"), [
-    "`$summary` is answered by the render stack, and a body runs after one, so it reads Null here; a `pred` or a `compute` is called bare from a body, and nothing here declares one by that name",
+    "`summary(…)` is answered by the render stack, and a body runs after one, so it reads Null here; a `pred` or a `compute` is called bare from a body, and nothing here declares one by that name",
   ])
 }
 
@@ -529,7 +529,7 @@ test "a type the state does not declare is named, with the nearest one" {
     "`Labl` is not a type the Counter state declares — did you mean `Label`?",
   ])
   assert_eq(messages("receive x { new Array[Widget] }"), [
-    "`Array[Widget]` is not a type the Counter state declares; declare it in the <script type=\"tutuca/spec\"> block, or write a built-in type",
+    "`Array[Widget]` is not a type the Counter state declares; declare it in the `spec:` section, or write a built-in type",
   ])
   // The built-in spellings the state block has, all of them legal here.
   assert_eq(
@@ -878,7 +878,7 @@ test "a mutator spelling is reported, and names the property action" {
   // stay quiet" — is what 0.48 deleted. These are now the names MOST likely to
   // be dead, because they are the ones that used to work without a handler.
   assert_eq(
-    codes_with_views("receive resetTo(n) { .count = n }", ["setCount"]),
+    codes_with_views("receive resetTo(n) { .count = n }", ["set_count"]),
     ["NO_VIEW_HANDLER"],
   )
   assert_eq(
@@ -887,13 +887,13 @@ test "a mutator spelling is reported, and names the property action" {
   )
   // `At` is part of the generated name, not of the verb.
   assert_eq(
-    codes_with_views("receive resetTo(n) { .count = n }", ["removeInItemsAt"]),
+    codes_with_views("receive resetTo(n) { .count = n }", ["remove_in_items_at"]),
     ["NO_VIEW_HANDLER"],
   )
   // A name that is no mutator of any member is reported too — the rule is the
   // same one, and only the repair it names differs.
   assert_eq(
-    codes_with_views("receive resetTo(n) { .count = n }", ["setWidget"]),
+    codes_with_views("receive resetTo(n) { .count = n }", ["set_widget"]),
     ["NO_VIEW_HANDLER"],
   )
 }
@@ -901,7 +901,7 @@ test "a mutator spelling is reported, and names the property action" {
 ///|
 test "the repair a mutator spelling names is a property action" {
   let inputs : Map[String, Array[@tutuca.Ty?]] = Map([])
-  inputs["setName"] = [None]
+  inputs["set_name"] = [None]
   let found = @check.check(
     @tscript.parse_script("receive resetTo(n) { .count = n }"),
     def_of(schema()),
@@ -911,7 +911,7 @@ test "the repair a mutator spelling names is a property action" {
   assert_eq(found[0].severity, SWarning)
   assert_eq(
     found[0].message,
-    "the view sends `setName`, and this block neither answers it nor forwards it — `setName` is the generated `set` mutator's name for `name`, and generated mutators stopped answering dispatches in 0.48 — write `.name = v` in the view where it is sent, or answer it here with `receive setName(…) { … }`",
+    "the view sends `set_name`, and this block neither answers it nor forwards it — `set_name` is the generated `set` mutator's name for `name`, and generated mutators stopped answering dispatches in 0.48 — write `it.name := v` in the view where it is sent, or answer it here with `receive set_name(…) { … }`",
   )
 }
 
@@ -937,7 +937,7 @@ test "a rule reading a field the state does not declare is reported" {
   debug_inspect(
     rule_findings("state Counter { count : Int  pred ok { .nope > 0 } }"),
     content=(
-      #|["`.nope` is not a field of the Counter state; declare it in the <script type=\"tutuca/spec\"> block"]
+      #|["`.nope` is not a field of the Counter state; declare it in the `spec:` section"]
     ),
   )
 }

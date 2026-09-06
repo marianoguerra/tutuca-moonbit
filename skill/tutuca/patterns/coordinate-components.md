@@ -4,7 +4,7 @@
 ask for work you can't name a handler for, or run async work and fold in
 the result.
 
-The channels are **effects the block spells**: `send`, `sendAt`, `intent
+The channels are **effects the block spells**: `send`, `send(…, ~to: …)`, `intent
 <route>` and `forward`. An effect is queued, not performed — it goes out only
 if the whole body finished, because a message sent beside a transition that did
 not happen is the one outcome nobody can reason about afterwards.
@@ -101,16 +101,16 @@ view:
 ```
 
 Pick by **what you know**: `send` / `receive` when you can name the target,
-`intent` when you can only name the job. `send 'name' args` addresses SELF —
-two call sites sharing one body — and `sendAt &.status 'flash' .draft`
-addresses a position, where `&.status` denotes the place and `.status` would
-denote what is there. Every intent ends in exactly one of three named answers
-— `<name>Ok`, `<name>Failed`, `<name>Unhandled` — dispatched back to the sender
-as ordinary `receive` arms. `<name>Unhandled` means the route ran out with
+`intent` when you can only name the job. `send("name", args)` addresses SELF —
+two call sites sharing one body — and `send("flash", it.draft, ~to: it.status)`
+addresses a position: `~to:` takes the PLACE `it.status` names, not the value
+that is there. Every intent ends in exactly one of three named answers
+— `<name>_ok`, `<name>_failed`, `<name>_unhandled` — dispatched back to the sender
+as ordinary `receive` arms. `<name>_unhandled` means the route ran out with
 nobody claiming it, which is a different sentence from a handler failing.
 
 Carry the most granular payload across the channel, not whole objects you
-won't use — `ask dyn 'itemSelected' .label` over passing the entire
+won't use — `ask("item_selected", it.label, ~route: dyn)` over passing the entire
 instance (same reasoning as handler args:
 [testing.md](../testing.md) *Designing handlers so tests stay simple*).
 
@@ -119,7 +119,7 @@ explicit third parameter:
 
 ```moonbit nocheck
 // nocheck: bucket arguments, not compilable items
-// 1. `sendAt` — the block spells it and a card runs it, but `gen` does
+// 1. `send(…, ~to: …)` — the block spells it and a card runs it, but `gen` does
 //    not emit a position yet, so an addressed send is a MoonBit arm today.
 update=(s : ChatState, msg, ctx) => match msg {
   Receive("submit", _) => {
@@ -130,7 +130,7 @@ update=(s : ChatState, msg, ctx) => match msg {
 },
 
 // 2. An intent naming its OWN answers, which is all `IntentOpts` carries. The
-//    block's `ask lex 'loadData'` gets these three filled in from the
+//    block's `ask("load_data", ~route: lex)` gets these three filled in from the
 //    schema; writing them here is how a sender names its own.
 update=(s : FeedState, msg, ctx) => match msg {
   Receive("loadAnotherWay", _) => {

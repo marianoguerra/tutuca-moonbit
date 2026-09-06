@@ -239,11 +239,11 @@ impl Guest for FakeGuest with fn handle_dispatch(
           msgs: [StopPropagation],
         }
       // reach INTO the subtree: `.left` is the child the left field holds
-      (Receive, "resetLeft") =>
+      (Receive, "reset_left") =>
         {
           handled: true,
           next: None,
-          msgs: [SendAt([FieldStep("left")], "setTo", [Num(0)])],
+          msgs: [SendAt([FieldStep("left")], "set_to", [Num(0)])],
         }
       _ => { handled: false, next: None, msgs: [], }
     }
@@ -382,7 +382,7 @@ impl Guest for FakeGuest with fn handle_dispatch(
       }
     (Receive, "reset") =>
       { handled: true, next: Some(self.next_of(handle, 0.0)), msgs: [], }
-    (Receive, "setTo") =>
+    (Receive, "set_to") =>
       match args {
         [Num(n), ..] =>
           { handled: true, next: Some(self.next_of(handle, n)), msgs: [], }
@@ -618,7 +618,7 @@ fn counter_manifest() -> DynManifest {
           plain_field("count", TyFloat),
           plain_field("history", TyList(TyFloat)),
         ],
-        // Nothing declares a `setCount`: the zero button writes the `count`
+        // Nothing declares a `set_count`: the zero button writes the `count`
         // property outright, and the host answers the write
         properties: [
           {
@@ -637,7 +637,7 @@ fn counter_manifest() -> DynManifest {
           },
         ],
         domains: [],
-        receives: ["init", "setTo"],
+        receives: ["init", "set_to"],
         intents: [],
         express_messages: [],
         express_intents: [],
@@ -684,7 +684,7 @@ fn counter_manifest() -> DynManifest {
             name: "main",
             html: (
               #|<div class="pair">
-              #|  <button class="resetleft" @on.click="resetLeft">reset left</button>
+              #|  <button class="resetleft" @on.click="reset_left">reset left</button>
               #|  <div class="left"><x render=".left"></div>
               #|  <div class="right"><x render=".right"></div>
               #|</div>
@@ -699,7 +699,7 @@ fn counter_manifest() -> DynManifest {
         // which is a component of THIS module, so they are the guest's own
         // nested children and the host must not fill them. `Framed` is the
         // other case.
-        // `resetLeft` is ALSO the generated mutator name for a `left` field;
+        // `reset_left` is ALSO the generated mutator name for a `left` field;
         // saying so here is what makes it the guest's
         properties: [],
         domains: [],
@@ -893,7 +893,7 @@ fn shell_module() -> @component.ModuleDef {
     provide={ "theme": ".note" },
     update=(s : TestShellState, msg, ctx) => {
       match msg {
-        Receive("setSlot", [v, ..]) => Next({ ..s, slot: v, })
+        Receive("set_slot", [v, ..]) => Next({ ..s, slot: v, })
         // Shell is the SENDER here, so the guest's reply has a position to
         // reach.
         Receive("poke", _) => {
@@ -995,7 +995,7 @@ test "module mounts into a live app and dispatches through stock machinery" {
     is Some(inst0)
 
   // seeding the instance is a plain state change
-  h.send_at_root("setSlot", args=[inst0.to_value()])
+  h.send_at_root("set_slot", args=[inst0.to_value()])
   inspect(h.text(".count"), content="10")
   inspect(h.text(".label"), content="count is 10")
 
@@ -1038,7 +1038,7 @@ test "a guest successor keeps its origin and moves its revision" {
   guard! b.to_value().identity() is Some(id_b)
   assert_not_eq(id_a.to_hex(), id_b.to_hex())
   assert_eq(id_a.rev, 0)
-  h.send_at_root("setSlot", args=[a.to_value()])
+  h.send_at_root("set_slot", args=[a.to_value()])
   h.click(".inc")
   inspect(h.text(".count"), content="11")
   guard! h.app.root_value().field("slot").identity() is Some(after)
@@ -1061,9 +1061,9 @@ test "a guest `request` round-trips through a host IntentFn" {
     ],
   })
   guard! loaded.make_instance("Counter", args={ "count": Num(21) }) is Some(c)
-  h.send_at_root("setSlot", args=[c.to_value()])
+  h.send_at_root("set_slot", args=[c.to_value()])
   inspect(h.text(".count"), content="21")
-  // the guest's `request` becomes an `intent lex` at the host, and the answer
+  // the guest's `request` becomes an `ask(…, ~route: lex)` at the host, and the answer
   // comes back as an ordinary message named by `on_ok_name` — which the guest
   // hears in its `receive` bucket and answers with the doubled successor
   h.click(".double")
@@ -1075,7 +1075,7 @@ test "nested guest children render and dispatch through two DynObj levels" {
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Pair") is Some(pair)
-  h.send_at_root("setSlot", args=[pair.to_value()])
+  h.send_at_root("set_slot", args=[pair.to_value()])
 
   // both children render with their own counts
   debug_inspect(h.texts(".count"), content="[\"1\", \"100\"]")
@@ -1095,7 +1095,7 @@ test "event modifiers in guest views dispatch through stock parsing" {
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(5) }) is Some(c)
-  h.send_at_root("setSlot", args=[c.to_value()])
+  h.send_at_root("set_slot", args=[c.to_value()])
   inspect(h.text(".count"), content="5")
   // @on.keydown+cancel="reset" — the modifier gates on Escape (host-side
   // modifier semantics apply to guest views for free); Enter is filtered
@@ -1262,7 +1262,7 @@ test "a guest's view can write one of its own properties" {
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(10) }) is Some(c)
-  h.send_at_root("setSlot", args=[c.to_value()])
+  h.send_at_root("set_slot", args=[c.to_value()])
   inspect(h.text(".count"), content="10")
   // `@on.click=".count = 0"` in the GUEST's view: no name crosses to the
   // guest at all — the write goes through the property door
@@ -1299,7 +1299,7 @@ test "a guest child's bubble reaches a guest PARENT, which can stop it" {
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Pair") is Some(pair)
-  h.send_at_root("setSlot", args=[pair.to_value()])
+  h.send_at_root("set_slot", args=[pair.to_value()])
   debug_inspect(h.texts(".count"), content="[\"1\", \"100\"]")
   // the left child emits "counted"; the Pair declares that bubble and hears it
   // one level up, swapping the two children...
@@ -1314,7 +1314,7 @@ test "a bubble no guest stops still reaches the host" {
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(3) }) is Some(c)
-  h.send_at_root("setSlot", args=[c.to_value()])
+  h.send_at_root("set_slot", args=[c.to_value()])
   // no Pair in between: the same emit walks all the way up to the shell
   h.click(".announce")
   inspect(h.text(".note"), content="counted 3")
@@ -1325,9 +1325,9 @@ test "a guest addresses its own subtree by relative path" {
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Pair") is Some(pair)
-  h.send_at_root("setSlot", args=[pair.to_value()])
+  h.send_at_root("set_slot", args=[pair.to_value()])
   debug_inspect(h.texts(".count"), content="[\"1\", \"100\"]")
-  // `send-at [field("left")] "setTo" [0]`: the left CHILD's receive handler runs
+  // `send-at [field("left")] "set_to" [0]`: the left CHILD's receive handler runs
   h.click(".resetleft")
   debug_inspect(h.texts(".count"), content="[\"0\", \"100\"]")
 }
@@ -1347,7 +1347,7 @@ test "request opts route the response to the name the guest asked for" {
     ],
   })
   guard! loaded.make_instance("Counter", args={ "count": Num(21) }) is Some(c)
-  h.send_at_root("setSlot", args=[c.to_value()])
+  h.send_at_root("set_slot", args=[c.to_value()])
   // the guest requested with on_ok_name="doubled", so the response dispatches
   // "doubled" with just the value — not "double" with [result, error]
   h.click(".double")
@@ -1370,7 +1370,7 @@ test "a module serves its own requests, ahead of the host's" {
     ],
   })
   guard! loaded.make_instance("Counter", args={ "count": Num(5) }) is Some(c)
-  h.send_at_root("setSlot", args=[c.to_value()])
+  h.send_at_root("set_slot", args=[c.to_value()])
   h.click(".triple")
   // 5 * 3 (the module's own handler), not 5 * 100 (the host's)
   inspect(h.text(".count"), content="15")
@@ -1382,7 +1382,7 @@ test "a guest answers a view's @when filter" {
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(0) }) is Some(c)
-  h.send_at_root("setSlot", args=[c.to_value()])
+  h.send_at_root("set_slot", args=[c.to_value()])
   // history is empty
   debug_inspect(h.texts("li.h"), content="[]")
   h.click(".inc") // history [0]
@@ -1972,7 +1972,7 @@ test "a `$method` the manifest never declared is reported at load" {
             name: "main",
             html: (
               #|<div :style="$boxStyle" :class="$valueClass">
-              #|  <button @on.click="$setCount 0">zero</button>
+              #|  <button @on.click="$set_count 0">zero</button>
               #|  <button @on.click="$bumpIt">bump</button>
               #|  <span @text="$'{.count} / {$boxStyl}'"></span>
               #|</div>
@@ -1992,7 +1992,7 @@ test "a `$method` the manifest never declared is reported at load" {
         view_bindings: [],
         provide_bindings: [],
         lookup_bindings: [],
-        // `$setCount` is absent on purpose: it is the mutator the `count` field
+        // `$set_count` is absent on purpose: it is the mutator the `count` field
         // implies, so the host answers it and it must NOT be reported as an
         // undeclared method. Both `@on` sites are separately refused as
         // METHOD_IN_EVENT — a `$name` there is the same dispatch a bare name
@@ -2022,7 +2022,7 @@ test "a `$method` the manifest never declared is reported at load" {
       #|UNDECLARED_METHOD (warning) Stat/main: '$bumpIt' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods
       #|UNDECLARED_METHOD (warning) Stat/main: '$boxStyl' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods — did you mean '$boxStyle'?
       #|UNDECLARED_METHOD (warning) Stat/main: '$valueClass' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods
-      #|METHOD_IN_EVENT (error) module statlib: 'Stat' writes `@on.click="$setCount"`: a `$name` in an event position is refused. A handler name and a `$name` are the same dispatch, so the sigil claims a distinction that does not exist — write `setCount` bare
+      #|METHOD_IN_EVENT (error) module statlib: 'Stat' writes `@on.click="$set_count"`: a `$name` in an event position is refused. A handler name and a `$name` are the same dispatch, so the sigil claims a distinction that does not exist — write `set_count` bare
       #|METHOD_IN_EVENT (error) module statlib: 'Stat' writes `@on.click="$bumpIt"`: a `$name` in an event position is refused. A handler name and a `$name` are the same dispatch, so the sigil claims a distinction that does not exist — write `bumpIt` bare
     ),
   )
@@ -2058,7 +2058,7 @@ test "a foreign placeholder is filled by the host and never reaches the guest" {
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Framed", args={ "title": Str("panel") })
     is Some(framed)
-  h.send_at_root("setSlot", args=[framed.to_value()])
+  h.send_at_root("set_slot", args=[framed.to_value()])
   // The guest's own field, answered by the guest.
   assert_eq(h.text(".frame-title"), "panel")
   // The hole, filled with the component the field NAMED and rendered by the
@@ -2075,7 +2075,7 @@ test "what a person puts in a placeholder survives the guest around it changing"
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Framed", args={ "title": Str("panel") })
     is Some(framed)
-  h.send_at_root("setSlot", args=[framed.to_value()])
+  h.send_at_root("set_slot", args=[framed.to_value()])
   // Use what is in the hole.
   h.click(".filler-bump")
   h.click(".filler-bump")
@@ -2099,7 +2099,7 @@ test "a same-module child is the guest's own, and the host does not fill it" {
   // cases are told apart by exactly that: same-module is the guest's, foreign
   // is a hole.
   guard! loaded.make_instance("Pair") is Some(pair)
-  h.send_at_root("setSlot", args=[pair.to_value()])
+  h.send_at_root("set_slot", args=[pair.to_value()])
   // The guest's own children, with the guest's own values.
   assert_eq(h.texts(".count"), ["1", "100"])
   assert_true(Guest::get_field(fake, pair.handle(), "left") is Some(_))
@@ -2447,7 +2447,7 @@ test "a guest reads a value a host ancestor provides" {
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
-  h.send_at_root("setSlot", args=[inst.to_value()])
+  h.send_at_root("set_slot", args=[inst.to_value()])
   // Shell's `note` starts empty, so the binding is there and holds "".
   inspect(h.text(".theme"), content="")
   // An intent that changes what Shell publishes re-renders the guest's read of
@@ -2474,7 +2474,7 @@ test "a guest with no provider above it reads its declared default" {
   )
   fake.loaded.val = Some(loaded)
   guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
-  h.send_at_root("setSlot", args=[inst.to_value()])
+  h.send_at_root("set_slot", args=[inst.to_value()])
   inspect(h.text(".theme"), content="unthemed")
 }
 
@@ -2492,7 +2492,7 @@ fn no_provide_shell() -> @component.ModuleDef {
     initial=TestShellState::{ slot: Null, note: "", },
     update=(s : TestShellState, msg, _ctx) => {
       match msg {
-        Receive("setSlot", [v, ..]) => Next({ ..s, slot: v, })
+        Receive("set_slot", [v, ..]) => Next({ ..s, slot: v, })
         _ => Unhandled
       }
     },
@@ -2518,7 +2518,7 @@ test "a guest component published as a type can be built" {
   let inst = comp.make({ "count": Num(7) })
   // A real guest instance, not the `Null` a `for_type` component used to yield.
   assert_true(inst is Obj(_))
-  h.send_at_root("setSlot", args=[inst])
+  h.send_at_root("set_slot", args=[inst])
   inspect(h.text(".count"), content="7")
   // And it is the SAME module's: driving it reaches the guest that made it.
   h.click(".inc")
@@ -2538,12 +2538,12 @@ test "a guest handler reads a declared lookup" {
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
-  h.send_at_root("setSlot", args=[inst.to_value()])
+  h.send_at_root("set_slot", args=[inst.to_value()])
   // Shell's `note` — which is what it provides as `theme` — starts empty.
   h.click(".notify")
   inspect(h.text(".note"), content="changed!")
   // The handler now reads what the ancestor publishes, at this position.
-  h.send_at_root("setSlot", args=[inst.to_value()])
+  h.send_at_root("set_slot", args=[inst.to_value()])
   h.click(".notify")
   h.send_at_root("readTheme", args=[])
   inspect(h.text(".theme"), content="changed!")
@@ -2607,7 +2607,7 @@ test "a guest handler reads nothing for an undeclared name" {
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
-  h.send_at_root("setSlot", args=[inst.to_value()])
+  h.send_at_root("set_slot", args=[inst.to_value()])
   h.click(".undeclared")
   inspect(h.text(".note"), content="absent")
 }
@@ -2618,7 +2618,7 @@ test "a guest replies to whoever sent it a message" {
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
   guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
-  h.send_at_root("setSlot", args=[inst.to_value()])
+  h.send_at_root("set_slot", args=[inst.to_value()])
   // Shell sends, the guest replies, and the reply lands in Shell's `receive`
   // bucket like any other message.
   h.send_at_root("poke", args=[])
@@ -2681,10 +2681,10 @@ test "a guest's declared domain is enforced at both of the host's doors" {
   ])
   guard! loaded.make_instance("Counter", args={ "count": Num(10) })
     is Some(inst0)
-  h.send_at_root("setSlot", args=[inst0.to_value()])
+  h.send_at_root("set_slot", args=[inst0.to_value()])
   inspect(h.text(".count"), content="10")
 
-  // THE FIRST DOOR: the field write itself. `setCount 0` is a generated
+  // THE FIRST DOOR: the field write itself. `set_count 0` is a generated
   // mutator the host answers over `with_member`, and the guest is never
   // asked — so if this door did not exist there would be nothing between the
   // click and a state the declaration forbids.
@@ -2714,7 +2714,7 @@ test "a refused guest write reaches the refusal channel" {
   ])
   guard! loaded.make_instance("Counter", args={ "count": Num(10) })
     is Some(inst0)
-  h.send_at_root("setSlot", args=[inst0.to_value()])
+  h.send_at_root("set_slot", args=[inst0.to_value()])
   let refused = @harness.refusals_while(() => h.click(".zero"))
   assert_eq(refused.length(), 1)
   assert_eq(refused[0].code, OutOfRange)
@@ -2742,7 +2742,7 @@ test "a component with no readable domain is unconstrained" {
   let (h, loaded) = mount_with_domains(fake, [])
   guard! loaded.make_instance("Counter", args={ "count": Num(10) })
     is Some(inst0)
-  h.send_at_root("setSlot", args=[inst0.to_value()])
+  h.send_at_root("set_slot", args=[inst0.to_value()])
   h.click(".zero")
   inspect(h.text(".count"), content="0")
 }
@@ -2764,7 +2764,7 @@ test "a refused transition frees the successor and keeps the live handle" {
   ])
   guard! loaded.make_instance("Counter", args={ "count": Num(12) })
     is Some(inst0)
-  h.send_at_root("setSlot", args=[inst0.to_value()])
+  h.send_at_root("set_slot", args=[inst0.to_value()])
   inspect(h.text(".count"), content="12")
   // The guest ran and minted a handle for 13; the host will not adopt it.
   h.click(".inc")
@@ -2789,8 +2789,8 @@ test "a refused mutator frees the successor and keeps the live handle" {
   ])
   guard! loaded.make_instance("Counter", args={ "count": Num(10) })
     is Some(inst0)
-  h.send_at_root("setSlot", args=[inst0.to_value()])
-  // `setCount 0` is turned down at the FIRST door, before the guest is
+  h.send_at_root("set_slot", args=[inst0.to_value()])
+  // `set_count 0` is turned down at the FIRST door, before the guest is
   // entered — so there is no successor to free and nothing to get wrong.
   h.click(".zero")
   assert_true(fake.counters.length() == 1)
@@ -2933,7 +2933,7 @@ test "a bare component field holds what the host puts in it" {
   // An instance, not a Map wearing its fields.
   assert_eq(rack.to_value().field("holds").field("note"), Str("mine"))
   // And it RENDERS: `<x render=".holds">` draws the component itself.
-  h.send_at_root("setSlot", args=[rack.to_value()])
+  h.send_at_root("set_slot", args=[rack.to_value()])
   assert_eq(h.text(".filler-note"), "mine")
 }
 
@@ -2956,7 +2956,7 @@ test "a list of bare component fields holds what the host puts in it" {
   @debug.assert_eq(cells.map(c => c.field("note").to_display_string()), [
     "one", "two",
   ])
-  h.send_at_root("setSlot", args=[rack.to_value()])
+  h.send_at_root("set_slot", args=[rack.to_value()])
   @debug.assert_eq(h.texts(".filler-note"), ["one", "two"])
 }
 
@@ -2999,7 +2999,7 @@ test "a guest can address a message into a hole it does not own" {
       "holds": filler.make({ "note": Str("x") }),
     })
     is Some(rack)
-  h.send_at_root("setSlot", args=[rack.to_value()])
+  h.send_at_root("set_slot", args=[rack.to_value()])
   assert_eq(h.text(".filler-note"), "x")
   // The guest answers this by asking the HOST to deliver `bump` at `.holds`.
   h.click(".rack-poke")
@@ -3206,7 +3206,7 @@ test "a counter from another module answers a click through its holder" {
     is Some(theirs)
   guard! loaded_kit.make_instance("Shelf", args={ "holds": theirs.to_value() })
     is Some(shelf)
-  h.send_at_root("setSlot", args=[shelf.to_value()])
+  h.send_at_root("set_slot", args=[shelf.to_value()])
   // It renders, which is the half that was never in doubt.
   assert_eq(h.text(".count"), "7")
   // And it answers, which is the half that is.

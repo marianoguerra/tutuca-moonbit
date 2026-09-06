@@ -18,7 +18,7 @@
 // data-cid onto it.
 
 ///|
-/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// This file's `spec:` section, as source, with its
 /// doc comments removed.
 ///
 /// The schema each component carries is this block's PROJECTION, and the

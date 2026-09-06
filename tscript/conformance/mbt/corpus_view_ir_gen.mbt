@@ -18,7 +18,7 @@
 // data-cid onto it.
 
 ///|
-/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// This file's `spec:` section, as source, with its
 /// doc comments removed.
 ///
 /// The schema each component carries is this block's PROJECTION, and the
@@ -92,7 +92,7 @@ pub fn corpus_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// The dispatches the `<script type="tutuca/script">` block answers.
+/// The dispatches the file's `logic:` section answers.
 ///
 /// Composed AHEAD of the author's `update~`, which stays optional and is
 /// consulted only for a name this does not answer. GENERATED — edit the
@@ -426,7 +426,7 @@ fn corpus_compute_small(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn corpus_inline_compute() -> Map[
   String,

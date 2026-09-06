@@ -22,9 +22,9 @@ questions a run-time CLI would answer are answered earlier, and more strictly:
 
 | You want to know | Where it is answered |
 | ---------------- | -------------------- |
-| does this view reference a field that exists? | `gen` — the `spec:` schema declares the fields, and an unknown `.field` fails generation, inside a loop as well as at the root — including a loop over CHILD components, whose fields are checked against that child's schema |
-| does the component this view renders have the view `as=` names? | `gen` over the whole project (`tutuca gen src/`) — a miss silently falls back to that component's `main` view at run time, and only a run that can see both components can say so. Reported as a hint, because a slot declared as the bare `component` marker takes its component from `component()`'s `slots~` — MoonBit the generator cannot see |
-| does this `@show` decide anything? | `gen` — a list or a record is always truthy, so `@show=".items"` never hides; it fails generation and names `empty? .items` as the fix |
+| does this view reference a field that exists? | `gen` — the `spec:` schema declares the fields, and an unknown `it.field` fails generation, inside a loop as well as at the root — including a loop over CHILD components, whose fields are checked against that child's schema |
+| does the component this view renders have the view `~as:` names? | `gen` over the whole project (`tutuca gen src/`) — a miss silently falls back to that component's `main` view at run time, and only a run that can see both components can say so. Reported as a hint, because a slot declared as the bare `component` marker takes its component from `component()`'s `slots~` — MoonBit the generator cannot see |
+| does this `@show` decide anything? | `gen` — a list or a record is always truthy, so `@show(it.items)` never hides; it fails generation and names `empty? .items` as the fix |
 | is this `id=` unique? | `gen` — an `id` inside an `@each` is stamped on every item, which only the compiled tree can see |
 | is every `@on` handler handled? | `gen` + `moon check` — `update` matches a generated `CounterMsg`, so an unhandled handler is a **build error** |
 | does the handler compile against the state? | `moon check` — state is a plain struct; `s.cuont` does not compile |
@@ -39,10 +39,10 @@ inspect a component, the answer is a `moon test` block.
 
 | Command                  | Purpose                                                                                                                |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| `gen [path...]`  | Compile `.html` files of views into companion MoonBit modules of typed view surfaces. Paths are files or directories (a directory contributes the `.html` files that already have a generated sibling). Flags: `--name <Name>`, `--out <dir-or-file>`, `--dry-run`, `--no-ir`. See below |
+| `gen [path...]`  | Compile `.tutu` files of views into companion MoonBit modules of typed view surfaces. Paths are files or directories (a directory contributes the `.tutu` files that already have a generated sibling). Flags: `--name <Name>`, `--out <dir-or-file>`, `--dry-run`, `--no-ir`. See below |
 | `gen-tailwind-css [path...]` | Compile the classes a project's views use into CSS, against stock Tailwind. Flags: `-o/--out <file>`, `--entry <file>`, `--classes <file>`, `--print-classes`, `--polyfills <0..3>`. See below |
 | `gen-margaui-css [path...]` | The same, against Tailwind **+ margaui**'s component layers (`btn`, `card`, `stat`, …) |
-| `watch [path...]`        | Regenerate view modules on every save. Paths are `.html` files or directories (which contribute the `.html` files that already have a generated sibling). Flags: `--name`, `--out`, `--no-ir`, and `--tailwind-css`/`--margaui-css` (+ `--css-entry`, `--css-classes`) to keep a stylesheet current too |
+| `watch [path...]`        | Regenerate view modules on every save. Paths are `.tutu` files or directories (which contribute the `.tutu` files that already have a generated sibling). Flags: `--name`, `--out`, `--no-ir`, and `--tailwind-css`/`--margaui-css` (+ `--css-entry`, `--css-classes`) to keep a stylesheet current too |
 | `storybook [dir]`        | Serve (or copy with `--out <dir>`) a pre-built gallery bundle over HTTP — a directory with an `index.html` and a `.wasm` beside it. Flags: `--port <n>` (default 4321, falling back to a free port), `--out <dir>`. A static file server; the gallery itself is a wasm page built from the project's own modules |
 | `new-storybook <name>`   | Scaffold that page: a gallery of your own components, one story per example a module declares. Writes the wasm export list, `index.html` and `build.mjs` — the parts a library cannot supply. Flags: `--dir <path>`, `--dry-run`, `--force`. Needs moon + node. See [storybook.md](./storybook.md) |
 | `trace [file]`           | Read an execution trace, trim it, or cut it down to one component. Flags: `--trim <n>`, `--at <path>`, `-o/--out <file>`, `--compact`. See [tracing.md](./tracing.md) |
@@ -53,7 +53,7 @@ inspect a component, the answer is a `moon test` block.
 
 ### `gen` — ahead-of-time views
 
-Optional. Keeps a component's views in an `.html` file instead of a MoonBit
+Optional. Keeps a component's views in a `.tutu` file instead of a MoonBit
 string literal, and turns the view's vocabulary into types:
 
 ```sh
@@ -66,13 +66,13 @@ tutuca gen src/            # the whole project, in one invocation
 **Pass the whole project when you have one.** Two checks need more than one
 component's schema, and they see exactly the paths you passed:
 
-- `<x render=".slot" as="edit">` where the child has no `edit` view. At run time
+- `@render(it.slot, ~as: "edit")` where the child has no `edit` view. At run time
   the name falls back to the child's `main` view, so the site renders the
   **wrong view** and says nothing about it. Reported as a
   hint rather than an error, because a slot declared as the bare `component`
   marker takes its component from `component()`'s `slots~` — MoonBit the
   generator cannot see.
-- `.field` and `@value.member` inside a loop over `Array[Todo]`, checked against
+- `it.field` and `@value.member` inside a loop over `Array[Todo]`, checked against
   the **Todo** component's schema rather than skipped.
 
 A component outside the paths you passed is unknown, and unknown is never
@@ -93,13 +93,13 @@ each one is:
 
 A component name is Uppercase-initial, which is what tells `Counter` (a
 component) from `row` (a view); a file either names its components or does
-not. A macro's `data-*` attributes are the defaults for its body's `^var`
+not. A macro's `data-*` attributes are the defaults for its body's a macro parameter
 references, and calls are expanded at generation time — so macros belong in
 the view file rather than being registered from MoonBit, which no generator
 could expand.
 
 A `<style>` inside a template is that view's style; one at file level is the
-first component's common style, or the global style with `data-global`. A
+first component's common style, or the global style with `~global`. A
 view that would emit a parse issue at runtime fails generation instead.
 
 While authoring, `tutuca watch` keeps the modules current on every save
@@ -148,7 +148,7 @@ site. `name`, `views`, `init` and the styles stay overridable; the codec and
 the schema are not parameters.
 
 `update` then pattern-matches typed messages, so adding an `@on` handler to
-the `.html` and regenerating breaks the build until it is handled, instead of
+the `.tutu` and regenerating breaks the build until it is handled, instead of
 falling into a silent `_ => Unhandled`. Handlers served by the auto-generated
 field mutators return `None` and fall through to them, as before.
 
@@ -158,7 +158,7 @@ The generated package must import `"marianoguerra/tutuca/core" @tutuca`,
 spells `@anode.View` directly. Each generated file's header repeats the list it
 needs.
 
-The schema goes in a `<script>` and not a `<template>`, because script
+The schema goes in a `spec:` section and not a `view:` one, because script
 content is raw text to an HTML parser and template content is markup — a
 `Array[Int]` inside a template would be read as an `<Int>` element.
 
@@ -176,7 +176,7 @@ mutators each kind generates, message buckets, slots, declared `$`-callables,
 schema-only files and `fixtures:` fixtures — is
 [schema.md](./schema.md).
 
-`gen` checks every `.field` read in every view against it, loop bodies and
+`gen` checks every `it.field` read in every view against it, loop bodies and
 child components included, and a read of a name the schema lacks fails
 generation.
 
@@ -191,8 +191,8 @@ unknown-handler errors above:
 | Error | Means |
 | ----- | ----- |
 | `NotIterable` | `@each` needs a collection, but the expression is a scalar |
-| `NotRenderable` | `<x render>` needs a component, but the field is not a slot |
-| `MethodInEventPosition` | a `$name` in an `@on` position; write it bare |
+| `NotRenderable` | `@render` needs a component, but the field is not a slot |
+| `MethodInEventPosition` | a `name(…)` in an `@on` position; write it bare |
 
 **Lint findings** are printed one per line, as
 `CODE (level) <Component>/<view>: message` — for example
@@ -232,7 +232,7 @@ not nest the way the source reads.
 
 Two diagnostics are not lint codes:
 
-- `state-without-views (hint)` — a schema block with no `<template>` in the
+- `state-without-views (hint)` — a `spec:` section with no `view:` entry in the
   file. Legitimate for a component whose views are built in MoonBit, and also
   what a mistyped component name looks like, which is why it is reported rather
   than passed in silence.
@@ -247,7 +247,7 @@ There is **no** `tutuca-lint-ignore` pragma and no per-line suppression.
 ### The drift check
 
 `gen` output is checked in, and a stale `*_view_gen.mbt` **type-checks and
-tests green** while no longer describing the `.html` beside it. So regenerating
+tests green** while no longer describing the `.tutu` beside it. So regenerating
 is not optional bookkeeping: it is the only thing that ties the two together.
 Run `gen` (or leave `watch` running) after every view edit, and have CI
 re-run it and fail on any difference — `tutuca gen src/` followed by
@@ -263,8 +263,8 @@ holding only the utilities it actually uses.
 tutuca gen-margaui-css src/ -o public/app.css
 ```
 
-Paths are `.html` files or directories, and follow `watch`'s rule: a directory
-contributes the `.html` files that already have a generated sibling, so pointing
+Paths are `.tutu` files or directories, and follow `watch`'s rule: a directory
+contributes the `.tutu` files that already have a generated sibling, so pointing
 this at a project root does not try to compile `index.html`. Defaults to the
 current directory. The stylesheets are compiled into the binary — no Node, no
 CDN, no checkout. The two commands differ only in which stylesheets the classes
@@ -272,11 +272,11 @@ compile against; `gen-margaui-css` output is a superset of `gen-tailwind-css`
 for the same views.
 
 Only **literal** class names are collected, the same limit the runtime collector
-has: a name the view assembles at run time (`:class="$'bg-{.color}'"`, or
+has: a name the view assembles at run time (`~class: @str{bg-@(it.color)}`, or
 anything a handler computes) is not in the source to be found.
 
 - `--print-classes` prints what was collected, one per line, instead of the CSS.
-  Start here when a style is missing. Note that `$'badge badge-{.kind}'`
+  Start here when a style is missing. Note that `@str{badge badge-@(it.kind)}`
   contributes its literal prefix `badge-` — a stub that compiles to nothing, not
   the real name.
 - `--classes <file>` adds candidates from a file, one per line, for exactly

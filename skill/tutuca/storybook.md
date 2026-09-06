@@ -30,7 +30,7 @@ pub fn counter_module() -> @component.ModuleDef {
   @component.ModuleDef::new(name="counter", components=[counter_component()], examples=[
     { component: "Counter", title: "Zero", args: Map([]), view: None },
     { component: "Counter", title: "Seeded", args: { "count": Num(7) }, view: None },
-    // `view` picks one of the component's named views (`<template
+    // `view` picks one of the component's named views (`Comp.name:`
     // id="Counter:compact">`) instead of its default
     { component: "Counter", title: "Compact", args: Map([]), view: Some("compact") },
   ])

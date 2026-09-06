@@ -1,8 +1,7 @@
 # Tutuca — Advanced Topics
 
 Reach this file only when the task touches drag & drop, context-style
-"dynamic bindings", pseudo-`x` (the `<x>`-stripping workaround inside
-`<select>`/`<table>`/`<tr>`), or custom collections. For compiling
+"dynamic bindings", or custom collections. For compiling
 Tailwind / MargaUI classes see [margaui.md](./margaui.md); for
 everything else, `core.md` is the right place.
 
@@ -94,7 +93,7 @@ becomes a drag after a small move threshold).
 
 For passing values "context-style" to a deep descendant without threading
 them through every component in between. **`provide`** on the producer;
-**`lookup`** on consumers; resolve as `*name`.
+**`lookup`** on consumers; resolve as `dyn.<name>`.
 
 > **Best practice:** keep state local to the component and reach for
 > `provide` / `lookup` only when it is genuinely the only solution. Dynamic
@@ -146,7 +145,7 @@ A **`lookup`** names what it WANTS, not who provides it. It is a LIST:
 `@component.lookup_name("color")` is the whole declaration, and
 `@component.lookup_or("color", "'gray'")` adds the fallback expression used
 when no producer is above the consumer (without one, a miss resolves to
-`null`). The local name IS the provided name — there is no alias. A `*name`
+`null`). The local name IS the provided name — there is no alias. A `dyn.<name>`
 resolves to the nearest binding above, which includes the component's own
 `provide` (pushed on entering it).
 
@@ -155,7 +154,7 @@ normal shadowing stack, so the nearest rendered provider wins.
 
 ### Dynamic vars as render targets
 
-A `*name` dynamic var resolves to a value, so it works anywhere a value
+A `dyn.<name>` dynamic var resolves to a value, so it works anywhere a value
 is read — not just in `:style` / `:class`, and including inside a `pred` or a
 `compute` body. In particular it can be a component-render target and an
 iteration source:
@@ -178,17 +177,17 @@ view:
     @comment{ iterate a dynamic seq }
 ```
 
-A `provide` value must be **addressable** — a `.field` or a `.seq[.key]`
-seq-access, nothing else. It is both read as `*name` *and* used as a
+A `provide` value must be **addressable** — a `it.field` or a `it.seq[key]`
+seq-access, nothing else. It is both read as `dyn.<name>` *and* used as a
 render-target / resume path, so a `$`-handler or constant — which has no
 path — cannot work. `Component::compile` **drops a bad `provide`** rather
-than raising on it, and the consumer's `*name` then resolves to its
+than raising on it, and the consumer's `dyn.<name>` then resolves to its
 `default`, or to `null`; `ComponentStack::check_names` reports it as
 `PROVIDE_NOT_ADDRESSABLE`. If a dynamic binding reads as its fallback
 everywhere, run the checks and suspect the producer's expression first.
 A `lookup` `default`, by contrast, is only a
 value fallback and accepts the full value grammar, including constants
-like `'gray'`. A `provide` can be a sequence/map item access:
+like `"gray"`. A `provide` can be a sequence/map item access:
 
 ```moonbit nocheck
 // nocheck: a hand-written state type; its `@component.Fields` impl is omitted for brevity
@@ -215,10 +214,10 @@ fn root_comp() -> @component.Component {
 
 There is **no `*name[.key]` form** — a consumer never indexes a dynamic
 var. The seq-access lives in the producer's `provide` declaration; the
-consumer just reads the resolved value as `*name`.
+consumer just reads the resolved value as `dyn.<name>`.
 
 **Resuming at the value's path.** The component rendered via
-`<x render="*selected">` uses the concrete app path stored beside the dynamic
+`@render(dyn.selected)` uses the concrete app path stored beside the dynamic
 value. Rendering pushes that path as a continuation frame. An event inside the
 subtree therefore mutates the selected value, while bubbling pops back to the
 visual caller at the top of the frame. Editing it here and in the owner's own
@@ -270,7 +269,7 @@ The name goes in the consumer's `lookup` list too, so the checks can see it
 collide, which is why types and values share one binding frame.
 
 A published type is **not** a render target: it has no path, so
-`<x render="*Cell">` stays unresolvable by construction.
+`@render(dyn.Cell)` stays unresolvable by construction.
 
 ### Routes: which environment answers
 
@@ -295,57 +294,36 @@ Worked recipes:
 (seq-access provide, "edit the selected entry"). Runtime mechanics:
 [semantics.md](./semantics.md) *Rendering with a resumed path*.
 
-## Pseudo-`x` (`@x`)
+## A loop inside a `<select>` or a table
 
-Tutuca's special operations (`render`, `render-it`, `render-each`, `text`,
-`show`, `hide`, `slot`) live on the `<x>` tag. That works almost
-everywhere, but the browser's HTML parser refuses to keep `<x>` (or any
-unknown tag) as a child of certain elements. Drop `<x render-each>`
-inside one of those and the parser silently strips it.
+There is nothing to do here, and this section exists because there used to be.
 
-The parser strips `<x>` only inside the **table family** and **`<select>`**.
-Use pseudo-`@x` when the parent is one of:
+The render ops compile to an `<x>` tag, and a browser's HTML parser drops an
+unknown tag inside an element whose content model names its children — the
+table family (`table`, `thead`, `tbody`, `tfoot`, `tr`, `colgroup`) and
+`select` / `optgroup`. A loop written inside one of those was silently
+stripped, and the old notation asked the author to write the workaround by
+hand: an `@x` on a legal tag, which the parser keeps and tutuca reads as if it
+were an `<x>`.
 
-`table`, `thead`, `tbody`, `tfoot`, `tr`, `colgroup`, `select`, `optgroup`.
-
-Everywhere else `<x>` is kept and needs no workaround — including `ul`, `ol`,
-`li`, `dl`, `dt`, `dd`, `details`, `summary`, `caption`, `td`, `th`. So
-`<ul><x render-each=".items">…</x></ul>` is fine. (When in doubt, the rule of
-thumb is: any element whose HTML content model only permits *specific* child
-tags — table sections and `<select>` — strips `<x>`.)
-
-The escape hatch: prefix the **first** attribute on a *legal* tag with
-`@x`. Tutuca treats that tag as if it were `<x>` and reads the next
-attribute as the special op.
+The printer knows the parent tag, so it writes that form itself:
 
 ```tutu
+spec:
+  Picker:
+    field items :: List.of(Instance.of(Picker))
+
 view:
-  Card:
-    @comment{ ❌ <x> stripped by the HTML parser inside <select> }
-    @" "
+  Picker:
     @select{
-      @each(value, key in it.items){
-        @render(value, ~as: "option")
-      }
-    }
-    @" "
-    @comment{@" ✅ pseudo-x: <option @x render-each=\".items\" as=\"option\"> "}
-    @" "
-    @select{
-      @each(value, key in it.items){
-        @render(value, ~as: "option")
-      }
+      @each(value, key in it.items){@render(value, ~as: "option")}
     }
 ```
 
-Notes:
-
-- `@x` must be the **first** attribute; the special op (`render-each`,
-  `render`, `text`, `show`, ...) is the second.
-- The host tag (here `<option>`) is otherwise ignored — only the special
-  op runs. Tutuca produces the rendered children directly.
-- Same trick works inside any of the stripping parents listed above
-  (`<table>`/`<tr>`/`<colgroup>`/`<select>`/…).
+Everywhere else needs nothing either — `ul`, `ol`, `li`, `dl`, `dt`, `dd`,
+`details`, `summary`, `caption`, `td`, `th` all keep an `<x>` as it is. The
+rule of thumb, if you ever read the generated HTML: any element whose content
+model only permits *specific* child tags borrows one of them.
 
 ## Custom collections
 

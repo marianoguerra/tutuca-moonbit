@@ -379,7 +379,7 @@ fn emit_component(
     let method_variants = variants_for(all_methods)
     emit_name_enum(
       out,
-      "Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.",
+      "Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.",
       "\{t}Compute",
       "name",
       method_variants,

@@ -21,7 +21,7 @@ view:
     }
 ```
 
-`paged.mbt` — `~loop_with` is the **one render bucket the script block has no
+`paged.mbt` — `~loop_with` is the **one render bucket `logic:` has no
 declaration kind for**, so this half is MoonBit by construction: a slice is
 decided once per render against the whole sequence, which is not a value the
 block has any way to see.

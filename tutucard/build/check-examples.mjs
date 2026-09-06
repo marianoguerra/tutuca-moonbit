@@ -52,7 +52,7 @@ const SITE_CARDS = join(REPO, "playground", "site", "cards");
 const cards = [
   ...EXAMPLES.map((e) => ({ name: e.name, source: e.source })),
   ...readdirSync(SITE_CARDS)
-    .filter((f) => f.endsWith(".html"))
+    .filter((f) => f.endsWith(".tutu"))
     .map((f) => ({
       name: `site/cards/${f}`,
       source: readFileSync(join(SITE_CARDS, f), "utf8"),
@@ -110,7 +110,7 @@ for (const ex of cards) {
   // …and it INSTANTIATES against the host that ships beside it.
   //
   // The third gate, and the one the first two cannot stand in for: a card's
-  // import section is decided by the effects it performs, so `intent lex
+  // import section is decided by the effects it performs, so `ask(…, ~route: lex)
   // 'loadQuote'` puts `tut.intent` in a module that checks and compiles
   // perfectly — and imports bind BY NAME, so a runtime missing that export
   // throws at instantiation rather than dropping the effect. Which is how step

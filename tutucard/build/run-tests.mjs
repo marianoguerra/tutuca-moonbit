@@ -55,9 +55,9 @@ const CARD_EXAMPLES = join(REPO, "tutucard", "examples");
 // ordinary compiler — that is the demo's whole claim — so it is driven by the
 // ordinary gate rather than by something of its own.
 const DEMO_CARDS = join(REPO, "demo", "universal", "std");
-const htmlIn = (dir, label) =>
+const cardsIn = (dir, label) =>
   readdirSync(dir)
-    .filter((f) => f.endsWith(".html"))
+    .filter((f) => f.endsWith(".tutu"))
     .map((f) => ({
       name: `${label}/${f}`,
       source: readFileSync(join(dir, f), "utf8"),
@@ -65,9 +65,9 @@ const htmlIn = (dir, label) =>
 
 const cards = [
   ...EXAMPLES.map((e) => ({ name: e.name, source: e.source })),
-  ...htmlIn(SITE_CARDS, "site/cards"),
-  ...htmlIn(CARD_EXAMPLES, "examples"),
-  ...htmlIn(DEMO_CARDS, "universal"),
+  ...cardsIn(SITE_CARDS, "site/cards"),
+  ...cardsIn(CARD_EXAMPLES, "examples"),
+  ...cardsIn(DEMO_CARDS, "universal"),
 ];
 
 let failed = 0;

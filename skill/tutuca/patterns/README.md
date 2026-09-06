@@ -7,7 +7,7 @@ one pitfall worth knowing. Each recipe is self-contained and brief.
 `spec:` schema and its behaviour in the
 `logic:` section beside it — `receive`, `intent`,
 `compute`, `pred`, `invariant`, `enrich`, `bindWith`, plus the `send` /
-`sendAt` / `intent` / `forward` effects. MoonBit is for what that language
+`send(…, ~to: …)` / `intent` / `forward` effects. MoonBit is for what that language
 cannot spell, and every recipe here that shows a MoonBit half says which of
 the two reasons it is:
 
@@ -40,7 +40,7 @@ task.
 
 ## Iteration & lists
 
-- [Iterate a list](iterate-a-list.md) — render one element per item with `@each` / `render-each`.
+- [Iterate a list](iterate-a-list.md) — render one element per item with `@each` / `@each(…){@render(value)}`.
 - [Filter a list](filter-a-list.md) — keep only matching items with `~when`, which takes a `pred`.
 - [Enrich each item](enrich-each-item.md) — expose derived per-item values as `@`-bindings with `enrich`.
 - [Paginate a list](paginate-a-list.md) — slice the iteration with `~loop_with` `start`/`end`.
@@ -49,29 +49,29 @@ task.
 ## Conditional content & attributes
 
 - [Show or hide content](show-or-hide-content.md) — `@show` / `@hide`, the built-in predicates, and a `pred` of your own.
-- [Switch between views](switch-between-views.md) — pick a component's own view with `as=` or `~push_view`.
-- [Conditional attribute value](conditional-attribute-value.md) — set a class/title by condition with `@if` / `@then` / `@else`.
-- [Tabbed interface](tabbed-interface.md) — a `currentView` field + predicates to show the panel and highlight the active tab.
+- [Switch between views](switch-between-views.md) — pick a component's own view with `~as:` or `~push_view`.
+- [Conditional attribute value](conditional-attribute-value.md) — set a class/title by condition with an `if` in the attribute.
+- [Tabbed interface](tabbed-interface.md) — a `current_view` field + predicates to show the panel and highlight the active tab.
 
 ## Context & dynamic bindings
 
-- [Share state across the tree](share-state-across-the-tree.md) — `provide` / `lookup` and reading `*name`.
-- [Edit through a dynamic target](edit-through-a-dynamic-target.md) — render `*name` at its stored path and edit the owner.
+- [Share state across the tree](share-state-across-the-tree.md) — `provide` / `lookup` and reading `dyn.<name>`.
+- [Edit through a dynamic target](edit-through-a-dynamic-target.md) — render `dyn.<name>` at its stored path and edit the owner.
 
 ## Composition
 
-- [Render a child component](render-a-child-component.md) — `<x render=".field">` and multiple views.
+- [Render a child component](render-a-child-component.md) — `@render(it.field)` and multiple views.
 - [Reuse markup with macros](reuse-markup-with-macros.md) — `@anode.Macro` with parameters and slots.
 
 ## Data & events
 
-- [Bind text and attributes](bind-text-and-attributes.md) — `@text`, `:attr`, `$'…'` templates, `compute` and `bindWith`.
+- [Bind text and attributes](bind-text-and-attributes.md) — `@text`, `:attr`, `@str{…}` templates, `compute` and `bindWith`.
 - [Handle events](handle-events.md) — `~on_<event>`, `receive` handlers, args, modifiers, custom events.
 - [Read a picked file](file-input.md) — `~on_change="… e.value"` and the file-metadata `Map`.
 
 ## Component communication
 
-- [Coordinate components](coordinate-components.md) — `send`/`receive`, `ask dyn`, async `ask lex`.
+- [Coordinate components](coordinate-components.md) — `send`/`receive`, `ask(~route: dyn)`, async `ask(~route: lex)`.
 
 ## Examples & catalog
 

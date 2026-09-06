@@ -291,7 +291,7 @@ fn spec_absent_hint(comp : @component.Component?) -> String {
     return "This story's instance does not resolve to a registered component, so there is no declaration to read."
   }
   guard c.spec == "" else { return "" }
-  "\{c.name} carries no <script type=\"tutuca/spec\"> block — it was written by hand rather than compiled by gen — so there is nothing declared to show. The Fuzz tab has nothing to generate from either."
+  "\{c.name} carries no `spec:` section — it was written by hand rather than compiled by gen — so there is nothing declared to show. The Fuzz tab has nothing to generate from either."
 }
 
 ///|

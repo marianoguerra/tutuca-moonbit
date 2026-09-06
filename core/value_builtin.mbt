@@ -134,7 +134,7 @@ let builtin_table : Map[String, Builtin] = {
     },
   },
   // A KEY in a set or map, a VALUE in a list. The keyed case keys on the
-  // DISPLAY string, which is the key the generated `hasIn<X>` mutator looks up.
+  // DISPLAY string, which is the key the generated `has_in_<x>` mutator looks up.
   "has": {
     name: "has",
     arity: 2,

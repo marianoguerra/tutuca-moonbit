@@ -1,12 +1,12 @@
 # Tutuca — List Iteration & Enrichment
 
 Read this file when a view iterates a sequence (`@each`,
-`render-each`), filters (`~when`), enriches items or scopes
+`@each(…){@render(value)}`), filters (`~when`), enriches items or scopes
 (`~enrich_with`), or paginates (`~loop_with`).
 
 ## List Iteration
 
-`@each` accepts: `.field`, `*dynamic`.
+`@each` accepts: `it.field`, `dyn.<name>`.
 
 ```tutu
 // iterate plain values
@@ -30,24 +30,21 @@ Read this file when a view iterates a sequence (`@each`,
 ```
 
 Directives carry the `@` prefix everywhere — on `<li @each>` / `<div @each>`
-host-element loops and on `<x render-each>` alike. Only `as=` is bare, because
+host-element loops and on `@each(…){@render(value)}` alike. Only `~as:` is bare, because
 it is an argument to the op rather than a directive. Both forms share the
 handler-name resolution rules below.
 
-`~enrich_with` is **not** supported on `<x render-each>`: the op renders
+`~enrich_with` is **not** supported on `@each(…){@render(value)}`: the op renders
 each item as a component in its own frame and drops child content, so
 nothing is left to read the `@X` binds an enricher would set. Reach for a
 host-element `@each` loop when you need enrichment.
 
-**An iteration directive cannot go on an `<x>` op.** `@each`, `~enrich_with`,
-and — outside the `<x render-each>` that consumes them — `~when` and
-`~loop_with` are rejected there, and the whole `<x>` is dropped with a
-`LOOP_DIRECTIVE_ON_X_OP` error. An `<x>` op is one render site with no body to
-iterate, so the directive has nothing to wrap; dropping it and keeping the site
-would quietly turn N renders into one. `<x render-it @each=".rows">` is the
-trap this exists for: without its loop that `render-it` renders the value that
-was to be iterated, which is the value already rendering. Write it one of the
-two ways that work:
+**A loop's options belong to the loop.** `~when`, `~enrich_with` and
+`~loop_with` are options of `@each`, and a `@render` is one render site with
+no body to iterate — so there is nowhere else to put them and no way to write
+the shape this rule used to exist for. A render inside a loop renders that
+step's value; a render outside one renders the value already rendering.
+Write it one of the two ways:
 
 ```tutu
 view:
@@ -84,7 +81,7 @@ when=w => match w {
       .to_lower()
       .contains(s.query.to_lower())),
 },
-// @enrich-with (with @each): (s, binds, key, value, iterData, stack) -> Unit
+// ~enrich_with (with @each): (s, binds, key, value, iterData, stack) -> Unit
 // binds is a MUTABLE Map seeded { key, value } — write into it,
 // the return value is Unit
 enrich=e => match e {
@@ -93,7 +90,7 @@ enrich=e => match e {
       value.str().length().to_double(),
     )),
 },
-// @loop-with: (s, seq, loopCtx) -> LoopWith, with optional
+// ~loop_with: (s, seq, loopCtx) -> LoopWith, with optional
 // iter_data / start / end / keys
 loop_with=l => match l {
   GetIterData =>
@@ -167,9 +164,9 @@ struct-function fields with parens):
 
 ### Lifecycle of `@each`
 
-For each render of an element with `@each=".items"`:
+For each render of an element with `@each(value, key in it.items)`:
 
-1. **Resolve sequence** — evaluate `.items`. `List`s, `Map`s, and any
+1. **Resolve sequence** — evaluate `it.items`. `List`s, `Map`s, and any
    `Obj` implementing `seq_entries` are recognized (see *Custom
    collections* below).
 2. **`~loop_with`** (once per render) — the handler is called with
@@ -191,7 +188,7 @@ For each render of an element with `@each=".items"`:
       `key`/`value` are restored afterwards).
    3. **Render** the element with the new bindings on the stack.
 
-Auto-bound names inside the loop are always `@key` and `@value` (or
+Auto-bound names inside the loop are always `@key` and the loop binder (or
 whatever you wrote into `binds`).
 
 ### Handler resolution
@@ -236,7 +233,7 @@ To make `@each` iterate your own collection type, implement the
   `@each` visits, in order, each keyed (`KStr` / `KInt`) so event paths
   resolve back to entries (`@key` in handlers).
 - **`item(self, key : PathKey) -> Value?`** — resolves the same keys
-  for seq-access reads (`.songs[.currentKey]`).
+  for seq-access reads (`it.songs[it.current_key]`).
 
 ```moonbit
 priv struct KeyedList {
@@ -326,4 +323,4 @@ checks, or go through the mounted view.)
 - [core.md](./core.md) — the component primer, notation, and the
   frame/scope stack model these directives build on.
 - [advanced.md](./advanced.md) — dynamic bindings as iteration sources
-  (`@each="*items"`).
+  (`@each(value, key in dyn.items)`).

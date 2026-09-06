@@ -273,7 +273,7 @@ pub let comp_view_common_style : String = ""
 pub let comp_view_global_style : String = ""
 
 ///|
-/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 pub(all) enum CompViewCompute {
   ArrowText
 } derive(Eq, @debug.Debug)
@@ -469,7 +469,7 @@ pub let comp_section_common_style : String = ""
 pub let comp_section_global_style : String = ""
 
 ///|
-/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: page_exists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
@@ -684,7 +684,7 @@ pub let component_inspector_common_style : String = ""
 pub let component_inspector_global_style : String = ""
 
 ///|
-/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 pub(all) enum ComponentInspectorCompute {
   IdText
 } derive(Eq, @debug.Debug)

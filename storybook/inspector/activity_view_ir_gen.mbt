@@ -18,7 +18,7 @@
 // data-cid onto it.
 
 ///|
-/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// This file's `spec:` section, as source, with its
 /// doc comments removed.
 ///
 /// The schema each component carries is this block's PROJECTION, and the
@@ -230,7 +230,7 @@ fn activity_entry_compute_has_after_tracks_after(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn activity_entry_inline_compute() -> Map[
   String,
@@ -336,7 +336,7 @@ fn activity_log_compute_has_events_tracks_events(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn activity_log_inline_compute() -> Map[
   String,

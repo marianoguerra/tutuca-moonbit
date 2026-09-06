@@ -53,34 +53,38 @@ test "make fills defaults and coerces args" {
 }
 
 ///|
-test "generated mutators: set/toggle/push/setAt/delete/len/reset" {
+test "generated mutators: set/toggle/push/set_at/delete/len/reset" {
   let comp = todo_comp()
   let t0 = comp.make(Map([]))
   guard t0 is Obj(o) else { fail("not obj") }
-  guard o.field("setTitle") is Some(Fn(set_title)) else { fail("no setTitle") }
+  guard o.field("set_title") is Some(Fn(set_title)) else {
+    fail("no set_title")
+  }
   let t1 = set_title([Null, Str("x")])
   assert_true(t1.field("title") == Str("x"))
   assert_true(t0.field("title") == Str("untitled")) // COW
   guard t1 is Obj(o1) else { fail("not obj") }
-  guard o1.field("toggleDone") is Some(Fn(toggle)) else {
-    fail("no toggleDone")
+  guard o1.field("toggle_done") is Some(Fn(toggle)) else {
+    fail("no toggle_done")
   }
   guard toggle([Null]) is Obj(o2) else { fail("toggle did not return obj") }
   assert_true(o2.field("done") == Some(Bool(true)))
-  guard o1.field("pushInItems") is Some(Fn(push)) else { fail("no push") }
+  guard o1.field("push_in_items") is Some(Fn(push)) else { fail("no push") }
   guard push([Null, Str("a")]) is Obj(o4) else { fail("push failed") }
   assert_true(o4.field("items") == Some(List([Str("a")])))
-  guard o4.field("setInItemsAt") is Some(Fn(set_at)) else { fail("no setAt") }
+  guard o4.field("set_in_items_at") is Some(Fn(set_at)) else {
+    fail("no set_at")
+  }
   guard set_at([Null, Num(0), Str("b")]) is Obj(o5) else {
-    fail("setAt failed")
+    fail("set_at failed")
   }
   assert_true(o5.field("items") == Some(List([Str("b")])))
-  guard o5.field("deleteInItemsAt") is Some(Fn(del)) else { fail("no del") }
+  guard o5.field("delete_in_items_at") is Some(Fn(del)) else { fail("no del") }
   guard del([Null, Num(0)]) is Obj(o6) else { fail("del failed") }
   assert_true(o6.field("items") == Some(List([])))
-  guard o4.field("itemsLen") is Some(Fn(len)) else { fail("no len") }
+  guard o4.field("items_len") is Some(Fn(len)) else { fail("no len") }
   assert_true(len([Null]) == Num(1))
-  guard o1.field("resetTitle") is Some(Fn(reset)) else { fail("no reset") }
+  guard o1.field("reset_title") is Some(Fn(reset)) else { fail("no reset") }
   guard reset([Null]) is Obj(o7) else { fail("reset failed") }
   assert_true(o7.field("title") == Some(Str("untitled")))
 }
@@ -123,7 +127,7 @@ priv struct ParentWithKid {} derive(Default)
 priv struct ParentWithAnyKid {} derive(Default)
 
 ///|
-test "set slot field: coercion + addIn/hasIn/toggleIn/deleteIn/len mutators" {
+test "set slot field: coercion + addIn/hasIn/toggle_in/deleteIn/len mutators" {
   let comp = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Facets",
@@ -139,21 +143,21 @@ test "set slot field: coercion + addIn/hasIn/toggleIn/deleteIn/len mutators" {
   assert_true(t2.field("sel") == Map({ "x": Bool(true), "y": Bool(true) }))
   guard! t is Obj(o)
   // hasIn
-  guard! o.field("hasInSel") is Some(Fn(has))
+  guard! o.field("has_in_sel") is Some(Fn(has))
   assert_true(has([Null, Str("a")]) == Bool(true))
   assert_true(has([Null, Str("z")]) == Bool(false))
   // addIn
-  guard! o.field("addInSel") is Some(Fn(add))
+  guard! o.field("add_in_sel") is Some(Fn(add))
   // Adding an existing member is a no-op all the way through core's COW map.
   assert_true(physical_equal(add([Null, Str("a")]), t))
   guard! add([Null, Str("c")]) is Obj(o2)
-  assert_true(o2.field("hasInSel").unwrap() is Fn(_))
+  assert_true(o2.field("has_in_sel").unwrap() is Fn(_))
   assert_true(
     o2.field("sel").unwrap() ==
     Map({ "a": Bool(true), "b": Bool(true), "c": Bool(true) }),
   )
-  // toggleIn removes an existing member, adds a missing one
-  guard! o.field("toggleInSel") is Some(Fn(toggle))
+  // toggle_in removes an existing member, adds a missing one
+  guard! o.field("toggle_in_sel") is Some(Fn(toggle))
   guard! toggle([Null, Str("a")]) is Obj(o3)
   assert_true(o3.field("sel").unwrap() == Map({ "b": Bool(true) }))
   guard! toggle([Null, Str("q")]) is Obj(o4)
@@ -162,13 +166,13 @@ test "set slot field: coercion + addIn/hasIn/toggleIn/deleteIn/len mutators" {
     Map({ "a": Bool(true), "b": Bool(true), "q": Bool(true) }),
   )
   // deleteIn / removeIn alias
-  guard! o.field("deleteInSel") is Some(Fn(del))
+  guard! o.field("delete_in_sel") is Some(Fn(del))
   assert_true(physical_equal(del([Null, Str("missing")]), t))
   guard! del([Null, Str("b")]) is Obj(o5)
   assert_true(o5.field("sel").unwrap() == Map({ "a": Bool(true) }))
-  assert_true(o.field("removeInSel").unwrap() is Fn(_))
+  assert_true(o.field("remove_in_sel").unwrap() is Fn(_))
   // len is the generic sized mutator
-  guard! o.field("selLen") is Some(Fn(len))
+  guard! o.field("sel_len") is Some(Fn(len))
   assert_true(len([Null]) == Num(2))
 }
 
@@ -188,7 +192,7 @@ test "a declared set keeps the typed default and gets set mutators" {
   assert_true(t.field("sel") == Map({ "a": Bool(true) }))
   guard! t is Obj(o)
   // set-kind mutators exist because the SCHEMA declares `sel` a set
-  guard! o.field("addInSel") is Some(Fn(add))
+  guard! o.field("add_in_sel") is Some(Fn(add))
   guard! add([Null, Str("b")]) is Obj(o2)
   assert_true(
     o2.field("sel").unwrap() == Map({ "a": Bool(true), "b": Bool(true) }),
@@ -209,10 +213,10 @@ test "omap slot field: keyed mutators over an ordered Map" {
   // wrong-shape arg falls back to default
   assert_true(comp.make({ "m": Str("no") }).field("m") == Map({ "x": Num(1) }))
   guard! t is Obj(o)
-  guard! o.field("setInMAt") is Some(Fn(set_at))
+  guard! o.field("set_in_m_at") is Some(Fn(set_at))
   guard! set_at([Null, Str("y"), Num(2)]) is Obj(o2)
   assert_true(o2.field("m").unwrap() == Map({ "x": Num(1), "y": Num(2) }))
-  guard! o.field("deleteInMAt") is Some(Fn(del))
+  guard! o.field("delete_in_m_at") is Some(Fn(del))
   // A key that is not there is a no-op that hands back the SAME object, not an
   // equal one: the transactor reads `physical_equal` as "nothing happened" and
   // skips the spine rebuild, so identity is the contract rather than equality.
@@ -268,7 +272,7 @@ test "update dispatches through Path::update; a write goes through set_member" {
   guard! leaf.set_member("title", Str("via-write")) is Changed(next)
   assert_eq(next.field("title"), Str("via-write"))
   // …and the dispatch that used to reach it now refuses.
-  let node3 = p.update(node, Receive, "setTitle", [Str("via-input")])
+  let node3 = p.update(node, Receive, "set_title", [Str("via-input")])
   assert_true(physical_equal(node3, node))
 }
 
@@ -1093,8 +1097,8 @@ impl @component.Fields for SwapAState with fn schema() {
 
 ///|
 test "a generated mutator is reached by writing, never by dispatching" {
-  // It used to be reached by both. `@on.click="setTitle 'x'"` from a
-  // component's own view and a parent's `ctx.send("setTitle", …)` were the same
+  // It used to be reached by both. `@on.click="set_title 'x'"` from a
+  // component's own view and a parent's `ctx.send("set_title", …)` were the same
   // message, and a message no arm claimed fell through to the setter the field
   // implies — so a `ctx.send` whose name happened to collide with a generated
   // mutator MUTATED, and a view could write a field the component never said
@@ -1118,9 +1122,12 @@ test "a generated mutator is reached by writing, never by dispatching" {
   guard! leaf.set_member("title", Str("written")) is Changed(next)
   assert_eq(next.field("title"), Str("written"))
   // Neither bucket reaches it.
-  assert_eq(title(p.update(root, Receive, "setTitle", [Str("sent")])), Str("a"))
   assert_eq(
-    title(p.update(root, Intent, "setTitle", [Str("routed")])),
+    title(p.update(root, Receive, "set_title", [Str("sent")])),
+    Str("a"),
+  )
+  assert_eq(
+    title(p.update(root, Intent, "set_title", [Str("routed")])),
     Str("a"),
   )
 }
@@ -1266,16 +1273,16 @@ test "the generated table separates what writes from what only reads" {
   let all = @component.schema_mutators(schema)
   let writers = @component.schema_writers(schema)
   // Every reader the loop installs is in the full table and out of this one.
-  for reader in ["itemsLen", "tagsLen", "doneLen", "hasInTags"] {
+  for reader in ["items_len", "tags_len", "done_len", "has_in_tags"] {
     assert_true(all.contains(reader))
     assert_false(writers.contains(reader))
   }
   // …and nothing that writes was lost with them.
   for
     writer in [
-      "setItems", "resetItems", "pushInItems", "insertInItemsAt", "setInItemsAt",
-      "deleteInItemsAt", "removeInItemsAt", "addInTags", "deleteInTags", "toggleInTags",
-      "toggleDone", "setDone",
+      "set_items", "reset_items", "push_in_items", "insert_in_items_at", "set_in_items_at",
+      "delete_in_items_at", "remove_in_items_at", "add_in_tags", "delete_in_tags",
+      "toggle_in_tags", "toggle_done", "set_done",
     ] {
     assert_true(writers.contains(writer))
   }
@@ -1289,7 +1296,7 @@ test "the generated table separates what writes from what only reads" {
   // The difference IS the readers, and nothing else — length as well as
   // membership, so a writer quietly going missing fails here too.
   assert_eq(dropped.length(), 4)
-  for expected in ["doneLen", "hasInTags", "itemsLen", "tagsLen"] {
+  for expected in ["done_len", "has_in_tags", "items_len", "tags_len"] {
     assert_true(dropped.contains(expected))
   }
 }
@@ -1298,7 +1305,7 @@ test "the generated table separates what writes from what only reads" {
 /// A reader dispatched as a message does nothing, which is what makes the
 /// split above worth having rather than a matter of taste.
 ///
-/// Both halves of the claim: `itemsLen` really is callable (it answers the
+/// Both halves of the claim: `items_len` really is callable (it answers the
 /// length through `$`), and sending it really does leave the instance exactly
 /// where it was — the same instance, not an equal one.
 test "sending a read-only generated name leaves the instance alone" {
@@ -1307,18 +1314,18 @@ test "sending a read-only generated name leaves the instance alone" {
   })
   let v = comp.make(Map([]))
   guard v is Obj(o) else { fail("a made component is an instance") }
-  // It reads: `$itemsLen` answers three.
-  guard o.trigger("itemsLen") is Some(Fn(f)) else {
-    fail("itemsLen is a generated `$`-callable")
+  // It reads: `$items_len` answers three.
+  guard o.trigger("items_len") is Some(Fn(f)) else {
+    fail("items_len is a generated `$`-callable")
   }
   assert_eq(f([v]), Num(3))
   // It does not write: the dispatch is unclaimed, so the instance comes back
   // unchanged — physically, which is how the runtime says "nothing happened".
-  let after = @tutuca.Path::new().update(v, Receive, "itemsLen", [])
+  let after = @tutuca.Path::new().update(v, Receive, "items_len", [])
   assert_true(physical_equal(after, v))
   // …and neither does a WRITER from the same table, dispatched: a generated
   // mutator is reached by writing.
-  let sent = @tutuca.Path::new().update(v, Receive, "pushInItems", [Num(4)])
+  let sent = @tutuca.Path::new().update(v, Receive, "push_in_items", [Num(4)])
   assert_true(physical_equal(sent, v))
   guard! v.mutate_member("items", "push", [Num(4)]) is Changed(moved)
   assert_false(physical_equal(moved, v))

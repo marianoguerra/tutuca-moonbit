@@ -249,7 +249,7 @@ test "each story pane offers a live Instance tab" {
   // moment the tab was opened.
   let story = opened.field("s0")
   assert_true(story.field("count") is Num(0.0))
-  let bumped = story.call_field("setCount", [Num(7)])
+  let bumped = story.call_field("set_count", [Num(7)])
   let after = opened.with_field("s0", bumped)
   assert_true(after.field("s0").field("count") is Num(7.0))
   let before_explorer = opened.field("i0")
@@ -666,7 +666,7 @@ test "a source with nothing to draw says why, and keeps the switcher" {
   assert_eq(h.find_all(".ctl-play").length(), 0)
   // the component DOES declare a block, so this is not the no-plan state
   assert_eq(h.find_all(".no-plan").length(), 0)
-  // switching to the internal mutators draws `setTab`, and the buttons come
+  // switching to the internal mutators draws `set_tab`, and the buttons come
   // back — which is what the hint tells the reader to try
   h.click(".src-fields")
   assert_eq(h.find_all(".no-draw").length(), 0)
@@ -714,7 +714,7 @@ test "the Fuzz tab drives the story on screen" {
 /// A green verdict is a claim about the ENFORCEMENT, not about the generator
 /// having found nothing.
 ///
-/// `setValues []` is a legal dispatch that no button in `svg_more.tutu` can
+/// `set_values []` is a legal dispatch that no button in `svg_more.tutu` can
 /// produce, and the generator sends it. `neverEmpty` is what stands between it
 /// and a chart with no bars — the runtime abandons the transition and refuses
 /// — so the run holds AND the refusals are there to prove it got that far.
@@ -872,7 +872,7 @@ test "Step walks a run, and restarts at the end of one" {
 /// A generated script sends nothing the story cannot answer.
 ///
 /// `tabbed-ui` is the case that showed this was wrong: its `tab` field gets a
-/// generated `tabLen` alongside `setTab`, and `tabLen` READS — it answers a
+/// generated `tab_len` alongside `set_tab`, and `tab_len` READS — it answers a
 /// scalar rather than a successor, so the receive path leaves it `Unhandled`.
 /// The generator drew it because it took its names from the full table of
 /// generated callables rather than the half that writes, and every draw
@@ -894,7 +894,7 @@ test "a run sends nothing the story leaves unhandled" {
   assert_eq(h.find_all(".fuzz-row").length(), 40)
   // No badge reading `unhandled`, and no row naming the reader.
   assert_false(h.texts(".row-refused").contains("unhandled"))
-  assert_false(h.texts(".row-name").contains("tabLen"))
+  assert_false(h.texts(".row-name").contains("tab_len"))
 }
 
 ///|

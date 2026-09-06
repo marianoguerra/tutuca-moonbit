@@ -126,7 +126,7 @@ fn emit_expr(
     // runs after one.
     EMethod(name~, ..) =>
       raise Refused(
-        "`$\{name}` is answered by the render stack, and a handler runs after one",
+        "`\{name}(…)` is answered by the render stack, and a handler runs after one",
       )
     // A `*name` is NOT a render read, even though it looks like one. The host
     // resolves this component's declared lookups before it calls in — for a

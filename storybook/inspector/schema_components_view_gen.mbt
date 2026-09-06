@@ -193,7 +193,7 @@ pub let schema_scalar_common_style : String = ""
 pub let schema_scalar_global_style : String = ""
 
 ///|
-/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: page_exists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
@@ -458,7 +458,7 @@ pub let schema_object_common_style : String = ""
 pub let schema_object_global_style : String = ""
 
 ///|
-/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: page_exists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
@@ -720,7 +720,7 @@ pub let schema_array_common_style : String = ""
 pub let schema_array_global_style : String = ""
 
 ///|
-/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: page_exists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
@@ -980,7 +980,7 @@ pub let schema_enum_common_style : String = ""
 pub let schema_enum_global_style : String = ""
 
 ///|
-/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: page_exists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
@@ -1245,7 +1245,7 @@ pub let schema_combinator_common_style : String = ""
 pub let schema_combinator_global_style : String = ""
 
 ///|
-/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
 /// Absent, because the script block answers them: page_exists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
@@ -1609,7 +1609,7 @@ pub let schema_boolean_common_style : String = ""
 pub let schema_boolean_global_style : String = ""
 
 ///|
-/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 pub(all) enum SchemaBooleanCompute {
   CssClass
   Text

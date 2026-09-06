@@ -8,7 +8,7 @@ spec:
     message clear
 
     /// A running total that `flash` only ever adds to and `clear` leaves
-    /// alone. `setCount` is generated all the same, so the floor is stated
+    /// alone. `set_count` is generated all the same, so the floor is stated
     /// here rather than defended in a handler nobody wrote.
     where it.count >= 0
 

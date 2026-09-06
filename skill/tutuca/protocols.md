@@ -106,7 +106,7 @@ Protocols cover boundary-visible behavior: handled/expressed operations,
 semantic views, typed properties, dynamic bindings, and component constraints.
 Fields, helper types, fixtures, private properties, `pred` / `invariant` rules,
 the `requires` / `ensures` clauses that attach them, and parameterized `compute`
-declarations stay private — declared in the spec block does not mean visible at
+declarations stay private — declared in `spec:` does not mean visible at
 the boundary, and a protocol says nothing about what an implementor promises
 itself. Promote a stable observation to a protocol `property`, and model an
 argument-taking or asynchronous operation as a message or intent.

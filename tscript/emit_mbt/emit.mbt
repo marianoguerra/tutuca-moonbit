@@ -277,9 +277,7 @@ pub fn emit(
   } else {
     let b = StringBuilder()
     b.write_string("///|\n")
-    b.write_string(
-      "/// The dispatches the `<script type=\"tutuca/script\">` block answers.\n",
-    )
+    b.write_string("/// The dispatches the file's `logic:` section answers.\n")
     b.write_string("///\n")
     b.write_string(
       "/// Composed AHEAD of the author's `update~`, which stays optional and is\n",

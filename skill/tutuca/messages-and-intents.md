@@ -1,11 +1,11 @@
 # Tutuca — Messages & Intents
 
 The two dispatch channels beyond a component's own `@on` handlers:
-**messages** (`send` / `sendAt` → a `receive` handler on one addressed
-component) and **intents** (`intent` → a walk along a *route* until
-something answers). Read this file when writing `receive` / `intent`
-handlers, calling `send` / `sendAt` / `intent` / `forward` / `reply` /
-`fail` / `drop` from a script block or `ctx.*` from MoonBit, or
+**messages** (`send` → a `receive` handler on one addressed component) and
+**intents** (`ask` → a walk along a *route* until something answers). Read
+this file when writing `receive` / `answer` handlers, calling `send` / `ask` /
+`notify` / `forward` / `reply` / `fail` / `drop` from a `logic:` section or
+`ctx.*` from MoonBit, or
 registering `IntentFn` handlers on a scope. General authoring lives in
 [core.md](./core.md); testing these handlers is in
 [testing.md](./testing.md).
@@ -15,11 +15,11 @@ registering `IntentFn` handlers on a scope. General authoring lives in
 Each trigger maps to one handler bucket — one block in the script, one
 arm of the **same `update` match** in MoonBit:
 
-| Triggered by                                          | script block        | `update` arm          |
+| Triggered by                                          | `logic:` handler    | `update` arm          |
 | ----------------------------------------------------- | ------------------- | --------------------- |
 | DOM event (`~on_click`, `~on_input`, …)               | `receive <name>`    | `Receive(name, args)` |
-| `send 'name' …` / `sendAt &.child 'name' …`           | `receive <name>`    | `Receive(name, args)` |
-| `ask 'name' …` — walks a route                     | `answer <name>`     | `Intent(name, args)`  |
+| `send("name", …)` / `send("name", …, ~to: it.child)`           | `receive <name>`    | `Receive(name, args)` |
+| `ask("name", …)` — walks a route                     | `answer <name>`     | `Intent(name, args)`  |
 
 The first two rows are one bucket, and there is no keyword or arm that
 separates them: a view is addressed at the component it belongs to, which is
@@ -41,10 +41,10 @@ same reason an intent comes back as three named answers rather than one
 reply carrying a result-or-error pair; *Answering an intent*, below, has
 them.
 
-## Messages — `send`, `sendAt`, `receive`
+## Messages — `send`, `send(…, ~to: …)`, `receive`
 
-`send 'name' args…` delivers a message to the **current** component;
-`sendAt <place> 'name' args…` delivers it to an addressed one. The
+`send("name", args…)` delivers a message to the **current** component;
+`send("name", args…, ~to: <place>)` delivers it to an addressed one. The
 target's `receive <name>` block runs. There is **no built-in lifecycle**
 — `receive init` is just a convention; the host must dispatch it
 (typically after mounting) for it to run.
@@ -61,7 +61,7 @@ spec:
 
 logic:
   Card:
-    /// A parent's `sendAt &.status 'flash' 'Saved'` lands here.
+    /// A parent's `send("flash", "Saved", ~to: it.status)` lands here.
     receive flash(text):
       it.text := text
 
@@ -70,8 +70,8 @@ logic:
       send("flash", "Ready", ~to: it.status)
 ```
 
-`&.status` is a **position**, not a value: `.rows[k]` is what is *there*,
-`&.rows[k]` is *where*. The difference is what lets a late answer land on
+A `~to:` place is a **position**, not a value: `it.rows[k]` is what is
+*there*, the place it names is *where*. The difference is what lets a late answer land on
 the row that asked for it even after the list moved — see *Positional
 delivery across async* below.
 
@@ -98,15 +98,14 @@ e.g. `ctx.path().concat([FieldStep("x")])`.)
 
 `reply` answers whoever asked, and where it is written decides where the name
 comes from. An intent's raiser asked a question and declared arms for the
-answer, so the runtime names it (`<name>Ok`) and the one argument is the value.
+answer, so the runtime names it (`<name>_ok`) and the one argument is the value.
 A message carries no such expectation and its sender declares no arms, so in a
 `receive` body the **replier names the reply** and the first argument is that
 name.
 
-```
-receive ping {
-  reply 'pong' .label
-}
+```tutu
+receive ping:
+  reply("pong", it.label)
 ```
 
 …and the MoonBit spelling, which is the same thing:
@@ -121,7 +120,7 @@ Receive("ping", _) => {
 
 The reply is an ordinary message delivered to whoever sent this one, at the
 position they sent it from (pinned at dispatch, like an intent's answer). With
-nobody waiting — a view's own `@on.*`, or the host's `send_at_root` — it
+nobody waiting — a view's own `~on_*`, or the host's `send_at_root` — it
 refuses `NO_SENDER` and nothing is dispatched. `ctx.reply` stays intent-only.
 
 **When to send.** Send when *one specific component* must be told
@@ -133,11 +132,11 @@ you don't know who should answer. That is what an intent is for.
 
 ## Intents — `ask`, `notify`, routes and legs
 
-`ask 'name' args…` dispatches a request the sender does not address.
+`ask("name", args…)` dispatches a request the sender does not address.
 The runtime walks a **route** and offers the intent to each hop in turn;
 the first hop that answers ends the walk.
 
-`notify 'name' args…` is the same walk with **no answer channel**: an
+`notify("name", args…)` is the same walk with **no answer channel**: an
 announcement that something happened, which any ancestor on the route may
 act on — updating its own state, sending a message, whatever it decides —
 and none of them answers. Reach for it whenever you want nothing back.
@@ -147,7 +146,7 @@ The distinction is worth a word because it is invisible otherwise. An
 `ask` whose author meant a notification and an `ask` whose author forgot
 the arms are the same line of code, and which one it is lives somewhere
 else in the file. `notify` says it where it is written — and a
-`<name>Ok` arm beside a name only ever notified is reported
+`<name>_ok` arm beside a name only ever notified is reported
 (`ANSWERS_A_NOTIFY`), because it is an arm that can never fire.
 
 A route is a list of **legs**, and there are two:
@@ -184,7 +183,7 @@ runtime refuses with `RefusalCode::IntentDepth` rather than looping.
 A component answers an intent with an `answer <name>` handler. Inside it:
 
 - `reply <value>` — answer with a result. **Ends the walk.**
-- `fail <value>` — answer with an error. **Ends the walk.**
+- `fail(<value>)` — answer with an error. **Ends the walk.**
 - `forward` — hand the walk on to the next hop (see below).
 - `drop` — end the walk **answering nothing**: the question is dropped.
 - ...or none of the above: the body runs, changes state, and the walk
@@ -234,9 +233,9 @@ payload shape:
 
 | outcome                     | dispatched name    | payload            |
 | --------------------------- | ------------------ | ------------------ |
-| a hop replied               | `<name>Ok`         | the replied value  |
-| a hop failed                | `<name>Failed`     | the failure value  |
-| the route ran out           | `<name>Unhandled`  | none               |
+| a hop replied               | `<name>_ok`         | the replied value  |
+| a hop failed                | `<name>_failed`     | the failure value  |
+| the route ran out           | `<name>_unhandled`  | none               |
 
 They arrive back at the sender as **ordinary messages, in the `receive`
 bucket**. A handler cannot tell an answer from a message a parent sent,
@@ -272,7 +271,7 @@ logic:
       it.is_loading := true
 ```
 
-`<name>Unhandled` is what a route running out means. A handler that must
+`<name>_unhandled` is what a route running out means. A handler that must
 answer has no way to say "not mine" — it can only invent an error — which
 is why declining (`Pass`) is a separate answer from failing. "Nothing
 claimed it" and "a handler refused it" are different sentences, so they
@@ -313,7 +312,7 @@ update=(s : ItemsState, msg, ctx) => match msg {
 `@tutuca.IntentOpts::new(route?, on_ok_name?, on_failed_name?,
 on_unhandled_name?, live_path?)` — every field optional, `route`
 defaulting to `[Dyn, Lex]`. Omit the three names and the answers are
-dispatched as `<name>Ok` / `<name>Failed` / `<name>Unhandled`; all three
+dispatched as `<name>_ok` / `<name>_failed` / `<name>_unhandled`; all three
 derive the same way, so a sender that names one and not the others still
 hears the others under their derived names. A sender that names **none** is
 sending a notification and hears nothing at all.
@@ -365,7 +364,7 @@ logic:
       forward()
 ```
 
-`ask 'name' …` names a NEW question; `ask .name` amends the one that
+`ask("name", …)` names a NEW question; `ask(it.name)` amends the one that
 arrived. There is no ambiguity between them, because a message name has
 to be a literal or a declared protocol operation — a first argument that
 is neither cannot be naming anything.
@@ -392,12 +391,12 @@ one of three answers:
 
 | answer            | meaning                                        |
 | ----------------- | ---------------------------------------------- |
-| `Ok(value)`       | answered; the sender hears `<name>Ok`          |
-| `Failed(value)`   | failed; the sender hears `<name>Failed`        |
+| `Ok(value)`       | answered; the sender hears `<name>_ok`          |
+| `Failed(value)`   | failed; the sender hears `<name>_failed`        |
 | `Pass`            | **declines**; the walk goes on to the next hop |
 
 `Pass` is the `IntentFn`'s half of "running is not answering". A `Pass`
-from every handler on the route is what produces `<name>Unhandled`.
+from every handler on the route is what produces `<name>_unhandled`.
 
 Handlers are registered as a **list per name**, because the leg walks: a
 declining handler hands the intent to the next one, and the scope chain
@@ -427,7 +426,7 @@ fn fixture_intent_handlers() -> Map[String, Array[@component.IntentFn]] {
 
 ///|
 /// A scope that DECLINES. `Pass` is how a handler says "not mine" without
-/// inventing an error, and it is what makes `<name>Unhandled` reachable.
+/// inventing an error, and it is what makes `<name>_unhandled` reachable.
 fn declining_intent_handlers() -> Map[String, Array[@component.IntentFn]] {
   { "loadData": [IntentFn((_call, answer) => answer(Pass))] }
 }
@@ -463,7 +462,7 @@ inspect(h.text(".error"), content="nothing answers `loadData`")
 
 An intent name that **nothing** is registered for is not a crash and not
 an error: the route simply runs out and the sender hears
-`<name>Unhandled`. A typo surfaces there.
+`<name>_unhandled`. A typo surfaces there.
 
 ## Integrating with the outside world
 
@@ -471,9 +470,9 @@ A tutuca app talks to the outside world in two directions, and both go
 through handlers — never around them.
 
 - **Outbound** — the app reaches out (fetch, timers, storage, external
-  APIs). `intent lex 'name'`; the scope-registered `IntentFn` does the
+  APIs). `ask("name", ~route: lex)`; the scope-registered `IntentFn` does the
   async work and the answer lands back in component state as
-  `<name>Ok` / `<name>Failed`.
+  `<name>_ok` / `<name>_failed`.
 - **Inbound** — the outside world pushes an event in (a WebSocket
   message, a `postMessage`, a timer, a third-party callback). Use
   `app.send_at_root("name", args=[...])` from the host / glue code. It
@@ -497,7 +496,7 @@ Route every inbound event through `app.send_at_root` instead.
 
 `send_at_root` only targets the root. To land an inbound event on nested
 state, let the root's `receive` body forward it with
-`sendAt &.child 'name' …` — one entry point, still reaching deep.
+`send("name", …, ~to: it.child)` — one entry point, still reaching deep.
 
 ## Fire-and-forget
 
@@ -513,9 +512,8 @@ logic:
       it.filter := value
 ```
 
-The payload is plain arguments. There is no record literal to pass one as
-a single value — a record payload is built with `new <Type>` and handed
-over as `cur` (see [schema.md](./schema.md#building-a-value-new-type--cur)).
+The payload is plain arguments. A record payload is written as a constructor
+call in place (see [schema.md](./schema.md#building-a-value)).
 
 Fire several in one body when needed — effects come out in the order
 written, after the transition succeeds.
@@ -523,9 +521,9 @@ written, after the transition succeeds.
 ## `live_path` — pinning vs following a moving key
 
 `IntentOpts` takes `live_path`. It controls where the answer lands when
-the sender's path addresses a seq-access entry (`.sheets[.selId]`): by
+the sender's path addresses a seq-access entry (`it.sheets[it.sel_id]`): by
 **default** the resolved key is *pinned* at dispatch time, so the answer
-updates the item that raised the intent even if `.selId` moved while the
+updates the item that raised the intent even if `it.sel_id` moved while the
 walk was in flight (e.g. the user switched tabs). Set `live_path=true` to
 opt out and re-resolve the key live, delivering to whatever the key now
 points at:
@@ -586,8 +584,8 @@ It captures the immutable dispatch root/path at call time.
 
 - [core.md](./core.md) — the core mental model, `view` directives, the
   `update`/`compute` overview, and *The ModuleDef convention*.
-- [schema.md](./schema.md) — the `handle { message / intent }` declarations
-  these script handlers are typed by.
+- [schema.md](./schema.md) — the `message` and `intent` declarations these
+  handlers are typed by.
 - [protocols.md](./protocols.md) — implicit and named communication surfaces,
   raw versus checked effect names, and runtime mismatch notices.
 - [semantics.md](./semantics.md) — the path/transaction model behind

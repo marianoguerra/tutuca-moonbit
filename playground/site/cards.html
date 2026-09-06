@@ -6,7 +6,7 @@
     <title>Cards — the tutuca script tutorial</title>
     <meta
       name="description"
-      content="Build a tutuca component one file at a time: the state block, the tutuca/script block, and the views. Your browser compiles the file to a WebAssembly component and mounts it. Nine live, editable examples."
+      content="Build a tutuca component one file at a time: the spec, the logic, and the views. Your browser compiles the file to a WebAssembly component and mounts it. Nine live, editable examples."
     />
     <meta name="author" content="Mariano Guerra" />
     <meta name="theme-color" content="#0d47a1" />
@@ -82,22 +82,22 @@
           rather than ahead of time. What you give up for that is the subject
           of <a href="#limits">the last section</a>.
         </p>
-        <p>The file has three kinds of block, and only the last is required:</p>
-        <pre><code>&lt;script type="tutuca/spec"&gt;   fields, types, payloads
-&lt;script type="tutuca/script"&gt;  handlers, derived values
-&lt;template&gt;                     the views</code></pre>
+        <p>The file has three kinds of section, and only the last is required:</p>
+        <pre><code>spec:   fields, types, payloads
+logic:  handlers, derived values
+view:   the views</code></pre>
         <p>
           A file may carry two more, and no example here does:
-          <code>tutuca/fixtures</code> (named starting states, each one a
-          fixture a host can mount) and <code>tutuca/test</code> (scenes that
+          <code>fixtures:</code> (named starting states, each one a
+          fixture a host can mount) and <code>tests:</code> (scenes that
           drive the card and assert against the DOM).
         </p>
         <p>
           Every example below is one such file. Each one is complete and
           runnable. The bar above each example shows the component name and
           the checker result: <code>ok</code>, or the number of issues. The
-          checker reads both halves of the file — the script block against the
-          schema, and the templates against the same schema — so a
+          checker reads both halves of the file — the <code>logic:</code> section
+          against the spec, and the views against the same spec — so a
           <code>.field</code> that no field answers is an issue here rather
           than a blank in the render. Each
           issue has a button. Press it to select the exact characters of that
@@ -358,7 +358,7 @@
         <p>
           <code>intent</code> is the second channel. It is the asynchronous
           one. A handler names a piece of work, for example
-          <code>intent lex 'loadQuote'</code>, and gives it to a
+          <code>ask("load_quote", ~route: lex)</code>, and gives it to a
           <strong>route</strong> rather than to an address.
           <code>lex</code> is the leg that searches the handlers registered on
           the host. Because of that leg, the same component can run against a
@@ -394,7 +394,7 @@
           yourself, and choose whether a path is pinned at dispatch time or
           resolved again on arrival. A small language would model these parts
           badly. When you write no options, the generator fills them in from
-          the three arms the schema declares. Second, <code>intent dyn</code>
+          the three arms the schema declares. Second, <code>ask(…, ~route: dyn)</code>
           needs an ancestor to reach. A card mounted on its own <em>is</em> the
           root, so the <code>dyn</code> leg from one has nowhere to walk.
           Both points follow the same rule as everywhere else on this page:
@@ -588,28 +588,24 @@
           Each clause names a <code>pred</code>, with at most one of each kind.
         </p>
         <h4>Statements</h4>
-        <pre><code>.count = 0                  assign
-.count += d   .count -= d   add, subtract
-new Label                   build one, at cur
-cur.text = 'hi'            …and fill it in
-@tag = $'{@value}'          bind (in an enrich)
-.items.push v               a collection method,
-.items.deleteAt i           receiver first
-.byId.setAt k v
-new Label                   build a value at its zero,
-cur.text = 'hi'            fill it in through `cur`,
-.labels.push cur           then put it somewhere
-send 'flash' .msg           an effect
-sendAt &amp;.rows[k] 'done' 1
-intent dyn 'picked' @key    …routed rather than addressed
-intent lex 'load'
-forward           reply v
-fail e            stop
-if cond { … } else { … }    a branch, else optional</code></pre>
+        <pre><code>it.count := 0                     assign
+it.count += d   it.count -= d    add, subtract
+tag = @str{@(value)}              bind (in an enrich)
+it.items.push(v)                  a collection method,
+it.items.delete_at(i)             receiver first
+it.by_id.set_at(k, v)
+it.labels.push(Label(text: "hi")) a record, where it is used
+send("flash", it.msg)             an effect
+send("done", 1, ~to: it.rows[k])
+ask("picked", key, ~route: dyn)   …routed rather than addressed
+ask("load", ~route: lex)
+forward()         reply(v)
+fail(e)           drop()
+if c | a | b                      a branch</code></pre>
         <p>
-          A place can be nested. <code>.a.b</code> and <code>.a[k].b</code>
-          are exactly what a view slot cannot spell. That is the reason the
-          block language exists at all.
+          A place can be nested. <code>it.a.b</code> and
+          <code>it.a[k].b</code> are exactly what a view slot cannot spell.
+          That is the reason the <code>logic:</code> section exists at all.
         </p>
         <h4>Expressions</h4>
         <table>
@@ -664,21 +660,20 @@ str x       lower s     upper s     trim s</code></pre>
             handler that needs <code>gen</code> and a module.
           </li>
           <li>
-            <strong>No record literal, but a record.</strong> There is no
-            syntax for one, because the language has no way to name a value it
-            is not building. <code>new Label</code> puts the type's zero at
-            <code>cur</code>, and the statements under it fill it in. So
-            <code>.labels.push cur</code> is how a list of records grows.
+            <strong>No record literal, but a record.</strong> A record is
+            written where it is used, as a constructor call, so
+            <code>it.labels.push(Label(text: it.draft))</code> is how a list of
+            records grows. A collection inside one arrives empty, because there
+            is no list literal to fill it with.
           </li>
           <li>
             <strong>Several components, but no reading into one.</strong> A
-            file may declare a <code>state</code> per component, a
-            <code>&lt;script type="tutuca/script" for="Comp"&gt;</code> for
-            each, and a <code>&lt;template id="Comp:main"&gt;</code> each; the
-            root is the first one, or the one whose template carries
-            <code>data-root</code>. A card even builds children at run time —
-            <code>new Todo</code> beside <code>state Todo</code> asks the host
-            to make one. What it cannot do is reach <em>into</em> a child: the
+            file may name a component in each of <code>spec:</code>,
+            <code>logic:</code> and <code>view:</code>; the root is the first
+            one, or the one marked <code>~root</code>. A card even builds
+            children at run time — <code>Todo(text: it.draft)</code> beside a
+            <code>Todo</code> in <code>spec:</code> asks the host to make
+            one. What it cannot do is reach <em>into</em> a child: the
             instance belongs to the host and the card holds a token, so
             <code>.rows[0].text</code> is refused when the card compiles. Send
             the child a message instead.
@@ -720,7 +715,7 @@ str x       lower s     upper s     trim s</code></pre>
         </p>
         <h3>Keep going</h3>
         <ul>
-          <li><a href="./tutucard/">The card playground</a> — the same compiler with more panels: the state tree, the dispatch log, the card's <code>tutuca/test</code> scenes run against an in-memory DOM, the compiled module as Wax, and a structured editor that shows one block of the file at a time.</li>
+          <li><a href="./tutucard/">The card playground</a> — the same compiler with more panels: the state tree, the dispatch log, the card's <code>tests:</code> scenes run against an in-memory DOM, the compiled module as Wax, and a structured editor that shows one section of the file at a time.</li>
           <li><a href="./">The landing page</a> — the same framework with the compiler included. It compiles MoonBit in your browser.</li>
           <li><a href="./storybook/">Storybook</a> — every ported example, compiled ahead of time, with a Lint panel per story.</li>
           <li><a href="https://github.com/marianoguerra/tutuca-moonbit">Source</a> — the card compiler is <code>tgc/emit/</code>, the format is <code>tgc/SPEC.md</code>, the language is <code>tscript/</code>.</li>

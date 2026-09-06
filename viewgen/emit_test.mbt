@@ -288,7 +288,7 @@ test "a view with a $method, several views and styles" {
       #|}
       #|
       #|///|
-      #|/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+      #|/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
       #|pub(all) enum TodoListCompute {
       #|  DoneLabel
       #|} derive(Eq, @debug.Debug)

@@ -43,43 +43,73 @@ const probe = globalThis.__twomod;
 assert.ok(probe, "the probe did not install globalThis.__twomod");
 
 // The holder. `holds` is a bare `Instance`, so what goes in it is anybody's.
-const KIT = `<script type="tutuca/spec">
-  state Shelf { holds: Instance, seen: String }
-</script>
-<script type="tutuca/script">
-  receive hold(inst) { .holds = inst }
-  /// Read THROUGH the child. A member read on a held instance goes through the
-  /// property door - op 8, never the get slot - so what it reaches is what the
-  /// child declared public and nothing else.
-  receive peek(which) {
-    if which is 'body' { .seen = str .holds.body } else { .seen = str .holds.secret }
-  }
-  /// ...and write through it, which is op 9 and answers a SUCCESSOR.
-  receive rename(to) { .holds.body = to }
-</script>
-<template id="Shelf:main" data-root><div class="shelf"><x render=".holds"></x><b class="seen" @text=".seen"></b></div></template>
+const KIT = `spec:
+  Shelf ~root:
+    field holds :: Instance
+    field seen :: String
+
+    message hold(Any)
+    message peek(String)
+    message rename(String)
+
+logic:
+  Shelf:
+    receive hold(inst):
+      it.holds := inst
+
+    /// Read THROUGH the child. A member read on a held instance goes through
+    /// the property door - op 8, never the get slot - so what it reaches is
+    /// what the child declared public and nothing else.
+    receive peek(which):
+      if (which == "body")
+      | it.seen := it.holds.body.to_string()
+      | it.seen := it.holds.secret.to_string()
+
+    /// ...and write through it, which is op 9 and answers a SUCCESSOR.
+    receive rename(to):
+      it.holds.body := to
+
+view:
+  Shelf:
+    @div(~class: "shelf"){
+      @render(it.holds)
+      @b(~class: "seen"){@(it.seen)}
+    }
 `;
 
 // The stranger. An ordinary counter with an ordinary \`receive\`.
-const OTHER = `<script type="tutuca/spec">
-  state Counter {
-    count: Int
+const OTHER = `spec:
+  Counter ~root:
+    field count :: Int
+
     /// Public, and the declaration is the whole permission.
-    body: String
+    field body :: String
+
     /// A field with no property beside it: private, and private however it is
     /// held.
-    secret: String
-    property { body: String { get .body set .body } }
-  }
-</script>
-<script type="tutuca/script">
-  receive inc { .count += 1 }
-</script>
-<template id="Counter:main" data-root><div class="counter"><button class="inc" @on.click="inc">+</button><output class="n" @text=".count"></output></div></template>
+    field secret :: String
+
+    property body :: String:
+      get: it.body
+      set: it.body
+
+    message inc
+
+logic:
+  Counter:
+    receive inc:
+      it.count += 1
+
+view:
+  Counter:
+    @div(~class: "counter"){
+      @button(~class: "inc", ~on_click: inc){+}
+      @output(~class: "n"){@(it.count)}
+    }
 `;
 
 async function load(source, stem) {
-  const cardPath = join(out, `${stem}.html`);
+  const cardPath = join(out, `${stem}.tutu`);
   writeFileSync(cardPath, source);
   run(["cmd/tgc", "--", "card", cardPath, join(out, `${stem}.wasm`)]);
   const { manifest } = await loadGuest(

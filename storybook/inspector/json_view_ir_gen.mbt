@@ -18,7 +18,7 @@
 // data-cid onto it.
 
 ///|
-/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// This file's `spec:` section, as source, with its
 /// doc comments removed.
 ///
 /// The schema each component carries is this block's PROJECTION, and the
@@ -662,7 +662,7 @@ fn json_array_compute_page_exists(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn json_array_inline_compute() -> Map[
   String,
@@ -909,7 +909,7 @@ fn json_object_compute_page_exists(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn json_object_inline_compute() -> Map[
   String,

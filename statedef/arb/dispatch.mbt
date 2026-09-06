@@ -240,7 +240,7 @@ pub fn mutator_args(
     let one = setter_arg(def, f, domains, state, depth).fmap(v => [v])
     out[@tutuca.mutator_name("set", f.name)] = one
     out[@tutuca.mutator_name("reset", f.name)] = none
-    out[f.name + "Len"] = none
+    out[f.name + "_len"] = none
     match f.ty.kind() {
       FBool => out[@tutuca.mutator_name("toggle", f.name)] = none
       FSet => {
@@ -268,10 +268,10 @@ pub fn mutator_args(
         let v = value_of(def, elem, depth~)
         out[@tutuca.mutator_name("pushIn", f.name)] = v.fmap(x => [x])
         let keyed = @gen.liftA2((k, x) => [k, x], key, v)
-        out[@tutuca.mutator_name("insertIn", f.name) + "At"] = keyed
-        out[@tutuca.mutator_name("setIn", f.name) + "At"] = keyed
+        out[@tutuca.mutator_name("insertIn", f.name) + "_at"] = keyed
+        out[@tutuca.mutator_name("setIn", f.name) + "_at"] = keyed
         for verb in ["deleteIn", "removeIn"] {
-          out[@tutuca.mutator_name(verb, f.name) + "At"] = key.fmap(k => [k])
+          out[@tutuca.mutator_name(verb, f.name) + "_at"] = key.fmap(k => [k])
         }
       }
       _ => ()

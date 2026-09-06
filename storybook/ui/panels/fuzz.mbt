@@ -184,8 +184,8 @@ fn[N] opening_panel(
 }
 
 ///|
-/// What a component with no `<script type="tutuca/spec">` block gets told.
-const NO_SPEC_HINT : String = "This story's component declares no <script type=\"tutuca/spec\"> block, so there is nothing to derive generators from."
+/// What a component with no `spec:` section gets told.
+const NO_SPEC_HINT : String = "This story's component declares no `spec:` section, so there is nothing to derive generators from."
 
 ///|
 /// Why the chosen source draws nothing, named for the source.

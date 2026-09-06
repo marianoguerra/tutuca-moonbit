@@ -345,11 +345,11 @@ fn mutator_shape(def : @statedef.StateDef, name : String) -> (String, String)? {
   ]
   for name_of in mutable_members(def) {
     for verb in verbs {
-      // Both spellings, because `component()` generates both: `pushInItems`
-      // takes no key and `insertInItemsAt` takes one, and the `At` is part of
-      // the generated name rather than of the verb.
+      // Both spellings, because `component()` generates both:
+      // `push_in_items` takes no key and `insert_in_items_at` takes one, and
+      // the `_at` is part of the generated name rather than of the verb.
       let bare = @tutuca.mutator_name(verb, name_of)
-      if name == bare || name == bare + "At" {
+      if name == bare || name == bare + "_at" {
         return Some((verb, name_of))
       }
     }
@@ -384,12 +384,12 @@ fn mutable_members(def : @statedef.StateDef) -> Array[String] {
 /// sentence rather than a guess an author would paste.
 fn mutator_repair(verb : String, name_of : String) -> String {
   match verb {
-    "set" => "write `.\{name_of} = v` in the view where it is sent"
+    "set" => "write `it.\{name_of} := v` in the view where it is sent"
     "toggle" =>
-      "write `.\{name_of} = not .\{name_of}` in the view where it is sent"
-    "reset" => "write `.\{name_of} = default` in the view where it is sent"
+      "write `it.\{name_of} := !it.\{name_of}` in the view where it is sent"
+    "reset" => "write `it.\{name_of} := default` in the view where it is sent"
     _ =>
-      "write the property action on `.\{name_of}` in the view where it is sent"
+      "write the property action on `it.\{name_of}` in the view where it is sent"
   }
 }
 
@@ -645,8 +645,7 @@ fn C::msg_params(self : C, d : @tscript.Decl) -> Unit {
       "the schema declares no `\{bucket}` case `\{d.name}`" +
       (match @statedef.nearest(d.name, cases.map(m => m.name)) {
         Some(s) => " — did you mean `\{s}`?"
-        None =>
-          "; add it to `variant \{bucket}` in the <script type=\"tutuca/spec\"> block"
+        None => "; add it to `variant \{bucket}` in the `spec:` section"
       }),
       d.name_span,
     )
@@ -973,7 +972,7 @@ fn C::ty_ref(self : C, t : @tscript.TyRef) -> @tutuca.Ty? {
           @statedef.nearest(t.name, self.def.types.map(u => u.source_name)) {
           Some(s) => " — did you mean `\{s}`?"
           None =>
-            "; declare it in the <script type=\"tutuca/spec\"> block, or write a built-in type"
+            "; declare it in the `spec:` section, or write a built-in type"
         }),
         t.span,
       )
@@ -1017,7 +1016,7 @@ fn C::place(self : C, p : @tutuca.Place, assigning~ : Bool) -> @tutuca.Ty? {
             "`.\{name}` is not a field of the \{self.def.component} state" +
             (match @statedef.nearest(name, self.def.fields.map(f => f.name)) {
               Some(s) => " — did you mean `.\{s}`?"
-              None => "; declare it in the <script type=\"tutuca/spec\"> block"
+              None => "; declare it in the `spec:` section"
             }),
             p.span,
           )
@@ -1199,7 +1198,7 @@ fn C::expr(self : C, e : @tutuca.Expr) -> @tutuca.Ty? {
     EMacroVar(name~, span~) => {
       self.say(
         "NO_MACRO_FRAME",
-        "`^\{name}` is a macro argument, and a block has no macro slots — a `<script type=\"tutuca/script\">` block is parsed once for the component, not once per call site. Read it in the view, where a macro frame exists, and pass it in as a handler argument or a field",
+        "`^\{name}` is a macro argument, and a `logic:` section has no macro slots — it is parsed once for the component, not once per call site. Read it in the view, where a macro frame exists, and pass it in as a handler argument or a field",
         span,
       )
       None
@@ -1306,7 +1305,11 @@ fn C::render_only(
   sigil~ : String,
   span : @tutuca.Span,
 ) -> Unit {
-  let head = "`\{sigil}\{name}` is answered by the render stack, and a body runs after one, so it reads Null here"
+  // The two the old notation told apart with a sigil: a `$name` was a call and
+  // an `@name` a binding. The notation spells the call `name(…)` and the
+  // binding by its bare name, so the message spells them that way too.
+  let written = if sigil == "$" { "\{name}(…)" } else { name }
+  let head = "`\{written}` is answered by the render stack, and a body runs after one, so it reads Null here"
   self.say(
     "RENDER_ONLY",
     head +

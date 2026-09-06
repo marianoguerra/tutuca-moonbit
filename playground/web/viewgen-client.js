@@ -12,31 +12,34 @@
 // <mb-playground> element (../site/embed.js) so the two cannot drift.
 
 // The component name heads the generated types (CounterMsg, counter_views,
-// …). It is read from the view file's first `<!-- name: X -->` comment so the
-// component and view tabs stay in sync without a third input to fill in. A
-// view file that names its templates (`<template id="Counter">`) ignores it.
-const NAME_RE = /<!--\s*name:\s*([A-Za-z][\w]*)\s*-->/;
-
-export function componentName(html) {
-  const m = NAME_RE.exec(html);
-  return m ? m[1] : "View";
+// …). A `.tutu` names its components itself, in the headings under `spec:`
+// and `view:`, so there is nothing to fill in and no third input to keep in
+// sync. `View` is the fallback for a file that declares none.
+export function componentName(src) {
+  const names = componentNames(src);
+  return names.length ? names[0] : "View";
 }
 
-// A template id says which component a view belongs to (`Counter`,
-// `Counter:row`); `macro:` ids declare a macro shared by the file. A file that
-// names its templates carries a whole module's components, and the fallback
-// name above is never consulted — so report what it actually declares.
-const TEMPLATE_ID_RE = /<template[^>]*\bid\s*=\s*["']([^"']+)["']/gi;
+// A heading under `spec:` or `view:` names a component; `Note.edit:` is one of
+// its views and `macro row(…):` is a macro shared by the file. Read from both
+// sections, because a file may declare state for a component whose views are
+// built in MoonBit, and views for one whose state is.
+const SECTION_RE = /^(spec|view):[ \t]*$/;
+const HEADING_RE = /^  ([A-Z][\w]*)(?:\.\w+)?:/;
 
-export function componentNames(html) {
+export function componentNames(src) {
   const names = [];
-  // comments first: a view file may TALK about `<template id="…">`
-  for (const [, id] of html.replace(/<!--[\s\S]*?-->/g, "").matchAll(TEMPLATE_ID_RE)) {
-    if (id.startsWith("macro:")) continue;
-    const name = id.split(":")[0];
-    if (name && !names.includes(name)) names.push(name);
+  let inside = false;
+  for (const line of src.split("\n")) {
+    if (/^[a-z]+:[ \t]*$/.test(line)) {
+      inside = SECTION_RE.test(line);
+      continue;
+    }
+    if (!inside) continue;
+    const m = HEADING_RE.exec(line);
+    if (m && !names.includes(m[1])) names.push(m[1]);
   }
-  return names.length ? names : [componentName(html)];
+  return names;
 }
 
 // Memoized: many callers (a page full of embedded playgrounds) share one load.

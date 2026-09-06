@@ -101,140 +101,57 @@ const moonbitMode = StreamLanguage.define({
   languageData: { commentTokens: { line: "//" } },
 });
 
-// --- tutuca block language --------------------------------------------------
-// What a <script type="tutuca/spec"> or "tutuca/script" block holds. It is
-// not HTML and it is not MoonBit — it is the small language `tscript` parses,
-// and its atoms are the view's atoms (`.field`, `@bind`, `$method`, `*dyn`,
-// `'text'`), which is exactly why they are coloured the same here.
-//
-// A card is mostly these blocks, so a view file highlighted without them is a
-// file with its middle greyed out.
+// --- the `.tutu` language ---------------------------------------------------
+// A whole view file: `spec:`, `logic:`, `view:`, `fixtures:` and `tests:`,
+// written in shrubbery notation. One mode covers all five, because they share
+// atoms — `it.field`, `@(hole)`, `@str{…}`, `~option:`, a quoted literal — and
+// the sections differ in vocabulary rather than in shape.
 
 const BLOCK_KEYWORDS = new Set([
-  // declarations
-  "on", "receive", "bubble", "response", "compute", "pred", "enrich",
-  "enrichScope",
-  // the schema's own
-  "state", "struct", "enum",
+  // the sections
+  "spec", "logic", "view", "fixtures", "tests",
+  // what a `spec:` declares
+  "field", "property", "message", "intent", "express", "protocol", "struct",
+  "enum", "flags", "pred", "invariant", "where", "provide", "lookup",
+  "implements", "import", "macro", "get", "set",
+  // what a `logic:` declares
+  "receive", "answer", "compute", "enrich", "bind_with", "requires", "ensures",
   // statements and effects
-  "if", "else", "send", "request", "sendAt", "stop",
-  // operators that are words
-  "and", "or", "not", "is", "implies", "mod",
+  "if", "else", "send", "ask", "notify", "forward", "reply", "fail", "drop",
+  "in", "self",
+  // the two roots a value reads from
+  "it", "dyn", "host", "e",
 ]);
 
 function blockToken(stream, state) {
-  // The closing tag ends the block and hands the stream back to the tag
-  // tokenizer, which is mid-tag by the time it sees `>`.
-  if (stream.match(/^<\/script/i)) {
-    state.tokenize = null;
-    state.inTag = true;
-    return "tagName";
-  }
   if (stream.eatSpace()) return null;
-  if (stream.match(/^\/\/.*/)) return "comment";
-  // `$'…{expr}…'` and `'…'` are one token: the interpolations inside a
-  // template are expressions, but colouring them apart buys less than it
-  // costs in a mode this size.
-  if (stream.match(/^\$?'(?:[^'\\]|\\.)*'?/)) return "string";
-  // A place or a binding, with `&` for the reference form `sendAt` takes.
-  if (stream.match(/^&?[.@$*][\w-]+/)) return "variableName";
+  if (stream.match(/^\/\/\/?.*/)) return "comment";
+  // A quoted literal. `@str{…}` interpolates, but its holes are `@(…)` and are
+  // tokenised as themselves when the stream reaches them.
+  if (stream.match(/^"(?:[^"\\]|\\.)*"?/)) return "string";
+  // An element, a form or a hole: `@div`, `@show`, `@str`, `@(`.
+  if (stream.match(/^@[\w_]*/)) return "tagName";
+  // An option: `~class:`, `~on_click:`, `~root`.
+  if (stream.match(/^~[\w_]+/)) return "attributeName";
   if (stream.match(/^-?\d+(?:\.\d+)?/)) return "number";
-  const word = stream.match(/^[A-Za-z_][\w?]*/);
+  const word = stream.match(/^[A-Za-z_][\w]*/);
   if (word) {
     const w = word[0];
     if (w === "true" || w === "false") return "bool";
     if (BLOCK_KEYWORDS.has(w)) return "keyword";
-    // `empty?`, `len`, `clamp` — the closed reading vocabulary, and the
-    // schema's type names, both of which read as names rather than syntax.
     if (/^[A-Z]/.test(w)) return "typeName";
-    return null;
+    return "variableName";
   }
-  if (stream.match(/^(?:\+=|-=|[=+\-*/<>]|is not)/)) return "operator";
+  if (stream.match(/^(?:\+=|-=|:=|::|\|\||&&|[=+\-*/<>!|:.])/)) return "operator";
   stream.next();
   return null;
 }
 
-// --- tutuca view mode ------------------------------------------------------
-// The View tab holds tutuca's HTML-ish template syntax, so plain HTML
-// highlighting would miss what actually matters: which attributes are
-// directives (@on.click, @each, @if.class), which are dynamic bindings
-// (:value), and where a value expression sits. Same StreamLanguage approach as
-// the MoonBit mode — token() returns @lezer/highlight tag names directly.
-const viewMode = StreamLanguage.define({
-  name: "tutuca-view",
-  startState: () => ({ inTag: false, tokenize: null, script: false }),
-  token(stream, state) {
-    if (state.tokenize) return state.tokenize(stream, state);
-    if (stream.eatSpace()) return null;
-    if (stream.match(/^<!--/)) {
-      state.tokenize = (st, s2) => {
-        if (st.match(/^[\s\S]*?-->/)) s2.tokenize = null;
-        else st.skipToEnd();
-        return "comment";
-      };
-      return state.tokenize(stream, state);
-    }
-    if (!state.inTag) {
-      const open = stream.match(/^<\/?[A-Za-z][\w:.-]*/);
-      if (open) {
-        state.inTag = true;
-        // Remembered rather than acted on: what follows the tag name is still
-        // attributes, and the block only starts at the `>`.
-        state.script = /^<script$/i.test(open[0]);
-        return "tagName";
-      }
-      if (stream.match(/^&[#\w]+;/)) return "string";
-      stream.next();
-      stream.eatWhile((c) => c !== "<" && c !== "&");
-      return null;
-    }
-    // inside a tag
-    const close = stream.match(/^\/?>/);
-    if (close) {
-      state.inTag = false;
-      // `<script … />` closes itself and holds nothing, so only a plain `>`
-      // opens a block.
-      if (state.script && close[0] === ">") {
-        state.tokenize = blockToken;
-      }
-      state.script = false;
-      return "tagName";
-    }
-    // directive (@on.click, @each, @if.class, @text) or dynamic bind (:value)
-    if (stream.match(/^[@:][\w.+-]+/)) return "keyword";
-    if (stream.match(/^[A-Za-z][\w:.-]*/)) return "propertyName";
-    if (stream.match(/^=/)) return "operator";
-    if (stream.match(/^"/)) {
-      state.tokenize = (st, s2) => {
-        // a value expression: highlight its sigils inside the quotes
-        if (st.match(/^"/)) { s2.tokenize = null; return "string"; }
-        if (st.match(/^[.$*][\w-]+/)) return "variableName";
-        if (st.match(/^@[\w.-]+/)) return "variableName";
-        if (st.match(/^'(?:[^'\\]|\\.)*'/)) return "literal";
-        if (st.match(/^-?\d+(?:\.\d+)?/)) return "number";
-        st.next();
-        st.eatWhile((c) => c !== '"' && c !== "." && c !== "$" && c !== "@" && c !== "*" && c !== "'");
-        return "string";
-      };
-      return "string";
-    }
-    stream.next();
-    return null;
-  },
-  languageData: { commentTokens: { block: { open: "<!--", close: "-->" } } },
-});
-
-///|
-function viewHtml() {
-  return new LanguageSupport(viewMode);
-}
-
-// The block language on its own, for a pane holding ONE block's body rather
-// than a whole file: the card playground's structured view edits the state and
-// script regions WITHOUT the `<script>` tags around them, and the view mode
-// only ever reaches blockToken through a tag that pane cannot see.
+// One mode for a whole `.tutu` and for a pane holding ONE section's body: the
+// card playground's structured view edits a section without the heading above
+// it, and the atoms are the same either way.
 const blockMode = StreamLanguage.define({
-  name: "tutuca-block",
+  name: "tutu",
   startState: () => ({ inTag: false, tokenize: null }),
   token(stream, state) {
     return (state.tokenize || blockToken)(stream, state);
@@ -243,15 +160,14 @@ const blockMode = StreamLanguage.define({
 });
 
 // exported for headless token tests; the editor uses langFor()
-export { moonbitMode, viewMode, blockMode };
+export { moonbitMode, blockMode };
 function moonbit() {
   return new LanguageSupport(moonbitMode);
 }
 
 /** The mode a pane asks for by name. MoonBit unless it says otherwise. */
 function langFor(lang) {
-  if (lang === "html") return viewHtml();
-  if (lang === "tutuca") return new LanguageSupport(blockMode);
+  if (lang === "tutu") return new LanguageSupport(blockMode);
   return moonbit();
 }
 

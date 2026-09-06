@@ -393,7 +393,7 @@ pub fn DefError::message(self : DefError) -> String {
     ProtocolConflict(id~, ..) =>
       "spec block: protocol `\{id}` is declared more than once with different surfaces"
     DuplicateRule(name~, ..) =>
-      "spec block: two rules named `\{name}`; a `pred` and an `invariant` share one `$name`, so one name has one answer"
+      "spec block: two rules named `\{name}`; a `pred` and an `invariant` share one name, so one name has one answer"
     RuleOutsideState(name~, ..) =>
       "spec block: `\{name}` is a rule, and a rule belongs to the `state` that keeps it — move it inside the `state` body"
     WhereOutsideState(..) =>

@@ -1,7 +1,7 @@
 # Render a child component
 
 **Problem:** a component holds another component in a field and wants to render
-it (reaching into nested data is not allowed — `@text=".child.name"` fails).
+it (reaching into nested data is not allowed — `@(it.child.name)` fails).
 
 Declare the field with the child's interface name — that makes it a **slot**:
 
@@ -51,12 +51,12 @@ That call is wiring, not behaviour — the schema already declared the slot;
 type states.
 
 The child draws its own view from its own fields, so inside `Greeting`'s view
-`@text=".name"` reads the child's `name`. This is the idiomatic way to display
+`@(it.name)` reads the child's `name`. This is the idiomatic way to display
 nested structure: make the nested thing a component and render it, rather than
 trying to path into it. Every component needs a `main` view, even one you only
-render `as="edit"`.
+render `~as: "edit"`.
 
-For a list of children use `render-each` ([Iterate a
+For a list of children use `@each(…){@render(value)}` ([Iterate a
 list](iterate-a-list.md)); to flip which view renders, see [Switch between
 views](switch-between-views.md). Slot spellings — a sibling interface, bare
 `component`, or a `resource` from another module — are in

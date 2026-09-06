@@ -48,7 +48,7 @@ test "a field with no near miss is told where to declare it" {
     "Board",
   )
   assert_true(msg.contains("not a field of the Board state"))
-  assert_true(msg.contains("tutuca/spec"))
+  assert_true(msg.contains("`spec:` section"))
 }
 
 ///|
@@ -474,15 +474,15 @@ test "a view name that does resolve, or cannot be known, is reported by nothing"
 test "a generated mutator sent as a message is reported, and names the write" {
   let hints = gen_hints(
     board(
-      "state Board { items: Array[String] }", "<div @each=\".items\"><button @on.click=\"removeInItemsAt @key\">x</button></div>",
+      "state Board { items: Array[String] }", "<div @each=\".items\"><button @on.click=\"remove_in_items_at @key\">x</button></div>",
     ),
     "Board",
   )
   assert_eq(hints.length(), 1)
   assert_true(hints[0].contains("mutator-as-message (hint)"))
-  assert_true(hints[0].contains("`removeInItemsAt` is a generated mutator"))
+  assert_true(hints[0].contains("`remove_in_items_at` is a generated mutator"))
   assert_true(hints[0].contains("a mutator is not a message"))
-  assert_true(hints[0].contains("write `.items.removeAt <key>`"))
+  assert_true(hints[0].contains("write `it.items.remove(<key>)`"))
 }
 
 ///|
@@ -491,30 +491,30 @@ test "a generated mutator sent as a message is reported, and names the write" {
 test "the repair names the write for every mutator shape" {
   let set_hints = gen_hints(
     board(
-      "state Board { tags: Set[String] }", "<button @on.click=\"addInTags 'x'\">x</button>",
+      "state Board { tags: Set[String] }", "<button @on.click=\"add_in_tags 'x'\">x</button>",
     ),
     "Board",
   )
   assert_eq(set_hints.length(), 1)
-  assert_true(set_hints[0].contains("write `.tags.add <member>`"))
+  assert_true(set_hints[0].contains("write `it.tags.add(<member>)`"))
   let scalar_hints = gen_hints(
     board(
-      "state Board { count: Int }", "<button @on.click=\"setCount 1\">x</button>",
+      "state Board { count: Int }", "<button @on.click=\"set_count 1\">x</button>",
     ),
     "Board",
   )
   assert_eq(scalar_hints.length(), 1)
-  assert_true(scalar_hints[0].contains("write `.count = <value>`"))
+  assert_true(scalar_hints[0].contains("write `it.count := <value>`"))
   // A bool's toggle has no path form — `.open.toggle` is not a property action
   // — so the repair is the expression that says the same thing.
   let bool_hints = gen_hints(
     board(
-      "state Board { open: Bool }", "<button @on.click=\"toggleOpen\">x</button>",
+      "state Board { open: Bool }", "<button @on.click=\"toggle_open\">x</button>",
     ),
     "Board",
   )
   assert_eq(bool_hints.length(), 1)
-  assert_true(bool_hints[0].contains("write `.open = not .open`"))
+  assert_true(bool_hints[0].contains("write `it.open := !it.open`"))
 }
 
 ///|
@@ -544,8 +544,8 @@ test "the path form, a real handler name and a declared message are silent" {
   assert_eq(
     gen_hints(
       "<script type=\"tutuca/spec\">\n" +
-      "state Board { open: Bool\n  message { setOpen(Bool) } }\n" +
-      "</script>\n<template><button @on.click=\"setOpen true\">x</button></template>",
+      "state Board { open: Bool\n  message { set_open(Bool) } }\n" +
+      "</script>\n<template><button @on.click=\"set_open true\">x</button></template>",
       "Board",
     ),
     [],

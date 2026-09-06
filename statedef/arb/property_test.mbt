@@ -506,7 +506,7 @@ test "the readers the generators skip are still generated callables" {
   let all = @component.schema_mutators(schema)
   let writers = @component.schema_writers(schema)
   // `SCALARS` declares `many : Array[Int]` and `open : Set[String]`.
-  for reader in ["manyLen", "hasInOpen"] {
+  for reader in ["many_len", "has_in_open"] {
     assert_true(all.contains(reader))
     assert_false(writers.contains(reader))
   }

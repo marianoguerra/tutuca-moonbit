@@ -2,35 +2,39 @@
 
 A [MoonBit](https://docs.moonbitlang.com) port of
 [tutuca](https://github.com/marianoguerra/tutuca), a small UI framework built
-around a reactive value language, HTML-ish templates, and a virtual DOM.
+around a reactive value language, a declarative view notation, and a virtual
+DOM.
 
-A component declares its state and views in one file, using a small state
-language and HTML-ish templates, and both compile ahead of time into typed
-MoonBit. Every handler is checked against the state it mutates, and so is
-every `.field` a view reads — including inside a loop. It runs on all three
+A component declares its spec, its logic and its views in one `.tutu` file,
+and all three compile ahead of time into typed MoonBit. Every handler is
+checked against the state it mutates, and so is every field a view reads —
+including inside a loop. It runs on all three
 backends: **wasm-gc** (the default), **js** (the real-DOM adapter) and
 **native** (the CLI).
 
-```html
-<!-- counter.html -->
-<script type="tutuca/spec">
-  state Counter { count: Int }
-</script>
+```
+# counter.tutu
+spec:
+  Counter:
+    field count :: Int
 
-<script type="tutuca/script">
-  receive inc { .count += 1 }
-</script>
+    message inc
 
-<template id="Counter">
-  <button @on.click="inc" @text=".count"></button>
-</template>
+logic:
+  Counter:
+    receive inc:
+      it.count += 1
+
+view:
+  Counter:
+    @button(~on_click: inc){@(it.count)}
 ```
 
 ```moonbit
 // `tutuca gen` made CounterState and counter_component out of the three
-// blocks above, checked `.count` against the schema in both the view and the
-// handler, and compiled `inc` into the update the wrapper already passes. The
-// name, the views, the styles, the codec and the schema are not arguments —
+// sections above, checked `it.count` against the spec in both the view and
+// the handler, and compiled `inc` into the update the wrapper already passes.
+// The name, the views, the styles, the codec and the spec are not arguments —
 // the view file states them.
 counter_component()
 ```

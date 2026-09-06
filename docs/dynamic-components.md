@@ -52,20 +52,24 @@ block and templates, compiled to a module by `tgc/emit`. The card playground
 it, mounts it, and hands you the `.wasm`. No toolchain: the compiler is a
 MoonBit library in the page.
 
-```html
-<script type="tutuca/spec">
-  state Counter { count: Int }
-</script>
+```
+spec:
+  Counter ~root:
+    field count :: Int
 
-<script type="tutuca/script">
-  receive inc { .count += 1 }
-  compute label { $'count: {.count}' }
-</script>
+    message inc
 
-<template id="Counter:main" data-root>
-  <button @on.click="inc">+</button>
-  <output @text="$label"></output>
-</template>
+logic:
+  Counter:
+    receive inc:
+      it.count += 1
+
+    compute label: @str{count: @(it.count)}
+
+view:
+  Counter:
+    @button(~on_click: inc){+}
+    @output{@(label())}
 ```
 
 The card language, its limits, and what the compiler refuses are in

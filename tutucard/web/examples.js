@@ -568,12 +568,12 @@ export const EXAMPLES = [
   handle Feed {
     message {
       init
-      rowsOk(Any)
-      rowsError(Any)
-      rowsUnhandled
-      echoOk(Any)
-      echoError(Any)
-      echoUnhandled
+      rows_ok(Any)
+      rows_failed(Any)
+      rows_unhandled
+      echo_ok(Any)
+      echo_failed(Any)
+      echo_unhandled
     }
   }
 </script>
@@ -612,7 +612,7 @@ export const EXAMPLES = [
   /// walk runs out and nobody answered. Not a crash, and — the part v1 could
   /// not say — not a failure either.
   receive breakIt {
-    ask lex 'nothingAnswersThis'
+    ask lex 'nothing_answers_this'
     .busy = true
     .error = ''
   }
@@ -621,32 +621,32 @@ export const EXAMPLES = [
   /// payload carrying BOTH a result and an error, exactly one of which was
   /// Null, and every arm began by working out which. The branch is gone with
   /// the pair.
-  receive rowsOk(res) {
+  receive rows_ok(res) {
     .busy = false
     .rows = res
   }
 
-  receive rowsError(err) {
+  receive rows_failed(err) {
     .busy = false
     .error = str err
   }
 
-  receive rowsUnhandled {
+  receive rows_unhandled {
     .busy = false
     .error = 'nothing on this page answers \`rows\`'
   }
 
-  receive echoOk(res) {
+  receive echo_ok(res) {
     .busy = false
     .echoed = str res
   }
 
-  receive echoError(err) {
+  receive echo_failed(err) {
     .busy = false
     .error = str err
   }
 
-  receive echoUnhandled {
+  receive echo_unhandled {
     .busy = false
     .error = 'nothing on this page answers \`echo\`'
   }

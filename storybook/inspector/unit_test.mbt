@@ -243,16 +243,16 @@ test "component_summary reads fields, buckets, and view sources" {
   assert_true(f0.get("default") is Some(Str("")))
   // methods = the compute names. `inc`/`reset` are update arms, not
   // methods: they answer a dispatch rather than a field read. The generated
-  // mutators (setTitle, toggleOpen, …) never appear either — they live in
+  // mutators (set_title, toggle_open, …) never appear either — they live in
   // their own table.
   guard d.get("methods") is Some(List(methods)) else { fail("no methods") }
   assert_true(methods.contains(Str("label")))
   assert_true(methods.contains(Str("double")))
   assert_false(methods.contains(Str("inc")))
   assert_false(methods.contains(Str("reset")))
-  assert_false(methods.contains(Str("setTitle")))
-  assert_false(methods.contains(Str("toggleOpen")))
-  assert_false(methods.contains(Str("pushInTags")))
+  assert_false(methods.contains(Str("set_title")))
+  assert_false(methods.contains(Str("toggle_open")))
+  assert_false(methods.contains(Str("push_in_tags")))
   // `update` is one opaque pattern match at run time, so reflection could
   // only ever say THAT it exists. The schema names what it answers.
   assert_true(d.get("viewHandlers") is Some(List([Str("inc"), Str("reset")])))
@@ -481,7 +481,7 @@ test "a described component surfaces what reflection cannot" {
   assert_eq(d.get("receive"), Some(List([Str("ping"), Str("on_data")])))
   assert_eq(d.get("intent"), Some(List([Str("on_child")])))
   // The selectors a test addresses, and the fixtures it can seed from.
-  assert_eq(d.get("ids"), Some(List([Str("counter"), Str("resetBtn")])))
+  assert_eq(d.get("ids"), Some(List([Str("counter"), Str("reset_btn")])))
   assert_eq(d.get("fixtures"), Some(List([Str("fresh")])))
   assert_eq(d.get("fingerprint"), Some(Str("deadbeefcafe0001")))
   // A field carries the WIT spelling and its element type, where the
@@ -648,7 +648,7 @@ impl @component.Fields for DescribedState with fn schema() {
     receives=["ping", "on_data"],
     intents=["on_child"],
     methods=["label"],
-    ids=["counter", "resetBtn"],
+    ids=["counter", "reset_btn"],
     view_names=["main"],
     init_names=["fresh"],
   )
@@ -708,7 +708,7 @@ test "state editor: the form wraps the target it edits" {
 /// The state editor reaches a generated mutator BY NAME through `Obj::member`
 /// — it holds a bare `Value`, so it has no other way in. That means two places
 /// have to agree on how a field name becomes a mutator name, and neither can
-/// see the other: `component()` builds `setTitle`, the editor asks for it.
+/// see the other: `component()` builds `set_title`, the editor asks for it.
 ///
 /// They agree because there is one function, not two spellings of a convention.
 test "the editor's setter name is the one the component generated" {
@@ -716,7 +716,7 @@ test "the editor's setter name is the one the component generated" {
   guard! card is Obj(o)
   // The name the convention produces...
   let setter = @tutuca.mutator_name("set", "title")
-  assert_eq(setter, "setTitle")
+  assert_eq(setter, "set_title")
   // ...is a mutator the instance actually answers to.
   guard! o.field(setter) is Some(Fn(set))
   guard! set([Null, Str("Bye")]) is Obj(o2)

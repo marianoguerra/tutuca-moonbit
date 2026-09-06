@@ -14,16 +14,16 @@ pub fn GenError::message(self : GenError) -> String {
     BadComponentName(name) =>
       "\"\{name}\" is not usable as a component name: expected a name starting with a letter and made of letters, digits and underscores"
     MethodInEventPosition(view~, name~, site~) =>
-      "view \"\{view}\": `\{site}=\"$\{name}\"` — drop the `$`. In an event position a `$name` and a bare name are the SAME dispatch, so the sigil claims a distinction that is not there; `$` belongs in value positions (@text, @show, an attribute)"
+      "view \"\{view}\": `\{site}` names `\{name}` with a decoration — write it bare. In an event position a decorated name and a bare one are the SAME dispatch, so the decoration claims a distinction that is not there"
     BareEventArg(view~, name~, site~) =>
-      "view \"\{view}\": `\{site}=\"… \{name}\"` — an argument needs a sigil saying where it reads from. Write `e.\{name}` for the event, `.\{name}` for state, or `@\{name}` for a binding"
+      "view \"\{view}\": `\{site}` passes `\{name}`, and nothing says where it reads from. Write `e.\{name}` for the event, `it.\{name}` for state, or the name a loop or an enricher bound"
     NoViewsToCompile =>
-      "this file declares a schema and no <template>, so it has no views to compile"
+      "this file declares a `spec:` section and no `view:` section, so it has no views to compile"
     UnknownStateField(view~, name~, scope~, suggestion~) =>
       "view \"\{view}\": `.\{name}` is not a field of \{scope}" +
       (match suggestion {
         Some(s) => " — did you mean `.\{s}`?"
-        None => "; declare it in the <script type=\"tutuca/spec\"> block"
+        None => "; declare it in the `spec:` section"
       })
     InvalidBind(view~, reason~) => "view \"\{view}\": `@bind` \{reason}"
     InvalidPropertyAction(view~, reason~) =>

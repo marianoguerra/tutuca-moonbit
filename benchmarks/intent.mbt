@@ -15,7 +15,7 @@
 //
 //   - `dyn` walks the dispatch path. `intent_dyn(depth)` mounts a chain of
 //     TreeItems `depth` deep (`storybook/examples/communication.mbt`) and
-//     clicks the deepest one, which raises `intent dyn 'treeItemSelected'`.
+//     clicks the deepest one, which raises `ask('treeItemSelected', ~route: dyn)`.
 //     Every ancestor between it and the root is an OBSERVER — its `Intent` arm
 //     runs and does not reply — so the walk goes the whole way and then runs
 //     out. The worst case, deliberately: a walk that stops early measures the
@@ -77,7 +77,7 @@ pub fn mount_tree_chain(depth : Int) -> @harness.MemHarness {
 /// walk on its own, for subtracting rather than guessing.
 pub fn intent_dyn(h : @harness.MemHarness, depth : Int) -> Int {
   h.click(".head", nth=depth - 1) catch {
-    e => fail_patch("intent dyn depth \{depth}", e)
+    e => fail_patch("ask dyn depth \{depth}", e)
   }
   h.render_count()
 }
@@ -113,7 +113,7 @@ pub fn mount_lex_chain(n : Int) -> @harness.MemHarness {
 }
 
 ///|
-/// Raise `intent lex 'load_data'` and settle the answer.
+/// Raise `ask("load_data", ~route: lex)` and settle the answer.
 ///
 /// `receive init` is what raises it, so this is one `send_at_root` and then the
 /// whole walk plus the `load_data_ok` that comes back — which is the round trip a

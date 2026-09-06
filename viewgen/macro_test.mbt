@@ -35,7 +35,7 @@ test "the macro expands at generation time" {
   inspect(
     without,
     content=(
-      #|view "main": no macro named 'icon' — declare it as <template id="macro:icon">
+      #|view "main": no macro named 'icon' — declare it as `macro icon(…):` in the `view:` section
     ),
   )
   // With them, the expansion's own field reads show up in the surface.

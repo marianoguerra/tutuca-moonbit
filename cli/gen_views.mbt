@@ -39,7 +39,7 @@ fn view_diagnostics(
   for def in file.state {
     if !declared.contains(def.component_name(fallback)) {
       out.push(
-        "state-without-views (hint) \{def.component_name(fallback)}: the schema declares it but no <template> here gives it views" +
+        "state-without-views (hint) \{def.component_name(fallback)}: the `spec:` section declares it but no `view:` entry here gives it views" +
         (if declared.is_empty() {
           ""
         } else {
@@ -58,10 +58,10 @@ fn view_diagnostics(
     // That is true of a CARD and false of a compiled component: a block is not
     // a promise that it is the only handler surface. `SkillEditor` in the
     // tutuca-components port has a block answering `save` and `cancel`, and
-    // answers `setName` in MoonBit (`Receive("setName", args) => …`) because
-    // it must also recompute a verdict, which a script arm cannot express.
-    // `gen` reads .html, the arm is in .mbt, and the warning fired on correct
-    // code — naming `.name = v` as the repair, which is precisely the bug that
+    // answers `set_name` in MoonBit (`Receive("set_name", args) => …`) because
+    // it must also recompute a verdict, which a `logic:` arm cannot express.
+    // `gen` reads the `.tutu`, the arm is in `.mbt`, and the warning fired on
+    // correct code — naming `it.name := v` as the repair, which is the bug that
     // component's author avoided on purpose.
     //
     // The sharpest statement of the bug, from the consumer who found it: the

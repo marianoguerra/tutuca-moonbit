@@ -23,7 +23,7 @@ and formal `spec.mbt`. From the bottom up:
 | Layer | Package(s) | What it does |
 |---|---|---|
 | **Value language** | `core/` — `marianoguerra/tutuca/core` (`value_*.mbt`, `path_*.mbt`) | The value model and its evaluation, plus the reactive path/dispatch system (COW spine rebuild, handler dispatch, change sets). `core` never PARSES anything — one package by necessity, since `value_*` and `path_*` form a dependency cycle. |
-| **Expression language** | `tscript/` (+ `check/`, `emit_mbt/`, `conformance/`) | Reading the surface tutuca writes: the slot expressions in a view (`.field`, `$method`, `@value`) and the block language of `<script type="tutuca/script">`. Tokenizer, parser, checker, and a MoonBit emitter for the ahead-of-time path. There was an interpreter here too, for the card runtime; `tgc/emit` compiles a card now, so a card is mounted by instantiating a module rather than by running one where it stands. Above `core` rather than inside it, for the reason in the cell above. |
+| **Expression language** | `tscript/` (+ `check/`, `emit_mbt/`, `conformance/`) | Reading the surface tutuca writes: the slot expressions in a view (`it.field`, `method()`, a loop binding) and the statement language of the `logic:` section. Tokenizer, parser, checker, and a MoonBit emitter for the ahead-of-time path. There was an interpreter here too, for the card runtime; `tgc/emit` compiles a card now, so a card is mounted by instantiating a module rather than by running one where it stands. Above `core` rather than inside it, for the reason in the cell above. |
 | **Templates** | `anode/` (+ `anode/sanitize`) | Parses the HTML-ish view syntax into an AST: attributes, directives, `x-` ops, macros, whitespace handling, optimization. `sanitize` is the WHATWG Sanitizer API config model, applied statically to a view's literal names. |
 | **Virtual DOM** | `vdom/` (+ `vdom/memdom`, `vdom/browser`, `vdom/wasm`) | Builds and incrementally morphs a VDOM against any DOM implementing the `DomNode` trait. |
 | **Render-time filters** | `vdom/filter/` (+ `url/`, `handler/`, `markup/`, `markdown/`), `markdown/`, `sinks/` | The half a static pass cannot decide: an attribute VALUE is only known once state has produced it. URL schemes, `on*` handlers, sanitized raw markup, and Markdown rendered straight into vdom nodes. `markdown/` is a CommonMark+GFM parser vendored from mizchi/markdown.mbt — see `markdown/UPSTREAM.md`. `sinks/` holds one four-bit type and imports nothing: which of these rules an element's attribute NAMES could concern, which `render` decides off the tree so the rules can skip what cannot concern them. |
@@ -67,22 +67,22 @@ names the parser: a program built entirely ahead of time never calls it, so it
 does not link an HTML parser it cannot reach. Worth 44% of the counter demo's
 wasm bundle — see `benchmarks/OPTIMIZATIONS.md`.
 
-A component keeps its views in an `.html` file and compiles them ahead of time
-into a companion MoonBit module, so the view's vocabulary stops being strings
-the compiler cannot see:
+A component keeps its spec, its logic and its views in one `.tutu` file and
+compiles them ahead of time into a companion MoonBit module, so the view's
+vocabulary stops being strings the compiler cannot see:
 
 ```sh
-moon run --target native cmd/tutuca -- gen demo/counterlib/counter.html --name Counter
+moon run --target native cmd/tutuca -- gen demo/counterlib/counter.tutu --name Counter
 # -> demo/counterlib/counter_view_gen.mbt      (the view vocabulary as types)
 # -> demo/counterlib/counter_view_ir_gen.mbt   (the compiled views + the wrapper)
 # both checked in; regenerate, never edit
 
 ```
 
-The file is either one bare view, or several `<template>` elements whose `id`
-attributes name them — the one with no `id` is `main`. A `<style>` inside a
-template is that view's style; one at file level is the component's common
-style, or its global style with `data-global`.
+The `view:` section names each component it draws, and `Note.edit:` is one
+component and one of its views — the unqualified one is `main`. An `@style{…}`
+inside a view is that view's style; one at the section's top level is the
+component's common style, or its global style with `~global`.
 
 For a component named `Counter` the generated module declares
 `counter_views()` (the built views, for `views~`) and — with a schema —
@@ -100,13 +100,14 @@ The package it lands in must import
 A view file may also declare its component's data contract, in a small language
 that spells its types the way MoonBit does, next to the templates that read it:
 
-```html
-<script type="tutuca/spec">
-  state Counter { label: String, count: Int, history: Array[Int] }
-  handle Counter {
-    message { resetTo(Int) }
-  }
-</script>
+```
+spec:
+  Counter:
+    field label :: String
+    field count :: Int
+    field history :: List.of(Int)
+
+    message reset_to(Int)
 ```
 
 Then `CounterState` itself is generated — a plain struct with no derives, a
@@ -127,45 +128,42 @@ The payoff is in `update` (see `demo/counterlib/` for the worked example):
 
 ```mbt nocheck
 update=(s : CounterState, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
-  Some(Add(d)) => ...          // `d` is a Double: `@on.click="add 1"`
+  Some(Add(d)) => ...          // `d` is a Double: `~on_click: add(1)`
   Some(Unknown(_, _)) | None => Unhandled
 }
-// `.count = default` and `.label = e.value` are writes the view performs
-// itself, so they raise no name and there is no case here for them.
+// `it.count := default` and `it.label := e.value` are writes the view
+// performs itself, so they raise no name and there is no case here for them.
 ```
 
-Adding `@on.click="del 1"` to `counter.html` and regenerating makes that match
+Adding `~on_click: del(1)` to `counter.tutu` and regenerating makes that match
 non-exhaustive — a compile error naming `Some(Del(_))`, where the old
 string-matched `_ => None` arm silently did nothing.
 
 ### Several components, and macros
 
-A view file belongs to a MoonBit module, not to a single component — template
-ids say what each one is:
+A view file belongs to a MoonBit module, not to a single component — each
+section names the component it speaks about:
 
-| id | |
+| in `view:` | |
 |---|---|
-| *(none)* | the single unnamed component's `main` view |
-| `row` | …its `row` view |
-| `Counter:main` | the `Counter` component's `main` view |
-| `Counter` | shorthand for `Counter:main` |
-| `macro:icon` | a macro shared by every component in the file |
+| `Counter:` | the `Counter` component's `main` view |
+| `Counter.row:` | …its `row` view |
+| `macro icon(…):` | a macro shared by every component in the file |
 
 A component name is Uppercase-initial, which is what tells `Counter` (a
-component) from `row` (a view). A file either names its components or does
-not; mixing the two is an error.
+component) from `row` (one of its views).
 
-A macro's `data-*` attributes are the defaults for the `^var` references in
-its body, and the generator expands every call ahead of time — which is why
-macros belong in the view file rather than being registered from MoonBit:
+A macro's parameters carry their own defaults, and the generator expands every
+call ahead of time — which is why macros belong in the view file rather than
+being registered from MoonBit:
 
-```html
-<template id="macro:icon" data-size="'24'" data-color="'currentColor'">
-  <svg :width="^size" :height="^size" :stroke="^color"><path :d="^path"></path></svg>
-</template>
-<template id="Gallery">
-  <x:icon :size=".size" :path=".heart"></x:icon>
-</template>
+```
+view:
+  macro icon(~size: "24", ~color: "currentColor", ~path: ""):
+    @svg(~width: size, ~height: size, ~stroke: color){@path(~d: path)}
+
+  Gallery:
+    @icon(~size: it.size, ~path: it.heart)
 ```
 
 ### The compiled tree
@@ -221,7 +219,7 @@ handler list the id that is its position, stamps `data-vid` and runs the
 constant-subtree optimization — `RenderOnce` ids are process-global renderer
 memo keys, so they must be minted at load time, not baked in.
 
-A macro declared in the view file (`<template id="macro:badge" data-label="'New'">`)
+A macro declared in the view file (`macro badge(~label: "New"):`)
 is expanded when the views are generated, so a view that calls one compiles to
 a tree like any other. A macro REGISTERED from MoonBit cannot be — its body is
 a runtime value — so a file using those keeps the source path; `--no-ir` opts
@@ -243,7 +241,7 @@ tutuca watch demo/counterlib      # or a file, or bare for the whole project
 
 It generates every managed view once, then again on each save, so the types
 are always current and the MoonBit compiler is what tells you a view and a
-component have drifted apart. A directory contributes the `.html` files that
+component have drifted apart. A directory contributes the `.tutu` files that
 already have a generated sibling — that is what distinguishes a view file
 from a page like `index.html`. A view that fails to generate prints and the
 watch keeps going; the next save is expected to fix it.
@@ -256,7 +254,7 @@ runs the same generator in the browser. Its left pane has three tabs:
 | Tab | |
 |---|---|
 | **Component** | the MoonBit you write |
-| **View** | the `.html` its views live in (name the component with `<!-- name: Counter -->`) |
+| **View** | the `.tutu` its spec, logic and views live in |
 | **Generated** | read-only: what `gen` makes of the View tab, updating as you type |
 
 The generated modules are compiled as extra files of *your* package, so the

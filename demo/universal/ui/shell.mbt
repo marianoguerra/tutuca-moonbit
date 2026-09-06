@@ -45,10 +45,10 @@ fn picker_comp_new() -> @component.Component {
   component_picker_component(update=(s, msg, ctx) => {
     let with_cursor = cursor => {
       let hits = s.hits.mapi((i, row) => {
-        // `setSelected` is the AUTO-MUTATOR for the field `selected`, not the
-        // component's `receive set_selected`: `call_field` reaches the
+        // `set_selected` is the AUTO-MUTATOR for the field `selected`, not
+        // the component's `receive set_selected`: `call_field` reaches the
         // generated callables and never a handler.
-        row.call_field("setSelected", [Bool(i == cursor)])
+        row.call_field("set_selected", [Bool(i == cursor)])
       })
       (Next({ ..s, hits, cursor, }) : @component.Update[ComponentPickerState])
     }

@@ -171,7 +171,7 @@ test "a macro must be declared in the view file" {
   inspect(
     shape.message,
     content=(
-      #|views/counter.html: view "main": no macro named 'card' — declare it as <template id="macro:card">
+      #|views/counter.html: view "main": no macro named 'card' — declare it as `macro card(…):` in the `view:` section
     ),
   )
 }

@@ -26,7 +26,7 @@ node benchmarks/report.mjs --target native --baseline /tmp/before.json
 ```
 
 Known-noisy benches, not to be used for judging a change: `render all examples`
-(±13–26%), `render json 3x4` (±31–38%) and the whole `intent dyn depth *` row
+(±13–26%), `render json 3x4` (±31–38%) and the whole `ask dyn depth *` row
 (±13–58%, and it measures a render that grows with the same parameter as the
 walk — see OPTIMIZATIONS.md #14 for what those rows do and do not establish).
 Everything else lands under ±5%.

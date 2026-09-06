@@ -220,7 +220,7 @@ pub fn SchemaInfo::shape_fingerprint(self : SchemaInfo) -> String {
 }
 
 ///|
-/// The name of a field's generated mutator: `count` + `set` -> `setCount`.
+/// The name of a field's generated mutator: `count` + `set` -> `set_count`.
 ///
 /// The convention lives HERE, in one function, because two places have to agree
 /// on it and neither can see the other. `component()` builds the mutators by
@@ -228,9 +228,34 @@ pub fn SchemaInfo::shape_fingerprint(self : SchemaInfo) -> String {
 /// them by name through `Obj::member` — reconstructed the same string from
 /// its own copy. Two spellings of one convention, either of which could have
 /// been changed alone.
+///
+/// The name is `snake_case`, because it is DERIVED from a field name and a
+/// field name is. A camelCase mutator over a snake_case field was a name the
+/// notation renamed on its way in — `remove_in_items_at` in the file, nothing
+/// answering it at run time — and the vocabulary a component answers has to be
+/// spellable in the notation that calls it.
 pub fn mutator_name(verb : String, field : String) -> String {
   if field.is_empty() {
-    return verb
+    return snake_word(verb)
   }
-  verb + field[0:1].to_owned().to_upper() + field[1:].to_owned()
+  snake_word(verb) + "_" + field
+}
+
+///|
+/// One camelCase word, in snake_case. The verbs are a closed set (`set`,
+/// `reset`, `toggle`, `pushIn`, `insertIn`, `setIn`, `deleteIn`, `removeIn`,
+/// `addIn`, `toggleIn`, `hasIn`), so this handles what they are and no more.
+fn snake_word(w : String) -> String {
+  let out = StringBuilder()
+  for i, c in w.to_array() {
+    if c is ('A'..='Z') {
+      if i > 0 {
+        out.write_char('_')
+      }
+      out.write_char(Int::unsafe_to_char(c.to_int() + 32))
+    } else {
+      out.write_char(c)
+    }
+  }
+  out.to_string()
 }

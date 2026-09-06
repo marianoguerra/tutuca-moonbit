@@ -317,7 +317,7 @@ fn bucket_router(
   let out = StringBuilder()
   out.write_string("///|\n")
   out.write_string(
-    "/// The `\{b.param}` names the `<script type=\"tutuca/script\">` block answers.\n",
+    "/// The `\{b.param}` names the file's `logic:` section answers.\n",
   )
   out.write_string("/// GENERATED — edit the block, not this.\n")
   out.write_string("fn \{name}() -> Map[String, \{b.handler}] {\n  {\n")
@@ -429,7 +429,7 @@ fn wrapper_buckets(
 }
 
 ///|
-/// The `<script type="tutuca/spec">` block, as source, for the `spec~` a
+/// The `spec:` section, as source, for the `spec~` a
 /// wrapper passes to `component()`.
 ///
 /// Doc comments go. What is kept has to be re-PARSEABLE — that is the whole
@@ -454,7 +454,7 @@ fn emit_spec_source(
   let name = "\{v}_spec_source"
   emit_string_let(
     out,
-    "This file's `<script type=\"tutuca/spec\">` block, as source, with its\n" +
+    "This file's `spec:` section, as source, with its\n" +
     "/// doc comments removed.\n" +
     "///\n" +
     "/// The schema each component carries is this block's PROJECTION, and the\n" +

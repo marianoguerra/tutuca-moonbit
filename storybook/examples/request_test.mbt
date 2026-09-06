@@ -62,7 +62,7 @@ test "request-example: onOkName / onFailedName route to different handlers" {
     "RequestExample",
   )
   // "Load Another Way" names its own three outcomes in `IntentOpts`, where
-  // the block's `intent lex 'load_data'` had them filled in from the schema.
+  // the block's `ask("load_data", ~route: lex)` had them filled in from the schema.
   h.click(".another")
   inspect(h.text(".error"), content="network is down")
   inspect(h.find_all(".loading").length(), content="0")

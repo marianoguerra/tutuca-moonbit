@@ -13,7 +13,7 @@
 //    handler with nothing to contribute DECLINES, and the walk goes on to the
 //    next one instead of it having to invent an error.
 //
-//    The component side dispatches `intent lex 'load_data'`, and the answer
+//    The component side dispatches `ask("load_data", ~route: lex)`, and the answer
 //    arrives as an ordinary message — `load_data_ok`, `load_data_failed` or
 //    `load_data_unhandled` — in the same `receive` bucket everything else lands
 //    in. A handler cannot tell an answer from a message a parent sent, and
@@ -42,7 +42,7 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
     update=(s, msg, ctx) => {
       match msg {
         // The same intent, dispatched from MoonBit rather than from the block
-        // — which is what `IntentOpts` is for. The block's `intent lex
+        // — which is what `IntentOpts` is for. The block's `ask(…, ~route: lex)
         // 'load_data'` gets these three names filled in by the generator, from
         // the schema; writing them here is how a sender names its own.
         Receive("load_another_way", _) => {

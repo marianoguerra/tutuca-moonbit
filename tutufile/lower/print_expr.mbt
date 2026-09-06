@@ -85,12 +85,29 @@ fn print_member(base : @sh.Ex, m : String) -> String raise @sh.ExError {
     // runtime `Path` is field-then-key, so a key followed by a field is a step
     // it has.
     @sh.EIndex(_, _) => print_ex(base) + "." + m
+    // A field BELOW a field: `it.holds.body`. A statement may write one — it
+    // reads a held instance through the property door — and a view slot may
+    // not; which is which is decided by the checker over the printed text,
+    // where both readings are already spelled out. Refusing it HERE refused
+    // the statement too.
+    _ if from_state(base) => print_ex(base) + "." + m
     _ =>
       raise @sh.ExError(
-        message="a member read needs a binding, an index or the event to read it from",
-        help="`it.a.b` is refused: render the child as a component, or name the value with a `compute`",
+        message="a member read needs a place, a binding, an index or the event to read it from",
+        help="write `it.<field>`, a loop's binding, or `e.<something>`",
         span=@report.Span::at(0),
       )
+  }
+}
+
+///|
+/// Whether a path is rooted at the component's own state.
+fn from_state(e : @sh.Ex) -> Bool {
+  match e {
+    @sh.EIt(_) | @sh.EState(_) => true
+    @sh.EMember(inner, _) => from_state(inner)
+    @sh.EIndex(inner, _) => from_state(inner)
+    _ => false
   }
 }
 

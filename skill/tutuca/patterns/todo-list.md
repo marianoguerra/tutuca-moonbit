@@ -5,7 +5,7 @@ a list of child components over `Array[Item]`, `~when`
 filtering, add / toggle / delete handlers, and controlled inputs.
 
 One view file carries the whole module — the schema for both components
-and a named `<template>` per component:
+and one `view:` entry per component:
 
 ```tutu
 spec:
@@ -42,7 +42,7 @@ two reasons: **building a child component instance** (`item.make`), which that
 language deliberately has no way to say, and **reading a path into a row**
 (`@value.completed`), which `gen` does not compile — the rows are `Item`
 INSTANCES, so the filter has to look inside one. Were `items` a list of plain
-values, `onlyVisible` would be a `pred` in the spec block and this file would
+values, `onlyVisible` would be a `pred` in `spec:` and this file would
 have no `when` bucket at all (see [filter-a-list.md](filter-a-list.md)). What is left
 is the handlers:
 
@@ -50,7 +50,7 @@ is the handlers:
 ///|
 fn todo_item_comp() -> @component.Component {
   item_component(initial=ItemState::{ completed: false, text: "do the thing" })
-  // no update: the view writes `.completed` and `.text` itself, which is a
+  // no update: the view writes `it.completed` and `it.text` itself, which is a
   // synchronous member write and raises no message at all. Give the component
   // an arm only when something has to HAPPEN besides the write.
 }
@@ -60,7 +60,7 @@ fn todo_items_comp(item : @component.Component) -> @component.Component {
     initial=ItemsState::{ items: [], hide_completed: false },
     update=(s, msg, _ctx) => match ItemsMsg::from_dispatch(msg) {
       // the handler CAPTURES the child Component; the view just says
-      // @on.click="onAddItem" (no component-reference value exists)
+      // ~on_click: on_add_item (no component-reference value exists)
       Some(OnAddItem) => Next({ ..s, items: s.items + [item.make(Map([]))] })
       // remove and hide are member operations the view performs itself
       // (`it.items.delete_at(key)`, `it.hide_completed := !it.hide_completed`), so
@@ -111,9 +111,9 @@ Why each piece is the way it is:
   costs nothing at runtime and buys the check. Append immutably:
   `s.items + [ ... ]`. Reach for `Array[Any]` only when the elements really
   are of different shapes.
-- **`@each` + `<x render-it>`** renders each instance as its own `Item`
+- **`@each` + `@render(value)` in a loop** renders each instance as its own `Item`
   component (fresh frame — the item handles its own events); the remove
-  button sits **beside** `render-it` in the loop, so `it.items.delete_at(key)`
+  button sits **beside** `@render(value)` in a loop in the loop, so `it.items.delete_at(key)`
   writes the *list*'s own field, which is where the collection lives.
 - **`~when="onlyVisible"`** filters at render time; the `when` bucket is
   a match over a generated enum (a raw `component()` call would take

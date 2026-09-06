@@ -18,7 +18,7 @@
 // data-cid onto it.
 
 ///|
-/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// This file's `spec:` section, as source, with its
 /// doc comments removed.
 ///
 /// The schema each component carries is this block's PROJECTION, and the
@@ -274,7 +274,7 @@ pub fn fuzz_row_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// The dispatches the `<script type="tutuca/script">` block answers.
+/// The dispatches the file's `logic:` section answers.
 ///
 /// Composed AHEAD of the author's `update~`, which stays optional and is
 /// consulted only for a name this does not answer. GENERATED — edit the
@@ -363,7 +363,7 @@ fn fuzz_row_compute_break_names_a_rule(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn fuzz_row_inline_compute() -> Map[
   String,
@@ -481,7 +481,7 @@ fn fuzz_log_compute_has_rows_tracks_rows(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn fuzz_log_inline_compute() -> Map[
   String,
@@ -757,7 +757,7 @@ pub fn fuzz_controls_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// The dispatches the `<script type="tutuca/script">` block answers.
+/// The dispatches the file's `logic:` section answers.
 ///
 /// Composed AHEAD of the author's `update~`, which stays optional and is
 /// consulted only for a name this does not answer. GENERATED — edit the
@@ -1455,7 +1455,7 @@ fn fuzz_controls_compute_playing_needs_something_to_draw(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn fuzz_controls_inline_compute() -> Map[
   String,
@@ -1635,7 +1635,7 @@ pub fn fuzz_verdict_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// The dispatches the `<script type="tutuca/script">` block answers.
+/// The dispatches the file's `logic:` section answers.
 ///
 /// Composed AHEAD of the author's `update~`, which stays optional and is
 /// consulted only for a name this does not answer. GENERATED — edit the
@@ -1773,7 +1773,7 @@ fn fuzz_verdict_compute_has_unchecked_tracks_unchecked(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn fuzz_verdict_inline_compute() -> Map[
   String,
@@ -1901,7 +1901,7 @@ fn fuzz_panel_compute_at_within_total(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn fuzz_panel_inline_compute() -> Map[
   String,

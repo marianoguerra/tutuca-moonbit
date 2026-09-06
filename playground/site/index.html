@@ -93,7 +93,7 @@ let counter = counter_component()</code></pre>
           compiled view tree and a typed message enum, compiled as part of the
           same package. You can edit the View tab. The Generated tab then
           changes also. Add an <code>@on</code> handler in the view and answer
-          it in the same file's <code>tutuca/script</code> block. If you do not
+          it in the same file's <code>logic:</code> section. If you do not
           answer it there, the next run fails until the component's
           <code>match</code> handles it.
         </p>
@@ -129,7 +129,7 @@ let counter = counter_component()</code></pre>
           name a MoonBit value. Thus there are no imports and no closures, and
           a handler <code>gen</code> would refuse has nowhere to go.
           Every handler must use the language in the
-          <code>tutuca/script</code> block. You keep everything else, including
+          <code>logic:</code> section. You keep everything else, including
           the checks. The diagnostics below the preview are the same ones
           <code>tutuca gen</code> reports. They have the same line and
           column numbers.
@@ -326,7 +326,7 @@ let counter = counter_component()</code></pre>
         <p>
           This is a list of entries. You can filter by category and role, sort
           the entries, and solo or unsolo an entry with alt-click. After mount,
-          the app raises an <code>intent lex</code> to load the data. A handler
+          the app raises an <code>ask(…, ~route: lex)</code> to load the data. A handler
           on the module answers the intent.
         </p>
         <mb-playground

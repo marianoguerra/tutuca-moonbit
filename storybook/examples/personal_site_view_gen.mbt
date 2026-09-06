@@ -223,7 +223,7 @@ pub let ps_entry_common_style : String = ""
 pub let ps_entry_global_style : String = ""
 
 ///|
-/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 pub(all) enum PsEntryCompute {
   IsSpanish
   LangFlag
@@ -544,7 +544,7 @@ pub let root_common_style : String = ""
 pub let root_global_style : String = ""
 
 ///|
-/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 pub(all) enum RootCompute {
   HasActiveFilters
 } derive(Eq, @debug.Debug)

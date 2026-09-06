@@ -6,6 +6,69 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### The skill is written in `.tutu`, and five holes the writing found
+
+Every view block in `skill/tutuca/**` is a `.tutu` — 90 of them — and
+`check-skill` reads them through the same lowering the CLI runs, so a block
+that would not compile fails the build. It went from 4/30 sections to 72/72.
+The prose went with them: `spec:` / `logic:` / `view:` / `fixtures:` /
+`tests:`, `~on_click`, `it.field`, `name(…)`, `dyn.name`, and the answer
+names `<name>_ok` / `<name>_failed` / `<name>_unhandled`.
+
+Converting them is what found the following. Each is a construct the old
+notation could write and the new one could not, or could write and not mean:
+
+- **A loop inside a `<select>` or a table was silently stripped.** The render
+  ops compile to an `<x>` tag, and an HTML parser drops an unknown tag inside
+  an element whose content model names its children. The old notation made the
+  author write the workaround by hand; the printer knows the parent tag, so it
+  writes it itself. `storybook/examples/pseudo_x` had an EMPTY `<tbody>` in the
+  tree it generates — the repo's own example for this, broken by the conversion
+  and green.
+- **A macro's slots had no spelling.** `@slot` printed a literal `<slot>`
+  element and a named slot had no form at all, so a call's children went
+  nowhere. `@slot` and `@slot("name")` declare, `@fill("name"){…}` fills, and
+  the converter REFUSES a macro whose body has one rather than dropping it.
+- **A protocol's `provide` and `lookup` had no line**, in either direction.
+- **`set_at` lowered to `set_at`**, which is not a collection operation, so a
+  converted file did not compile. `equiv` read a script block that does not
+  parse as an empty handler list — it compared unequal for the right reason and
+  said the wrong thing about it. It reports the parse failure now.
+- **A generated mutator's name is snake_case**, like the field it is derived
+  from. `remove_in_items_at` was a name the notation renamed on its way in with
+  nothing answering it at run time; `mutator_name` builds the name the notation
+  can write.
+- **A nested read is refused where it cannot be answered, not where it is
+  printed.** `it.holds.body` reads a held instance through the property door,
+  which a `logic:` statement may do and a view slot may not — and the printer
+  refused both, so a card that reads through a child could not be written.
+
+Also: a `provide`'s NAME is not renamed (a provide and the lookup that finds it
+are paired by string), a deep event path (`e.target.dataset.rowId`) reaches
+more than two steps, a `new` run whose `cur` is filled by anything but
+`cur.<field> = …` is refused instead of dropped, a macro name with a hyphen
+becomes one with an underscore, and `intent` is gone as an effect verb — it
+was in the arity table and not in the vocabulary, so it parsed and printed
+back as a word nothing lowers.
+
+Every diagnostic an author reads names the notation they write: `spec:` rather
+than `<script type="tutuca/spec">`, `it.name := v` rather than `.name = v`,
+`macro icon(…):` rather than `<template id="macro:icon">`.
+
+### The card gate had gone blind, and a card had gone stale behind it
+
+`tutucard/build/run-tests.mjs` and `check-examples.mjs` collected cards by
+`.endsWith(".html")`. Every card in the tree is a `.tutu`, so the two gates
+had been running over the starter cards in `tutucard/web/examples.js` and
+nothing else — 68 scenes where there are 121, with
+`tutucard/examples/`, `playground/site/cards/` and `demo/universal/std/`
+contributing none.
+
+Behind the blind spot: the `intents` starter card still answered `rowsOk` /
+`rowsError`, the spellings the answer names left when they became
+`<name>_ok` / `<name>_failed`. Its two intent scenes had been failing since,
+and the gate that would have said so could not see the ones that pass either.
+
 ### The repo is written in `.tutu`
 
 Every view file in the repository is a `.tutu` — 85 of them, plus the two
@@ -3696,7 +3759,7 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   something answers. A route is a list of legs: `dyn` walks the dispatch path
   from the sender's PARENT up to the root, `lex` walks the handlers registered
   on the scope chain, and a bare `intent` takes `dyn lex`. What v1 spelled
-  `bubble` is `intent dyn`; what it spelled `request` is `intent lex`. The verb
+  `bubble` is `ask(…, ~route: dyn)`; what it spelled `request` is `ask(…, ~route: lex)`. The verb
   no longer decides which scope answers — the route does, and it is written at
   the call site where the decision is.
 

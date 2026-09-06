@@ -5,9 +5,9 @@ blocks or debugging CSS that silently doesn't apply.
 
 ## Where styles live
 
-Styles live in the view file: a `<style>` inside a `<template>` is that view's
+Styles live in the view file: an `@style{…}` inside a view is that view's
 style, one at file level is the component's `common_style`, and one marked
-`data-global` is its `global_style`.
+`~global` is its `global_style`.
 
 ```tutu
 spec:

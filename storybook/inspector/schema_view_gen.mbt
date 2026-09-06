@@ -135,7 +135,7 @@ pub let schema_branch_common_style : String = ""
 pub let schema_branch_global_style : String = ""
 
 ///|
-/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 pub(all) enum SchemaBranchCompute {
   LabelCssClass
 } derive(Eq, @debug.Debug)

@@ -154,7 +154,7 @@ pub(all) struct SchemaInfo {
   /// Constant element ids — the selectors a test addresses.
   ids : Array[String]
   view_names : Array[String]
-  /// Named fixtures from the `tutuca/fixtures` block.
+  /// Named fixtures from the `fixtures:` section.
   init_names : Array[String]
   protocols : Array[ProtocolInfo]
   implements : Array[String]
@@ -179,7 +179,7 @@ declare pub fn FieldInfo::default(self : FieldInfo) -> Value
 
 ///|
 /// The name of a field's generated mutator: `mutator_name("set", "count")` is
-/// `"setCount"`. One home for a convention two unrelated places must agree on.
+/// `"set_count"`. One home for a convention two unrelated places must agree on.
 declare pub fn mutator_name(verb : String, field : String) -> String
 
 ///|

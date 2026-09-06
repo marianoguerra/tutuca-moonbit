@@ -650,16 +650,16 @@ fn member_mutator_name(
   match (operation, kind) {
     ("clear", _) => Some(@tutuca.mutator_name("reset", name))
     ("push", _) => Some(@tutuca.mutator_name("pushIn", name))
-    ("insertAt", _) => Some(@tutuca.mutator_name("insertIn", name) + "At")
-    ("setAt" | "set", _) => Some(@tutuca.mutator_name("setIn", name) + "At")
-    ("deleteAt", _) => Some(@tutuca.mutator_name("deleteIn", name) + "At")
-    ("removeAt", _) => Some(@tutuca.mutator_name("removeIn", name) + "At")
+    ("insertAt", _) => Some(@tutuca.mutator_name("insertIn", name) + "_at")
+    ("setAt" | "set", _) => Some(@tutuca.mutator_name("setIn", name) + "_at")
+    ("deleteAt", _) => Some(@tutuca.mutator_name("deleteIn", name) + "_at")
+    ("removeAt", _) => Some(@tutuca.mutator_name("removeIn", name) + "_at")
     ("add", _) => Some(@tutuca.mutator_name("addIn", name))
     ("toggle", _) => Some(@tutuca.mutator_name("toggleIn", name))
     ("delete", FSet) => Some(@tutuca.mutator_name("deleteIn", name))
     ("remove", FSet) => Some(@tutuca.mutator_name("removeIn", name))
-    ("delete", _) => Some(@tutuca.mutator_name("deleteIn", name) + "At")
-    ("remove", _) => Some(@tutuca.mutator_name("removeIn", name) + "At")
+    ("delete", _) => Some(@tutuca.mutator_name("deleteIn", name) + "_at")
+    ("remove", _) => Some(@tutuca.mutator_name("removeIn", name) + "_at")
     _ => None
   }
 }

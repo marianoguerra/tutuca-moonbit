@@ -2,7 +2,7 @@
 // its spec block, at runtime.
 //
 // A domain has two doors and this is where both are pinned. The first is the
-// field write itself, which turns down `setCurrentIndex 99` naming the field;
+// field write itself, which turns down `set_currentIndex 99` naming the field;
 // the second is after the transition, which is what catches the OTHER half of
 // the same relation — shrinking `items` under a `currentIndex` that was fine.
 // Neither door catches both cases, which is why there are two.
@@ -144,7 +144,7 @@ test "the refusal names the FIELD and says what it wanted" {
   assert_eq(refused.length(), 1)
   assert_eq(refused[0].code, OutOfRange)
   assert_eq(refused[0].rule, "currentIndex")
-  assert_eq(refused[0].asked, "setCurrentIndex")
+  assert_eq(refused[0].asked, "set_currentIndex")
   assert_eq(
     refused[0].sentence,
     "`currentIndex` is 99, which is not an index of `items` (3 items)",
@@ -153,7 +153,7 @@ test "the refusal names the FIELD and says what it wanted" {
 
 ///|
 test "the second door: a write that invalidates a DIFFERENT field" {
-  // `setItems []` says nothing about `currentIndex`, so the first door has no
+  // `set_items []` says nothing about `currentIndex`, so the first door has no
   // reason to look at it — the write is about `items`. What it leaves behind
   // is `currentIndex: 0` over an empty list, and the after-the-transition
   // check is the one that sees it.
@@ -230,7 +230,7 @@ test "the rest of the vocabulary, over values" {
     "lo": Num(2),
   }
   // A set is Map-backed, and a key holding false is the same non-membership
-  // an absent key is — which is what `toggleIn` produces on the way out.
+  // an absent key is — which is what `toggle_in` produces on the way out.
   assert_true(@tutuca.domain_holds(DMemberOf(field="tags"), Str("red"), fields))
   assert_false(
     @tutuca.domain_holds(DMemberOf(field="tags"), Str("blue"), fields),

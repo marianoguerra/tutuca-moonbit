@@ -46,51 +46,51 @@ let unanswered : @harness.MemHarness = @benchmarks.mount_counter()
 // --- the `dyn` leg: one hop per ancestor ------------------------------------
 
 ///|
-test "bench intent dyn depth 1" (it : @bench.T) {
+test "bench ask dyn depth 1" (it : @bench.T) {
   it.bench(() => it.keep(@benchmarks.intent_dyn(chain_1, 1)))
 }
 
 ///|
-test "bench intent dyn depth 4" (it : @bench.T) {
+test "bench ask dyn depth 4" (it : @bench.T) {
   it.bench(() => it.keep(@benchmarks.intent_dyn(chain_4, 4)))
 }
 
 ///|
-test "bench intent dyn depth 16" (it : @bench.T) {
+test "bench ask dyn depth 16" (it : @bench.T) {
   it.bench(() => it.keep(@benchmarks.intent_dyn(chain_16, 16)))
 }
 
 ///|
-test "bench intent dyn depth 64" (it : @bench.T) {
+test "bench ask dyn depth 64" (it : @bench.T) {
   it.bench(() => it.keep(@benchmarks.intent_dyn(chain_64, 64)))
 }
 
 // --- the selector walk that finds the element, for subtracting ---------------
 
 ///|
-test "bench intent dyn find 64" (it : @bench.T) {
+test "bench ask dyn find 64" (it : @bench.T) {
   it.bench(() => it.keep(@benchmarks.find_cost(chain_64, ".head")))
 }
 
 // --- the `lex` leg: one hop per DECLINING handler ---------------------------
 
 ///|
-test "bench intent lex declines 0" (it : @bench.T) {
+test "bench ask lex declines 0" (it : @bench.T) {
   it.bench(() => it.keep(@benchmarks.intent_lex(lex_0)))
 }
 
 ///|
-test "bench intent lex declines 4" (it : @bench.T) {
+test "bench ask lex declines 4" (it : @bench.T) {
   it.bench(() => it.keep(@benchmarks.intent_lex(lex_4)))
 }
 
 ///|
-test "bench intent lex declines 16" (it : @bench.T) {
+test "bench ask lex declines 16" (it : @bench.T) {
   it.bench(() => it.keep(@benchmarks.intent_lex(lex_16)))
 }
 
 ///|
-test "bench intent lex declines 48" (it : @bench.T) {
+test "bench ask lex declines 48" (it : @bench.T) {
   it.bench(() => it.keep(@benchmarks.intent_lex(lex_48)))
 }
 

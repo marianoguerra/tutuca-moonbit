@@ -39,7 +39,7 @@ const editor = createEditor({ parent: $("#editor"), doc: window.STARTER || "", o
 const viewEditor = createEditor({
   parent: $("#view-editor"),
   doc: window.STARTER_VIEW || "",
-  lang: "html",
+  lang: "tutu",
   onRun: run,
   onChange: () => scheduleGenerate(),
 });

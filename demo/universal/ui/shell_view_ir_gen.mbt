@@ -18,7 +18,7 @@
 // data-cid onto it.
 
 ///|
-/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// This file's `spec:` section, as source, with its
 /// doc comments removed.
 ///
 /// The schema each component carries is this block's PROJECTION, and the
@@ -160,7 +160,7 @@ pub fn picker_row_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// The dispatches the `<script type="tutuca/script">` block answers.
+/// The dispatches the file's `logic:` section answers.
 ///
 /// Composed AHEAD of the author's `update~`, which stays optional and is
 /// consulted only for a name this does not answer. GENERATED — edit the
@@ -217,7 +217,7 @@ fn picker_row_compute_label(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn picker_row_inline_compute() -> Map[
   String,
@@ -365,7 +365,7 @@ pub fn component_picker_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// The dispatches the `<script type="tutuca/script">` block answers.
+/// The dispatches the file's `logic:` section answers.
 ///
 /// Composed AHEAD of the author's `update~`, which stays optional and is
 /// consulted only for a name this does not answer. GENERATED — edit the
@@ -541,7 +541,7 @@ pub fn card_row_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// The dispatches the `<script type="tutuca/script">` block answers.
+/// The dispatches the file's `logic:` section answers.
 ///
 /// Composed AHEAD of the author's `update~`, which stays optional and is
 /// consulted only for a name this does not answer. GENERATED — edit the
@@ -898,7 +898,7 @@ pub fn shell_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// The dispatches the `<script type="tutuca/script">` block answers.
+/// The dispatches the file's `logic:` section answers.
 ///
 /// Composed AHEAD of the author's `update~`, which stays optional and is
 /// consulted only for a name this does not answer. GENERATED — edit the
@@ -1000,7 +1000,7 @@ fn shell_compute_edit_label(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn shell_inline_compute() -> Map[
   String,

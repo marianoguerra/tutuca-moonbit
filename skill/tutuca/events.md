@@ -49,7 +49,7 @@ are three:
 | Written  | Reads                                     |
 | -------- | ----------------------------------------- |
 | `e.…`    | the DOM event                             |
-| `.field` | this component's state                    |
+| `it.field` | this component's state                    |
 | `~bind`  | a binding — `@key`, `@value.x`            |
 
 Written args arrive in the handler's `args` array in template order — pattern-match
@@ -108,7 +108,7 @@ assignment, and the generated action carries a checked coercion. An empty,
 malformed, fractional integer, non-finite, or out-of-range numeric edit does
 not dispatch the setter, so it leaves the previous field value intact.
 
-Generation refuses `~bind` when its target is not a direct `.field`, when it
+Generation refuses `~bind` when its target is not a direct `it.field`, when it
 sits under `@each`, when the input `:type` is dynamic, when a select is
 `multiple`, when the field is not one of the scalar types above, or when the
 element/type combination is wrong. It also refuses an explicit `value` or
@@ -154,7 +154,7 @@ A dropped file's `id` is how a handler names it again: the `File` itself is a
 browser object and never becomes a `Value`, so the backend keeps the last
 drop's files and a host reads one by id (the wasm bridge's `load_dropped`,
 `globalThis.__tutucaDroppedFile(id)` on js). That is what lets a page take a
-dropped file without a listener of its own — `@on.drop="load e.value"` is an
+dropped file without a listener of its own — `~on_drop: load(e.value)` is an
 ordinary handler.
 
 For numeric inputs, prefer `e.valueAsInt` / `e.valueAsFloat` to skip the string
@@ -226,7 +226,7 @@ Two more rules worth holding:
 > what it is for — and the `&Ctx` reaches an `update` arm as the third
 > parameter, never as an argument.
 
-An `e.` path is refused **outside** an argument slot: `@text="e.value"` is a
+An `e.` path is refused **outside** an argument slot: `@(e.value)` is a
 render-time read of an event that is not happening.
 
 ## Generated `Msg` payload types
@@ -237,7 +237,7 @@ When the views are generated (`gen`), each `@on` name becomes a case of the
 
 | Written in the template | Payload type in `<Comp>Msg` |
 | ----------------------- | --------------------------- |
-| `'literal'` / `1` / `true` | `String` / `Double` / `Bool` |
+| `"literal"` / `1` / `true` | `String` / `Double` / `Bool` |
 | `e.value` | `String` — but `Bool` on `<input type="checkbox">` and `@tutuca.Value` on `<input type="file">` (the host element's static `type` decides) |
 | `e.key` | `String` |
 | `e.valueAsInt`, `e.valueAsFloat`, `e.keyCode` | `Double` |
@@ -251,24 +251,24 @@ and nothing narrows it: the DOM property table could answer for a rooted read,
 but not for a path through `detail` or `dataset`, where the shape is the
 application's.
 
-So `~on_click="chooseTab 'edit'"` generates `ChooseTab(String)` (unwrapped —
+So `~on_click: choose_tab("edit")` generates `ChooseTab(String)` (unwrapped —
 match `Some(ChooseTab(tab))`, not `Some(ChooseTab(Str(tab)))`),
 `~on_input="markDone e.value"` on a checkbox generates `MarkDone(Bool)`, and
 `~on_click="dropRow @key"` generates `DropRow(@tutuca.Value)`.
 
 > These are MESSAGES, and each needs an arm to answer it. A name that happens
-> to be a generated mutator — `setTab`, `removeInItemsAt` — is still only a
+> to be a generated mutator — `set_tab`, `remove_in_items_at` — is still only a
 > message here, and no arm answers it: to reach the mutator, WRITE the field
-> (`.tab = 'edit'`, `.items.removeAt @key`). `gen` reports the confusion.
+> (`it.tab := "edit"`, `it.items.delete_at(key)`). `gen` reports the confusion.
 Two call sites that disagree on an argument's shape join to `@tutuca.Value`. At
 runtime, arguments that don't match the inferred shape land in
 `Unknown(name, args)` with the raw `Array[@tutuca.Value]`.
 
 > The `e.value` inference reads the host element's **static** `type` attribute,
 > matching what the glue delivers (checkbox → the checked state, file → the
-> metadata `Map` / `Null`). An input whose `type` is dynamic (`:type=".kind"`)
+> metadata `Map` / `Null`). An input whose `type` is dynamic (`~type: it.kind`)
 > keeps the default `String` — if such an input can render as a checkbox at
-> runtime, write the property from the view (`.kind = e.value`) or take it in a
+> runtime, write the property from the view (`it.kind := e.value`) or take it in a
 > raw `Receive(name, args)` arm rather than a typed case.
 
 ## Event modifiers
@@ -328,7 +328,7 @@ view:
 > bubbled to it, and the component's own handler still fires. What `+stop`
 > keeps in is everything ABOVE the mount: a host page's document listener, an
 > outer shell's delegated dispatch. Inside one app, a child cannot silence a
-> parent's `@on.` by stopping — route around it in state instead.
+> parent's `~on_*` by stopping — route around it in state instead.
 
 Both effects need the live event object; a test's or harness's `DomEvent`
 carries none, and both degrade to no-ops there rather than crashing a dispatch.
@@ -371,7 +371,7 @@ grab the node from host/glue code and `addEventListener` on it. A listener
 attached from outside the component runs outside the handler model: no
 new-state return, no transactor batching, and the mutation is invisible to the
 component that owns the state. For any event with a real element in the tree,
-`@on.` is the only entry point you need. Genuinely external inbound sources
+`~on_*` is the only entry point you need. Genuinely external inbound sources
 (WebSocket, `postMessage`, timers) have no element to bind — route those through
 `app.send_at_root` instead (see
 [messages-and-intents.md](./messages-and-intents.md)).

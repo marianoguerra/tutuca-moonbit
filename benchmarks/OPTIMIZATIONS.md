@@ -965,15 +965,15 @@ node benchmarks/report.mjs --file intent_bench_test.mbt [--target native]
 |--------------------------|----------|----------|
 | `dispatch answered`      |  8.43 µs | 11.02 µs |
 | `dispatch unanswered`    |  0.24 µs |  0.34 µs |
-| `intent lex declines 0`  |  9.44 µs | 13.82 µs |
-| `intent lex declines 4`  |  9.44 µs | 14.06 µs |
-| `intent lex declines 16` | 10.18 µs | 14.80 µs |
-| `intent lex declines 48` | 11.36 µs | 16.55 µs |
-| `intent dyn depth 1`     |  1.73 ms |  3.10 ms |
-| `intent dyn depth 4`     |  2.07 ms |  3.15 ms |
-| `intent dyn depth 16`    |  1.97 ms |  2.39 ms |
-| `intent dyn depth 64`    |  2.98 ms |  3.25 ms |
-| `intent dyn find 64`     |  1.16 µs |  1.75 µs |
+| `ask lex declines 0`  |  9.44 µs | 13.82 µs |
+| `ask lex declines 4`  |  9.44 µs | 14.06 µs |
+| `ask lex declines 16` | 10.18 µs | 14.80 µs |
+| `ask lex declines 48` | 11.36 µs | 16.55 µs |
+| `ask dyn depth 1`     |  1.73 ms |  3.10 ms |
+| `ask dyn depth 4`     |  2.07 ms |  3.15 ms |
+| `ask dyn depth 16`    |  1.97 ms |  2.39 ms |
+| `ask dyn depth 64`    |  2.98 ms |  3.25 ms |
+| `ask dyn find 64`     |  1.16 µs |  1.75 µs |
 
 **Claim 1 — a name nothing answers costs one lookup.** It holds, with room to
 spare: an unanswered dispatch is **2.8% of an answered one** on wasm-gc and

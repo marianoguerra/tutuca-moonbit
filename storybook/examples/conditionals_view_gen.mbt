@@ -128,7 +128,7 @@ pub let traffic_light_common_style : String = ""
 pub let traffic_light_global_style : String = ""
 
 ///|
-/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 pub(all) enum TrafficLightCompute {
   Light
 } derive(Eq, @debug.Debug)

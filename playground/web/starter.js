@@ -4,7 +4,7 @@
 // (js `main` self-mount, or the wasm-gc export wrappers) around it, so the SAME
 // source runs on both backends. Ctrl/⌘+Enter to run.
 //
-// The default idiom is AHEAD-OF-TIME views: the View tab holds the `.html`,
+// The default idiom is AHEAD-OF-TIME views: the View tab holds the `.tutu`,
 // `tutuca gen` turns it into the module shown in the Generated tab
 // (compiled as part of THIS package), and the Component tab references the
 // generated `<comp>_views()` builder and the typed `<Comp>Msg` it declares.
@@ -15,39 +15,37 @@ const EXAMPLES = {
   // The default example. The view lives in the View tab; the component reads
   // the compiled tree and the message enum generated from its @on handlers.
   Counter: {
-    view: `<!-- Edit this and the Generated tab updates; the component tab sees the
-     names it declares. Every half of the component is here — the state, the
-     behaviour, and the view — and the component tab is what is left over. -->
+    view: `// Edit this and the Generated tab updates; the component tab sees the
+// names it declares. Every half of the component is here — the spec, the
+// logic, and the view — and the component tab is what is left over.
+spec:
+  Counter:
+    // CounterState, its zero(), and its @component.Fields impl (schema +
+    // codec) are generated from this section, so the component tab never
+    // writes a codec by hand.
+    field count :: Int
+    field label :: String
 
-<!-- The state: CounterState, its zero(), and its @component.Fields impl
-     (schema + codec) are generated from this block, so the component tab
-     never writes a codec by hand. -->
-<script type="tutuca/spec">
-  state Counter {
-    count : Int
-    label : String
-  }
-</script>
+    message add(Int)
 
-<!-- The behaviour. \`d\` is typed by the CALL SITES below — both pass a
-     number — and this block compiles into the update the wrapper passes.
-     Write a handler it cannot compile and the Generated tab says which one,
-     by name; that one goes in the component tab as an \`update~\`. -->
-<script type="tutuca/script">
-  receive add(d) {
-    .count += d
-  }
-</script>
+logic:
+  Counter:
+    // \`d\` is typed by the CALL SITES below — both pass a number — and this
+    // section compiles into the update the wrapper passes. Write a handler it
+    // cannot compile and the Generated tab says which one, by name; that one
+    // goes in the component tab as an \`update~\`.
+    receive add(d):
+      it.count += d
 
-<template id="Counter">
-  <style>display:flex;gap:.5rem;align-items:center;font-size:1.5rem</style>
-  <div>
-    <button id="dec" @on.click="add -1">-</button>
-    <b id="count" @text=".count"></b>
-    <button id="inc" @on.click="add 1">+</button>
-    <span style="font-size:.8rem;opacity:.6" @text=".label"></span>
-  </div>
-</template>
+view:
+  Counter:
+    @style{display:flex;gap:.5rem;align-items:center;font-size:1.5rem}
+    @div{
+      @button(~id: "dec", ~on_click: add(-1)){-}
+      @b(~id: "count"){@(it.count)}
+      @button(~id: "inc", ~on_click: add(1)){+}
+      @span(~style: "font-size:.8rem;opacity:.6"){@(it.label)}
+    }
 `,
     code: `// The view lives in the View tab. \`tutuca gen\` turns its three
 // blocks into the module in the Generated tab, which is compiled as part of
@@ -77,23 +75,23 @@ fn build() -> @component.ModuleDef {
   // the component has no @on Input handlers at all, and no update. The View tab
   // still compiles ahead of time.
   Toggle: {
-    view: `<script type="tutuca/spec">
-  state Panel {
-    open : Bool
-  }
-</script>
+    view: `spec:
+  Panel:
+    field open :: Bool
 
-<template id="Panel">
-  <style>font-family:system-ui</style>
-  <section>
-    <button @on.click=".open = not .open" @text="\$label"></button>
-    <p @show=".open" style="padding:.5rem;border:1px solid #ccc;margin-top:.5rem">
-      Now you see me. Toggle again to hide.
-    </p>
-  </section>
-</template>
+view:
+  Panel:
+    @style{font-family:system-ui}
+    @section{
+      @button(~on_click: it.open := !it.open){@(label())}
+      @show(it.open){
+        @p(~style: "padding:.5rem;border:1px solid #ccc;margin-top:.5rem"){
+          Now you see me. Toggle again to hide.
+        }
+      }
+    }
 `,
-    code: `// The button writes '.open' back inverted; \$label is a compute. No
+    code: `// The button writes 'it.open' back inverted; label() is a compute. No
 // hand-written handlers, no update — the view drives it all.
 
 fn build() -> @component.ModuleDef {
@@ -114,24 +112,22 @@ fn build() -> @component.ModuleDef {
 `,
   },
 
-  // Two-way binding: :value reads the field, @on.input writes it back.
-  // @text mirrors it live. No handlers needed.
+  // Two-way binding: ~value reads the field, ~on_input writes it back.
+  // A hole mirrors it live. No handlers needed.
   "Text input": {
-    view: `<script type="tutuca/spec">
-  state Greeter {
-    name : String
-  }
-</script>
+    view: `spec:
+  Greeter:
+    field name :: String
 
-<template id="Greeter">
-  <div style="font-family:system-ui;display:flex;flex-direction:column;gap:.5rem">
-    <input :value=".name" @on.input=".name = e.value" placeholder="your name">
-    <p>Hello, <b @text=".name"></b>!</p>
-  </div>
-</template>
+view:
+  Greeter:
+    @div(~style: "font-family:system-ui;display:flex;flex-direction:column;gap:.5rem"){
+      @input(~value: it.name, ~on_input: it.name := e.value, ~placeholder: "your name")
+      @p{Hello, @b{@(it.name)}!}
+    }
 `,
-    code: `// :value reads the field and @on.input writes it back, which is the whole
-// two-way bind. @text mirrors it live. No handlers needed.
+    code: `// ~value reads the field and ~on_input writes it back, which is the whole
+// two-way bind. A hole mirrors it live. No handlers needed.
 
 fn build() -> @component.ModuleDef {
   let greeter = greeter_component(
@@ -155,7 +151,7 @@ fn build() -> @component.ModuleDef {
 //
 // No View tab means no generator, so this state writes the three
 // @component.Fields methods by hand — the same contract gen emits from
-// a \`tutuca/spec\` block. That is the whole cost of leaving the AOT path.
+// a \`spec:\` section. That is the whole cost of leaving the AOT path.
 struct CounterState {
   count : Int
 }

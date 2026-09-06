@@ -52,19 +52,19 @@ fn selector_comp() -> @component.Component {
 
 `provide` / `lookup` are **wiring, not behaviour**: they say where a value
 comes from, which is a fact about how this component was registered rather than
-about what it does, so they are `component()` arguments and the script block has
+about what it does, so they are `component()` arguments and `logic:` has
 nothing to say about them.
 
 `provide` publishes a field under a name; a descendant's `lookup` names that
-same name and resolves `*name` to the nearest binding above, falling back to
+same name and resolves `dyn.<name>` to the nearest binding above, falling back to
 the `default` expression when nothing is in scope (no default → `null`).
-`*name` works wherever a `.field` does, iteration and render targets included.
+`dyn.<name>` works wherever a `it.field` does, iteration and render targets included.
 The consumer never names the producer. Multiple providers may use the same
 name; the nearest one in the live render ancestry wins.
 
-A `provide` expression must be **addressable** (`.field` or `.seq[.key]`), and
+A `provide` expression must be **addressable** (`it.field` or `it.seq[key]`), and
 a bad one is dropped rather than raised — `ComponentStack::check_names` reports
-it as `PROVIDE_NOT_ADDRESSABLE`, so if `*name` reads as its fallback
+it as `PROVIDE_NOT_ADDRESSABLE`, so if `dyn.<name>` reads as its fallback
 everywhere, run the checks. This is the **read** side; to edit the
 producer's value through the dynamic, see
 [Edit through a dynamic target](edit-through-a-dynamic-target.md).

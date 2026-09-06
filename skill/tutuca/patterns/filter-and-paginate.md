@@ -12,9 +12,9 @@ view:
 ```
 
 All three handlers are MoonBit, and each for its own reason: `~loop_with` has
-no declaration kind in the script block; the count scan folds over the whole
+no declaration kind in `logic:`; the count scan folds over the whole
 sequence, which no expression in that language can do; and the rows are child
-component *instances*, whose fields are read through a path into `@value` that
+component *instances*, whose fields are read through a path into the loop binder that
 `gen` does not compile. This is the shape the split is meant to have —
 the block takes the ordinary five-sixths, and what is left is genuinely
 MoonBit's.

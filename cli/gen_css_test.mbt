@@ -193,7 +193,7 @@ test "collect_view_classes still refuses an @bind with no schema to read" {
     Ok(_) => abort("expected the schema-less @bind to fail")
   }
   assert_eq(shape.code, @cli.CODE_VIEW_GEN_FAILED)
-  assert_true(shape.message.contains("tutuca/spec"))
+  assert_true(shape.message.contains("`spec:` section"))
 }
 
 ///|

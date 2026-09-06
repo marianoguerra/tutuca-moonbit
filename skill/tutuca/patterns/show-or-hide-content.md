@@ -20,30 +20,30 @@ spec:
 
 view:
   Form:
-    @div{@show(it.is_open){@div{Details}} @hide(it.is_open){@p{(hidden when open)}} @comment{ boolean predicates for one-field checks } @show(it.items.is_empty()){@p{No results}} @show(it.query.is_truthy()){@p{Searching…}} @show((it.query == "detail")){@div{detail view}} @comment{ a pred of your own: `$name`, because this is a value position } @show(can_submit()){@button{Publish}} @comment{ on an <x> render op: wraps the produced node, no extra DOM element } @show(it.is_open){@(it.title)}}
+    @div{@show(it.is_open){@div{Details}} @hide(it.is_open){@p{(hidden when open)}} @comment{ boolean predicates for one-field checks } @show(it.items.is_empty()){@p{No results}} @show(it.query.is_truthy()){@p{Searching…}} @show((it.query == "detail")){@div{detail view}} @comment{ a pred of your own: `name(…)`, because this is a value position } @show(can_submit()){@button{Publish}} @comment{ around a hole or a render: wraps the produced node, no extra DOM element } @show(it.is_open){@(it.title)}}
 ```
 
 A conditional slot takes the same expression language a `pred` body does:
 the shape predicates `empty?`, `truthy?`, `null?`, the operators `not`, `and`,
 `or`, `is`, `is not`, `<`, `<=`, `>`, `>=`, `implies`, and the reading
 builtins — semantics in [core.md](../core.md) *Conditional
-Display*. Anything else is a `pred` in the spec block, read as `$name`; the
+Display*. Anything else is a `pred` in `spec:`, read as `name(…)`; the
 `$` sigil is what a value slot spells a callable with, and a bare `canSubmit`
 in a `@show` is a generation error. (Inside a body the same rule inverts: a
 `pred` is called BARE there, since nothing answers `$` once the render stack is
 gone.)
 
 A hidden element is **omitted from the output** entirely (not just visually
-hidden); the wrapper form (`show=` / `hide=` on `<x>`) conditionally emits the
+hidden); the wrapper form (`@show` / `@hide` around a hole or a render) conditionally emits the
 node with no surrounding element.
 
 The same `pred` is also what a contract attaches to — `receive publish requires
-canSubmit` in the script block refuses the transition and reports it, instead
+canSubmit` in `logic:` refuses the transition and reports it, instead
 of the view merely hiding the button. The rule and the clause live in different
 blocks on purpose: the rule is a fact about the form, the clause says when one
 handler applies (see
 [schema.md](../schema.md#contracts-requires--ensures--invariant)).
 
-A rule that reads a loop's `@value`, or one that takes an argument, is not
-about the component and stays in the script block —
+A rule that reads a loop's the loop binder, or one that takes an argument, is not
+about the component and stays in `logic:` —
 [filter-a-list.md](filter-a-list.md) is that case.

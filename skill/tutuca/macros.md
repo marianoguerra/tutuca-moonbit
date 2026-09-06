@@ -42,7 +42,7 @@ Inside the macro body a parameter is read by its bare name. An argument is a
 value like any other — see *Quoting & String Literals* in
 [core.md](./core.md) for the literal-vs-template rules.
 
-A `^param` is a value like any other, so it also works inside a conditional
+A a macro parameter is a value like any other, so it also works inside a conditional
 slot's expression — this is the `macro:row` idiom:
 
 ```tutu
@@ -54,7 +54,7 @@ view:
 ```
 
 It has to expand to a single token, which is already the rule everywhere `^` is
-written. A `logic:` section cannot write `^param` at all:
+written. A `logic:` section cannot write a macro parameter at all:
 a block is parsed once for the component rather than once per call site, so
 there is no frame to substitute from — pass the value in as a handler argument
 or read it as a field.
@@ -77,7 +77,7 @@ fn btn_rm_macro() -> @anode.Macro {
 
 > **Pass the handler name bare.** A macro declared in a view file is expanded
 > by `gen`, which refuses a decorated name in an event position:
-> *"in an event position a `$name` and a bare name are the SAME dispatch"*. A
+> *"in an event position a `name(…)` and a bare name are the SAME dispatch"*. A
 > bare name works in a file macro and in an `@anode.Macro` value alike, and
 > there is no case where a decoration buys anything in a handler.
 
@@ -86,7 +86,7 @@ use `ComponentStack::register_macros(macros)` **before**
 `compile_all()` — views are compiled against the scope's macros.
 
 Registry keys are lowercased on insert because the HTML parser already
-lowercases `<x:Tag>` to `<x:tag>`. `"Card"` and `"card"` both register
+lowercases `@Tag(…)` to `@tag(…)`. `"Card"` and `"card"` both register
 under `card`.
 
 ## Slots

@@ -23,7 +23,7 @@ Walk these top-down whenever you add or reshape a component:
 3. **How do these components talk?** Pick the narrowest channel that reaches the
    owner — see the ladder below.
 4. **Where does the outside world cross the boundary?** Outbound I/O goes through
-   `ask lex`; inbound external events go through
+   `ask(~route: lex)`; inbound external events go through
    `app.send_at_root` to the root. Keep the logic inside tutuca on both sides.
 
 ## Communication decision ladder
@@ -39,22 +39,22 @@ Reach for the *narrowest* channel that does the job, and only move further down
 the ladder when the one above can't express it:
 
 - **The component owns the state needed to respond** → write the property from
-  the view (`.open = not .open`) when that is the whole of it, and otherwise
+  the view (`it.open := !it.open`) when that is the whole of it, and otherwise
   answer it in an **`update` `Receive` arm** — either way it stays
   self-contained. See
   [core.md](./core.md) *Computed values & predicates*.
-- **You need to reach one known component** → **`send` / `sendAt` / `receive`**,
-  addressing a specific path (`sendAt &.email 'focus'`, or `ctx.at()` from
+- **You need to reach one known component** → **`send` / `send(…, ~to: …)` / `receive`**,
+  addressing a specific path (`send("focus", ~to: it.email)`, or `ctx.at()` from
   MoonBit; bare `send` targets self). See
   [messages-and-intents.md](./messages-and-intents.md) "When to send".
 - **An ancestor owns aggregate state** (a log, a selection, a total) →
-  **`ask dyn`**, which walks up toward the root; the first ancestor whose
+  **`ask(~route: dyn)`**, which walks up toward the root; the first ancestor whose
   `intent` handler replies ends the walk, and ancestors that only *record* it
   are observers. See
   [messages-and-intents.md](./messages-and-intents.md) "Intents — routes and legs".
 - **The work is async or host-side** (fetch, timer, storage, an external API) →
-  **`ask lex`**, which walks the scope-registered `IntentFn`s and routes the
-  answer back as `<name>Ok` / `<name>Failed` / `<name>Unhandled`. See
+  **`ask(~route: lex)`**, which walks the scope-registered `IntentFn`s and routes the
+  answer back as `<name>_ok` / `<name>_failed` / `<name>_unhandled`. See
   [messages-and-intents.md](./messages-and-intents.md) "The three outcomes".
 - **You don't know who should answer** → **a bare `ask`**, which takes the
   default `dyn lex` route: the ancestors, then the scope.
@@ -62,12 +62,12 @@ the ladder when the one above can't express it:
   **`app.send_at_root`**, which lands the inbound event on the root. See
   [messages-and-intents.md](./messages-and-intents.md) "Integrating with the outside world".
 - **A deep descendant needs a value owned far away** and nothing in between should
-  know about it → **`provide` / `lookup` (`*name`)** across the tree — the last
+  know about it → **`provide` / `lookup` (`dyn.<name>`)** across the tree — the last
   resort. See [advanced.md](./advanced.md).
 
 A compact worked version of the first four (a `Receive` arm for the component's
 own events, `send`/`receive`,
-`ask dyn`, `ask lex`) lives in
+`ask(~route: dyn)`, `ask(~route: lex)`) lives in
 [patterns/coordinate-components.md](./patterns/coordinate-components.md).
 
 ## Do's & Don'ts
@@ -77,8 +77,8 @@ own events, `send`/`receive`,
   of reuse and the unit of testing. → [patterns/render-a-child-component.md](./patterns/render-a-child-component.md)
 
 - **Don't add a `kind` / `type` field and branch the view on it. Do make one
-  component per kind and render it with `<x render=".item">`.** Conditional-on-kind
-  views grow into tangled `@if` chains; a component per kind keeps each view flat
+  component per kind and render it with `@render(it.item)`.** Conditional-on-kind
+  views grow into tangled a conditional attribute chains; a component per kind keeps each view flat
   and each concern isolated. This is also why pathing into nested data is barred —
   model the nested thing as a component instead. → [core.md](./core.md) "Common
   pitfalls" (Paths are not allowed in values) and
@@ -101,7 +101,7 @@ own events, `send`/`receive`,
   new state or `send`.) → [core.md](./core.md) "The value tree" and
   [messages-and-intents.md](./messages-and-intents.md) "When to send"
 
-- **Do reach for `provide` / `lookup` (`*name`) last** — only when a deep
+- **Do reach for `provide` / `lookup` (`dyn.<name>`) last** — only when a deep
   descendant needs a value owned far away and nothing in between should know about
   it. Dynamic bindings couple a consumer to a producer that may not be in scope.
   → [advanced.md](./advanced.md)
@@ -109,12 +109,12 @@ own events, `send`/`receive`,
 - **Do pick the channel by what you know (the ladder above). Don't raise an
   `intent` nothing on its route answers, and don't `send` to self when a plain
   expression would do.** `send` addresses one target you can name; `intent` names
-  a job and lets the route find who does it — and hears `<name>Unhandled` when
+  a job and lets the route find who does it — and hears `<name>_unhandled` when
   nobody does. → [messages-and-intents.md](./messages-and-intents.md) "The two
   channels"
 
 - **Do keep logic inside the tutuca app when integrating with the outside world.**
-  Route outbound work through `ask lex` and inbound external
+  Route outbound work through `ask(~route: lex)` and inbound external
   events through `app.send_at_root` to the root (which forwards deeper with
   `ctx.at()`), so handlers stay the single owner of state changes. **Don't
   overwrite the root state out of band or `addEventListener` outside the model** —
@@ -122,9 +122,9 @@ own events, `send`/`receive`,
   is invisible to the component that owns it. → [messages-and-intents.md](./messages-and-intents.md)
   "Integrating with the outside world" (and its ⚠️ note)
 
-- **Do handle every DOM event with tutuca's built-in `@on.` handlers — including
+- **Do handle every DOM event with tutuca's built-in `~on_*` handlers — including
   custom events fired by web components.** `~on_click`, `~on_input`,
-  `@on.<custom-event>` (the event `detail` surfaces as `e.value`) keep the event
+  `~on_<custom-event>` (the event `detail` surfaces as `e.value`) keep the event
   inside the model, so it flows through a handler and returns a new state.
   **Don't reach in from the outside with `addEventListener`** — a listener
   attached out of band mutates state the owning component can't see and bypasses
@@ -134,20 +134,20 @@ own events, `send`/`receive`,
 - **Do put a handler in the right bucket for its needs: an `update` arm for
   an event, `compute` for a pure read in a value position.** The split is
   about WHERE the handler is called from, not what it does: a `compute`
-  entry answers `@text="$label"`, where there is no event and no `ctx`; an
+  entry answers `@(label())`, where there is no event and no `ctx`; an
   event handler is a bare name and is answered in `update`, which gets the
   `ctx`. → [core.md](./core.md) "Common pitfalls"
 
 - **Do use inline predicates and property actions. Don't hand-write
   `isSelected` / `select` boilerplate.** A single field plus
-  `.activeSection is 'todo'` / `empty?` and a view that writes
-  `.activeSection = 'todo'` or `.open = not .open` often *is* the whole state
+  `it.active_section == "todo"` / `empty?` and a view that writes
+  `it.active_section := "todo"` or `it.open := !it.open` often *is* the whole state
   machine — no handler name, and nothing to answer it. → [core.md](./core.md)
   "Computed values & predicates" and "Field Types & Auto-generated API"
 
 - **Do remember a rendered child gets a clean namespace.** Parent `@` bindings
-  (`@each`, `~enrich_with`) don't cross a `<x render>` boundary — pass a value
-  across it with `*name`, not by assuming the binding leaks in. → [advanced.md](./advanced.md)
+  (`@each`, `~enrich_with`) don't cross a `@render` boundary — pass a value
+  across it with `dyn.<name>`, not by assuming the binding leaks in. → [advanced.md](./advanced.md)
 
 - **Do add a decoy view when a margaui class is assembled at runtime.** The margaui
   compiler only scans constant class literals — a class built by interpolation or
@@ -161,11 +161,11 @@ own events, `send`/`receive`,
 ## Smells & refactors
 
 - **Hand-written `isTodoSelected` / `selectTodo` handlers → predicate +
-  property write.** Replace `~on_click="selectTodo"` / `@show="$isTodoSelected"`
-  with `~on_click=".activeSection = 'todo'"` / `@show=".activeSection is 'todo'"`,
+  property write.** Replace `~on_click="selectTodo"` / `@show(is_todo_selected())`
+  with `~on_click: it.active_section := "todo"` / `@show(it.active_section == "todo")`,
   derive the current value from one field.
-- **A view that `@if`-branches on a `kind` field → one component per kind**, each
-  rendered with `<x render>`.
+- **A view that a conditional attribute-branches on a `kind` field → one component per kind**, each
+  rendered with `@render`.
 - **A value passed down through three components that don't use it → move the
   state up to the nearest common owner** and let the leaf render it directly; only
   if nothing in between should know it, use `provide` / `lookup`.
@@ -180,9 +180,9 @@ own events, `send`/`receive`,
 - [core.md](./core.md) — component skeleton, fields, directives, predicates, the
   verification recipe, and the "Common pitfalls" list.
 - [messages-and-intents.md](./messages-and-intents.md) — the channels in depth
-  (`send`/`sendAt`/`receive`, `intent` and its route, `forward`/`reply`/`fail`,
+  (`send`/`send(…, ~to: …)`/`receive`, `intent` and its route, `forward`/`reply`/`fail`,
   `send_at_root`) and integrating with the outside world.
-- [advanced.md](./advanced.md) — `provide` / `lookup` / `*name` and the
+- [advanced.md](./advanced.md) — `provide` / `lookup` / `dyn.<name>` and the
   clean-namespace boundary.
 - [patterns/coordinate-components.md](./patterns/coordinate-components.md),
   [patterns/share-state-across-the-tree.md](./patterns/share-state-across-the-tree.md),

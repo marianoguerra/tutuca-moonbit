@@ -1,5 +1,5 @@
 // Teaches send/receive messaging (`ctx.send`,
-// `ctx.at.field(..).send` + receive), tree recursion, and `intent dyn`.
+// `ctx.at.field(..).send` + receive), tree recursion, and `ask(…, ~route: dyn)`.
 //
 // PORT RULE — where a handler goes in the typed API.
 // A dispatched handler can always send messages, so a `methods.submit(ctx)`

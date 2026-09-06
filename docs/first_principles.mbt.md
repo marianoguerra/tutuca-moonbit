@@ -99,7 +99,7 @@ component is.
 ## 2. The value language: `Expr`, `Stack`, `eval`
 
 Attribute values in templates are a tiny expression language, one sigil per
-resolution rule — and it is the SAME language a `<script type="tutuca/script">`
+resolution rule — and it is the SAME language a `logic:` section
 block is written in, which is why there is one AST rather than a slot's and a
 block's:
 

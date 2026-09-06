@@ -32,12 +32,12 @@ view:
 
 A view slot NAMES things; it does not call them. `{(len .str)}` written in an
 attribute has nothing to interpolate — an expression belongs in a body, and
-`.strUpper` / `@len` is how the view reaches its result.
+`str_upper()` / `@len` is how the view reaches its result.
 
-Value slots take `.field`, `$handler`, or `~binding` — never a path
-(`.user.name` fails; a body may walk one, a slot may not). Multi-word strings
-**must** be quoted (`'flex gap-3'`) or written as a `$'…'` template
-(`$'btn {.kind}'`); a bare unquoted string returns `null`. Boolean HTML
+Value slots take `it.field`, `handler()`, or `~binding` — never a path
+(`it.user.name` fails; a body may walk one, a slot may not). Multi-word strings
+**must** be quoted (`"flex gap-3"`) or written as a `@str{…}` template
+(`@str{btn @(it.kind)}`); a bare unquoted string returns `null`. Boolean HTML
 attributes (`disabled`, `checked`, …) are auto-recognized — pass a boolean
 field.
 

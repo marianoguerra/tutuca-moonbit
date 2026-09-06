@@ -48,7 +48,7 @@ priv struct Checker {
   def : @statedef.StateDef
   prog : ProgramIndex
   view : String
-  /// The names the component's `tutuca/script` block answers with a `receive`
+  /// The names the component's `logic:` section answers with a `receive`
   /// or an `answer`. Only `bare_mutator` reads it, and only to stay quiet: a
   /// handler the block claims is a handler, whatever its name resembles.
   script_answers : Array[String]
@@ -144,62 +144,62 @@ fn Checker::declares_message(self : Checker, name : String) -> Bool {
 /// `component/instance.mbt`, over every shape `gen_mutators` installs.
 ///
 /// `set` and `reset` exist for every field; the collection operations depend
-/// on the kind; `<x>Len` and `hasIn<X>` only READ, so they are `$`-callables
+/// on the kind; `<x>_len` and `has_in_<x>` only READ, so they are callables
 /// and dispatching one does nothing at all.
 fn Checker::mutator_repair(self : Checker, name : String) -> String? {
   for field in self.def.fields {
     let f = field.name
     // Every field, whatever its type.
     if @tutuca.mutator_name("set", f) == name {
-      return Some("`.\{f} = <value>`")
+      return Some("`it.\{f} := <value>`")
     }
     if @tutuca.mutator_name("reset", f) == name {
-      return Some("`.\{f} = <its default>`")
+      return Some("`it.\{f} := <its default>`")
     }
     // A bool's `toggle<X>` has no path form — `.x.toggle` is not a property
     // action — so the write is the expression that says the same thing.
     if field.ty is TyBool && @tutuca.mutator_name("toggle", f) == name {
-      return Some("`.\{f} = not .\{f}`")
+      return Some("`it.\{f} := !it.\{f}`")
     }
-    if f + "Len" == name {
+    if f + "_len" == name {
       return Some(
-        "`$\{f}Len` in a value position — it answers a number rather than a state",
+        "`\{f}_len()` in a value position — it answers a number rather than a state",
       )
     }
     let ops : Array[(String, String, String)] = match field.ty {
       TyList(_) =>
         [
-          ("pushIn", "", "push <value>"),
-          ("insertIn", "At", "insertAt <key> <value>"),
-          ("setIn", "At", "setAt <key> <value>"),
-          ("deleteIn", "At", "deleteAt <key>"),
-          ("removeIn", "At", "removeAt <key>"),
+          ("pushIn", "", "push(<value>)"),
+          ("insertIn", "_at", "insert_at(<key>, <value>)"),
+          ("setIn", "_at", "set_at(<key>, <value>)"),
+          ("deleteIn", "_at", "delete_at(<key>)"),
+          ("removeIn", "_at", "remove(<key>)"),
         ]
       TyOMap(_) =>
         [
-          ("setIn", "At", "setAt <key> <value>"),
-          ("deleteIn", "At", "deleteAt <key>"),
-          ("removeIn", "At", "removeAt <key>"),
+          ("setIn", "_at", "set_at(<key>, <value>)"),
+          ("deleteIn", "_at", "delete_at(<key>)"),
+          ("removeIn", "_at", "remove(<key>)"),
         ]
       TySet | TyFlags(_, _) =>
         [
-          ("addIn", "", "add <member>"),
-          ("toggleIn", "", "toggle <member>"),
-          ("deleteIn", "", "delete <member>"),
-          ("removeIn", "", "remove <member>"),
+          ("addIn", "", "add(<member>)"),
+          ("toggleIn", "", "toggle(<member>)"),
+          ("deleteIn", "", "delete_at(<member>)"),
+          ("removeIn", "", "remove(<member>)"),
         ]
       _ => []
     }
     for op in ops {
       let (verb, suffix, path_op) = op
       if @tutuca.mutator_name(verb, f) + suffix == name {
-        return Some("`.\{f}.\{path_op}`")
+        return Some("`it.\{f}.\{path_op}`")
       }
     }
     if field.ty is (TySet | TyFlags(_, _)) &&
       @tutuca.mutator_name("hasIn", f) == name {
       return Some(
-        "`$\{name}` in a value position — it answers a boolean rather than a state",
+        "`\{name}()` in a value position — it answers a boolean rather than a state",
       )
     }
   }

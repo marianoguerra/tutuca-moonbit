@@ -27,11 +27,11 @@ view:
 ```
 
 An `enrich` writes `@name` bindings; every name it assigns becomes an
-`@`-prefixed binding for that item's subtree, on top of the `@key` / `@value`
+`@`-prefixed binding for that item's subtree, on top of the `@key` / the loop binder
 the loop already bound. It writes bindings and never state — that is the whole
 difference between it and a `receive`.
 
-`@value` is a binding with no declared type, so a builtin that needs one takes
+the loop binder is a binding with no declared type, so a builtin that needs one takes
 a coercer: `len (str @value)`, not `len @value`. A row's membership in a set
 elsewhere on the state is what `has` answers — the same key the generated
 `toggleInPicked` writes — and the answer becomes an ordinary binding the

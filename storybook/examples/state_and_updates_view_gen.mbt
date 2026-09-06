@@ -489,7 +489,7 @@ pub let show_hide_common_style : String = ""
 pub let show_hide_global_style : String = ""
 
 ///|
-/// Every `$name` the views call, plus the block's own `pred` / `compute` names — the bucket `compute~` keys.
+/// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 pub(all) enum ShowHideCompute {
   Label
 } derive(Eq, @debug.Debug)

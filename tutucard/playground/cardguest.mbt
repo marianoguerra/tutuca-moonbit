@@ -60,7 +60,7 @@ fn mount_failed(msg : String) -> String {
 /// which is what `App::new` taking a value makes possible. There is nothing for
 /// a wrapper to do here: the card is the whole of what this pane shows.
 ///
-/// `init` names one of the component's `tutuca/fixtures` fixtures, and "" means
+/// `init` names one of the component's `fixtures:` fixtures, and "" means
 /// "whatever the card would show a visitor" — which is the fixture marked
 /// `default` when there is one, and the schema's zero otherwise. A fixture is
 /// the whole envelope rather than its field map: `value` seeds the instance,
@@ -121,7 +121,7 @@ pub fn mount_compiled(
       None => {
         let names = loaded.init_names(component)
         return mount_failed(
-          "no `tutuca/fixtures` fixture called `" +
+          "no `fixtures:` fixture called `" +
           want +
           "` on `" +
           component +
@@ -149,7 +149,7 @@ pub fn mount_compiled(
   }
   scope.register_intent_handlers(@drive.intent_handlers(answers))
   // …and the page's own behind them, in the scope OUTSIDE the module's. The
-  // `lex` leg walks child -> parent, so a compiled card's `intent lex 'rows'`
+  // `lex` leg walks child -> parent, so a compiled card's `ask("rows", ~route: lex)`
   // is offered to its module's own handlers first — it registers none — and
   // then to these.
   scope.register_intent_handlers(playground_intents(slot, slot.gen))
@@ -203,7 +203,7 @@ pub fn mount_compiled(
   // they are what a person would have done to a card that had already loaded.
   //
   // The verbs are `testing/harness`'s, driving the BrowserNode this just
-  // mounted — the same eight a `tutuca/test` scene uses against the in-memory
+  // mounted — the same eight a `tests:` scene uses against the in-memory
   // DOM. A step whose selector matched nothing is a fixture that cannot be
   // shown, so it fails the mount rather than leaving a half-driven card on the
   // page pretending to be the state it names.
@@ -240,7 +240,7 @@ pub fn mount_compiled(
 /// checked by something with no page at all, which is what a build step and an
 /// agent both are.
 ///
-/// `scenes_json` overrides the card's own `<script type="tutuca/test">` block.
+/// `scenes_json` overrides the card's own `tests:` section.
 /// Empty means "use the block", and an override is what lets a card that
 /// declares no tests be driven anyway — the case an agent is in when it has
 /// just written one and wants to see what it does.

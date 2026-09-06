@@ -40,7 +40,7 @@ You can browse and install extra skills here:
 
 - Files named `*_gen.mbt` are GENERATED and checked in; never hand-edit one.
   Change its source and rerun the task that produces it (`gen` for a
-  `*_view_gen.mbt` from its `.html`; `skill-embed` for
+  `*_view_gen.mbt` from its `.tutu`; `skill-embed` for
   `cli/skill_assets_gen.mbt` from `skill/tutuca/`). Each generating task ends
   in `moon fmt`, so what is checked in is already what fmt produces and a
   later `moon fmt` leaves it alone — run the task, not the CLI directly.
@@ -90,7 +90,7 @@ binary inside the `_build` they delete.
 | `dist` | build all targets and assemble a self-contained runnable `dist/` |
 | `check` / `test` / `build` | across wasm-gc, js and native |
 | `fmt` | `moon fmt` then `moon info` — format and regenerate every `.mbti` |
-| `gen` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources, then drift-check them. A stale one type-checks and tests green, which is why the check exists |
+| `gen` | regenerate the checked-in `*_view_gen.mbt` from their `.tutu` sources, then drift-check them. A stale one type-checks and tests green, which is why the check exists |
 | `setup` | `npm install` (happy-dom for js tests) + enable the git hooks |
 
 **That is the whole table, deliberately.** `cmd/dev` with no task prints every
@@ -106,7 +106,7 @@ tasks need the network, so they are not in `ci` — see `css/README.md`.
 
 While editing views, `tutuca watch [path…]` regenerates them on every save
 (mizchi/fswatch; native only, since the watcher is the shell's job). It
-manages the `.html` files that already have a generated sibling, so pointing
+manages the `.tutu` files that already have a generated sibling, so pointing
 it at a project root does not try to compile `index.html`. Add
 `--tailwind-css`/`--margaui-css <file>` and it rewrites that stylesheet too,
 once per settled batch over every watched view.
@@ -188,7 +188,7 @@ The raw `moon` commands below still work and are what the tasks run underneath.
 `moon test` is the runner — there is no `tutuca test`, and MoonBit's built-ins
 cover the whole jest surface. Component tests are ordinary `test { ... }` blocks
 over `marianoguerra/tutuca/testing/harness`; a card declares its own as a
-`<script type="tutuca/test">` block that `tutucard/drive` runs.
+`tests:` section that `tutucard/drive` runs.
 
 **`skill/tutuca/testing.md` is the reference** — the harness verbs, the scene
 language, the assertion mapping, and what a card reports instead of a refusal.

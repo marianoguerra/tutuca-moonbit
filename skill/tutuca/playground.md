@@ -19,11 +19,11 @@ component names in the view source:
 
 | In the view file | Generated |
 | ---------------- | --------- |
-| `<template id="Items">` / `state Items` | `items_views()`, `ItemsState`, `ItemsState::zero()`, `items_component(...)` |
+| `Items:` under `view:` / `Items:` under `spec:` | `items_views()`, `ItemsState`, `ItemsState::zero()`, `items_component(...)` |
 | the `@on` names the templates use | `ItemsMsg` + `ItemsMsg::from_dispatch` (payload types per the table in [events.md](./events.md) *Generated `Msg` payload types*) |
-| the `$`-callables / `~when` / `~enrich_with` names | `ItemsCompute`, `ItemsWhen`, … — one enum per bucket, carrying the names the script block does not answer (see [cli.md](./cli.md)) |
+| the `$`-callables / `~when` / `~enrich_with` names | `ItemsCompute`, `ItemsWhen`, … — one enum per bucket, carrying the names `logic:` does not answer (see [cli.md](./cli.md)) |
 
-Name **every** template (`<template id="Counter">`) so one view source
+Name **every** view (`Counter:` under `view:`) so one view source
 can carry a whole module's components. The generated module is compiled
 alongside your MoonBit source as an extra file of the same package, so
 your code names `items_component` and `ItemsMsg` with **no import**.
@@ -32,9 +32,9 @@ your code names `items_component` and `ItemsMsg` with **no import**.
 
 A playground example is a PAIR of sources compiled together:
 
-- the **view** source — the `<template>`s, the
+- the **view** source — the `view:` section, the
   `spec:` schema, and any `<style>`s, exactly as
-  in an `.html` view file;
+  in a `.tutu` view file;
 - the **component** source — MoonBit, ending in a bare entry point:
 
   ```moonbit nocheck
@@ -58,7 +58,7 @@ live in an editor pane.
 The repo loop (`gen` → `moon check` → `moon test`,
 [core.md](./core.md) *Verifying changes*) collapses here to one step:
 **recompile and read the diagnostics**. The same errors surface — an
-unknown `.field` fails view generation, an unhandled `@on` name makes
+unknown `it.field` fails view generation, an unhandled `@on` name makes
 the `Msg` match non-exhaustive — but there is no separate lint or test
 run, and no way to run `@harness` tests.
 

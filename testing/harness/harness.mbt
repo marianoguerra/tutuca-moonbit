@@ -523,7 +523,7 @@ pub fn[N] Harness::send_at_root(
 /// Beside `send_at_root`, and the pair is the distinction the plan calls the
 /// one docs-vs-runtime contradiction: a dispatch ASKS a component to decide
 /// something and a write says what a member is now. A test that used to spell
-/// a write as `send_at_root("setCount", [Num(3)])` was leaning on a fallback
+/// a write as `send_at_root("set_count", [Num(3)])` was leaning on a fallback
 /// that no longer exists, and the fallback is what made the two look alike.
 pub fn[N] Harness::set(
   self : Harness[N],

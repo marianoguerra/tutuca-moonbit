@@ -42,7 +42,7 @@ Author tests as plain `test "..." { ... }` blocks in `*_test.mbt` files:
 test "counter: click increments" {
   let h = @harness.mount(counter_module(), "Counter")
   inspect(h.text(".stat-value"), content="0")
-  h.click(".btn-success") // @on.click="inc"
+  h.click(".btn-success") // ~on_click: inc
   inspect(h.text(".stat-value"), content="1")
 }
 ```
@@ -211,13 +211,13 @@ test "a scope that DECLINES is not a scope that failed" {
   synchronously — the parameterized-module pattern
   (`request_module(intents? = fixture_intent_handlers())`, see *The
   ModuleDef convention* in [core.md](./core.md)). Test all three answers:
-  `Pass` from every handler is what produces `<name>Unhandled`, and it is
+  `Pass` from every handler is what produces `<name>_unhandled`, and it is
   the path a test is likeliest to leave uncovered: nothing in the component
   raises it, only the absence of an answer does.
 - To exercise a handler on a nested child, click the element inside it
   (the dispatch path reconstruction is part of what you're testing) or
   call the child's extracted update fn directly on a state value.
-- A root-level `ask dyn` has no ancestor to reach — test `Intent`
+- A root-level `ask(~route: dyn)` has no ancestor to reach — test `Intent`
   arms by clicking the child element that raises the intent, or call the
   update fn directly with an `Intent(name, args)` dispatch.
 - To observe every committed transaction (message/state traces), the
@@ -263,10 +263,10 @@ the most specific named args you need**. With named args the handler
 pattern-matches a plain literal, which a test can pass directly.
 
 Every `@on` handler is written BARE and dispatches a `Receive` arm of
-`update`. A leading `$` is refused there: in an event position a `$name`
+`update`. A leading `$` is refused there: in an event position a `name(…)`
 and a bare name are the same dispatch, so the sigil would claim a
 distinction that does not exist. `$` belongs in a value position
-(`@text="$label"`), where a `compute` entry answers it.
+(`@(label())`), where a `compute` entry answers it.
 
 **Bad — asking for the event object:**
 
@@ -317,10 +317,10 @@ mutator:
 test "counter: inc and dec round-trip" {
   let h = @harness.mount(counter_module(), "Counter")
   inspect(h.text(".stat-value"), content="0")
-  h.click(".btn-success") // @on.click="inc"
+  h.click(".btn-success") // ~on_click: inc
   h.click(".btn-success")
   inspect(h.text(".stat-value"), content="2")
-  h.click(".btn-error")   // @on.click="dec"
+  h.click(".btn-error")   // ~on_click: dec
   inspect(h.text(".stat-value"), content="1")
 }
 
@@ -344,7 +344,7 @@ test "counter: immutability — one render per interaction" {
 
 Everything above is the ahead-of-time path: a view file, `gen`, a
 `ModuleDef`, and `moon test` over `@harness`. A **card** is the other
-thing a `.html` file can be — one file the browser compiles to a wasm
+thing a `.tutu` file can be — one file the browser compiles to a wasm
 module with no MoonBit toolchain on the page. There is no `moon test` there and no MoonBit to write a test in,
 so a card declares its tests as a **fifth block**, in JSON, beside its
 schema and its handlers.
@@ -400,7 +400,7 @@ scene is `{ "steps": [ … ] }` plus four optional keys:
 | `"intents": { … }` | answer the intents this card raises — see below |
 | `"raw": true` | keep the renderer's `data-cid` / `§…§` bookkeeping in the reported HTML |
 
-**`send "init"` is usually the first step.** tutuca has no lifecycle:
+**`send("init")` is usually the first step.** tutuca has no lifecycle:
 `receive init` runs because a HOST dispatches it, and in a scene the
 scene is the host.
 
@@ -443,10 +443,10 @@ Reads are all spelled `expect`, naming what to read.
 | `{ "expect": "log", "contains": "does not hold" }` | what the card has SAID since you last asked |
 | `{ "expect": "refused", "is": [] }` | what the HOST refused since you last asked |
 
-`"at"` for `state` is a dotted place: `.count`, `.rows[0].label`,
-`.byId['a'].n`. A bare key (`.rows[a]`) is refused rather than guessed
-at, because the block language already has a spelling for "the key held
-in `.a`".
+`"at"` for `state` is a dotted place: `it.count`, `it.rows[0].label`,
+`it.by_id["a"].n`. A bare key (`it.rows[a]`) is refused rather than guessed
+at, because the language already has a spelling for "the key held in
+`it.a`".
 
 `"contains"` works on `text` and `html` only. Everywhere else `"is"`
 says what you mean exactly.
@@ -606,22 +606,25 @@ view:
     @"… "
 ```
 
-- One `state` per component in the **one** spec block.
+- One `state` per component in the **one** `spec:` section.
 - One `logic:` each. A bare block with
-  no `for=` is only unambiguous when the file declares one component; with
+  no a `logic:` entry is only unambiguous when the file declares one component; with
   several, name every block.
-- `<template id="Comp:view">`, or `<template id="Comp">` for its `main`.
+- `Comp.view:` in `view:`, or `Comp:` for its `main`.
 - The two are genuinely separate: separate schemas (a `Row` has no
-  `.tally`), separate dispatch (a `Board` answers `unhandled` to
+  `tally` field), separate dispatch (a `Board` answers `unhandled` to
   `toggle`), and the same name may mean different things in each.
 
 **The root** — what a host mounts when told no other name — is the first
-component in the file. `data-root` on a `<template>` overrides that, for
+component in the file. `~root` on the component in `spec:` overrides that, for
 the file where the order you want to read is not the order you want
 mounted:
 
-    <template id="Row:main"> … </template>
-    <template id="Board:main" data-root> … </template>
+    spec:
+      Row:
+        …
+      Board ~root:
+        …
 
 A scene names the component it drives, so one block tests both:
 
@@ -666,12 +669,12 @@ Nothing is built at the `new`: it opens an argument map for the sibling,
 `cur.text` fills it in, and the child is made when `cur` is READ — the
 push. Reading it twice does not make two.
 
-> **A card cannot READ through a child.** `.items[0].text` is refused when the
+> **A card cannot READ through a child.** `it.items[0].text` is refused when the
 > card compiles: the instance belongs to the host and the card holds a token.
 > Send it a message instead — which is what clicking the row does.
 >
 > Writing ONE member of a child it holds directly is different, and allowed:
-> `.child.body = 'x'` is addressed at the child's position rather than read
+> `it.child.body := "x"` is addressed at the child's position rather than read
 > through, and it goes through the PUBLIC door — what a child lets a holder
 > write is what its `property { … }` declares writable. A field with no
 > property beside it is private, and stays private however it is held.
@@ -751,7 +754,7 @@ is those same four steps.
 
 ### Intents answer synchronously
 
-A card raising `intent lex 'rows'` is asking a host for something, and
+A card raising `ask("rows", ~route: lex)` is asking a host for something, and
 in a scene the scene is the host:
 
 ```json
@@ -768,7 +771,7 @@ in a scene the scene is the host:
 
 The three answers an intent has, and no fourth. **A name with no fixture
 answers nothing at all** — the route runs out, nobody claims it, and the
-card hears `<name>Unhandled`. That is a different sentence from a
+card hears `<name>_unhandled`. That is a different sentence from a
 failure's and the path a test is likeliest to leave uncovered: nothing
 in a card raises it, only the absence of an answer does.
 

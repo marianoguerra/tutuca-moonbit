@@ -87,7 +87,7 @@ test "a held verdict admits what it did not check" {
 /// A component with no block gets the reason, not buttons that cannot act.
 test "nothing to generate says why" {
   let h = fv_mount("Fuzz Controls · nothing to generate")
-  assert_true(h.text(".no-plan").contains("tutuca/spec"))
+  assert_true(h.text(".no-plan").contains("`spec:` section"))
   inspect(h.find_all(".ctl-burst").length(), content="0")
   inspect(h.find_all(".ctl-seed").length(), content="0")
 }

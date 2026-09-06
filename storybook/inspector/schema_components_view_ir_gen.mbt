@@ -18,7 +18,7 @@
 // data-cid onto it.
 
 ///|
-/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// This file's `spec:` section, as source, with its
 /// doc comments removed.
 ///
 /// The schema each component carries is this block's PROJECTION, and the
@@ -331,7 +331,7 @@ fn schema_scalar_compute_page_exists(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn schema_scalar_inline_compute() -> Map[
   String,
@@ -631,7 +631,7 @@ fn schema_object_compute_page_exists(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn schema_object_inline_compute() -> Map[
   String,
@@ -931,7 +931,7 @@ fn schema_array_compute_page_exists(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn schema_array_inline_compute() -> Map[
   String,
@@ -1226,7 +1226,7 @@ fn schema_enum_compute_page_exists(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn schema_enum_inline_compute() -> Map[
   String,
@@ -1525,7 +1525,7 @@ fn schema_combinator_compute_page_exists(
 }
 
 ///|
-/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// The `compute` names the file's `logic:` section answers.
 /// GENERATED — edit the block, not this.
 fn schema_combinator_inline_compute() -> Map[
   String,
