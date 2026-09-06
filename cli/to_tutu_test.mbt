@@ -52,15 +52,19 @@ test "a lowercase component name is refused, and names the spelling to use" {
 /// The refusal path: a construct the converter will not guess at stops the
 /// write and says which one.
 test "a construct with no spelling stops the write and names itself" {
-  // `where title len <= 100` states the relation about the value's LENGTH. It
-  // nests, and the nesting has no spelling in the new notation — so it is
-  // refused by name rather than flattened into a claim about the value itself.
+  // `clear` parsed in the old block language and only one backend implemented
+  // it. The new notation does not have it — a REMOVAL rather than an
+  // unimplemented printer — so a call to one is refused by name rather than
+  // written as a method that does not exist. This is the anchor the earlier
+  // ones were not: `provide`, a comment node and `where … len` each stopped
+  // being refused as the converter learned to print them, and each time this
+  // test went red having proved the opposite of what it claimed.
   let html =
     #|<script type="tutuca/spec">
-    #|  state Holder {
-    #|    title: String
-    #|    where title len <= 100
-    #|  }
+    #|  state Holder { notes: Array[String] }
+    #|</script>
+    #|<script type="tutuca/script">
+    #|  receive wipe { .notes.clear }
     #|</script>
     #|<template id="Holder"><div>x</div></template>
     #|
@@ -70,7 +74,7 @@ test "a construct with no spelling stops the write and names itself" {
   )
   assert_eq(emit.exit_code, 1)
   assert_true(emit.err.contains("will not guess at"))
-  assert_true(emit.err.contains("about a value's length"))
+  assert_true(emit.err.contains("not a collection method"))
 }
 
 ///|
