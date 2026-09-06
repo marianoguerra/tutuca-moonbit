@@ -56,7 +56,10 @@ test "a component claims its protocols and binds their members" {
   assert_true(out.text.contains("Container::count = count"))
   assert_true(out.text.contains("Container::cellField = cellField"))
   assert_true(out.text.contains("Editable::editor = arrange"))
-  assert_true(out.text.contains("message { Container::appendCell }"))
+  // One case per line, because each carries its own doc comment.
+  assert_true(out.text.contains("message {\n    Container::appendCell\n  }"))
+  // `express` stays on one line: an outbound capability has no doc of its own
+  // to make room for.
   assert_true(out.text.contains("intent { Container::insertRequested(Int) }"))
 }
 
