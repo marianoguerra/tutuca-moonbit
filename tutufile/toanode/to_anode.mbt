@@ -401,6 +401,17 @@ fn ViewBuilder::tag(
   if !events.is_empty() {
     attrs.insert(eid_at, @anode.eid(self.register(events)))
   }
+  // A scope's id is allocated only when there IS one, and before the element is
+  // built, because the element carries it: `data-nid` is how a rendered node
+  // finds the frame it is in, and the parser stamps it on the wrapped node
+  // rather than on the wrapper.
+  let mut scope_id = 0
+  for w in wrappers {
+    if w.0 == "scope" {
+      scope_id = self.alloc()
+      attrs.push(@anode.attr_num("data-nid", scope_id.to_double()))
+    }
+  }
   // `@svg{…}` opens the SVG namespace for everything under it, and `@math{…}`
   // MathML. Nothing closes one but the end of the element.
   let outer = self.ns
@@ -426,6 +437,7 @@ fn ViewBuilder::tag(
     out = match kind {
       "show" => @anode.show(val, out)
       "hide" => @anode.hide(val, out)
+      "scope" => @anode.scope(scope_id, val, out)
       _ => @anode.push_view(val, out)
     }
     i = i - 1
@@ -464,6 +476,14 @@ fn ViewBuilder::attribute(
   match name {
     "push_view" => {
       wrappers.push(("push_view", to_expr(value, ctx, span)))
+      return
+    }
+    // A loop-less `~enrich_with:` opens a SCOPE frame around the element: the
+    // enricher is handed no row and answers the bindings the subtree renders
+    // with. On an `@each` the option belongs to the loop and `print_each` has
+    // already taken it, so reaching here means there is no loop.
+    "enrich_with" => {
+      wrappers.push(("scope", to_expr(value, ctx.as_handler(), span)))
       return
     }
     "inner_html" => {
