@@ -206,25 +206,6 @@ fn compare_rules(
 }
 
 ///|
-/// A rule's source text as the expression it is.
-///
-/// The EXPRESSION rather than its rendering, so that the comparison scrubs it
-/// like any other tree — the renaming pass reads `PState("hasSpec")` as a name
-/// and answers `has_spec`, which it cannot do to a string that already holds
-/// the whole dump.
-///
-/// `None` for a body that does not parse, and for an absent one. The two are
-/// distinguished by the caller only in that an absent body is absent on both
-/// sides; a body that stopped parsing is a difference the caller will see as
-/// one side having `None`.
-fn expr_of(source : String) -> @tutuca.Expr? {
-  if source.trim(chars=" \n\t") == "" {
-    return None
-  }
-  Some(@tscript.parse_expr_source(source) catch { _ => return None })
-}
-
-///|
 /// The handlers, as the script parser parses them.
 ///
 /// Parsed rather than compared as text, because the two notations spell the

@@ -42,7 +42,6 @@ import {
   "marianoguerra/tutuca/tutufile/names",
   "marianoguerra/tutuca/viewfile",
   "marianoguerra/tutuca/anode",
-  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/statedef",
   "marianoguerra/error-report" @report,

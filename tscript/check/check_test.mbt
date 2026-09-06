@@ -980,11 +980,21 @@ test "a format that answers a number is reported, and one that answers a string 
 /// BLOCK. That is earlier and stricter than a finding — and the message is
 /// still the grammar's own, pointed at where inside the rule it broke.
 test "a rule that does not parse fails the block it is written in" {
-  let broke = (try? @statedef.parse_state(
+  try
+    @statedef.parse_state(
       "state Counter { count : Int  pred ok { .a + .b * .c } }",
-    ))
-    is Err(_)
-  assert_true(broke)
+    )
+    |> ignore
+  catch {
+    // The block language refuses two operator families in one unparenthesized
+    // chain, which is the whole reason it has no precedence table.
+    e =>
+      assert_true(
+        e.message().contains("parenthes") || e.message().contains("`*`"),
+      )
+  } noraise {
+    _ => fail("the spec block accepted a rule the grammar cannot parse")
+  }
 }
 
 ///|
