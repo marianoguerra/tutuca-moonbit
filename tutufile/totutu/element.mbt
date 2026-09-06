@@ -312,10 +312,36 @@ fn flat_children(
     }
     let piece = StringBuilder()
     print_node(c, events, "", piece, inline=true)
-    let text = drop_newline(piece.to_string())
+    // A newline left in a piece is the line ending of a node with no `inline`
+    // form of its own — a macro call, a fragment's children — and the spaces
+    // after it are that printer's indentation. Both are layout: on one line
+    // they are neither a separator nor content, and a stray one splits the
+    // body into pieces the reader then counts.
+    let text = strip_layout(piece.to_string())
     if text != "" {
       out.push(text)
     }
   }
   out
+}
+
+///|
+/// One printed piece with its line breaks and the indentation that followed
+/// them removed, so it can be spliced into a line.
+fn strip_layout(s : String) -> String {
+  let out = StringBuilder()
+  let cs = s.to_array()
+  let mut i = 0
+  while i < cs.length() {
+    if cs[i] == '\n' {
+      i = i + 1
+      while i < cs.length() && cs[i] == ' ' {
+        i = i + 1
+      }
+    } else {
+      out.write_char(cs[i])
+      i = i + 1
+    }
+  }
+  out.to_string()
 }

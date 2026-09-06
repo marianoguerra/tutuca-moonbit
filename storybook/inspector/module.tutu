@@ -32,9 +32,7 @@ spec:
 
 view:
   RichSample:
-    @div(~on_click: inc){@span{@(it.title)} @each(value, key in it.tags, ~loop_with: rows){
-  @span{@(value)}
-}}
+    @div(~on_click: inc){@span{@(it.title)} @each(value, key in it.tags, ~loop_with: rows){@span{@(value)}}}
 
   RichSample.compact:
     @span(~on_click: reset){

@@ -70,13 +70,7 @@ view:
     @section{@input(~class: "q", ~value: it.draft, ~on_input: it.draft := e.value, ~on_keydown: it.sent := e.value ~send, ~on_keydown: it.draft := default ~cancel) @p(~class: "sent"){@(it.sent)}}
 
   Toggle:
-    @section{@button(~class: "flip", ~on_click: it.on := !it.on, ~class: if it.on | "flip is-on" | "flip is-off"){toggle} @show(it.on){
-  @p(~class: "yes"){it is ON}
-} @hide(it.on){
-  @p(~class: "no"){it is OFF}
-} @show(it.message.is_truthy()){
-  @p(~class: "msg"){@(it.message)}
-}}
+    @section{@button(~class: "flip", ~on_click: it.on := !it.on, ~class: if it.on | "flip is-on" | "flip is-off"){toggle} @show(it.on){@p(~class: "yes"){it is ON}} @hide(it.on){@p(~class: "no"){it is OFF}} @show(it.message.is_truthy()){@p(~class: "msg"){@(it.message)}}}
 
   Fruits:
     @ul{
@@ -103,11 +97,7 @@ view:
     @section{@render(it.status) @input(~class: "draft", ~value: it.draft, ~on_input: it.draft := e.value) @button(~class: "send", ~on_click: submit){send}}
 
   Quotes:
-    @section{@show(it.is_loading){
-  @p(~class: "loading"){Loading…}
-} @ul{@each(value, key in it.items){
-  @li{@(value)}
-}}}
+    @section{@show(it.is_loading){@p(~class: "loading"){Loading…}} @ul{@each(value, key in it.items){@li{@(value)}}}}
 
   Features:
     @div{@span{Feature A} @badge() @span{Feature B} @badge(~label: "Beta") @span{Feature C} @badge(~label: it.status)}

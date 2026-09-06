@@ -11,7 +11,5 @@ view:
     @div(~class: "flex gap-3 items-center"){@input(~type: "checkbox", ~class: "checkbox", ~checked: it.completed, ~on_input: it.completed := e.value) @input(~class: "input", ~value: it.text, ~on_input: it.text := e.value, ~disabled: it.completed)}
 
   Items:
-    @div(~class: "flex flex-col gap-3"){@button(~class: "btn btn-soft btn-success add", ~on_click: on_add_item){Add Task} @div(~class: "flex flex-col gap-3 w-full"){@each(value, key in it.items){
-  @div(~class: "flex gap-3 justify-center items-center w-full row"){@render(value) @button(~class: "btn btn-soft btn-sm btn-error btn-circle font-mono rm", ~on_click: it.items.delete_at(key)){x}}
-}}}
+    @div(~class: "flex flex-col gap-3"){@button(~class: "btn btn-soft btn-success add", ~on_click: on_add_item){Add Task} @div(~class: "flex flex-col gap-3 w-full"){@each(value, key in it.items){@div(~class: "flex gap-3 justify-center items-center w-full row"){@render(value) @button(~class: "btn btn-soft btn-sm btn-error btn-circle font-mono rm", ~on_click: it.items.delete_at(key)){x}}}}}
 

@@ -4,7 +4,5 @@ spec:
 
 view:
   Panel:
-    @section(~style: "font-family:system-ui"){@button(~on_click: it.open := !it.open){@(label())} @show(it.open){
-  @p(~style: "padding:.5rem;border:1px solid #ccc;margin-top:.5rem"){@" Now you see me. Toggle again to hide. "}
-}}
+    @section(~style: "font-family:system-ui"){@button(~on_click: it.open := !it.open){@(label())} @show(it.open){@p(~style: "padding:.5rem;border:1px solid #ccc;margin-top:.5rem"){@" Now you see me. Toggle again to hide. "}}}
 

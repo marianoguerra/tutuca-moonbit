@@ -160,127 +160,25 @@ spec:
 
 view:
   SchemaScalar:
-    @span(~class: "font-mono text-sm leading-tight inline-block"){@span(~class: "inline-flex items-center gap-2 flex-wrap"){@button(~type: "button", ~class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", ~disabled: is_items_empty(), ~on_click: it.is_expanded := !it.is_expanded){@hide(is_items_empty()){
-  @span{@(arrow_text())}
-} @span(~class: "text-success schema-scalar font-semibold"){@(type_text())} @span(~class: "text-base-content/50"){@(count_text())}} @each(value, key in it.badges){
-  @span(~class: "badge badge-xs badge-ghost font-mono font-normal"){@(value)}
-} @show(it.deprecated){
-  @span(~class: "badge badge-xs badge-warning"){deprecated}
-} @show(show_pagination()){
-  @div(~class: "join"){@button(~type: "button", ~class: "join-item btn btn-xs pg-prev", ~disabled: cannot_prev_page(), ~on_click: prev_page){«} @span(~class: "join-item badge font-mono text-xs pg-label"){@(page_indicator_text())} @button(~type: "button", ~class: "join-item btn btn-xs pg-next", ~disabled: cannot_next_page(), ~on_click: next_page){»}}
-}} @show(it.title.is_truthy()){
-  @span(~class: "block text-base-content/80 italic"){@(it.title)}
-} @show(it.description.is_truthy()){
-  @span(~class: "block text-base-content/50"){@(it.description)}
-} @show(it.is_expanded){
-  @div(~class: "ml-1 grid gap-x-2 gap-y-0.5 items-baseline border-l border-base-content/10 pl-2 mt-0.5", ~style: "grid-template-columns: auto 1fr"){
-    @each(value, key in it.items, ~loop_with: get_page_range){
-      @render(value)
-    }
-  }
-}}
+    @span(~class: "font-mono text-sm leading-tight inline-block"){@span(~class: "inline-flex items-center gap-2 flex-wrap"){@button(~type: "button", ~class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", ~disabled: is_items_empty(), ~on_click: it.is_expanded := !it.is_expanded){@hide(is_items_empty()){@span{@(arrow_text())}} @span(~class: "text-success schema-scalar font-semibold"){@(type_text())} @span(~class: "text-base-content/50"){@(count_text())}} @each(value, key in it.badges){@span(~class: "badge badge-xs badge-ghost font-mono font-normal"){@(value)}} @show(it.deprecated){@span(~class: "badge badge-xs badge-warning"){deprecated}} @show(show_pagination()){@div(~class: "join"){@button(~type: "button", ~class: "join-item btn btn-xs pg-prev", ~disabled: cannot_prev_page(), ~on_click: prev_page){«} @span(~class: "join-item badge font-mono text-xs pg-label"){@(page_indicator_text())} @button(~type: "button", ~class: "join-item btn btn-xs pg-next", ~disabled: cannot_next_page(), ~on_click: next_page){»}}}} @show(it.title.is_truthy()){@span(~class: "block text-base-content/80 italic"){@(it.title)}} @show(it.description.is_truthy()){@span(~class: "block text-base-content/50"){@(it.description)}} @show(it.is_expanded){@div(~class: "ml-1 grid gap-x-2 gap-y-0.5 items-baseline border-l border-base-content/10 pl-2 mt-0.5", ~style: "grid-template-columns: auto 1fr"){@each(value, key in it.items, ~loop_with: get_page_range){@render(value)}}}}
 
   SchemaObject:
-    @span(~class: "font-mono text-sm leading-tight inline-block"){@span(~class: "inline-flex items-center gap-2 flex-wrap"){@button(~type: "button", ~class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", ~disabled: is_items_empty(), ~on_click: it.is_expanded := !it.is_expanded){@hide(is_items_empty()){
-  @span{@(arrow_text())}
-} @span(~class: "text-primary schema-object font-semibold"){@(type_text())} @span(~class: "text-base-content/50"){@(count_text())}} @each(value, key in it.badges){
-  @span(~class: "badge badge-xs badge-ghost font-mono font-normal"){@(value)}
-} @show(it.deprecated){
-  @span(~class: "badge badge-xs badge-warning"){deprecated}
-} @show(show_pagination()){
-  @div(~class: "join"){@button(~type: "button", ~class: "join-item btn btn-xs pg-prev", ~disabled: cannot_prev_page(), ~on_click: prev_page){«} @span(~class: "join-item badge font-mono text-xs pg-label"){@(page_indicator_text())} @button(~type: "button", ~class: "join-item btn btn-xs pg-next", ~disabled: cannot_next_page(), ~on_click: next_page){»}}
-}} @show(it.title.is_truthy()){
-  @span(~class: "block text-base-content/80 italic"){@(it.title)}
-} @show(it.description.is_truthy()){
-  @span(~class: "block text-base-content/50"){@(it.description)}
-} @show(it.is_expanded){
-  @div(~class: "ml-1 grid gap-x-2 gap-y-0.5 items-baseline border-l border-base-content/10 pl-2 mt-0.5", ~style: "grid-template-columns: auto 1fr"){
-    @each(value, key in it.items, ~loop_with: get_page_range){
-      @render(value)
-    }
-  }
-}}
+    @span(~class: "font-mono text-sm leading-tight inline-block"){@span(~class: "inline-flex items-center gap-2 flex-wrap"){@button(~type: "button", ~class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", ~disabled: is_items_empty(), ~on_click: it.is_expanded := !it.is_expanded){@hide(is_items_empty()){@span{@(arrow_text())}} @span(~class: "text-primary schema-object font-semibold"){@(type_text())} @span(~class: "text-base-content/50"){@(count_text())}} @each(value, key in it.badges){@span(~class: "badge badge-xs badge-ghost font-mono font-normal"){@(value)}} @show(it.deprecated){@span(~class: "badge badge-xs badge-warning"){deprecated}} @show(show_pagination()){@div(~class: "join"){@button(~type: "button", ~class: "join-item btn btn-xs pg-prev", ~disabled: cannot_prev_page(), ~on_click: prev_page){«} @span(~class: "join-item badge font-mono text-xs pg-label"){@(page_indicator_text())} @button(~type: "button", ~class: "join-item btn btn-xs pg-next", ~disabled: cannot_next_page(), ~on_click: next_page){»}}}} @show(it.title.is_truthy()){@span(~class: "block text-base-content/80 italic"){@(it.title)}} @show(it.description.is_truthy()){@span(~class: "block text-base-content/50"){@(it.description)}} @show(it.is_expanded){@div(~class: "ml-1 grid gap-x-2 gap-y-0.5 items-baseline border-l border-base-content/10 pl-2 mt-0.5", ~style: "grid-template-columns: auto 1fr"){@each(value, key in it.items, ~loop_with: get_page_range){@render(value)}}}}
 
   SchemaArray:
-    @span(~class: "font-mono text-sm leading-tight inline-block"){@span(~class: "inline-flex items-center gap-2 flex-wrap"){@button(~type: "button", ~class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", ~disabled: is_items_empty(), ~on_click: it.is_expanded := !it.is_expanded){@hide(is_items_empty()){
-  @span{@(arrow_text())}
-} @span(~class: "text-primary schema-array font-semibold"){@(type_text())} @span(~class: "text-base-content/50"){@(count_text())}} @each(value, key in it.badges){
-  @span(~class: "badge badge-xs badge-ghost font-mono font-normal"){@(value)}
-} @show(it.deprecated){
-  @span(~class: "badge badge-xs badge-warning"){deprecated}
-} @show(show_pagination()){
-  @div(~class: "join"){@button(~type: "button", ~class: "join-item btn btn-xs pg-prev", ~disabled: cannot_prev_page(), ~on_click: prev_page){«} @span(~class: "join-item badge font-mono text-xs pg-label"){@(page_indicator_text())} @button(~type: "button", ~class: "join-item btn btn-xs pg-next", ~disabled: cannot_next_page(), ~on_click: next_page){»}}
-}} @show(it.title.is_truthy()){
-  @span(~class: "block text-base-content/80 italic"){@(it.title)}
-} @show(it.description.is_truthy()){
-  @span(~class: "block text-base-content/50"){@(it.description)}
-} @show(it.is_expanded){
-  @div(~class: "ml-1 grid gap-x-2 gap-y-0.5 items-baseline border-l border-base-content/10 pl-2 mt-0.5", ~style: "grid-template-columns: auto 1fr"){
-    @each(value, key in it.items, ~loop_with: get_page_range){
-      @render(value)
-    }
-  }
-}}
+    @span(~class: "font-mono text-sm leading-tight inline-block"){@span(~class: "inline-flex items-center gap-2 flex-wrap"){@button(~type: "button", ~class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", ~disabled: is_items_empty(), ~on_click: it.is_expanded := !it.is_expanded){@hide(is_items_empty()){@span{@(arrow_text())}} @span(~class: "text-primary schema-array font-semibold"){@(type_text())} @span(~class: "text-base-content/50"){@(count_text())}} @each(value, key in it.badges){@span(~class: "badge badge-xs badge-ghost font-mono font-normal"){@(value)}} @show(it.deprecated){@span(~class: "badge badge-xs badge-warning"){deprecated}} @show(show_pagination()){@div(~class: "join"){@button(~type: "button", ~class: "join-item btn btn-xs pg-prev", ~disabled: cannot_prev_page(), ~on_click: prev_page){«} @span(~class: "join-item badge font-mono text-xs pg-label"){@(page_indicator_text())} @button(~type: "button", ~class: "join-item btn btn-xs pg-next", ~disabled: cannot_next_page(), ~on_click: next_page){»}}}} @show(it.title.is_truthy()){@span(~class: "block text-base-content/80 italic"){@(it.title)}} @show(it.description.is_truthy()){@span(~class: "block text-base-content/50"){@(it.description)}} @show(it.is_expanded){@div(~class: "ml-1 grid gap-x-2 gap-y-0.5 items-baseline border-l border-base-content/10 pl-2 mt-0.5", ~style: "grid-template-columns: auto 1fr"){@each(value, key in it.items, ~loop_with: get_page_range){@render(value)}}}}
 
   SchemaEnum:
-    @span(~class: "font-mono text-sm leading-tight inline-block"){@span(~class: "inline-flex items-center gap-2 flex-wrap"){@button(~type: "button", ~class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", ~disabled: is_items_empty(), ~on_click: it.is_expanded := !it.is_expanded){@hide(is_items_empty()){
-  @span{@(arrow_text())}
-} @span(~class: "text-info schema-enum font-semibold"){@(type_text())} @span(~class: "text-base-content/50"){@(count_text())}} @each(value, key in it.badges){
-  @span(~class: "badge badge-xs badge-ghost font-mono font-normal"){@(value)}
-} @show(it.deprecated){
-  @span(~class: "badge badge-xs badge-warning"){deprecated}
-} @show(show_pagination()){
-  @div(~class: "join"){@button(~type: "button", ~class: "join-item btn btn-xs pg-prev", ~disabled: cannot_prev_page(), ~on_click: prev_page){«} @span(~class: "join-item badge font-mono text-xs pg-label"){@(page_indicator_text())} @button(~type: "button", ~class: "join-item btn btn-xs pg-next", ~disabled: cannot_next_page(), ~on_click: next_page){»}}
-}} @show(it.title.is_truthy()){
-  @span(~class: "block text-base-content/80 italic"){@(it.title)}
-} @show(it.description.is_truthy()){
-  @span(~class: "block text-base-content/50"){@(it.description)}
-} @show(it.is_expanded){
-  @div(~class: "ml-1 flex flex-col gap-0.5 border-l border-base-content/10 pl-2 mt-0.5"){
-    @each(value, key in it.items, ~loop_with: get_page_range){
-      @render(value)
-    }
-  }
-}}
+    @span(~class: "font-mono text-sm leading-tight inline-block"){@span(~class: "inline-flex items-center gap-2 flex-wrap"){@button(~type: "button", ~class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", ~disabled: is_items_empty(), ~on_click: it.is_expanded := !it.is_expanded){@hide(is_items_empty()){@span{@(arrow_text())}} @span(~class: "text-info schema-enum font-semibold"){@(type_text())} @span(~class: "text-base-content/50"){@(count_text())}} @each(value, key in it.badges){@span(~class: "badge badge-xs badge-ghost font-mono font-normal"){@(value)}} @show(it.deprecated){@span(~class: "badge badge-xs badge-warning"){deprecated}} @show(show_pagination()){@div(~class: "join"){@button(~type: "button", ~class: "join-item btn btn-xs pg-prev", ~disabled: cannot_prev_page(), ~on_click: prev_page){«} @span(~class: "join-item badge font-mono text-xs pg-label"){@(page_indicator_text())} @button(~type: "button", ~class: "join-item btn btn-xs pg-next", ~disabled: cannot_next_page(), ~on_click: next_page){»}}}} @show(it.title.is_truthy()){@span(~class: "block text-base-content/80 italic"){@(it.title)}} @show(it.description.is_truthy()){@span(~class: "block text-base-content/50"){@(it.description)}} @show(it.is_expanded){@div(~class: "ml-1 flex flex-col gap-0.5 border-l border-base-content/10 pl-2 mt-0.5"){@each(value, key in it.items, ~loop_with: get_page_range){@render(value)}}}}
 
   SchemaCombinator:
-    @span(~class: "font-mono text-sm leading-tight inline-block"){@span(~class: "inline-flex items-center gap-2 flex-wrap"){@button(~type: "button", ~class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", ~disabled: is_items_empty(), ~on_click: it.is_expanded := !it.is_expanded){@hide(is_items_empty()){
-  @span{@(arrow_text())}
-} @span(~class: "text-accent schema-combinator font-semibold"){@(type_text())} @span(~class: "text-base-content/50"){@(count_text())}} @each(value, key in it.badges){
-  @span(~class: "badge badge-xs badge-ghost font-mono font-normal"){@(value)}
-} @show(it.deprecated){
-  @span(~class: "badge badge-xs badge-warning"){deprecated}
-} @show(show_pagination()){
-  @div(~class: "join"){@button(~type: "button", ~class: "join-item btn btn-xs pg-prev", ~disabled: cannot_prev_page(), ~on_click: prev_page){«} @span(~class: "join-item badge font-mono text-xs pg-label"){@(page_indicator_text())} @button(~type: "button", ~class: "join-item btn btn-xs pg-next", ~disabled: cannot_next_page(), ~on_click: next_page){»}}
-}} @show(it.title.is_truthy()){
-  @span(~class: "block text-base-content/80 italic"){@(it.title)}
-} @show(it.description.is_truthy()){
-  @span(~class: "block text-base-content/50"){@(it.description)}
-} @show(it.is_expanded){
-  @div(~class: "ml-1 flex flex-col gap-0.5 border-l border-base-content/10 pl-2 mt-0.5"){
-    @each(value, key in it.items, ~loop_with: get_page_range){
-      @render(value)
-    }
-  }
-}}
+    @span(~class: "font-mono text-sm leading-tight inline-block"){@span(~class: "inline-flex items-center gap-2 flex-wrap"){@button(~type: "button", ~class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", ~disabled: is_items_empty(), ~on_click: it.is_expanded := !it.is_expanded){@hide(is_items_empty()){@span{@(arrow_text())}} @span(~class: "text-accent schema-combinator font-semibold"){@(type_text())} @span(~class: "text-base-content/50"){@(count_text())}} @each(value, key in it.badges){@span(~class: "badge badge-xs badge-ghost font-mono font-normal"){@(value)}} @show(it.deprecated){@span(~class: "badge badge-xs badge-warning"){deprecated}} @show(show_pagination()){@div(~class: "join"){@button(~type: "button", ~class: "join-item btn btn-xs pg-prev", ~disabled: cannot_prev_page(), ~on_click: prev_page){«} @span(~class: "join-item badge font-mono text-xs pg-label"){@(page_indicator_text())} @button(~type: "button", ~class: "join-item btn btn-xs pg-next", ~disabled: cannot_next_page(), ~on_click: next_page){»}}}} @show(it.title.is_truthy()){@span(~class: "block text-base-content/80 italic"){@(it.title)}} @show(it.description.is_truthy()){@span(~class: "block text-base-content/50"){@(it.description)}} @show(it.is_expanded){@div(~class: "ml-1 flex flex-col gap-0.5 border-l border-base-content/10 pl-2 mt-0.5"){@each(value, key in it.items, ~loop_with: get_page_range){@render(value)}}}}
 
   SchemaConst:
     @span(~class: "font-mono text-sm leading-tight inline-flex items-center gap-2 schema-const"){@span(~class: "text-info font-semibold"){const} @span(~class: "text-base-content/30"){=} @render(it.value)}
 
   SchemaConditional:
-    @span(~class: "font-mono text-sm leading-tight inline-block schema-conditional"){@span(~class: "inline-flex items-center gap-2 flex-wrap"){@span(~class: "text-accent font-semibold"){conditional} @show(it.deprecated){
-  @span(~class: "badge badge-xs badge-warning"){deprecated}
-}} @show(it.title.is_truthy()){
-  @span(~class: "block text-base-content/80 italic"){@(it.title)}
-} @show(it.description.is_truthy()){
-  @span(~class: "block text-base-content/50"){@(it.description)}
-} @div(~class: "ml-1 grid gap-x-2 gap-y-0.5 items-baseline border-l border-base-content/10 pl-2 mt-0.5", ~style: "grid-template-columns: auto 1fr"){@show(it.if_node.is_truthy()){
-  @div(~class: "contents"){@span(~class: "font-mono text-sm flex items-center gap-1 leading-tight"){@span(~class: "text-info"){if} @span(~class: "text-base-content/30"){:}} @render(it.if_node)}
-} @show(it.then_node.is_truthy()){
-  @div(~class: "contents"){@span(~class: "font-mono text-sm flex items-center gap-1 leading-tight"){@span(~class: "text-success"){then} @span(~class: "text-base-content/30"){:}} @render(it.then_node)}
-} @show(it.else_node.is_truthy()){
-  @div(~class: "contents"){@span(~class: "font-mono text-sm flex items-center gap-1 leading-tight"){@span(~class: "text-warning"){else} @span(~class: "text-base-content/30"){:}} @render(it.else_node)}
-}}}
+    @span(~class: "font-mono text-sm leading-tight inline-block schema-conditional"){@span(~class: "inline-flex items-center gap-2 flex-wrap"){@span(~class: "text-accent font-semibold"){conditional} @show(it.deprecated){@span(~class: "badge badge-xs badge-warning"){deprecated}}} @show(it.title.is_truthy()){@span(~class: "block text-base-content/80 italic"){@(it.title)}} @show(it.description.is_truthy()){@span(~class: "block text-base-content/50"){@(it.description)}} @div(~class: "ml-1 grid gap-x-2 gap-y-0.5 items-baseline border-l border-base-content/10 pl-2 mt-0.5", ~style: "grid-template-columns: auto 1fr"){@show(it.if_node.is_truthy()){@div(~class: "contents"){@span(~class: "font-mono text-sm flex items-center gap-1 leading-tight"){@span(~class: "text-info"){if} @span(~class: "text-base-content/30"){:}} @render(it.if_node)}} @show(it.then_node.is_truthy()){@div(~class: "contents"){@span(~class: "font-mono text-sm flex items-center gap-1 leading-tight"){@span(~class: "text-success"){then} @span(~class: "text-base-content/30"){:}} @render(it.then_node)}} @show(it.else_node.is_truthy()){@div(~class: "contents"){@span(~class: "font-mono text-sm flex items-center gap-1 leading-tight"){@span(~class: "text-warning"){else} @span(~class: "text-base-content/30"){:}} @render(it.else_node)}}}}
 
   SchemaNot:
     @span(~class: "font-mono text-sm leading-tight inline-flex items-center gap-2 schema-not"){@span(~class: "text-error font-semibold"){not} @span(~class: "text-base-content/30"){:} @render(it.child)}

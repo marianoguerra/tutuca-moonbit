@@ -3,7 +3,7 @@
 // That package is a LIBRARY and does everything — mounts the gallery, owns the
 // URL and theme services, bridges DOM events, compiles margaui. This package
 // exists for one reason: a wasm-gc export list is per-package `link`
-// configuration and cannot come from a dependency. So the six entry points the
+// configuration and cannot come from a dependency. So the entry points the
 // page calls are re-exported here as one-line forwards, and the only real
 // content is which stories to show.
 //
@@ -14,7 +14,7 @@ import {
   "marianoguerra/tutuca/component",
   // the story model: `stories_of_modules` and `sections_of`
   "marianoguerra/tutuca/storybook" @sb,
-  // the browser host: mount + the four entry points
+  // the browser host: mount + the page's other entry points
   "marianoguerra/tutuca/storybook/ui/wasm" @sbw,
   // the standard tabs (Instance/Trace/Fuzz/Spec/Raw) and the page effects they
   // need. Naming it is what links them: drop this import and the `panels~`

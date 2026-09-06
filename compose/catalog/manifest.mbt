@@ -162,15 +162,30 @@ fn fields_of(c : Json) -> Array[FieldInfo] {
 fn properties_of(c : Json) -> Array[String] {
   let out : Array[String] = []
   guard c is Object(o) else { return out }
-  guard o.get("properties") is Some(Array(items)) else { return out }
-  for p in items {
-    let name = str_at(p, "name")
-    let public_ = match p {
-      Object(po) => po.get("public") is Some(True)
-      _ => false
+  if o.get("properties") is Some(Array(items)) {
+    for p in items {
+      let name = str_at(p, "name")
+      let public_ = match p {
+        Object(po) => po.get("public") is Some(True)
+        _ => false
+      }
+      if name != "" && public_ {
+        out.push(name)
+      }
     }
-    if name != "" && public_ {
-      out.push(name)
+  }
+  // A protocol member a component BINDS is a name anything outside it may
+  // read, and it is the name a host asks by: `compose/build.mbt` asks for
+  // `cellField`, the member, not for whatever the component calls the property
+  // behind it. The two used to be the same word — a component under the old
+  // notation named its local property after the member — and stopped being
+  // one when local names went `snake_case`.
+  if o.get("propertyBindings") is Some(Array(bs)) {
+    for b in bs {
+      let bound = str_at(b, "member")
+      if bound != "" && !out.contains(bound) {
+        out.push(bound)
+      }
     }
   }
   out

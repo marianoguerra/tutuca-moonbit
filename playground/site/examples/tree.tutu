@@ -23,16 +23,8 @@ spec:
 view:
   TreeItem:
     @style{user-select: none; .head { cursor: pointer; } .head:before { content: "⏺️"; margin-right: 0.25rem; } .head.type-file:before { content: "📄️"; } .head.open.type-dir:before { content: "📂️"; } .head.closed.type-dir:before { content: "📁️"; }}
-    @section{@p(~class: "head", ~class: if it.is_open | @str{head open type-@(it.type)} | @str{head closed type-@(it.type)}, ~on_click: on_item_click){@(it.label)} @show(are_childs_visible()){
-  @div(~class: "pl-3 pt-1 flex flex-col gap-2 kids"){
-    @each(value, key in it.items){
-      @render(value)
-    }
-  }
-}}
+    @section{@p(~class: "head", ~class: if it.is_open | @str{head open type-@(it.type)} | @str{head closed type-@(it.type)}, ~on_click: on_item_click){@(it.label)} @show(are_childs_visible()){@div(~class: "pl-3 pt-1 flex flex-col gap-2 kids"){@each(value, key in it.items){@render(value)}}}}
 
   TreeRoot:
-    @div(~class: "flex flex-col gap-3"){@render(it.root) @ul(~class: "flex flex-col gap-2 max-h-[40vh] overflow-y-auto log"){@each(value, key in it.log){
-  @li{@(value)}
-}}}
+    @div(~class: "flex flex-col gap-3"){@render(it.root) @ul(~class: "flex flex-col gap-2 max-h-[40vh] overflow-y-auto log"){@each(value, key in it.log){@li{@(value)}}}}
 

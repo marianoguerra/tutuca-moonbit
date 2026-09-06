@@ -1,7 +1,7 @@
-// Generated from `std.card.html` by `node demo/universal/std/embed.mjs`.
+// Generated from `std.card.tutu` by `node demo/universal/std/embed.mjs`.
 // DO NOT EDIT.
 //
-// Change `std.card.html`, rerun the task, commit both halves.
+// Change `std.card.tutu`, rerun the task, commit both halves.
 
 ///|
 /// The layout kit, as source.
@@ -12,18 +12,18 @@
 /// it arrives, not about what it is allowed to do.
 pub fn card_source() -> String {
   let src =
-    #|<script type="tutuca/spec">
+    #|spec:
     #|  /// The three protocols the shell speaks, and the only things it knows about
     #|  /// a component before it has one in hand.
     #|  ///
     #|  /// A protocol rather than a base component, because the shell must not be
     #|  /// able to tell its own layout kit from a card somebody wrote ten seconds
     #|  /// ago. It asks "do you implement this", never "are you one of mine".
-    #|  protocol Holder = "tutuca.dev/universal/Holder@1" {
-    #|    handle { message { hold(Any), empty } }
-    #|    express { intent { addRequested(Bool) } }
-    #|    property { filled: Bool }
-    #|  }
+    #|  protocol Holder = "tutuca.dev/universal/Holder@1":
+    #|    message hold(Any)
+    #|    message empty
+    #|    express intent addRequested(Bool)
+    #|    property filled :: Bool
     #|
     #|  /// A thing with cells.
     #|  ///
@@ -32,19 +32,14 @@ pub fn card_source() -> String {
     #|  /// handed over finished — so the one thing a builder cannot work out for
     #|  /// itself is what that constructor argument is called. One string answers it,
     #|  /// and the code that fills a grid is the code that fills a tab strip.
-    #|  protocol Container = "tutuca.dev/universal/Container@1" {
-    #|    handle { message { appendCell, removeAt(Int), insertAt(Int) } }
-    #|    /// What the container's own chrome raises when a person clicks an insert
-    #|    /// strip or a cell's `x`. It ASKS rather than doing it, and the shell
-    #|    /// answers by sending the message above at the container's own path.
-    #|    ///
-    #|    /// Not squeamishness about a card mutating itself — a view cannot name a
-    #|    /// qualified handler at all, so the protocol message and a local one would
-    #|    /// have to be two bodies saying the same thing. One body, asked for.
-    #|    /// `-1` means append.
-    #|    express { intent { insertRequested(Int), removeRequested(Int) } }
-    #|    property { count: Int, cellField: String }
-    #|  }
+    #|  protocol Container = "tutuca.dev/universal/Container@1":
+    #|    message appendCell
+    #|    message removeAt(Int)
+    #|    message insertAt(Int)
+    #|    express intent insertRequested(Int)
+    #|    express intent removeRequested(Int)
+    #|    property count :: Int
+    #|    property cellField :: String
     #|
     #|  /// A component that can draw its own settings.
     #|  ///
@@ -53,9 +48,8 @@ pub fn card_source() -> String {
     #|  /// role with a different local view behind it per component — a container's
     #|  /// editor still has to render its children or nested cells become
     #|  /// unreachable, and a leaf's is a form.
-    #|  protocol Editable = "tutuca.dev/universal/Editable@1" {
-    #|    view { editor }
-    #|  }
+    #|  protocol Editable = "tutuca.dev/universal/Editable@1":
+    #|    view editor
     #|
     #|  /// The universal holder: what a `+` is, and what every cell contains.
     #|  ///
@@ -64,64 +58,72 @@ pub fn card_source() -> String {
     #|  /// every placed component one uniform home for the chrome, and what makes
     #|  /// "insert a cell here" always "insert an empty hole", with no kind to decide
     #|  /// and no binding to invent.
-    #|  state Hole implements Holder, Editable {
+    #|  Hole:
     #|    /// What this holds, or null, which is what draws the `+`.
     #|    ///
     #|    /// UNCONSTRAINED on purpose. `Instance[protocol X]` would check the claim
     #|    /// and reject a value that does not make it — and a hole that must accept
     #|    /// anything a person can load cannot constrain what that is.
-    #|    child : Instance
+    #|    field child :: Instance
+    #|
     #|    /// Whether what it holds draws its own settings, decided when the shell
     #|    /// put it there. A view cannot ask the catalog, and the moment of placing
     #|    /// is the one moment the answer is known.
-    #|    editable : Bool
+    #|    field editable :: Bool
+    #|
     #|    /// Whether this ONE cell is showing its child's settings — the third of
     #|    /// the three ways into an editor, and the narrowest. The other two are
     #|    /// views pushed from above and touch no state at all.
-    #|    configuring : Bool
-    #|    property {
-    #|      pub filled : Bool { get }
-    #|      Holder::filled = filled
-    #|    }
-    #|    view { Editable::editor = chrome }
-    #|  }
+    #|    field configuring :: Bool
     #|
-    #|  handle Hole { message { Holder::hold(Any), Holder::empty } }
-    #|  express Hole { intent { Holder::addRequested(Bool) } }
+    #|    property filled :: Bool ~public
+    #|
+    #|    message Holder::hold(Any)
+    #|
+    #|    message Holder::empty
+    #|
+    #|    express intent Holder::addRequested(Bool)
+    #|
+    #|    implements Holder
+    #|    implements Editable
+    #|
+    #|    property Holder::filled = filled
+    #|    view Editable::editor = chrome
     #|
     #|  /// A row or a column: the flexbox subset, and nothing else.
     #|  ///
     #|  /// There is no `vbox` and no `hbox`. They are the same component with two
     #|  /// sets of arguments, and the palette lists a preset as its own row, so a
     #|  /// person typing either still finds one.
-    #|  state Box implements Container, Editable {
-    #|    children : Array[Hole]
-    #|    direction : String
-    #|    justify : String
-    #|    align : String
-    #|    wrap : Bool
-    #|    gap : Int
-    #|    padding : Int
-    #|    property {
-    #|      pub count : Int { get }
-    #|      pub cellField : String { get }
-    #|      Container::count = count
-    #|      Container::cellField = cellField
-    #|    }
-    #|    view { Editable::editor = arrange }
-    #|  }
+    #|  Box:
+    #|    field children :: List.of(Instance.of(Hole))
+    #|    field direction :: String
+    #|    field justify :: String
+    #|    field align :: String
+    #|    field wrap :: Bool
+    #|    field gap :: Int
+    #|    field padding :: Int
     #|
-    #|  express Box {
-    #|    intent { Container::insertRequested(Int), Container::removeRequested(Int) }
-    #|  }
+    #|    property count :: Int ~public
     #|
-    #|  handle Box {
-    #|    message {
-    #|      Container::appendCell
-    #|      Container::removeAt(Int)
-    #|      Container::insertAt(Int)
-    #|    }
-    #|  }
+    #|    property cell_field :: String ~public
+    #|
+    #|    message Container::appendCell
+    #|
+    #|    message Container::removeAt(Int)
+    #|
+    #|    message Container::insertAt(Int)
+    #|
+    #|    express intent Container::insertRequested(Int)
+    #|
+    #|    express intent Container::removeRequested(Int)
+    #|
+    #|    implements Container
+    #|    implements Editable
+    #|
+    #|    property Container::count = count
+    #|    property Container::cellField = cell_field
+    #|    view Editable::editor = arrange
     #|
     #|  /// A uniform grid: every cell the same size, children in row-major order.
     #|  ///
@@ -129,32 +131,33 @@ pub fn card_source() -> String {
     #|  /// the layout easiest to get subtly wrong and hardest to explain to somebody
     #|  /// adding a cell; a bento box wants a component of its own rather than a mode
     #|  /// of this one.
-    #|  state Grid implements Container, Editable {
-    #|    children : Array[Hole]
-    #|    cols : Int
-    #|    rows : Int
-    #|    gap : Int
-    #|    padding : Int
-    #|    property {
-    #|      pub count : Int { get }
-    #|      pub cellField : String { get }
-    #|      Container::count = count
-    #|      Container::cellField = cellField
-    #|    }
-    #|    view { Editable::editor = arrange }
-    #|  }
+    #|  Grid:
+    #|    field children :: List.of(Instance.of(Hole))
+    #|    field cols :: Int
+    #|    field rows :: Int
+    #|    field gap :: Int
+    #|    field padding :: Int
     #|
-    #|  express Grid {
-    #|    intent { Container::insertRequested(Int), Container::removeRequested(Int) }
-    #|  }
+    #|    property count :: Int ~public
     #|
-    #|  handle Grid {
-    #|    message {
-    #|      Container::appendCell
-    #|      Container::removeAt(Int)
-    #|      Container::insertAt(Int)
-    #|    }
-    #|  }
+    #|    property cell_field :: String ~public
+    #|
+    #|    message Container::appendCell
+    #|
+    #|    message Container::removeAt(Int)
+    #|
+    #|    message Container::insertAt(Int)
+    #|
+    #|    express intent Container::insertRequested(Int)
+    #|
+    #|    express intent Container::removeRequested(Int)
+    #|
+    #|    implements Container
+    #|    implements Editable
+    #|
+    #|    property Container::count = count
+    #|    property Container::cellField = cell_field
+    #|    view Editable::editor = arrange
     #|
     #|  /// A tab strip and one page at a time.
     #|  ///
@@ -162,46 +165,52 @@ pub fn card_source() -> String {
     #|  /// hole: wrapping each one in a component that carried its own label would
     #|  /// make this the only container whose cells are not holes, and every builder
     #|  /// would need a special case for it.
-    #|  state Tabs implements Container, Editable {
-    #|    tabs : Array[Hole]
-    #|    labels : Array[String]
-    #|    active : Int
-    #|    property {
-    #|      pub count : Int { get }
-    #|      pub cellField : String { get }
-    #|      Container::count = count
-    #|      Container::cellField = cellField
-    #|    }
-    #|    view { Editable::editor = arrange }
-    #|  }
+    #|  Tabs:
+    #|    field tabs :: List.of(Instance.of(Hole))
+    #|    field labels :: List.of(String)
+    #|    field active :: Int
     #|
-    #|  express Tabs {
-    #|    intent { Container::insertRequested(Int), Container::removeRequested(Int) }
-    #|  }
+    #|    property count :: Int ~public
     #|
-    #|  handle Tabs {
-    #|    message {
-    #|      Container::appendCell
-    #|      Container::removeAt(Int)
-    #|      Container::insertAt(Int)
-    #|      activate(Int)
-    #|    }
-    #|  }
+    #|    property cell_field :: String ~public
+    #|
+    #|    message Container::appendCell
+    #|
+    #|    message Container::removeAt(Int)
+    #|
+    #|    message Container::insertAt(Int)
+    #|
+    #|    message activate(Int)
+    #|
+    #|    express intent Container::insertRequested(Int)
+    #|
+    #|    express intent Container::removeRequested(Int)
+    #|
+    #|    implements Container
+    #|    implements Editable
+    #|
+    #|    property Container::count = count
+    #|    property Container::cellField = cell_field
+    #|    view Editable::editor = arrange
     #|
     #|  /// A leaf: a run of text.
-    #|  state Text implements Editable {
-    #|    text : String
-    #|    size : String
-    #|    view { Editable::editor = configure }
-    #|  }
+    #|  Text:
+    #|    field text :: String
+    #|    field size :: String
+    #|
+    #|    implements Editable
+    #|
+    #|    view Editable::editor = configure
     #|
     #|  /// A leaf: editable multi-line text. The other half of the notepad.
-    #|  state Textarea implements Editable {
-    #|    text : String
-    #|    rows : Int
-    #|    placeholder : String
-    #|    view { Editable::editor = configure }
-    #|  }
+    #|  Textarea:
+    #|    field text :: String
+    #|    field rows :: Int
+    #|    field placeholder :: String
+    #|
+    #|    implements Editable
+    #|
+    #|    view Editable::editor = configure
     #|
     #|  /// A leaf: markdown, sanitized by construction.
     #|  ///
@@ -209,344 +218,270 @@ pub fn card_source() -> String {
     #|  /// — the filter walks it into nodes and puts every element and every
     #|  /// attribute to the sanitizer — so this loads under the same policy every
     #|  /// other card gets, which is the claim this whole demo is making.
-    #|  state Markdown implements Editable {
-    #|    text : String
-    #|    view { Editable::editor = configure }
-    #|  }
-    #|</script>
+    #|  Markdown:
+    #|    field text :: String
     #|
-    #|<script type="tutuca/script" for="Hole">
-    #|  get filled { not (null? .child) }
+    #|    implements Editable
     #|
-    #|  /// Hold this. The shell builds the instance — it is the only thing that can,
-    #|  /// since building a component from another module needs the registry — and
-    #|  /// hands it over finished.
-    #|  receive Holder::hold(inst) {
-    #|    .child = inst
-    #|    .editable = false
-    #|  }
+    #|    view Editable::editor = configure
     #|
-    #|  /// Empty it again, which gives the `+` back rather than deleting a cell.
-    #|  receive Holder::empty {
-    #|    .child = null
-    #|    .editable = false
-    #|  }
+    #|logic:
+    #|  Hole:
+    #|    property filled :: Bool:
+    #|      get: !((it.child == none))
     #|
-    #|  /// The `+` was clicked. `ctrl` is "let me configure it" rather than "place it
-    #|  /// with its defaults". The shell answers by opening the picker AT this cell:
-    #|  /// it reads the asking path off the intent, so nothing has to be stored here
-    #|  /// and no cell can name another.
-    #|  receive add(ctrl) { ask Holder::addRequested ctrl }
+    #|    /// Hold this. The shell builds the instance — it is the only thing that can,
+    #|    /// since building a component from another module needs the registry — and
+    #|    /// hands it over finished.
+    #|    receive Holder::hold(inst):
+    #|      it.child := inst
+    #|      it.editable := false
     #|
-    #|  /// The `x`. Local, because emptying a hole is the hole's own business and
-    #|  /// needs nothing the shell knows — unlike a container's cells, which change
-    #|  /// the ARRANGEMENT and so are the shell's to apply.
-    #|  receive askEmpty {
-    #|    .child = null
-    #|    .editable = false
-    #|    .configuring = false
-    #|  }
+    #|    /// Empty it again, which gives the `+` back rather than deleting a cell.
+    #|    receive Holder::empty:
+    #|      it.child := none
+    #|      it.editable := false
     #|
-    #|  /// What the shell knows and a view cannot ask: whether what is held draws its
-    #|  /// own settings. Sent right after `hold`, because the catalog is the only
-    #|  /// thing that can answer and only the shell can reach it.
-    #|  receive markEditable(on) { .editable = on }
+    #|    /// The `+` was clicked. `ctrl` is "let me configure it" rather than "place it
+    #|    /// with its defaults". The shell answers by opening the picker AT this cell:
+    #|    /// it reads the asking path off the intent, so nothing has to be stored here
+    #|    /// and no cell can name another.
+    #|    receive add(ctrl):
+    #|      ask(Holder::addRequested, ctrl)
     #|
-    #|  /// Show the held component under its own `editor` role, or stop.
-    #|  receive toggleConfig { .configuring = not .configuring }
+    #|    /// The `x`. Local, because emptying a hole is the hole's own business and
+    #|    /// needs nothing the shell knows — unlike a container's cells, which change
+    #|    /// the ARRANGEMENT and so are the shell's to apply.
+    #|    receive ask_empty:
+    #|      it.child := none
+    #|      it.editable := false
+    #|      it.configuring := false
     #|
-    #|  /// What the child is drawn under.
-    #|  ///
-    #|  /// ONE render site with a pushed name, rather than two `<x render>` siblings
-    #|  /// gated on `@show` / `@hide`. Two of them is one too many: the renderer drew
-    #|  /// the first and skipped the second whatever the flags said, so a held
-    #|  /// component was permanently in its editor view — which for a card that binds
-    #|  /// no editor role LOOKS right, because the role falls back to `main`, and is
-    #|  /// wrong in the way that matters.
-    #|  ///
-    #|  /// Empty means "whatever is being pushed from above", so a cell follows the
-    #|  /// whole page into editor mode without being told, and naming the role here
-    #|  /// overrides it for this one cell.
-    #|  compute childView {
-    #|    if .configuring { 'tutuca.dev/universal/Editable@1::editor' } else { '' }
-    #|  }
-    #|</script>
+    #|    /// What the shell knows and a view cannot ask: whether what is held draws its
+    #|    /// own settings. Sent right after `hold`, because the catalog is the only
+    #|    /// thing that can answer and only the shell can reach it.
+    #|    receive mark_editable(on):
+    #|      it.editable := on
     #|
-    #|<script type="tutuca/script" for="Text">
-    #|  compute sized { $'font-size:{.size}' }
-    #|</script>
+    #|    /// Show the held component under its own `editor` role, or stop.
+    #|    receive toggle_config:
+    #|      it.configuring := !it.configuring
     #|
-    #|<script type="tutuca/script" for="Box">
-    #|  receive askInsert(i) { ask Container::insertRequested i }
-    #|  receive askRemove(i) { ask Container::removeRequested i }
-    #|  get count { len .children }
-    #|  get cellField { 'children' }
-    #|  compute wrapMode { if .wrap { 'wrap' } else { 'nowrap' } }
-    #|  compute style {
-    #|    $'display:flex;flex-direction:{.direction};justify-content:{.justify};align-items:{.align};flex-wrap:{wrapMode};gap:{.gap}px;padding:{.padding}px'
-    #|  }
-    #|  compute isRow { .direction is 'row' }
-    #|  receive Container::appendCell {
-    #|    new Hole
-    #|    .children.push cur
-    #|  }
-    #|  receive Container::removeAt(i) { .children.deleteAt i }
-    #|  receive Container::insertAt(i) {
-    #|    new Hole
-    #|    .children.insertAt i cur
-    #|  }
-    #|</script>
+    #|    /// What the child is drawn under.
+    #|    ///
+    #|    /// ONE render site with a pushed name, rather than two `<x render>` siblings
+    #|    /// gated on `@show` / `@hide`. Two of them is one too many: the renderer drew
+    #|    /// the first and skipped the second whatever the flags said, so a held
+    #|    /// component was permanently in its editor view — which for a card that binds
+    #|    /// no editor role LOOKS right, because the role falls back to `main`, and is
+    #|    /// wrong in the way that matters.
+    #|    ///
+    #|    /// Empty means "whatever is being pushed from above", so a cell follows the
+    #|    /// whole page into editor mode without being told, and naming the role here
+    #|    /// overrides it for this one cell.
+    #|    compute child_view: if it.configuring | "tutuca.dev/universal/Editable@1::editor" | ""
     #|
-    #|<script type="tutuca/script" for="Grid">
-    #|  receive askInsert(i) { ask Container::insertRequested i }
-    #|  receive askRemove(i) { ask Container::removeRequested i }
-    #|  get count { len .children }
-    #|  get cellField { 'children' }
-    #|  compute style {
-    #|    $'display:grid;grid-template-columns:repeat({.cols},minmax(0,1fr));grid-template-rows:repeat({.rows},minmax(0,1fr));gap:{.gap}px;padding:{.padding}px'
-    #|  }
-    #|  receive Container::appendCell {
-    #|    new Hole
-    #|    .children.push cur
-    #|  }
-    #|  receive Container::removeAt(i) { .children.deleteAt i }
-    #|  receive Container::insertAt(i) {
-    #|    new Hole
-    #|    .children.insertAt i cur
-    #|  }
-    #|</script>
+    #|  Text:
+    #|    compute sized: @str{font-size:@(it.size)}
     #|
-    #|<script type="tutuca/script" for="Tabs">
-    #|  /// Which row is the open one, bound per row.
-    #|  ///
-    #|  /// It has to be an enricher: inside `@each` a `.field` reads the ITEM, and a
-    #|  /// page is a Hole, which has no idea which tab it is. The strip's own index
-    #|  /// is the only thing that knows, and this is how it reaches the row.
-    #|  enrich markActive {
-    #|    @active = @key is .active
-    #|  }
-    #|  receive askInsert(i) { ask Container::insertRequested i }
-    #|  receive askRemove(i) { ask Container::removeRequested i }
-    #|  get count { len .tabs }
-    #|  get cellField { 'tabs' }
-    #|  receive activate(i) { .active = i }
-    #|  receive Container::appendCell {
-    #|    new Hole
-    #|    .tabs.push cur
-    #|    .labels.push 'tab'
-    #|  }
-    #|  receive Container::removeAt(i) {
-    #|    .tabs.deleteAt i
-    #|    .labels.deleteAt i
-    #|  }
-    #|  receive Container::insertAt(i) {
-    #|    new Hole
-    #|    .tabs.insertAt i cur
-    #|    .labels.insertAt i 'tab'
-    #|  }
-    #|</script>
+    #|  Box:
+    #|    receive ask_insert(i):
+    #|      ask(Container::insertRequested, i)
     #|
-    #|<script type="tutuca/test">
-    #|{
-    #|  "an empty hole renders nothing at all": {
-    #|    "component": "Hole",
-    #|    "steps": [
-    #|      { "expect": "html", "contains": "tut-hole" },
-    #|      { "expect": "state", "at": ".child", "is": null }
-    #|    ]
-    #|  },
-    #|  "a box opens its cells as holes, and grows one more": {
-    #|    "component": "Box",
-    #|    "args": { "direction": "row", "gap": 8 },
-    #|    "steps": [
-    #|      { "expect": "count", "at": "div.tut-hole", "is": 0 },
-    #|      { "send": "tutuca.dev/universal/Container@1::appendCell" },
-    #|      { "send": "tutuca.dev/universal/Container@1::appendCell" },
-    #|      { "expect": "count", "at": "div.tut-hole", "is": 2 },
-    #|      { "expect": "state", "at": ".direction", "is": "row" }
-    #|    ]
-    #|  },
-    #|  "a cell inserted in the middle lands in the middle": {
-    #|    "component": "Box",
-    #|    "steps": [
-    #|      { "send": "tutuca.dev/universal/Container@1::appendCell" },
-    #|      { "send": "tutuca.dev/universal/Container@1::appendCell" },
-    #|      { "send": "tutuca.dev/universal/Container@1::insertAt", "args": [1] },
-    #|      { "expect": "count", "at": "div.tut-hole", "is": 3 }
-    #|    ]
-    #|  },
-    #|  "a tab strip grows a label beside every page": {
-    #|    "component": "Tabs",
-    #|    "steps": [
-    #|      { "send": "tutuca.dev/universal/Container@1::appendCell" },
-    #|      { "expect": "text", "at": "button.tab-label", "is": "tab" },
-    #|      { "expect": "state", "at": ".labels", "is": ["tab"] }
-    #|    ]
-    #|  },
-    #|  "removing a tab takes its label with it": {
-    #|    "component": "Tabs",
-    #|    "steps": [
-    #|      { "send": "tutuca.dev/universal/Container@1::appendCell" },
-    #|      { "send": "tutuca.dev/universal/Container@1::appendCell" },
-    #|      { "expect": "count", "at": "button.tab-label", "is": 2 },
-    #|      { "send": "tutuca.dev/universal/Container@1::removeAt", "args": [0] },
-    #|      { "expect": "count", "at": "button.tab-label", "is": 1 },
-    #|      { "expect": "state", "at": ".labels", "is": ["tab"] }
-    #|    ]
-    #|  },
-    #|  "one tab is open at a time, and activate picks it": {
-    #|    "component": "Tabs",
-    #|    "steps": [
-    #|      { "send": "tutuca.dev/universal/Container@1::appendCell" },
-    #|      { "send": "tutuca.dev/universal/Container@1::appendCell" },
-    #|      { "expect": "state", "at": ".active", "is": 0 },
-    #|      { "send": "activate", "args": [1] },
-    #|      { "expect": "state", "at": ".active", "is": 1 }
-    #|    ]
-    #|  },
-    #|  "a textarea writes what is typed": {
-    #|    "component": "Textarea",
-    #|    "args": { "rows": 4, "placeholder": "..." },
-    #|    "steps": [
-    #|      { "type": "textarea.tut-textarea", "value": "note to self" },
-    #|      { "expect": "state", "at": ".text", "is": "note to self" }
-    #|    ]
-    #|  },
-    #|  "a hole holds what it is given and gives the slot back": {
-    #|    "component": "Hole",
-    #|    "steps": [
-    #|      { "send": "tutuca.dev/universal/Holder@1::empty" },
-    #|      { "expect": "state", "at": ".child", "is": null },
-    #|      { "expect": "state", "at": ".editable", "is": false }
-    #|    ]
-    #|  }
-    #|}
-    #|</script>
+    #|    receive ask_remove(i):
+    #|      ask(Container::removeRequested, i)
     #|
-    #|<!-- The templates.
-    #|     Three things here cannot be said inside a template, and each one is a bug
-    #|     that no test on the in-memory DOM can see:
+    #|    property count :: Int:
+    #|      get: it.children.length()
     #|
-    #|     `pt-5` on the chrome is a reserved BAND, not decoration. Without it the
-    #|     badge and the `x` sit on top of whatever is held and INTERCEPT ITS CLICKS —
-    #|     a tabbed thing whose first tab cannot be selected. There is no layout in
-    #|     `@memdom`, so nothing there overlaps and nothing there fails.
+    #|    property cell_field :: String:
+    #|      get: "children"
     #|
-    #|     There is no comment INSIDE any template below. One before the root makes
-    #|     the view a fragment; one inside it sits where the renderer's boundary meta
-    #|     is expected and ends the chain dispatch walks — which is how a click inside
-    #|     a held component stops reaching that component.
+    #|    compute wrap_mode: if it.wrap | "wrap" | "nowrap"
     #|
-    #|     And the chrome's `drop` handler forwards what it does not recognise.
-    #|     `drop` is the only DOM event that bubbles across component boundaries and
-    #|     dispatch gives it to the first ancestor with a handler, so a hole claiming
-    #|     it unconditionally would swallow the page-wide file drop. -->
-    #|<template id="Hole:main">
-    #|  <div class="tut-hole flex items-center justify-center w-full"><x render=".child"></x></div>
-    #|</template>
+    #|    compute style: @str{display:flex;flex-direction:@(it.direction);justify-content:@(it.justify);align-items:@(it.align);flex-wrap:@(wrap_mode);gap:@(it.gap)px;padding:@(it.padding)px}
     #|
-    #|<template id="Hole:chrome">
-    #|  <div class="tut-hole relative w-full min-h-8 pt-5 px-1 pb-1 flex items-center justify-center rounded outline-1 outline-dashed outline-base-300">
-    #|    <button class="hole-add btn btn-ghost btn-block min-h-16 text-3xl font-thin opacity-30 hover:opacity-100"
-    #|            @show="not .filled" @on.click="add e.isCtrl">+</button>
-    #|    <button class="hole-config absolute top-0.5 left-1 z-10 badge badge-xs badge-ghost cursor-pointer"
-    #|            @show=".editable" @on.click="toggleConfig">edit</button>
-    #|    <button class="hole-remove absolute top-0.5 right-1 z-10 btn btn-xs btn-circle btn-ghost opacity-40 hover:opacity-100"
-    #|            @show=".filled" @on.click="askEmpty">x</button>
-    #|    <span class="contents" @push-view="$childView"><x render=".child"></x></span>
-    #|  </div>
-    #|</template>
+    #|    compute is_row: (it.direction == "row")
     #|
-    #|<template id="Box:main">
-    #|  <div class="tut-box w-full" :style="$style"><x render-each=".children"></x></div>
-    #|</template>
+    #|    receive Container::appendCell:
+    #|      it.children.push(Hole())
     #|
-    #|<template id="Box:arrange">
-    #|  <div class="tut-box w-full" :style="$style">
-    #|    <div class="tut-cell relative" @each=".children">
-    #|      <button class="cell-before absolute z-20 rounded bg-primary opacity-0 hover:opacity-60"
-    #|              @if.style="$isRow"
-    #|              @then="'inset-block:0;inset-inline-start:-4px;inline-size:8px'"
-    #|              @else="'inset-inline:0;inset-block-start:-4px;block-size:8px'"
-    #|              @on.click="askInsert @key"></button>
-    #|      <x render-it></x>
-    #|    </div>
-    #|    <button class="cell-append rounded bg-primary opacity-20 hover:opacity-60"
-    #|            @if.style="$isRow"
-    #|            @then="'inline-size:8px;align-self:stretch'"
-    #|            @else="'block-size:8px'"
-    #|            @on.click="askInsert -1"></button>
-    #|  </div>
-    #|</template>
+    #|    receive Container::removeAt(i):
+    #|      it.children.delete_at(i)
     #|
-    #|<template id="Grid:main">
-    #|  <div class="tut-grid w-full" :style="$style"><x render-each=".children"></x></div>
-    #|</template>
+    #|    receive Container::insertAt(i):
+    #|      it.children.insert_at(i, Hole())
     #|
-    #|<template id="Grid:arrange">
-    #|  <div class="tut-grid w-full" :style="$style">
-    #|    <div class="tut-cell relative" @each=".children">
-    #|      <button class="cell-remove absolute top-0 right-0 z-20 btn btn-xs btn-ghost opacity-0 hover:opacity-70"
-    #|              @on.click="askRemove @key">x</button>
-    #|      <x render-it></x>
-    #|    </div>
-    #|  </div>
-    #|</template>
+    #|  Grid:
+    #|    receive ask_insert(i):
+    #|      ask(Container::insertRequested, i)
     #|
-    #|<template id="Tabs:main">
-    #|  <div class="tut-tabs w-full flex flex-col gap-2">
-    #|    <div role="tablist" class="tab-strip tabs tabs-box">
-    #|      <button role="tab" class="tab-label tab" @each=".labels"
-    #|              @on.click="activate @key" @text="@value"></button>
-    #|    </div>
-    #|    <span class="contents" @each=".tabs" @enrich-with="markActive">
-    #|      <x render-it @show="@active"></x>
-    #|    </span>
-    #|  </div>
-    #|</template>
+    #|    receive ask_remove(i):
+    #|      ask(Container::removeRequested, i)
     #|
-    #|<template id="Tabs:arrange">
-    #|  <div class="tut-tabs w-full flex flex-col gap-2">
-    #|    <div role="tablist" class="tab-strip tabs tabs-box">
-    #|      <button role="tab" class="tab-label tab" @each=".labels"
-    #|              @on.click="activate @key" @text="@value"></button>
-    #|      <button class="tab-add tab" @on.click="askInsert -1">+</button>
-    #|      <button class="tab-close tab" @hide="empty? .tabs" @on.click="askRemove .active">x</button>
-    #|    </div>
-    #|    <span class="contents" @each=".tabs" @enrich-with="markActive">
-    #|      <x render-it @show="@active"></x>
-    #|    </span>
-    #|  </div>
-    #|</template>
+    #|    property count :: Int:
+    #|      get: it.children.length()
     #|
-    #|<template id="Text:main"><span class="tut-text" :style="$sized" @text=".text"></span></template>
+    #|    property cell_field :: String:
+    #|      get: "children"
     #|
+    #|    compute style: @str{display:grid;grid-template-columns:repeat(@(it.cols),minmax(0,1fr));grid-template-rows:repeat(@(it.rows),minmax(0,1fr));gap:@(it.gap)px;padding:@(it.padding)px}
     #|
-    #|<template id="Text:configure">
-    #|  <label class="tut-config flex flex-col gap-1 w-full">
-    #|    <input class="cfg-text input input-bordered input-sm w-full" :value=".text" @on.input=".text = e.value">
-    #|    <input class="cfg-size input input-bordered input-xs w-full" :value=".size" @on.input=".size = e.value">
-    #|  </label>
-    #|</template>
+    #|    receive Container::appendCell:
+    #|      it.children.push(Hole())
     #|
-    #|<template id="Textarea:main">
-    #|  <textarea class="tut-textarea textarea textarea-bordered w-full font-mono"
-    #|            :rows=".rows" :placeholder=".placeholder"
-    #|            :value=".text" @on.input=".text = e.value"></textarea>
-    #|</template>
+    #|    receive Container::removeAt(i):
+    #|      it.children.delete_at(i)
     #|
-    #|<template id="Textarea:configure">
-    #|  <label class="tut-config flex flex-col gap-1 w-full">
-    #|    <input class="cfg-rows input input-bordered input-xs w-full" :value=".rows" @on.input=".rows = e.value">
-    #|    <input class="cfg-placeholder input input-bordered input-xs w-full" :value=".placeholder" @on.input=".placeholder = e.value">
-    #|  </label>
-    #|</template>
+    #|    receive Container::insertAt(i):
+    #|      it.children.insert_at(i, Hole())
     #|
-    #|<template id="Markdown:main"><article class="tut-markdown prose w-full" @setinnermd=".text"></article></template>
+    #|  Tabs:
+    #|    /// Which row is the open one, bound per row.
+    #|    ///
+    #|    /// It has to be an enricher: inside `@each` a `.field` reads the ITEM, and a
+    #|    /// page is a Hole, which has no idea which tab it is. The strip's own index
+    #|    /// is the only thing that knows, and this is how it reaches the row.
+    #|    enrich mark_active(value, key):
+    #|      active = (key == it.active)
     #|
-    #|<template id="Markdown:configure">
-    #|  <textarea class="cfg-md textarea textarea-bordered w-full font-mono" :rows="6"
-    #|            :value=".text" @on.input=".text = e.value"></textarea>
-    #|</template>
+    #|    receive ask_insert(i):
+    #|      ask(Container::insertRequested, i)
+    #|
+    #|    receive ask_remove(i):
+    #|      ask(Container::removeRequested, i)
+    #|
+    #|    property count :: Int:
+    #|      get: it.tabs.length()
+    #|
+    #|    property cell_field :: String:
+    #|      get: "tabs"
+    #|
+    #|    receive activate(i):
+    #|      it.active := i
+    #|
+    #|    receive Container::appendCell:
+    #|      it.tabs.push(Hole())
+    #|      it.labels.push("tab")
+    #|
+    #|    receive Container::removeAt(i):
+    #|      it.tabs.delete_at(i)
+    #|      it.labels.delete_at(i)
+    #|
+    #|    receive Container::insertAt(i):
+    #|      it.tabs.insert_at(i, Hole())
+    #|      it.labels.insert_at(i, "tab")
+    #|
+    #|view:
+    #|  Hole:
+    #|    @div(~class: "tut-hole flex items-center justify-center w-full"){@render(it.child)}
+    #|
+    #|  Hole.chrome:
+    #|    @div(~class: "tut-hole relative w-full min-h-8 pt-5 px-1 pb-1 flex items-center justify-center rounded outline-1 outline-dashed outline-base-300"){@show(!it.filled){@button(~class: "hole-add btn btn-ghost btn-block min-h-16 text-3xl font-thin opacity-30 hover:opacity-100", ~on_click: add(e.isCtrl)){+}} @show(it.editable){@button(~class: "hole-config absolute top-0.5 left-1 z-10 badge badge-xs badge-ghost cursor-pointer", ~on_click: toggle_config){edit}} @show(it.filled){@button(~class: "hole-remove absolute top-0.5 right-1 z-10 btn btn-xs btn-circle btn-ghost opacity-40 hover:opacity-100", ~on_click: ask_empty){x}} @span(~push_view: child_view(), ~class: "contents"){@render(it.child)}}
+    #|
+    #|  Box:
+    #|    @div(~class: "tut-box w-full", ~style: style()){
+    #|      @each(value, key in it.children){
+    #|        @render(value)
+    #|      }
+    #|    }
+    #|
+    #|  Box.arrange:
+    #|    @div(~class: "tut-box w-full", ~style: style()){@each(value, key in it.children){@div(~class: "tut-cell relative"){@button(~class: "cell-before absolute z-20 rounded bg-primary opacity-0 hover:opacity-60", ~style: if is_row() | "inset-block:0;inset-inline-start:-4px;inline-size:8px" | "inset-inline:0;inset-block-start:-4px;block-size:8px", ~on_click: ask_insert(key)) @render(value)}} @button(~class: "cell-append rounded bg-primary opacity-20 hover:opacity-60", ~style: if is_row() | "inline-size:8px;align-self:stretch" | "block-size:8px", ~on_click: ask_insert(-1))}
+    #|
+    #|  Grid:
+    #|    @div(~class: "tut-grid w-full", ~style: style()){
+    #|      @each(value, key in it.children){
+    #|        @render(value)
+    #|      }
+    #|    }
+    #|
+    #|  Grid.arrange:
+    #|    @div(~class: "tut-grid w-full", ~style: style()){
+    #|      @each(value, key in it.children){
+    #|        @div(~class: "tut-cell relative"){@button(~class: "cell-remove absolute top-0 right-0 z-20 btn btn-xs btn-ghost opacity-0 hover:opacity-70", ~on_click: ask_remove(key)){x} @render(value)}
+    #|      }
+    #|    }
+    #|
+    #|  Tabs:
+    #|    @div(~class: "tut-tabs w-full flex flex-col gap-2"){@div(~role: "tablist", ~class: "tab-strip tabs tabs-box"){@each(value, key in it.labels){@button(~role: "tab", ~class: "tab-label tab", ~on_click: activate(key)){@(value)}}} @each(value, key in it.tabs, ~enrich_with: mark_active){@span(~class: "contents"){@show(active){@render(value)}}}}
+    #|
+    #|  Tabs.arrange:
+    #|    @div(~class: "tut-tabs w-full flex flex-col gap-2"){@div(~role: "tablist", ~class: "tab-strip tabs tabs-box"){@each(value, key in it.labels){@button(~role: "tab", ~class: "tab-label tab", ~on_click: activate(key)){@(value)}} @button(~class: "tab-add tab", ~on_click: ask_insert(-1)){+} @hide(it.tabs.is_empty()){@button(~class: "tab-close tab", ~on_click: ask_remove(it.active)){x}}} @each(value, key in it.tabs, ~enrich_with: mark_active){@span(~class: "contents"){@show(active){@render(value)}}}}
+    #|
+    #|  Text:
+    #|    @span(~class: "tut-text", ~style: sized()){@(it.text)}
+    #|
+    #|  Text.configure:
+    #|    @label(~class: "tut-config flex flex-col gap-1 w-full"){@input(~class: "cfg-text input input-bordered input-sm w-full", ~value: it.text, ~on_input: it.text := e.value) @input(~class: "cfg-size input input-bordered input-xs w-full", ~value: it.size, ~on_input: it.size := e.value)}
+    #|
+    #|  Textarea:
+    #|    @textarea(~class: "tut-textarea textarea textarea-bordered w-full font-mono", ~rows: it.rows, ~placeholder: it.placeholder, ~value: it.text, ~on_input: it.text := e.value)
+    #|
+    #|  Textarea.configure:
+    #|    @label(~class: "tut-config flex flex-col gap-1 w-full"){@input(~class: "cfg-rows input input-bordered input-xs w-full", ~value: it.rows, ~on_input: it.rows := e.value) @input(~class: "cfg-placeholder input input-bordered input-xs w-full", ~value: it.placeholder, ~on_input: it.placeholder := e.value)}
+    #|
+    #|  Markdown:
+    #|    @article(~class: "tut-markdown prose w-full", ~inner_md: it.text)
+    #|
+    #|  Markdown.configure:
+    #|    @textarea(~class: "cfg-md textarea textarea-bordered w-full font-mono", ~rows: 6, ~value: it.text, ~on_input: it.text := e.value)
+    #|
+    #|tests:
+    #|  "an empty hole renders nothing at all":
+    #|    ~component: Hole
+    #|    expect html contains "tut-hole"
+    #|    expect state it.child == none
+    #|
+    #|  "a box opens its cells as holes, and grows one more":
+    #|    ~component: Box
+    #|    ~args: {direction: "row", gap: 8}
+    #|    expect count("div.tut-hole") == 0
+    #|    send("tutuca.dev/universal/Container@1::appendCell")
+    #|    send("tutuca.dev/universal/Container@1::appendCell")
+    #|    expect count("div.tut-hole") == 2
+    #|    expect state it.direction == "row"
+    #|
+    #|  "a cell inserted in the middle lands in the middle":
+    #|    ~component: Box
+    #|    send("tutuca.dev/universal/Container@1::appendCell")
+    #|    send("tutuca.dev/universal/Container@1::appendCell")
+    #|    send("tutuca.dev/universal/Container@1::insertAt", 1)
+    #|    expect count("div.tut-hole") == 3
+    #|
+    #|  "a tab strip grows a label beside every page":
+    #|    ~component: Tabs
+    #|    send("tutuca.dev/universal/Container@1::appendCell")
+    #|    expect text("button.tab-label") == "tab"
+    #|    expect state it.labels == ["tab"]
+    #|
+    #|  "removing a tab takes its label with it":
+    #|    ~component: Tabs
+    #|    send("tutuca.dev/universal/Container@1::appendCell")
+    #|    send("tutuca.dev/universal/Container@1::appendCell")
+    #|    expect count("button.tab-label") == 2
+    #|    send("tutuca.dev/universal/Container@1::removeAt", 0)
+    #|    expect count("button.tab-label") == 1
+    #|    expect state it.labels == ["tab"]
+    #|
+    #|  "one tab is open at a time, and activate picks it":
+    #|    ~component: Tabs
+    #|    send("tutuca.dev/universal/Container@1::appendCell")
+    #|    send("tutuca.dev/universal/Container@1::appendCell")
+    #|    expect state it.active == 0
+    #|    send("activate", 1)
+    #|    expect state it.active == 1
+    #|
+    #|  "a textarea writes what is typed":
+    #|    ~component: Textarea
+    #|    ~args: {rows: 4, placeholder: "..."}
+    #|    type("textarea.tut-textarea", "note to self")
+    #|    expect state it.text == "note to self"
+    #|
+    #|  "a hole holds what it is given and gives the slot back":
+    #|    ~component: Hole
+    #|    send("tutuca.dev/universal/Holder@1::empty")
+    #|    expect state it.child == none
+    #|    expect state it.editable == false
   src
 }

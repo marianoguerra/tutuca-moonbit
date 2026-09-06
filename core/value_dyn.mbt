@@ -41,7 +41,32 @@ pub fn Value::field(self : Value, name : String) -> Value {
 /// ordinary record lookup.
 pub fn Value::property_opt(self : Value, name : String) -> Value? {
   match self {
-    Obj(o) => o.property(name)
+    Obj(o) =>
+      match o.property(name) {
+        Some(v) => Some(v)
+        // A PROTOCOL member, by the name the protocol gives it. The component
+        // binds it to a property of its own — `Container::cellField =
+        // cell_field` — and the two used to be the same word, so asking for
+        // the member found the property by accident. They stopped being one
+        // word when local names went `snake_case`, and `compose/build.mbt`
+        // asks by the member: it is the protocol that froze the name, and the
+        // whole point of freezing it is that a stranger can ask.
+        None => bound_property(self, name)
+      }
+    _ => None
+  }
+}
+
+///|
+/// The local property a protocol member is bound to, read through the binding.
+fn bound_property(v : Value, name : String) -> Value? {
+  guard v.schema() is Some(schema) else { return None }
+  guard schema.property_bindings.iter().find_first(b => b.member_name == name)
+    is Some(binding) else {
+    return None
+  }
+  match v {
+    Obj(o) => o.property(binding.source)
     _ => None
   }
 }

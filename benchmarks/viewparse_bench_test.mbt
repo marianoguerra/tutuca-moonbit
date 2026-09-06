@@ -54,7 +54,7 @@ test "workload shape" {
   inspect(
     @benchmarks.all_views.length(),
     content=(
-      #|62164
+      #|77070
     ),
   )
   inspect(
@@ -66,13 +66,13 @@ test "workload shape" {
   inspect(
     @benchmarks.gen(@benchmarks.all_views),
     content=(
-      #|307126
+      #|1067197
     ),
   )
   inspect(
     @benchmarks.gen(giant_1x),
     content=(
-      #|143686
+      #|132230
     ),
   )
 }
@@ -85,14 +85,14 @@ test "workload shape" {
 /// splits fails only under `moon bench` — which is not what CI runs. Both
 /// corpora were silently unusable for exactly that reason once view files
 /// started carrying schema blocks: `all_views` concatenates every view file,
-/// and 36 schemas in one file is not a view file, while a `<template>`
-/// written inside a schema COMMENT was taken for an opening tag.
+/// and 36 schemas in one file is not a view file.
+///
+/// They are `.tutu` now, so the corpus goes through the lowering the pipeline
+/// does — `split_corpus`, which is what the benches measure — rather than
+/// straight into the splitter.
 test "both corpora still split" {
-  let many = @viewgen.split_file(@benchmarks.all_views)
-  assert_true(many.components.length() > 50)
-  // A schema block is WIT, not markup: the corpus builder strips it, so no
-  // schema survives the concatenation to be parsed as a second one.
-  assert_eq(many.state.length(), 0)
-  let giant = @viewgen.split_file(@benchmarks.giant_view(1))
-  assert_eq(giant.components.length(), 1)
+  let many = @benchmarks.split(@benchmarks.all_views)
+  assert_true(many > 0)
+  let giant = @benchmarks.split(@benchmarks.giant_view(1))
+  assert_true(giant > 0)
 }

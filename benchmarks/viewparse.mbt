@@ -79,7 +79,13 @@ const WORKLOAD_FILE = "corpus.tutu"
 
 ///|
 fn split_corpus(source : String) -> @viewfile.ViewFile {
-  @viewgen.split_file(source) catch {
+  let sources = @report.Sources::new()
+  let id = sources.add("corpus.tutu", source)
+  let lowered = @lower.lower(source, id)
+  if lowered.reports.length() > 0 {
+    abort("benchmark corpus did not lower: " + lowered.reports[0].message)
+  }
+  @viewgen.split_file(lowered.text) catch {
     e => fail_stage("split", e)
   }
 }
@@ -90,17 +96,16 @@ fn[T] fail_stage(stage : String, e : @viewgen.GenError) -> T {
 }
 
 ///|
-/// `one_big_view_body` wrapped in a `<template>` `times` times over: one view
+/// `one_big_view_body` under one component `times` times over: one view
 /// holding `times` copies of every view body in the repo. `giant_view(1)` is
-/// benchmarks/one_big_view.html; higher counts are the scaling probe.
+/// benchmarks/one_big_view.tutu; higher counts are the scaling probe.
 pub fn giant_view(times : Int) -> String {
   let sb = StringBuilder()
-  sb.write_string("<template id=\"GiantView\">\n")
+  sb.write_string("view:\n  GiantView:\n")
   for _ in 0..<times {
     sb.write_string(one_big_view_body)
     sb.write_char('\n')
   }
-  sb.write_string("</template>")
   sb.to_string()
 }
 

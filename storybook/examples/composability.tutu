@@ -15,17 +15,5 @@ spec:
 
 view:
   Composability:
-    @section(~class: "flex flex-col gap-4"){@div(~role: "tablist", ~class: "tabs tabs-border"){@button(~role: "tab", ~id: "tab-todo", ~class: if (it.active_section == "todo") | "tab tab-active" | "tab", ~on_click: it.active_section := "todo"){To-Do} @button(~role: "tab", ~id: "tab-json", ~class: if (it.active_section == "json") | "tab tab-active" | "tab", ~on_click: it.active_section := "json"){JSON Editor} @button(~role: "tab", ~id: "tab-tree", ~class: if (it.active_section == "tree") | "tab tab-active" | "tab", ~on_click: it.active_section := "tree"){Tree} @button(~role: "tab", ~id: "tab-personal-site", ~class: if (it.active_section == "personalSite") | "tab tab-active" | "tab", ~on_click: it.active_section := "personalSite"){Personal Site} @button(~role: "tab", ~id: "tab-dnd", ~class: if (it.active_section == "dnd") | "tab tab-active" | "tab", ~on_click: it.active_section := "dnd"){Drag and Drop} @button(~role: "tab", ~id: "tab-visual-wasm", ~class: if (it.active_section == "visualWasm") | "tab tab-active" | "tab", ~on_click: it.active_section := "visualWasm"){Visual Wasm}} @show((it.active_section == "todo")){
-  @div(~class: "pane-todo"){@render(it.todo)}
-} @show((it.active_section == "json")){
-  @div(~class: "pane-json"){@render(it.json)}
-} @show((it.active_section == "tree")){
-  @div(~class: "pane-tree"){@render(it.tree)}
-} @show((it.active_section == "personalSite")){
-  @div(~class: "pane-personal-site"){@render(it.personal_site)}
-} @show((it.active_section == "dnd")){
-  @div(~class: "pane-dnd"){@render(it.dnd)}
-} @show((it.active_section == "visualWasm")){
-  @div(~class: "pane-visual-wasm"){@render(it.visual_wasm)}
-}}
+    @section(~class: "flex flex-col gap-4"){@div(~role: "tablist", ~class: "tabs tabs-border"){@button(~role: "tab", ~id: "tab-todo", ~class: if (it.active_section == "todo") | "tab tab-active" | "tab", ~on_click: it.active_section := "todo"){To-Do} @button(~role: "tab", ~id: "tab-json", ~class: if (it.active_section == "json") | "tab tab-active" | "tab", ~on_click: it.active_section := "json"){JSON Editor} @button(~role: "tab", ~id: "tab-tree", ~class: if (it.active_section == "tree") | "tab tab-active" | "tab", ~on_click: it.active_section := "tree"){Tree} @button(~role: "tab", ~id: "tab-personal-site", ~class: if (it.active_section == "personalSite") | "tab tab-active" | "tab", ~on_click: it.active_section := "personalSite"){Personal Site} @button(~role: "tab", ~id: "tab-dnd", ~class: if (it.active_section == "dnd") | "tab tab-active" | "tab", ~on_click: it.active_section := "dnd"){Drag and Drop} @button(~role: "tab", ~id: "tab-visual-wasm", ~class: if (it.active_section == "visualWasm") | "tab tab-active" | "tab", ~on_click: it.active_section := "visualWasm"){Visual Wasm}} @show((it.active_section == "todo")){@div(~class: "pane-todo"){@render(it.todo)}} @show((it.active_section == "json")){@div(~class: "pane-json"){@render(it.json)}} @show((it.active_section == "tree")){@div(~class: "pane-tree"){@render(it.tree)}} @show((it.active_section == "personalSite")){@div(~class: "pane-personal-site"){@render(it.personal_site)}} @show((it.active_section == "dnd")){@div(~class: "pane-dnd"){@render(it.dnd)}} @show((it.active_section == "visualWasm")){@div(~class: "pane-visual-wasm"){@render(it.visual_wasm)}}}
 

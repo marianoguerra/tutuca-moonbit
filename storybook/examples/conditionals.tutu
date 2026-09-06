@@ -33,34 +33,11 @@ logic:
 
 view:
   TrafficLight:
-    @section(~class: "flex flex-col gap-2"){@button(~class: "btn btn-primary", ~on_click: next_light){Next light} @p{@"Light is: "@code{@(light())}}@p(~class: "advice"){@" You must "@show((light() == "red")){
-  @span{STOP}
-} @show((light() == "orange")){
-  @span{SLOW DOWN}
-} @show((light() == "green")){
-  @span{GO}
-}}}
+    @section(~class: "flex flex-col gap-2"){@button(~class: "btn btn-primary", ~on_click: next_light){Next light} @p{@"Light is: "@code{@(light())}}@p(~class: "advice"){@" You must "@show((light() == "red")){@span{STOP}} @show((light() == "orange")){@span{SLOW DOWN}} @show((light() == "green")){@span{GO}}}}
 
   TabbedUI:
-    @section(~class: "flex flex-col gap-3"){@div(~role: "tablist", ~class: "tabs tabs-border"){@button(~role: "tab", ~id: "t-overview", ~class: if (it.tab == "overview") | "tab tab-active" | "tab", ~on_click: it.tab := "overview"){Overview} @button(~role: "tab", ~id: "t-features", ~class: if (it.tab == "features") | "tab tab-active" | "tab", ~on_click: it.tab := "features"){Features} @button(~role: "tab", ~id: "t-pricing", ~class: if (it.tab == "pricing") | "tab tab-active" | "tab", ~on_click: it.tab := "pricing"){Pricing}} @show((it.tab == "overview")){
-  @div(~class: "card p-3 border panel"){
-    @h4{Overview}
-    @p{A short summary of what this product does.}
-  }
-} @show((it.tab == "features")){
-  @div(~class: "card p-3 border panel"){
-    @h4{Features}
-    @p{The list of features lives on this tab.}
-  }
-} @show((it.tab == "pricing")){
-  @div(~class: "card p-3 border panel"){
-    @h4{Pricing}
-    @p{What it costs.}
-  }
-}}
+    @section(~class: "flex flex-col gap-3"){@div(~role: "tablist", ~class: "tabs tabs-border"){@button(~role: "tab", ~id: "t-overview", ~class: if (it.tab == "overview") | "tab tab-active" | "tab", ~on_click: it.tab := "overview"){Overview} @button(~role: "tab", ~id: "t-features", ~class: if (it.tab == "features") | "tab tab-active" | "tab", ~on_click: it.tab := "features"){Features} @button(~role: "tab", ~id: "t-pricing", ~class: if (it.tab == "pricing") | "tab tab-active" | "tab", ~on_click: it.tab := "pricing"){Pricing}} @show((it.tab == "overview")){@div(~class: "card p-3 border panel"){@h4{Overview}@p{A short summary of what this product does.}}} @show((it.tab == "features")){@div(~class: "card p-3 border panel"){@h4{Features}@p{The list of features lives on this tab.}}} @show((it.tab == "pricing")){@div(~class: "card p-3 border panel"){@h4{Pricing}@p{What it costs.}}}}
 
   ListAndFilter:
-    @section(~class: "flex flex-col gap-3"){@input(~type: "search", ~class: "input", ~value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := default ~cancel, ~placeholder: "Filter entries") @ul{@each(value, key in it.items, ~when: filter_item){
-  @li{@span{@(key)}@": "@(value)}
-}}}
+    @section(~class: "flex flex-col gap-3"){@input(~type: "search", ~class: "input", ~value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := default ~cancel, ~placeholder: "Filter entries") @ul{@each(value, key in it.items, ~when: filter_item){@li{@span{@(key)}@": "@(value)}}}}
 

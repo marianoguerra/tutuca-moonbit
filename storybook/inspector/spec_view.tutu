@@ -107,46 +107,20 @@ spec:
 
 view:
   SpecField:
-    @div(~class: "flex flex-col gap-0.5 leading-tight spec-field"){@div(~class: "flex items-center gap-2 flex-wrap"){@span(~class: "text-base-content/70 font-mono text-sm spec-field-name"){@(it.name)} @show(it.type_name.is_truthy()){
-  @span(~class: "text-base-content/30"){:}
-} @span(~class: "text-base-content/50 font-mono text-xs spec-field-type"){@(it.type_name)} @show(it.attrs.is_truthy()){
-  @span(~class: "badge badge-xs badge-ghost font-mono spec-field-attrs"){@(it.attrs)}
-}} @show(it.doc.is_truthy()){
-  @div(~class: "text-xs opacity-50 pl-2 spec-doc"){@(it.doc)}
-}}
+    @div(~class: "flex flex-col gap-0.5 leading-tight spec-field"){@div(~class: "flex items-center gap-2 flex-wrap"){@span(~class: "text-base-content/70 font-mono text-sm spec-field-name"){@(it.name)} @show(it.type_name.is_truthy()){@span(~class: "text-base-content/30"){:}} @span(~class: "text-base-content/50 font-mono text-xs spec-field-type"){@(it.type_name)} @show(it.attrs.is_truthy()){@span(~class: "badge badge-xs badge-ghost font-mono spec-field-attrs"){@(it.attrs)}}} @show(it.doc.is_truthy()){@div(~class: "text-xs opacity-50 pl-2 spec-doc"){@(it.doc)}}}
 
   SpecMsg:
-    @div(~class: "flex flex-col gap-0.5 leading-tight spec-msg"){@div(~class: "flex items-center gap-2 flex-wrap"){@span(~class: "font-mono text-sm spec-msg-name"){@(it.name)} @show(it.payload.is_truthy()){
-  @span(~class: "text-base-content/50 font-mono text-xs spec-msg-payload"){@(it.payload)}
-}} @show(it.doc.is_truthy()){
-  @div(~class: "text-xs opacity-50 pl-2 spec-doc"){@(it.doc)}
-}}
+    @div(~class: "flex flex-col gap-0.5 leading-tight spec-msg"){@div(~class: "flex items-center gap-2 flex-wrap"){@span(~class: "font-mono text-sm spec-msg-name"){@(it.name)} @show(it.payload.is_truthy()){@span(~class: "text-base-content/50 font-mono text-xs spec-msg-payload"){@(it.payload)}}} @show(it.doc.is_truthy()){@div(~class: "text-xs opacity-50 pl-2 spec-doc"){@(it.doc)}}}
 
   SpecRule:
-    @div(~class: "flex flex-col gap-0.5 leading-tight spec-rule"){@div(~class: "flex items-center gap-2 flex-wrap"){@span(~class: it.kind_class){@(it.kind)} @span(~class: "font-mono text-sm font-semibold spec-rule-name"){@(it.name)}} @code(~class: "text-xs font-mono opacity-70 pl-2 break-all spec-rule-source"){@(it.source)} @show(it.format.is_truthy()){
-  @div(~class: "text-xs opacity-50 pl-2 spec-rule-format"){@(it.format)}
-} @show(it.doc.is_truthy()){
-  @div(~class: "text-xs opacity-50 pl-2 spec-doc"){@(it.doc)}
-}}
+    @div(~class: "flex flex-col gap-0.5 leading-tight spec-rule"){@div(~class: "flex items-center gap-2 flex-wrap"){@span(~class: it.kind_class){@(it.kind)} @span(~class: "font-mono text-sm font-semibold spec-rule-name"){@(it.name)}} @code(~class: "text-xs font-mono opacity-70 pl-2 break-all spec-rule-source"){@(it.source)} @show(it.format.is_truthy()){@div(~class: "text-xs opacity-50 pl-2 spec-rule-format"){@(it.format)}} @show(it.doc.is_truthy()){@div(~class: "text-xs opacity-50 pl-2 spec-doc"){@(it.doc)}}}
 
   SpecDoc:
     @div(~class: "text-xs opacity-60 italic whitespace-pre-wrap spec-doc-block"){@(it.text)}
 
   SpecViewer:
-    @div(~class: "font-mono text-sm leading-tight flex flex-col gap-1 spec-viewer"){@hide(it.has_spec){
-  @div(~class: "text-xs opacity-50 spec-hint"){@(it.hint)}
-} @show(it.note.is_truthy()){
-  @div(~class: "text-xs opacity-40 italic spec-note"){@(it.note)}
-} @each(value, key in it.sections){
-  @render(value)
-}}
+    @div(~class: "font-mono text-sm leading-tight flex flex-col gap-1 spec-viewer"){@hide(it.has_spec){@div(~class: "text-xs opacity-50 spec-hint"){@(it.hint)}} @show(it.note.is_truthy()){@div(~class: "text-xs opacity-40 italic spec-note"){@(it.note)}} @each(value, key in it.sections){@render(value)}}
 
   SpecSource:
-    @div(~class: "flex flex-col gap-1 spec-source"){@hide(it.has_source){
-  @div(~class: "text-xs opacity-50 spec-source-hint"){@(it.hint)}
-} @show(it.note.is_truthy()){
-  @div(~class: "text-xs opacity-40 italic spec-note"){@(it.note)}
-} @show(it.has_source){
-  @pre(~class: "text-xs bg-base-200 rounded p-2 overflow-x-auto whitespace-pre-wrap"){@code(~class: "spec-source-text"){@(it.source)}}
-}}
+    @div(~class: "flex flex-col gap-1 spec-source"){@hide(it.has_source){@div(~class: "text-xs opacity-50 spec-source-hint"){@(it.hint)}} @show(it.note.is_truthy()){@div(~class: "text-xs opacity-40 italic spec-note"){@(it.note)}} @show(it.has_source){@pre(~class: "text-xs bg-base-200 rounded p-2 overflow-x-auto whitespace-pre-wrap"){@code(~class: "spec-source-text"){@(it.source)}}}}
 

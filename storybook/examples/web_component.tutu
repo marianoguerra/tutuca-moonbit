@@ -5,13 +5,5 @@ spec:
 
 view:
   EmojiPicker:
-    @section(~on_emoji_click: on_emoji_click(e.value), ~class: "join join-vertical gap-3 items-center"){@hide(it.current.is_truthy()){
-  @p(~class: "hint"){@" Select the "@em{Toggle Picker}@" button and select an emoji, it will be displayed here "}
-} @show(it.current.is_truthy()){
-  @p(~class: "label"){Selected emoji:}
-} @show(it.current.is_truthy()){
-  @span(~class: "current text-9xl"){@(it.current)}
-} @button(~class: "btn btn-sm toggle-btn", ~on_click: it.is_picker_visible := !it.is_picker_visible){@" Toggle Picker "} @show(it.is_picker_visible){
-  @emoji_picker
-}}
+    @section(~on_emoji_click: on_emoji_click(e.value), ~class: "join join-vertical gap-3 items-center"){@hide(it.current.is_truthy()){@p(~class: "hint"){@" Select the "@em{Toggle Picker}@" button and select an emoji, it will be displayed here "}} @show(it.current.is_truthy()){@p(~class: "label"){Selected emoji:}} @show(it.current.is_truthy()){@span(~class: "current text-9xl"){@(it.current)}} @button(~class: "btn btn-sm toggle-btn", ~on_click: it.is_picker_visible := !it.is_picker_visible){@" Toggle Picker "} @show(it.is_picker_visible){@emoji_picker}}
 

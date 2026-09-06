@@ -71,16 +71,10 @@ logic:
 
 view:
   PushView:
-    @section(~class: "flex flex-col gap-3"){@div(~class: "flex justify-between"){@input(~type: "search", ~class: "input", ~value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := default ~cancel, ~placeholder: "Filter entries") @button(~class: "btn bnt-sm btn-primary toggle-btn", ~on_click: toggle_view){@(get_toggle_label())}} @div(~push_view: it.view, ~class: "flex flex-col gap-3 max-h-[40vh] overflow-y-auto pr-3 rows"){
-  @each(value, key in it.items, ~when: filter_item){
-    @render(value)
-  }
-}}
+    @section(~class: "flex flex-col gap-3"){@div(~class: "flex justify-between"){@input(~type: "search", ~class: "input", ~value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := default ~cancel, ~placeholder: "Filter entries") @button(~class: "btn bnt-sm btn-primary toggle-btn", ~on_click: toggle_view){@(get_toggle_label())}} @div(~push_view: it.view, ~class: "flex flex-col gap-3 max-h-[40vh] overflow-y-auto pr-3 rows"){@each(value, key in it.items, ~when: filter_item){@render(value)}}}
 
   SeqItemAccess:
-    @section(~class: "flex flex-col gap-3"){@input(~type: "range", ~min: "0", ~max: get_max_index(), ~value: it.current_index, ~on_input: it.current_index := e.valueAsInt) @render(it.by_index[it.current_index]) @select(~class: "select", ~value: it.current_key, ~on_input: it.current_key := e.value){@each(value, key in it.by_key){
-  @option(~value: key){@(value.title)}
-}} @render(it.by_key[it.current_key])}
+    @section(~class: "flex flex-col gap-3"){@input(~type: "range", ~min: "0", ~max: get_max_index(), ~value: it.current_index, ~on_input: it.current_index := e.valueAsInt) @render(it.by_index[it.current_index]) @select(~class: "select", ~value: it.current_key, ~on_input: it.current_key := e.value){@each(value, key in it.by_key){@option(~value: key){@(value.title)}}} @render(it.by_key[it.current_key])}
 
   Pagination:
     @section(~class: "flex flex-col gap-3"){

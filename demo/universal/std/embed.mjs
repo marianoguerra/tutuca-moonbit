@@ -1,4 +1,4 @@
-// Regenerate `std_card_gen.mbt` from `std.card.html`.
+// Regenerate `std_card_gen.mbt` from `std.card.tutu`.
 //
 //   moon run --target native cmd/dev -- universal-embed   (snapshots + drift-checks)
 //
@@ -17,7 +17,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(join(here, "std.card.html"), "utf8");
+const source = readFileSync(join(here, "std.card.tutu"), "utf8");
 
 // No ASCII guard here, unlike `tgc/rt/embed.mjs`. That one has one because the
 // wap front end needs it when the source arrives as a literal; MoonBit source
@@ -34,10 +34,10 @@ const lines = source
 
 writeFileSync(
   join(here, "std_card_gen.mbt"),
-  `// Generated from \`std.card.html\` by \`node demo/universal/std/embed.mjs\`.
+  `// Generated from \`std.card.tutu\` by \`node demo/universal/std/embed.mjs\`.
 // DO NOT EDIT.
 //
-// Change \`std.card.html\`, rerun the task, commit both halves.
+// Change \`std.card.tutu\`, rerun the task, commit both halves.
 
 ///|
 /// The layout kit, as source.

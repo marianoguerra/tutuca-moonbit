@@ -1,11 +1,11 @@
-// Build the synthetic benchmark view: every view .html in the repo
+// Build the synthetic benchmark view: every view .tutu in the repo
 // concatenated into one file, with every component name prefixed so nothing
 // collides.
 //
 // Emits two checked-in artifacts:
 //
-//   benchmarks/all_views.html    — the concatenation, readable/debuggable
-//   benchmarks/one_big_view.html — the same views inside one root
+//   benchmarks/all_views.tutu    — the concatenation, readable/debuggable
+//   benchmarks/one_big_view.tutu — the same views inside one root
 //   benchmarks/corpus_gen.mbt    — both as MoonBit strings, so the bench runs
 //                                  on every backend (wasm-gc has no filesystem)
 //
@@ -60,128 +60,107 @@ const VIEWS = [
   ["playground/site/examples/tree.tutu", "SiteTree"],
 ];
 
-// The source with every `<!-- ... -->` span blanked out (same length, newlines
-// kept). Matching tags against this and slicing the original keeps a `<template>`
-// written inside a comment — playground/site/examples/composability.tutu has one
-// in its header — from being mistaken for a real element.
-function maskComments(source) {
-  return source.replace(/<!--[\s\S]*?-->/g, c =>
-    c.replace(/[^\n]/g, " "),
-  );
-}
-
-// `<template id="Counter:row">` -> `<template id="<Prefix>Counter:row">`.
-// A bare `<template>` names the file's single unnamed component, so it becomes
-// `id="<Prefix>"` — the `Prefix:main` view. `macro:` ids would need their call
-// sites rewritten too; no view file declares one, so it is an error here.
-function prefixTemplates(source, prefix, path) {
-  const masked = maskComments(source);
-  let out = "";
-  let at = 0;
-  for (const m of masked.matchAll(/<template([^>]*)>/g)) {
-    const [whole, attrs] = m;
-    out = out + source.slice(at, m.index);
-    at = m.index + whole.length;
-    const id = attrs.match(/\bid\s*=\s*"([^"]*)"/);
-    if (!id) {
-      if (/\bid\s*=/.test(attrs)) {
-        throw new Error(`${path}: unquoted template id, not supported`);
-      }
-      out = out + `<template id="${prefix}"${attrs}>`;
-      continue;
-    }
-    if (id[1].startsWith("macro:")) {
-      throw new Error(`${path}: macro templates would need call-site rewriting`);
-    }
-    const colon = id[1].indexOf(":");
-    const renamed =
-      colon < 0
-        ? prefix + id[1]
-        : prefix + id[1].slice(0, colon) + id[1].slice(colon);
-    out = out + whole.replace(id[0], `id="${renamed}"`);
+// Every NAME a `.tutu` file declares at the top of a section: a component, a
+// struct, an enum, a protocol. The corpus concatenates every view file in the
+// repo into one, so each file's names are prefixed to keep them apart — and a
+// name is only ever declared at one indent, which is what makes this a line
+// scan rather than a parse.
+function declaredNames(source) {
+  const names = new Set();
+  for (const line of source.split("\n")) {
+    let m = line.match(/^  ([A-Z][A-Za-z0-9_]*)\s*(?:~root:|:)?\s*$/);
+    if (m) names.add(m[1]);
+    m = line.match(/^  (?:struct|enum|protocol)\s+([A-Z][A-Za-z0-9_]*)/);
+    if (m) names.add(m[1]);
   }
-  return out + source.slice(at);
+  return names;
 }
 
-// `<script type="tutuca/script">` -> `<script type="tutuca/script" for="<Prefix>">`.
-//
-// A block is written about ONE component, so the corpus — which concatenates
-// every view file in the repo — cannot hold two unqualified ones. A bare
-// `<template>` becomes `id="<Prefix>"` above, so the file's single unnamed
-// component is `<Prefix>`, and that is what its block is about. A block that
-// already names its component is left alone: the name it carries is one
-// `prefixTemplates` has already rewritten.
-function prefixScripts(source, prefix) {
-  return source.replace(
-    /<script type="tutuca\/script"(\s*)>/g,
-    `<script type="tutuca/script" for="${prefix}">`,
-  );
-}
-
-// A view file's `tutuca/spec` and `tutuca/init` blocks, removed. See the
-// call site for why the concatenated corpus cannot keep them.
-function stripStateBlocks(source) {
-  return source.replace(
-    /<script type="tutuca\/(?:spec|state|init)">[\s\S]*?<\/script>\n?/g,
-    "",
-  );
-}
-
-// Each top-level `<template>`'s inner source, which is what the one-big-view
-// corpus concatenates. No view file nests templates, so the first `</template>`
-// after an opening tag closes it.
-function templateBodies(source) {
-  const masked = maskComments(source);
-  const bodies = [];
-  for (const m of masked.matchAll(/<template[^>]*>/g)) {
-    const from = m.index + m[0].length;
-    const to = masked.indexOf("</template", from);
-    bodies.push(
-      source
-        .slice(from, to < 0 ? source.length : to)
-        .replace(/^\n/, "")
-        .trimEnd(),
-    );
+// The file with every name it declares prefixed, everywhere it appears: the
+// section headers, `Instance.of(X)`, `List.of(X)`, `implements X`, a
+// constructor call. Word-boundary replacement, because a `.tutu` name is a
+// word and nothing else in the file spells one the same way.
+function prefixNames(source, prefix) {
+  let out = source;
+  for (const name of declaredNames(source)) {
+    out = out.replace(new RegExp(`\\b${name}\\b`, "g"), prefix + name);
   }
-  return bodies;
+  return out;
+}
+
+// One section's body, by name. A section is a line at column 0 ending in `:`
+// and everything indented under it.
+function section(source, name) {
+  const lines = source.split("\n");
+  const at = lines.findIndex(l => l === name + ":");
+  if (at < 0) return [];
+  const body = [];
+  for (let i = at + 1; i < lines.length; i = i + 1) {
+    const l = lines[i];
+    if (l !== "" && !l.startsWith(" ")) break;
+    body.push(l);
+  }
+  while (body.length > 0 && body[body.length - 1].trim() === "") body.pop();
+  return body;
 }
 
 // Corpus 1: many views. Every file's templates side by side, ids prefixed.
-const manyParts = [
-  "<!-- GENERATED by benchmarks/build.mjs — do not edit. -->",
-  "<!-- Every view .html in the repo, component names prefixed per file. -->",
-];
-// Corpus 2: one view. Every view's BODY inside a single <template>, so the same
-// node count arrives as one enormous tree instead of 108 small ones. Only the
-// body is embedded, so the bench can wrap it once or N times over (the scaling
-// probe in scaling_bench_test.mbt).
-const bodyParts = [
-  "  <!-- GENERATED by benchmarks/build.mjs — do not edit. -->",
-  "  <!-- Every view body in the repo, concatenated into one view. -->",
-];
+// Corpus 1: many views. Every file's three sections merged into one `.tutu`,
+// with each file's own names prefixed so nothing collides.
+const specParts = [];
+const logicParts = [];
+const viewParts = [];
+// Corpus 2: one view. Every component's view body under a single component, so
+// the same node count arrives as one enormous tree instead of 108 small ones.
+// Only the bodies are embedded, so the bench can wrap them once or N times over
+// (the scaling probe in scaling_bench_test.mbt).
+const bodyParts = [];
 let bodyCount = 0;
 for (const [path, prefix] of VIEWS) {
-  // Stripped BEFORE anything scans for tags. A schema block is WIT, not
-  // markup, and its prose may say `<template>` — as filter_paginate's does,
-  // explaining why its strategies have none — which the tag scan below would
-  // otherwise take for an opening tag and slice a "body" from.
-  const source = stripStateBlocks(readFileSync(join(root, path), "utf8"));
-  manyParts.push(`<!-- ${path} (${prefix}) -->`);
-  manyParts.push(prefixScripts(prefixTemplates(source, prefix, path), prefix).trimEnd());
-  for (const body of templateBodies(source)) {
-    bodyCount = bodyCount + 1;
-    bodyParts.push(`  <!-- ${path} -->`);
-    bodyParts.push(body);
+  const source = prefixNames(readFileSync(join(root, path), "utf8"), prefix);
+  const spec = section(source, "spec");
+  const logic = section(source, "logic");
+  const view = section(source, "view");
+  if (spec.length > 0) {
+    specParts.push(`  // ${path}`);
+    specParts.push(...spec);
+  }
+  if (logic.length > 0) {
+    logicParts.push(`  // ${path}`);
+    logicParts.push(...logic);
+  }
+  if (view.length > 0) {
+    viewParts.push(`  // ${path}`);
+    viewParts.push(...view);
+  }
+  // A view body is what sits UNDER a component's name in the view section: two
+  // levels of indent, re-indented to sit under one component of its own.
+  for (let i = 0; i < view.length; i = i + 1) {
+    if (!/^  [A-Za-z]/.test(view[i])) continue;
+    const body = [];
+    for (let j = i + 1; j < view.length && (view[j] === "" || view[j].startsWith("    ")); j = j + 1) {
+      body.push(view[j]);
+    }
+    while (body.length > 0 && body[body.length - 1].trim() === "") body.pop();
+    if (body.length > 0) {
+      bodyCount = bodyCount + 1;
+      bodyParts.push(...body);
+    }
   }
 }
 
-const GIANT_OPEN = '<template id="GiantView">';
-const GIANT_CLOSE = "</template>";
-const many = manyParts.join("\n") + "\n";
+const HEAD = "// GENERATED by benchmarks/build.mjs — do not edit.\n" +
+  "// Every view .tutu in the repo, component names prefixed per file.\n";
+const many = HEAD +
+  (specParts.length > 0 ? "spec:\n" + specParts.join("\n") + "\n\n" : "") +
+  (logicParts.length > 0 ? "logic:\n" + logicParts.join("\n") + "\n\n" : "") +
+  (viewParts.length > 0 ? "view:\n" + viewParts.join("\n") + "\n" : "");
 const body = bodyParts.join("\n");
-const one = `${GIANT_OPEN}\n${body}\n${GIANT_CLOSE}\n`;
-writeFileSync(join(root, "benchmarks/all_views.html"), many);
-writeFileSync(join(root, "benchmarks/one_big_view.html"), one);
+const one = "// GENERATED by benchmarks/build.mjs — do not edit.\n" +
+  "// Every view body in the repo, concatenated into one view.\n" +
+  "view:\n  GiantView:\n" + body + "\n";
+writeFileSync(join(root, "benchmarks/all_views.tutu"), many);
+writeFileSync(join(root, "benchmarks/one_big_view.tutu"), one);
 
 // The MoonBit twin of both. `#|` is a raw multi-line string: no interpolation,
 // so the `{...}` and `\` a view body is full of need no escaping.
@@ -192,20 +171,20 @@ function lit(text) {
     .join("\n");
 }
 const manyText = many.replace(/\n$/, "");
-const mbt = `// GENERATED by benchmarks/build.mjs from benchmarks/all_views.html and
-// benchmarks/one_big_view.html — do not edit; regenerate with
+const mbt = `// GENERATED by benchmarks/build.mjs from benchmarks/all_views.tutu and
+// benchmarks/one_big_view.tutu — do not edit; regenerate with
 // \`cmd/dev -- bench-views\`.
 
 ///|
-/// Every view .html in the repo concatenated into one view FILE, component
+/// Every view .tutu in the repo concatenated into one view FILE, component
 /// names prefixed per source file so nothing collides: ${manyText.split("\n").length} lines,
-/// ${manyText.length} chars, ${(many.match(/<template/g) ?? []).length} views.
+/// ${manyText.length} chars, ${bodyCount} views.
 pub let all_views : String =
 ${lit(manyText)}
 
 ///|
-/// The body of benchmarks/one_big_view.html: every view body above, ${body.split("\n").length} lines
-/// and ${body.length} chars of them, with no \`<template>\` wrapper. Wrapping it once
+/// The body of benchmarks/one_big_view.tutu: every view body above, ${body.split("\n").length} lines
+/// and ${body.length} chars of them, with no component around them. Wrapping it once
 /// gives the same nodes as ONE enormous view instead of 108 small ones — see
 /// \`giant_view\` — and wrapping it N times over scales a single view's size.
 pub let one_big_view_body : String =
@@ -214,9 +193,9 @@ ${lit(body)}
 writeFileSync(join(root, "benchmarks/corpus_gen.mbt"), mbt);
 
 console.log(
-  `all_views.html:    ${VIEWS.length} files, ` +
-    `${(many.match(/<template/g) ?? []).length} views, ` +
+  `all_views.tutu:    ${VIEWS.length} files, ` +
+    `${bodyCount} views, ` +
     `${manyText.split("\n").length} lines, ${manyText.length} chars\n` +
-    `one_big_view.html: ${bodyCount} bodies in 1 view, ` +
+    `one_big_view.tutu: ${bodyCount} bodies in 1 view, ` +
     `${one.split("\n").length - 1} lines, ${one.length - 1} chars`,
 );

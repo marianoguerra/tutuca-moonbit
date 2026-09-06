@@ -58,7 +58,7 @@ stories.map(s => if s.id == "counter-counter-seeded" { { ..s, init: true } } els
 Write the view file, then generate its MoonBit module:
 
 ```sh
-tutuca gen page/my_thing.html
+tutuca gen page/my_thing.tutu
 ```
 
 The generated `page/my_thing_view_gen.mbt` is checked in and never hand-edited;
@@ -69,8 +69,8 @@ The generated `page/my_thing_view_gen.mbt` is checked in and never hand-edited;
 
 | File | |
 | --- | --- |
-| `page/main.mbt` | the story set and the five wasm entry points |
-| `page/counter.html` | a demo component's views + spec + script |
+| `page/main.mbt` | the story set and the wasm entry points |
+| `page/counter.tutu` | a demo component's spec, logic and views |
 | `page/counter_view_gen.mbt` | generated from it — regenerate, never edit |
 | `page/moon.pkg` | the executable's `link.exports` list |
 | `index.html` | the page: the margaui `<style>` slot, `#app`, the loader |

@@ -88,9 +88,5 @@ logic:
 
 view:
   Cart:
-    @div{@input(~on_input: rename(e.value), ~value: it.item, ~placeholder: "what?") @button(~on_click: fewer){-} @span{@(it.qty)} @button(~on_click: more){+} @p{@(it.line)} @button(~on_click: remember){remember} @button(~on_click: receipt){to receipt} @p{@(@str{@(it.remembered) remembered: @(it.history)})} @show(has_item()){
-  @button(~on_click: checkout){checkout}
-} @show(it.sent){
-  @p{@("sent")}
-}}
+    @div{@input(~on_input: rename(e.value), ~value: it.item, ~placeholder: "what?") @button(~on_click: fewer){-} @span{@(it.qty)} @button(~on_click: more){+} @p{@(it.line)} @button(~on_click: remember){remember} @button(~on_click: receipt){to receipt} @p{@(@str{@(it.remembered) remembered: @(it.history)})} @show(has_item()){@button(~on_click: checkout){checkout}} @show(it.sent){@p{@("sent")}}}
 

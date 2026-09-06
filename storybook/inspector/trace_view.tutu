@@ -457,99 +457,26 @@ logic:
 
 view:
   TraceRow:
-    @div(~class: it.row_class){@div(~class: "row-head flex items-center gap-2 flex-wrap cursor-pointer", ~on_click: toggle){@span(~class: "badge badge-xs tabular-nums opacity-50 row-seq"){@(it.seq)} @span(~title: "What this was: a message, an intent, an offer to the host, the host's answer, or a refusal", ~class: it.verb_class){@(it.verb)} @span(~class: "font-mono font-semibold row-name"){@(it.name)} @span(~title: "Where it landed", ~class: "text-xs opacity-40 font-mono row-place"){@(it.place)} @show(it.input){
-  @span(~title: "A rerun feeds this one; everything else it produces for itself", ~class: "badge badge-xs badge-primary badge-outline row-input"){input}
-} @show(it.has_walk){
-  @span(~title: "Every hop of one intent shares this", ~class: "badge badge-xs badge-ghost row-walk"){@("walk ")@(it.walk)}
-} @span(~class: "ml-auto text-xs opacity-40 tabular-nums row-turn"){@("turn ")@(it.turn)}} @show(it.open){
-  @div(~class: "pl-6 flex flex-col gap-1 font-mono text-xs row-detail"){@show(it.args.is_truthy()){
-  @div(~class: "opacity-60 row-args"){@("args ")@(it.args)}
-} @show(it.has_after){
-  @div{@div(~class: "opacity-50"){after} @render(it.after)}
-} @hide(it.has_after){
-  @div(~class: "opacity-40 row-noafter"){no state was kept for this one}
-}}
-}}
+    @div(~class: it.row_class){@div(~class: "row-head flex items-center gap-2 flex-wrap cursor-pointer", ~on_click: toggle){@span(~class: "badge badge-xs tabular-nums opacity-50 row-seq"){@(it.seq)} @span(~title: "What this was: a message, an intent, an offer to the host, the host's answer, or a refusal", ~class: it.verb_class){@(it.verb)} @span(~class: "font-mono font-semibold row-name"){@(it.name)} @span(~title: "Where it landed", ~class: "text-xs opacity-40 font-mono row-place"){@(it.place)} @show(it.input){@span(~title: "A rerun feeds this one; everything else it produces for itself", ~class: "badge badge-xs badge-primary badge-outline row-input"){input}} @show(it.has_walk){@span(~title: "Every hop of one intent shares this", ~class: "badge badge-xs badge-ghost row-walk"){@("walk ")@(it.walk)}} @span(~class: "ml-auto text-xs opacity-40 tabular-nums row-turn"){@("turn ")@(it.turn)}} @show(it.open){@div(~class: "pl-6 flex flex-col gap-1 font-mono text-xs row-detail"){@show(it.args.is_truthy()){@div(~class: "opacity-60 row-args"){@("args ")@(it.args)}} @show(it.has_after){@div{@div(~class: "opacity-50"){after} @render(it.after)}} @hide(it.has_after){@div(~class: "opacity-40 row-noafter"){no state was kept for this one}}}}}
 
   TraceLog:
-    @div(~class: "trace-log flex flex-col gap-1 max-h-[50vh] overflow-y-auto p-2"){@hide(it.has_rows){
-  @div(~class: "text-xs opacity-40 empty-hint"){@(it.empty_hint)}
-} @each(value, key in it.rows){
-  @render(value)
-}}
+    @div(~class: "trace-log flex flex-col gap-1 max-h-[50vh] overflow-y-auto p-2"){@hide(it.has_rows){@div(~class: "text-xs opacity-40 empty-hint"){@(it.empty_hint)}} @each(value, key in it.rows){@render(value)}}
 
   TraceHeader:
     @div(~class: "trace-header flex flex-col gap-1 p-2 text-sm"){
-      @div(~class: "flex items-center gap-2 flex-wrap"){@span(~class: "badge badge-sm badge-primary header-component"){@(it.component)} @show(it.module.is_truthy()){
-  @span(~class: "text-xs opacity-50 font-mono header-module"){@(it.module)}
-} @show(it.example.is_truthy()){
-  @span(~class: "text-xs opacity-50 header-example"){@(it.example)}
-} @show(it.is_relocated){
-  @span(~title: "This trace was cut down to a subtree; every path in it was rewritten", ~class: "badge badge-xs badge-warning header-relocated"){@("relocated from ")@(it.relocated_from)}
-} @show(it.compacted){
-  @span(~title: "The derived events were dropped: this trace can no longer be relocated or scripted", ~class: "badge badge-xs badge-ghost header-compacted"){compacted}
-}}
-      @div(~class: "flex gap-3 text-xs opacity-60 tabular-nums"){@span(~class: "header-events"){@(it.events)@(" events")} @span(~class: "header-inputs"){@(it.inputs)@(" fed on a rerun")} @span(~class: "header-turns"){@(it.turns)@(" turns")} @show(it.fingerprint.is_truthy()){
-  @span(~class: "opacity-40 font-mono header-fp"){@(it.fingerprint)}
-}}
+      @div(~class: "flex items-center gap-2 flex-wrap"){@span(~class: "badge badge-sm badge-primary header-component"){@(it.component)} @show(it.module.is_truthy()){@span(~class: "text-xs opacity-50 font-mono header-module"){@(it.module)}} @show(it.example.is_truthy()){@span(~class: "text-xs opacity-50 header-example"){@(it.example)}} @show(it.is_relocated){@span(~title: "This trace was cut down to a subtree; every path in it was rewritten", ~class: "badge badge-xs badge-warning header-relocated"){@("relocated from ")@(it.relocated_from)}} @show(it.compacted){@span(~title: "The derived events were dropped: this trace can no longer be relocated or scripted", ~class: "badge badge-xs badge-ghost header-compacted"){compacted}}}
+      @div(~class: "flex gap-3 text-xs opacity-60 tabular-nums"){@span(~class: "header-events"){@(it.events)@(" events")} @span(~class: "header-inputs"){@(it.inputs)@(" fed on a rerun")} @span(~class: "header-turns"){@(it.turns)@(" turns")} @show(it.fingerprint.is_truthy()){@span(~class: "opacity-40 font-mono header-fp"){@(it.fingerprint)}}}
     }
 
   TracePlace:
-    @button(~class: it.row_class, ~on_click: pick_place(it.label)){@span(~class: "font-mono place-label"){@(it.display)} @show(it.component.is_truthy()){
-  @span(~class: "badge badge-xs badge-ghost place-component"){@(it.component)}
-} @hide(it.mountable){
-  @span(~title: "Cutting here would not yield a component, so the trace could not be mounted", ~class: "badge badge-xs badge-warning place-unmountable"){not a component}
-} @span(~class: "ml-auto text-xs opacity-40 tabular-nums place-count"){@(it.events)}}
+    @button(~class: it.row_class, ~on_click: pick_place(it.label)){@span(~class: "font-mono place-label"){@(it.display)} @show(it.component.is_truthy()){@span(~class: "badge badge-xs badge-ghost place-component"){@(it.component)}} @hide(it.mountable){@span(~title: "Cutting here would not yield a component, so the trace could not be mounted", ~class: "badge badge-xs badge-warning place-unmountable"){not a component}} @span(~class: "ml-auto text-xs opacity-40 tabular-nums place-count"){@(it.events)}}
 
   TracePlaces:
-    @div(~class: "trace-places flex flex-col gap-1 p-2"){@div(~class: "text-xs opacity-50 places-heading"){@(it.heading)} @hide(it.has_places){
-  @div(~class: "text-xs opacity-40 empty-hint"){@(it.empty_hint)}
-} @each(value, key in it.places){
-  @render(value)
-}}
+    @div(~class: "trace-places flex flex-col gap-1 p-2"){@div(~class: "text-xs opacity-50 places-heading"){@(it.heading)} @hide(it.has_places){@div(~class: "text-xs opacity-40 empty-hint"){@(it.empty_hint)}} @each(value, key in it.places){@render(value)}}
 
   RecorderBar:
-    @div(~class: "flex flex-col gap-1"){@div(~class: "recorder-bar flex items-center gap-2 p-2 flex-wrap"){@show(it.recording){
-  @button(~class: "btn btn-sm btn-error rec-stop", ~on_click: stop_recording){@" Stop recording "}
-} @hide(it.recording){
-  @button(~class: "btn btn-sm btn-primary rec-start", ~on_click: open_picker){@" Record "}
-} @span(~class: "badge badge-sm badge-ghost rec-scope"){@(it.scope_label)} @show(it.recording){
-  @span(~class: "text-xs opacity-60 tabular-nums rec-count"){@(it.events)@(" events · ")@(it.turns)@(" turns")}
-} @show(it.has_trace){
-  @hide(it.recording){
-    @button(~class: "btn btn-sm btn-ghost rec-clear", ~on_click: clear_recording){@" Discard "}
-  }
-}} @comment{ Inline rather than a view of its own: what a recording covers has to be asked in the place the Record button is, and a second template holding the same three buttons is a second place for them to drift. } @show(it.picking){
-  @div(~class: "recorder-picker flex flex-col gap-2 p-2"){
-    @div(~class: "text-sm"){What should this recording cover?}
-    @div(~class: "flex gap-2 flex-wrap"){@button(~class: it.all_class, ~on_click: set_scope("all")){The whole storybook} @button(~class: it.section_class, ~on_click: set_scope("section")){The active section} @button(~class: it.example_class, ~on_click: set_scope("example")){This example only}}
-    @div(~class: "text-xs opacity-50"){@" A narrower scope is not a filter applied afterwards — it is what gets mounted with a recorder on it, so nothing else is ever captured. You can still cut a recording down to one component when you stop. "}
-    @div(~class: "flex gap-2"){@button(~class: "btn btn-sm btn-primary picker-go", ~on_click: start_recording){Start} @button(~class: "btn btn-sm btn-ghost picker-cancel", ~on_click: close_picker){Cancel}}
-  }
-}}
+    @div(~class: "flex flex-col gap-1"){@div(~class: "recorder-bar flex items-center gap-2 p-2 flex-wrap"){@show(it.recording){@button(~class: "btn btn-sm btn-error rec-stop", ~on_click: stop_recording){@" Stop recording "}} @hide(it.recording){@button(~class: "btn btn-sm btn-primary rec-start", ~on_click: open_picker){@" Record "}} @span(~class: "badge badge-sm badge-ghost rec-scope"){@(it.scope_label)} @show(it.recording){@span(~class: "text-xs opacity-60 tabular-nums rec-count"){@(it.events)@(" events · ")@(it.turns)@(" turns")}} @show(it.has_trace){@hide(it.recording){@button(~class: "btn btn-sm btn-ghost rec-clear", ~on_click: clear_recording){@" Discard "}}}} @comment{ Inline rather than a view of its own: what a recording covers has to be asked in the place the Record button is, and a second template holding the same three buttons is a second place for them to drift. } @show(it.picking){@div(~class: "recorder-picker flex flex-col gap-2 p-2"){@div(~class: "text-sm"){What should this recording cover?}@div(~class: "flex gap-2 flex-wrap"){@button(~class: it.all_class, ~on_click: set_scope("all")){The whole storybook} @button(~class: it.section_class, ~on_click: set_scope("section")){The active section} @button(~class: it.example_class, ~on_click: set_scope("example")){This example only}}@div(~class: "text-xs opacity-50"){@" A narrower scope is not a filter applied afterwards — it is what gets mounted with a recorder on it, so nothing else is ever captured. You can still cut a recording down to one component when you stop. "}@div(~class: "flex gap-2"){@button(~class: "btn btn-sm btn-primary picker-go", ~on_click: start_recording){Start} @button(~class: "btn btn-sm btn-ghost picker-cancel", ~on_click: close_picker){Cancel}}}}}
 
   TracePanel:
-    @div(~class: "trace-panel flex flex-col gap-2"){@div(~class: "flex items-center gap-2 border-b border-base-content/10 px-2"){@button(~class: it.record_tab_class, ~on_click: set_tab("record")){Record} @show(it.has_trace){
-  @button(~class: it.trace_tab_class, ~on_click: set_tab("trace")){Trace}
-} @show(it.has_trace){
-  @button(~class: it.replay_tab_class, ~on_click: set_tab("replay")){Replay}
-} @show(it.has_trace){
-  @button(~class: it.select_tab_class, ~on_click: toggle_selecting){@(it.select_label)}
-} @show(it.has_trace){
-  @span(~class: "ml-auto text-xs opacity-40 tabular-nums panel-pos"){@(it.at)@(" / ")@(it.total)}
-}} @comment{ Above every pane, because it is about the thing the reader just did and not about the pane they happen to be looking at. A parse error on import belongs where they can see it without changing tabs. } @show(it.has_notice){
-  @div(~class: "trace-notice alert alert-warning text-xs mx-2 py-1"){@(it.notice)}
-} @render(it.bar) @show(it.show_trace){
-  @div(~class: "panel-trace flex flex-col gap-2"){@div(~class: "flex items-center gap-2 px-2 flex-wrap"){@button(~class: "btn btn-sm btn-ghost trace-export", ~on_click: export_trace){@" Download "} @comment{ Enabled by a pick, and the pick is a separate press for the reason the host's comment gives: choosing a place is the thing a person does several times before they mean it. } @button(~class: "btn btn-sm btn-ghost trace-cut", ~on_click: cut_to_place){@" Cut to the picked place "}} @render(it.header) @render(it.places) @render(it.log)}
-} @comment{ The rerun. It drives the STORY, not a preview of one: the gallery is a single transactor with every story mounted under it, so the events go into the instance already on screen and the reader watches it move. } @show(it.show_replay){
-  @div(~class: "panel-replay flex flex-col gap-2 p-2"){@show(it.can_replay){
-  @div(~class: "flex gap-2 flex-wrap"){@button(~class: "btn btn-sm btn-primary replay-step", ~on_click: replay_step){Step} @button(~class: "btn btn-sm replay-run", ~on_click: replay_run){Run} @button(~class: "btn btn-sm btn-ghost replay-reset", ~on_click: replay_reset){Reset} @span(~class: "text-xs opacity-60 tabular-nums replay-pos self-center"){@(it.at)@(" of ")@(it.total)}}
-} @show(it.can_replay){
-  @div(~class: "text-xs opacity-50"){@" The story above is the one being driven. A step feeds one whole turn — what the recording drained together — so the app is never left mid-cascade in a state it was never in. "}
-}}
-} @comment{ Import lives on the empty pane as well as the full one: the reader who has no recording is exactly the reader who wants to load somebody else's. } @show(it.show_import){
-  @div(~class: "panel-import flex flex-col gap-2 p-2"){@div(~class: "text-xs opacity-50"){Paste a .trace.jsonl to load it.} @textarea(~class: "textarea textarea-sm trace-draft", ~rows: "3", ~bind: it.draft) @div{@button(~class: "btn btn-sm trace-import", ~on_click: import_draft){Load}}}
-} @hide(it.has_trace){
-  @div(~class: "panel-empty flex flex-col gap-2 px-2 pb-2"){@div(~class: "text-xs opacity-40"){@" Nothing recorded yet. Press Record, use the component, then stop — or paste a recording somebody else made. "} @textarea(~class: "textarea textarea-sm trace-draft-empty", ~rows: "3", ~bind: it.draft) @div{@button(~class: "btn btn-sm trace-import-empty", ~on_click: import_draft){Load}}}
-}}
+    @div(~class: "trace-panel flex flex-col gap-2"){@div(~class: "flex items-center gap-2 border-b border-base-content/10 px-2"){@button(~class: it.record_tab_class, ~on_click: set_tab("record")){Record} @show(it.has_trace){@button(~class: it.trace_tab_class, ~on_click: set_tab("trace")){Trace}} @show(it.has_trace){@button(~class: it.replay_tab_class, ~on_click: set_tab("replay")){Replay}} @show(it.has_trace){@button(~class: it.select_tab_class, ~on_click: toggle_selecting){@(it.select_label)}} @show(it.has_trace){@span(~class: "ml-auto text-xs opacity-40 tabular-nums panel-pos"){@(it.at)@(" / ")@(it.total)}}} @comment{ Above every pane, because it is about the thing the reader just did and not about the pane they happen to be looking at. A parse error on import belongs where they can see it without changing tabs. } @show(it.has_notice){@div(~class: "trace-notice alert alert-warning text-xs mx-2 py-1"){@(it.notice)}} @render(it.bar) @show(it.show_trace){@div(~class: "panel-trace flex flex-col gap-2"){@div(~class: "flex items-center gap-2 px-2 flex-wrap"){@button(~class: "btn btn-sm btn-ghost trace-export", ~on_click: export_trace){@" Download "} @comment{ Enabled by a pick, and the pick is a separate press for the reason the host's comment gives: choosing a place is the thing a person does several times before they mean it. } @button(~class: "btn btn-sm btn-ghost trace-cut", ~on_click: cut_to_place){@" Cut to the picked place "}} @render(it.header) @render(it.places) @render(it.log)}} @comment{ The rerun. It drives the STORY, not a preview of one: the gallery is a single transactor with every story mounted under it, so the events go into the instance already on screen and the reader watches it move. } @show(it.show_replay){@div(~class: "panel-replay flex flex-col gap-2 p-2"){@show(it.can_replay){@div(~class: "flex gap-2 flex-wrap"){@button(~class: "btn btn-sm btn-primary replay-step", ~on_click: replay_step){Step} @button(~class: "btn btn-sm replay-run", ~on_click: replay_run){Run} @button(~class: "btn btn-sm btn-ghost replay-reset", ~on_click: replay_reset){Reset} @span(~class: "text-xs opacity-60 tabular-nums replay-pos self-center"){@(it.at)@(" of ")@(it.total)}}} @show(it.can_replay){@div(~class: "text-xs opacity-50"){@" The story above is the one being driven. A step feeds one whole turn — what the recording drained together — so the app is never left mid-cascade in a state it was never in. "}}}} @comment{ Import lives on the empty pane as well as the full one: the reader who has no recording is exactly the reader who wants to load somebody else's. } @show(it.show_import){@div(~class: "panel-import flex flex-col gap-2 p-2"){@div(~class: "text-xs opacity-50"){Paste a .trace.jsonl to load it.} @textarea(~class: "textarea textarea-sm trace-draft", ~rows: "3", ~bind: it.draft) @div{@button(~class: "btn btn-sm trace-import", ~on_click: import_draft){Load}}}} @hide(it.has_trace){@div(~class: "panel-empty flex flex-col gap-2 px-2 pb-2"){@div(~class: "text-xs opacity-40"){@" Nothing recorded yet. Press Record, use the component, then stop — or paste a recording somebody else made. "} @textarea(~class: "textarea textarea-sm trace-draft-empty", ~rows: "3", ~bind: it.draft) @div{@button(~class: "btn btn-sm trace-import-empty", ~on_click: import_draft){Load}}}}}
 

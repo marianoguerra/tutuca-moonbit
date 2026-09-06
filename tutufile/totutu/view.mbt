@@ -69,9 +69,11 @@ fn print_node(
       for c in d.childs {
         print_node(c, events, indent, out)
       }
-    Show(d) => print_wrapper("show", d.val, d.node, events, indent, out)
-    Hide(d) => print_wrapper("hide", d.val, d.node, events, indent, out)
-    Each(d) => print_each(d, events, indent, out)
+    Show(d) =>
+      print_wrapper("show", d.val, d.node, events, indent, out, inline~)
+    Hide(d) =>
+      print_wrapper("hide", d.val, d.node, events, indent, out, inline~)
+    Each(d) => print_each(d, events, indent, out, inline~)
     Render(d) => {
       let tail = match d.view_val {
         Some(v) => ", ~as: " + print_expr(v)
@@ -156,7 +158,14 @@ fn print_wrapper(
   events : Array[@anode.NodeEvents],
   indent : String,
   out : StringBuilder,
+  inline? : Bool = false,
 ) -> Unit raise NoSpelling {
+  if inline {
+    out.write_string("@\{word}(\{print_expr(cond)}){")
+    print_node(inner, events, "", out, inline=true)
+    out.write_string("}")
+    return
+  }
   out.write_string("\{indent}@\{word}(\{print_expr(cond)}){\n")
   print_node(inner, events, indent + "  ", out)
   out.write_string("\{indent}}\n")
@@ -175,6 +184,7 @@ fn print_each(
   events : Array[@anode.NodeEvents],
   indent : String,
   out : StringBuilder,
+  inline? : Bool = false,
 ) -> Unit raise NoSpelling {
   let opts = StringBuilder()
   opts.write_string("value, key in " + print_expr(d.iter_info.val))
@@ -189,6 +199,12 @@ fn print_each(
   match d.iter_info.loop_with_val {
     Some(v) => opts.write_string(", ~loop_with: " + print_trigger(v))
     None => ()
+  }
+  if inline {
+    out.write_string("@each(\{opts}){")
+    print_node(d.node, events, "", out, inline=true)
+    out.write_string("}")
+    return
   }
   out.write_string("\{indent}@each(\{opts}){\n")
   print_node(d.node, events, indent + "  ", out)

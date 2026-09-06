@@ -35,9 +35,7 @@ view:
     }
 
   EntryEditorAndSelector:
-    @div(~class: "flex flex-col gap-3"){@div(~class: "flex gap-3 justify-center"){@render(it.selector)} @button(~class: "btn btn-soft btn-success add", ~on_click: on_add_item){Add Entry} @div(~class: "flex flex-col gap-3 w-full"){@each(value, key in it.items){
-  @div(~class: "flex gap-3 justify-center items-center w-full row"){@render(value) @button(~class: "btn btn-soft btn-sm btn-error btn-circle font-mono rm", ~on_click: it.items.delete_at(key)){x}}
-}}}
+    @div(~class: "flex flex-col gap-3"){@div(~class: "flex gap-3 justify-center"){@render(it.selector)} @button(~class: "btn btn-soft btn-success add", ~on_click: on_add_item){Add Entry} @div(~class: "flex flex-col gap-3 w-full"){@each(value, key in it.items){@div(~class: "flex gap-3 justify-center items-center w-full row"){@render(value) @button(~class: "btn btn-soft btn-sm btn-error btn-circle font-mono rm", ~on_click: it.items.delete_at(key)){x}}}}}
 
   Sheet:
     @div(~class: "card bg-base-200 p-3 gap-2 sheet"){@span(~class: "text-xs opacity-60 tag"){Sheet (rendered via *active)} @input(~class: "input input-bordered title", ~value: it.title, ~on_input: it.title := e.value)}

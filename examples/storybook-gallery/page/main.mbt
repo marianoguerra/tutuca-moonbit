@@ -13,7 +13,7 @@ fn main {
 
 ///|
 /// One module of components. `counter_component` is generated from
-/// counter.tutu by `tutuca gen`; nothing here restates the view file.
+/// counter.html by `tutuca gen`; nothing here restates the view file.
 ///
 /// The `examples` are the stories: each names a component, the args to make it
 /// with, and optionally the view to render it under. They are also what
@@ -29,7 +29,7 @@ pub fn counter_module() -> @component.ModuleDef {
       view: None,
     },
     // `view` picks one of the component's named views — `<template
-    // id="Counter:compact">` in counter.tutu — instead of its default.
+    // id="Counter:compact">` in counter.html — instead of its default.
     {
       component: "Counter",
       title: "Compact",

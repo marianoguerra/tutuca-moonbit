@@ -53,20 +53,10 @@ spec:
 view:
   ActivityEntry:
     @div(~class: "rounded border border-base-content/15 p-2 text-sm flex flex-col gap-1 activity-entry"){
-      @div(~class: "flex items-center gap-2 flex-wrap"){@span(~title: "Which bucket it went through: receive, intent — or answer, for a message the runtime wrote", ~class: "badge badge-sm badge-neutral entry-kind"){@(it.kind)} @span(~title: "Who raised it: host (something outside the tree), view (a component's own @on), or handler (a dispatch another handler pushed)", ~class: "badge badge-sm badge-ghost entry-origin"){@(it.origin)} @span(~title: "Message name dispatched — for a DOM input, the event type (click, input, change, keydown, …)", ~class: "font-mono font-semibold entry-name"){@(it.name)} @show(it.handler_name.is_truthy()){
-  @span(~title: "Actual handler that ran — shown only when it differs from the name", ~class: "text-xs opacity-60 font-mono"){@(it.handler_name)}
-} @span(~title: "Path to the target component", ~class: "text-xs opacity-40 font-mono entry-path"){@(it.path_label)} @show(it.matched.is_truthy()){
-  @span(~title: "Handler resolution — exact: matched by name · none: no handler (no-op)", ~class: "badge badge-xs badge-ghost entry-matched"){@(it.matched)}
-} @span(~title: "When this event ran", ~class: "ml-auto text-xs opacity-40 font-mono tabular-nums entry-time"){@(it.time)}}
-      @div(~class: "flex gap-3 items-start font-mono text-xs"){@div(~class: "flex-1 min-w-0"){@div(~class: "opacity-50", ~title: "Target state before the handler ran"){before} @render(it.before)} @show(it.has_after){
-  @div(~class: "flex-1 min-w-0"){@div(~class: "opacity-50", ~title: "Target state after the handler ran"){after} @render(it.after)}
-}}
+      @div(~class: "flex items-center gap-2 flex-wrap"){@span(~title: "Which bucket it went through: receive, intent — or answer, for a message the runtime wrote", ~class: "badge badge-sm badge-neutral entry-kind"){@(it.kind)} @span(~title: "Who raised it: host (something outside the tree), view (a component's own @on), or handler (a dispatch another handler pushed)", ~class: "badge badge-sm badge-ghost entry-origin"){@(it.origin)} @span(~title: "Message name dispatched — for a DOM input, the event type (click, input, change, keydown, …)", ~class: "font-mono font-semibold entry-name"){@(it.name)} @show(it.handler_name.is_truthy()){@span(~title: "Actual handler that ran — shown only when it differs from the name", ~class: "text-xs opacity-60 font-mono"){@(it.handler_name)}} @span(~title: "Path to the target component", ~class: "text-xs opacity-40 font-mono entry-path"){@(it.path_label)} @show(it.matched.is_truthy()){@span(~title: "Handler resolution — exact: matched by name · none: no handler (no-op)", ~class: "badge badge-xs badge-ghost entry-matched"){@(it.matched)}} @span(~title: "When this event ran", ~class: "ml-auto text-xs opacity-40 font-mono tabular-nums entry-time"){@(it.time)}}
+      @div(~class: "flex gap-3 items-start font-mono text-xs"){@div(~class: "flex-1 min-w-0"){@div(~class: "opacity-50", ~title: "Target state before the handler ran"){before} @render(it.before)} @show(it.has_after){@div(~class: "flex-1 min-w-0"){@div(~class: "opacity-50", ~title: "Target state after the handler ran"){after} @render(it.after)}}}
     }
 
   ActivityLog:
-    @div(~class: "p-3 flex flex-col gap-2 max-h-[60vh] overflow-y-auto activity-log"){@hide(it.has_events){
-  @div(~class: "text-xs opacity-40 empty-hint"){@" No activity yet — interact with the component. "}
-} @each(value, key in it.events){
-  @render(value)
-}}
+    @div(~class: "p-3 flex flex-col gap-2 max-h-[60vh] overflow-y-auto activity-log"){@hide(it.has_events){@div(~class: "text-xs opacity-40 empty-hint"){@" No activity yet — interact with the component. "}} @each(value, key in it.events){@render(value)}}
 

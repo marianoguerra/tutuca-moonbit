@@ -108,7 +108,6 @@ if (!tryRun("moon-wasm-opt", optArgs) && !tryRun("wasm-opt", optArgs)) {
 
 copyFileSync(join(here, "index.html"), join(dist, "index.html"));
 copyFileSync(join(tutuca, "app/wasm/loader.mjs"), join(dist, "app-loader.mjs"));
-
 // The Trace tab's file service. Rewritten rather than copied: it imports the
 // app loader by the path the two have inside the package, and in dist/ they
 // land flat beside each other.

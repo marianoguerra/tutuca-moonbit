@@ -12,19 +12,11 @@ spec:
 
 view:
   RenderWithScope:
-    @section(~class: "flex flex-col gap-3"){@input(~class: "input", ~value: it.text, ~on_input: it.text := e.value) @div(~enrich_with: enrich_scope){
-  @p{@"Text: "@span(~class: "v-text"){@(it.text)}}
-  @p{@"Len: "@span(~class: "v-len"){@(len)}}
-  @p{@"Upper: "@span(~class: "v-upper"){@(upper)}}
-}}
+    @section(~class: "flex flex-col gap-3"){@input(~class: "input", ~value: it.text, ~on_input: it.text := e.value) @div(~enrich_with: enrich_scope){@p{@"Text: "@span(~class: "v-text"){@(it.text)}}@p{@"Len: "@span(~class: "v-len"){@(len)}}@p{@"Upper: "@span(~class: "v-upper"){@(upper)}}}}
 
   ListFilterEnrich:
-    @section(~class: "flex flex-col gap-3"){@input(~type: "search", ~class: "input", ~value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := default ~cancel, ~placeholder: "Filter entries") @ul{@each(value, key in it.items, ~when: filter_item, ~enrich_with: enrich_item){
-  @li{@span{@(key)}@": "@(value)@" ("@(count)@" characters) "}
-}}}
+    @section(~class: "flex flex-col gap-3"){@input(~type: "search", ~class: "input", ~value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := default ~cancel, ~placeholder: "Filter entries") @ul{@each(value, key in it.items, ~when: filter_item, ~enrich_with: enrich_item){@li{@span{@(key)}@": "@(value)@" ("@(count)@" characters) "}}}}
 
   ListFilterEnrichWith:
-    @section(~class: "flex flex-col gap-3"){@input(~type: "search", ~class: "input", ~value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := default ~cancel, ~placeholder: "Filter entries") @ul{@each(value, key in it.items, ~when: filter_item, ~enrich_with: enrich_item, ~loop_with: get_iter_data){
-  @li{@span{@(key)}@": "@(value)@" ("@(count)@" / "@(total)@") "}
-}}}
+    @section(~class: "flex flex-col gap-3"){@input(~type: "search", ~class: "input", ~value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := default ~cancel, ~placeholder: "Filter entries") @ul{@each(value, key in it.items, ~when: filter_item, ~enrich_with: enrich_item, ~loop_with: get_iter_data){@li{@span{@(key)}@": "@(value)@" ("@(count)@" / "@(total)@") "}}}}
 
