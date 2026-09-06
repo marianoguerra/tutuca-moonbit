@@ -430,6 +430,27 @@ fn where_member(ex : Ex) -> String raise ExError {
 }
 
 ///|
+/// A message case's doc comment, as the lines that precede it inside the block.
+fn case_doc(doc : String?) -> String {
+  match doc {
+    None => "    "
+    Some(text) => {
+      let out = StringBuilder()
+      for line in text.split("\n") {
+        let t = line.to_owned()
+        if t == "" {
+          out.write_string("    ///\n")
+        } else {
+          out.write_string("    /// \{t}\n")
+        }
+      }
+      out.write_string("    ")
+      out.to_string()
+    }
+  }
+}
+
+///|
 /// The relation a domain word spells in the old notation.
 fn where_word(w : String) -> String {
   match w {
@@ -539,12 +560,17 @@ pub fn print_channels(
   let intents = []
   let ex_messages = []
   let ex_intents = []
-  for group in body_groups(decl) {
+  // Each case carries its own doc, and a doc between two members sits on the
+  // FIRST one's suffix — see `member_doc`.
+  let members = body_groups(decl)
+  for at, group in members {
+    let prev = if at > 0 { Some(members[at - 1]) } else { None }
+    let doc = case_doc(member_doc(group, prev))
     guard group.it is Group(parts) && parts.length() > 0 else { continue }
     guard parts[0].it is Id(word) else { continue }
     match word {
-      "message" => messages.push(case_text(parts, 1))
-      "intent" => intents.push(case_text(parts, 1))
+      "message" => messages.push(doc + case_text(parts, 1))
+      "intent" => intents.push(doc + case_text(parts, 1))
       "express" => {
         guard parts.length() >= 2 && parts[1].it is Id(kind) else {
           raise ExError(
@@ -565,10 +591,10 @@ pub fn print_channels(
   if !messages.is_empty() || !intents.is_empty() {
     out.write_string("handle \{decl.name} {\n")
     if !messages.is_empty() {
-      out.write_string("  message { \{messages.join(", ")} }\n")
+      out.write_string("  message {\n\{messages.join(",\n")}\n  }\n")
     }
     if !intents.is_empty() {
-      out.write_string("  intent { \{intents.join(", ")} }\n")
+      out.write_string("  intent {\n\{intents.join(",\n")}\n  }\n")
     }
     out.write_string("}\n")
   }

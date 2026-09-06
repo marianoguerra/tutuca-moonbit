@@ -253,7 +253,55 @@ fn compare_logic(
   for comp in names {
     let da = decls_of(a, comp)
     let db = decls_of(b, comp)
-    diff_debug(out, "logic", "\{comp} handlers", da, db)
+    diff_debug(
+      out,
+      "logic",
+      "\{comp} handlers",
+      da.map(flat_decl),
+      db.map(flat_decl),
+    )
+  }
+}
+
+///|
+/// One declaration with its operator chains reduced.
+///
+/// The same normalisation the view half applies, for the same reason: a slot
+/// parser reads `(a + b)` as an application and the block grammar reads it as a
+/// chain, and an associative chain of six operands is one `EChain` on one side
+/// and a nest of two-operand ones on the other. `eval_chain` reduces the first
+/// to the second before evaluating it, so they are one expression written two
+/// ways.
+fn flat_decl(d : @tscript.Decl) -> @tscript.Decl {
+  { ..d, body: flat_body(d.body), format: d.format.map(@toanode.flat_expr), }
+}
+
+///|
+fn flat_body(b : @tscript.Body) -> @tscript.Body {
+  match b {
+    Value(e) => Value(@toanode.flat_expr(e))
+    Stmts(ss) => Stmts(ss.map(flat_stmt))
+  }
+}
+
+///|
+fn flat_stmt(s : @tscript.Stmt) -> @tscript.Stmt {
+  let f = @toanode.flat_expr
+  match s {
+    SAssign(place~, op~, value~, span~) =>
+      SAssign(place~, op~, value=f(value), span~)
+    SMethod(place~, call~, args~, span~) =>
+      SMethod(place~, call~, args=args.map(f), span~)
+    SEffect(name~, args~, route~, span~) =>
+      SEffect(name~, args=args.map(f), route~, span~)
+    SIf(cond~, then_~, else_~, span~) =>
+      SIf(
+        cond=f(cond),
+        then_=then_.map(flat_stmt),
+        else_=else_.map(flat_stmt),
+        span~,
+      )
+    other => other
   }
 }
 
