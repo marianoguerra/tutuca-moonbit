@@ -108,7 +108,10 @@ fn print_step(step : @scenedef.Step) -> String raise NoSpelling {
     }
     Drag(sel~, from~, to~) => "drag(\{quote(sel)}, \{from}, \{to})"
     Send(name~, args~) => {
-      let parts = [quote(@names.snake_of(name))]
+      // A qualified message is a WIRE name on both halves — the protocol id
+      // and its member, dispatched as those exact strings — so a scene that
+      // renamed either would send something nothing answers.
+      let parts = [quote(@names.rename_member(name))]
       for a in args {
         parts.push(print_value(a))
       }

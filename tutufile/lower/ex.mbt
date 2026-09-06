@@ -209,6 +209,22 @@ fn read_postfix(terms : ArrayView[@ast.Node]) -> Ex raise ExError {
         ex = EMember(ex, name)
         i = i + 2
       }
+      // `Holder::addRequested` is ONE name — the protocol's local name, the
+      // member's wire name — and not a read of anything. It stands where a
+      // message name stands: the argument an `ask` or a `send` carries.
+      Op("::") => {
+        guard ex is EName(base) &&
+          i + 1 < terms.length() &&
+          terms[i + 1].it is Id(who) else {
+          raise ExError(
+            message="`::` names a protocol's member",
+            help="write `<Protocol>::<member>` — a local protocol name on the left, the member's own name on the right",
+            span=span_of(t),
+          )
+        }
+        ex = EName(base + "::" + who)
+        i = i + 2
+      }
       Parens(gs) => {
         ex = ECall(ex, read_args(gs))
         i = i + 1

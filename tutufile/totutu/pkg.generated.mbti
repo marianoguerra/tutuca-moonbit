@@ -18,15 +18,21 @@ pub fn escape_text(String) -> String
 
 pub fn is_type_name(String) -> Bool
 
+pub fn local_names(Array[@statedef.StateDef]) -> Map[String, String]
+
 pub let macro_sentinel : String
 
 pub let macro_sentinel_name : String
 
 pub fn pascal_of(String) -> String
 
+pub fn print_bindings(@statedef.StateDef, Map[String, String], StringBuilder) -> Unit raise NoSpelling
+
 pub fn print_expr(@core.Expr) -> String raise NoSpelling
 
 pub fn print_fixture(@statedef.InitState, StringBuilder) -> Unit raise NoSpelling
+
+pub fn print_implements(@statedef.StateDef, Map[String, String], StringBuilder) -> Unit raise NoSpelling
 
 pub fn print_lit(@core.Lit) -> String
 
@@ -34,9 +40,11 @@ pub fn print_logic(String, Array[@tscript.Decl], @statedef.StateDef?, StringBuil
 
 pub fn print_num(Double) -> String
 
+pub fn print_protocols(Array[@statedef.StateDef], StringBuilder) -> Unit raise NoSpelling
+
 pub fn print_scene(@scenedef.Scene, StringBuilder) -> Unit raise NoSpelling
 
-pub fn print_spec(@statedef.StateDef, root~ : Bool, StringBuilder) -> Unit raise NoSpelling
+pub fn print_spec(@statedef.StateDef, root~ : Bool, names~ : Map[String, String], StringBuilder) -> Unit raise NoSpelling
 
 pub fn print_ty(@core.Ty) -> String raise NoSpelling
 

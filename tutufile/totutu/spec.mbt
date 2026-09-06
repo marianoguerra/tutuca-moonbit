@@ -47,6 +47,7 @@ pub fn print_ty(t : @tutuca.Ty) -> String raise NoSpelling {
 pub fn print_spec(
   def : @statedef.StateDef,
   root~ : Bool,
+  names~ : Map[String, String],
   out : StringBuilder,
 ) -> Unit raise NoSpelling {
   write_doc(out, def.doc, "  ")
@@ -156,10 +157,14 @@ pub fn print_spec(
       None => out.write_string("    lookup \{@names.snake_of(l.name)}\n")
     }
   }
-  for id in def.implements {
+  if !def.implements.is_empty() {
     gap()
-    out.write_string("    implements \{quote(id)}\n")
+    print_implements(def, names, out)
   }
+  if !def.property_bindings.is_empty() || !def.view_bindings.is_empty() {
+    gap()
+  }
+  print_bindings(def, names, out)
   refuse_unconverted(def)
 }
 
@@ -175,7 +180,11 @@ fn is_empty(def : @statedef.StateDef) -> Bool {
   def.intent.is_empty() &&
   def.express_message.is_empty() &&
   def.express_intent.is_empty() &&
-  def.implements.is_empty()
+  def.implements.is_empty() &&
+  def.property_bindings.is_empty() &&
+  def.view_bindings.is_empty() &&
+  def.provide.is_empty() &&
+  def.lookup.is_empty()
 }
 
 ///|
@@ -241,17 +250,8 @@ fn expr_text(source : String) -> String raise NoSpelling {
 /// declarations vanished would compile, register, and compose with nothing.
 fn refuse_unconverted(def : @statedef.StateDef) -> Unit raise NoSpelling {
   let missing = []
-  if !def.protocols.is_empty() {
-    missing.push("a `protocol` declaration")
-  }
-  if !def.protocol_imports.is_empty() {
-    missing.push("a protocol import")
-  }
-  if !def.property_bindings.is_empty() ||
-    !def.view_bindings.is_empty() ||
-    !def.provide_bindings.is_empty() ||
-    !def.lookup_bindings.is_empty() {
-    missing.push("a protocol binding")
+  if !def.provide_bindings.is_empty() || !def.lookup_bindings.is_empty() {
+    missing.push("a `provide` or `lookup` protocol binding")
   }
   guard missing.is_empty() else {
     raise NoSpelling(

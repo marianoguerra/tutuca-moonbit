@@ -53,7 +53,7 @@ pub fn print_fixtures(Array[@tutufile.Decl]) -> String raise ExError
 
 pub fn print_logic(@tutufile.Decl, StringBuilder, rows? : Array[String]) -> Map[String, PropImpl] raise ExError
 
-pub fn print_protocol(@tutufile.Decl, StringBuilder) -> Unit raise ExError
+pub fn print_protocol(@tutufile.Decl, StringBuilder, doc? : String?) -> Unit raise ExError
 
 pub fn print_scenes(Array[@tutufile.Decl]) -> String raise ExError
 

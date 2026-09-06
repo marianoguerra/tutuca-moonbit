@@ -88,7 +88,7 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
             }
             Struct => print_struct(decl, body, doc~)
             Enum => print_enum(decl, body, doc~)
-            Protocol => print_protocol(decl, body)
+            Protocol => print_protocol(decl, body, doc~)
             _ => ()
           }
           out.write_string(body.to_string())

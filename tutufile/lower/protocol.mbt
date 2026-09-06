@@ -60,8 +60,14 @@ pub fn case_text(parts : Array[@ast.Node], from : Int) -> String raise ExError {
 pub fn print_protocol(
   decl : @tutufile.Decl,
   out : StringBuilder,
+  doc? : String?,
 ) -> Unit raise ExError {
-  write_doc(out, decl_doc(decl), "")
+  // A doc between two declarations attaches to the FIRST one's suffix, so the
+  // caller — which has the predecessor in hand — is the only one that can read
+  // it. `decl_doc` alone sees a protocol's own leading doc and nothing else,
+  // which is right for the first declaration in a section and wrong for the
+  // rest.
+  write_doc(out, doc.unwrap_or(decl_doc(decl)), "")
   guard decl.node.it is Group(parts) else { return }
   guard parts.length() >= 4 && parts[2].it is Op("=") else {
     raise ExError(

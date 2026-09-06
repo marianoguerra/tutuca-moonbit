@@ -57,13 +57,17 @@ fn section_spec(
 ) -> Unit raise NoSpelling {
   guard !file.state.is_empty() else { return }
   out.write_string("spec:\n")
+  // The protocols come first because a component's `implements` names one, and
+  // a file reads top to bottom.
+  print_protocols(file.state, out)
+  let names = local_names(file.state)
   let mut first = true
   for def in file.state {
     if !first {
       out.write_string("\n")
     }
     first = false
-    print_spec(def, root=def.component == file.root, out)
+    print_spec(def, root=def.component == file.root, names~, out)
     // A `struct` or an `enum` is a declaration of the FILE rather than of the
     // component's body, which is where the old block put it too.
     for t in def.types {

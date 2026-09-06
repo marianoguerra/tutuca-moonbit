@@ -574,11 +574,16 @@ fn ViewBuilder::attribute(
   }
   let attr = @lower.attr_name(name)
   match value {
-    // A constant stays a constant, which is what lets a whole element collapse
-    // to `ConstAttrs` and never be re-evaluated.
+    // A constant STRING stays a constant, which is what lets a whole element
+    // collapse to `ConstAttrs` and never be re-evaluated.
+    //
+    // Only a string. `~rows: 6` is a literal too and could fold the same way,
+    // but the markup an attribute value was written in has no numbers: the
+    // parser reads `:rows="6"` as a dynamic attribute holding `LNum(6)`, and a
+    // reader that folded it here would change what a view compiles to as a
+    // side effect of changing how it is written. Folding it is worth doing on
+    // its own, to every backend at once, and not here.
     EStr(s) => attrs.push(@anode.attr(attr, s))
-    EBool(b) => attrs.push(@anode.attr_bool(attr, b))
-    ENum(n) => attrs.push(@anode.attr_num(attr, n))
     // A conditional VALUE, which the printer path had to split into three
     // attributes (`@if.x` / `@then.x` / `@else.x`) because HTML has nowhere to
     // put one. Here it is the node it always was.
