@@ -1,6 +1,6 @@
 # Tutucard — Single-file Tutuca components
 
-Read this first when the deliverable is a **card**: one HTML file that a page
+Read this first when the deliverable is a **card**: one `.tutu` file that a page
 can check, compile to a wasm module, instantiate, and mount
 without shipping the MoonBit compiler.
 
@@ -223,7 +223,7 @@ For Node or browser automation, use `driveCard`; it checks, compiles,
 instantiates, and drives in one call. Only use the lower-level synchronous
 `__tutucard.drive` when the exact compiled guest and its matching manifest are
 already mounted under the supplied key. Full scene syntax and APIs are in
-[testing.md](./testing.md#testing-a-card-script-typetutucatest).
+[testing.md](./testing.md#testing-a-card-tests).
 
 ## Card scene essentials
 
@@ -238,7 +238,7 @@ Selectors are one compound selector: a tag plus `#id`, `.class`, and
 supported. Omit `is` from an expectation to record its current value before
 turning the useful observations into assertions.
 
-Read [testing.md](./testing.md#testing-a-card-script-typetutucatest) whenever
+Read [testing.md](./testing.md#testing-a-card-tests) whenever
 you add or review scenes; it is the authoritative field and verb reference.
 
 ## Moving between paths

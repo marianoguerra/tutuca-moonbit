@@ -80,7 +80,7 @@ other origin must send CORS headers.
 | attribute | meaning |
 | --- | --- |
 | `src` | URL of the `.mbt` component the editor opens with |
-| `view` | URL of the `.html` view file; adds the View and Generated tabs |
+| `view` | URL of the `.tutu` view file; adds the View and Generated tabs |
 | `target` | `wasm-gc` (default) or `js` |
 
 With no `view`, the element is a single editor and compiles its source alone.

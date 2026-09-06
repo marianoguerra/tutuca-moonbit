@@ -1,12 +1,12 @@
 # The card playground
 
-A **card** is one `.html` file — spec, script, templates, styles, fixtures and
-scenes — that the browser compiles to a component wasm module with no MoonBit
-toolchain anywhere on the page. This directory is the machinery for that.
+A **card** is one `.tutu` file — `spec:`, `logic:`, `view:`, styles,
+`fixtures:` and `tests:` — that the browser compiles to a component wasm module
+with no MoonBit toolchain anywhere on the page. This directory is the machinery for that.
 
 | | |
 |---|---|
-| `drive/` | the headless driver: mounts a card on memdom and runs its `<script type="tutuca/test">` scenes through `@harness`'s own verbs. SHIPS |
+| `drive/` | the headless driver: mounts a card on memdom and runs its `tests:` scenes through `@harness`'s own verbs. SHIPS |
 | `playground/` | the page's MoonBit half — `cardguest.mbt` implements `&Guest` over the JS surface, `host.mbt` is what the page calls |
 | `web/` | the page itself: the shell, the `<mb-card>` element, the loader, the starter cards |
 | `build/` | assembly and the four gates below |

@@ -11,7 +11,7 @@ General authoring lives in [core.md](./core.md).
 
 This file also contains the complete Tutucard scene reference. If the
 deliverable is a card, read [tutucard.md](./tutucard.md) for the authoring
-model, then jump to [Testing a CARD](#testing-a-card-script-typetutucatest).
+model, then jump to [Testing a CARD](#testing-a-card-tests).
 
 ## Setup
 

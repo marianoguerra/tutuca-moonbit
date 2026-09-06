@@ -40,15 +40,15 @@ Everything else lands under ±5%.
 Two corpora, same nodes, opposite shapes — so a cost that is per-view shows up
 in one and a cost that scales with a view's size shows up in the other.
 
-**`all_views.html` — 108 small views.** Every view `.html` in the repo
+**`all_views.tutu` — 108 small views.** Every view `.tutu` in the repo
 concatenated into one view *file*, with each file's component names prefixed so
-nothing collides (`storybook/examples/json.html`'s `JsonArray` becomes
-`SbJsonJsonArray`, `playground/site/examples/json.html`'s becomes
+nothing collides (`storybook/examples/json.tutu`'s `JsonArray` becomes
+`SbJsonJsonArray`, `playground/site/examples/json.tutu`'s becomes
 `SiteJsonJsonArray`). A file whose single component is unnamed — a bare
 `<template>` — becomes that prefix's `main` view. 36 source files, 108 views,
 ~58 KB.
 
-**`one_big_view.html` — one enormous view.** Every one of those views' *bodies*
+**`one_big_view.tutu` — one enormous view.** Every one of those views' *bodies*
 inside a single `<template>`: 107 bodies, ~55 KB, one tree.
 
 `corpus_gen.mbt` holds both as MoonBit strings (the second as its body, which

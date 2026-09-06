@@ -13,7 +13,7 @@ There are two authoring paths over that same file format:
 | Path | Choose it when | Build and test |
 |---|---|---|
 | **Compiled Tutuca component** | The UI needs MoonBit functions, imports, custom objects, host wiring, or a reusable `ModuleDef` | `tutuca gen` or `tutuca watch`, then `moon check` and `moon test` |
-| **Tutucard** | The UI should remain one portable HTML file and use only the spec, script, template, style, fixture, and scene languages | The card runtime compiles it to a component wasm module in the browser; validate with the card checker and its `tests:` scenes |
+| **Tutucard** | The UI should remain one portable `.tutu` file and use only the `spec:`, `logic:`, `view:`, style, `fixtures:` and `tests:` languages | The card runtime compiles it to a component wasm module in the browser; validate with the card checker and its `tests:` scenes |
 
 Read [tutucard.md](./tutucard.md) first for a card. Read
 [core.md](./core.md) first for a compiled component. Load only the additional
@@ -22,9 +22,9 @@ references needed for the task.
 ## Working method
 
 1. Identify the path from the surrounding files and requested deployment.
-   An HTML file is not necessarily a card: an adjacent generated
+   A `.tutu` is not necessarily a card: an adjacent generated
    `*_view_gen.mbt` and MoonBit component builder indicate the compiled path.
-2. Inspect the schema and templates before changing handlers. Generated
+2. Inspect `spec:` and `view:` before changing handlers. Generated
    message and handler enums are view-driven.
 3. Keep behavior in `logic:` when the language expresses it. On the
    compiled path, use MoonBit for refused script arms and host/module wiring.
@@ -128,4 +128,4 @@ all supported targets.
 For a card, compile/check it with the card runtime, run every embedded
 `tests:` scene, and inspect the mounted result. See
 [tutucard.md](./tutucard.md#validation) and
-[testing.md](./testing.md#testing-a-card-script-typetutucatest).
+[testing.md](./testing.md#testing-a-card-tests).

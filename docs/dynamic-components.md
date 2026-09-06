@@ -46,8 +46,8 @@ delegation, morphing, the modifiers and the linter all apply to it unchanged.
 
 ## Writing a component
 
-The shortest route is a **card**: one HTML file holding a spec block, a script
-block and templates, compiled to a module by `tgc/emit`. The card playground
+The shortest route is a **card**: one `.tutu` file holding a `spec:`, a
+`logic:` and a `view:`, compiled to a module by `tgc/emit`. The card playground
 (`cmd/dev -- tutucard-playground`, then `dist/tutucard/`) checks it, compiles
 it, mounts it, and hands you the `.wasm`. No toolchain: the compiler is a
 MoonBit library in the page.

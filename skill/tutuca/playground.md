@@ -7,7 +7,7 @@ toolchain. Everything else in this skill still applies; this file covers
 what differs.
 
 This is the **MoonBit playground**, where a view and MoonBit source compile as
-a pair. It is not Tutucard, whose deliverable is one HTML file compiled by the
+a pair. It is not Tutucard, whose deliverable is one `.tutu` file compiled by the
 card runtime; see [tutucard.md](./tutucard.md).
 
 ## Same generator, same names

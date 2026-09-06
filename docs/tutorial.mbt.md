@@ -12,7 +12,7 @@ plain MoonBit struct, and the compiler checks every handler against it.
 The examples here build each view inline with `@anode.View::new(raw_view="…")`
 and match dispatches as raw `Input(name, args)` strings. This is the shortest
 form to read on one screen, and the escape hatch for dynamic views. For real
-components, use **ahead-of-time views**: put the template in an `.html` file
+components, use **ahead-of-time views**: put the view in a `.tutu` file
 and run `tutuca gen`. The tool compiles the file and generates a typed
 `<Comp>Msg`. A misspelled or unhandled `@on` handler then gives a *compile
 error*, not a silent no-op. See the "Views (`views~` + `gen`)"
