@@ -91,6 +91,8 @@ pub fn split_binder(Array[@ast.Node]) -> (Array[String], Ex, Int) raise ExError
 
 pub fn split_call(Array[@ast.Node]) -> (Array[@ast.Node], Array[@ast.Node]) raise ExError
 
+pub fn tag_name(String) -> String
+
 pub fn write_doc(StringBuilder, String?, String) -> Unit
 
 // Errors

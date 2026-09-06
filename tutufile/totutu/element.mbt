@@ -86,10 +86,18 @@ fn print_element(
     }
     opts.push("~attrs: {\{entries.join(", ")}}")
   }
+  // A hyphen in a tag is written as an underscore, the same way it is in an
+  // attribute name: shrubbery reads `emoji-picker` as three terms.
+  guard option_name(d.tag) is Some(tag) else {
+    raise NoSpelling(
+      what="an element whose tag `\{d.tag}` cannot be written as a name",
+      help="a tag is a name with hyphens written as underscores; this one holds something else",
+    )
+  }
   let head = if opts.is_empty() {
-    "@\{d.tag}"
+    "@\{tag}"
   } else {
-    "@\{d.tag}(\{opts.join(", ")})"
+    "@\{tag}(\{opts.join(", ")})"
   }
   let kids = []
   let flat = []

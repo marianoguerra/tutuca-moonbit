@@ -409,16 +409,6 @@ fn ViewBuilder::tag(
         )
     }
   }
-  // `data-eid` goes where the first `~on_*` option was written, which is where
-  // the HTML parser puts it — appending it would reorder the element's
-  // attributes against a tree parsed from the old notation.
-  //
-  // And it is registered BEFORE the children are built, because the parser
-  // reads an element's attributes before its content: a parent's handlers get a
-  // lower id than its children's, and the ids are what `data-eid` carries.
-  if !events.is_empty() {
-    attrs.insert(eid_at, @anode.eid(self.register(events)))
-  }
   // A scope's id is allocated only when there IS one, and before the element is
   // built, because the element carries it: `data-nid` is how a rendered node
   // finds the frame it is in, and the parser stamps it on the wrapped node
@@ -444,7 +434,22 @@ fn ViewBuilder::tag(
       childs.push(n)
     }
   }
-  let node = @anode.h(tag, attrs, merge_text(childs), ns?=self.ns)
+  // `data-eid` goes where the first `~on_*` option was written, which is where
+  // the HTML parser puts it — appending it would reorder the element's
+  // attributes against a tree parsed from the old notation.
+  //
+  // And it is registered AFTER the children, because the adapter builds an
+  // element once its content is closed: a child's handlers get a lower id than
+  // its parent's, and the ids are what `data-eid` carries.
+  if !events.is_empty() {
+    attrs.insert(eid_at, @anode.eid(self.register(events)))
+  }
+  let node = @anode.h(
+    @lower.tag_name(tag),
+    attrs,
+    merge_text(childs),
+    ns?=self.ns,
+  )
   self.ns = outer
   // Outermost-first in source order, which is the order `WrapperAttr` records
   // them in — so the last one read is the innermost wrap.

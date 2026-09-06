@@ -358,6 +358,7 @@ fn print_tag(
         )
     }
   }
+  let tag = tag_name(tag)
   let head = if attrs.is_empty() { tag } else { tag + " " + attrs.join(" ") }
   if body.is_empty() {
     out.write_string("\{indent}<\{head}></\{tag}>\n")
@@ -850,6 +851,18 @@ pub fn body_of(group : @ast.Node) -> Array[@ast.Node]? {
   guard group.it is Group(parts) && parts.length() == 1 else { return None }
   guard parts[0].it is Brackets(items) else { return None }
   Some(items)
+}
+
+///|
+/// A TAG name, under the same rule an attribute name follows: an underscore is
+/// a hyphen, and case is preserved.
+///
+/// A custom element must contain a hyphen (`<emoji-picker>`), and shrubbery
+/// reads `emoji-picker` as three terms — a name, an operator and a name — so
+/// the hyphen cannot be written directly. No HTML tag contains an underscore,
+/// which is what makes the mapping unambiguous.
+pub fn tag_name(name : String) -> String {
+  attr_name(name)
 }
 
 ///|
