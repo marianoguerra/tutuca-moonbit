@@ -466,12 +466,12 @@ pub fn tasks() -> Array[Task] {
     },
     {
       name: "check-tgc",
-      about: "the node harnesses over the component format: composition, conformance, and whether tgc/rt/rt_src_gen.mbt still matches rt.wax",
+      about: "the node harnesses over the component format: composition, conformance, and whether tgc/rt/rt_src_gen.mbt still matches rt.wap",
       commands: [
         // These build hand-written modules from `_build` and instantiate them
         // together against one import object, which no `moon test` can do — and
         // they ran in no task at all, so the only check that `rt_src_gen.mbt`
-        // matches `rt.wax` was a harness nobody invoked. compose.test.mjs needs
+        // matches `rt.wap` was a harness nobody invoked. compose.test.mjs needs
         // `wasm-tools` on PATH; the other two need only moon and node.
         //
         // compose.test.mjs and twomod.test.mjs are one claim at two levels, and
@@ -782,7 +782,7 @@ fn assembled() -> Array[(String, String, () -> Array[Step])] {
       storybook_template_embed_steps,
     ),
     (
-      "rt-embed", "re-embed tgc/rt/rt.wax into tgc/rt/rt_src_gen.mbt (the runtime source that ships)",
+      "rt-embed", "re-embed tgc/rt/rt.wap into tgc/rt/rt_src_gen.mbt (the runtime source that ships)",
       rt_embed_steps,
     ),
     (
@@ -1075,7 +1075,7 @@ const STORYBOOK_EMBED_WAS : String = "_build/storybook_template_gen.mbt.was"
 
 ///|
 /// The embedded runtime module source, and where its pre-regeneration copy
-/// parks. `tgc/rt/rt.wax` is the source; `tgc/emit`'s `compile_runtime` builds
+/// parks. `tgc/rt/rt.wap` is the source; `tgc/emit`'s `compile_runtime` builds
 /// the module from what is embedded here, so a page that hosts a component gets
 /// the runtime without fetching this repository's `_build`.
 const RT_EMBED : String = "tgc/rt/rt_src_gen.mbt"
@@ -1113,31 +1113,31 @@ pub fn storybook_template_embed_steps() -> Array[Step] {
 }
 
 ///|
-/// Re-embed `tgc/rt/rt.wax` into `tgc/rt/rt_src_gen.mbt`. Run after editing the
+/// Re-embed `tgc/rt/rt.wap` into `tgc/rt/rt_src_gen.mbt`. Run after editing the
 /// runtime module.
 ///
 /// The third embed, and it gets the other two's shape for the reason they have
 /// it: this one ships INSIDE the published package, and `compile_runtime` builds
-/// a component's runtime from it rather than from the `.wax` beside it. A
-/// `rt.wax` edited without re-embedding is a source file that no longer
+/// a component's runtime from it rather than from the `.wap` beside it. A
+/// `rt.wap` edited without re-embedding is a source file that no longer
 /// describes the module anybody actually gets, and nothing in `check` or `test`
 /// reads the pair — only `tgc/test/guest.test.mjs`, which ran in no task until
 /// `check-tgc`.
 ///
-/// The embed drops comments, so a comment-only edit to `rt.wax` correctly
+/// The embed drops comments, so a comment-only edit to `rt.wap` correctly
 /// produces no diff here.
 pub fn rt_embed_steps() -> Array[Step] {
   [
     Mkdir("_build"),
     Copy(from=RT_EMBED, to=RT_EMBED_WAS),
     Run({
-      label: "embed tgc/rt/rt.wax",
+      label: "embed tgc/rt/rt.wap",
       prog: "node",
       args: ["tgc/rt/embed.mjs"],
     }),
     Run(moon("fmt", ["fmt"])),
     Run({
-      label: "drift check · tgc/rt/rt_src_gen.mbt matches rt.wax",
+      label: "drift check · tgc/rt/rt_src_gen.mbt matches rt.wap",
       prog: "diff",
       args: [RT_EMBED_WAS, RT_EMBED],
     }),

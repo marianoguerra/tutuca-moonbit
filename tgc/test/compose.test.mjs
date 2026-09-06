@@ -32,7 +32,7 @@ test("three routes, one host: every module loads and declares itself", () => {
   );
   // dashboard.body.wat — a person wrote it, the builder prepended the types.
   assert.equal(cat.get("Dashboard").module, "tgc.proto.dashboard");
-  // counter.wax — a COMPILER emitted the types, from tgc/abi.
+  // counter.wap — a COMPILER emitted the types, from tgc/abi.
   assert.equal(cat.get("Counter").module, "tgc.proto.counter");
   // clock.whole.wat — its own preamble, its own names, nothing shared but shape.
   assert.equal(cat.get("Clock").module, "tgc.proto.clock");

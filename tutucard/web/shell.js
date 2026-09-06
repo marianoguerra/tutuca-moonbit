@@ -411,7 +411,7 @@ async function reload() {
   drawActivity();
   styleClasses();
   // The compile PANEL, from the build this mount already did — so the WAT, the
-  // WAX and the download come from the module on the page rather than from a
+  // wap and the download come from the module on the page rather than from a
   // second compile of the same source.
   showBuild(report.build);
   drawScenes(src, report);
@@ -937,7 +937,7 @@ function drawRefusals(refusals) {
 }
 
 function drawCompiled() {
-  els.compiled.textContent = lastBuild ? lastBuild.wax : "";
+  els.compiled.textContent = lastBuild ? lastBuild.wap : "";
 }
 
 /**

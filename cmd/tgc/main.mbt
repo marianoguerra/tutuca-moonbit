@@ -29,7 +29,7 @@ fn main raise {
     "build" => build(rest)
     "card" => card(rest)
     "check" => check(rest)
-    // The runtime, from its EMBEDDED source rather than from `rt.wax`. It is
+    // The runtime, from its EMBEDDED source rather than from `rt.wap`. It is
     // the route a page takes, so it is the route worth being able to run.
     "runtime" => {
       let outp = if rest.length() >= 2 { rest[1] } else { "tutuca-rt.wasm" }
@@ -91,8 +91,35 @@ fn build(rest : ArrayView[String]) -> Unit raise {
     process_exit(1)
     return
   }
+  // What wap could not say, appended rather than imported: `import was` records
+  // a signature and lowers to nothing, so the definition arrives here. Only the
+  // runtime declares the block; for anything else these are two unreferenced
+  // fields that cost a handful of bytes.
+  let fields = m.fields
+  for f in @abi.runtime_sys_fields() {
+    fields.push(f)
+  }
+  // A hand-written module builds a vtable the same way a generated one does,
+  // and needs the same thing done about it: wap cannot annotate a definition
+  // with a named function type, so the two functions a `tg_vt` holds get theirs
+  // here. Parsed a second time only to be READ — the fields above are the ones
+  // that get compiled.
+  let scanned = @parse.parse_module(body, fname=inp) catch {
+    _ => {
+      println("rejected: \{inp}")
+      process_exit(1)
+      return
+    }
+  }
+  let fields = @abi.retype_vtables(scanned.module_(), fields) catch {
+    e => {
+      println("\{e}")
+      process_exit(1)
+      return
+    }
+  }
   let session = @compile.Session::new(source=body)
-  let checked = session.check(m.fields)
+  let checked = session.check(fields)
   let reports = session.reports()
   if @compile.rejected(reports) {
     println("rejected: \{inp}")
@@ -164,7 +191,7 @@ fn card(rest : ArrayView[String]) -> Unit raise {
     }
   }
   @fs.write_bytes_to_file(rest[2], out.wasm)
-  @fs.write_string_to_file(rest[2] + ".wax", out.wax)
+  @fs.write_string_to_file(rest[2] + ".wap", out.wap)
   @fs.write_string_to_file(
     rest[2] + ".manifest.json",
     out.manifest.stringify(indent=2),

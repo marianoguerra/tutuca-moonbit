@@ -9,7 +9,7 @@ Read [`SPEC.md`](SPEC.md) for the format. This page is the tree.
 
 | | |
 |---|---|
-| `abi/` | the FROZEN preamble, op codes, tag numbers and export names. One table, two renderings (Wax and WAT). Nothing else may spell these. |
+| `abi/` | the FROZEN preamble, op codes, tag numbers, export names and the runtime vocabulary. One table in wap; the WAT is DERIVED from it. Nothing else may spell these. |
 | `rt/` | `tutuca-rt` — the shared function vocabulary, as a module |
 | `emit/` | card → `tgc` module. The third backend over `tscript`'s one AST. |
 | `host/` | the host side: the `&Obj` wrapper, the manifest, `register_module`, and `values.mjs` — `core.Value` JSON ↔ `tg_val`, the one copy |
@@ -90,46 +90,75 @@ compose" is the claim and three copies of one route would not test it.
 | | route |
 |---|---|
 | `dashboard.body.wat` | hand-written WAT. The builder prepends the canonical preamble; the author never types the types. |
-| `counter.wax` | Wax, compiled by `marianoguerra/wax` through `cmd/tgc`. A **compiler** emitted this preamble, from `abi/`. |
+| `counter.wap` | wap, compiled by `marianoguerra/wap` through `cmd/tgc`. A **compiler** emitted this preamble, from `abi/`. |
 | `clock.whole.wat` | a COMPLETE module carrying its own preamble, spelled its own way — different type names, different field names, an unrelated group declared first, functions in a different order. Nothing shared but the shape. |
 
 ## The toolchain
 
 ```sh
-moon run --target native cmd/tgc -- preamble --wax   # or --wat
-moon run --target native cmd/tgc -- build in.wax out.wasm
+moon run --target native cmd/tgc -- preamble --wap   # or --wat
+moon run --target native cmd/tgc -- build in.wap out.wasm
 node tgc/test/build.mjs                              # build everything
 ```
 
 `tgc preamble` exists so a hand-writer never copies the types out of a file that
 might have moved on. Ask for them.
 
-## Writing a module in Wax: five things that will bite
+## Writing a module in wap: things that will bite
 
-All five cost time once. None of them are in Wax's own README.
+Each cost time once. None of them are in wap's own README.
 
 - **`tag` is a reserved word** (wasm's exception-tag section), so the
   discriminator field is spelled `kind`. That is why the frozen group says
   `kind` and not `tag`.
-- **A function used as a vtable value must be declared with the named type**:
-  `fn counter_get: tg_get(self: &tg_inst, …)`. An inline signature is an
-  identical-LOOKING type in a new singleton group, and a reference to it is not
-  a `&tg_get`. The same trap exists in WAT — `(func $get (type $tg.get) …)` —
-  and it is the freeze rule biting at the smallest possible scale.
-- **There is no `&&`.** Nest the `if`s.
-- **A mutable local is `let x: i32 = 0;`** — the type annotation is what makes
-  it a local rather than a binding. A mutable global is the same, at the top
-  level.
-- **A string literal is already `[mut i8]`**, which IS `tg_bytes`. So
-  `str_eq(name, "count")` needs no conversion, no interning table and no
-  constant pool. That is luck rather than design, and it is one reason the
-  format's text type is a byte array.
+- **A function used as a vtable value cannot be declared in wap at all.** Its
+  type is `tg_get` or `tg_call`, both inside the one recursion group, and Wax
+  will not coerce a function's NAME to a type declared in a group — it wants
+  `fn c_get: tg_get(…)`, which wap has no syntax for. `cmd/tgc` reads the
+  `tg_vt` literal and sets the type on the lowered field, so write the literal
+  and it is handled. This is the freeze rule biting at the smallest scale.
+- **Spell out the import NAME on every host import**: `import "str_eq" fn
+  str_eq(…)`. Without it wap prefixes the wasm import field with the module —
+  `tut.counter__str_eq` — and the link fails against a runtime exporting
+  `str_eq`. The name in the import section is the ABI; the local name is not.
+- **Import `get_field` and `call_op` under those names.** `cmd/tgc` binds those
+  two to their frozen function types and finds them by that spelling. Under any
+  other local name they get an inline signature, which does not link: the
+  runtime's own `get_field` is interned to `tg_get` because its signature
+  matches one, and a standalone func type is not the type inside a group
+  however identically it is written.
+- **There is no `else` as a statement head.** wap's `if` takes shrubbery
+  alternatives; the idiom in practice is an early `return`.
+- **Annotate a destructured tuple binder** — `let (ok, x :: f64) = …`. Without
+  it `x` has no type, and the operators that need signedness to pick an
+  instruction do not lower. `x + y` compiles and `x / y` does not, which makes
+  the annotation look optional until it isn't. The same applies to `var x = n`.
+- **An array literal takes its element type from a bare name**, not a qualified
+  one, so declare your own `type vals = [tgabi.tg_val?]` and use that. It is
+  not a new wasm type: singleton recursion groups with identical content
+  canonicalize together, so `array.new $your_vals` produces a value a signature
+  declaring `tgabi.tg_vals` accepts.
+- **A string literal is an anonymous `[u8]`**, which canonicalizes to the same
+  type as `tg_bytes`. So `str_eq(name, "count")` needs no conversion, no
+  interning table and no constant pool. That is luck rather than design, and it
+  is one reason the format's text type is a byte array.
+- **There are no mutable globals.** A `const` can hold an allocation —
+  `const the_null :: tgabi.tg_val = tgabi.tg_val{ kind: 0 }` lowers to a wasm
+  global with `struct.new` in its initialiser — but a cell that CHANGES needs
+  `import was` and a field supplied by the embedder. The runtime's id counter
+  is the only one in this repository.
 
 ## The one thing to know
 
-**The core rec group is frozen.** A rec group's identity depends on the whole
+**Every rec group is frozen.** A rec group's identity depends on the whole
 group, so adding a type to it, reordering it, or changing one field breaks the
 identity of *every* type in it, in every module ever built, retroactively.
 
+At `tgc/2` there is one group with more than one member — `tg_get`, `tg_inst`,
+`tg_vt` and `tg_call`, which genuinely refer to each other — and everything
+else is a group of one. So adding a type breaks nothing and changing `tg_list`
+breaks `tg_list`. That is a smaller blast radius than `tgc/1`'s single group of
+twenty, and it is why `tg_ext` now carries less than it used to.
+
 Extend through `tg_ext` and through the op space. Both are designed for it; the
-group is not.
+groups are not.

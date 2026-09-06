@@ -39,7 +39,7 @@ test "a named message slot takes a bare or qualified protocol name" {
     assert_eq(out.refusals, [])
     // The WIRE name, resolved as `tscript/check` resolves it — not the local
     // spelling, which the host has never heard of.
-    assert_true(out.wax.contains("tg_str(\"\{wire}\")"))
+    assert_true(out.wap.contains("tg_str(\"\{wire}\")"))
   }
 }
 
@@ -52,7 +52,7 @@ test "a bare ask still takes a value in the slot a name would use" {
     name="b",
   )
   assert_eq(out.refusals, [])
-  assert_true(out.wax.contains("eff_forward("))
+  assert_true(out.wap.contains("eff_forward("))
 }
 
 ///|
@@ -177,9 +177,9 @@ test "a protocol receive answers its wire name, not the file's alias" {
     name="b",
   )
   // The module matches on it…
-  assert_true(out.wax.contains("str_eq(name, \"x/Holder@1::hold\")"))
-  assert_false(out.wax.contains("str_eq(name, \"hold\")"))
-  assert_false(out.wax.contains("str_eq(name, \"Holder::hold\")"))
+  assert_true(out.wap.contains("str_eq(name, \"x/Holder@1::hold\")"))
+  assert_false(out.wap.contains("str_eq(name, \"hold\")"))
+  assert_false(out.wap.contains("str_eq(name, \"Holder::hold\")"))
   // …and the manifest advertises the same thing, which is the half a host
   // reads before it ever dispatches.
   guard out.manifest is Object(m) else { fail("no manifest") }
@@ -224,7 +224,7 @@ test "a card's inbound and outbound protocol names are both resolved" {
     Some(Json::array([Json::string("x/Holder@1::addRequested")])),
   )
   // …and what it actually raises is that same name, not the local alias.
-  assert_true(out.wax.contains("tg_str(\"x/Holder@1::addRequested\")"))
+  assert_true(out.wap.contains("tg_str(\"x/Holder@1::addRequested\")"))
 }
 
 ///|
@@ -237,7 +237,7 @@ test "an ordinary receive keeps its own name" {
     card("state B { n: Double }", "receive bump { .n += 1.0 }"),
     name="b",
   )
-  assert_true(out.wax.contains("str_eq(name, \"bump\")"))
+  assert_true(out.wap.contains("str_eq(name, \"bump\")"))
   guard out.manifest is Object(m) else { fail("no manifest") }
   guard m.get("components") is Some(Array(cs)) && cs[0] is Object(c0) else {
     fail("no component")
@@ -262,7 +262,7 @@ test "a spec-block rule is not reported as declared twice" {
   assert_false(c.issues.map(i => i.code).contains("RULE_IN_BOTH"))
   // …and the rule still compiles, which is what the merge is for.
   let out = @emit.compile(src, name="b")
-  assert_true(out.wax.contains("_pred_positive("))
+  assert_true(out.wap.contains("_pred_positive("))
 }
 
 ///|

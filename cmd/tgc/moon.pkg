@@ -17,6 +17,7 @@ import {
   "marianoguerra/wax/compile",
   "marianoguerra/error-report" @report,
   "marianoguerra/wap/resolve",
+  "marianoguerra/wap/parse",
   "marianoguerra/wax/message",
   "moonbitlang/x/fs",
   "moonbitlang/core/env",

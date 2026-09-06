@@ -8,7 +8,7 @@
 // A card is compiled and mounted, so what ships is the runtime and the page —
 // AND a compiler. `tgc/emit` turns the same card into a core wasm module, and
 // it is a MoonBit library in this bundle rather than a payload fetched beside
-// it: `marianoguerra/wax` plus the Wax standard library it vendors.
+// it: `marianoguerra/wap` and the `marianoguerra/wax` backend it lowers to.
 //
 // The two built things are the compilers a card can ask for, and neither is
 // new: `margaui.wasm` is the wasm-gc build of `@css.compile_margaui` the other

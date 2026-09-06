@@ -20,7 +20,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const source = readFileSync(join(here, "std.card.html"), "utf8");
 
 // No ASCII guard here, unlike `tgc/rt/embed.mjs`. That one has one because the
-// WAX front end needs it when the source arrives as a literal; MoonBit source
+// wap front end needs it when the source arrives as a literal; MoonBit source
 // is UTF-8 and a card's prose is written for people to read.
 
 // FOUR spaces, because that is what `moon fmt` leaves — and a generator whose

@@ -1,6 +1,6 @@
 ///|
 /// The smallest card there is, end to end: it splits, checks, lowers, and the
-/// Wax the emitter wrote compiles.
+/// wap the emitter wrote compiles.
 test "a counter card compiles" {
   let card =
     #|<script type="tutuca/spec">
@@ -65,11 +65,11 @@ test "one declaration is refused and the rest still compiles" {
     msg=out.refusals[0].reason,
   )
   assert_true(
-    out.wax.contains("Counter_receive_inc"),
+    out.wap.contains("Counter_receive_inc"),
     msg="the rest did not compile",
   )
   assert_true(
-    !out.wax.contains("Counter_receive_ping"),
+    !out.wap.contains("Counter_receive_ping"),
     msg="a refused handler was emitted",
   )
 }
@@ -92,9 +92,12 @@ test "a card that performs no effect imports no effect" {
     #|</script>
     #|<template id="Pure" data-root><b @text="$doubled"></b></template>
   let out = @emit.compile(pure, name="pure")
-  assert_true(out.wax.contains("op_mul"), msg="the arithmetic it does use")
+  assert_true(out.wap.contains("op_mul"), msg="the arithmetic it does use")
+  // The wap spelling: one `import "tut":` block, one `fn` line per name. An
+  // effect a card does not perform is not in it — which is the property, not
+  // the syntax, and `tgc/SECURITY.md` rests on it.
   for effect in ["eff_send", "eff_ask", "eff_reply", "eff_fail", "eff_log"] {
-    assert_false(out.wax.contains("#[import = \"\{effect}\"]"), msg=effect)
+    assert_false(out.wap.contains("fn \{effect}("), msg=effect)
   }
   // …and a card that DOES send says so.
   let sender =
@@ -106,11 +109,8 @@ test "a card that performs no effect imports no effect" {
     #|</script>
     #|<template id="Loud" data-root><b></b></template>
   let loud = @emit.compile(sender, name="loud")
-  assert_true(loud.wax.contains("#[import = \"eff_send\"]"), msg="a sender")
-  assert_false(
-    loud.wax.contains("#[import = \"eff_ask\"]"),
-    msg="but not an asker",
-  )
+  assert_true(loud.wap.contains("fn eff_send("), msg="a sender")
+  assert_false(loud.wap.contains("fn eff_ask("), msg="but not an asker")
 }
 
 ///|
@@ -133,13 +133,13 @@ test "sendAt reifies its place" {
     #|<template id="Board" data-root><b></b></template>
   let out = @emit.compile(card, name="board")
   assert_eq(out.refusals.map(r => r.name), [])
-  assert_true(out.wax.contains("eff_send_at"), msg="the effect")
-  assert_true(out.wax.contains("mk_step_key(\"rows\""), msg="a keyed step")
+  assert_true(out.wap.contains("eff_send_at"), msg="the effect")
+  assert_true(out.wap.contains("mk_step_key(\"rows\""), msg="a keyed step")
   assert_true(
-    out.wax.contains("mk_step_field(\"inner\")"),
+    out.wap.contains("mk_step_field(\"inner\")"),
     msg="a field after a key",
   )
-  assert_true(out.wax.contains("mk_step_field(\"rows\")"), msg="a bare field")
+  assert_true(out.wap.contains("mk_step_field(\"rows\")"), msg="a bare field")
 }
 
 ///|

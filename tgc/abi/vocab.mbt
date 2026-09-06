@@ -20,12 +20,14 @@ fn f(
   name : String,
   import_name? : String? = None,
   supplier? : Supplier = Runtime,
+  frozen? : String? = None,
   params : Array[(String, @wast.Type)],
   results : Array[@wast.Type],
 ) -> VocabFn {
   {
     name,
     supplier,
+    frozen,
     import_name: match import_name {
       Some(n) => n
       None => name
@@ -68,9 +70,12 @@ pub fn vocab() -> Array[VocabFn] {
   let f64_ : @wast.Type = F64
   [
     // ── composition: the two calls that are the whole of it ──────────────
-    f("get_field", [("inst", inst), ("name", bytes)], [opt_val]),
+    f("get_field", frozen=Some("tg_get"), [("inst", inst), ("name", bytes)], [
+      opt_val,
+    ]),
     f(
       "call_op",
+      frozen=Some("tg_call"),
       [
         ("inst", inst),
         ("op", i32_),
@@ -113,6 +118,10 @@ pub fn vocab() -> Array[VocabFn] {
     // `cur` is materialized at its first READ, and "has it been already" is
     // that question.
     f("kind_of", [("v", val)], [i32_]),
+    // Instance identity, from the RUNTIME rather than from a counter of the
+    // module's own — see `sys.mbt`. Two modules with private counters hand out
+    // the same first id, and `val_eq` compares component values by id alone.
+    f("next_id", [], [I64]),
     // ── arithmetic and comparison ────────────────────────────────────────
     un("trunc"),
     bin("op_add"),

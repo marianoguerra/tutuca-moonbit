@@ -17,7 +17,7 @@ test "the embedded runtime compiles" {
 /// Every name a generated card imports is a name the runtime exports.
 ///
 /// This is the check `tgc/1` did not have. The vocabulary lived in `tgc/emit` as
-/// eighty signature STRINGS spliced into generated Wax, `rt.wax` exported
+/// eighty signature STRINGS spliced into generated Wax, `rt.wap` exported
 /// whatever it happened to export, and nothing compared them — so a rename on
 /// one side surfaced as a browser refusing to instantiate a module, at the far
 /// end of a build, with `LinkError` for a message.

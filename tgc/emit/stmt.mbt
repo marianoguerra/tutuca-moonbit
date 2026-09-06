@@ -10,45 +10,99 @@
 // with the transition. Putting the buffer host-side rather than guest-side is
 // the same decision the old contract made about `control.*`, kept for the same
 // reason — it is the host that knows when the call ended.
+//
+// Statements accumulate into an `Array[@wast.Node]` rather than into a text
+// buffer. The shape is the same shape it was; what is gone is the indentation
+// bookkeeping and the escaping, and what is new is that every node knows where
+// in the card it came from.
+
+///|
+/// Bind a value to a fresh local and abandon the transition if it has none.
+///
+/// This pair — `let t = e` then `if t == null { return null }` — is the single
+/// most repeated thing in the emitters, because it IS the two-nulls rule: a
+/// runtime operation with no answer for its arguments returns null, and a
+/// transition with no answer does not happen. Writing it once is the only
+/// change; `tgc/1` wrote both lines at nineteen sites.
+fn hold(
+  ctx : Ctx,
+  b : B,
+  out : Array[@wast.Node],
+  value : @wast.Node,
+) -> String {
+  let t = ctx.temp()
+  out.push(b.bind(t, value))
+  // …unless the thing cannot answer nothing. The vocabulary says which: a
+  // constructor's result is `tg_val` and an operation's is `tg_val?`, and that
+  // difference IS the two-nulls rule written in the types. Checking anyway
+  // emitted a branch that could not be taken after every literal in every card.
+  if !never_null(value) {
+    out.push(b.if_(b.is_null(b.var_(t)), [b.ret(Some(b.null_()))]))
+  }
+  t
+}
+
+///|
+/// Whether a value is a call to a vocabulary function that cannot answer null.
+fn never_null(value : @wast.Node) -> Bool {
+  guard value.it is Call(callee, _) else { return false }
+  guard callee.it is Var(name) else { return false }
+  for f in @abi.vocab() {
+    if f.name == name {
+      return match f.results {
+        [Nullable(_)] => false
+        [_] => true
+        _ => false
+      }
+    }
+  }
+  false
+}
 
 ///|
 fn emit_stmts(
   ctx : Ctx,
-  src : Src,
+  b : B,
+  out : Array[@wast.Node],
   stmts : Array[@tscript.Stmt],
 ) -> Unit raise Refused {
   for s in stmts {
-    emit_stmt(ctx, src, s)
+    emit_stmt(ctx, b, out, s)
   }
 }
 
 ///|
-fn emit_stmt(ctx : Ctx, src : Src, stmt : @tscript.Stmt) -> Unit raise Refused {
+fn emit_stmt(
+  ctx : Ctx,
+  b : B,
+  out : Array[@wast.Node],
+  stmt : @tscript.Stmt,
+) -> Unit raise Refused {
   match stmt {
-    SAssign(place~, op~, value~, ..) => emit_assign(ctx, src, place, op, value)
+    SAssign(place~, op~, value~, ..) =>
+      emit_assign(ctx, b, out, place, op, value)
     SMethod(place~, call~, args~, ..) =>
-      emit_method(ctx, src, place, call, args)
+      emit_method(ctx, b, out, place, call, args)
     SEffect(name~, args~, route~, ..) =>
-      emit_effect(ctx, src, name, args, route)
-    SIf(cond~, then_~, else_~, ..) => {
-      let c = emit_expr(ctx, src, cond)
-      let cv = ctx.temp()
-      src.line("let \{cv} = \{c};")
+      emit_effect(ctx, b, out, name, args, route)
+    SIf(cond~, then_~, else_~, span~) => {
+      let c = emit_expr(ctx, b, out, cond)
       // A condition with no answer abandons rather than being read as false.
-      src.line("if \{cv} == null { return null; }")
-      src.open("if tg_truthy(\{cv}) != 0 {")
-      emit_stmts(ctx, src, then_)
+      let cv = hold(ctx, b, out, c)
+      let then_nodes : Array[@wast.Node] = []
+      emit_stmts(ctx, b, then_nodes, then_)
+      let cond_node = b.made(
+        Bin(Ne, b.rt("tg_truthy", [b.var_(cv)]), b.int_(0)),
+      )
       if else_.length() == 0 {
-        src.close("}")
+        out.push(at(b, span, b.if_(cond_node, then_nodes)))
       } else {
-        src.close("} else {")
-        src.depth = src.depth + 1
-        emit_stmts(ctx, src, else_)
-        src.depth = src.depth - 1
-        src.line("}")
+        let else_nodes : Array[@wast.Node] = []
+        emit_stmts(ctx, b, else_nodes, else_)
+        out.push(at(b, span, b.if_(cond_node, then_nodes, else_=else_nodes)))
       }
     }
-    SNew(ty~, ..) => emit_new(ctx, src, ty)
+    SNew(ty~, ..) => emit_new(ctx, b, out, ty)
   }
 }
 
@@ -64,7 +118,12 @@ fn emit_stmt(ctx : Ctx, src : Src, stmt : @tscript.Stmt) -> Unit raise Refused {
 /// declared type and the type is written in the source — so a `new` naming a
 /// type the card does not declare is refused when it compiles rather than
 /// abandoned when it runs.
-fn emit_new(ctx : Ctx, src : Src, ty : @tscript.TyRef) -> Unit raise Refused {
+fn emit_new(
+  ctx : Ctx,
+  b : B,
+  out : Array[@wast.Node],
+  ty : @tscript.TyRef,
+) -> Unit raise Refused {
   match @check.resolve_ty_ref(ctx.comp.def, ty) {
     Some(TyRecord(name)) => {
       guard ctx.comp.def.user_ty(name) is Some(u) && u.kind is URecord(fields) else {
@@ -72,16 +131,11 @@ fn emit_new(ctx : Ctx, src : Src, ty : @tscript.TyRef) -> Unit raise Refused {
           "`new \{name}` names a record this component does not declare",
         )
       }
-      let parts = []
+      let parts : Array[@wast.Node] = []
       for f in fields {
-        parts.push("tg_entry_of(\{wax_str(f.name)}, \{zero_expr(f.ty)})")
+        parts.push(b.rt("tg_entry_of", [b.str_(f.name), zero_node(b, f.ty)]))
       }
-      let body = if parts.length() == 0 {
-        "tg_map([tg_entries| null; 0])"
-      } else {
-        "tg_map([tg_entries| " + parts.join(", ") + "])"
-      }
-      src.line("cur = \{body};")
+      out.push(b.set(b.var_("cur"), b.rt("tg_map", [b.entries_of(parts)])))
       ctx.cur = CurRecord
     }
     // A sibling starts EMPTY rather than at its zero: `<Sib>_make_fields` fills
@@ -93,7 +147,7 @@ fn emit_new(ctx : Ctx, src : Src, ty : @tscript.TyRef) -> Unit raise Refused {
           "`new \{name}` names a component this card does not declare beside it",
         )
       }
-      src.line("cur = tg_map([tg_entries| null; 0]);")
+      out.push(b.set(b.var_("cur"), b.rt("tg_map", [b.entries_of([])])))
       ctx.cur = CurComp(name)
     }
     // A SIBLING is not a type of this component's, so the type resolver does
@@ -101,7 +155,7 @@ fn emit_new(ctx : Ctx, src : Src, ty : @tscript.TyRef) -> Unit raise Refused {
     // component, and which names are components is a fact about the FILE.
     _ =>
       if ctx.comp.siblings.contains(ty.name) {
-        src.line("cur = tg_map([tg_entries| null; 0]);")
+        out.push(b.set(b.var_("cur"), b.rt("tg_map", [b.entries_of([])])))
         ctx.cur = CurComp(ty.name)
       } else {
         raise Refused(
@@ -116,7 +170,8 @@ fn emit_new(ctx : Ctx, src : Src, ty : @tscript.TyRef) -> Unit raise Refused {
 /// `.field = e`, `+=`, `-=`, and the same through a path.
 fn emit_assign(
   ctx : Ctx,
-  src : Src,
+  b : B,
+  out : Array[@wast.Node],
   place : @tutuca.Place,
   op : @tscript.AssignOp,
   value : @tutuca.Expr,
@@ -134,16 +189,18 @@ fn emit_assign(
     guard op is ASet else {
       raise Refused("`cur.\{field}` is written, not accumulated into")
     }
-    let rv = emit_expr(ctx, src, value)
-    let t = ctx.temp()
-    src.line("let \{t} = \{rv};")
-    src.line("if \{t} == null { return null; }")
-    src.line("cur = with_member(cur, \{wax_str(field)}, \{t});")
-    src.line("if cur == null { return null; }")
+    let t = hold(ctx, b, out, emit_expr(ctx, b, out, value))
+    out.push(
+      b.set(
+        b.var_("cur"),
+        b.rt("with_member", [b.var_("cur"), b.str_(field), b.var_(t)]),
+      ),
+    )
+    out.push(b.if_(b.is_null(b.var_("cur")), [b.ret(Some(b.null_()))]))
     return
   }
   // Writing a BINDING rather than a field: an enricher's whole job.
-  if place.root is PBind(bname) && ctx.binds is Some(b) {
+  if place.root is PBind(bname) && ctx.binds is Some(bind) {
     guard place.steps.length() == 0 else {
       raise Refused(
         "`@\{bname}` is a binding, and a binding has no path into it",
@@ -152,56 +209,51 @@ fn emit_assign(
     guard op is ASet else {
       raise Refused("`@\{bname}` is written, not accumulated into")
     }
-    let rv = emit_expr(ctx, src, value)
-    let t = ctx.temp()
-    src.line("let \{t} = \{rv};")
-    src.line("if \{t} == null { return null; }")
-    src.line("\{b} = with_member(\{b}, \{wax_str(bname)}, \{t});")
-    src.line("if \{b} == null { return null; }")
+    let t = hold(ctx, b, out, emit_expr(ctx, b, out, value))
+    out.push(
+      b.set(
+        b.var_(bind),
+        b.rt("with_member", [b.var_(bind), b.str_(bname), b.var_(t)]),
+      ),
+    )
+    out.push(b.if_(b.is_null(b.var_(bind)), [b.ret(Some(b.null_()))]))
     return
   }
   let slot = state_slot(ctx, place)
-  let rhs = emit_expr(ctx, src, value)
-  let v = ctx.temp()
-  src.line("let \{v} = \{rhs};")
-  src.line("if \{v} == null { return null; }")
+  let v = hold(ctx, b, out, emit_expr(ctx, b, out, value))
 
   // The current value of the PLACE, which `+=` needs and `=` does not.
-  let current = read_place(ctx, src, place)
   let combined = match op {
-    ASet => v
+    ASet => b.var_(v)
     AAdd | ASub => {
-      let t = ctx.temp()
+      let current = read_place(ctx, b, out, place)
       let fname = if op is AAdd { "op_add" } else { "op_sub" }
-      src.line("let \{t} = \{fname}(\{current}, \{v});")
-      src.line("if \{t} == null { return null; }")
-      t
+      let t = hold(ctx, b, out, b.rt(fname, [current, b.var_(v)]))
+      b.var_(t)
     }
   }
   // An `Int` field truncates AT ITS ASSIGNMENT SITES, which is where the
   // interpreter does it too and what the corpus pins.
-  let stored = truncated(ctx, src, place, combined)
-  write_place(ctx, src, place, slot, stored)
+  let stored = truncated(ctx, b, out, place, combined)
+  write_place(ctx, b, out, place, slot, stored)
 }
 
 ///|
 /// Whether this place lands in an `Int` field, and the truncation if it does.
 fn truncated(
   ctx : Ctx,
-  src : Src,
+  b : B,
+  out : Array[@wast.Node],
   place : @tutuca.Place,
-  value : String,
-) -> String {
+  value : @wast.Node,
+) -> @wast.Node {
   guard place.root is PState(name) else { return value }
   // Only a whole field is known to be an Int; a step into one lands somewhere
   // the declared type of the FIELD does not describe.
   guard place.steps.length() == 0 else { return value }
   guard ctx.comp.def.field(name) is Some(f) else { return value }
   guard f.ty is TyInt(..) else { return value }
-  let t = ctx.temp()
-  src.line("let \{t} = trunc(\{value});")
-  src.line("if \{t} == null { return null; }")
-  t
+  b.var_(hold(ctx, b, out, b.rt("trunc", [value])))
 }
 
 ///|
@@ -223,8 +275,8 @@ fn state_slot(ctx : Ctx, place : @tutuca.Place) -> Int raise Refused {
         "`@\{name}` is a render binding, and a handler is handed no row",
       )
     // A whole-`cur` place, which only a collection method could ask for —
-    // `cur.rows.push x`. `cur` is a value being built, not a place with a
-    // slot, and the write that matters (`cur.<name> = …`) never reaches here.
+    // `cur.rows.push x`. `cur` is a value being built, not a place with a slot,
+    // and the write that matters (`cur.<name> = …`) never reaches here.
     PTarget =>
       raise Refused(
         "`cur` is a value being built, and a collection inside one is written " +
@@ -236,14 +288,16 @@ fn state_slot(ctx : Ctx, place : @tutuca.Place) -> Int raise Refused {
 ///|
 fn read_place(
   ctx : Ctx,
-  src : Src,
+  b : B,
+  out : Array[@wast.Node],
   place : @tutuca.Place,
-) -> String raise Refused {
-  let mut acc = emit_root(ctx, src, place.root)
+) -> @wast.Node raise Refused {
+  ignore(out)
+  let mut acc = emit_root(ctx, b, out, place.root)
   for step in place.steps {
     acc = match step {
-      PField(name) => "member(\{acc}, \{wax_str(name)})"
-      PIndex(key) => "item(\{acc}, \{emit_expr(ctx, src, key)})"
+      PField(name) => b.rt("member", [acc, b.str_(name)])
+      PIndex(key) => b.rt("item", [acc, emit_expr(ctx, b, out, key)])
     }
   }
   acc
@@ -254,40 +308,40 @@ fn read_place(
 ///
 /// A path write is a read down and a rebuild up, because every collection here
 /// is immutable: `.a[k].b = x` reads `.a`, reads `[k]`, rebuilds the record with
-/// `b`, rebuilds the collection with `k`, and writes the field. The old
-/// contract refused this shape outright; the cost of having it is this
-/// function, and the reason it is affordable is that the collections already
-/// share what they do not change.
+/// `b`, rebuilds the collection with `k`, and writes the field. The old contract
+/// refused this shape outright; the cost of having it is this function, and the
+/// reason it is affordable is that the collections already share what they do
+/// not change.
 fn write_place(
   ctx : Ctx,
-  src : Src,
+  b : B,
+  out : Array[@wast.Node],
   place : @tutuca.Place,
   slot : Int,
-  value : String,
+  value : @wast.Node,
 ) -> Unit raise Refused {
+  let cell = b.made(Index(b.var_("f"), b.int_(slot)))
   if place.steps.length() == 0 {
-    src.line("f[\{slot}] = \{value};")
+    out.push(b.set(cell, value))
     return
   }
   // Read every intermediate container, outermost first.
-  let containers = ["f[\{slot}]"]
-  let keys = []
+  let containers : Array[@wast.Node] = [cell]
+  let keys : Array[(Bool, @wast.Node)] = []
   for i, step in place.steps {
     let holder = containers[i]
     match step {
       PField(name) => {
-        keys.push(("member", wax_str(name)))
+        keys.push((true, b.str_(name)))
         if i + 1 < place.steps.length() {
-          containers.push("member(\{holder}, \{wax_str(name)})")
+          containers.push(b.rt("member", [holder, b.str_(name)]))
         }
       }
       PIndex(key) => {
-        let k = ctx.temp()
-        src.line("let \{k} = \{emit_expr(ctx, src, key)};")
-        src.line("if \{k} == null { return null; }")
-        keys.push(("item", k))
+        let k = hold(ctx, b, out, emit_expr(ctx, b, out, key))
+        keys.push((false, b.var_(k)))
         if i + 1 < place.steps.length() {
-          containers.push("item(\{holder}, \{k})")
+          containers.push(b.rt("item", [holder, b.var_(k)]))
         }
       }
     }
@@ -295,20 +349,13 @@ fn write_place(
   // Rebuild innermost first.
   let mut carried = value
   for i in 0..<keys.length() {
-    let at = keys.length() - 1 - i
-    let (kind, key) = keys[at]
-    let holder = containers[at]
-    let t = ctx.temp()
-    let call = if kind == "member" {
-      "with_member(\{holder}, \{key}, \{carried})"
-    } else {
-      "with_item(\{holder}, \{key}, \{carried})"
-    }
-    src.line("let \{t} = \{call};")
-    src.line("if \{t} == null { return null; }")
-    carried = t
+    let at_i = keys.length() - 1 - i
+    let (is_member, key) = keys[at_i]
+    let holder = containers[at_i]
+    let fname = if is_member { "with_member" } else { "with_item" }
+    carried = b.var_(hold(ctx, b, out, b.rt(fname, [holder, key, carried])))
   }
-  src.line("f[\{slot}] = \{carried};")
+  out.push(b.set(b.made(Index(b.var_("f"), b.int_(slot))), carried))
 }
 
 ///|
@@ -320,7 +367,8 @@ fn write_place(
 /// than compiling something plausible.
 fn emit_method(
   ctx : Ctx,
-  src : Src,
+  b : B,
+  out : Array[@wast.Node],
   place : @tutuca.Place,
   call : String,
   args : Array[@tutuca.Expr],
@@ -341,19 +389,12 @@ fn emit_method(
     _ => raise Refused("no collection method called `\{call}`")
   }
   let slot = state_slot(ctx, place)
-  let current = read_place(ctx, src, place)
-  let parts = [current]
+  let parts : Array[@wast.Node] = [read_place(ctx, b, out, place)]
   for a in args {
-    let v = emit_expr(ctx, src, a)
-    let t = ctx.temp()
-    src.line("let \{t} = \{v};")
-    src.line("if \{t} == null { return null; }")
-    parts.push(t)
+    parts.push(b.var_(hold(ctx, b, out, emit_expr(ctx, b, out, a))))
   }
-  let out = ctx.temp()
-  src.line("let \{out} = \{fname}(" + parts.join(", ") + ");")
-  src.line("if \{out} == null { return null; }")
-  write_place(ctx, src, place, slot, out)
+  let res = hold(ctx, b, out, b.rt(fname, parts))
+  write_place(ctx, b, out, place, slot, b.var_(res))
 }
 
 ///|
@@ -364,7 +405,8 @@ fn emit_method(
 /// statement about what it does, which is the property the whole format keeps.
 fn emit_effect(
   ctx : Ctx,
-  src : Src,
+  b : B,
+  out : Array[@wast.Node],
   name : String,
   args : Array[@tutuca.Expr],
   route : Array[@tutuca.Leg],
@@ -379,46 +421,49 @@ fn emit_effect(
   // write a name where a value would go, and reading either as a value refuses
   // the whole effect over a name the checker already resolved.
   let name_at = message_arg(name, ctx.kind, named_question)
-  let vals = []
+  let vals : Array[@wast.Node] = []
   for i, a in args {
     // A `&.place` is an address, not a value. `sendAt` reifies its first
     // argument below; evaluating it here would refuse the whole effect.
     if name == "sendAt" && i == 0 {
-      vals.push("tg_null()")
+      vals.push(b.rt("tg_null", []))
       continue
     }
     // The WIRE name, resolved the way `tscript/check` resolves it: an
     // `import protocol "example/Bus@1" as Bus` makes `Bus::notify` a local
     // spelling of a name the host knows by its id, and a card author writing
     // the id out by hand is the thing the alias exists to avoid.
-    if name_at is Some(at) && i == at && a is EName(name=n, ..) {
+    if name_at is Some(at_i) && i == at_i && a is EName(name=n, ..) {
       guard ctx.comp.def.operation_name(n) is Some(wire) else {
         raise Refused(
           "`\{n}` uses a protocol name this component did not import",
         )
       }
-      vals.push("tg_str(\{wax_str(wire)})")
+      vals.push(b.rt("tg_str", [b.str_(wire)]))
       continue
     }
-    let v = emit_expr(ctx, src, a)
-    let t = ctx.temp()
-    src.line("let \{t} = \{v};")
-    src.line("if \{t} == null { return null; }")
-    vals.push(t)
+    vals.push(b.var_(hold(ctx, b, out, emit_expr(ctx, b, out, a))))
   }
-  let route_code = route_of(route)
+  let route_code = b.int_(route_of(route))
   match name {
-    "drop" => src.line("eff_drop();")
-    "fail" => {
-      let v = if vals.length() >= 1 { vals[0] } else { "tg_null()" }
-      src.line("eff_fail(\{v});")
-    }
+    "drop" => out.push(b.rt("eff_drop", []))
+    "fail" =>
+      out.push(
+        b.rt("eff_fail", [
+          if vals.length() >= 1 {
+            vals[0]
+          } else {
+            b.rt("tg_null", [])
+          },
+        ]),
+      )
     "send" => {
       guard vals.length() >= 1 else {
         raise Refused("`send` needs a message name")
       }
-      let rest = vals_array(src, ctx, vals, 1)
-      src.line("eff_send(display(\{vals[0]}), \{rest});")
+      out.push(
+        b.rt("eff_send", [b.rt("display", [vals[0]]), tail_vals(b, vals, 1)]),
+      )
     }
     // ONE WORD, TWO OPERATIONS, and the body is what says which.
     //
@@ -430,14 +475,22 @@ fn emit_effect(
     // one word in the language — and they are two runtime calls.
     "reply" =>
       if ctx.kind is DAnswer {
-        let v = if vals.length() >= 1 { vals[0] } else { "tg_null()" }
-        src.line("eff_answer(\{v});")
+        out.push(
+          b.rt("eff_answer", [
+            if vals.length() >= 1 {
+              vals[0]
+            } else {
+              b.rt("tg_null", [])
+            },
+          ]),
+        )
       } else {
         guard vals.length() >= 1 else {
           raise Refused("a `reply` in a receive body names the reply")
         }
-        let rest = vals_array(src, ctx, vals, 1)
-        src.line("eff_reply(display(\{vals[0]}), \{rest});")
+        out.push(
+          b.rt("eff_reply", [b.rt("display", [vals[0]]), tail_vals(b, vals, 1)]),
+        )
       }
     "ask" | "notify" =>
       // A BARE ask re-dispatches the question already in hand: the message that
@@ -446,26 +499,32 @@ fn emit_effect(
       // so it is empty rather than a copy of them — a copy would be the same
       // values under a claim that the sender re-stated them.
       if named_question {
-        let rest = vals_array(src, ctx, vals, 1)
-        src.line("eff_\{name}(display(\{vals[0]}), \{rest}, \{route_code});")
+        out.push(
+          b.rt("eff_\{name}", [
+            b.rt("display", [vals[0]]),
+            tail_vals(b, vals, 1),
+            route_code,
+          ]),
+        )
       } else {
-        let all = vals_array(src, ctx, vals, 0)
-        src.line("eff_forward(\{all}, \{route_code});")
+        out.push(b.rt("eff_forward", [tail_vals(b, vals, 0), route_code]))
       }
-    "forward" => {
-      let rest = vals_array(src, ctx, vals, 0)
-      src.line("eff_forward(\{rest}, \{route_code});")
-    }
+    "forward" =>
+      out.push(b.rt("eff_forward", [tail_vals(b, vals, 0), route_code]))
     "sendAt" => {
       guard args.length() >= 2 && args[0] is ERef(place~, ..) else {
         raise Refused("`sendAt` takes a place and then a message name")
       }
       // The place is REIFIED rather than read: `vals` above evaluated every
       // argument, and the first one is not a value.
-      let path = emit_path(ctx, src, place)
-      let name_v = vals[1]
-      let rest = vals_array(src, ctx, vals, 2)
-      src.line("eff_send_at(\{path}, display(\{name_v}), \{rest});")
+      let path = emit_path(ctx, b, out, place)
+      out.push(
+        b.rt("eff_send_at", [
+          path,
+          b.rt("display", [vals[1]]),
+          tail_vals(b, vals, 2),
+        ]),
+      )
     }
     _ => raise Refused("no effect called `\{name}`")
   }
@@ -498,17 +557,19 @@ fn message_arg(
 
 ///|
 /// The tail of an effect's arguments, as a `tg_vals`.
-fn vals_array(src : Src, ctx : Ctx, vals : Array[String], from : Int) -> String {
-  let n = vals.length() - from
-  if n <= 0 {
-    return "tg_no_args()"
+///
+/// An array LITERAL now, where `tgc/1` allocated a local and wrote each slot on
+/// its own line. The values are already held in locals, so nothing about the
+/// evaluation order changes; what changes is that the array is one node.
+fn tail_vals(b : B, vals : Array[@wast.Node], from : Int) -> @wast.Node {
+  if vals.length() - from <= 0 {
+    return b.rt("tg_no_args", [])
   }
-  let a = ctx.temp()
-  src.line("let \{a} = [tg_vals| null; \{n}];")
-  for i in 0..<n {
-    src.line("\{a}[\{i}] = \{vals[from + i]};")
+  let items : Array[@wast.Node] = []
+  for i in from..<vals.length() {
+    items.push(vals[i])
   }
-  a
+  b.vals_of(items)
 }
 
 ///|
@@ -552,28 +613,29 @@ const ROUTE_LEX_DYN : Int = 4
 /// field step and an index — and a `PField` closes the pending one first.
 ///
 /// A key READ FROM LIVE STATE is refused. `&.panes[.sel]` means "re-read `.sel`
-/// on every dispatch", which is what makes it follow a moving selection, and
-/// the host's path has no step that says so — `core.Step::SeqAccessStep` exists
-/// but nothing carries it across this boundary. Freezing the key would be a
+/// on every dispatch", which is what makes it follow a moving selection, and the
+/// host's path has no step that says so — `core.Step::SeqAccessStep` exists but
+/// nothing carries it across this boundary. Freezing the key would be a
 /// different path that looks like this one, so it is refused rather than
 /// approximated.
 fn emit_path(
   ctx : Ctx,
-  src : Src,
+  b : B,
+  out : Array[@wast.Node],
   place : @tutuca.Place,
-) -> String raise Refused {
+) -> @wast.Node raise Refused {
   guard place.root is PState(root) else {
     raise Refused(
       "`sendAt` addresses this component's own subtree, so its place starts at a field",
     )
   }
-  let steps = []
+  let steps : Array[@wast.Node] = []
   let mut pending : String? = Some(root)
   for step in place.steps {
     match step {
       PField(name) => {
         if pending is Some(f) {
-          steps.push("mk_step_field(\{wax_str(f)})")
+          steps.push(b.rt("mk_step_field", [b.str_(f)]))
         }
         pending = Some(name)
       }
@@ -588,24 +650,16 @@ fn emit_path(
             "or a parameter key compiles",
           )
         }
-        let k = emit_expr(ctx, src, key)
-        let t = ctx.temp()
-        src.line("let \{t} = \{k};")
-        src.line("if \{t} == null { return null; }")
-        steps.push("mk_step_key(\{wax_str(f)}, \{t})")
+        let t = hold(ctx, b, out, emit_expr(ctx, b, out, key))
+        steps.push(b.rt("mk_step_key", [b.str_(f), b.var_(t)]))
         pending = None
       }
     }
   }
   if pending is Some(f) {
-    steps.push("mk_step_field(\{wax_str(f)})")
+    steps.push(b.rt("mk_step_field", [b.str_(f)]))
   }
-  let a = ctx.temp()
-  src.line("let \{a} = [tg_vals| null; \{steps.length()}];")
-  for i, e in steps {
-    src.line("\{a}[\{i}] = \{e};")
-  }
-  "tg_list(\{a})"
+  b.rt("tg_list", [b.vals_of(steps)])
 }
 
 ///|

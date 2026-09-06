@@ -1,11 +1,11 @@
 // Expressions.
 //
-// Every expression compiles to a Wax expression of type `&?tg_val`, and
-// `ref.null` means THE TRANSITION HAS NO ANSWER. That is what lets the
-// emitters compose freely: a runtime operation with no answer for its arguments
-// returns null, null propagates through everything above it, and the statement
-// checks once at the top instead of the emitter threading a failure flag
-// through every operand.
+// Every expression compiles to a wap expression of type `tg_val?`, and a null
+// means THE TRANSITION HAS NO ANSWER. That is what lets the emitters compose
+// freely: a runtime operation with no answer for its arguments returns null,
+// null propagates through everything above it, and the statement checks once at
+// the top instead of the emitter threading a failure flag through every
+// operand.
 //
 // The null VALUE is `kind 0` and is an ordinary thing to compute with. Keeping
 // the two apart is why `.note is null` is a real question and `len true` is not
@@ -55,10 +55,7 @@ priv struct Ctx {
 /// A RECORD is a map and stays one — `core.Value` has no record, and
 /// `struct Label { text: String }` decodes to a `Map`. A sibling COMPONENT is
 /// an instance, and building one is a call to this module's own `tgc.make`
-/// rather than a request to the host: the old contract had to ask, because
-/// `control.make-instance` was the only way a guest could name one, and the
-/// Component Model forbade re-entering the module while a call was active.
-/// Neither is true here.
+/// rather than a request to the host.
 priv enum CurKind {
   CurNone
   /// No name, because nothing needs one: a record needs no materialization —
@@ -82,39 +79,48 @@ fn Ctx::temp(self : Ctx) -> String {
 }
 
 ///|
-/// Emit an expression, and answer the Wax expression that reads its value.
+/// Emit an expression as a wap node.
 ///
-/// It takes the source buffer because three forms have to SHORT-CIRCUIT — `and`,
-/// `or` and a conditional — and Wax has no macros, so the only way to leave an
-/// operand unevaluated is to emit it inside a branch. Everything else could
-/// have been a pure string; making them all take `src` is what keeps one rule.
-fn emit_expr(ctx : Ctx, src : Src, e : @tutuca.Expr) -> String raise Refused {
+/// Under Wax this answered a STRING and wrote statements into a shared buffer as
+/// a side effect, because the three short-circuiting forms — `and`, `or` and a
+/// conditional — had nowhere to put an unevaluated operand except a branch, and
+/// a branch is a statement. wap has `if` as an expression and a block as a
+/// value, so a short circuit is a TREE and every emitter below is a function of
+/// its input again.
+fn emit_expr(
+  ctx : Ctx,
+  b : B,
+  out : Array[@wast.Node],
+  e : @tutuca.Expr,
+) -> @wast.Node raise Refused {
   match e {
-    ELit(lit~, ..) =>
+    ELit(lit~, span~, ..) =>
       match lit {
-        LNull => "tg_null()"
-        LBool(b) => "tg_bool(\{if b { 1 } else { 0 }})"
-        LNum(n) => "tg_num(\{wax_num(n)})"
-        LStr(s) => "tg_str(\{wax_str(s)})"
+        LNull => at(b, span, b.rt("tg_null", []))
+        LBool(v) =>
+          at(b, span, b.rt("tg_bool", [b.int_(if v { 1 } else { 0 })]))
+        LNum(n) => at(b, span, b.rt("tg_num", [b.num(n)]))
+        LStr(s) => at(b, span, b.rt("tg_str", [b.str_(s)]))
       }
-    ETpl(parts~, ..) => emit_tpl(ctx, src, parts)
-    ERead(place~, ..) => emit_read(ctx, src, place)
-    EName(name~, ..) => emit_name(ctx, src, name, [])
-    EApp(name~, args~, ..) => emit_name(ctx, src, name, args)
+    ETpl(parts~, ..) => emit_tpl(ctx, b, out, parts)
+    ERead(place~, ..) => emit_read(ctx, b, out, place)
+    EName(name~, ..) => emit_name(ctx, b, out, name, [])
+    EApp(name~, args~, ..) => emit_name(ctx, b, out, name, args)
     EChain(family~, ops~, operands~, ..) =>
-      emit_chain(ctx, src, family, ops, operands)
-    EUnary(op~, operand~, ..) => {
-      let inner = emit_expr(ctx, src, operand)
-      match op {
-        UNot => "b_not(\{inner})"
-        UNeg => "op_neg(\{inner})"
+      emit_chain(ctx, b, out, family, ops, operands)
+    EUnary(op~, operand~, span~) => {
+      let inner = emit_expr(ctx, b, out, operand)
+      let f = match op {
+        UNot => "b_not"
+        UNeg => "op_neg"
       }
+      at(b, span, b.rt(f, [inner]))
     }
     // A conditional evaluates ONE arm, so both arms are emitted inside
     // branches rather than beside each other. A condition with no answer
     // abandons the transition rather than being read as false.
     EIf(cond~, then_~, else_~, ..) =>
-      emit_branch(ctx, src, cond, () => then_, () => else_)
+      emit_branch(ctx, b, out, cond, then_, else_)
     // A handler is handed no render row, so `@binding` has nothing to mean
     // here; `$method` is answered by the render stack and a compiled handler
     // runs after one.
@@ -127,10 +133,11 @@ fn emit_expr(ctx : Ctx, src : Src, e : @tutuca.Expr) -> String raise Refused {
     // dispatch and for a render call alike — and hands the map over in the
     // call's fifth slot, so this is a lookup in a map that is already here.
     //
-    // The exception is a property SET, whose fifth slot carries the value
-    // being written; `dyn` is null there and this reads null, which is what
-    // "nothing above provides one" answers anyway.
-    EDyn(name~, ..) => "member(dyn, \{wax_str(name)})"
+    // The exception is a property SET, whose fifth slot carries the value being
+    // written; `dyn` is null there and this reads null, which is what "nothing
+    // above provides one" answers anyway.
+    EDyn(name~, span~) =>
+      at(b, span, b.rt("member", [b.var_("dyn"), b.str_(name)]))
     EEventPath(segments~, ..) =>
       raise Refused(
         "`e.\{segments.join(".")}` is DOM event data, named in the view and passed as an argument",
@@ -153,6 +160,17 @@ fn emit_expr(ctx : Ctx, src : Src, e : @tutuca.Expr) -> String raise Refused {
 }
 
 ///|
+/// Put the author's span on a node the emitter just built.
+///
+/// The node's own span is the emitter's, which points nowhere; this is the one
+/// place the card's position is attached, and it is why a wap diagnostic names
+/// a line the author can find. `tgc/1` had nothing to attach — it prepended the
+/// preamble as text and subtracted its line count from every message afterwards.
+fn at(b : B, span : @tutuca.Span, n : @wast.Node) -> @wast.Node {
+  { it: n.it, span: b.at(span), }
+}
+
+///|
 /// A `$'…'` template: display each part and join.
 ///
 /// Left-folded rather than joined through a builder because the parts are known
@@ -160,48 +178,51 @@ fn emit_expr(ctx : Ctx, src : Src, e : @tutuca.Expr) -> String raise Refused {
 /// runtime has. A template of one literal part is that literal.
 fn emit_tpl(
   ctx : Ctx,
-  src : Src,
+  b : B,
+  out : Array[@wast.Node],
   parts : Array[@tutuca.TplPart],
-) -> String raise Refused {
+) -> @wast.Node raise Refused {
   if parts.length() == 0 {
-    return "tg_str(\"\")"
+    return b.rt("tg_str", [b.str_("")])
   }
-  let pieces = []
+  let pieces : Array[@wast.Node] = []
   for p in parts {
     match p {
-      TText(text~, ..) => pieces.push(wax_str(text))
-      TExpr(inner) => pieces.push("display(\{emit_expr(ctx, src, inner)})")
+      TText(text~, ..) => pieces.push(b.str_(text))
+      TExpr(inner) =>
+        pieces.push(b.rt("display", [emit_expr(ctx, b, out, inner)]))
     }
   }
   let mut acc = pieces[0]
   for i in 1..<pieces.length() {
-    acc = "concat(\{acc}, \{pieces[i]})"
+    acc = b.rt("concat", [acc, pieces[i]])
   }
-  "tg_str(\{acc})"
+  b.rt("tg_str", [acc])
 }
 
 ///|
 /// A bare name, or a name applied to arguments.
 ///
-/// Three things it can be, in the order the language resolves them: a
-/// parameter of this declaration, one of the sixteen builtins, or a `compute` /
-/// `pred` / `invariant` this component declares. Nothing else — the vocabulary
-/// is closed, and `tscript/script_builtin.mbt` means it.
+/// Three things it can be, in the order the language resolves them: a parameter
+/// of this declaration, one of the sixteen builtins, or a `compute` / `pred` /
+/// `invariant` this component declares. Nothing else — the vocabulary is
+/// closed, and `tscript/script_builtin.mbt` means it.
 fn emit_name(
   ctx : Ctx,
-  src : Src,
+  b : B,
+  out : Array[@wast.Node],
   name : String,
   args : Array[@tutuca.Expr],
-) -> String raise Refused {
+) -> @wast.Node raise Refused {
   if args.length() == 0 && ctx.params.get(name) is Some(i) {
-    return "tg_arg_at(args, \{i})"
+    return b.rt("tg_arg_at", [b.var_("args"), b.int_(i)])
   }
   if builtin_call(name) is Some(fname) {
-    let parts = []
+    let parts : Array[@wast.Node] = []
     for a in args {
-      parts.push(emit_expr(ctx, src, a))
+      parts.push(emit_expr(ctx, b, out, a))
     }
-    return "\{fname}(" + parts.join(", ") + ")"
+    return b.rt(fname, parts)
   }
   match ctx.callable.get(name) {
     Some(kind) => {
@@ -215,20 +236,24 @@ fn emit_name(
       // fixed by the vtable and cannot vary per call site. `dyn` rides through
       // unchanged — a `*name` read inside a callee is the same lookup the
       // caller resolved.
-      let vals : Array[String] = []
+      let vals : Array[@wast.Node] = []
       for a in args {
-        vals.push(emit_expr(ctx, src, a))
+        vals.push(emit_expr(ctx, b, out, a))
       }
       let arg_list = if vals.is_empty() {
-        "args"
+        b.var_("args")
       } else {
-        vals_array(src, ctx, vals, 0)
+        b.vals_of(vals)
       }
-      "\{ctx.comp.id}_\{callable_suffix(kind)}_\{mangle(name)}(f, \{arg_list}, dyn)"
+      b.call("\{ctx.comp.id}_\{callable_suffix(kind)}_\{mangle(name)}", [
+        b.var_("f"),
+        arg_list,
+        b.var_("dyn"),
+      ])
     }
     // The checker has already rejected a name that resolves to nothing, so
-    // reaching here means it resolved to something this backend has not
-    // learned — a refusal, not an error.
+    // reaching here means it resolved to something this backend has not learned
+    // — a refusal, not an error.
     None => raise Refused("nothing this backend compiles is called `\{name}`")
   }
 }
@@ -247,7 +272,7 @@ fn callable_suffix(kind : @tscript.DeclKind) -> String {
 /// The sixteen, plus the operator spellings that share the table.
 ///
 /// `and` / `or` / `implies` are absent on purpose: they SHORT-CIRCUIT, so they
-/// are emitted as control flow by `emit_chain` rather than called with both
+/// are emitted as a branch by `emit_chain` rather than called with both
 /// arguments already evaluated.
 fn builtin_call(name : String) -> String? {
   match name {
@@ -287,45 +312,47 @@ fn builtin_call(name : String) -> String? {
 /// cannot.
 fn emit_chain(
   ctx : Ctx,
-  src : Src,
+  b : B,
+  out : Array[@wast.Node],
   family : @tutuca.OpFamily,
   ops : Array[String],
   operands : Array[@tutuca.Expr],
-) -> String raise Refused {
+) -> @wast.Node raise Refused {
   guard operands.length() >= 1 else {
     raise Refused("an operator chain with no operands")
   }
-  let mut acc = emit_expr(ctx, src, operands[0])
+  let mut acc = emit_expr(ctx, b, out, operands[0])
   for i in 1..<operands.length() {
     let op = if i - 1 < ops.length() { ops[i - 1] } else { "" }
     // The short-circuiting three take the RIGHT OPERAND UNEVALUATED, so they
     // are handled before it is emitted. Everything else takes a value.
     if family is FLogic || family is FImplies {
-      acc = emit_logic(ctx, src, op, acc, operands[i])
+      acc = emit_logic(ctx, b, out, op, acc, operands[i])
       continue
     }
-    let rhs = emit_expr(ctx, src, operands[i])
-    acc = match family {
-      FLogic | FImplies => acc
+    let rhs = emit_expr(ctx, b, out, operands[i])
+    let f = match family {
+      FLogic | FImplies => "" // unreachable: handled above
       FCompare =>
         match builtin_call(op) {
-          Some(f) => "\{f}(\{acc}, \{rhs})"
+          Some(f) => f
           None => raise Refused("no comparison called `\{op}`")
         }
       FAdd =>
         match op {
-          "+" => "op_add(\{acc}, \{rhs})"
-          "-" => "op_sub(\{acc}, \{rhs})"
+          "+" => "op_add"
+          "-" => "op_sub"
           _ => raise Refused("no additive operator called `\{op}`")
         }
       FMul =>
         match op {
-          "*" => "op_mul(\{acc}, \{rhs})"
-          "/" => "op_div(\{acc}, \{rhs})"
-          "mod" => "op_mod(\{acc}, \{rhs})"
+          "*" => "op_mul"
+          "/" => "op_div"
+          "mod" => "op_mod"
           _ => raise Refused("no multiplicative operator called `\{op}`")
         }
     }
+    acc = b.rt(f, [acc, rhs])
   }
   acc
 }
@@ -333,13 +360,14 @@ fn emit_chain(
 ///|
 fn emit_root(
   ctx : Ctx,
-  src : Src,
+  b : B,
+  out : Array[@wast.Node],
   root : @tutuca.PlaceRoot,
-) -> String raise Refused {
+) -> @wast.Node raise Refused {
   match root {
     PState(name) =>
       match ctx.comp.field_index(name) {
-        Some(i) => "f[\{i}]"
+        Some(i) => b.made(Index(b.var_("f"), b.int_(i)))
         None =>
           raise Refused(
             "`.\{name}` is not a declared field of \{ctx.comp.name}",
@@ -347,7 +375,7 @@ fn emit_root(
       }
     PParam(name) =>
       match ctx.params.get(name) {
-        Some(i) => "tg_arg_at(args, \{i})"
+        Some(i) => b.rt("tg_arg_at", [b.var_("args"), b.int_(i)])
         None =>
           raise Refused("`\{name}` is not a parameter of this declaration")
       }
@@ -356,36 +384,54 @@ fn emit_root(
     // shape, which is what `bind_index` is for.
     PBind(name) =>
       match bind_index(ctx.kind, name) {
-        Some(i) => "tg_arg_at(args, \{i})"
+        Some(i) => b.rt("tg_arg_at", [b.var_("args"), b.int_(i)])
         None =>
           match ctx.binds {
             // A binding an enricher wrote, read back by the same enricher.
-            Some(b) => "member(\{b}, \{wax_str(name)})"
+            Some(bind) => b.rt("member", [b.var_(bind), b.str_(name)])
             None =>
               raise Refused(
                 "`@\{name}` is a render binding, and a \{@tscript.kind_word(ctx.kind)} is handed no row",
               )
           }
       }
-    // `cur` WHOLE. For a record that is the accumulated map; for a sibling it
-    // is the instance, materialized HERE — at the last moment the arguments
-    // can still change and the first moment they are all in. Rebinding is what
-    // makes pushing `cur` twice push one child rather than build two.
+    // `cur` WHOLE. For a record that is the accumulated map; for a sibling it is
+    // the instance, materialized HERE — at the last moment the arguments can
+    // still change and the first moment they are all in. Rebinding is what makes
+    // pushing `cur` twice push one child rather than build two.
     PTarget =>
       match ctx.cur {
         CurNone =>
           raise Refused(
             "`cur` has no `new` before it, so there is nothing for it to name",
           )
-        CurRecord => "cur"
+        CurRecord => b.var_("cur")
         CurComp(name) => {
-          src.line("if cur == null { return null; }")
-          src.open("if kind_of(cur!) != 10 {")
-          src.line(
-            "cur = tg_comp(\{mangle(name)}_inst(\{mangle(name)}_desc(), \{mangle(name)}_make_fields(cur)));",
+          // A block, because materializing is three statements and the value of
+          // the whole is still `cur`. Under Wax these lines went into the
+          // enclosing buffer and the expression was the bare name; the reader
+          // had to find them above.
+          let m = mangle(name)
+          out.push(b.if_(b.is_null(b.var_("cur")), [b.ret(Some(b.null_()))]))
+          out.push(
+            b.if_(
+              b.made(
+                Bin(Ne, b.rt("kind_of", [b.force(b.var_("cur"))]), b.int_(10)),
+              ),
+              [
+                b.set(
+                  b.var_("cur"),
+                  b.rt("tg_comp", [
+                    b.call("\{m}_inst", [
+                      b.call("\{m}_desc", []),
+                      b.call("\{m}_make_fields", [b.var_("cur")]),
+                    ]),
+                  ]),
+                ),
+              ],
+            ),
           )
-          src.close("}")
-          "cur"
+          b.var_("cur")
         }
       }
   }
@@ -395,102 +441,125 @@ fn emit_root(
 /// `and`, `or` and `implies`, which must not evaluate their right operand
 /// unless they have to.
 ///
-/// Wax has no macros, so the only way to leave an operand unevaluated is to
-/// emit it inside a branch — which is why every expression emitter takes the
-/// source buffer.
-///
 /// A left operand with no answer abandons the transition. It is not read as
 /// false, and that is the difference between `and` short-circuiting and `and`
 /// swallowing a mistake.
+///
+/// Under Wax this was twenty lines of `src.depth = src.depth ± 1` around a
+/// mutable `out` local, because the only way to leave an operand unevaluated
+/// was to emit it inside a branch and a branch was a statement. It is the same
+/// three-way decision, written once.
 fn emit_logic(
   ctx : Ctx,
-  src : Src,
+  b : B,
+  out : Array[@wast.Node],
   op : String,
-  lhs : String,
+  lhs : @wast.Node,
   rhs : @tutuca.Expr,
-) -> String raise Refused {
-  let a = ctx.temp()
-  let out = ctx.temp()
-  src.line("let \{a} = \{lhs};")
-  src.line("let \{out}: &?tg_val = null;")
-  src.open("if \{a} == null {")
-  src.line("\{out} = null;")
-  src.close("} else {")
-  src.depth = src.depth + 1
+) -> @wast.Node raise Refused {
   // `and` continues when the left is truthy; `or` and `implies` when it is not.
   // `implies` is `(not a) or b`, which is the shape most cross-field rules take.
-  let (settled, keep_going) = match op {
-    "and" => ("tg_bool(0)", "!= 0")
-    "or" => ("tg_bool(1)", "== 0")
-    "implies" => ("tg_bool(1)", "!= 0")
+  let (settled, keep_going_truthy) = match op {
+    "and" => (0, true)
+    "or" => (1, false)
+    "implies" => (1, true)
     _ => raise Refused("no logical operator called `\{op}`")
   }
-  src.open("if tg_truthy(\{a}) \{keep_going} {")
-  let b = emit_expr(ctx, src, rhs)
+  let a = ctx.temp()
+  let res = ctx.temp()
+  out.push(b.bind(res, b.null_(), typ=opt_val(), mutable=true))
+  out.push(b.bind(a, lhs))
+  // The right operand is emitted INSIDE the branch, which is the whole point:
+  // it must not run when the left already settled the answer.
+  let right : Array[@wast.Node] = []
   let bv = ctx.temp()
-  src.line("let \{bv} = \{b};")
-  src.open("if \{bv} == null {")
-  src.line("\{out} = null;")
-  src.close("} else {")
-  src.depth = src.depth + 1
-  // The answer is a BOOLEAN, not the operand: `or` is not a coalescing
-  // operator here, and `truthy? x` and `x` are different values.
-  src.line("\{out} = tg_bool(tg_truthy(\{bv}));")
-  src.depth = src.depth - 1
-  src.line("}")
-  src.close("} else {")
-  src.depth = src.depth + 1
-  src.line("\{out} = \{settled};")
-  src.depth = src.depth - 1
-  src.line("}")
-  src.depth = src.depth - 1
-  src.line("}")
-  out
+  let rv = emit_expr(ctx, b, right, rhs)
+  right.push(b.bind(bv, rv))
+  right.push(
+    b.if_(
+      b.is_null(b.var_(bv)),
+      [b.set(b.var_(res), b.null_())],
+      // The answer is a BOOLEAN, not the operand: `or` is not a coalescing
+      // operator here, and `truthy? x` and `x` are different values.
+      else_=[
+        b.set(b.var_(res), b.rt("tg_bool", [b.rt("tg_truthy", [b.var_(bv)])])),
+      ],
+    ),
+  )
+  let keep_going = b.made(
+    Bin(
+      if keep_going_truthy {
+        Ne
+      } else {
+        Eq
+      },
+      b.rt("tg_truthy", [b.var_(a)]),
+      b.int_(0),
+    ),
+  )
+  out.push(
+    b.if_(b.is_null(b.var_(a)), [b.set(b.var_(res), b.null_())], else_=[
+      b.if_(keep_going, right, else_=[
+        b.set(b.var_(res), b.rt("tg_bool", [b.int_(settled)])),
+      ]),
+    ]),
+  )
+  b.var_(res)
 }
 
 ///|
 /// A conditional in a value position: one arm is evaluated, the other is not.
+///
+/// The arms are emitted into their OWN statement lists and spliced into the
+/// branches, which is what makes "one arm is evaluated" true. A result local
+/// carries the answer out, because a wap block that binds cannot itself be the
+/// value of a binding — Wax's `let` scopes over the rest of its sequence, so a
+/// `let` nested inside a `let`'s value is not a shape it can type. That is the
+/// same reason the Wax backend before this one wrote a mutable `out` local, and
+/// it survives the port.
 fn emit_branch(
   ctx : Ctx,
-  src : Src,
+  b : B,
+  out : Array[@wast.Node],
   cond : @tutuca.Expr,
-  then_ : () -> @tutuca.Expr,
-  else_ : () -> @tutuca.Expr,
-) -> String raise Refused {
-  let c = emit_expr(ctx, src, cond)
+  then_ : @tutuca.Expr,
+  else_ : @tutuca.Expr,
+) -> @wast.Node raise Refused {
   let cv = ctx.temp()
-  let out = ctx.temp()
-  src.line("let \{cv} = \{c};")
-  src.line("let \{out}: &?tg_val = null;")
-  src.open("if \{cv} == null {")
-  src.line("\{out} = null;")
-  src.close("} else {")
-  src.depth = src.depth + 1
-  src.open("if tg_truthy(\{cv}) != 0 {")
-  let t = emit_expr(ctx, src, then_())
-  src.line("\{out} = \{t};")
-  src.close("} else {")
-  src.depth = src.depth + 1
-  let f = emit_expr(ctx, src, else_())
-  src.line("\{out} = \{f};")
-  src.depth = src.depth - 1
-  src.line("}")
-  src.depth = src.depth - 1
-  src.line("}")
-  out
+  let res = ctx.temp()
+  let c = emit_expr(ctx, b, out, cond)
+  out.push(b.bind(res, b.null_(), typ=opt_val(), mutable=true))
+  out.push(b.bind(cv, c))
+  let then_nodes : Array[@wast.Node] = []
+  let tv = emit_expr(ctx, b, then_nodes, then_)
+  then_nodes.push(b.set(b.var_(res), tv))
+  let else_nodes : Array[@wast.Node] = []
+  let ev = emit_expr(ctx, b, else_nodes, else_)
+  else_nodes.push(b.set(b.var_(res), ev))
+  out.push(
+    b.if_(b.is_null(b.var_(cv)), [b.set(b.var_(res), b.null_())], else_=[
+      b.if_(
+        b.made(Bin(Ne, b.rt("tg_truthy", [b.var_(cv)]), b.int_(0))),
+        then_nodes,
+        else_=else_nodes,
+      ),
+    ]),
+  )
+  b.var_(res)
 }
 
 ///|
 fn emit_read(
   ctx : Ctx,
-  src : Src,
+  b : B,
+  out : Array[@wast.Node],
   place : @tutuca.Place,
-) -> String raise Refused {
-  let mut acc = emit_root(ctx, src, place.root)
+) -> @wast.Node raise Refused {
+  let mut acc = emit_root(ctx, b, out, place.root)
   for step in place.steps {
     acc = match step {
-      PField(name) => "member(\{acc}, \{wax_str(name)})"
-      PIndex(key) => "item(\{acc}, \{emit_expr(ctx, src, key)})"
+      PField(name) => b.rt("member", [acc, b.str_(name)])
+      PIndex(key) => b.rt("item", [acc, emit_expr(ctx, b, out, key)])
     }
   }
   acc

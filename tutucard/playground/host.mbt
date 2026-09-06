@@ -128,7 +128,7 @@ pub fn compile(source : String, name : String) -> String {
     "components": Json::array(out.components.map(Json::string)),
     "wasm": Json::string(@base64.encode(out.wasm)),
     "size": Json::number(out.wasm.length().to_double()),
-    "wax": Json::string(out.wax),
+    "wap": Json::string(out.wap),
     "manifest": out.manifest,
     "fields": Json::array(out.fields.map(Json::string)),
     "refusals": Json::array(

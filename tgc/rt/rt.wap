@@ -50,6 +50,12 @@ module rt
 
 import tgabi
 
+// What wap cannot say: a mutable global. `tgc_next_id` is defined in Wax and
+// appended by `@abi.runtime_sys_fields` — wap has `const` and no `var`, and
+// instance identity is a cell that changes.
+import was "tgc/abi/sys.mbt":
+  fn tgc_next_id() -> i64
+
 // Local names for the three array types, because wap takes an array literal's
 // element type from a bare name and not from a qualified one. They are not new
 // wasm types: each is a singleton recursion group with the same content as the
@@ -59,6 +65,19 @@ import tgabi
 type bytes = [u8]
 type vals = [tgabi.tg_val?]
 type entries = [tgabi.tg_entry?]
+
+// ── identity ────────────────────────────────────────────────────────────────
+
+// The id an instance carries, unique over everything that shares this runtime.
+//
+// It is the RUNTIME's counter rather than each module's, which is a fix as much
+// as a port: under `tgc/1` every generated module counted from zero on its own,
+// and `val_eq` compares two component values by `id` alone — so the first
+// instance built by one module and the first built by another were EQUAL. In a
+// format whose claim is that strangers' modules compose, identity has to be
+// unique over the set of instances that can meet, and that set is a page.
+export "next_id" fn next_id() -> i64:
+  tgc_next_id()
 
 // ── the two calls that are the whole of composition ─────────────────────────
 

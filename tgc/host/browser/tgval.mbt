@@ -70,7 +70,7 @@ fn cannot_read(what : String) -> Unit {
   unread.val.push(
     "a " +
     what +
-    " crossed the host boundary; `tgc/rt/rt.wax` exports no accessor for one — add one there before a host can read it",
+    " crossed the host boundary; `tgc/rt/rt.wap` exports no accessor for one — add one there before a host can read it",
   )
 }
 

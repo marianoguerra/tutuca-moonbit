@@ -60,7 +60,7 @@ declare pub fn Tag::code(self : Tag) -> Int
 declare pub fn Tag::of_code(code : Int) -> Tag?
 
 ///|
-/// The name of the Wax type that holds this case, e.g. `tg_str`.
+/// The name of the preamble type that holds this case, e.g. `tg_str`.
 declare pub fn Tag::type_name(self : Tag) -> String
 
 ///|
@@ -228,9 +228,32 @@ pub(all) struct VocabFn {
   import_name : String
   params : Array[(String, @wast.Type)]
   results : Array[@wast.Type]
+  /// The FROZEN function type this one is, if it is one of the two.
+  ///
+  /// `get_field` and `call_op` are `tg_get` and `tg_call` — types inside the one
+  /// recursion group — and binding the import to the name rather than to a
+  /// same-shaped inline signature is what makes the link check the GROUP rather
+  /// than a lookalike. It matters in practice and not only in principle: the
+  /// runtime's own `get_field` is interned to `tg_get` because its signature
+  /// matches, so an importer with an inline type does not link at all.
+  frozen : String?
 }
 
 ///|
 /// The whole vocabulary. The emitter filters it by what a card actually
 /// called, so a module's import section stays a truthful authority list.
 declare pub fn vocab() -> Array[VocabFn]
+
+///|
+/// The name of the one function `runtime_sys_fields` supplies, and the name
+/// `tgc/rt` exports it under. Frozen with everything else here.
+pub let sys_next_id : String = "tgc_next_id"
+
+///|
+/// The Wax module fields `tgc/rt` is compiled beside — see `sys.mbt` for what is
+/// on the list and why the list is not empty.
+declare pub fn runtime_sys_fields() -> @wax_ast.LocModule
+
+///|
+/// The `import was` block the runtime writes to reach them.
+declare pub fn sys_import_wap() -> String

@@ -10,6 +10,10 @@
 // gave, not for a string that looks like one.
 import {
   "marianoguerra/wap",
+  "marianoguerra/wax/ast" @wax_ast,
+  "marianoguerra/wax/ast/build",
+  "marianoguerra/wax/basic",
+  "marianoguerra/wax/wasm/types" @wasm_types,
   "marianoguerra/wap/ast" @wast,
   "marianoguerra/wax/compile",
   "moonbitlang/core/debug",

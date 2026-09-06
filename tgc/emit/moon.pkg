@@ -6,12 +6,17 @@
 // A language with three implementations and no shared table has three
 // semantics, so this is held to `tscript/conformance` exactly as they are.
 //
-// It emits Wax SOURCE rather than a Wax AST. The backend it replaces built an AST to
-// avoid linking the front end, and then parses a vendored runtime with it
-// anyway; here the runtime is a separate module and the front end is the only
-// route in, so source is both simpler and readable — the generated text is an
-// artifact a card author can look at, which is what the playground's WAX panel
-// is for.
+// It builds a wap AST. The backend before this one emitted Wax SOURCE, for a
+// reason worth recording: the generated text was an artifact a card author
+// could read, which is what the playground's panel is for. What that cost was
+// an expression emitter that answered a String while writing statements into a
+// shared buffer as a side effect, indentation maintained by hand at eleven
+// sites, its own string escaping, and diagnostics whose line numbers had the
+// preamble's length subtracted from them.
+//
+// The artifact is the thing to keep, and it is now an outline rather than the
+// source — see `describe_wap`. When wap grows a printer, or this package grows
+// one, it goes back to being the whole module.
 import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/statedef",
@@ -26,9 +31,13 @@ import {
   "marianoguerra/tutuca/viewgen",
   "marianoguerra/tutuca/tgc/abi",
   "marianoguerra/tutuca/tgc/rt",
-  "marianoguerra/wax",
   "marianoguerra/wap",
+  "marianoguerra/wap/ast" @wast,
   "marianoguerra/wap/resolve",
+  "marianoguerra/wap/parse",
+  "marianoguerra/wap/lower" @waplower,
+  "marianoguerra/wax/compile",
+  "marianoguerra/error-report" @report,
   "marianoguerra/wax/message",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",

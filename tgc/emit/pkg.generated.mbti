@@ -38,7 +38,7 @@ pub(all) struct Compiled {
   component : String
   components : Array[String]
   wasm : Bytes
-  wax : String
+  wap : String
   refusals : Array[@check.Refusal]
   fields : Array[String]
   manifest : Json

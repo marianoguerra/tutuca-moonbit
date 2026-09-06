@@ -98,7 +98,7 @@ fn steps_of(v : @tutuca.Value) -> Array[@tutuca.Step] {
     }
     // `{"item": [field, key]}` is a keyed read and `{"at": [field, index]}` is
     // an indexed one — both a `SeqStep`, differing only in the kind of key.
-    // `mk_step_key` in `tgc/rt/rt.wax` decides which, and it decides by whether
+    // `mk_step_key` in `tgc/rt/rt.wap` decides which, and it decides by whether
     // the key is a whole non-negative number.
     match m.get("item") {
       Some(List([Str(field), Str(key)])) => {

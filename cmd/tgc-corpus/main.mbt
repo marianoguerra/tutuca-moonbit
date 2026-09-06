@@ -11,7 +11,7 @@ fn main raise {
       (Ok(@emit.compile(card, name="case\{i}")) catch { e => Err(e) }) {
       Ok(out) => {
         @fs.write_bytes_to_file("\{outdir}/case\{i}.wasm", out.wasm)
-        @fs.write_string_to_file("\{outdir}/case\{i}.wax", out.wax)
+        @fs.write_string_to_file("\{outdir}/case\{i}.wap", out.wap)
         compiled = compiled + 1
         {
           "name": Json::string(c.name),

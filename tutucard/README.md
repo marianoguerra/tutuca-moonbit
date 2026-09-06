@@ -14,7 +14,7 @@ toolchain anywhere on the page. This directory is the machinery for that.
 ## What ships to the page
 
 `cmd/dev -- tutucard-playground` assembles `dist/tutucard/`. The payload is the
-card compiler (`tgc/emit`), the Wax front end it stands on, and the page — plus
+card compiler (`tgc/emit`), the wap compiler it stands on, and the page — plus
 the two things a card can ASK for, each fetched lazily by whoever wants it:
 
 - **`margaui.wasm`** — the class compiler the starter cards' `btn` / `card` /

@@ -5,9 +5,9 @@
 //   *.whole.wat  a COMPLETE module carrying its own preamble, spelled its own
 //                way. This is the "different toolchain" leg: nothing about it
 //                came from this repo except the shape of the group.
-//   *.wax        compiled by `cmd/tgc`, which prepends the same preamble and
-//                hands it to the Wax compiler. A real compiler emitted these
-//                types, not a person.
+//   *.wap        compiled by `cmd/tgc`, which resolves the same preamble as an
+//                import and hands the pair to the wap compiler. A real compiler
+//                emitted these types, not a person.
 //
 // Run: node tgc/test/build.mjs
 import { execFileSync } from "node:child_process";
@@ -58,12 +58,12 @@ export function buildAll() {
     built[name] = assemble(readFileSync(join(proto, file), "utf8"), name);
   }
 
-  const waxen = [
-    ...readdirSync(rt).filter((f) => f.endsWith(".wax")).map((f) => [rt, f]),
-    ...readdirSync(proto).filter((f) => f.endsWith(".wax")).map((f) => [proto, f]),
+  const wapen = [
+    ...readdirSync(rt).filter((f) => f.endsWith(".wap")).map((f) => [rt, f]),
+    ...readdirSync(proto).filter((f) => f.endsWith(".wap")).map((f) => [proto, f]),
   ];
-  for (const [dir, file] of waxen) {
-    const name = file.replace(/\.wax$/, "");
+  for (const [dir, file] of wapen) {
+    const name = file.replace(/\.wap$/, "");
     const wasmPath = join(out, `${name}.wasm`);
     const said = run("moon", [
       "run", "--target", "native", "cmd/tgc", "--",

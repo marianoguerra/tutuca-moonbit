@@ -98,7 +98,7 @@ Decisions worth naming:
 - **`tg_bytes` is UTF-8** and carries binary too. The wire, the GC type and the
   JSON encoding all agree; a UTF-16 host transcodes at its own boundary
   rather than at every field. There is no per-module encoding choice, because
-  the encoding is part of the type. In Wax it costs nothing extra: a string
+  the encoding is part of the type. In wap it costs nothing extra: a string
   literal is already `[mut i8]`.
 - **Two numbers.** `tg_num` is tutuca's double; `tg_int` is the 64-bit integer
   the GC types have natively and a double cannot hold past 2^53.

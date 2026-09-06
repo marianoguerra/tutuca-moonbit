@@ -2,7 +2,7 @@
 package "marianoguerra/tutuca/tgc/abi"
 
 import {
-  "marianoguerra/wap/ast",
+  "marianoguerra/wax/basic",
   "moonbitlang/core/debug",
 }
 
@@ -23,11 +23,21 @@ pub let export_serve : String
 
 pub let import_namespace : String
 
+pub fn mangled(String, String) -> String
+
 pub let preamble_module : String
 
 pub fn preamble_wap() -> String
 
 pub fn preamble_wat() -> String raise PreambleError
+
+pub fn retype_vtables(@marianoguerra/wap/ast.Module, Array[@basic.Annotated[@marianoguerra/wax/ast.ModuleField[@basic.Location], @basic.Location]]) -> Array[@basic.Annotated[@marianoguerra/wax/ast.ModuleField[@basic.Location], @basic.Location]] raise PreambleError
+
+pub fn runtime_sys_fields() -> Array[@basic.Annotated[@marianoguerra/wax/ast.ModuleField[@basic.Location], @basic.Location]]
+
+pub fn sys_import_wap() -> String
+
+pub let sys_next_id : String
 
 pub fn vocab() -> Array[VocabFn]
 
@@ -86,8 +96,9 @@ pub(all) struct VocabFn {
   name : String
   supplier : Supplier
   import_name : String
-  params : Array[(String, @ast.Type)]
-  results : Array[@ast.Type]
+  params : Array[(String, @marianoguerra/wap/ast.Type)]
+  results : Array[@marianoguerra/wap/ast.Type]
+  frozen : String?
 }
 
 // Type aliases

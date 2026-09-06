@@ -6,6 +6,96 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### `tgc/2` — the component format is compiled through wap
+
+`tgc/emit` had no IR. It answered a Wax expression as a STRING and wrote
+statements into a shared `StringBuilder` as a side effect, with indentation
+maintained by hand at eleven call sites. It now builds `marianoguerra/wap` AST
+values, and `tgc/rt` is 1218 lines of wap where it was 1246 of Wax.
+
+**Every `tgc/1` module stops linking.** `tgc.abi` answers `2`, and a host that
+reads `1` refuses the module rather than adapting — there is nothing to adapt
+to, because a different grouping is a different set of types.
+
+- **The frozen preamble is wap, and the WAT is DERIVED from it.** `tgc/1` kept
+  two hand-written spellings and a test that they canonicalized the same, which
+  could only ever find a drift already committed. `tgc preamble --wap` prints
+  the source; `--wat` prints what the compiler made of it.
+- **A recursion group per strongly connected component, not one per module.**
+  `tgc/1` put all twenty types in one group, so adding an arm re-typed every
+  module ever built and `tg_ext` had to carry the whole extension story. Now
+  exactly one group has more than one member — `tg_get`, `tg_inst`, `tg_vt` and
+  `tg_call`, which genuinely cycle — and everything else is a group of one.
+  Adding a type breaks nothing; changing `tg_list` breaks `tg_list`.
+- **A module's import section is what it asked for, not what it might use.**
+  The old emitter decided by SCANNING the generated text for each of eighty
+  names, and had to be careful `member` did not match `with_member`. Every
+  runtime call now goes through one door that records it. `tgc/SECURITY.md`
+  rests on the import section being a complete authority list, so this is the
+  difference between a true statement and a careful one.
+- **A diagnostic points at the line the author typed.** The preamble is
+  imported rather than prepended, so nothing subtracts its length from a
+  message afterwards — and the branch that said "in the preamble — which is a
+  tgc bug, not yours" when that arithmetic went negative is gone.
+- **A null check is emitted where a value can actually be null.** The
+  vocabulary types a constructor's result `tg_val` and an operation's
+  `tg_val?`, which IS the two-nulls rule written down — so the emitter stops
+  guarding the ones that cannot answer nothing. Every literal in every card had
+  a branch after it that could not be taken.
+- **The runtime vocabulary is a table of TYPES**, in `tgc/abi/vocab.mbt`, read
+  by the emitter that imports it and by a test that compiles `tgc/rt` and
+  asserts it exports exactly that. `tgc/1` kept eighty signature strings in
+  `tgc/emit` and nothing compared them to what the runtime had; a disagreement
+  surfaced as a browser refusing to instantiate.
+
+### Instance identity was not unique, and a workaround had been hiding it
+
+Every generated module declared its own id counter starting at zero, and
+`val_eq` compares two component values by `id` ALONE — so the first instance
+built by one module and the first built by another compared **equal**, in a
+format whose whole claim is that strangers' modules compose. `next_id` is the
+runtime's now, which makes ids unique over a page: the set of instances that
+can meet.
+
+The tell was in the tree and unread. `tgc/proto/counter` started its ids at
+`100`, a hand-picked offset that dodged the collision without naming it —
+so the question "why does this start at 100" had an answer nobody had asked
+for. It is the same pattern as this week's other four defects in a different
+register: not a check looking one step away from what could fail, but a FIX
+standing in for a diagnosis. The dodge worked, so nobody asked what it dodged.
+
+### What wap could not say
+
+Recorded because the next person to drive a compiler from MoonBit will meet
+them, and two are silent:
+
+- **A function cannot be given a named function type**, so a vtable — whose
+  slots are typed by `tg_get` and `tg_call`, both inside a recursion group — is
+  not expressible in wap alone. The lowered field carries a `typ` that wap
+  always leaves empty, so `@abi.retype_vtables` sets it, finding which
+  functions need it by reading the `tg_vt` literal rather than by a naming
+  convention.
+- **A block that binds cannot be the value of a binding.** Wax's `let` scopes
+  over the rest of its sequence, so `let t = { let cv = …; … }` is not a shape
+  it can type. Every card with an `if` in a value position failed and nothing
+  else did — caught by `tutu_seam_test`, the one test that sits exactly on the
+  seam. Expressions hoist their statements into the enclosing body instead,
+  which is what the Wax backend did for the same reason.
+- **A destructured tuple binder carries no type**, so `x + y` lowers and
+  `x / y` raises an internal-sounding error from the Wax emitter. Annotate:
+  `let (ok, x :: f64) = …`.
+- **An array literal cannot name a qualified type**, so a generated module
+  declares its own `vals` and `entries`. They are not new wasm types — three
+  independently declared `(array (mut i8))` canonicalize to one, which is the
+  `tgc/2` grouping property doing its job.
+- **There are no mutable globals**, which is what forced the identity question
+  above. The one cell the runtime needs arrives through `import was`, wap's own
+  escape hatch.
+
+Fixed upstream during the port: `wap@0.2.1` adds integer-to-float conversion,
+which nothing in wap or its standard library had needed — a language with one
+number reaches for it on the first line of arithmetic.
+
 ## [0.53.1] - 2026-09-05
 
 Two silent drops in a `view:` section, both found by writing a `.tutu` file by

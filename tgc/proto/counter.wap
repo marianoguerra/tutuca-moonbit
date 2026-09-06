@@ -1,0 +1,197 @@
+// B — Counter. Written in wap, compiled by `marianoguerra/wap` through
+// `cmd/tgc`, which resolves the canonical preamble as an import.
+//
+// This is the leg the proof needs most: the type section of this module was
+// emitted by a COMPILER, from `tgc/abi`, not typed by the person who wrote the
+// file below. Nothing here mentions the Dashboard or the Clock, and it composes
+// with both.
+//
+// A pleasant accident, and evidence for the design in its own right: a wap
+// string literal is an anonymous `[u8]`, which canonicalizes to the same wasm
+// type as `tg_bytes`. The format's text type is the one the language hands you,
+// so `"count"` needs no conversion, no interning table and no constant pool.
+//
+// It implements `tut.demo.tile@1` — a `label`, a `count` and a `bump` — and it
+// HOLDS a peer, which it reads through exactly the way the Dashboard reads
+// through it. Neither is the framework; neither knows who made the other.
+//
+// Two things changed at `tgc/2`. The module no longer carries a counter of its
+// own — it starts ids at 100 in the Wax original, which was a hand-picked
+// dodge around every module counting from zero and `val_eq` comparing
+// instances by id alone. `next_id` is the runtime's now, so the dodge is gone
+// with the defect. And `counter_get` / `counter_call` are declared plainly:
+// wap cannot annotate a definition with a named function type, so `cmd/tgc`
+// reads the `tg_vt` literal below and gives them theirs.
+
+module counter
+
+import tgabi
+
+// The import NAME is spelled out on every one of them. Without it wap gives the
+// wasm import field the module's prefix — `tut.counter__str_eq` — and the link
+// fails against a runtime that exports `str_eq`. The name in the import section
+// is the ABI; the local name is not.
+//
+// `get_field` is named `get_field` locally as well, because `cmd/tgc` binds the
+// two composition imports to their FROZEN function types and finds them by that
+// spelling. Importing it under a different local name gets an inline signature,
+// which does not link: the runtime's own `get_field` is interned to `tg_get`.
+import "tut":
+  import "str_eq" fn str_eq(a :: tgabi.tg_bytes, b :: tgabi.tg_bytes) -> i32
+  import "get_field" fn get_field(inst :: tgabi.tg_inst,
+                                  name :: tgabi.tg_bytes) -> tgabi.tg_val?
+  import "next_id" fn next_id() -> i64
+
+// Its own state type, outside the frozen group. `tg_inst.state` is `eq?`, so
+// this name is unreachable from anywhere else and the cast traps for anyone who
+// guesses at it.
+type counter_state = {
+  count :: i64,
+  label :: tgabi.tg_bytes,
+  peer :: tgabi.tg_inst?,
+}
+
+type vals = [tgabi.tg_val?]
+type entries = [tgabi.tg_entry?]
+
+fn counter_get(self :: tgabi.tg_inst, name :: tgabi.tg_bytes) -> tgabi.tg_val?:
+  let state = self.state! as counter_state
+  if str_eq(name, "count") != 0:
+    return tgabi.tg_int{ kind: 3, value: state.count }
+  if str_eq(name, "label") != 0:
+    return tgabi.tg_str{ kind: 4, value: state.label }
+  if str_eq(name, "peer") != 0:
+    if state.peer == null:
+      return null
+    return tgabi.tg_comp{ kind: 10, value: state.peer! }
+  // Reading THROUGH the peer. `peerLabel` is not a field of this component at
+  // all — it is a field of somebody else's, reached by a call.
+  if str_eq(name, "peerLabel") != 0:
+    if state.peer == null:
+      return null
+    return get_field(state.peer!, "label")
+  // Absence, not null-the-value: there is no such field.
+  null
+
+fn counter_call(self :: tgabi.tg_inst, op :: i32, name :: tgabi.tg_bytes,
+                args :: tgabi.tg_vals, v :: tgabi.tg_val?) -> tgabi.tg_val?:
+  // OpImplements
+  if op == 11:
+    return tgabi.tg_bool{ kind: 1, value: str_eq(name, "tut.demo.tile@1") }
+  // OpHandleMessage
+  if op == 2:
+    if str_eq(name, "bump") != 0:
+      let state = self.state! as counter_state
+      let next = counter_state{
+        count: state.count + 1,
+        label: state.label,
+        peer: state.peer,
+      }
+      return counter_wrap(counter_instance(self.desc, next))
+  // OpWithField, for the one field a holder may write. A successor, never a
+  // mutation: the caller keeps the instance it had.
+  if op == 1:
+    if str_eq(name, "peer") != 0:
+      let state = self.state! as counter_state
+      let next = counter_state{
+        count: state.count,
+        label: state.label,
+        peer: counter_as_inst(v),
+      }
+      return counter_wrap(counter_instance(self.desc, next))
+  // An op or a name this module does not answer — the same answer an older
+  // module gives for an op invented after it was built.
+  null
+
+fn counter_wrap(inst :: tgabi.tg_inst) -> tgabi.tg_val?:
+  tgabi.tg_comp{ kind: 10, value: inst }
+
+fn counter_as_inst(v :: tgabi.tg_val?) -> tgabi.tg_inst?:
+  if v == null:
+    return null
+  let value = v!
+  if value.kind != 10:
+    return null
+  (value as tgabi.tg_comp).value
+
+fn counter_instance(desc :: tgabi.tg_val, state :: counter_state) -> tgabi.tg_inst:
+  let vt = tgabi.tg_vt{ get: counter_get, call: counter_call }
+  tgabi.tg_inst{ vt: vt, desc: desc, state: state, id: next_id() }
+
+export "tgc.make" fn counter_make(name :: tgabi.tg_bytes,
+                                  args :: tgabi.tg_val?) -> tgabi.tg_inst?:
+  if str_eq(name, "Counter") == 0:
+    return null
+  // A missing or oddly shaped `args` is a zero rather than a refusal: a host
+  // that hands a component nothing has asked for its initial state, and that is
+  // a thing a component knows.
+  let state = counter_state{
+    count: counter_arg_int(args, "count"),
+    label: counter_arg_str(args, "label", "Counter"),
+    peer: null,
+  }
+  counter_instance(counter_describe(), state)
+
+fn counter_arg_int(args :: tgabi.tg_val?, key :: tgabi.tg_bytes) -> i64:
+  let found = counter_map_get(args, key)
+  if found == null:
+    return 0
+  let v = found!
+  if v.kind == 3:
+    return (v as tgabi.tg_int).value
+  if v.kind == 2:
+    return (v as tgabi.tg_num).value as i64_s
+  0
+
+fn counter_arg_str(args :: tgabi.tg_val?, key :: tgabi.tg_bytes,
+                   fallback :: tgabi.tg_bytes) -> tgabi.tg_bytes:
+  let found = counter_map_get(args, key)
+  if found == null:
+    return fallback
+  let v = found!
+  if v.kind == 4:
+    return (v as tgabi.tg_str).value
+  fallback
+
+fn counter_map_get(args :: tgabi.tg_val?, key :: tgabi.tg_bytes) -> tgabi.tg_val?:
+  if args == null:
+    return null
+  let m = args!
+  if m.kind != 8:
+    return null
+  let map = m as tgabi.tg_map
+  for i in 0 ..< map.count:
+    let e = map.entries[i]
+    if e != null:
+      let entry = e!
+      if str_eq(entry.key, key) != 0:
+        return entry.value
+  null
+
+// The manifest, as an ordinary value. Not a sidecar file and not an archive
+// member: a module that says what it is needs no packer, and a toolchain that
+// has never heard of this repo can still produce one.
+export "tgc.describe" fn counter_describe() -> tgabi.tg_val:
+  let tile_v = tgabi.tg_str{ kind: 4, value: "tut.demo.tile@1" }
+  let protocols = tgabi.tg_list{ kind: 7, items: vals[tile_v], count: 1 }
+  let e_module = tgabi.tg_entry{
+    key: "module",
+    value: tgabi.tg_str{ kind: 4, value: "tgc.proto.counter" },
+  }
+  let e_comp = tgabi.tg_entry{
+    key: "name",
+    value: tgabi.tg_str{ kind: 4, value: "Counter" },
+  }
+  let e_protos = tgabi.tg_entry{ key: "protocols", value: protocols }
+  tgabi.tg_map{
+    kind: 8,
+    entries: entries[e_module, e_comp, e_protos],
+    count: 3,
+  }
+
+export "tgc.serve" fn counter_serve(name :: tgabi.tg_bytes,
+                                    args :: tgabi.tg_vals) -> tgabi.tg_val?:
+  null
+
+export "tgc.abi" fn counter_abi() -> i32:
+  2

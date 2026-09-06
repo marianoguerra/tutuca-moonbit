@@ -32,7 +32,8 @@ import {
   // declaration list, and round-tripping is the whole point. Apache-2.0, where
   // this module is MIT.
   "mizchi/css@0.7.3",
-  // The Wax compiler, for `tgc/emit` — the card-to-core-wasm backend.
+  // The wap compiler and the Wax backend under it, for `tgc/emit` — the
+  // card-to-core-wasm route. `tgc` writes wap; wap lowers to the Wax AST.
   // Dependency-free itself, and MoonBit links per package, so a consumer who
   // never compiles a card pays the fetch and nothing else.
   "marianoguerra/wax@0.2.1",
@@ -109,7 +110,7 @@ options(
     "cmd/dev",
     "cmd/css-bundle",
     // `cmd/tgc` is the toolchain shell for the component format: it prints the
-    // canonical preamble and compiles a `.wax` module that carries it. A dev
+    // canonical preamble and compiles a `.wap` module against it. A dev
     // shell over shipping packages — the compilers are the feature, and a
     // terminal front end for them is not. `cmd/tgc-corpus` is the same kind of
     // thing for the conformance table: it projects `tscript/conformance` into
@@ -123,7 +124,7 @@ options(
     // together. Evidence about the format rather than part of it.
     //
     // `tgc/rt` SHIPS, because a page that hosts a component needs the runtime
-    // module and cannot fetch it from this repository's `_build`. Its `.wax` is
+    // module and cannot fetch it from this repository's `_build`. Its `.wap` is
     // embedded and `tgc/emit`'s `compile_runtime` builds it.
     "tgc/proto",
     "tgc/test",

@@ -3,7 +3,7 @@
 ///|
 /// What a compile produced.
 ///
-/// `wax` is checked in to the answer rather than thrown away because it is the
+/// `wap` is checked in to the answer rather than thrown away because it is the
 /// discovery path: a card author who wants to know what a handler became reads
 /// it, and an author writing an escape copies its idioms. `wasm` is what a host
 /// instantiates.
@@ -13,7 +13,7 @@ pub(all) struct Compiled {
   /// Every component the card declares, root first.
   components : Array[String]
   wasm : Bytes
-  wax : String
+  wap : String
   /// Declarations this backend could not lower. The rest of the card still
   /// runs, and the manifest leaves a refused name out — a host is never told a
   /// component answers something it does not.

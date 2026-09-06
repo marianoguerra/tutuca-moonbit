@@ -10,9 +10,15 @@ pub fn source() -> String {
     #|
     #|import tgabi
     #|
+    #|import was "tgc/abi/sys.mbt":
+    #|  fn tgc_next_id() -> i64
+    #|
     #|type bytes = [u8]
     #|type vals = [tgabi.tg_val?]
     #|type entries = [tgabi.tg_entry?]
+    #|
+    #|export "next_id" fn next_id() -> i64:
+    #|  tgc_next_id()
     #|
     #|export "get_field" fn get_field(inst :: tgabi.tg_inst, name :: tgabi.tg_bytes) -> tgabi.tg_val?:
     #|  inst.vt.get(inst, name)

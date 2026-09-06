@@ -36,7 +36,7 @@ copyFileSync(join(HERE, "..", "page.js"), join(OUT, "page.js"));
 copyFileSync(join(REPO, "tutucard", "web", "card.js"), join(OUT, "card.js"));
 copyTgcValues(OUT);
 
-// The runtime, from its EMBEDDED source rather than from `rt.wax`. It is the
+// The runtime, from its EMBEDDED source rather than from `rt.wap`. It is the
 // route a page takes, so it is the route worth building.
 execFileSync(
   "moon",
