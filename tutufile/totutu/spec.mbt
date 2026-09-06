@@ -179,6 +179,24 @@ fn is_empty(def : @statedef.StateDef) -> Bool {
 }
 
 ///|
+/// An enum CASE: its name exactly as written, and the payload it carries.
+///
+/// A case name is not renamed. It is a name at the type level — it encodes as
+/// itself, a value round-trips through it, and the codec compares it as a
+/// string — so it belongs with the component and struct names the rename leaves
+/// alone rather than with the members it does not.
+fn case_sig(m : @statedef.MsgDef) -> String raise NoSpelling {
+  if m.payload.is_empty() {
+    return m.source_name
+  }
+  let parts = []
+  for t in m.payload {
+    parts.push(print_ty(t))
+  }
+  "\{m.source_name}(\{parts.join(", ")})"
+}
+
+///|
 /// A message case: its name, and the payload it carries.
 fn msg_sig(m : @statedef.MsgDef) -> String raise NoSpelling {
   let name = @names.rename_member(m.source_name)
@@ -274,12 +292,24 @@ fn print_where(w : @statedef.WhereDecl) -> String raise NoSpelling {
     DNonEmpty => "\{subject} non_empty"
     DPattern(p) => "\{subject} pattern \{quote(p)}"
     DFormat(f) => "\{subject} format \{quote(f)}"
-    // `where len(x) …` states the inner relation about the LENGTH. It nests,
-    // and the new notation has no spelling for the nesting yet.
-    DLen(_) =>
+    // `where … len <= 100` states the inner relation about the LENGTH rather
+    // than about the value. One prefix, because a length is the only projection
+    // this vocabulary admits — anything else about a collection is a fact about
+    // its elements, and a domain is about the field.
+    DLen(inner) => "\{subject} len \{relation_tail(inner)}"
+  }
+}
+
+///|
+/// A relation without its subject, for the one form that nests.
+fn relation_tail(d : @tutuca.Domain) -> String raise NoSpelling {
+  match d {
+    DCompare(op~, rhs~) => "\{op_word(op)} \{operand(rhs)}"
+    DBetween(lo~, hi~) => "in_range(\{operand(lo)}, \{operand(hi)})"
+    _ =>
       raise NoSpelling(
-        what="a `where` about a value's length (`\{w.subject}`)",
-        help="the nested `len` form has no spelling in the new notation — convert this clause by hand",
+        what="a `where … len` whose relation is not an ordering",
+        help="a length is compared or bounded — `len <= 100`, `len in_range(1, 10)`",
       )
   }
 }
@@ -341,15 +371,17 @@ pub fn print_user_ty(
     UEnum(cases) => {
       out.write_string("  enum \{t.source_name}:\n")
       for c in cases {
-        out.write_string("    \{@names.snake_of(c.0)}\n")
+        // The case name as written: it encodes as itself.
+        out.write_string("    \{c.0}\n")
       }
     }
-    // A case with a payload is a variant, and the notation has no form for one
-    // yet — an enum's cases are bare names.
-    UVariant(_) =>
-      raise NoSpelling(
-        what="an enum whose cases carry payloads (`\{t.source_name}`)",
-        help="the `.tutu` notation writes an enum as one bare case per line; a case with a payload has no form yet",
-      )
+    // A case that carries a payload writes it in parentheses, which is what
+    // makes the enum a VARIANT rather than a set of names.
+    UVariant(cases) => {
+      out.write_string("  enum \{t.source_name}:\n")
+      for c in cases {
+        out.write_string("    \{case_sig(c)}\n")
+      }
+    }
   }
 }

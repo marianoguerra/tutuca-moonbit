@@ -506,11 +506,22 @@ pub fn print_enum(
     guard g.it is Group(parts) && parts.length() >= 1 && parts[0].it is Id(c) else {
       raise ExError(
         message="an enum case is a name",
-        help="write one case per line under `enum \{decl.name}:`",
+        help="write one case per line under `enum \{decl.name}:`, with its payload in parentheses if it has one",
         span=span_of(g),
       )
     }
-    cases.push(c)
+    // A case may carry a payload: `picked(String, Int)`. One that does makes
+    // the whole enum a VARIANT, which is a different type at the runtime — and
+    // the difference is written where it is, on the case.
+    if parts.length() > 1 && parts[1].it is Parens(gs) {
+      let tys = []
+      for a in gs {
+        tys.push(print_ty(read_group(a)))
+      }
+      cases.push(c + "(" + tys.join(", ") + ")")
+    } else {
+      cases.push(c)
+    }
   }
   out.write_string("enum \{decl.name} { \{cases.join(", ")} }\n")
 }
