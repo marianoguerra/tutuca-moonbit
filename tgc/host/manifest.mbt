@@ -732,12 +732,21 @@ pub fn DynManifest::from_json_string(
   // A module built before this field existed reads as 1 and is refused here,
   // with the version named, rather than instantiating and failing later at
   // whatever the first incompatibility turns out to be.
-  // Absent means 1. A module built before the field existed is a `tgc/1`
-  // module, and reading its silence as anything else would be inventing a
-  // claim it never made.
+  // Three states, not two. ABSENT means 1: a module built before the field
+  // existed is a `tgc/1` module, and reading its silence as anything else would
+  // invent a claim it never made. MALFORMED is not a claim at all — `"2"` as a
+  // string, or a null, or an array — and answering 1 for it would put a version
+  // in front of whoever has to fix it that the module never said, which is the
+  // same mistake in the other direction.
   let abi_version = match root.get("abiVersion") {
     Some(Number(n, ..)) => n.to_int()
-    _ => 1
+    None => 1
+    Some(other) =>
+      raise ManifestError(
+        "manifest: abiVersion is \{other.stringify()}, which is not a number — " +
+        "a `tgc` module states its format version as one, and this module states " +
+        "nothing this host can read",
+      )
   }
   if abi_version != @abi.ABI_VERSION {
     raise ManifestError(

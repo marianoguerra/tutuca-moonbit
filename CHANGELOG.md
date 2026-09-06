@@ -74,9 +74,11 @@ would instantiate into a `tgc/2` host and fail later at whatever the first
 incompatibility turned out to be.
 
 The manifest carries `abiVersion` now and `DynManifest::from_json_string`
-refuses a mismatch by name. An absent field reads as **1**, because a module
-built before the field existed is a `tgc/1` module and reading its silence as
-anything else would invent a claim it never made.
+refuses a mismatch by name. Three states, not two: an absent field reads as
+**1**, because a module built before the field existed is a `tgc/1` module and
+reading its silence as anything else would invent a claim it never made — while
+a MALFORMED value is refused for what it is, since `"abiVersion": "2"` reported
+as "this module is tgc/1" would be the same invention in the other direction.
 
 Found by review rather than by a test, which is the point: a gate that cannot
 fail is indistinguishable from one that is missing.

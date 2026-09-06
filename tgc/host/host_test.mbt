@@ -1757,6 +1757,36 @@ test "an unreadable member type reads as `any`" {
 }
 
 ///|
+/// A version that is not a number is not a version 1 either.
+///
+/// The first cut of this gate read anything that was not a number as `1`, which
+/// meant a manifest saying `"abiVersion": "2"` was refused as *"this module is
+/// tgc/1"* — a version it never claimed. Absence IS a claim, and 1 is the right
+/// reading of it; a malformed value is not a claim at all, and putting a number
+/// on it is the same invention the absent case was written to avoid.
+///
+/// It cannot fire today, because only `tgc/emit` writes the field. It fires the
+/// first time a hand-written manifest or another toolchain gets it wrong, which
+/// is when a misleading version costs the most — and hand-written manifests are
+/// exactly the population that hits it.
+test "an abiVersion that is not a number says so" {
+  for bad in ["\"2\"", "null", "[2]"] {
+    let manifest =
+      "{\"manifestVersion\": 3, \"abiVersion\": " +
+      bad +
+      ", \"apiVersion\": 10, \"moduleName\": \"odd\", \"components\": []}"
+    let said = try {
+      @host.DynManifest::from_json_string(manifest) |> ignore
+      "the gate did not fire"
+    } catch {
+      e => e.message()
+    }
+    assert_true(said.contains("not a number"), msg=bad + " → " + said)
+    assert_false(said.contains("tgc/1"), msg="claimed a version it did not: " + said)
+  }
+}
+
+///|
 /// A module from the OTHER format is refused at the door.
 ///
 /// `tgc.abi` existed from the start and nothing read it, which was harmless for
