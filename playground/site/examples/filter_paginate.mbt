@@ -72,14 +72,14 @@ fn fp_update() -> (
     // strands you on an empty page
     Receive("search", [Str(q), ..]) => Next({ ..s, query: q, page: 0 })
     Receive("prev", _) => {
-      let (_, current) = fp_clamp(s.page, fp_match_count(s), s.pageSize)
+      let (_, current) = fp_clamp(s.page, fp_match_count(s), s.page_size)
       Next({ ..s, page: @cmp.maximum(0, current - 1) })
     }
     Receive("next", _) => {
       let (page_count, current) = fp_clamp(
         s.page,
         fp_match_count(s),
-        s.pageSize,
+        s.page_size,
       )
       Next({ ..s, page: @cmp.minimum(page_count - 1, current + 1) })
     }
@@ -119,7 +119,7 @@ fn person_comp() -> @component.Component {
 /// variant).
 fn fp_pager_info(s : NaivePeopleState) -> Map[String, @tutuca.Value] {
   let total = fp_match_count(s)
-  let (page_count, current) = fp_clamp(s.page, total, s.pageSize)
+  let (page_count, current) = fp_clamp(s.page, total, s.page_size)
   {
     "current_page": Num(current.to_double()),
     "is_first": Bool(current <= 0),
@@ -133,7 +133,7 @@ fn fp_pager_info(s : NaivePeopleState) -> Map[String, @tutuca.Value] {
 /// scans again for the count. Two independent walks, nothing shared.
 fn naive_people_comp() -> @component.Component {
   naive_people_component(
-    initial=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
+    initial=NaivePeopleState::{ items: [], query: "", page: 0, page_size: 5 },
     update=fp_update(),
     when=w => match w {
       OnlyMatches =>
@@ -151,9 +151,9 @@ fn naive_people_comp() -> @component.Component {
               all.push(i)
             }
           }
-          let (_, current) = fp_clamp(s.page, all.length(), s.pageSize)
-          let start = current * s.pageSize
-          fp_num_keys(page_slice(all, start, s.pageSize))
+          let (_, current) = fp_clamp(s.page, all.length(), s.page_size)
+          let start = current * s.page_size
+          fp_num_keys(page_slice(all, start, s.page_size))
         })
     },
   )
@@ -171,7 +171,7 @@ fn shared_people_comp() -> @component.Component {
     views=shared_people_views(),
     name="SharedPeople",
     // The shared shape's codec: all three strategies seed from one state.
-    initial=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
+    initial=NaivePeopleState::{ items: [], query: "", page: 0, page_size: 5 },
     update=fp_update(),
     when=fp_only_matches(),
     bind_with={ "pager_info": (s, _stack) => fp_pager_info(s) },
@@ -181,8 +181,8 @@ fn shared_people_comp() -> @component.Component {
           Num(n) => n.to_int()
           _ => 0
         }
-        let start = current * s.pageSize
-        let end = start + s.pageSize
+        let start = current * s.page_size
+        let end = start + s.page_size
         let keys : Array[Int] = []
         let mut m = 0
         for i, v in seq.list() {
@@ -210,7 +210,7 @@ fn coupled_people_comp() -> @component.Component {
   @component.component(
     views=coupled_people_views(),
     name="CoupledPeople",
-    initial=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
+    initial=NaivePeopleState::{ items: [], query: "", page: 0, page_size: 5 },
     update=fp_update(),
     bind_with={
       "pager_info": (s, _stack) => {
@@ -220,9 +220,9 @@ fn coupled_people_comp() -> @component.Component {
             all.push(i)
           }
         }
-        let (page_count, current) = fp_clamp(s.page, all.length(), s.pageSize)
-        let start = current * s.pageSize
-        let page_keys = page_slice(all, start, s.pageSize)
+        let (page_count, current) = fp_clamp(s.page, all.length(), s.page_size)
+        let start = current * s.page_size
+        let page_keys = page_slice(all, start, s.page_size)
         {
           // consumed ONLY by the loop-with below
           "__keys__": List(

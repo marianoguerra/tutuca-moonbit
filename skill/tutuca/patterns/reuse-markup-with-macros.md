@@ -27,24 +27,33 @@ fn card_macro() -> @anode.Macro {
 )
 ```
 
-```html
-<x:badge></x:badge>                  <!-- defaults -->
-<x:badge label="Sale"></x:badge>     <!-- static string (no quotes needed) -->
-<x:badge :label=".status"></x:badge> <!-- bind a field -->
-<x:card title="Hi"><p>body</p></x:card>  <!-- children fill <x:slot> -->
+Or declare the same two in the `view:` section of the file that uses them:
+
+```tutu
+view:
+  macro badge(~label: "New", ~kind: "info"):
+    @span(~class: @str{badge badge-@(kind)}){@(label)}
+
+  macro card(~title: "Card"):
+    @div(~class: "card"){@h2{@(title)} @slot}
+
+  Page:
+    @badge()                      // defaults
+    @badge(~label: "Sale")        // a literal
+    @badge(~label: it.status)     // bind a field
+    @card(~title: "Hi"){@p{body}} // children fill @slot
 ```
 
-A macro is registered from MoonBit because it is expanded at build time by
-code, not by a component — there is no state for a script block to be about.
+Register from MoonBit when the macro is built by code; declare it in the file
+when it is written by hand. Either way it is expanded at build time — there is
+no state for a `logic:` section to be about.
 
 A macro is pure template expansion — no fields, no handlers. Parameters are
-read as `^name`; calls inside the body (`$handler`, `.field`) resolve against
-the *host* component. Params substitute as source text, so a handler name
-threads through: `<x:btn-rm :handler="$removeInItemsAt" :arg="@key">`
-expands to `@on.click="removeInItemsAt @key"` inside the loop.
-`<x:slot>` (or `<x:slot name="…">` for named
-slots) receives the caller's children. Registry keys are lowercased
-(`<x:Card>` → `card`). Full semantics (named slots, quoting of parameter
-values) in [macros.md](../macros.md). For repeated markup that *does* need
-state, use a child component instead (see the render-a-child-component
-recipe).
+read by their bare names; calls inside the body (`handler`, `it.field`)
+resolve against the *host* component. A parameter carries a value, so a
+handler name threads through: `@btn_rm(~handler: remove_in_items_at, ~arg:
+key)` dispatches `remove_in_items_at(key)` inside the loop. `@slot` (or
+`@slot("name")` for named slots) receives the caller's children. Registry
+keys are lowercased. Full semantics (named slots, quoting of parameter values)
+in [macros.md](../macros.md). For repeated markup that *does* need state, use
+a child component instead (see the render-a-child-component recipe).

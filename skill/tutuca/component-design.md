@@ -123,7 +123,7 @@ own events, `send`/`receive`,
   "Integrating with the outside world" (and its ⚠️ note)
 
 - **Do handle every DOM event with tutuca's built-in `@on.` handlers — including
-  custom events fired by web components.** `@on.click`, `@on.input`,
+  custom events fired by web components.** `~on_click`, `~on_input`,
   `@on.<custom-event>` (the event `detail` surfaces as `e.value`) keep the event
   inside the model, so it flows through a handler and returns a new state.
   **Don't reach in from the outside with `addEventListener`** — a listener
@@ -146,7 +146,7 @@ own events, `send`/`receive`,
   "Computed values & predicates" and "Field Types & Auto-generated API"
 
 - **Do remember a rendered child gets a clean namespace.** Parent `@` bindings
-  (`@each`, `@enrich-with`) don't cross a `<x render>` boundary — pass a value
+  (`@each`, `~enrich_with`) don't cross a `<x render>` boundary — pass a value
   across it with `*name`, not by assuming the binding leaks in. → [advanced.md](./advanced.md)
 
 - **Do add a decoy view when a margaui class is assembled at runtime.** The margaui
@@ -161,8 +161,8 @@ own events, `send`/`receive`,
 ## Smells & refactors
 
 - **Hand-written `isTodoSelected` / `selectTodo` handlers → predicate +
-  property write.** Replace `@on.click="selectTodo"` / `@show="$isTodoSelected"`
-  with `@on.click=".activeSection = 'todo'"` / `@show=".activeSection is 'todo'"`,
+  property write.** Replace `~on_click="selectTodo"` / `@show="$isTodoSelected"`
+  with `~on_click=".activeSection = 'todo'"` / `@show=".activeSection is 'todo'"`,
   derive the current value from one field.
 - **A view that `@if`-branches on a `kind` field → one component per kind**, each
   rendered with `<x render>`.

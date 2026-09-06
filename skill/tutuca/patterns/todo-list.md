@@ -1,52 +1,42 @@
 # Build a todo list (complete pairing)
 
 **Problem:** a known-good, complete view + code pairing for a small app:
-a list of child components over `Array[Item]`, `@when`
+a list of child components over `Array[Item]`, `~when`
 filtering, add / toggle / delete handlers, and controlled inputs.
 
 One view file carries the whole module — the schema for both components
 and a named `<template>` per component:
 
-```html
-<!-- todo.html -->
-<script type="tutuca/spec">
-  state Item { completed: Bool, text: String }
-    state Items { items: Array[Item], hideCompleted: Bool }
-</script>
+```tutu
+spec:
+  Item:
+    field completed :: Bool
+    field text :: String
 
-<template id="Item">
-  <div class="flex gap-3 items-center">
-    <input type="checkbox" class="checkbox" :checked=".completed"
-      @on.input=".completed = e.value">
-    <input class="input" :value=".text" @on.input=".text = e.value"
-      :disabled=".completed">
-  </div>
-</template>
+  Items:
+    field items :: List.of(Instance.of(Item))
+    field hide_completed :: Bool
 
-<template id="Items">
-  <div class="flex flex-col gap-3">
-    <div class="flex gap-2">
-      <button class="btn btn-soft btn-success add" @on.click="onAddItem">Add Task</button>
-      <button class="btn btn-soft btn-sm toggle-done"
-        @on.click=".hideCompleted = not .hideCompleted">Hide done</button>
-    </div>
-    <div class="flex flex-col gap-3 w-full">
-      <div @each=".items" @when="onlyVisible"
-        class="flex gap-3 items-center w-full row">
-        <x render-it></x>
-        <button class="btn btn-soft btn-sm btn-error btn-circle rm"
-          @on.click=".items.removeAt @key">x</button>
-      </div>
-    </div>
-  </div>
-</template>
+view:
+  Item:
+    @div(~class: "flex gap-3 items-center"){@input(~type: "checkbox", ~class: "checkbox", ~checked: it.completed, ~on_input: it.completed := e.value) @input(~class: "input", ~value: it.text, ~on_input: it.text := e.value, ~disabled: it.completed)}
+
+  Items:
+    @div(~class: "flex flex-col gap-3"){
+      @div(~class: "flex gap-2"){@button(~class: "btn btn-soft btn-success add", ~on_click: on_add_item){Add Task} @button(~class: "btn btn-soft btn-sm toggle-done", ~on_click: it.hide_completed := !it.hide_completed){Hide done}}
+      @div(~class: "flex flex-col gap-3 w-full"){
+        @each(value, key in it.items, ~when: only_visible){
+          @div(~class: "flex gap-3 items-center w-full row"){@render(value) @button(~class: "btn btn-soft btn-sm btn-error btn-circle rm", ~on_click: it.items.delete_at(key)){x}}
+        }
+      }
+    }
 ```
 
 Generation derives every name from the template/interface ids:
 `ItemState` / `ItemsState`, `item_component` / `items_component`,
 `ItemsMsg::from_dispatch`, and the bucket enums.
 
-There is no `<script type="tutuca/script">` block here, and this is the recipe
+There is no `logic:` section here, and this is the recipe
 that shows why one is not always the answer. Each handler below is one of the
 two reasons: **building a child component instance** (`item.make`), which that
 language deliberately has no way to say, and **reading a path into a row**
@@ -67,13 +57,13 @@ fn todo_item_comp() -> @component.Component {
 
 fn todo_items_comp(item : @component.Component) -> @component.Component {
   items_component(
-    initial=ItemsState::{ items: [], hideCompleted: false },
+    initial=ItemsState::{ items: [], hide_completed: false },
     update=(s, msg, _ctx) => match ItemsMsg::from_dispatch(msg) {
       // the handler CAPTURES the child Component; the view just says
       // @on.click="onAddItem" (no component-reference value exists)
       Some(OnAddItem) => Next({ ..s, items: s.items + [item.make(Map([]))] })
       // remove and hide are member operations the view performs itself
-      // (`.items.removeAt @key`, `.hideCompleted = not .hideCompleted`), so
+      // (`it.items.delete_at(key)`, `it.hide_completed := !it.hide_completed`), so
       // no name reaches here for either
       Some(Unknown(_, _)) | None => Unhandled
     },
@@ -82,7 +72,7 @@ fn todo_items_comp(item : @component.Component) -> @component.Component {
       // with the value coercers
       OnlyVisible =>
         Some((s, _key, value, _iter, _stack) => {
-          !s.hideCompleted || !value.field("completed").bool()
+          !s.hide_completed || !value.field("completed").bool()
         })
     },
   )
@@ -123,9 +113,9 @@ Why each piece is the way it is:
   are of different shapes.
 - **`@each` + `<x render-it>`** renders each instance as its own `Item`
   component (fresh frame — the item handles its own events); the remove
-  button sits **beside** `render-it` in the loop, so `.items.removeAt @key`
+  button sits **beside** `render-it` in the loop, so `it.items.delete_at(key)`
   writes the *list*'s own field, which is where the collection lives.
-- **`@when="onlyVisible"`** filters at render time; the `when` bucket is
+- **`~when="onlyVisible"`** filters at render time; the `when` bucket is
   a match over a generated enum (a raw `component()` call would take
   `when={ "onlyVisible": ... }` instead). The other way to write it is to put
   the predicate on the CHILD — `pred unfinished { not .completed }` in
@@ -144,7 +134,7 @@ test "todo: add, complete, filter" {
   h.click(".add")
   assert_eq(h.find_all(".row").length(), 2)
   h.check(".checkbox", true)        // complete the first item
-  h.click(".toggle-done")           // .hideCompleted = not .hideCompleted
+  h.click(".toggle-done")           // it.hide_completed := !it.hide_completed
   assert_eq(h.find_all(".row").length(), 1)
   h.click(".rm")                    // delete the visible one
   assert_eq(h.find_all(".row").length(), 0)

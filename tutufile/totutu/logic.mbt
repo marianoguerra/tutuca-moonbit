@@ -356,8 +356,14 @@ fn print_consumer(
   indent : String,
   out : StringBuilder,
 ) -> Unit raise NoSpelling {
+  // Whether the constructor found the `cur` it replaces. A consumer that
+  // mentions `cur` in no argument would print without it, and the aggregate
+  // would be gone from a file that still compiles — so it is counted, not
+  // assumed.
+  let placed = FixedArray::make(1, false)
   fn one(e : @tutuca.Expr) -> String raise NoSpelling {
     if e is ERead(place~, ..) && place.root is PTarget && place.steps.is_empty() {
+      placed[0] = true
       ctor
     } else {
       print_expr(e)
@@ -401,6 +407,12 @@ fn print_consumer(
         what="a `new` whose value is read by a statement this does not know",
         help="the value is made where `cur` is read — a collection method, an assignment or an effect",
       )
+  }
+  guard placed[0] else {
+    raise NoSpelling(
+      what="a `new` run whose `cur` is filled by something other than `cur.<field> = …`",
+      help="an aggregate is spelled directly in the new notation, so everything it holds is written inside its parentheses — rewrite this run by hand",
+    )
   }
 }
 

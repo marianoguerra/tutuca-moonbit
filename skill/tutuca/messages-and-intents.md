@@ -17,7 +17,7 @@ arm of the **same `update` match** in MoonBit:
 
 | Triggered by                                          | script block        | `update` arm          |
 | ----------------------------------------------------- | ------------------- | --------------------- |
-| DOM event (`@on.click`, `@on.input`, …)               | `receive <name>`    | `Receive(name, args)` |
+| DOM event (`~on_click`, `~on_input`, …)               | `receive <name>`    | `Receive(name, args)` |
 | `send 'name' …` / `sendAt &.child 'name' …`           | `receive <name>`    | `Receive(name, args)` |
 | `ask 'name' …` — walks a route                     | `answer <name>`     | `Intent(name, args)`  |
 
@@ -49,29 +49,25 @@ target's `receive <name>` block runs. There is **no built-in lifecycle**
 — `receive init` is just a convention; the host must dispatch it
 (typically after mounting) for it to run.
 
-```html
-<script type="tutuca/spec">
-  state {
-    text : String
-    rows : Array[Any]
-  }
-  handle {
-    message { init, flash(String)
-    }
-  }
-</script>
+```tutu
+spec:
+  Card:
+    field text :: String
+    field rows :: List.of(Any)
 
-<script type="tutuca/script">
-  /// A parent's `sendAt &.status 'flash' 'Saved'` lands here.
-  receive flash(text) {
-    .text = text
-  }
+    message init
 
-  /// Reuse one body from several call sites without duplicating it.
-  receive init {
-    sendAt &.status 'flash' 'Ready'
-  }
-</script>
+    message flash(String)
+
+logic:
+  Card:
+    /// A parent's `sendAt &.status 'flash' 'Saved'` lands here.
+    receive flash(text):
+      it.text := text
+
+    /// Reuse one body from several call sites without duplicating it.
+    receive init:
+      send("flash", "Ready", ~to: it.status)
 ```
 
 `&.status` is a **position**, not a value: `.rows[k]` is what is *there*,
@@ -166,15 +162,14 @@ Written with no legs at all, an intent takes the default route
 is written down in exactly one place (`@tutuca.IntentOpts::new`), so
 "what does a bare `ask` do" has one answer and no second copy.
 
-```html
-<script type="tutuca/script">
-  receive go {
-    ask 'saveDraft' .name        // dyn lex — ancestors, then the scope
-    ask dyn 'picked' .page       // ancestors only
-    ask lex 'loadRows'           // the registered scopes only
-    ask lex dyn 'saveDraft' .name // legs run in the order written
-  }
-</script>
+```tutu
+logic:
+  Draft:
+    receive go:
+      ask("save_draft", it.name)                    // dyn lex — ancestors, then the scope
+      ask("picked", it.page, ~route: dyn)           // ancestors only
+      ask("load_rows", ~route: lex)                 // the registered scopes only
+      ask("save_draft", it.name, ~route: [lex, dyn]) // legs run in the order written
 ```
 
 The `dyn` leg starts at the sender's **parent**, not at the sender: a
@@ -196,27 +191,26 @@ A component answers an intent with an `answer <name>` handler. Inside it:
   goes on. A handler that does not reply is an **observer**.
 
 
-```html
-<script type="tutuca/spec">
-  state { count : Int, page : Int }
-  handle {
-    intent { saveDraft(String), picked(Int)
-    }
-  }
-</script>
+```tutu
+spec:
+  Card:
+    field count :: Int
+    field page :: Int
 
-<script type="tutuca/script">
-  /// Answered where it arrives.
-  answer saveDraft(text) {
-    .count += 1
-    reply .count
-  }
+    intent save_draft(String)
 
-  /// An observer: it records the intent and lets it keep walking.
-  answer picked(k) {
-    .page = k
-  }
-</script>
+    intent picked(Int)
+
+logic:
+  Card:
+    /// Answered where it arrives.
+    answer save_draft(text):
+      it.count += 1
+      reply(it.count)
+
+    /// An observer: it records the intent and lets it keep walking.
+    answer picked(k):
+      it.page := k
 ```
 
 The one rule to hold on to: **a reply ends the walk; running does not.**
@@ -253,35 +247,29 @@ Declaring the three arms in the schema is what makes an intent a
 only if it declares one. Nobody writes that down twice: the generator
 reads the schema's `receive` list and fills the intent's opts in.
 
-```html
-<script type="tutuca/spec">
-  state {
-    items     : Array[Any]
-    isLoading : Bool
-    error     : Any
-  }
+```tutu
+spec:
+  Card:
+    field items :: List.of(Any)
+    field is_loading :: Bool
+    field error :: Any
 
-  /// The three ANSWERS. Declaring them is what wires `loadData` up.
-  handle {
-    message {
-    init
-    loadDataOk(Any)
-    loadDataFailed(String)
-    loadDataUnhandled
+    message init
 
-    }
-  }
-</script>
+    message load_data_ok(Any)
 
-<script type="tutuca/script">
-  /// `intent` is an EFFECT: it goes out only if the whole body finished. A
-  /// message sent beside a transition that did not happen is the one outcome
-  /// nobody can reason about afterwards.
-  receive init {
-    ask lex 'loadData'
-    .isLoading = true
-  }
-</script>
+    message load_data_failed(String)
+
+    message load_data_unhandled
+
+logic:
+  Card:
+    /// `intent` is an EFFECT: it goes out only if the whole body finished. A
+    /// message sent beside a transition that did not happen is the one outcome
+    /// nobody can reason about afterwards.
+    receive init:
+      ask("load_data", ~route: lex)
+      it.is_loading := true
 ```
 
 `<name>Unhandled` is what a route running out means. A handler that must
@@ -346,29 +334,35 @@ Writing either in the wrong body is reported.
 The arms below are ALTERNATIVES, not one block — several spell `saveDraft`
 to show one route each, and a real block declares a name once per bucket.
 
-```html
-<script type="tutuca/script">
-  /// A receive that turns a message into an intent — same name, same args.
-  receive saveDraft(text) { ask }              // default route: dyn lex
-  receive picked(k)       { ask dyn }          // ancestors only
-  receive saveDraft(text) { ask lex }          // the scope only
-  receive saveDraft(text) { ask lex dyn }      // legs in the order written
+```tutu
+logic:
+  Draft:
+    /// A receive that turns a message into an intent — same name, same args.
+    receive save_draft(text):
+      ask()                       // default route: dyn lex
 
-  /// Amend the arguments; the name and the route are kept.
-  receive saveDraft(text) { ask .name }
+    receive picked(k):
+      ask(~route: dyn)            // ancestors only
 
-  /// Run first, then hand it on.
-  receive saveDraft(text) {
-    .count += 1
-    ask
-  }
+    receive save_draft(text):
+      ask(~route: lex)            // the scope only
 
-  /// The answering side: record it, then let the walk continue.
-  answer picked(k) {
-    .page = k
-    forward
-  }
-</script>
+    receive save_draft(text):
+      ask(~route: [lex, dyn])     // legs in the order written
+
+    /// Amend the arguments; the name and the route are kept.
+    receive save_draft(text):
+      ask(it.name)
+
+    /// Run first, then hand it on.
+    receive save_draft(text):
+      it.count += 1
+      ask()
+
+    /// The answering side: record it, then let the walk continue.
+    answer picked(k):
+      it.page := k
+      forward()
 ```
 
 `ask 'name' …` names a NEW question; `ask .name` amends the one that
@@ -511,13 +505,12 @@ An intent whose answer you don't need declares no answer arms, so the
 generator wires none and the outcome is dropped. Idiomatic for
 side-effect-only work like persisting state:
 
-```html
-<script type="tutuca/script">
-  receive applyFilter(value) {
-    ask lex 'persistState' 'sectionFilter' value
-    .filter = value
-  }
-</script>
+```tutu
+logic:
+  Section:
+    receive apply_filter(value):
+      ask("persist_state", "sectionFilter", value, ~route: lex)
+      it.filter := value
 ```
 
 The payload is plain arguments. There is no record literal to pass one as

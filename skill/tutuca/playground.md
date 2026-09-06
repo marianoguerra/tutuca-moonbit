@@ -21,7 +21,7 @@ component names in the view source:
 | ---------------- | --------- |
 | `<template id="Items">` / `state Items` | `items_views()`, `ItemsState`, `ItemsState::zero()`, `items_component(...)` |
 | the `@on` names the templates use | `ItemsMsg` + `ItemsMsg::from_dispatch` (payload types per the table in [events.md](./events.md) *Generated `Msg` payload types*) |
-| the `$`-callables / `@when` / `@enrich-with` names | `ItemsCompute`, `ItemsWhen`, … — one enum per bucket, carrying the names the script block does not answer (see [cli.md](./cli.md)) |
+| the `$`-callables / `~when` / `~enrich_with` names | `ItemsCompute`, `ItemsWhen`, … — one enum per bucket, carrying the names the script block does not answer (see [cli.md](./cli.md)) |
 
 Name **every** template (`<template id="Counter">`) so one view source
 can carry a whole module's components. The generated module is compiled
@@ -33,7 +33,7 @@ your code names `items_component` and `ItemsMsg` with **no import**.
 A playground example is a PAIR of sources compiled together:
 
 - the **view** source — the `<template>`s, the
-  `<script type="tutuca/spec">` schema, and any `<style>`s, exactly as
+  `spec:` schema, and any `<style>`s, exactly as
   in an `.html` view file;
 - the **component** source — MoonBit, ending in a bare entry point:
 

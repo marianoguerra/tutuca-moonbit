@@ -2,20 +2,14 @@
 
 **Problem:** render one element per item in a list/map field.
 
-```html
-<script type="tutuca/spec">
-  state Feed { items: Array[String] }   // or Array[Row], Map[String, Row], …
-</script>
+```tutu
+spec:
+  Feed:
+    field items :: List.of(String)
 
-<template id="Feed">
-  <ul>
-    <!-- a host element per item: @key and @value are bound in the loop -->
-    <li @each=".items"><span @text="@key"></span>: <x text="@value"></x></li>
-    <!-- a child component per item -->
-    <x render-each=".items"></x>
-    <div @each=".items"><x render-it></x></div>
-  </ul>
-</template>
+view:
+  Feed:
+    @ul{@comment{@" a host element per item: @key and @value are bound in the loop "} @each(value, key in it.items){@li{@span{@(key)}@": "@(value)}} @comment{ a child component per item } @each(value, key in it.items){@render(value)} @each(value, key in it.items){@div{@render(value)}}}
 ```
 
 There is no MoonBit half: the field is declared in the schema block and the

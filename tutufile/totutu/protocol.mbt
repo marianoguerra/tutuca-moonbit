@@ -74,14 +74,15 @@ fn print_protocol(
   for v in p.views {
     out.write_string("    view \{v}\n")
   }
-  // `provide` and `lookup` on a protocol have no line in the new notation yet,
-  // and a dropped one would leave a component claiming a protocol it does not
-  // fill.
-  if !p.provides.is_empty() || !p.lookups.is_empty() {
-    raise NoSpelling(
-      what="a `provide` or `lookup` member of protocol `\{p.local_name}`",
-      help="the notation spells a protocol's `message`, `intent`, `express`, `property` and `view` members; this one has no line yet",
-    )
+  // A protocol's dynamic channels. Like its properties, these are wire names
+  // and a type, and unlike them there is nothing to be writable about.
+  for d in p.provides {
+    write_doc(out, d.doc, "    ")
+    out.write_string("    provide \{d.name} :: \{print_ty(d.ty)}\n")
+  }
+  for d in p.lookups {
+    write_doc(out, d.doc, "    ")
+    out.write_string("    lookup \{d.name} :: \{print_ty(d.ty)}\n")
   }
 }
 
@@ -137,10 +138,14 @@ pub fn print_bindings(
       "    view \{local_of(b.protocol_id, names)}::\{b.member_name} = \{@names.snake_of(b.source)}\n",
     )
   }
-  if !def.provide_bindings.is_empty() || !def.lookup_bindings.is_empty() {
-    raise NoSpelling(
-      what="a `provide` or `lookup` protocol binding in `\{def.component}`",
-      help="the notation binds a protocol's `property` and `view` members; these two have no line yet",
+  for b in def.provide_bindings {
+    out.write_string(
+      "    provide \{local_of(b.protocol_id, names)}::\{b.member_name} = \{expr_text(b.source)}\n",
+    )
+  }
+  for b in def.lookup_bindings {
+    out.write_string(
+      "    lookup \{local_of(b.protocol_id, names)}::\{b.member_name} = \{expr_text(b.source)}\n",
     )
   }
 }

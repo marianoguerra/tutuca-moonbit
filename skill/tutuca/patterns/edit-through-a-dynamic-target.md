@@ -5,29 +5,29 @@ the child land back on the owner — without forwarding events up by hand.
 
 `workspace.html` — one view file, so one generated module for all three:
 
-```html
-<script type="tutuca/spec">
-  state Workspace { sheet: Sheet, bar: Toolbar }
-    state Sheet { text: String }
-    state Toolbar {  }
-</script>
+```tutu
+spec:
+  Workspace:
+    field sheet :: Instance.of(Sheet)
+    field bar :: Instance.of(Toolbar)
 
-<template id="Workspace">
-  <div>
-    <x render=".bar"></x>
-  </div>
-</template>
+  Sheet:
+    field text :: String
 
-<template id="Sheet">
-  <p @text=".text"></p>
-</template>
-<template id="Sheet:edit">
-  <input class="input" :value=".text" @on.input=".text = e.value" />
-</template>
+  Toolbar
 
-<template id="Toolbar">
-  <x render="*active" as="edit"></x>
-</template>
+view:
+  Workspace:
+    @div{@render(it.bar)}
+
+  Sheet:
+    @p{@(it.text)}
+
+  Sheet.edit:
+    @input(~class: "input", ~value: it.text, ~on_input: it.text := e.value)
+
+  Toolbar:
+    @render(dyn.active, ~as: "edit")
 ```
 
 `workspace.mbt`:

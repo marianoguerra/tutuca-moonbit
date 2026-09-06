@@ -8,6 +8,8 @@
 // file of the user's package.
 import {
   "marianoguerra/tutuca/viewgen",
+  "marianoguerra/tutuca/tutufile/lower",
+  "marianoguerra/error-report" @report,
   "moonbitlang/core/json",
 }
 

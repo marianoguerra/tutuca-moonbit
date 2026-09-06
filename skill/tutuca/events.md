@@ -1,29 +1,47 @@
 # Tutuca — Events
 
-Read this file when wiring `@on.<event>` handlers, choosing which handler
+Read this file when wiring `~on_<event>` handlers, choosing which handler
 argument to ask for, matching a generated `<Comp>Msg` case, using event
 modifiers, or handling a custom element's `CustomEvent`.
 
 ## Wiring a handler
 
-```html
-<!-- a bare name dispatches a `Receive` arm of `update` -->
-<button @on.click="inc">+</button>
-<button @on.click="dec">-</button>
+```tutu
+spec:
+  Wiring:
+    field str :: String
+    field n :: Int
+    field items :: List.of(String)
 
-<!-- pass args: an event read is written `e.<something>` -->
-<input @on.input=".str = e.value" />
-<input @on.input=".n = e.valueAsInt" />
-<button @on.click="pick @key e.isAlt">pick</button>
-<button @on.click="loadAnotherWay">load</button>
+    message inc
+    message dec
+    message pick(String, Bool)
+    message load_another_way
+
+view:
+  Wiring:
+    // a bare name dispatches a `Receive` arm of `update`
+    @button(~on_click: inc){+}
+    @button(~on_click: dec){-}
+
+    // pass args: an event read is written `e.<something>`
+    @input(~on_input: it.str := e.value)
+    @input(~on_input: it.n := e.valueAsInt)
+
+    // a loop binder is in scope, so it is passed as itself
+    @each(value, key in it.items){
+      @button(~on_click: pick(key, e.isAlt)){pick}
+    }
+
+    @button(~on_click: load_another_way){load}
 ```
 
-An event value is either a **property action** beginning with `.`, or a semantic
-handler name written bare. `.str = e.value`, `.open = not .open`, and
-`.items.removeAt @key` are synchronous member operations and dispatch no
-message. A leading `$` is refused in an event position. `$` belongs to calls
-with arguments in value positions; a zero-argument derived value is a property
-and is read as `.label`.
+An event value is either a **property action** — a write or a collection
+operation on a place — or a semantic handler name written bare.
+`it.str := e.value`, `it.open := !it.open`, and `it.items.delete_at(key)` are
+synchronous member operations and dispatch no message. A handler name is
+written bare, with no decoration; a zero-argument derived value is a property
+and is read as `label()`.
 
 Its **arguments** carry a sigil that says where the value comes from, and there
 are three:
@@ -32,7 +50,7 @@ are three:
 | -------- | ----------------------------------------- |
 | `e.…`    | the DOM event                             |
 | `.field` | this component's state                    |
-| `@bind`  | a binding — `@key`, `@value.x`            |
+| `~bind`  | a binding — `@key`, `@value.x`            |
 
 Written args arrive in the handler's `args` array in template order — pattern-match
 them directly (`Receive("search", [Str(q), ..]) => ...`). For an `update` arm the
@@ -40,29 +58,40 @@ them directly (`Receive("search", [Str(q), ..]) => ...`). For an `update` arm th
 ctx (it is pure). So `loadAnotherWay` dispatches `Receive("loadAnotherWay", [])`
 plus ctx.
 
-> **Every handler argument carries a sigil.** A bare name — `@on.input="save value"`
-> — is refused at generation time, as `BareEventArg`, and the message names the
-> three prefixes above. Without a sigil the same word reads two ways: `value`
-> could be the DOM event's value or an enclosing `@each` bind's, decided by
-> whichever loop happens to surround the element. The runtime does not rescue
-> one either — a name with no sigil is looked up among the binds and nowhere
-> else, so an unbound one answers `Null`. Write `e.value`.
+> **A handler argument says where it reads from.** An event read is written
+> `e.value`; a state read is `it.value`; a loop or scope binding is the name
+> the binder introduced. A name that no binder introduced is refused at
+> generation time, as `BareEventArg`, and the message names the three. Without
+> that, the same word reads two ways: `value` could be the DOM event's or an
+> enclosing loop's, decided by whichever loop happens to surround the element.
+> The runtime does not rescue one either — an unbound name answers `Null`.
 
-## Two-way scalar fields with `@bind`
+## Two-way scalar fields with `~bind`
 
-`@bind` is the checked shorthand for mirroring a direct writable property into
+`~bind` is the checked shorthand for mirroring a direct writable property into
 a form control and assigning the event value to it:
 
-```html
-<input @bind=".name" />
-<textarea @bind=".notes"></textarea>
-<select @bind=".category"><option>work</option></select>
-<input type="checkbox" @bind=".completed" />
-<input type="number" @bind=".count" />
-<input type="number" step="any" @bind=".ratio" />
+```tutu
+spec:
+  Binding:
+    field name :: String
+    field notes :: String
+    field category :: String
+    field completed :: Bool
+    field count :: Int
+    field ratio :: Double
+
+view:
+  Binding:
+    @input(~bind: it.name)
+    @textarea(~bind: it.notes)
+    @select(~bind: it.category){@option{work}}
+    @input(~type: "checkbox", ~bind: it.completed)
+    @input(~type: "number", ~bind: it.count)
+    @input(~type: "number", ~step: "any", ~bind: it.ratio)
 ```
 
-The component must have a `tutuca/spec` schema. View generation reads that
+The component must declare a `spec:` section. View generation reads that
 schema and accepts exactly these combinations:
 
 | State field | Host element | Mirrored property | Event value |
@@ -74,18 +103,18 @@ schema and accepts exactly these combinations:
 
 Text-like input types are a missing `type`, `text`, `search`, `email`, `url`,
 `tel`, `password`, `date`, `month`, `week`, `time`, `datetime-local`, or
-`color`. `@bind` expands conceptually to `:value`/`:checked` plus a property
+`color`. `~bind` expands conceptually to `:value`/`:checked` plus a property
 assignment, and the generated action carries a checked coercion. An empty,
 malformed, fractional integer, non-finite, or out-of-range numeric edit does
 not dispatch the setter, so it leaves the previous field value intact.
 
-Generation refuses `@bind` when its target is not a direct `.field`, when it
+Generation refuses `~bind` when its target is not a direct `.field`, when it
 sits under `@each`, when the input `:type` is dynamic, when a select is
 `multiple`, when the field is not one of the scalar types above, or when the
 element/type combination is wrong. It also refuses an explicit `value` or
 `checked` attribute, or another handler for the synthesized event, on the same
 element: either would make ownership or update order ambiguous. Use the
-explicit `:value` plus `@on.<event>` form when the conversion or event policy
+explicit `:value` plus `~on_<event>` form when the conversion or event policy
 needs to differ.
 
 ## Handler arguments
@@ -153,11 +182,11 @@ block cannot apply a function it did not name. Worked example:
 Anything else is a real path into the event object, and every **traversed** step
 is checked against an allowlist:
 
-```html
-<button @on.click="pick e.target.dataset.rowId">pick</button>
-<input @on.input="rename e.target.value" />
-<section @on.emoji-click="onEmojiClick e.detail.unicode">…</section>
-<div @on.wheel="zoom e.deltaY">…</div>
+```tutu
+@button(~on_click: pick(e.target.dataset.rowId)){pick}
+@input(~on_input: rename(e.target.value))
+@section(~on_emoji_click: on_emoji_click(e.detail.unicode)){…}
+@div(~on_wheel: zoom(e.deltaY)){…}
 ```
 
 The object-valued steps a path may go **through** are exactly six:
@@ -192,7 +221,7 @@ Two more rules worth holding:
   `e.pointerId` say nothing.
 
 > **There is no `event` or `ctx` argument.** A DOM object is not a `Value`, so
-> `@on.input="countFrom event"` resolves to `Null` and the handler receives
+> `~on_input="countFrom event"` resolves to `Null` and the handler receives
 > `[Null, ..]` with nothing reported. Reach the event through `e.` — that is
 > what it is for — and the `&Ctx` reaches an `update` arm as the third
 > parameter, never as an argument.
@@ -222,10 +251,10 @@ and nothing narrows it: the DOM property table could answer for a rooted read,
 but not for a path through `detail` or `dataset`, where the shape is the
 application's.
 
-So `@on.click="chooseTab 'edit'"` generates `ChooseTab(String)` (unwrapped —
+So `~on_click="chooseTab 'edit'"` generates `ChooseTab(String)` (unwrapped —
 match `Some(ChooseTab(tab))`, not `Some(ChooseTab(Str(tab)))`),
-`@on.input="markDone e.value"` on a checkbox generates `MarkDone(Bool)`, and
-`@on.click="dropRow @key"` generates `DropRow(@tutuca.Value)`.
+`~on_input="markDone e.value"` on a checkbox generates `MarkDone(Bool)`, and
+`~on_click="dropRow @key"` generates `DropRow(@tutuca.Value)`.
 
 > These are MESSAGES, and each needs an arm to answer it. A name that happens
 > to be a generated mutator — `setTab`, `removeInItemsAt` — is still only a
@@ -244,7 +273,7 @@ runtime, arguments that don't match the inferred shape land in
 
 ## Event modifiers
 
-`@on.<event>+<mod>+<mod>=...`
+`~on_<event>+<mod>+<mod>=...`
 
 Modifiers come in two kinds. A **guard** is a predicate: a failing one makes
 the handler a no-op. Guards are defined for two events only, and an unknown
@@ -256,9 +285,12 @@ event/guard pair passes through as if it were not there (`app/app.mbt`,
 | `keydown` | `+send` (Enter), `+cancel` (Escape), `+ctrl`, `+cmd`, `+meta`, `+alt` |
 | `click` | `+ctrl`, `+cmd`, `+meta`, `+alt` |
 
-```html
-<input @on.keydown+send="submit e.value" @on.keydown+cancel="reset" />
-<button @on.click+ctrl="soloOnly">ctrl-click</button>
+```tutu
+view:
+  Card:
+    @input(~on_keydown: submit(e.value) ~send, ~on_keydown: reset ~cancel)
+    @" "
+    @button(~on_click: solo_only ~ctrl){ctrl-click}
 ```
 
 An **effect** is an action on the live event, run when its handler runs — after
@@ -271,12 +303,24 @@ element can disagree about whether to prevent:
 - `+stop` calls `stopPropagation()` — the click that would otherwise reach an
   outer component's delegated handler does not.
 
-```html
-<form @on.submit+prevent="save e.value">
-  <input :value=".draft" />
-  <button>save</button>
-</form>
-<nav @on.click+stop="pick @key"><a href="#a">a</a><a href="#b">b</a></nav>
+```tutu
+spec:
+  Modifiers:
+    field draft :: String
+    field items :: List.of(String)
+
+    message save(String)
+    message pick(String)
+
+view:
+  Modifiers:
+    @form(~on_submit: save(e.value) ~prevent){@input(~value: it.draft) @button{save}}
+    @each(value, key in it.items){
+      @nav(~on_click: pick(key) ~stop){
+        @a(~href: "#a"){a}
+        @a(~href: "#b"){b}
+      }
+    }
 ```
 
 > **What `+stop` stops here.** Events dispatch through ONE delegated listener
@@ -292,14 +336,18 @@ carries none, and both degrade to no-ops there rather than crashing a dispatch.
 ## Web components & custom events
 
 Custom elements just work, and any `CustomEvent` they fire is reachable via
-`@on.<event-name>`. The event's `detail` surfaces two ways: `e.value` is the
+`~on_<event>`. The event's `detail` surfaces two ways: `e.value` is the
 whole `detail` mapped to a `Value::Map`, and `e.detail.<field>` walks into it —
 `detail` is a terminal, so the path may go as deep as the payload does.
 
-```html
-<section @on.emoji-click="onEmojiClick e.value">
-  <emoji-picker @show=".isPickerVisible"></emoji-picker>
-</section>
+```tutu
+view:
+  Card:
+    @section(~on_emoji_click: on_emoji_click(e.value)){
+      @show(it.is_picker_visible){
+        @emoji_picker
+      }
+    }
 ```
 
 ```moonbit nocheck
@@ -318,7 +366,7 @@ Asking for `e.detail.unicode` instead moves that `.get` into the template and
 gives the arm a plain value to match. Either is fine; the choice is whether the
 handler wants the whole payload or one field of it.
 
-Handle these events declaratively with `@on.<event-name>` in the view — don't
+Handle these events declaratively with `~on_<event>` in the view — don't
 grab the node from host/glue code and `addEventListener` on it. A listener
 attached from outside the component runs outside the handler model: no
 new-state return, no transactor batching, and the mutation is invisible to the

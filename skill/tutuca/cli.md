@@ -22,7 +22,7 @@ questions a run-time CLI would answer are answered earlier, and more strictly:
 
 | You want to know | Where it is answered |
 | ---------------- | -------------------- |
-| does this view reference a field that exists? | `gen` — the `<script type="tutuca/spec">` schema declares the fields, and an unknown `.field` fails generation, inside a loop as well as at the root — including a loop over CHILD components, whose fields are checked against that child's schema |
+| does this view reference a field that exists? | `gen` — the `spec:` schema declares the fields, and an unknown `.field` fails generation, inside a loop as well as at the root — including a loop over CHILD components, whose fields are checked against that child's schema |
 | does the component this view renders have the view `as=` names? | `gen` over the whole project (`tutuca gen src/`) — a miss silently falls back to that component's `main` view at run time, and only a run that can see both components can say so. Reported as a hint, because a slot declared as the bare `component` marker takes its component from `component()`'s `slots~` — MoonBit the generator cannot see |
 | does this `@show` decide anything? | `gen` — a list or a record is always truthy, so `@show=".items"` never hides; it fails generation and names `empty? .items` as the fix |
 | is this `id=` unique? | `gen` — an `id` inside an `@each` is stamped on every item, which only the compiled tree can see |
@@ -118,13 +118,13 @@ inferred from the argument shapes at the `@on` call sites: `add 1` ->
 element's static `type` — anything unresolvable
 -> `@tutuca.Value`) — and `CounterCompute`, the `$`-callables the views name
 that a block has NOT already answered. A `compute` in
-`<script type="tutuca/script">`, and a `pred` or an `invariant` in
-`<script type="tutuca/spec">`, are merged into the bucket ahead of your match,
+`logic:`, and a `pred` or an `invariant` in
+`spec:`, are merged into the bucket ahead of your match,
 so an arm for one could never run and its name is dropped from the enum, with a
 note on the enum saying which names went; a bucket the blocks answer entirely
 emits no enum at all. The same holds for `CounterWhen`, `CounterEnrich` and
 `CounterEnrichScope`. A file that also carries
-a `<script type="tutuca/spec">` block gets the state half: `CounterState`
+a `spec:` section gets the state half: `CounterState`
 (a plain struct — no derives), `CounterState::zero()`, an
 `impl @component.Fields for CounterState` carrying the whole contract as
 static metadata plus the direct encode/decode, and a typed
@@ -173,7 +173,7 @@ to declare the schema.
 A view file may declare its component's data contract in a small language,
 alongside the templates that read it. That language — every field spelling, the
 mutators each kind generates, message buckets, slots, declared `$`-callables,
-schema-only files and `tutuca/fixtures` fixtures — is
+schema-only files and `fixtures:` fixtures — is
 [schema.md](./schema.md).
 
 `gen` checks every `.field` read in every view against it, loop bodies and

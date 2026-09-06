@@ -8,48 +8,62 @@ bidirectional and also covers observations, views and dynamic bindings.
 Protocol identity is a string, and the local name is only a source alias —
 manifests and runtime checks carry the id:
 
-```html
-<script type="tutuca/spec">
-protocol Lifecycle = "tutuca.dev/std/Lifecycle@1" {
-  handle { message { init, deinit } intent { resume, suspend } }
-  express { message { resumed } intent { wantsAttention(String) } }
-  property { active: Bool }
-  view { display }
-  provide { lifecycleState: String }
-  lookup { clock: Int }
-}
+```tutu
+spec:
+  protocol Lifecycle = "tutuca.dev/std/Lifecycle@1":
+    message init
+    message deinit
+    intent resume
+    intent suspend
+    express message resumed
+    express intent wantsAttention(String)
+    property active :: Bool
+    view display
+    provide lifecycleState :: String
+    lookup clock :: Int
 
-state Screen implements Lifecycle {
-  active: Bool
-  property { Lifecycle::active = .active }
-  view { Lifecycle::display = main }
-  provide { Lifecycle::lifecycleState = .status }
-  lookup { Lifecycle::clock = 0 }
-}
+  Screen:
+    field status :: String
+    property active :: Bool
 
-handle Screen {
-  message { Lifecycle::init, Lifecycle::deinit }
-  intent { Lifecycle::resume, Lifecycle::suspend }
-}
-express Screen {
-  message { Lifecycle::resumed }
-  intent { Lifecycle::wantsAttention(String) }
-}
-</script>
+    message Lifecycle::init
+    message Lifecycle::deinit
+    intent Lifecycle::resume
+    intent Lifecycle::suspend
+    express message Lifecycle::resumed
+    express intent Lifecycle::wantsAttention(String)
+
+    implements Lifecycle
+    property Lifecycle::active = active
+    view Lifecycle::display = main
+    provide Lifecycle::lifecycleState = it.status
+    lookup Lifecycle::clock = 0
+
+logic:
+  Screen:
+    property active :: Bool:
+      get: true
+
+view:
+  Screen:
+    @p{@(it.status)}
 ```
 
 Import by id, never by a path:
 
 ```text
-import protocol "tutuca.dev/std/Lifecycle@1" as Lifecycle
+import protocol Lifecycle = "tutuca.dev/std/Lifecycle@1"
 ```
 
-`property` means a typed read operation. Bind it explicitly to `.field`, or use
-a bare `get` plus a `get name { … }` script body; it does not require a
-same-named stored field. A local property is private unless marked `pub`, while
-binding it to a protocol exposes it under the protocol's member name.
-Protocol views are semantic roles mapped to local view names. Qualified
-provide/lookup values use the canonical-id namespace.
+`property` means a typed read operation. A component declares its own
+`property name :: Type` and gives it a body in `logic:`; the `property
+Lifecycle::active = active` line then binds that local property to the
+protocol's member. It does not require a same-named stored field. A local
+property is private unless marked `~public`, while binding it to a protocol
+exposes it under the protocol's member name. Protocol views are semantic roles
+mapped to local view names — `view Lifecycle::display = main`. A qualified
+`provide` or `lookup` takes a value the same way an unqualified one does, and
+lives in the canonical-id namespace rather than the raw one.
 
 Effects distinguish three cases:
 

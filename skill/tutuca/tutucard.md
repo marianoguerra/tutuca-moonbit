@@ -24,50 +24,50 @@ generated module and a MoonBit component builder is the ahead-of-time path.
 
 A card keeps its concerns in one file:
 
-```html
-<script type="tutuca/spec">
-  state Counter {
-    count: Int
-    property { count: Int { get .count set .count } }
-  }
-</script>
+```tutu
+spec:
+  Counter ~root:
+    field count :: Int
 
-<script type="tutuca/script">
-  receive inc { .count += 1 }
-  compute label { $'count: {.count}' }
-</script>
+    property count :: Int:
+      get: it.count
+      set: it.count
 
-<script type="tutuca/test">
-{
-  "increments": { "steps": [
-    { "click": "button.inc" },
-    { "expect": "text", "at": "output", "is": "count: 1" },
-    { "expect": "state", "at": ".count", "is": 1 }
-  ] }
-}
-</script>
+logic:
+  Counter:
+    receive inc:
+      it.count += 1
 
-<template id="Counter:main" data-root>
-  <button class="inc" @on.click="inc">+</button>
-  <output @text="$label"></output>
-</template>
+    compute label: @str{count: @(it.count)}
+
+view:
+  Counter:
+    @button(~class: "inc", ~on_click: inc){+}
+    @" "
+    @output{@(label())}
+
+tests:
+  "increments":
+    click("button.inc")
+    expect text("output") == "count: 1"
+    expect state it.count == 1
 ```
 
-- `tutuca/spec` declares components, field types, public properties, records, enums, flags,
-  message buckets, dynamic `provide`/`lookup`, named initial states, and the
+- `spec:` declares components, field types, public properties, records, enums,
+  flags, message and intent cases, dynamic `provide`/`lookup`, and the
   `pred` / `invariant` rules the component keeps.
-- `tutuca/script` declares receives, derived values, enrichment, intents,
+- `logic:` declares receives, derived values, enrichment, intents,
   effects, collection updates, and the `requires` / `ensures` clauses that
-  attach a spec-block rule to one transition.
-- `tutuca/fixtures` contains named fixtures. A fixture may provide a value, drive
+  attach a `spec:` rule to one transition.
+- `fixtures:` contains named fixtures. A fixture may provide a value, drive
   steps, documentation, and a default marker.
-- `tutuca/test` contains named interaction scenes. It is optional but should
+- `tests:` contains named interaction scenes. It is optional but should
   accompany behavior that can regress.
-- Templates render the component. A card without a template has nothing to
-  mount. Styles may be written in the same view file or supplied by the host.
+- `view:` renders the component. A card with no `view:` has nothing to
+  mount. Styles may be written in the same file or supplied by the host.
 
 For the complete schema and script grammar, read [schema.md](./schema.md).
-For template directives, start with [core.md](./core.md#notation-reference)
+For `view:` directives, start with [core.md](./core.md#notation-reference)
 and load [events.md](./events.md) or [iteration.md](./iteration.md) as needed.
 
 ## What cards can express
@@ -78,15 +78,16 @@ Their handler language covers:
 
 - field and nested collection updates;
 - simple field-backed properties and fixed-signature complex property getters/setters;
-- `receive`, `compute`, `enrich`, and `bindWith` in the script block, and
-  `pred` / `invariant` in the spec block beside the state they are about;
+- `receive`, `compute`, `enrich`, and `bind_with` in `logic:`, and
+  `pred` / `invariant` in `spec:` beside the state they are about;
 - `requires` and `ensures` clauses attaching one of those rules to a
   transition, with user-facing `format` text on the rule;
-- `send`, addressed `sendAt`, `intent`, `forward`, `reply`, `fail`, and
+- `send`, addressed `send_at`, `intent`, `forward`, `reply`, `fail`, and
   `drop`;
 - conditionals, arithmetic, comparisons, string templates, and the closed
   reading vocabulary documented in [schema.md](./schema.md#the-reading-vocabulary);
-- `new` plus `cur` for declared records and sibling component instances.
+- constructor calls (`Todo(text: it.draft)`) for declared records and sibling
+  component instances.
 
 This is compiled behavior, not an interpreter fallback. The browser compiles
 the checked card to a core wasm module — GC types, no component model, no
@@ -103,17 +104,16 @@ handler compiled.
 
 Current language boundaries that matter when authoring are:
 
-- a transition has no render row or render stack, so `@binding`, `$method`,
-  and `*dynamic` reads are refused there; `cur` is the transition-owned
-  exception;
-- `sendAt` accepts literal and parameter keys, but a path whose key is reread
+- a transition has no render row or render stack, so `~binding`, `$method`,
+  and `*dynamic` reads are refused there;
+- `send_at` accepts literal and parameter keys, but a path whose key is reread
   from live state cannot be represented by the guest ABI and is refused;
-- collection mutations use the canonical `push`, `insertAt`, `setAt`,
-  `deleteAt`, `add`, `remove`, and `toggle` names; parsed aliases such as
-  `clear`, `delete`, `set`, and `removeAt` have no backend behavior;
-- a field declared as a bare `component` (or by protocol) is a slot the HOST
-  fills: pass an instance in and `<x render>` draws it, and a list of them
-  draws all of them. A card can `sendAt` a literal path into such a slot,
+- collection mutations are `push`, `insert_at`, `set_at`, `delete_at`,
+  `clear`, `add`, `remove`, and `toggle` — one name per operation, and
+  `clear` is a list's alone;
+- a field declared as a bare `Instance` (or by protocol) is a slot the HOST
+  fills: pass an instance in and `@render(…)` draws it, and a list of them
+  draws all of them. A card can `send_at` a literal path into such a slot,
   because a message needs an address and the host resolves the path.
 
 The ahead-of-time MoonBit emitter has a different refusal set. When the same
@@ -122,57 +122,60 @@ file must work on both paths, validate both; see
 
 ## Multiple components and children
 
-A card may declare several components. Keep one spec block, qualify each
-script block, and qualify template ids:
+A card may declare several components. Each section names each component it
+speaks about:
 
-```html
-<script type="tutuca/spec">
-  state Todos {
-    draft: String, items: Array[Todo]
-    property { count: Int { get } }
-  }
-  state Todo  { text: String, done: Bool }
-</script>
+```tutu
+spec:
+  Todos ~root:
+    field draft :: String
+    field items :: List.of(Instance.of(Todo))
+    property count :: Int
 
-<script type="tutuca/script" for="Todos">
-  get count { len state.items }
-</script>
+  Todo:
+    field text :: String
+    field done :: Bool
+    message toggle
 
-<script type="tutuca/script" for="Todo">
-  receive toggle { .done = not .done }
-</script>
+logic:
+  Todos:
+    property count :: Int:
+      get: it.items.length()
 
-<template id="Todos:main" data-root>...</template>
-<template id="Todo:main">...</template>
+  Todo:
+    receive toggle:
+      it.done := !it.done
+
+view:
+  Todos:
+    @p{@(it.draft)}
+
+  Todo:
+    @p{@(it.text)}
 ```
 
-The root is the first declared component unless a template has `data-root`.
-Scenes may choose another component with their `component` key.
+The root is the first declared component unless one is marked `~root`.
+Scenes may choose another component with their `~component:` option.
 
-A handler builds a sibling with the same `new` and `cur` vocabulary used for
-records:
+A handler builds a sibling the same way it builds a record — the component's
+name, and its fields named in parentheses:
 
-```tutuca
-receive add {
-  new Todo
-  cur.text = .draft
-  cur.done = false
-  .items.push cur
-}
+```tutu
+receive add:
+  it.items.push(Todo(text: it.draft, done: false))
 ```
 
-`new Todo` opens the sibling's argument map; writes to `cur` fill it; the
-first read of `cur` materializes one child instance — a real instance in the
-parent's own state, not a token.
+The call names the sibling's arguments, and pushing it materializes one child
+instance — a real instance in the parent's own state, not a token.
 
 ## State, startup, and fixtures
 
 A card starts from the selected schema or fixture value. `receive init` is not
 a lifecycle hook: the host, fixture drive, or scene must send `init`.
 
-Use `tutuca/fixtures` for named, inspectable states and repeatable demonstrations.
-Use its drive form when the important state should be reached through real
-interactions rather than copied as an opaque value. Use `tutuca/test` for
+Use `fixtures:` for named, inspectable states and repeatable demonstrations.
+Use its `~drive:` form when the important state should be reached through real
+interactions rather than copied as an opaque value. Use `tests:` for
 assertions; fixtures and tests serve different purposes even though both may
 drive the component.
 
@@ -207,8 +210,8 @@ Use the card playground for the normal edit loop: it checks and recompiles the
 card, remounts the preview, shows state and activity, and runs embedded scenes.
 Before handoff:
 
-1. Ensure the checker reports no schema, script, or template issue.
-2. Run every `tutuca/test` scene and inspect failures step by step.
+1. Ensure the checker reports no `spec:`, `logic:`, or `view:` issue.
+2. Run every `tests:` scene and inspect failures step by step.
 3. Assert both visible behavior and settled state. For rejected contract
    transitions, assert `log` so a selector typo cannot look like a valid veto.
 4. Exercise every declared component and fixture, not only the root/default.
@@ -240,8 +243,9 @@ you add or review scenes; it is the authoritative field and verb reference.
 
 ## Moving between paths
 
-To graduate a card to a compiled Tutuca component, keep the state, script,
-templates, fixtures, and styles; add `gen`, the MoonBit component/module
+To graduate a card to a compiled Tutuca component, keep the file as it is —
+same `spec:`, `logic:`, `view:`, `fixtures:` and styles; add `gen`, the
+MoonBit component/module
 wiring, and harness tests. The ahead-of-time emitter reports each script arm it
 cannot compile as a named refusal, leaving that behavior for MoonBit instead of
 dropping it.

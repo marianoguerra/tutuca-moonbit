@@ -232,8 +232,34 @@ fn compare_logic(
     }
   }
   for comp in names {
-    let da = decls_of(a, comp)
-    let db = decls_of(b, comp)
+    // A block that does not PARSE is reported as itself. Read as an empty
+    // handler list it compared unequal for the right reason and said the
+    // wrong thing — "the converted file has no handlers" — about a converted
+    // file whose handlers were all there and one of them misspelled.
+    let da = match script_decls(a, comp) {
+      Ok(d) => d
+      Err(msg) => {
+        out.push({
+          section: "logic",
+          what: "\{comp} handlers",
+          html: "the script block does not parse: \{msg}",
+          tutu: "",
+        })
+        continue
+      }
+    }
+    let db = match script_decls(b, comp) {
+      Ok(d) => d
+      Err(msg) => {
+        out.push({
+          section: "logic",
+          what: "\{comp} handlers",
+          html: "",
+          tutu: "the converted `logic:` section does not parse: \{msg}",
+        })
+        continue
+      }
+    }
     diff_debug(
       out,
       "logic",
@@ -310,7 +336,10 @@ fn script_names(f : @viewfile.ViewFile) -> Array[String] {
 ///
 /// A single-component file's block is looked up under the empty name too, since
 /// that is what the `.html` side calls it.
-fn decls_of(f : @viewfile.ViewFile, comp : String) -> Array[@tscript.Decl] {
+fn script_decls(
+  f : @viewfile.ViewFile,
+  comp : String,
+) -> Result[Array[@tscript.Decl], String] {
   let block = match f.script_for(comp) {
     Some(b) => Some(b)
     None =>
@@ -321,8 +350,11 @@ fn decls_of(f : @viewfile.ViewFile, comp : String) -> Array[@tscript.Decl] {
       }
   }
   match block {
-    Some(block) => @tscript.parse_script(block.text) catch { _ => [] }
-    None => []
+    Some(block) =>
+      Ok(@tscript.parse_script(block.text)) catch {
+        e => Err(e.message())
+      }
+    None => Ok([])
   }
 }
 

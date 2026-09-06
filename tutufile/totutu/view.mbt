@@ -88,7 +88,15 @@ fn print_node(
       }
       out.write_string("\{indent}@render(value\{tail})\n")
     }
-    Slot(_) => out.write_string("\{indent}@slot\n")
+    // A `Slot` in a parsed tree is a CALL SITE's content for one named slot —
+    // `<x slot="actions">…</x>`. The placeholder inside a macro body is a
+    // different node that the parser grafts away, and `print_macro` refuses a
+    // body that has one rather than printing it as this.
+    Slot(d) => {
+      out.write_string("\{indent}@fill(\{quote(d.name)}){\n")
+      print_node(d.node, events, indent + "  ", out)
+      out.write_string("\{indent}}\n")
+    }
     // Both are OPTIONS on the element they wrap rather than forms around it:
     // `~push_view:` pushes a view for the subtree, and a loop-less
     // `~enrich_with:` opens a scope frame. The wrapper node is what the parser
@@ -241,9 +249,9 @@ fn print_macro_call(
     args.push("~\{@names.snake_of(k)}: \{macro_arg(v)}")
   }
   let head = if args.is_empty() {
-    "@\{@names.snake_of(d.name)}()"
+    "@\{macro_name(d.name)}()"
   } else {
-    "@\{@names.snake_of(d.name)}(\{args.join(", ")})"
+    "@\{macro_name(d.name)}(\{args.join(", ")})"
   }
   // Only a call that actually passes content gets a body. A macro with no slot
   // content carries one empty `Fragment` under the default slot name, and
@@ -309,4 +317,14 @@ fn collapse(s : String) -> String {
     out.write_char(' ')
   }
   out.to_string()
+}
+
+///|
+/// A macro's name, as the new notation spells it.
+///
+/// The old notation put a macro in a TAG (`<x:btn-rm>`), where a hyphen is
+/// ordinary; here it is a call, where a hyphen is the subtraction operator.
+/// `snake_of` alone leaves it, so `@btn-rm(…)` read as `btn` minus `rm(…)`.
+pub fn macro_name(name : String) -> String {
+  @names.snake_of(name).replace_all(old="-", new="_")
 }

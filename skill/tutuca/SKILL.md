@@ -13,7 +13,7 @@ There are two authoring paths over that same file format:
 | Path | Choose it when | Build and test |
 |---|---|---|
 | **Compiled Tutuca component** | The UI needs MoonBit functions, imports, custom objects, host wiring, or a reusable `ModuleDef` | `tutuca gen` or `tutuca watch`, then `moon check` and `moon test` |
-| **Tutucard** | The UI should remain one portable HTML file and use only the spec, script, template, style, fixture, and scene languages | The card runtime compiles it to a component wasm module in the browser; validate with the card checker and its `tutuca/test` scenes |
+| **Tutucard** | The UI should remain one portable HTML file and use only the spec, script, template, style, fixture, and scene languages | The card runtime compiles it to a component wasm module in the browser; validate with the card checker and its `tests:` scenes |
 
 Read [tutucard.md](./tutucard.md) first for a card. Read
 [core.md](./core.md) first for a compiled component. Load only the additional
@@ -26,7 +26,7 @@ references needed for the task.
    `*_view_gen.mbt` and MoonBit component builder indicate the compiled path.
 2. Inspect the schema and templates before changing handlers. Generated
    message and handler enums are view-driven.
-3. Keep behavior in `tutuca/script` when the language expresses it. On the
+3. Keep behavior in `logic:` when the language expresses it. On the
    compiled path, use MoonBit for refused script arms and host/module wiring.
 4. Regenerate generated view modules; never edit a `*_gen.mbt` file directly.
 5. Validate the chosen path, including interaction tests for observable
@@ -50,9 +50,9 @@ references needed for the task.
   the view, regenerate, then implement the new arm. An `invariant` is the one
   exception: it gets a body whether or not a view names it, because the runtime
   asks it after every dispatch.
-- The two blocks split by what they say, not by how they look. `tutuca/spec`
+- The two blocks split by what they say, not by how they look. `spec:`
   says what a component IS — fields, types, channels, wiring, and the `pred` /
-  `invariant` rules it keeps. `tutuca/script` says what it DOES. A rule about
+  `invariant` rules it keeps. `logic:` says what it DOES. A rule about
   the state goes in the spec block; one that takes an argument or reads
   `@value` is a render-time filter and stays in the script block.
 - Literal class names can be collected for Tailwind/MargaUI. Runtime-assembled
@@ -74,7 +74,7 @@ references needed for the task.
 ### Views, state, and behavior
 
 - [schema.md](./schema.md) — state types, properties and visibility, records,
-  enums, flags, slots, property actions, `tutuca/fixtures`, the script language,
+  enums, flags, slots, property actions, `fixtures:`, the script language,
   `new` and `cur`, contracts, and script refusals.
 - [events.md](./events.md) — event payloads, generated message types,
   modifiers, safe event paths, files, and custom events.
@@ -126,6 +126,6 @@ runner described by its `AGENTS.md`; it also checks generated-file drift and
 all supported targets.
 
 For a card, compile/check it with the card runtime, run every embedded
-`tutuca/test` scene, and inspect the mounted result. See
+`tests:` scene, and inspect the mounted result. See
 [tutucard.md](./tutucard.md#validation) and
 [testing.md](./testing.md#testing-a-card-script-typetutucatest).

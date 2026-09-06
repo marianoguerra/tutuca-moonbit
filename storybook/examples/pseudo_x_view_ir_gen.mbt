@@ -120,22 +120,21 @@ pub fn table_row_component(
 fn item_table_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
-    @anode.frag([
-      @anode.each(
-        1,
-        @tutuca.Expr::field("rows"),
-        @anode.render_it(0),
-        from_render_each=true,
-      ),
-      @anode.h("table", [@anode.attr("class", "table")], [
-        @anode.h("thead", [], [
-          @anode.h("tr", [], [
-            @anode.h("th", [], [@anode.text("Name")]),
-            @anode.h("th", [], [@anode.text("Qty")]),
-            @anode.h("th", [], [@anode.text("Price")]),
-          ]),
+    @anode.h("table", [@anode.attr("class", "table")], [
+      @anode.h("thead", [], [
+        @anode.h("tr", [], [
+          @anode.h("th", [], [@anode.text("Name")]),
+          @anode.h("th", [], [@anode.text("Qty")]),
+          @anode.h("th", [], [@anode.text("Price")]),
         ]),
-        @anode.h("tbody", [], []),
+      ]),
+      @anode.h("tbody", [], [
+        @anode.each(
+          1,
+          @tutuca.Expr::field("rows"),
+          @anode.render_it(0),
+          from_render_each=true,
+        ),
       ]),
     ]),
     [],

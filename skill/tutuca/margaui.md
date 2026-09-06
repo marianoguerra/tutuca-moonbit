@@ -32,8 +32,10 @@ The only thing you may still fetch from margaui is the **extra theme palettes**
 (dracula, nord, …), which are plain CSS custom-property stylesheets with no
 MoonBit equivalent. Link one lazily when the user picks it:
 
-```html
-<link rel="stylesheet" href="https://marianoguerra.github.io/margaui/themes/dracula.css" />
+```tutu
+view:
+  Card:
+    @link(~rel: "stylesheet", ~href: "https://marianoguerra.github.io/margaui/themes/dracula.css")
 ```
 
 (or vendor those `.css` files for a fully offline build). Light + dark need no
@@ -265,33 +267,12 @@ component classes (`btn`, `card`, `input`, `badge`, `join`, …) plus the
 Tailwind v4 utilities. A starter vocabulary — enough for a typical app
 shell, all compiling against the embedded bundle:
 
-```html
-<!-- app shell: a centered column -->
-<div class="max-w-md mx-auto p-4 flex flex-col gap-3">
-  <!-- panel -->
-  <div class="card bg-base-200">
-    <div class="card-body">
-      <h2 class="card-title">Todos</h2>
-      <!-- toolbar row -->
-      <div class="flex gap-2 items-center">
-        <input class="input w-full" placeholder="What needs doing?" />
-        <button class="btn btn-primary btn-sm">Add</button>
-      </div>
-      <!-- an item row; completed state = 'opacity-60 line-through' -->
-      <div class="flex gap-3 items-center w-full">
-        <input type="checkbox" class="checkbox" />
-        <span class="w-full">Buy milk</span>
-        <button class="btn btn-soft btn-sm btn-error btn-circle">✕</button>
-      </div>
-      <!-- grouped controls + a counter -->
-      <div class="join">
-        <button class="btn btn-sm join-item">All</button>
-        <button class="btn btn-sm join-item btn-outline">Active</button>
-      </div>
-      <span class="badge badge-neutral">3 left</span>
-    </div>
-  </div>
-</div>
+```tutu
+view:
+  Card:
+    @comment{ app shell: a centered column }
+    @" "
+    @div(~class: "max-w-md mx-auto p-4 flex flex-col gap-3"){@comment{ panel } @div(~class: "card bg-base-200"){@div(~class: "card-body"){@h2(~class: "card-title"){Todos} @comment{ toolbar row } @div(~class: "flex gap-2 items-center"){@input(~class: "input w-full", ~placeholder: "What needs doing?") @button(~class: "btn btn-primary btn-sm"){Add}} @comment{ an item row; completed state = 'opacity-60 line-through' } @div(~class: "flex gap-3 items-center w-full"){@input(~type: "checkbox", ~class: "checkbox") @span(~class: "w-full"){Buy milk} @button(~class: "btn btn-soft btn-sm btn-error btn-circle"){✕}} @comment{ grouped controls + a counter } @div(~class: "join"){@button(~class: "btn btn-sm join-item"){All} @button(~class: "btn btn-sm join-item btn-outline"){Active}} @span(~class: "badge badge-neutral"){3 left}}}}
 ```
 
 Buttons compose a kind (`btn-primary` / `btn-success` / `btn-error` /

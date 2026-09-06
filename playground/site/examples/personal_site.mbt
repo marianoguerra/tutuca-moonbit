@@ -86,7 +86,7 @@ fn ps_sort(
 fn ps_resort(s : RootState) -> RootState {
   {
     ..s,
-    allEntries: ps_sort(s.allEntries, s.sortByEnd, s.sortAsc, s.featuredFirst),
+    all_entries: ps_sort(s.all_entries, s.sort_by_end, s.sort_asc, s.featured_first),
   }
 }
 
@@ -191,12 +191,12 @@ fn ps_entry_comp() -> @component.Component {
       title: "?",
       description: "",
       lang: "en",
-      startYear: None,
-      endYear: None,
+      start_year: None,
+      end_year: None,
       role: None,
       featured: false,
       url: "#",
-      altUrls: [],
+      alt_urls: [],
       categories: [],
     },
     compute=m => match m {
@@ -208,9 +208,9 @@ fn ps_entry_comp() -> @component.Component {
         })
       IsSpanish => Some((s, _args, _stack) => Bool(s.lang == "es"))
       YearDisplay =>
-        Some((s, _args, _stack) => match s.startYear {
+        Some((s, _args, _stack) => match s.start_year {
           Some(start) =>
-            match s.endYear {
+            match s.end_year {
               Some(e) => Str("\{start}-\{e}")
               None => Str("\{start}")
             }
@@ -275,19 +275,19 @@ fn root_comp() -> @component.Component {
     views=root_views_with_decoy(),
     name="Root",
     initial=RootState::{
-        allEntries: [],
-        allCategories: [],
-        allRoles: [],
-        selectedCategories: Map([]),
-        selectedRoles: Map([]),
-        featuredFirst: true,
-        sortByEnd: false,
-        sortAsc: false,
+        all_entries: [],
+        all_categories: [],
+        all_roles: [],
+        selected_categories: Map([]),
+        selected_roles: Map([]),
+        featured_first: true,
+        sort_by_end: false,
+        sort_asc: false,
       },
     compute={
       "has_active_filters": (s : RootState, _args, _stack) => Bool(
-        s.selectedCategories.length() != s.allCategories.length() ||
-        s.selectedRoles.length() != s.allRoles.length(),
+        s.selected_categories.length() != s.all_categories.length() ||
+        s.selected_roles.length() != s.all_roles.length(),
       ),
     },
     when={
@@ -298,7 +298,7 @@ fn root_comp() -> @component.Component {
       // color; the trailing `cat-btn on|off` tokens are the MB test hooks.
       "enrich_category_bindings": (s : RootState, binds, _key, value, _iter, _stack) => match value {
           Str(cat) => {
-            let selected = s.selectedCategories.contains(cat)
+            let selected = s.selected_categories.contains(cat)
             binds["isSelected"] = Bool(selected)
             let state = if selected { "on" } else { "off" }
             binds["btn_class"] = Str(
@@ -312,7 +312,7 @@ fn root_comp() -> @component.Component {
       // opacity-40`; the trailing `role-btn on|off` tokens are the MB hooks.
       "enrich_role_bindings": (s : RootState, binds, _key, value, _iter, _stack) => match value {
           Str(role) => {
-            let selected = s.selectedRoles.contains(role)
+            let selected = s.selected_roles.contains(role)
             binds["btn_class"] = Str(
               if selected {
                 "btn btn-xs btn-neutral font-bold ring-1 ring-neutral-content/30 role-btn on"
@@ -328,29 +328,29 @@ fn root_comp() -> @component.Component {
         Receive("clear_filters", _) =>
           Next({
             ..s,
-            selectedCategories: ps_set_of(s.allCategories),
-            selectedRoles: ps_set_of(s.allRoles),
+            selected_categories: ps_set_of(s.all_categories),
+            selected_roles: ps_set_of(s.all_roles),
           })
         Receive("on_category_toggle", args) =>
           Next({
             ..s,
-            selectedCategories: ps_facet_toggle(
-              s.allCategories,
-              s.selectedCategories,
+            selected_categories: ps_facet_toggle(
+              s.all_categories,
+              s.selected_categories,
               args,
             ),
           })
         Receive("on_role_toggle", args) =>
           Next({
             ..s,
-            selectedRoles: ps_facet_toggle(s.allRoles, s.selectedRoles, args),
+            selected_roles: ps_facet_toggle(s.all_roles, s.selected_roles, args),
           })
         Receive("on_toggle_sort_by_end", _) =>
-          Next(ps_resort({ ..s, sortByEnd: !s.sortByEnd }))
+          Next(ps_resort({ ..s, sort_by_end: !s.sort_by_end }))
         Receive("on_toggle_sort_asc", _) =>
-          Next(ps_resort({ ..s, sortAsc: !s.sortAsc }))
+          Next(ps_resort({ ..s, sort_asc: !s.sort_asc }))
         Receive("on_toggle_featured_first", _) =>
-          Next(ps_resort({ ..s, featuredFirst: !s.featuredFirst }))
+          Next(ps_resort({ ..s, featured_first: !s.featured_first }))
         // The ANSWER, named for its outcome and carrying only what it is
         // about: three arms, three payloads, and no arm handed both a result
         // and an error to tell apart.
@@ -388,11 +388,11 @@ fn root_comp() -> @component.Component {
           roles.sort_by((a, b) => a.lexical_compare(b))
           Next({
             ..s,
-            allEntries: ps_sort(entries, s.sortByEnd, s.sortAsc, s.featuredFirst),
-            allCategories: cats,
-            selectedCategories: ps_set_of(cats),
-            allRoles: roles,
-            selectedRoles: ps_set_of(roles),
+            all_entries: ps_sort(entries, s.sort_by_end, s.sort_asc, s.featured_first),
+            all_categories: cats,
+            selected_categories: ps_set_of(cats),
+            all_roles: roles,
+            selected_roles: ps_set_of(roles),
           })
         }
         Receive("init", _) => {
@@ -411,9 +411,9 @@ fn root_comp() -> @component.Component {
 /// The `filterEntry` @when: keep an entry when its role and at least one of
 /// its categories are selected.
 fn ps_filter_entry(s : RootState, entry : @tutuca.Value) -> Bool {
-  if s.selectedRoles.length() > 0 {
+  if s.selected_roles.length() > 0 {
     let r = entry.field("role").str()
-    if !s.selectedRoles.contains(r) {
+    if !s.selected_roles.contains(r) {
       return false
     }
   }
@@ -425,10 +425,10 @@ fn ps_filter_entry(s : RootState, entry : @tutuca.Value) -> Bool {
       }
     _ => []
   }
-  if s.selectedCategories.length() > 0 && entry_cats.length() > 0 {
+  if s.selected_categories.length() > 0 && entry_cats.length() > 0 {
     let mut hit = false
     for c in entry_cats {
-      if c is Str(cs) && s.selectedCategories.contains(cs) {
+      if c is Str(cs) && s.selected_categories.contains(cs) {
         hit = true
         break
       }

@@ -453,7 +453,7 @@ pub fn collection_op(name : String) -> String? {
   match name {
     "push" => Some("push")
     "insert_at" => Some("insertAt")
-    "set_at" => Some("set_at")
+    "set_at" => Some("setAt")
     "delete_at" => Some("deleteAt")
     "add" => Some("add")
     "remove" => Some("remove")

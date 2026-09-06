@@ -76,7 +76,10 @@ fn print_member(base : @sh.Ex, m : String) -> String raise @sh.ExError {
     // binder that knows better — a loop's `@value`, a macro's `^param` — and
     // adding a second gives `@@value`, which reaches no reader.
     @sh.EName(b) => sigil(b) + "." + m
-    @sh.EMember(@sh.EName("e"), a) => "e." + a + "." + m
+    // The event is a DOM value, so a path into it is as deep as the DOM is:
+    // `e.target.dataset.rowId` is three steps, and stopping at two refused a
+    // handler the old notation wrote.
+    @sh.EMember(inner, _) if from_event(inner) => print_ex(base) + "." + m
     // A field BELOW an index: `it.rows[i].inner`. The old notation writes the
     // same path, and a `&` reference is the one position that takes one — the
     // runtime `Path` is field-then-key, so a key followed by a field is a step
@@ -88,6 +91,16 @@ fn print_member(base : @sh.Ex, m : String) -> String raise @sh.ExError {
         help="`it.a.b` is refused: render the child as a component, or name the value with a `compute`",
         span=@report.Span::at(0),
       )
+  }
+}
+
+///|
+/// Whether a path is rooted at the DOM event.
+fn from_event(e : @sh.Ex) -> Bool {
+  match e {
+    @sh.EName("e") => true
+    @sh.EMember(inner, _) => from_event(inner)
+    _ => false
   }
 }
 

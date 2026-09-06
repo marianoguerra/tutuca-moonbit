@@ -2,37 +2,32 @@
 
 **Problem:** respond to a DOM event and update state.
 
-```html
-<script type="tutuca/spec">
-  state Counter { count: Int, str: String, n: Int }
-</script>
+```tutu
+spec:
+  Counter:
+    field count :: Int
+    field str :: String
+    field n :: Int
 
-<script type="tutuca/script" for="Counter">
-  receive inc { .count += 1 }
-  receive dec { .count -= 1 }
+logic:
+  Counter:
+    receive inc:
+      it.count += 1
 
-  /// The argument the view wrote arrives by name; its type is inferred from
-  /// the call site, so nothing declares it twice.
-  receive submit(text) { .str = text }
-  receive reset { .str = '' }
-</script>
+    receive dec:
+      it.count -= 1
 
-<template id="Counter">
-  <div>
-    <button @on.click="inc">+</button>      <!-- bare name = a handler -->
-    <button @on.click="dec">-</button>
+    /// The argument the view wrote arrives by name; its type is inferred from
+    /// the call site, so nothing declares it twice.
+    receive submit(text):
+      it.str := text
 
-    <!-- pass args by name -->
-    <input @on.input=".str = e.value" />
-    <input @on.input=".n = e.valueAsInt" />
+    receive reset:
+      it.str := ""
 
-    <!-- modifiers: keydown +send (Enter) / +cancel (Esc), and +ctrl/+cmd/+alt -->
-    <input @on.keydown+send="submit e.value" @on.keydown+cancel="reset" />
-
-    <!-- custom elements: any CustomEvent reaches @on.<name>, detail is `e.value` -->
-    <emoji-picker @on.emoji-click=".str = e.value"></emoji-picker>
-  </div>
-</template>
+view:
+  Counter:
+    @div{@button(~on_click: inc){+} @comment{ bare name = a handler } @button(~on_click: dec){-} @comment{ pass args by name } @input(~on_input: it.str := e.value) @input(~on_input: it.n := e.valueAsInt) @comment{ modifiers: keydown +send (Enter) / +cancel (Esc), and +ctrl/+cmd/+alt } @input(~on_keydown: submit(e.value) ~send, ~on_keydown: reset ~cancel) @comment{@" custom elements: any CustomEvent reaches @on.<name>, detail is `e.value` "} @emoji_picker(~on_emoji_click: it.str := e.value)}
 ```
 
 An `@on` value is either a property action beginning with `.` or a semantic
@@ -45,7 +40,7 @@ Written args arrive in template order. The first slot is a handler name —
 always bare in an event position, and dispatched as `Receive(name, args)`;
 `$name` belongs in a VALUE position and is a generation error here. Later slots
 carry a sigil for where they read from: `e.…` the event, `.field` state,
-`@bind` a binding. (A bare name names none of the three, so it is a generation
+`~bind` a binding. (A bare name names none of the three, so it is a generation
 error.) The computed accessors are `e.value`,
 `e.valueAsInt`/`e.valueAsFloat`, `e.key`, `e.keyCode`,
 `e.isAlt`, `e.isShift`, `e.isCtrl`/`e.isCmd`, `e.isSend`, `e.isCancel`,

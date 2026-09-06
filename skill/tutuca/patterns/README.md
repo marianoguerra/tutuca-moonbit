@@ -4,8 +4,8 @@ Task-oriented recipes: "how do I do X" with a minimal working snippet and the
 one pitfall worth knowing. Each recipe is self-contained and brief.
 
 **Write it in the view file first.** A component's data goes in the
-`<script type="tutuca/spec">` schema and its behaviour in the
-`<script type="tutuca/script">` block beside it — `receive`, `intent`,
+`spec:` schema and its behaviour in the
+`logic:` section beside it — `receive`, `intent`,
 `compute`, `pred`, `invariant`, `enrich`, `bindWith`, plus the `send` /
 `sendAt` / `intent` / `forward` effects. MoonBit is for what that language
 cannot spell, and every recipe here that shows a MoonBit half says which of
@@ -16,7 +16,7 @@ the two reasons it is:
   a component was assembled, which is not something a component's own block
   could state.
 - **the block does not spell it** — building a child component instance
-  (`item.make`), `@loop-with` (the one render bucket with no declaration
+  (`item.make`), `~loop_with` (the one render bucket with no declaration
   kind), a fold over a whole sequence, and a payload unpacked out of an `Any`.
 
 `gen` never silently ignores a block: an arm it cannot compile prints
@@ -35,21 +35,21 @@ task.
 ## Putting it together
 
 - [Build a todo list](todo-list.md) — a complete view + code pairing: a
-  `values` list of child components, `@when` filtering, add/toggle/delete
+  `values` list of child components, `~when` filtering, add/toggle/delete
   handlers, controlled inputs, and a harness test.
 
 ## Iteration & lists
 
 - [Iterate a list](iterate-a-list.md) — render one element per item with `@each` / `render-each`.
-- [Filter a list](filter-a-list.md) — keep only matching items with `@when`, which takes a `pred`.
+- [Filter a list](filter-a-list.md) — keep only matching items with `~when`, which takes a `pred`.
 - [Enrich each item](enrich-each-item.md) — expose derived per-item values as `@`-bindings with `enrich`.
-- [Paginate a list](paginate-a-list.md) — slice the iteration with `@loop-with` `start`/`end`.
-- [Filter and paginate a list](filter-and-paginate.md) — do both with `@loop-with` `keys` (filter-then-slice, identity preserved).
+- [Paginate a list](paginate-a-list.md) — slice the iteration with `~loop_with` `start`/`end`.
+- [Filter and paginate a list](filter-and-paginate.md) — do both with `~loop_with` `keys` (filter-then-slice, identity preserved).
 
 ## Conditional content & attributes
 
 - [Show or hide content](show-or-hide-content.md) — `@show` / `@hide`, the built-in predicates, and a `pred` of your own.
-- [Switch between views](switch-between-views.md) — pick a component's own view with `as=` or `@push-view`.
+- [Switch between views](switch-between-views.md) — pick a component's own view with `as=` or `~push_view`.
 - [Conditional attribute value](conditional-attribute-value.md) — set a class/title by condition with `@if` / `@then` / `@else`.
 - [Tabbed interface](tabbed-interface.md) — a `currentView` field + predicates to show the panel and highlight the active tab.
 
@@ -66,8 +66,8 @@ task.
 ## Data & events
 
 - [Bind text and attributes](bind-text-and-attributes.md) — `@text`, `:attr`, `$'…'` templates, `compute` and `bindWith`.
-- [Handle events](handle-events.md) — `@on.<event>`, `receive` handlers, args, modifiers, custom events.
-- [Read a picked file](file-input.md) — `@on.change="… e.value"` and the file-metadata `Map`.
+- [Handle events](handle-events.md) — `~on_<event>`, `receive` handlers, args, modifiers, custom events.
+- [Read a picked file](file-input.md) — `~on_change="… e.value"` and the file-metadata `Map`.
 
 ## Component communication
 

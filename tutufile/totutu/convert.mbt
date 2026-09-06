@@ -288,10 +288,20 @@ fn print_macro(
   for k, v in m.defaults {
     params.push("~\{@names.snake_of(k)}: \{macro_arg(v)}")
   }
+  // The placeholder is grafted away at PARSE time — with no call frame it
+  // collapses to its own default children — so a body that has one has to be
+  // caught before the parse, on the text. Printed from the tree it came out as
+  // a macro with no slot: a card whose children went nowhere, silently.
+  if m.source.contains("x:slot") || m.source.contains("X:slot") {
+    raise NoSpelling(
+      what="a macro with a slot (`\{m.name}`)",
+      help="the notation writes `@slot` and `@slot(\"name\")` in the body and `@fill(\"name\"){ … }` at the call site — this one has to be written by hand, because the parser resolves a slot before the converter sees it",
+    )
+  }
   let head = if params.is_empty() {
-    "macro \{@names.snake_of(m.name)}()"
+    "macro \{macro_name(m.name)}()"
   } else {
-    "macro \{@names.snake_of(m.name)}(\{params.join(", ")})"
+    "macro \{macro_name(m.name)}(\{params.join(", ")})"
   }
   out.write_string("  \{head}:\n")
   // Parsed INSIDE a macro frame, because a `^label` read outside one resolves

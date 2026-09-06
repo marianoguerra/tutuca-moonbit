@@ -22,15 +22,32 @@ extern "js" fn publish_viewgen(gen : (String, String) -> String) -> Unit =
   #|(gen) => { globalThis.__tutucaViewgen = gen }
 
 ///|
-/// Generate both modules from one .html file's text. Never raises: a bad view
+/// Generate both modules from one view file's text. Never raises: a bad view
 /// comes back as `ok: false` so the page can show it like a compile error.
+///
+/// The text is a `.tutu`, and the file is lowered into the blocks the splitter
+/// reads before anything else touches it — the same step `tutuca gen` takes,
+/// and for the same reason: one notation reaches the generator.
 fn generate_json(html : String, name : String) -> String {
   let obj : Map[String, Json] = try {
-    let views = @viewgen.split_file(html)
+    let sources = @report.Sources::new()
+    let id = sources.add("view.tutu", html)
+    let lowered = @lower.lower(html, id)
+    if lowered.reports.length() > 0 {
+      let lines = []
+      for r in lowered.reports {
+        lines.push(r.message)
+      }
+      return Json::object({
+        "ok": Json::boolean(false),
+        "error": Json::string(lines.join("; ")),
+      }).stringify()
+    }
+    let views = @viewgen.split_file(lowered.text)
     let hints : Array[String] = []
     let generated = @viewgen.emit_modules(
       name,
-      "view.html",
+      "view.tutu",
       views,
       debug_derive=false,
       hints~,

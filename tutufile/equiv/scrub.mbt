@@ -94,6 +94,13 @@ fn rename_names(s : String) -> String {
     out.write_string(
       if after_operation(cs, i) {
         @names.mutator_of(text)
+      } else if after_key(cs, i, "source: ") ||
+        after_key(cs, i, "default: Some(") {
+        // A `provide`'s source and a `lookup`'s default are the one place a
+        // field read survives as TEXT rather than as an `Expr` — the old
+        // parser handed the expression on unread — so the rename has to reach
+        // inside them. `.selId` and `.sel_id` are the same field.
+        rename_paths(text)
       } else if is_owned_name(text) {
         @names.snake_of(text)
       } else {
@@ -111,8 +118,47 @@ fn rename_names(s : String) -> String {
 ///|
 /// Whether the quote at `at` opens the value of an `operation=` field.
 fn after_operation(cs : Array[Char], at : Int) -> Bool {
-  let key : Array[Char] = "operation=".iter().collect()
-  at >= key.length() && matches_at(cs, key, at - key.length())
+  after_key(cs, at, "operation=")
+}
+
+///|
+/// Whether the quote at `at` is preceded by `key`.
+fn after_key(cs : Array[Char], at : Int, key : String) -> Bool {
+  let k : Array[Char] = key.iter().collect()
+  at >= k.length() && matches_at(cs, k, at - k.length())
+}
+
+///|
+/// Rename every `.field` in an expression's text.
+///
+/// Deliberately narrow: it renames what follows a dot and nothing else, so a
+/// literal, an operator and a bare name in the same string are left as they
+/// are. A field read is the only thing in one of these strings the conversion
+/// renames.
+fn rename_paths(s : String) -> String {
+  let out = StringBuilder()
+  let cs : Array[Char] = s.iter().collect()
+  let mut i = 0
+  while i < cs.length() {
+    out.write_char(cs[i])
+    guard cs[i] == '.' else {
+      i = i + 1
+      continue
+    }
+    let mut j = i + 1
+    guard j < cs.length() && cs[j] is ('a'..='z' | 'A'..='Z' | '_') else {
+      i = i + 1
+      continue
+    }
+    let word = StringBuilder()
+    while j < cs.length() && cs[j] is ('a'..='z' | 'A'..='Z' | '0'..='9' | '_') {
+      word.write_char(cs[j])
+      j = j + 1
+    }
+    out.write_string(@names.snake_of(word.to_string()))
+    i = j
+  }
+  out.to_string()
 }
 
 ///|

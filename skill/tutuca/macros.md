@@ -1,8 +1,9 @@
 # Tutuca — Macros
 
 Macros are pure template expansion — no state, no handlers of their
-own. Calls inside a macro resolve against the *host* component. Read this file when
-authoring `@anode.Macro` values, `<x:name>` calls, or slots.
+own. Calls inside a macro resolve against the *host* component. Read this file
+when authoring `@anode.Macro` values, `macro` declarations in a `view:`
+section, or slots.
 
 A macro is a plain struct: `defaults` maps parameter names to their
 default **expressions** (source text, same grammar as attribute values),
@@ -28,32 +29,32 @@ Register macros on the `ModuleDef`:
 )
 ```
 
-```html
-<x:badge></x:badge>                       <!-- defaults -->
-<x:badge label="Sale"></x:badge>          <!-- static string (no quotes needed) -->
-<x:badge :label="'Sale'"></x:badge>       <!-- dynamic literal -->
-<x:badge :label=".status"></x:badge>      <!-- field reference -->
+A macro is called the way any other form is — its name, and its arguments
+by keyword:
+
+```tutu
+@badge()                      // defaults
+@badge(~label: "Sale")        // a literal
+@badge(~label: it.status)     // a field reference
 ```
 
-Inside the macro body, `^param` reads a parameter. Static attributes
-(`label="Sale"`) pass the raw string; dynamic attributes (`:label=…`)
-take the same value forms as any binding — see *Quoting & String
-Literals* in [core.md](./core.md) for the literal-vs-template rules.
+Inside the macro body a parameter is read by its bare name. An argument is a
+value like any other — see *Quoting & String Literals* in
+[core.md](./core.md) for the literal-vs-template rules.
 
 A `^param` is a value like any other, so it also works inside a conditional
 slot's expression — this is the `macro:row` idiom:
 
-```html
-<template id="macro:row" data-value="''" data-label="''">
-  <div class="row" @hide="empty? ^value">
-    <span class="k" @text="^label"></span>
-    <b class="v" @text="^value"></b>
-  </div>
-</template>
+```tutu
+view:
+  macro row(~value: "", ~label: ""):
+    @hide(value.is_empty()){
+      @div(~class: "row"){@span(~class: "k"){@(label)} @b(~class: "v"){@(value)}}
+    }
 ```
 
 It has to expand to a single token, which is already the rule everywhere `^` is
-written. A `<script type="tutuca/script">` block cannot write `^param` at all:
+written. A `logic:` section cannot write `^param` at all:
 a block is parsed once for the component rather than once per call site, so
 there is no frame to substitute from — pass the value in as a handler argument
 or read it as a field.
@@ -70,20 +71,15 @@ fn btn_rm_macro() -> @anode.Macro {
 }
 ```
 
-```html
-<!-- the `$` resolves to the mutator itself before the handler is parsed -->
-<x:btn-rm :handler="$removeInItemsAt" :arg="@key"></x:btn-rm>
+```tutu
+@btn_rm(~handler: remove_in_items_at, ~arg: key)
 ```
 
-> **The `$` prefix only survives a RUNTIME macro.** The example above is an
-> `@anode.Macro` value, expanded when the view is compiled — by then the `$` has
-> already been resolved away. A macro declared in a view file
-> (`<template id="macro:btn-rm">`) is expanded by `gen` instead, which sees
-> `@on.click="$removeInItemsAt"` in an event position and refuses it:
-> *"drop the `$` — in an event position a `$name` and a bare name are the SAME
-> dispatch"*. Pass the handler name bare (`:handler="removeInItemsAt"`) and it
-> works in both kinds of macro. Prefer bare everywhere; there is no case where
-> the `$` buys anything in an `@on`.
+> **Pass the handler name bare.** A macro declared in a view file is expanded
+> by `gen`, which refuses a decorated name in an event position:
+> *"in an event position a `$name` and a bare name are the SAME dispatch"*. A
+> bare name works in a file macro and in an `@anode.Macro` value alike, and
+> there is no case where a decoration buys anything in a handler.
 
 If registering into a scope by hand (outside `ModuleDef::build_scope`),
 use `ComponentStack::register_macros(macros)` **before**
@@ -95,50 +91,46 @@ under `card`.
 
 ## Slots
 
-```moonbit
-fn card_macro() -> @anode.Macro {
-  {
-    defaults: { "title": "'Card'" },
-    raw_view: (
-      #|<div class="card">
-      #|  <h2 @text="^title"></h2>
-      #|  <x:slot></x:slot>
-      #|</div>
-    ),
-  }
-}
+`@slot` marks where a call's children go. Content written directly in the
+call's body fills it:
+
+```tutu
+view:
+  macro card(~title: "Card"):
+    @div(~class: "card"){@h2{@(title)} @slot}
+
+  Page:
+    @card(~title: "Hi"){@p{body}}
 ```
 
-```html
-<x:card title="Hi"><p>body</p></x:card>   <!-- default slot -->
+## Named slots
+
+`@slot("name")` declares a second place to put children, and `@fill("name")`
+at the call site says which content goes there. Everything not inside a
+`@fill` goes to the default slot:
+
+```tutu
+view:
+  macro panel():
+    @div{
+      @header{@slot("actions")}
+      @main{@slot}
+      @footer{@slot("footer")}
+    }
+
+  Page:
+    @panel(){
+      @fill("actions"){@button(~on_click: inc){+}}
+      @p{default slot content}
+      @fill("footer"){© 2026}
+    }
 ```
 
-## Named Slots
-
-```moonbit
-fn panel_macro() -> @anode.Macro {
-  {
-    defaults: {},
-    raw_view: (
-      #|<div>
-      #|  <header><x:slot name="actions"></x:slot></header>
-      #|  <main><x:slot></x:slot></main>
-      #|  <footer><x:slot name="footer"></x:slot></footer>
-      #|</div>
-    ),
-  }
-}
-```
-
-(The default slot is `name="_"`.)
-
-```html
-<x:panel>
-  <x slot="actions"><button @on.click="inc">+</button></x>
-  <p>default slot content</p>
-  <x slot="footer">© 2026</x>
-</x:panel>
-```
+A `@slot` may carry a body, which is what the call gets when it passes
+nothing for that slot. In an `@anode.Macro` value the same two halves are
+written in the markup the runtime parses — `<x:slot name="actions">` in the
+body and `<x slot="actions">` at the call site — and the default slot is
+`name="_"`.
 
 ## See also
 

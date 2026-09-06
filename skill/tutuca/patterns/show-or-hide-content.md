@@ -2,41 +2,25 @@
 
 **Problem:** render an element only when a condition holds.
 
-```html
-<script type="tutuca/spec">
-  state Form {
-    title: String
-    body: String
-    isOpen: Bool
-    items: Array[Any]
-    query: String
+```tutu
+spec:
+  Form:
+    field title :: String
+    field body :: String
+    field is_open :: Bool
+    field items :: List.of(Any)
+    field query :: String
 
     /// A condition spanning more than one field is a named `pred` — the view
     /// reads the NAME, and the rule is written once. It sits HERE, beside the
     /// fields it is about: a rule has no statements, no effects and no
     /// arguments, so it is part of what the component is rather than part of
     /// what it does.
-    pred canSubmit { ((trim .title) is not '') and ((trim .body) is not '') }
-  }
-</script>
+    pred can_submit: ((it.title.trim() != "") && (it.body.trim() != ""))
 
-<template id="Form">
-  <div>
-    <div @show=".isOpen">Details</div>
-    <p @hide=".isOpen">(hidden when open)</p>
-
-    <!-- boolean predicates for one-field checks -->
-    <p @show="empty? .items">No results</p>
-    <p @show="truthy? .query">Searching…</p>
-    <div @show=".query is 'detail'">detail view</div>
-
-    <!-- a pred of your own: `$name`, because this is a value position -->
-    <button @show="$canSubmit">Publish</button>
-
-    <!-- on an <x> render op: wraps the produced node, no extra DOM element -->
-    <x text=".title" @show=".isOpen"></x>
-  </div>
-</template>
+view:
+  Form:
+    @div{@show(it.is_open){@div{Details}} @hide(it.is_open){@p{(hidden when open)}} @comment{ boolean predicates for one-field checks } @show(it.items.is_empty()){@p{No results}} @show(it.query.is_truthy()){@p{Searching…}} @show((it.query == "detail")){@div{detail view}} @comment{ a pred of your own: `$name`, because this is a value position } @show(can_submit()){@button{Publish}} @comment{ on an <x> render op: wraps the produced node, no extra DOM element } @show(it.is_open){@(it.title)}}
 ```
 
 A conditional slot takes the same expression language a `pred` body does:

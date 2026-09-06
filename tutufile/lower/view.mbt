@@ -89,6 +89,7 @@ fn print_items(
   out : StringBuilder,
   renames : Map[String, String],
   macros? : Array[String] = [],
+  parent? : String = "",
 ) -> Unit raise @sh.ExError {
   let run = StringBuilder()
   let flush = fn() -> Unit {
@@ -104,7 +105,7 @@ fn print_items(
       Some(text) => run.write_string(text)
       None => {
         flush()
-        print_content(item, out, renames, macros~)
+        print_content(item, out, renames, macros~, parent~)
       }
     }
   }
@@ -125,6 +126,7 @@ fn print_items(
 fn inline_body(
   items : Array[@ast.Node],
   renames : Map[String, String],
+  parent? : String = "",
 ) -> String? raise @sh.ExError {
   let out = StringBuilder()
   let run = StringBuilder()
@@ -148,7 +150,7 @@ fn inline_body(
         }
         flush()
         let ex = bound(@sh.read_group(gs[0]), renames)
-        out.write_string("<x text=\"\{attr_escape(print_ex(ex))}\"></x>")
+        write_x_op(out, parent, "text=\"\{attr_escape(print_ex(ex))}\"")
       }
     }
   }
@@ -220,6 +222,7 @@ fn print_content(
   out : StringBuilder,
   renames : Map[String, String],
   macros? : Array[String] = [],
+  parent? : String = "",
 ) -> Unit raise @sh.ExError {
   guard group.it is Group(parts) && parts.length() > 0 else { return }
   // A LINE of an at-notation body is one group, and it may hold several items:
@@ -240,7 +243,7 @@ fn print_content(
       Parens(gs) => {
         guard gs.length() == 1 else { return }
         let ex = bound(@sh.read_group(gs[0]), renames)
-        out.write_string("<x text=\"\{attr_escape(print_ex(ex))}\"></x>")
+        write_x_op(out, parent, "text=\"\{attr_escape(print_ex(ex))}\"")
         i = i + 1
       }
       Id(word) => {
@@ -256,7 +259,14 @@ fn print_content(
               parts[i + take].it is (Kw(_) | Block(_)) {
           take = take + 1
         }
-        print_element(word, parts[i:i + take].to_owned(), out, renames, macros~)
+        print_element(
+          word,
+          parts[i:i + take].to_owned(),
+          out,
+          renames,
+          macros~,
+          parent~,
+        )
         i = i + take
       }
       _ =>
@@ -278,6 +288,7 @@ fn print_element(
   out : StringBuilder,
   renames : Map[String, String],
   macros? : Array[String] = [],
+  parent? : String = "",
 ) -> Unit raise @sh.ExError {
   if macros.contains(word) {
     return print_macro_call(word, parts, out, renames)
@@ -285,16 +296,79 @@ fn print_element(
   let (raw, body) = split_call(parts)
   match word {
     "show" | "hide" =>
-      print_guard(word, args_of(raw), body, out, renames, macros~)
-    "each" => print_each(raw, body, out, renames, macros~)
-    "render" => print_render(args_of(raw), out, renames)
-    "slot" => out.write_string("<slot></slot>")
+      print_guard(word, args_of(raw), body, out, renames, macros~, parent~)
+    "each" => print_each(raw, body, out, renames, macros~, parent~)
+    "render" => print_render(args_of(raw), out, renames, parent~)
+    // The two halves of a macro slot, which the old notation spelled with two
+    // different tags: `@slot` DECLARES one in a macro body, `@fill` passes
+    // content to a named one at a call site. `@slot` used to print a literal
+    // `<slot>` element — a tag that exists, renders nothing, and is not the
+    // placeholder.
+    "slot" => print_slot(args_of(raw), body, out, renames, macros~)
+    "fill" => print_fill(args_of(raw), body, out, renames, macros~)
     // A comment NODE, which reaches the DOM. `//` is a comment in the FILE and
     // a different thing entirely, so a comment that renders has a form.
     "comment" => print_comment(body, out)
     "style" => print_style(args_of(raw), body, out)
-    _ => print_tag(word, args_of(raw), body, out, renames, macros~)
+    _ => print_tag(word, args_of(raw), body, out, renames, macros~, parent~)
   }
+}
+
+///|
+/// `@slot` / `@slot("actions")` — where a macro's body takes its children.
+///
+/// A body here is the DEFAULT content, used when the call passes none.
+fn print_slot(
+  args : Array[@sh.Arg],
+  body : Array[@ast.Node],
+  out : StringBuilder,
+  renames : Map[String, String],
+  macros? : Array[String] = [],
+) -> Unit raise @sh.ExError {
+  let name = slot_name(args, "@slot")
+  let head = match name {
+    Some(n) => "x:slot name=\"\{attr_escape(n)}\""
+    None => "x:slot"
+  }
+  out.write_string("<\{head}>")
+  print_items(body, out, renames, macros~)
+  out.write_string("</x:slot>")
+}
+
+///|
+/// `@fill("actions"){ … }` — the content a call passes to one named slot.
+fn print_fill(
+  args : Array[@sh.Arg],
+  body : Array[@ast.Node],
+  out : StringBuilder,
+  renames : Map[String, String],
+  macros? : Array[String] = [],
+) -> Unit raise @sh.ExError {
+  guard slot_name(args, "@fill") is Some(name) else {
+    raise @sh.ExError(
+      message="`@fill` names the slot it fills",
+      help="write `@fill(\"actions\"){ … }` — content for the DEFAULT slot is written directly in the call's body",
+      span=@report.Span::at(0),
+    )
+  }
+  out.write_string("<x slot=\"\{attr_escape(name)}\">")
+  print_items(body, out, renames, macros~)
+  out.write_string("</x>")
+}
+
+///|
+/// The one quoted name a slot form takes, if it has one.
+fn slot_name(args : Array[@sh.Arg], word : String) -> String? raise @sh.ExError {
+  let pos = @sh.positional(args)
+  guard pos.length() > 0 else { return None }
+  guard pos.length() == 1 && pos[0] is @sh.EStr(name) else {
+    raise @sh.ExError(
+      message="`\{word}` takes one slot name",
+      help="write `\{word}(\"actions\")` — a slot name is a literal, matched by string",
+      span=@report.Span::at(0),
+    )
+  }
+  Some(name)
 }
 
 ///|
@@ -349,7 +423,9 @@ fn print_tag(
   out : StringBuilder,
   renames : Map[String, String],
   macros? : Array[String] = [],
+  parent? : String = "",
 ) -> Unit raise @sh.ExError {
+  ignore(parent)
   let attrs = []
   // An event's MODIFIERS are the options written after its handler, flattened
   // into siblings by `read_args`. They belong to the `~on_*` before them, so
@@ -394,12 +470,12 @@ fn print_tag(
     out.write_string("<\{head}>\{close_tag(tag)}")
     return
   }
-  if inline_body(body, renames) is Some(text) {
+  if inline_body(body, renames, parent=tag) is Some(text) {
     out.write_string("<\{head}>\{text}</\{tag}>")
     return
   }
   out.write_string("<\{head}>")
-  print_items(body, out, renames, macros~)
+  print_items(body, out, renames, macros~, parent=tag)
   out.write_string("</\{tag}>")
 }
 
@@ -577,6 +653,7 @@ fn print_guard(
   out : StringBuilder,
   renames : Map[String, String],
   macros? : Array[String] = [],
+  parent? : String = "",
 ) -> Unit raise @sh.ExError {
   let pos = @sh.positional(args)
   guard pos.length() == 1 else {
@@ -600,6 +677,7 @@ fn print_guard(
     renames,
     "@\{word}=\"\{attr_escape(cond)}\"",
     macros~,
+    parent~,
   )
 }
 
@@ -612,7 +690,10 @@ fn print_each(
   out : StringBuilder,
   renames : Map[String, String],
   macros? : Array[String] = [],
+  extra? : String = "",
+  parent? : String = "",
 ) -> Unit raise @sh.ExError {
+  let extra_attr = extra
   let (names, seq, after) = split_binder(raw)
   let args = args_of(raw[after:].to_owned())
   let inner : Map[String, String] = Map([])
@@ -626,6 +707,11 @@ fn print_each(
     inner[names[1]] = "@key"
   }
   let extra = ["@each=\"\{attr_escape(print_ex(rename_ex(seq, renames)))}\""]
+  // A form wrapping the loop — `@show(c){@each(…){…}}` — puts its attribute on
+  // the same element the loop is on, which is what the old notation writes.
+  if extra_attr != "" {
+    extra.push(extra_attr)
+  }
   match @sh.kw_arg(args, "when") {
     Some(@sh.EName(f)) => extra.push("@when=\"\{f}\"")
     Some(_) =>
@@ -668,12 +754,14 @@ fn print_each(
     for e in extra[1:] {
       tail = tail + " " + e
     }
-    out.write_string(
-      "<x render-each=\"\{attr_escape(print_ex(rename_ex(seq, renames)))}\"\{tail}></x>",
+    write_x_op(
+      out,
+      parent,
+      "render-each=\"\{attr_escape(print_ex(rename_ex(seq, renames)))}\"\{tail}",
     )
     return
   }
-  print_with_extra(body[0], out, inner, extra.join(" "), macros~)
+  print_with_extra(body[0], out, inner, extra.join(" "), macros~, parent~)
 }
 
 ///|
@@ -749,6 +837,7 @@ fn print_render(
   out : StringBuilder,
   renames : Map[String, String],
   extra? : String = "",
+  parent? : String = "",
 ) -> Unit raise @sh.ExError {
   let extra = if extra == "" { "" } else { " " + extra }
   let pos = @sh.positional(args)
@@ -770,7 +859,7 @@ fn print_render(
       Some(other) => only = " as=\"\{attr_escape(print_ex(other))}\""
       None => ()
     }
-    out.write_string("<x render-it\{only}\{extra}></x>")
+    write_x_op(out, parent, "render-it\{only}\{extra}")
     return
   }
   let mut tail = ""
@@ -828,6 +917,7 @@ fn print_with_extra(
   renames : Map[String, String],
   extra : String,
   macros? : Array[String] = [],
+  parent? : String = "",
 ) -> Unit raise @sh.ExError {
   // A hole is content rather than an element, and a form may govern one:
   // `@show(c){@(it.n)}` is a conditional text node. The old notation writes
@@ -838,7 +928,7 @@ fn print_with_extra(
     hole[0].it is Parens(gs) &&
     gs.length() == 1 {
     let ex = bound(@sh.read_group(gs[0]), renames)
-    out.write_string("<x text=\"\{attr_escape(print_ex(ex))}\" \{extra}></x>")
+    write_x_op(out, parent, "text=\"\{attr_escape(print_ex(ex))}\" \{extra}")
     return
   }
   guard group.it is Group(parts) && parts.length() > 0 && parts[0].it is Id(tag) else {
@@ -854,7 +944,14 @@ fn print_with_extra(
   // `print_tag` here printed a literal `<render>` element instead — which
   // parses, renders nothing, and is what a loop body most often is.
   if tag == "render" {
-    print_render(args_of(raw), out, renames, extra~)
+    print_render(args_of(raw), out, renames, extra~, parent~)
+    return
+  }
+  // A loop under a form is the same one element: `@show(c){@each(…){…}}` is
+  // `<li @each="…" @show="…">`. Reaching the generic path read the loop's
+  // binder as an argument list and refused the file.
+  if tag == "each" {
+    print_each(raw, body, out, renames, macros~, extra~, parent~)
     return
   }
   let args = args_of(raw)
@@ -1024,3 +1121,31 @@ let void_elements : Array[String] = [
   "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source",
   "track", "wbr",
 ]
+
+///|
+/// One `<x>` op, written so the browser's parser keeps it.
+///
+/// The ops live on an `<x>` tag, and an HTML parser drops an unknown tag
+/// inside an element whose content model names its children — the table
+/// family and `<select>`. The old notation made the author work around that
+/// by hand (`<option @x render-each=…>`); here the printer knows the parent
+/// tag, so a loop inside a `@select` comes out already written that way.
+fn write_x_op(out : StringBuilder, parent : String, op : String) -> Unit {
+  match pseudo_host(parent) {
+    Some(host) => out.write_string("<\{host} @x \{op}></\{host}>")
+    None => out.write_string("<x \{op}></x>")
+  }
+}
+
+///|
+/// The tag an `<x>` op borrows inside a parent that would strip it, and
+/// `None` for every parent that keeps it.
+fn pseudo_host(parent : String) -> String? {
+  match parent {
+    "select" | "optgroup" => Some("option")
+    "table" | "thead" | "tbody" | "tfoot" => Some("tr")
+    "tr" => Some("td")
+    "colgroup" => Some("col")
+    _ => None
+  }
+}

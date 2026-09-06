@@ -312,28 +312,31 @@ fn print_binding_decl(
       span=@sh.span_of(group),
     )
   }
-  guard parts[1].it is Id(name) else {
+  // `provide theme = .theme` publishes under a raw name; `provide
+  // Clock::now = .now` fills a protocol's channel, and the qualified name is
+  // what keeps the two out of each other's table.
+  guard @sh.member_name(parts, 1) is Some((name, next)) else {
     raise @sh.ExError(
       message="a `\{word}` names one binding",
-      help="write `\{word} <name>`",
+      help="write `\{word} <name>` or `\{word} <Protocol>::<name> = <value>`",
       span=@sh.span_of(parts[1]),
     )
   }
-  if parts.length() == 2 {
+  if parts.length() == next {
     out.write_string("  \{word} { \{name} }\n")
     return
   }
-  guard parts[2].it is Op("=") else {
+  guard parts[next].it is Op("=") else {
     raise @sh.ExError(
       message="a `\{word}` is a name, or a name and a value",
       help="write `\{word} \{name} = <value>`",
-      span=@sh.span_of(parts[2]),
+      span=@sh.span_of(parts[next]),
     )
   }
-  let value = if parts.length() >= 4 && parts[3].it is Id("self") {
+  let value = if parts.length() >= next + 2 && parts[next + 1].it is Id("self") {
     "self"
   } else {
-    print_ex(@sh.read_ex(parts[3:]))
+    print_ex(@sh.read_ex(parts[next + 1:]))
   }
   out.write_string("  \{word} { \{name} = \{value} }\n")
 }

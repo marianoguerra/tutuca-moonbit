@@ -2,23 +2,17 @@
 
 **Problem:** let the user pick a file and show its metadata.
 
-```html
-<!-- file_picker.html -->
-<script type="tutuca/spec">
-  state FilePicker { name: String, size: Double, type: String, hasFile: Bool }
-</script>
+```tutu
+spec:
+  FilePicker:
+    field name :: String
+    field size :: Double
+    field type :: String
+    field has_file :: Bool
 
-<template>
-  <section>
-    <input type="file" @on.change="onPickFile e.value">
-    <p @hide=".hasFile">No file selected yet.</p>
-    <dl @show=".hasFile">
-      <dt>Name</dt><dd @text=".name"></dd>
-      <dt>Size</dt><dd @text=".size"></dd>
-      <dt>Type</dt><dd @text=".type"></dd>
-    </dl>
-  </section>
-</template>
+view:
+  FilePicker:
+    @section{@input(~type: "file", ~on_change: on_pick_file(e.value)) @hide(it.has_file){@p{No file selected yet.}} @show(it.has_file){@dl{@dt{Name}@dd{@(it.name)}@dt{Size}@dd{@(it.size)}@dt{Type}@dd{@(it.type)}}}}
 ```
 
 `%type` is a MoonBit keyword, so the generated struct binds it as `type_`
@@ -43,9 +37,9 @@ fn file_picker_comp() -> @component.Component {
           name: meta.get("name").unwrap_or(Null).str(),
           size: meta.get("size").unwrap_or(Null).num(),
           type_: meta.get("type").unwrap_or(Null).str(),
-          hasFile: true,
+          has_file: true,
         })
-      Receive("onPickFile", _) => Next({ ..s, hasFile: false })
+      Receive("onPickFile", _) => Next({ ..s, has_file: false })
       _ => Unhandled
     },
   )
@@ -63,7 +57,7 @@ answers the text through a continuation; see
 `ask lex` or `app.send_at_root`. Flatten
 what you need into fields so the view can bind each piece (`type` is a
 MoonBit keyword, so the struct field is `type_` with a `rename` in the
-derive); gate the summary on a `hasFile` flag with `@show`/`@hide`.
+derive); gate the summary on a `has_file` flag with `@show`/`@hide`.
 Harness tests fire the pick with
 `h.fire("input", @render.DomEvent::new(name="change", value=Map({...})))`
 — see [testing.md](../testing.md) *Custom events and file inputs*.

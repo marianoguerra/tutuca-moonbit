@@ -270,8 +270,8 @@ distinction that does not exist. `$` belongs in a value position
 
 **Bad — asking for the event object:**
 
-```html
-<input @on.input="countTo event" />
+```tutu
+@input(~on_input: count_to(event))
 ```
 
 `event`, `target` and `ctx` are **not** handler arguments: a DOM object is not
@@ -281,8 +281,16 @@ input. Nothing reports it either; the dispatch lands and does nothing.
 
 **Good — named arg:**
 
-```html
-<input @on.input="countTo e.valueAsInt" />
+```tutu
+spec:
+  Counting:
+    field count :: Int
+
+    message count_to(Int)
+
+view:
+  Counting:
+    @input(~on_input: count_to(e.valueAsInt))
 ```
 ```moonbit nocheck
 // nocheck: a fragment (a match arm or an expression), not a top-level item
@@ -332,7 +340,7 @@ test "counter: immutability — one render per interaction" {
 }
 ```
 
-## Testing a CARD: `<script type="tutuca/test">`
+## Testing a CARD: `tests:`
 
 Everything above is the ahead-of-time path: a view file, `gen`, a
 `ModuleDef`, and `moon test` over `@harness`. A **card** is the other
@@ -348,51 +356,46 @@ with a block that path skips.
 
 ### The block
 
-```html
-<script type="tutuca/spec">
-  state Counter {
-    count: Int, step: Int
-    property { label: String { get } }
-  }
-</script>
+```tutu
+spec:
+  Counter:
+    field count :: Int
+    field step :: Int
 
-<script type="tutuca/script">
-  receive init { .step = 1 }
-  receive inc  { .count += .step }
-  get label { $'the count is {state.count}' }
-</script>
+    property label :: String
 
-<script type="tutuca/test">
-{
-  "two clicks add two": {
-    "steps": [
-      { "send": "init" },
-      { "click": "button.inc" },
-      { "click": "button.inc" },
-      { "expect": "text",  "at": "output", "is": "2" },
-      { "expect": "text",  "at": "p", "is": "the count is 2" },
-      { "expect": "state", "at": ".count", "is": 2 }
-    ]
-  }
-}
-</script>
+logic:
+  Counter:
+    receive init:
+      it.step := 1
 
-<template id="Counter">
-  <div>
-    <button class="inc" @on.click="inc">+</button>
-    <output @text=".count"></output>
-    <p @text="$label"></p>
-  </div>
-</template>
+    receive inc:
+      it.count += it.step
+
+    property label :: String:
+      get: @str{the count is @(it.count)}
+
+view:
+  Counter:
+    @div{@button(~class: "inc", ~on_click: inc){+} @output{@(it.count)} @p{@(label())}}
+
+tests:
+  "two clicks add two":
+    send("init")
+    click("button.inc")
+    click("button.inc")
+    expect text("output") == "2"
+    expect text("p") == "the count is 2"
+    expect state it.count == 2
 ```
 
-One object of **named scenes**, the same shape `tutuca/fixtures` has. Each
+One object of **named scenes**, the same shape `fixtures:` has. Each
 scene is `{ "steps": [ … ] }` plus four optional keys:
 
 | key | means |
 | --- | --- |
 | `"component": "TodoItem"` | which component to mount. Optional for a card with one; required for a card with several |
-| `"init": "fresh"` | start from a `tutuca/fixtures` fixture |
+| `"init": "fresh"` | start from a `fixtures:` fixture |
 | `"args": { "count": 3 }` | start from these field values (written over the fixture, if there is one) |
 | `"intents": { … }` | answer the intents this card raises — see below |
 | `"raw": true` | keep the renderer's `data-cid` / `§…§` bookkeeping in the reported HTML |
@@ -459,35 +462,34 @@ For a card, the thing that tells them apart is `log`. A `requires`, an
 happen, and the card says so through `control.log` — carrying the rule's
 own `format` sentence, evaluated over the state that was rejected:
 
-```html
-<script type="tutuca/spec">
-  state {
-    n : Int
+```tutu
+spec:
+  Card:
+    field n :: Int
 
-    pred room
-      format $'the counter is full at {.n}' { .n < 3 }
-  }
-</script>
+    pred room:
+      ~format: @str{the counter is full at @(it.n)}
+      (it.n < 3)
 
-<script type="tutuca/script">
-  receive bump requires room { .n += 1 }
-</script>
+logic:
+  Card:
+    receive bump:
+      ~requires: room
+      it.n += 1
 
-<script type="tutuca/test">
-{
-  "the guard stops it at three": { "steps": [
-    { "click": "button" }, { "click": "button" }, { "click": "button" },
-    { "expect": "text", "at": "output", "is": "3" },
-    { "click": "button" },
-    { "expect": "text", "at": "output", "is": "3" },
-    { "expect": "log", "contains": "precondition `room` does not hold" }
-  ] },
-  "and says nothing while it holds": { "steps": [
-    { "click": "button" },
-    { "expect": "log", "is": [] }
-  ] }
-}
-</script>
+tests:
+  "the guard stops it at three":
+    click("button")
+    click("button")
+    click("button")
+    expect text("output") == "3"
+    click("button")
+    expect text("output") == "3"
+    expect log contains "precondition `room` does not hold"
+
+  "and says nothing while it holds":
+    click("button")
+    expect log == []
 ```
 
 **`refused` is the HOST's channel, and for a card it is usually empty.**
@@ -573,28 +575,39 @@ One file, several components — the same device a view file has always
 used, and a `TodoItem` belongs beside the `TodoList` that renders it
 rather than in a file of its own:
 
-```html
-<script type="tutuca/spec">
-  state Board { title: String, tally: Int }
-  state Row   { label: String, done: Bool }
-</script>
+```tutu
+spec:
+  Board:
+    field title :: String
+    field tally :: Int
 
-<script type="tutuca/script" for="Board">
-  receive bump { .tally += 1 }
-  compute caption { $'{.title}: {.tally}' }
-</script>
+  Row:
+    field label :: String
+    field done :: Bool
 
-<script type="tutuca/script" for="Row">
-  receive toggle { .done = not .done }
-  compute caption { if .done { 'done' } else { .label } }
-</script>
+logic:
+  Board:
+    receive bump:
+      it.tally += 1
 
-<template id="Board:main"> … </template>
-<template id="Row:main">   … </template>
+    compute caption: @str{@(it.title): @(it.tally)}
+
+  Row:
+    receive toggle:
+      it.done := !it.done
+
+    compute caption: if it.done | "done" | it.label
+
+view:
+  Board:
+    @"… "
+
+  Row:
+    @"… "
 ```
 
 - One `state` per component in the **one** spec block.
-- One `<script type="tutuca/script" for="Comp">` each. A bare block with
+- One `logic:` each. A bare block with
   no `for=` is only unambiguous when the file declares one component; with
   several, name every block.
 - `<template id="Comp:view">`, or `<template id="Comp">` for its `main`.

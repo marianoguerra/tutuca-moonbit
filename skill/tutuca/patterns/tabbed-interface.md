@@ -5,29 +5,18 @@ shows, and the active tab button is highlighted.
 
 `tabs.html`:
 
-```html
-<script type="tutuca/spec">
-  state Tabs { currentView: String }
-</script>
+```tutu
+spec:
+  Tabs:
+    field current_view :: String
 
-<script type="tutuca/fixtures">
-{ "fresh": { "value": { "currentView": "overview" } } }
-</script>
+view:
+  Tabs:
+    @section{@div(~role: "tablist", ~class: "tabs"){@button(~role: "tab", ~class: if (it.current_view == "overview") | "tab tab-active" | "tab", ~on_click: it.current_view := "overview"){Overview} @button(~role: "tab", ~class: if (it.current_view == "pricing") | "tab tab-active" | "tab", ~on_click: it.current_view := "pricing"){Pricing}} @show((it.current_view == "overview")){@div{…overview…}} @show((it.current_view == "pricing")){@div{…pricing…}}}
 
-<template id="Tabs">
-  <section>
-    <div role="tablist" class="tabs">
-      <button role="tab"
-        @if.class=".currentView is 'overview'" @then="'tab tab-active'" @else="'tab'"
-        @on.click=".currentView = 'overview'">Overview</button>
-      <button role="tab"
-        @if.class=".currentView is 'pricing'" @then="'tab tab-active'" @else="'tab'"
-        @on.click=".currentView = 'pricing'">Pricing</button>
-    </div>
-    <div @show=".currentView is 'overview'">…overview…</div>
-    <div @show=".currentView is 'pricing'">…pricing…</div>
-  </section>
-</template>
+fixtures:
+  "fresh":
+    it.current_view = "overview"
 ```
 
 There is no script block and there are no handlers: each tab WRITES the field,
@@ -47,7 +36,7 @@ fn tabs_comp() -> @component.Component {
 One string field is the whole state machine. `.currentView is 'overview'`
 drives both the panel's `@show` and the active-tab class via `@if.class` /
 `@then` / `@else`. A tab click writes the field with a string literal
-(`@on.click=".currentView = 'pricing'"`).
+(`~on_click=".currentView = 'pricing'"`).
 
 A field has ONE spelling now — the one a view reads — so the schema writes
 `currentView` and so does every read of it. The name is yours to pick (`tab`,

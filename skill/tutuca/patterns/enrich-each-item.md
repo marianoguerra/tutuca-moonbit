@@ -3,28 +3,27 @@
 **Problem:** show a value derived from each item (a count, a formatted label)
 without storing it on the data.
 
-```html
-<script type="tutuca/spec">
-  state Notes { items: Array[String], picked: Set[String] }
-</script>
+```tutu
+spec:
+  Notes:
+    field items :: List.of(String)
+    field picked :: Set.of(String)
 
-<script type="tutuca/script" for="Notes">
-  /// Per-row bindings. What an enricher writes is in scope for that row's
-  /// subtree and nowhere else.
-  enrich enrichItem {
-    @count = len (str @value)
-    @picked = has .picked @value
-  }
-</script>
+logic:
+  Notes:
+    /// Per-row bindings. What an enricher writes is in scope for that row's
+    /// subtree and nowhere else.
+    enrich enrich_item(value, key):
+      count = (value.to_string()).length()
+      picked = it.picked.has(value)
 
-<template id="Notes">
-  <ul>
-    <li @each=".items" @enrich-with="enrichItem">
-      <input type="checkbox" :checked="@picked" @on.click=".picked.toggle @value">
-      <x text="@value"></x> (<x text="@count"></x> characters)
-    </li>
-  </ul>
-</template>
+view:
+  Notes:
+    @ul{
+      @each(value, key in it.items, ~enrich_with: enrich_item){
+        @li{@input(~type: "checkbox", ~checked: picked, ~on_click: it.picked.toggle(value)) @(value)@" ("@(count)@" characters) "}
+      }
+    }
 ```
 
 An `enrich` writes `@name` bindings; every name it assigns becomes an
@@ -36,10 +35,10 @@ difference between it and a `receive`.
 a coercer: `len (str @value)`, not `len @value`. A row's membership in a set
 elsewhere on the state is what `has` answers — the same key the generated
 `toggleInPicked` writes — and the answer becomes an ordinary binding the
-`:checked` slot reads. Combine freely with `@when` and `@loop-with` on the same
+`:checked` slot reads. Combine freely with `~when` and `~loop_with` on the same
 element.
 
-Without an `@each` on the same element, `@enrich-with` enriches the whole
+Without an `@each` on the same element, `~enrich_with` enriches the whole
 scope instead — that is `bindWith`, which sees only the state (see
 [bind-text-and-attributes.md](bind-text-and-attributes.md)).
 

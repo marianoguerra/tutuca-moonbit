@@ -58,6 +58,8 @@ pub fn print_protocol(
   let ex_intents = []
   let props = []
   let views = []
+  let provides = []
+  let lookups = []
   for group in @sh.body_groups(decl) {
     guard group.it is Group(gp) && gp.length() > 0 && gp[0].it is Id(word) else {
       continue
@@ -81,6 +83,11 @@ pub fn print_protocol(
         }
       }
       "property" => props.push(protocol_property(gp))
+      // A protocol's `provide` and `lookup` name a dynamic channel and its
+      // type — the same shape as a property, and without `~writable`, which
+      // says nothing about a value that travels the tree.
+      "provide" => provides.push(protocol_channel(gp, "provide"))
+      "lookup" => lookups.push(protocol_channel(gp, "lookup"))
       "view" => {
         guard gp.length() >= 2 && gp[1].it is Id(role) else {
           raise @sh.ExError(
@@ -94,7 +101,7 @@ pub fn print_protocol(
       other =>
         raise @sh.ExError(
           message="`\{other}` is not a protocol member",
-          help="a protocol declares `message`, `intent`, `express`, `property` and `view`",
+          help="a protocol declares `message`, `intent`, `express`, `property`, `view`, `provide` and `lookup`",
           span=@sh.span_of(gp[0]),
         )
     }
@@ -125,6 +132,12 @@ pub fn print_protocol(
   if !views.is_empty() {
     out.write_string("  view { \{views.join(", ")} }\n")
   }
+  if !provides.is_empty() {
+    out.write_string("  provide { \{provides.join(", ")} }\n")
+  }
+  if !lookups.is_empty() {
+    out.write_string("  lookup { \{lookups.join(", ")} }\n")
+  }
   out.write_string("}\n")
 }
 
@@ -147,4 +160,22 @@ fn protocol_property(parts : Array[@ast.Node]) -> String raise @sh.ExError {
   } else {
     "\{name}: \{ty}"
   }
+}
+
+///|
+/// A protocol's `provide` or `lookup`: a name and the type that travels.
+fn protocol_channel(
+  parts : Array[@ast.Node],
+  word : String,
+) -> String raise @sh.ExError {
+  guard parts.length() >= 4 &&
+    parts[1].it is Id(name) &&
+    parts[2].it is Op("::") else {
+    raise @sh.ExError(
+      message="a protocol `\{word}` names a type",
+      help="write `\{word} <name> :: <Type>`",
+      span=@sh.span_of(parts[0]),
+    )
+  }
+  "\{name}: \{print_ty(@sh.read_ex(parts[3:]))}"
 }

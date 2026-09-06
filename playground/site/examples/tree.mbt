@@ -11,12 +11,12 @@ fn tree_item_comp() -> @component.Component {
     initial=TreeItemState::{
       type_: "dir",
       label: "A Tree Item",
-      isOpen: true,
+      is_open: true,
       items: [],
     },
     compute=m => match m {
       AreChildsVisible =>
-        Some((s, _args, _stack) => Bool(s.isOpen && s.items.length() > 0))
+        Some((s, _args, _stack) => Bool(s.is_open && s.items.length() > 0))
     },
     // A raw `match msg`: this component answers an Intent, which arrives
     // because a walk routed here rather than because a view named it — so the
@@ -32,7 +32,7 @@ fn tree_item_comp() -> @component.Component {
           false // stop at the leaf: self
         })
         ctx.intent("treeItemSelected", [self_v], @tutuca.IntentOpts::new(route=[Dyn]))
-        Next({ ..s, isOpen: !s.isOpen })
+        Next({ ..s, is_open: !s.is_open })
       }
       // a TreeItem between the source and the root is an OBSERVER: it sees
       // the intent, does not reply, and the walk goes on to its own parent

@@ -9,104 +9,95 @@ The channels are **effects the block spells**: `send`, `sendAt`, `intent
 if the whole body finished, because a message sent beside a transition that did
 not happen is the one outcome nobody can reason about afterwards.
 
-```html
-<script type="tutuca/spec">
-  state Status { message: String, count: Int }
-  /// The two names a sibling addresses this component by. No view writes
-  /// either, so the schema is the only place they can be declared — and
-  /// declaring them is what lets the block answer them.
-  handle Status {
-    message { flash(String), clear
-    }
-  }
+```tutu
+spec:
+  Status:
+    field message :: String
+    field count :: Int
 
-  state Chat { draft: String, status: Status }
+    message flash(String)
 
-  state Log { label: String, log: Array[String] }
-  handle Log {
-    message { onItemClick
-    }
-  }
-  handle Log {
-    intent { itemSelected(String)
-    }
-  }
+    message clear
 
-  state Feed { items: Array[Any], isLoading: Bool, error: String }
-  /// The three `loadData…` names are the ANSWERS. Declaring them is what makes
-  /// `ask lex 'loadData'` a request rather than a notification — the
-  /// generator reads this list and fills the intent's opts in.
-  handle Feed {
-    message { init, loadDataOk(Array[Any]), loadDataFailed(String),
-                 loadDataUnhandled
-    }
-  }
-</script>
+  Chat:
+    field draft :: String
+    field status :: Instance.of(Status)
 
-<script type="tutuca/script" for="Status">
-  receive flash(m) {
-    .message = m
-    .count += 1
-  }
-  receive clear { .message = '' }
-</script>
+  Log:
+    field label :: String
+    field log :: List.of(String)
 
-<script type="tutuca/script" for="Log">
-  /// Name the JOB, not the target, and let the route find who does it. `dyn`
-  /// walks the ancestors, starting at the sender's PARENT.
-  receive onItemClick { ask dyn 'itemSelected' .label }
+    message on_item_click
 
-  /// The ancestor that answers. The first `intent` arm that REPLIES ends the
-  /// walk; one that only records it is an observer.
-  answer itemSelected(label) { .log.insertAt 0 label }
-</script>
+    intent item_selected(String)
 
-<script type="tutuca/script" for="Feed">
-  /// `lex` walks the IntentFns registered on the SCOPE, not the tree. A bare
-  /// `ask` takes `dyn lex`: try the ancestors, then the scope.
-  receive init {
-    ask lex 'loadData'
-    .isLoading = true
-  }
+  Feed:
+    field items :: List.of(Any)
+    field is_loading :: Bool
+    field error :: String
 
-  /// Three outcomes, three arms, each with its own shape. There is
-  /// deliberately no fourth: a combined payload is one an arm can read the
-  /// wrong slot of.
-  receive loadDataOk(rows) {
-    .items = rows
-    .isLoading = false
-  }
-  receive loadDataFailed(e) {
-    .error = e
-    .isLoading = false
-  }
-  receive loadDataUnhandled {
-    .error = 'nothing in the scope answers `loadData`'
-    .isLoading = false
-  }
-</script>
+    message init
 
-<template id="Status"><span @text=".message"></span></template>
-<template id="Chat">
-  <section>
-    <x render=".status"></x>
-    <!-- `submit` addresses the SIBLING, which is the one arm below in MoonBit -->
-    <input :value=".draft" @on.input=".draft = e.value" @on.keydown+send="submit">
-  </section>
-</template>
-<template id="Log">
-  <section>
-    <p @text=".label" @on.click="onItemClick"></p>
-    <li @each=".log"><x text="@value"></x></li>
-  </section>
-</template>
-<template id="Feed">
-  <section>
-    <div @show=".isLoading">Loading</div>
-    <button @on.click="loadAnotherWay">Load another way</button>
-    <li @each=".items"><x text="@value"></x></li>
-  </section>
-</template>
+    message load_data_ok(List.of(Any))
+
+    message load_data_failed(String)
+
+    message load_data_unhandled
+
+logic:
+  Status:
+    receive flash(m):
+      it.message := m
+      it.count += 1
+
+    receive clear:
+      it.message := ""
+
+  Log:
+    /// Name the JOB, not the target, and let the route find who does it. `dyn`
+    /// walks the ancestors, starting at the sender's PARENT.
+    receive on_item_click:
+      ask("item_selected", it.label, ~route: dyn)
+
+    /// The ancestor that answers. The first `intent` arm that REPLIES ends the
+    /// walk; one that only records it is an observer.
+    answer item_selected(label):
+      it.log.insert_at(0, label)
+
+  Feed:
+    /// `lex` walks the IntentFns registered on the SCOPE, not the tree. A bare
+    /// `ask` takes `dyn lex`: try the ancestors, then the scope.
+    receive init:
+      ask("load_data", ~route: lex)
+      it.is_loading := true
+
+    /// Three outcomes, three arms, each with its own shape. There is
+    /// deliberately no fourth: a combined payload is one an arm can read the
+    /// wrong slot of.
+    receive load_data_ok(rows):
+      it.items := rows
+      it.is_loading := false
+
+    receive load_data_failed(e):
+      it.error := e
+      it.is_loading := false
+
+    receive load_data_unhandled:
+      it.error := "nothing in the scope answers `loadData`"
+      it.is_loading := false
+
+view:
+  Status:
+    @span{@(it.message)}
+
+  Chat:
+    @section{@render(it.status) @comment{ `submit` addresses the SIBLING, which is the one arm below in MoonBit } @input(~value: it.draft, ~on_input: it.draft := e.value, ~on_keydown: submit ~send)}
+
+  Log:
+    @section{@p(~on_click: on_item_click){@(it.label)} @each(value, key in it.log){@li{@(value)}}}
+
+  Feed:
+    @section{@show(it.is_loading){@div{Loading}} @button(~on_click: load_another_way){Load another way} @each(value, key in it.items){@li{@(value)}}}
 ```
 
 Pick by **what you know**: `send` / `receive` when you can name the target,

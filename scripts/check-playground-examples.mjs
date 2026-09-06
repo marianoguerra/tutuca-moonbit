@@ -1,14 +1,14 @@
 // Compile-check the playground's editable examples (playground/site/examples/
-// *.mbt + their sibling *.html). They are standalone teaching editions —
+// *.mbt + their sibling *.tutu). They are standalone teaching editions —
 // intentionally NOT the storybook/examples ports — and no moon package
 // includes them, so without this check they rot silently when the library API
 // moves (it happened: see "drop deprecated Map::new in examples").
 //
-// An example's views live in its .html, exactly as `tutuca gen` expects.
+// An example's views live in its .tutu, exactly as `tutuca gen` expects.
 // The browser generates that module on the fly (the View tab), so this check
 // runs the SAME generator — viewgen/ compiled to JS — and drops its output
 // into the package as extra files, the way compiler.worker.js does. An
-// example with no .html sibling is checked on its own (a runtime-view
+// example with no .tutu sibling is checked on its own (a runtime-view
 // escape-hatch example is still legal).
 //
 // Each example is checked one at a time (they all define `fn build()`, so
@@ -76,8 +76,8 @@ if (!examples.length) {
 const units = examples.map((name) => ({
   name,
   mbt: readFileSync(join(EXAMPLES, name), "utf8"),
-  html: existsSync(join(EXAMPLES, name.replace(/\.mbt$/, ".html")))
-    ? readFileSync(join(EXAMPLES, name.replace(/\.mbt$/, ".html")), "utf8")
+  html: existsSync(join(EXAMPLES, name.replace(/\.mbt$/, ".tutu")))
+    ? readFileSync(join(EXAMPLES, name.replace(/\.mbt$/, ".tutu")), "utf8")
     : null,
 }));
 units.push(heroTeaser());

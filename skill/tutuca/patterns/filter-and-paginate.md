@@ -5,20 +5,13 @@
 identity survives editing or deleting across pages — without scanning the
 list more than necessary.
 
-```html
-<section @enrich-with="pagerInfo">          <!-- COUNT pass: runs once -->
-  <input :value=".query" @on.input="search e.value" />
-  <li @each=".items" @when="onlyMatches" @loop-with="page">  <!-- COLLECT pass -->
-    <span @text="@key"></span> <x render-it></x>
-    <button @on.click="removeInItemsAt @key">✕</button>
-  </li>
-  <button :disabled="@isFirst" @on.click="prev">‹</button>
-  <button @text="@pageLabel"></button>
-  <button :disabled="@isLast" @on.click="next">›</button>
-</section>
+```tutu
+view:
+  Card:
+    @section(~enrich_with: pager_info){@comment{ COUNT pass: runs once } @input(~value: it.query, ~on_input: search(e.value)) @each(value, key in it.items, ~when: only_matches, ~loop_with: page){@li{@comment{ COLLECT pass } @span{@(key)} @render(value) @button(~on_click: remove_in_items_at(key)){✕}}} @button(~disabled: is_first, ~on_click: prev){‹} @button{@(page_label)} @button(~disabled: is_last, ~on_click: next){›}}
 ```
 
-All three handlers are MoonBit, and each for its own reason: `@loop-with` has
+All three handlers are MoonBit, and each for its own reason: `~loop_with` has
 no declaration kind in the script block; the count scan folds over the whole
 sequence, which no expression in that language can do; and the rows are child
 component *instances*, whose fields are read through a path into `@value` that
@@ -41,7 +34,7 @@ bind_with=e => match e {
   PagerInfo =>
     Some(s => {
       let total = match_count(s)
-      let (page_count, current) = clamp(s.page, total, s.pageSize)
+      let (page_count, current) = clamp(s.page, total, s.page_size)
       {
         "currentPage": Num(current.to_double()),
         "isFirst": Bool(current <= 0),
@@ -58,7 +51,7 @@ loop_with=l => match l {
         Num(n) => n.to_int()
         _ => 0
       }
-      let (start, end) = (current * s.pageSize, (current + 1) * s.pageSize)
+      let (start, end) = (current * s.page_size, (current + 1) * s.page_size)
       let keys : Array[@tutuca.Value] = []
       let mut m = 0
       for i, v in seq.list() {                // early-exit: stops at page end
@@ -81,14 +74,14 @@ loop_with=l => match l {
 that clamp and set `page`, resetting to 0 on every query change.)
 
 Returning **`keys`** (ordered *original* keys) is what makes this work: the
-renderer visits exactly those and does **not** re-apply `@when`, and because
+renderer visits exactly those and does **not** re-apply `~when`, and because
 `@key` stays the original index, deleting row `@key` on page 2 of a filtered
 view hits the right item. The page controls live *outside* the loop, so they
-can't read its `iter_data`; instead a scope `@enrich-with` (`bind_with`)
+can't read its `iter_data`; instead a scope `~enrich_with` (`bind_with`)
 does the one counting scan and publishes the clamped page + labels as
 `@`-bindings. The `LoopCtx` lets the `loop_with` handler avoid repeating
 that work: `(ctx.lookup)` reads the clamped page the enrich already
-computed, and `(ctx.filter)` reuses the declared `@when` predicate — so the
+computed, and `(ctx.filter)` reuses the declared `~when` predicate — so the
 collect pass scans just far enough to fill the page.
 
 This is one of three wiring strategies (naive two-scan, shared, coupled

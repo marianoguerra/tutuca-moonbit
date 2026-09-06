@@ -143,29 +143,30 @@ pub fn print_spec(
     gap()
     // `provide theme = it.theme` — one line each, where the old block was a
     // section. The value is the value language, read and printed like any other.
-    out.write_string(
-      "    provide \{@names.snake_of(p.name)} = \{expr_text(p.source)}\n",
-    )
+    //
+    // The NAME is not renamed: a provide and the lookup that finds it are
+    // paired by string, across files that convert at different times, so
+    // snake-casing one side would quietly unpair them.
+    out.write_string("    provide \{p.name} = \{expr_text(p.source)}\n")
   }
   for l in def.lookup {
     gap()
     match l.default {
-      Some(d) =>
-        out.write_string(
-          "    lookup \{@names.snake_of(l.name)} = \{expr_text(d)}\n",
-        )
-      None => out.write_string("    lookup \{@names.snake_of(l.name)}\n")
+      Some(d) => out.write_string("    lookup \{l.name} = \{expr_text(d)}\n")
+      None => out.write_string("    lookup \{l.name}\n")
     }
   }
   if !def.implements.is_empty() {
     gap()
     print_implements(def, names, out)
   }
-  if !def.property_bindings.is_empty() || !def.view_bindings.is_empty() {
+  if !def.property_bindings.is_empty() ||
+    !def.view_bindings.is_empty() ||
+    !def.provide_bindings.is_empty() ||
+    !def.lookup_bindings.is_empty() {
     gap()
   }
   print_bindings(def, names, out)
-  refuse_unconverted(def)
 }
 
 ///|
@@ -241,24 +242,6 @@ fn expr_text(source : String) -> String raise NoSpelling {
       )
   }
   print_expr(e)
-}
-
-///|
-/// The parts of a schema this converter does not print yet.
-///
-/// Each is refused BY NAME rather than dropped: a component whose protocol
-/// declarations vanished would compile, register, and compose with nothing.
-fn refuse_unconverted(def : @statedef.StateDef) -> Unit raise NoSpelling {
-  let missing = []
-  if !def.provide_bindings.is_empty() || !def.lookup_bindings.is_empty() {
-    missing.push("a `provide` or `lookup` protocol binding")
-  }
-  guard missing.is_empty() else {
-    raise NoSpelling(
-      what="\{missing.join(", ")} in `\{def.component}`",
-      help="convert this file by hand: the converter prints fields, properties, rules and message declarations, and refuses the rest rather than dropping it",
-    )
-  }
 }
 
 ///|

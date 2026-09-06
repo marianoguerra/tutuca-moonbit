@@ -1,34 +1,32 @@
 # Tutuca — List Iteration & Enrichment
 
 Read this file when a view iterates a sequence (`@each`,
-`render-each`), filters (`@when`), enriches items or scopes
-(`@enrich-with`), or paginates (`@loop-with`).
+`render-each`), filters (`~when`), enriches items or scopes
+(`~enrich_with`), or paginates (`~loop_with`).
 
 ## List Iteration
 
 `@each` accepts: `.field`, `*dynamic`.
 
-```html
-<!-- iterate plain values -->
-<li @each=".items"><span @text="@key"></span>: <x text="@value"></x></li>
+```tutu
+// iterate plain values
+@each(value, key in it.items){@li{@span{@(key)}@": "@(value)}}
 
-<!-- filter -->
-<li @each=".items" @when="filterItem">...</li>
+// filter
+@each(value, key in it.items, ~when: filter_item){@li{...}}
 
-<!-- per-item enrichment via the enrich handler (binds key X => @X in template) -->
-<li @each=".items" @enrich-with="enrichItem">
-  <x text="@count"></x>
-</li>
+// per-item enrichment via the enrich handler (binds a name the body reads)
+@each(value, key in it.items, ~enrich_with: enrich_item){@li{@(count)}}
 
-<!-- shared per-loop data + slicing (computed once before iteration) -->
-<li @each=".items" @loop-with="getIterData" @when="filterItem">...</li>
+// shared per-loop data + slicing (computed once before iteration)
+@each(value, key in it.items, ~loop_with: get_iter_data, ~when: filter_item){@li{...}}
 
-<!-- render a list of components -->
-<x render-each=".items"></x>
-<x render-each=".items" as="edit"></x>                          <!-- specific view -->
-<x render-each=".items" @when="filterItem"></x>                 <!-- with filter -->
-<x render-each=".items" @loop-with="getIterData" @when="filterItem"></x>
-<x render-each=".items" @show=".isOpen"></x>                    <!-- wrap in show -->
+// render a list of components: the body is just the binder
+@each(value, key in it.items){@render(value)}
+@each(value, key in it.items){@render(value, ~as: "edit")}     // specific view
+@each(value, key in it.items, ~when: filter_item){@render(value)}
+@each(value, key in it.items, ~loop_with: get_iter_data, ~when: filter_item){@render(value)}
+@show(it.is_open){@each(value, key in it.items){@render(value)}}  // wrap in show
 ```
 
 Directives carry the `@` prefix everywhere — on `<li @each>` / `<div @each>`
@@ -36,14 +34,14 @@ host-element loops and on `<x render-each>` alike. Only `as=` is bare, because
 it is an argument to the op rather than a directive. Both forms share the
 handler-name resolution rules below.
 
-`@enrich-with` is **not** supported on `<x render-each>`: the op renders
+`~enrich_with` is **not** supported on `<x render-each>`: the op renders
 each item as a component in its own frame and drops child content, so
 nothing is left to read the `@X` binds an enricher would set. Reach for a
 host-element `@each` loop when you need enrichment.
 
-**An iteration directive cannot go on an `<x>` op.** `@each`, `@enrich-with`,
-and — outside the `<x render-each>` that consumes them — `@when` and
-`@loop-with` are rejected there, and the whole `<x>` is dropped with a
+**An iteration directive cannot go on an `<x>` op.** `@each`, `~enrich_with`,
+and — outside the `<x render-each>` that consumes them — `~when` and
+`~loop_with` are rejected there, and the whole `<x>` is dropped with a
 `LOOP_DIRECTIVE_ON_X_OP` error. An `<x>` op is one render site with no body to
 iterate, so the directive has nothing to wrap; dropping it and keeping the site
 would quietly turn N renders into one. `<x render-it @each=".rows">` is the
@@ -51,9 +49,20 @@ trap this exists for: without its loop that `render-it` renders the value that
 was to be iterated, which is the value already rendering. Write it one of the
 two ways that work:
 
-```html
-<x render-each=".rows"></x>              <!-- the sugar -->
-<div @each=".rows"><x render-it></x></div>   <!-- the loop on a wrapper -->
+```tutu
+view:
+  Card:
+    @each(value, key in it.rows){
+      @render(value)
+    }
+    @" "
+    @comment{ the sugar }
+    @" "
+    @each(value, key in it.rows){
+      @div{@render(value)}
+    }
+    @" "
+    @comment{ the loop on a wrapper }
 ```
 
 Should a self-referential render site reach the renderer another way, it stops
@@ -107,14 +116,14 @@ Loop keys and values arrive as `@tutuca.Value` — read them with the
 coercers (`.str()`, `.int()`, `.list()`, `.field("x")`) or pattern-match
 (`match value { Str(item) => ..., _ => ... }`).
 
-### `@loop-with` return shape — `LoopWith`
+### `~loop_with` return shape — `LoopWith`
 
-A `@loop-with` handler returns a `@component.LoopWith`
+A `~loop_with` handler returns a `@component.LoopWith`
 (`LoopWith::new(iter_data?=…, start?=…, end?=…, keys?=…)`) — all four
 fields optional:
 
-- **`iter_data`** — the shared per-loop value handed to `@when` /
-  `@enrich-with`. Defaults to `Map({ "seq": seq })` when omitted. Inside
+- **`iter_data`** — the shared per-loop value handed to `~when` /
+  `~enrich_with`. Defaults to `Map({ "seq": seq })` when omitted. Inside
   the loop a binding may read one **binding member** directly
   (`@value.title`) — if an enrich handler only copies members of the
   loop value, `gen` hints to drop it and read the members instead.
@@ -131,28 +140,28 @@ fields optional:
 
 Slicing is positional but **preserves each item's original key**: a list
 sliced to `start=2` still binds `@key` to `2, 3, …`, so events, drag,
-and two-way binding keep their identity. With `start`/`end`, `@when` then
+and two-way binding keep their identity. With `start`/`end`, `~when` then
 filters *within* the window, so a page may yield fewer than `end - start`
 items — to filter *before* paging (so the page count reflects the filtered
 total), return `keys` instead. `keys` are original keys, so identity is
 preserved there too: editing or deleting a row on page 2 of a filtered view
 hits the right item. A `keys` return is **authoritative** — the renderer
-visits exactly those keys and does **not** re-apply `@when` (the handler has
+visits exactly those keys and does **not** re-apply `~when` (the handler has
 already decided what renders).
 
-### `@loop-with` handler context — the `LoopCtx`
+### `~loop_with` handler context — the `LoopCtx`
 
 The handler's third parameter is the typed loop context,
 `@component.LoopCtx`, a struct of two function fields (call
 struct-function fields with parens):
 
 - **`(ctx.lookup)(name) : Value`** — reads a scope `@`-binding, e.g. one
-  published by an ancestor scope `@enrich-with`. Lets the handler
+  published by an ancestor scope `~enrich_with`. Lets the handler
   **reuse a value the enrich already computed** instead of recomputing
   it: `(ctx.lookup)("currentPage")`.
 - **`(ctx.filter)(key, value, iter_data) : Bool`** — wraps the declared
-  `@when` predicate (always callable; returns `true` when there is no
-  `@when`). Lets the handler apply the *declared* filter while building
+  `~when` predicate (always callable; returns `true` when there is no
+  `~when`). Lets the handler apply the *declared* filter while building
   its `keys` slice, rather than re-implementing the match test:
   `(ctx.filter)(Num(i.to_double()), v, Null)`.
 
@@ -163,18 +172,18 @@ For each render of an element with `@each=".items"`:
 1. **Resolve sequence** — evaluate `.items`. `List`s, `Map`s, and any
    `Obj` implementing `seq_entries` are recognized (see *Custom
    collections* below).
-2. **`@loop-with`** (once per render) — the handler is called with
+2. **`~loop_with`** (once per render) — the handler is called with
    `(state, seq, loop_ctx)`; its `iter_data` becomes the shared per-loop
    value and its `start`/`end` slice the iteration. Skipped if no
-   `@loop-with`; then `iter_data` is `Map({ "seq": seq })` and the whole
+   `~loop_with`; then `iter_data` is `Map({ "seq": seq })` and the whole
    sequence is iterated. If it returns `keys`, those exact keys are
    visited in order (filter-then-paginate) and `start`/`end` are ignored.
 3. For each `(key, value)` pair in the sliced sequence (or each `key` in
    `keys`):
-   1. **`@when`** — called with `(state, key, value, iter_data)`; if it
+   1. **`~when`** — called with `(state, key, value, iter_data)`; if it
       returns `false`, the item is skipped. **Not applied** when the
       handler returned `keys` (those are authoritative).
-   2. **`@enrich-with`** — called with
+   2. **`~enrich_with`** — called with
       `(state, binds, key, value, iter_data, stack)`. `binds` is a **mutable
       `Map[String, Value]`** seeded with `{ key, value }`; writing into
       it (`binds["count"] = …`) creates `@`-prefixed bindings available
@@ -187,17 +196,17 @@ whatever you wrote into `binds`).
 
 ### Handler resolution
 
-`@when` / `@enrich-with` / `@loop-with` name bare identifiers resolved
-in the matching typed bucket: `@when="filterItem"` → the `when` entry,
-`@enrich-with` → `enrich` (or `bind_with` without `@each`),
-`@loop-with` → `loop_with`. When no typed-bucket entry matches, the name
+`~when` / `~enrich_with` / `~loop_with` name bare identifiers resolved
+in the matching typed bucket: `~when="filterItem"` → the `when` entry,
+`~enrich_with` → `enrich` (or `bind_with` without `@each`),
+`~loop_with` → `loop_with`. When no typed-bucket entry matches, the name
 falls back to a `compute`/generated entry (works, not
 idiomatic — the typed buckets keep iteration helpers grouped and give
 them the right signature).
 
 ## Scope Enrichment
 
-Without an `@each` on the same element, `@enrich-with` resolves in the
+Without an `@each` on the same element, `~enrich_with` resolves in the
 **`bind_with`** bucket instead: the handler takes only the state, and
 its **returned** `Map[String, Value]`'s keys become `@`-prefixed
 bindings for descendants. The block-language keyword is `bindWith`.
@@ -212,8 +221,10 @@ bind_with={
 }
 ```
 
-```html
-<div @enrich-with="info">Length: <x text="@len"></x></div>
+```tutu
+view:
+  Card:
+    @div(~enrich_with: info){@"Length: "@(len)}
 ```
 
 ## Custom collections — the `Obj` trait
@@ -260,13 +271,13 @@ There are three ways to wire it, trading simplicity for scans-per-render
 (all return `keys`, so all keep identity):
 
 **1. Naive — two independent scans.** The loop scans + slices the whole
-list itself; a separate `@enrich-with` scans again for the pager labels.
+list itself; a separate `~enrich_with` scans again for the pager labels.
 Simplest, nothing shared: the `loop_with` handler walks `seq.list()`
 with `(ctx.filter)(...)`, builds the full matching index list, clamps
 the page, and returns that page's slice as `keys`.
 
 **2. Shared — one count + one partial collect** (the recipe's default).
-A scope `@enrich-with` (`bind_with`) on an ancestor does **one**
+A scope `~enrich_with` (`bind_with`) on an ancestor does **one**
 counting scan and publishes the clamped page + pager labels (which the
 page controls, sitting outside the loop, read as `@`-bindings); the
 `loop_with` handler reads the clamped page via

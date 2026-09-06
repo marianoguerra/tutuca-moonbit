@@ -60,15 +60,15 @@ fn json_string_comp() -> @component.Component {
 ///|
 fn json_number_comp() -> @component.Component {
   json_number_component(
-    initial=JsonNumberState::{ strValue: "0", value: 0 },
+    initial=JsonNumberState::{ str_value: "0", value: 0 },
     // Keep the raw string always, update the numeric value only when finite.
     // The payload is typed String by the generator, so no unpacking.
     update=(s, msg, _ctx) => match JsonNumberMsg::from_dispatch(msg) {
       Some(SetRawValue(raw)) => {
         let parsed : Double? = Some(@string.parse_double(raw)) catch { _ => None }
         Next(match parsed {
-          Some(n) => { strValue: raw, value: n }
-          None => { ..s, strValue: raw }
+          Some(n) => { str_value: raw, value: n }
+          None => { ..s, str_value: raw }
         })
       }
       Some(Unknown(_, _)) | None => Unhandled

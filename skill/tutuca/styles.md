@@ -9,24 +9,22 @@ Styles live in the view file: a `<style>` inside a `<template>` is that view's
 style, one at file level is the component's `common_style`, and one marked
 `data-global` is its `global_style`.
 
-```html
-<script type="tutuca/spec">
-  state Styled {  }
-</script>
+```tutu
+spec:
+  Styled
 
-<!-- scoped to all views of this component -->
-<style>.shared { color: yellow; }</style>
-<!-- injected unscoped -->
-<style data-global>.app-thing { color: green; }</style>
+view:
+  @style{.shared { color: yellow; }}
 
-<template id="Styled">
-  <style>.mine { color: red; }</style>
-  <p class="mine">x</p>
-</template>
-<template id="Styled:two">
-  <style>.mine { color: orange; }</style>
-  <p class="mine">two</p>
-</template>
+  @style(~global){.app-thing { color: green; }}
+
+  Styled:
+    @style{.mine { color: red; }}
+    @p(~class: "mine"){x}
+
+  Styled.two:
+    @style{.mine { color: orange; }}
+    @p(~class: "mine"){two}
 ```
 
 The generated `<c>_common_style` / `<c>_global_style` are plain strings the

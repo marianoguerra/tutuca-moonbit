@@ -106,12 +106,12 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
   `@show=".item.isOpen"` all fail. To reach into nested data: render the
   child as a component (`<x render=".foo">` then `@text=".bar"` inside),
   add a read-only property (read the nested value off a `@tutuca.Value`
-  field with `v.field("name")`), or use `@enrich-with`
+  field with `v.field("name")`), or use `~enrich_with`
   for scope-level derivation. The one exception: a **binding** may read
   exactly one **binding member** — `@text="@value.title"` inside `@each`
   works (any `@`-binding, one level only; `@value.a.b` fails generation
   as `BINDING_MEMBER_TOO_DEEP`, and render targets still reject it).
-- **Use `@bind=".field"` only for checked scalar form bindings.** It requires a
+- **Use `~bind=".field"` only for checked scalar form bindings.** It requires a
   state schema and supports `String` text controls/single selects, `Bool`
   checkboxes, integer number/range inputs, and `Double` number/range inputs.
   The generator rejects dynamic input types, nested/loop targets and competing
@@ -151,14 +151,14 @@ it. What you write is the code no generator can: the handlers.
 
 `counter.html`:
 
-```html
-<script type="tutuca/spec">
-  state Counter { count: Int }
-</script>
+```tutu
+spec:
+  Counter:
+    field count :: Int
 
-<template>
-  <button @on.click="inc" @text=".count"></button>
-</template>
+view:
+  Counter:
+    @button(~on_click: inc){@(it.count)}
 ```
 
 `counter.mbt`:
@@ -185,7 +185,7 @@ pub fn counter_module() -> @component.ModuleDef {
 Then regenerate (`tutuca gen counter.html --name Counter`) and run
 `moon fmt`, so the checked-in pair stays reproducible.
 
-Adding `@on.click="del"` to the view and regenerating makes that match
+Adding `~on_click="del"` to the view and regenerating makes that match
 non-exhaustive: a compile error naming `Some(Del)`, where a string-keyed
 handler map would have left a name nobody answers.
 
@@ -280,7 +280,7 @@ when the ancestor genuinely needs it. See
 **Stack: frames vs scopes.** As the renderer walks the AST it pushes
 bind frames. A *frame* is a barrier: name lookups (`@x`) stop at it,
 so a child component view sees a clean namespace. A *scope* is
-transparent: iteration `key` / `value` and `@enrich-with` binds layer
+transparent: iteration `key` / `value` and `~enrich_with` binds layer
 onto the surrounding frame and remain visible to handlers attached to
 the same iteration. `it` (the target of `.field` reads and `$handler`
 calls) is set on both.
@@ -290,7 +290,7 @@ calls) is set on both.
 | `<x render=".f">` / `<x render-it>` | frame | `it` = child, fresh binds            |
 | `<x render-each>` per iter          | frame | `it` = item, binds `{ key }`         |
 | `<div @each>` per iter              | scope | `it` = item, binds `{ key, value }`  |
-| `<div @enrich-with=…>` (no `@each`) | scope | `it` unchanged, binds = handler result |
+| `<div ~enrich_with=…>` (no `@each`) | scope | `it` unchanged, binds = handler result |
 
 For full mechanics see [iteration.md](./iteration.md).
 This is why a handler attached to `<div @each>` runs against the
@@ -327,7 +327,7 @@ keep them separate.
 Views are name-based: there is no arithmetic expression syntax in
 values, and no Vue- or Mustache-style `{{ … }}` placeholders. Every
 value slot — conditions (`@show`, `@if`), iteration (`@each`,
-`render-each`, `@when`), enrichment (`@enrich-with`, `@loop-with`), template
+`render-each`, `~when`), enrichment (`~enrich_with`, `~loop_with`), template
 expansion (`{…}`, `:attr`, `@text`) — names a field, handler, or macro
 defined on the component (or registered with the scope). Logic lives in
 `update` / `compute` and the render buckets (`when` /
@@ -341,13 +341,23 @@ same vocabulary and the same grammar. There is one language, not two that
 resemble each other; see [schema.md](./schema.md#the-reading-vocabulary)
 for the full table, which serves both halves.
 
-```html
-<div @show="not .open">…</div>
-<div @show="not (empty? .kind)">…</div>
-<div @show=".kind is 'a'">…</div>
-<div @show="(len .items) is 1">…</div>
-<div @show=".open and .ready">…</div>
-<div @show="(.n > 0) and .open">…</div>
+```tutu
+spec:
+  Conditions:
+    field open :: Bool
+    field ready :: Bool
+    field kind :: String
+    field n :: Int
+    field items :: List.of(String)
+
+view:
+  Conditions:
+    @show(!it.open){@div{…}}
+    @show(!it.kind.is_empty()){@div{…}}
+    @show(it.kind == "a"){@div{…}}
+    @show(it.items.length() == 1){@div{…}}
+    @show(it.open && it.ready){@div{…}}
+    @show((it.n > 0) && it.open){@div{…}}
 ```
 
 Application is **juxtaposition** (`empty? .items`, `contains (lower .title) 'x'`)
@@ -358,7 +368,7 @@ remember and none to get wrong.
 
 A conditional slot also accepts the plain value forms `@text` does — a property
 (`@show=".isOpen"`), or a
-loop/scope `@binding` (`@show="@isSelected"`, `@hide="@hasDesc"`) — read as a
+loop/scope `~binding` (`@show="@isSelected"`, `@hide="@hasDesc"`) — read as a
 boolean. String literals are `'detail'`, or `'two words'` for one with spaces
 (escape an interior quote as `\'`).
 
@@ -371,7 +381,7 @@ bare parameter.
 `^macro` and `host.config` are ordinary operands here: `@hide="empty? ^label"`,
 `@show="not ^collapsed"`, `@show="host.origin is 'x'"`. They are substituted as
 the value is read, so a `^name` still has to expand to a single token. Going
-the other way, a `<script type="tutuca/script">` block cannot write either one
+the other way, a `logic:` section cannot write either one
 — a block is parsed once for the component, with no macro call site and no host
 around it — so read the value in the view and pass it in.
 
@@ -392,7 +402,7 @@ around it — so read the value in the view and pass it in.
 `.x` and `$x` are not interchangeable: `.x` reads a property, while `$x`
 calls a method. `gen` reports a mismatch and names the prefix to use.
 
-A bare `name` (no prefix) in `@on.<event>="<handler> <arg> <arg>..."`
+A bare `name` (no prefix) in `~on_<event>="<handler> <arg> <arg>..."`
 resolves by slot:
 
 - **First slot** — a semantic event name dispatched as `Receive(name, args)`
@@ -401,9 +411,15 @@ resolves by slot:
 - **Subsequent slots** — built-in handler argument name (full list in
   *Event Handling*); anything else triggers a lint warning.
 
-```html
-<button @on.click="onAddItem e.value">+</button>
-<!--                ↑ handler  ↑ arg -->
+```tutu
+spec:
+  Slots:
+    message on_add_item(String)
+
+view:
+  Slots:
+    @button(~on_click: on_add_item(e.value)){+}
+    //                  ↑ handler  ↑ argument
 ```
 
 Handler args written in the template arrive in the MoonBit handler's
@@ -412,153 +428,42 @@ the `update` fn receives it as its explicit third parameter, so don't
 list `ctx` in the template.
 
 > Port note: the JS docs pass a component **type** as a handler arg
-> (`@on.click="onAddItem Item"`). In MoonBit the value language has no
+> (`~on_click="onAddItem Item"`). In MoonBit the value language has no
 > component-reference value — instead the handler **captures** the
 > `Component` in its closure and the view just calls `onAddItem`
 > (worked version in [patterns/todo-list.md](./patterns/todo-list.md)).
 
 ## Quoting & String Literals
 
-A string template is written `$'…'` — a single-quoted run with a leading
-`$`, holding `{expr}` interpolations. `:attr=` and other text slots accept
-`$'…'` templates; `@if`, `@each`, `<x render=>` do not.
+A quoted run is a **literal**: `"flex gap-3"` is those nine characters. A run
+that interpolates is written `@str{…}`, with `@(expr)` holes inside it.
 
-| Form                | Example                   | Where it works                                   |
-| ------------------- | ------------------------- | ------------------------------------------------ |
-| `'string'`          | `@then="'btn ok'"`        | anywhere a value is allowed                      |
-| `$'…'` template     | `:class="$'btn {.kind}'"` | `:attr=`, `@text`, `@title`, macro dynamic attrs |
-| Bare without quotes | `flex gap-3`              | **never** — returns `null`                       |
-| Bare identifier     | `dec`, `value`            | name slots only (handler/arg, not as a value)    |
+| Form                | Example                          | What it is                              |
+| ------------------- | -------------------------------- | --------------------------------------- |
+| `"string"`          | `~class: "btn ok"`               | a literal, anywhere a value is allowed  |
+| `@str{…}`           | `~class: @str{btn @(it.kind)}`   | a template, anywhere a value is allowed |
+| bare identifier     | `dec`, `value`                   | a NAME — a handler, a binding, a macro parameter |
 
-```html
-<!-- ✅ -->
-<p :class="'flex gap-3'">x</p>
-<p :class="$'flex {.color}'">x</p>         <!-- $'…' string template -->
+```tutu
+spec:
+  Quoting:
+    field color :: String
+    field kind :: String
 
-<!-- ❌ -->
-<p :class="flex gap-3">x</p>               <!-- null: no quotes -->
-<p :class="flex {.color}">x</p>            <!-- null: unquoted {…} is not a template -->
-<x render="'foo bar'"></x>                 <!-- @render rejects string templates -->
+view:
+  Quoting:
+    // a literal class list
+    @p(~class: "flex gap-3"){x}
+    // a template, with a field read in a hole
+    @p(~class: @str{flex @(it.color)}){x}
+    // a hole is an expression, so it may be a whole call
+    @p(~class: @str{btn btn-@(it.kind.lower())}){x}
 ```
 
-MoonBit note: inside `#|` raw strings, template quoting is written as-is
-(`@on.click="setView 'edit'"`); inside a normal MoonBit string you must
-escape the double quotes (`"<p :class=\"'flex gap-3'\">x</p>"`). Prefer
-`#|` raw strings for multi-line views.
-
-## Component Skeleton
-
-What you write is the handlers; everything else the view file states. The
-wrapper `gen` emits is typed on the state struct, so lambda parameters
-need no annotation:
-
-```moonbit nocheck
-// nocheck: the wrapper's parameter list, annotated — not a compilable item
-my_comp_component(
-  // `init` defaults to MyCompState::zero() — pass it only for what differs
-  initial={ ..MyCompState::zero(), count: 0 },
-  // ONE effectful dispatch match: (s, msg, ctx) => Update[S]
-  // (Next = successor, Unchanged = mine and no, Unhandled = not mine)
-  update=(s, msg, ctx) => match msg {
-    Receive("onClick", _) => Next({ ..s, count: s.count + 1 })
-    Receive("init", _) => {
-      ctx.intent("loadData", [], @tutuca.IntentOpts::new(route=[Lex]))
-      Some({ ..s, isLoading: true })
-    }
-    Intent("itemPicked", [item, ..]) => Next({ ..s, selected: item })
-    Receive("loadDataOk", [List(rows), ..]) =>
-      Some({ ..s, items: rows.map(r => r.str()), isLoading: false })
-    _ => Unhandled // ALWAYS needed
-  },
-  // Each bucket is keyed by an enum generated from the names the views use,
-  // so the match is exhaustive over them and a name added to a view is a
-  // build error. The enum is a CLOSED set: an entry for a name no view
-  // references does not compile (no such constructor), so handlers cannot
-  // be pre-declared "for later". A bucket the views never use is not a
-  // parameter at all.
-  compute=m => match m { // pure value read, $name: (s, args, stack) => Value
-    Label => Some((s, _args, _stack) => Str("n=\{s.count}"))
-  },
-  when=w => match w { // @when filters: (s, key, value, iterData, stack) => Bool
-    FilterItem => Some((s, _key, value, _iter, _stack) => value.str() != "")
-  },
-  // enrich= / bind_with= / loop_with= — see iteration.md
-  // `Replace(v)` in an update arm — supersede this node with another
-  // instance; see Replacing a node with a different component
-  slot_args={ // the ONE thing no type can state: a child's ctor arguments
-    "child": { "label": Str("pick one") },
-  },
-  // provide={ ... }, lookup=[ ... ]   // see advanced.md,
-)
-```
-
-`name`, `views`, `common_style` and `global_style` are not written here: the
-view file states them and the wrapper passes them. Do **not** restate them —
-that is how a fact the generator learns fails to reach the component. They are
-still parameters, so override one when a component genuinely differs.
-
-The codec and the schema are not parameters of anything: `MyCompState`
-implements `@component.Fields` (`schema` / `encode` / `decode`), which
-`component()` is bounded on and reads off the type. The generator writes that
-impl. Note the consequence — a schema belongs to a TYPE, so two components
-sharing a state struct share its description.
-
-`init` defaults to `MyCompState::zero()` — omit it when the zero state is what
-you want, and pass a `tutuca/fixtures` fixture (`MyCompState::fresh()`) or a
-literal otherwise.
-
-Call `@component.component(...)` directly only when there is no wrapper —
-views built in MoonBit, so there is nothing to default `views~` to. The state
-type still has to implement `@component.Fields`; a component that declares
-less does not get a runtime that infers the difference.
-
-> **Two bucket spellings, by call target.** The generated wrapper takes an
-> enum match, the raw `@component.component(...)` call takes a string-keyed
-> map, and they are not interchangeable. The full rule — plus which bucket
-> answers which name, and the dispatch precedence between them — is
-> [The handler buckets](#the-handler-buckets).
-
-`comp.make({...})` builds an instance from a `Map[String, Value]` of
-args and returns it as a `@tutuca.Value` (the `Obj`) — ready to store in
-lists, maps, or example args. Missing fields get their defaults from
-`init`, and every arg is coerced through its DECLARED kind (a wrong-shaped
-value falls back to the default — silently).
-A component-typed field (a **slot**) builds its default instance through the
-registration scope at `make()` time, so forward references work by name. The
-schema names the component; `slot_args={ "child": {...} }` supplies the
-arguments it is built with — see [schema.md](./schema.md#slots).
-
-> **No statics.** The JS `statics:` block has no MoonBit counterpart —
-> nothing in the framework calls statics in either language. Write a
-> plain MoonBit `fn` next to the component (e.g. a
-> `fn tree_from_data(...) -> @tutuca.Value` factory that calls
-> `comp.make(...)`) and call it directly. Likewise, "one component
-> object per scope" is natural here: a component definition is a
-> `fn my_comp() -> Component`, and each call produces a fresh
-> `Component` value (new id, separately compiled CSS) to register into
-> a scope.
-
-## Fields
-
-**The schema is the fields.** Names, types and kinds are declared in the view
-file's `<script type="tutuca/spec">` block; `gen` writes the struct, and
-every handler body is compiler-checked against it — `s.cuont` is a compile
-error, not a silently-Null render.
-
-How a field's type is spelled, and which property operations its kind admits,
-is one table in [schema.md](./schema.md#property-actions-in-views). Two consequences worth
-carrying here:
-
-- Views write the receiver directly: `@on.click=".items.removeAt @key"`,
-  `@on.input=".query = e.value"`, and `@on.click=".view = not .view"`.
-- Emptiness / truthiness / null checks are **not** generated — use the shape
-  predicates `empty?`, `truthy?`, `null?` in a conditional slot instead (e.g.
-  `@hide="empty? .x"`, `@show=".view is 'detail'"`).
-
-A field that can hold "anything" is declared `any` (MoonBit `@tutuca.Value`) —
-the dynamic escape hatch inside an otherwise typed struct. That includes fields
-holding component instances or `Fn` values: they survive state updates
-losslessly.
+There is no bare-word value: a word with no quotes and no `@` is a NAME, and
+it is answered as a handler, a binding or a macro parameter — or refused by
+name. That is the whole rule, and it is why `~class: flex gap-3` is not a
+class list but two names that answer nothing.
 
 ## Derived properties and parameterized computes
 
@@ -566,17 +471,21 @@ A zero-argument derived value is a read-only private property. Declare its type
 in the state and implement the getter in the script block; every value slot
 reads it with `.name`:
 
-```html
-<script type="tutuca/spec">
-  state Form {
-    title: String
-    property { label: String { get } }
-  }
-</script>
-<script type="tutuca/script">
-  get label { if state.title is '' { 'untitled' } else { state.title } }
-</script>
-<p @text=".label"></p>
+```tutu
+spec:
+  Form:
+    field title :: String
+
+    property label :: String
+
+logic:
+  Form:
+    property label :: String:
+      get: if (it.title == "") | "untitled" | it.title
+
+view:
+  Form:
+    @p{@(it.label)}
 ```
 
 A computation that takes arguments remains a method and uses `$name args…`.
@@ -599,9 +508,14 @@ compute={
 }
 ```
 
-```html
-<button @show=".canSubmit" :class=".buttonClass">Save</button>
-<p :title="$'Hello, {.fullName}'" @text=".fullName"></p>
+```tutu
+view:
+  Card:
+    @show(it.can_submit){
+      @button(~class: it.button_class){Save}
+    }
+    @" "
+    @p(~title: @str{Hello, @(it.full_name)}){@(it.full_name)}
 ```
 
 The shape predicates (`empty?`, `truthy?`, `null?`) and the operators
@@ -626,7 +540,7 @@ the value lives behind a field, your options are:
   ```
 
   then `@text=".userName"`. Best for one-off derivations or formatting.
-- **Use `@enrich-with`** — exposes computed values as `@`-bindings to a
+- **Use `~enrich_with`** — exposes computed values as `@`-bindings to a
   subtree without putting them on the component. See *Scope Enrichment*
   in [iteration.md](./iteration.md).
 
@@ -634,29 +548,48 @@ Exceptions: `@each` / `render-each` accept `.field` or `*dynamic` only
 (not a `$handler` — a computed result has no addressable path for event
 dispatch, so `$m` is rejected there at parse time), and `<x render>`
 expects a component instance — for a derived list, store it in a field
-or use `@when` with a `when` entry.
+or use `~when` with a `when` entry.
 
 ## Text Rendering
 
-```html
-<span @text=".str"></span>          <!-- prepend text into span -->
-<x text=".bool"></x>                <!-- text-only, no DOM element -->
-<x text=".strUpper"></x>            <!-- derived property -->
-<x text="@value"></x>               <!-- loop binding -->
+```tutu
+view:
+  Card:
+    @span{@(it.str)}
+    @" "
+    @comment{ prepend text into span }
+    @" "
+    @(it.bool)
+    @" "
+    @comment{ text-only, no DOM element }
+    @" "
+    @(it.str_upper)
+    @" "
+    @comment{ derived property }
+    @" "
+    @(value)
+    @" "
+    @comment{ loop binding }
 ```
 
 Use `@text` when you already have a host element to put the text in; use
 `<x text=…>` for bare text with no wrapping element (e.g. text interleaved with
 other inline content, or a loop binding). Both take the same value forms
-(`.property`, `$method args…`, `@binding`). A `Null` text value renders nothing
+(`.property`, `$method args…`, `~binding`). A `Null` text value renders nothing
 (not the string `"null"`).
 
 ## Attribute Binding
 
-```html
-<input :value=".str" @on.input=".str = e.value" />
-<a :href=".url" :title="$'Hi {.name}'">link</a>       <!-- string template -->
-<button :class="$'btn {.color}'">x</button>
+```tutu
+view:
+  Card:
+    @input(~value: it.str, ~on_input: it.str := e.value)
+    @" "
+    @a(~href: it.url, ~title: @str{Hi @(it.name)}){link}
+    @" "
+    @comment{ string template }
+    @" "
+    @button(~class: @str{btn @(it.color)}){x}
 ```
 
 Plain attrs are static. `:attr="..."` is a dynamic expression. Boolean
@@ -716,22 +649,38 @@ first**: several of these become build errors that way. The usual suspects:
 
 ## Event Handling
 
-```html
-<!-- a bare name dispatches a `Receive` arm of `update` -->
-<button @on.click="inc">+</button>
+```tutu
+spec:
+  Events:
+    field query :: String
+    field items :: List.of(String)
 
-<!-- pass args by name -->
-<input @on.input="search e.value" />
-<input @on.input="resize e.valueAsInt" />
-<button @on.click="pick @key e.isAlt">pick</button>
+    message inc
+    message search(String)
+    message resize(Int)
+    message pick(String, Bool)
 
-<!-- to WRITE a field, write it: a generated mutator does not answer a message -->
-<input @on.input=".query = e.value" />
+view:
+  Events:
+    // a bare name dispatches a `Receive` arm of `update`
+    @button(~on_click: inc){+}
+
+    // arguments say where they read from: `e.` is the DOM event
+    @input(~on_input: search(e.value))
+    @input(~on_input: resize(e.valueAsInt))
+
+    // a loop binder is a name in scope, so it is passed as itself
+    @each(value, key in it.items){
+      @button(~on_click: pick(key, e.isAlt)){pick}
+    }
+
+    // to WRITE a field, write it: a generated mutator does not answer a message
+    @input(~on_input: it.query := e.value)
 ```
 
 The handler **name** is written bare — a leading `$` is refused in an event
 position. Its **arguments** carry a sigil that says where the value comes from:
-`e.…` reads the DOM event, `.field` reads state, `@bind` reads a binding. (A bare
+`e.…` reads the DOM event, `.field` reads state, `~bind` reads a binding. (A bare
 argument name says none of the three, so `gen` refuses it and names them.)
 Written args arrive in the handler's `args` array in template order, so an arm
 pattern-matches them directly
@@ -754,37 +703,27 @@ in **[events.md](./events.md)**. Two things worth knowing before you get there:
 
 ## Conditional Display
 
-```html
-<div @show=".isLoading">Loading...</div>
-<div @hide=".isLoading">content</div>
+```tutu
+@show(it.is_loading){@div{Loading...}}
+@hide(it.is_loading){@div{content}}
 
-<!-- an expression; `is` compares against a string literal -->
-<div @show=".view is 'detail'">detail view</div>
+// an expression; `==` compares against a string literal
+@show(it.view == "detail"){@div{detail view}}
 
-<!-- @show / @hide also work as directives on `<x>` render ops:
-     wraps the produced node, no extra DOM element. Allowed on
-     text / render / render-it / render-each. First attr in
-     source order becomes the outermost wrapper. -->
-<x text=".name" @show=".isOpen"></x>
-<x render-it @hide=".isHidden"></x>
-<x render-each=".items" @when="filter" @show=".isOpen"></x>
+// @show / @hide wrap whatever they are given — a hole, a render, a loop —
+// with no extra DOM element around it
+@show(it.is_open){@(it.name)}
+@hide(it.is_hidden){@render(value)}
+@show(it.is_open){@each(value, key in it.items, ~when: filter){@render(value)}}
 
-<!-- Single @if: shorthand @then/@else (attr inferred) -->
-<button @if.class=".isActive" @then="'btn btn-success'" @else="'btn btn-ghost'">
-  ...
-</button>
+// a conditional attribute is an `if` expression in the attribute's own value
+@button(~class: if it.is_active | "btn btn-success" | "btn btn-ghost"){...}
 
-<!-- Multiple @if on same element: name the attr explicitly -->
-<button
-  @if.class=".isActive"
-  @then="'on'"
-  @else="'off'"
-  @if.title=".isActive"
-  @then.title="'On'"
-  @else.title="'Off'"
->
-  ...
-</button>
+// two of them is two attributes, each with its own condition
+@button(
+  ~class: if it.is_active | "on" | "off",
+  ~title: if it.is_active | "On" | "Off",
+){...}
 ```
 
 > HTML disallows duplicate attrs, so with multiple `@if.<attr>` on one
@@ -800,54 +739,84 @@ condition says hide — they do not merely toggle CSS visibility.
 
 ## List Iteration & Scope Enrichment
 
-```html
-<li @each=".items"><span @text="@key"></span>: <x text="@value"></x></li>
-<x render-each=".items"></x>
+```tutu
+view:
+  Card:
+    @each(value, key in it.items){
+      @li{@span{@(key)}@": "@(value)}
+    }
+    @" "
+    @each(value, key in it.items){
+      @render(value)
+    }
 ```
 
 Auto-bound names inside a loop are `@key` and `@value`. Iteration
-(`@each` / `render-each`), filtering (`@when` → the `when` bucket),
-item and scope enrichment (`@enrich-with` → `enrich` / `bind_with`),
-pagination and the `@loop-with` → `loop_with` return shape, and the
+(`@each` / `render-each`), filtering (`~when` → the `when` bucket),
+item and scope enrichment (`~enrich_with` → `enrich` / `bind_with`),
+pagination and the `~loop_with` → `loop_with` return shape, and the
 `@each` lifecycle: see [iteration.md](./iteration.md).
 
 ## Rendering Components
 
-```html
-<x render=".item"></x>                          <!-- default ("main") view -->
-<x render=".item" as="edit"></x>                <!-- specific view (literal) -->
-<x render=".item" as=".mode"></x>               <!-- view chosen by a field at runtime -->
-<x render-it></x>                               <!-- only inside @each / render-each -->
-<x render=".byIndex[.currentIndex]"></x>        <!-- list item access -->
-<x render=".byKey[.currentKey]"></x>            <!-- map item access -->
-<x render="*active"></x>                        <!-- dynamic binding — see advanced.md -->
-<x render=".item" @show=".isOpen"></x>          <!-- conditional wrap, see "Conditional Display" -->
+```tutu
+spec:
+  Rendering:
+    field item :: Instance
+    field mode :: String
+    field by_index :: List.of(Instance)
+    field by_key :: Map.of(String, Instance)
+    field current_index :: Int
+    field current_key :: String
+    field items :: List.of(Instance)
+    field is_open :: Bool
+
+    lookup active
+
+view:
+  Rendering:
+    @render(it.item)                    // the default ("main") view
+    @render(it.item, ~as: "edit")       // a named view (a literal)
+    @render(it.item, ~as: it.mode)      // a view chosen by a field at runtime
+    @render(it.by_index[it.current_index])  // a list item
+    @render(it.by_key[it.current_key])      // a map entry
+
+    // inside a loop, the binder is what each step renders
+    @each(value, key in it.items){@render(value)}
+
+    // a dynamic binding — see advanced.md
+    @render(dyn.active)
+
+    // a conditional wrap, see "Conditional Display"
+    @show(it.is_open){@render(it.item)}
 ```
 
 A component's views come in through `views=` (a
 `Map[String, @anode.View]`), keyed by name — `"main"` is the one rendered by
-default. Author them in an `.html` file and generate the map with
+default. Author them in a `.tutu` file and generate the map with
 `tutuca gen` (see [cli.md](./cli.md)). A view whose SOURCE only exists at
 run time — a guest bundle, markup a MoonBit function assembles — uses
 `@anode.View::new("main", raw_view="…")`, which builds the same `@anode.View`;
 its component still declares a schema and a codec like any other. `as` selects
 which view of the
 rendered component to use, falling back to `main` if absent. It accepts the
-same dynamic values as `@push-view` (a literal name like `edit`, or `.field`,
-`*dyn`, `@bind`, `$handler`, `$'…{x}…'`), evaluated against the **host**
+same dynamic values as `~push_view` (a literal name like `edit`, or `.field`,
+`*dyn`, `~bind`, `$handler`, `$'…{x}…'`), evaluated against the **host**
 component at render time. `as` only applies to the **direct** component — for
-whole-subtree control, use `@push-view` (next section). For `render-each` the
+whole-subtree control, use `~push_view` (next section). For `render-each` the
 selector is evaluated once against the host, so every item gets the same view.
 
 ## Multiple Views & View Stack
 
 Named views are `<template id="Comp:name">` entries in the view file:
 
-```html
-<template id="Note"><p @text=".title"></p></template>
-<template id="Note:edit">
-  <input :value=".title" @on.input=".title = e.value">
-</template>
+```tutu
+view:
+  Note:
+    @p{@(it.title)}
+
+  Note.edit:
+    @input(~value: it.title, ~on_input: it.title := e.value)
 ```
 
 ```moonbit nocheck
@@ -855,16 +824,22 @@ Named views are `<template id="Comp:name">` entries in the view file:
 note_component() // the wrapper passes both views
 ```
 
-```html
-<!-- @push-view pushes a name onto the rendering stack;
-     descendants resolve to first matching view, falling back to "main" -->
-<div @push-view=".view"><x render-each=".items"></x></div>
+```tutu
+view:
+  Card:
+    @comment{@" @push-view pushes a name onto the rendering stack; descendants resolve to first matching view, falling back to \"main\" "}
+    @" "
+    @div(~push_view: it.view){
+      @each(value, key in it.items){
+        @render(value)
+      }
+    }
 ```
 
 | Directive          | Scope                                                                    |
 |--------------------|--------------------------------------------------------------------------|
-| `as="edit"` / `as=".mode"` | One `<x render>` element only. Literal or dynamic (like `@push-view`), evaluated against the host. |
-| `@push-view=".v"`  | Every component rendered recursively under the host (children + descendants). Each picks the first stack entry it has a matching view for; falls back to `"main"`. Inner `@push-view`s nest, extending the outer ones. |
+| `as="edit"` / `as=".mode"` | One `<x render>` element only. Literal or dynamic (like `~push_view`), evaluated against the host. |
+| `~push_view=".v"`  | Every component rendered recursively under the host (children + descendants). Each picks the first stack entry it has a matching view for; falls back to `"main"`. Inner `~push_view`s nest, extending the outer ones. |
 
 ## Styles
 
@@ -889,12 +864,12 @@ by the first applicable layer:
    operation such as `.items.push value`. No message name is generated.
 2. a **declaration in one of the two blocks** — `receive`, `intent`,
    `compute`, `enrich`, `bindWith` and the `send` / `sendAt` / `intent` /
-   `forward` effects in `<script type="tutuca/script">`; `pred` and `invariant`
-   in `<script type="tutuca/spec">`, beside the state they are about. A name a
+   `forward` effects in `logic:`; `pred` and `invariant`
+   in `spec:`, beside the state they are about. A name a
    block answers is dropped from the generated enum, so the two halves can
    never both claim one handler.
 3. a **bucket entry**, for what neither of those says: building a child
-   component instance, `@loop-with`, a fold over a whole sequence, a payload
+   component instance, `~loop_with`, a fold over a whole sequence, a payload
    unpacked out of an `Any` — and anything `gen` prints a
    `script-refusal` for. The block's own reference, and the list of what the
    ahead-of-time backend refuses, are in
@@ -904,10 +879,10 @@ by the first applicable layer:
 | ------ | --------- | ------- |
 | `update` | `(S, Dispatch, &Ctx) -> Update[S]` | every event, message and intent; one match over all the channels |
 | `compute` | `(S, Array[Value], &Stack) -> Value` | a `$name` in a **value** position — pure, no ctx |
-| `when` | `(S, key, value, iterData, &Stack) -> Bool` | `@when` iteration filters |
-| `enrich` | `(S, binds, key, value, iterData, &Stack) -> Unit` | `@enrich-with` per-item binds |
+| `when` | `(S, key, value, iterData, &Stack) -> Bool` | `~when` iteration filters |
+| `enrich` | `(S, binds, key, value, iterData, &Stack) -> Unit` | `~enrich_with` per-item binds |
 | `bind_with` | `(S, &Stack) -> Map[String, Value]` | scope-level derived binds |
-| `loop_with` | `(S, seq, LoopCtx) -> LoopWith` | `@loop-with` slicing / filtering / key lists |
+| `loop_with` | `(S, seq, LoopCtx) -> LoopWith` | `~loop_with` slicing / filtering / key lists |
 
 The four render-time buckets — `compute`, `when`, `enrich`, `bind_with` —
 take a trailing `&@tutuca.Stack`: the render position the body is being asked
@@ -990,15 +965,20 @@ does not answers `Unhandled`, and a name nothing answers is refused with
 There is no fallback to a setter the field implies. A view that wants to write a
 field writes it, in the view, as a **property action**:
 
-```html
-<button @on.click=".title = 'x'">rename</button>
-<input @on.input=".query = e.value">
-<button @on.click=".isOpen = not .isOpen">toggle</button>
-<button @on.click=".count = default">reset</button>
+```tutu
+view:
+  Card:
+    @button(~on_click: it.title := "x"){rename}
+    @" "
+    @input(~on_input: it.query := e.value)
+    @" "
+    @button(~on_click: it.is_open := !it.is_open){toggle}
+    @" "
+    @button(~on_click: it.count := default){reset}
 ```
 
 That is a write, and it reads as one. A name in an event position —
-`@on.click="rename"` — is a **message**, and a message needs an answerer. Keeping
+`~on_click="rename"` — is a **message**, and a message needs an answerer. Keeping
 the two spellings apart is what stops a typo'd handler named `setTitle` from
 silently becoming a field write, and stops a real handler from being shadowed by
 the field beside it.
@@ -1021,7 +1001,7 @@ Receive("becomeEditor", _) => Replace(editor.make({ "text": Str(s.text) }))
 ```
 
 Reach for `Replace` only for a genuine change of identity; a view that merely
-looks different wants `@push-view` or an `as=` view (see *Multiple Views & View
+looks different wants `~push_view` or an `as=` view (see *Multiple Views & View
 Stack*).
 
 ### The render buckets
@@ -1043,8 +1023,10 @@ Registry keys are lowercased — `<x:Card>` resolves as `<x:card>`.
 
 ## Raw HTML (escape hatch)
 
-```html
-<div @dangerouslysetinnerhtml=".trustedHtml"></div>
+```tutu
+view:
+  Card:
+    @div(~dangerously_inner_html: it.trusted_html)
 ```
 
 Bypasses all escaping; children of the element are ignored when active.
@@ -1060,8 +1042,10 @@ get it.
 
 ## Markdown (`@setinnermd`)
 
-```html
-<article @setinnermd=".body"></article>
+```tutu
+view:
+  Card:
+    @article(~inner_md: it.body)
 ```
 
 Takes a markdown SOURCE string and replaces the element's children with the
@@ -1091,9 +1075,12 @@ right, and a second half showing what gets refused — is on the landing site
 
 ## HTML and SVG (`@setinnerhtml`, `@setinnersvg`)
 
-```html
-<article @setinnerhtml=".body"></article>
-<svg viewBox="0 0 100 100" @setinnersvg=".chart"></svg>
+```tutu
+view:
+  Card:
+    @article(~inner_html: it.body)
+    @" "
+    @svg(~viewBox: "0 0 100 100", ~inner_svg: it.chart)
 ```
 
 `@setinnermd`'s siblings, for a payload that is already markup — a CMS body, a
@@ -1230,17 +1217,17 @@ its examples never reach the storybook or a harness test.
 
 ## See also
 
-- [schema.md](./schema.md) — the `<script type="tutuca/spec">` language: field
+- [schema.md](./schema.md) — the `spec:` language: field
   spellings, the mutators each kind generates, slots, message buckets,
-  `tutuca/fixtures` fixtures, and the `pred` / `invariant` rules a component keeps
+  `fixtures:` fixtures, and the `pred` / `invariant` rules a component keeps
   with the `format` each says when it fails — plus what the
-  `<script type="tutuca/script">` block beside it declares: `$`-callables,
+  `logic:` section beside it declares: `$`-callables,
   `new` / `cur` value building, the `requires` / `ensures` clauses that attach
   a rule to a transition, and the refusal channel that carries a failure.
 - [events.md](./events.md) — handler argument names, generated `<Comp>Msg`
   payload types, event modifiers, and custom-element events.
-- [iteration.md](./iteration.md) — `@each` / `render-each`, `@when`,
-  `@enrich-with`, `@loop-with` pagination, and the loop lifecycle.
+- [iteration.md](./iteration.md) — `@each` / `render-each`, `~when`,
+  `~enrich_with`, `~loop_with` pagination, and the loop lifecycle.
 - [macros.md](./macros.md) — `Macro` definitions, `<x:name>` calls,
   slots, and registration.
 - [styles.md](./styles.md) — `style` / `common_style` / `global_style`

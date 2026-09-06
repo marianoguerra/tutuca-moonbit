@@ -33,7 +33,7 @@ handler runs against — a **position**, not a captured reference (see
 | `SeqStep(field~, key~)` | a sequence entry by **literal** key/index | `.items[2]`      |
 | `SeqAccessStep(seq_field~, key_field~)` | a sequence entry whose key is **read from another field** | `.sheets[.selId]` |
 | `EachRenderItStep(field~, key~)` | an iterated `render-it` item | `<x render-it>` per iter |
-| `BindStep` / `ScopeBindStep` / `EachBindStep` | nothing — frame-only (carry scope binds, no addressing) | `@each`, `@enrich-with` |
+| `BindStep` / `ScopeBindStep` / `EachBindStep` | nothing — frame-only (carry scope binds, no addressing) | `@each`, `~enrich_with` |
 
 Dispatch additionally keeps the steps in a `DispatchPath`, a stack of render
 continuations. Each frame is `{ base: Path, items: Array[DispatchStep] }`; a
@@ -65,7 +65,7 @@ The reconstructed path is transformed two ways depending on use:
 The DOM is the only thing that survives between render and click, so the
 renderer leaves breadcrumbs: `data-cid` / `data-nid` / `data-eid` on
 elements, and `§…§` comment "metas" adjacent to component boundaries,
-iteration entries, and scope boundaries (loop-less `@enrich-with`, so
+iteration entries, and scope boundaries (loop-less `~enrich_with`, so
 their custom binds can be replayed). A resumed component boundary also stores
 its absolute base (and repeats it as `data-rp` on fragment-root siblings). On an event, the render package's
 event-path reconstruction walks from the target up to the root, reads
@@ -192,7 +192,7 @@ The
 evaluated a handler's arguments is a local in the dispatch pipeline and is gone
 once the body runs, and a `send` or an `intent` transaction never built one.
 The rebuilt path is compacted, so per-item bindings (`@each`,
-`@enrich-with`) are not replayed: a `provide` whose expression reads a loop
+`~enrich_with`) are not replayed: a `provide` whose expression reads a loop
 binding is the one case this cannot reproduce.
 
 An UPPERCASE name is a component type and a lowercase one is a value, so the

@@ -8,14 +8,12 @@ everything else, `core.md` is the right place.
 
 ## Drag and Drop
 
-```html
-<div
-  @each=".items"
-  draggable="true"
-  data-dragtype="my-item"
-  data-droptarget="my-item"
-  @on.drop="onDrop @key e.dragKey"
-></div>
+```tutu
+view:
+  Card:
+    @each(value, key in it.items){
+      @div(~draggable: "true", ~data_dragtype: "my-item", ~data_droptarget: "my-item", ~on_drop: on_drop(key, e.dragKey))
+    }
 ```
 
 ```moonbit nocheck
@@ -71,7 +69,7 @@ update=(s : DndState, msg, _ctx) => match msg {
 A **card** has only the narrow three: the block language has no way to
 name a MoonBit value, so it cannot apply the `Fn` that `lookupBind`
 answers with. The `drag-reorder` starter card is this page's example
-with its handler written in a `<script type="tutuca/script">` block.
+with its handler written in a `logic:` section.
 
 Tutuca auto-manages two attrs during a drag — style them with CSS:
 
@@ -107,19 +105,20 @@ them through every component in between. **`provide`** on the producer;
 
 `theme.html` — both components in one view file, so one generated module:
 
-```html
-<script type="tutuca/spec">
-  state Theme { color: String, body: Child }
-    state Child {  }
-</script>
+```tutu
+spec:
+  Theme:
+    field color :: String
+    field body :: Instance.of(Child)
 
-<template id="Theme">
-  <div><x render=".body"></x></div>
-</template>
+  Child
 
-<template id="Child">
-  <p :style="$'color: {*color}'">themed</p>
-</template>
+view:
+  Theme:
+    @div{@render(it.body)}
+
+  Child:
+    @p(~style: @str{color: @(dyn.color)}){themed}
 ```
 
 `theme.mbt`:
@@ -161,10 +160,22 @@ is read — not just in `:style` / `:class`, and including inside a `pred` or a
 `compute` body. In particular it can be a component-render target and an
 iteration source:
 
-```html
-<x render="*selected"></x>           <!-- render the dynamic's component -->
-<x render="*selected" as="edit"></x> <!-- a specific view of it -->
-<div @each="*items"><x render-it></x></div>  <!-- iterate a dynamic seq -->
+```tutu
+view:
+  Card:
+    @render(dyn.selected)
+    @" "
+    @comment{ render the dynamic's component }
+    @" "
+    @render(dyn.selected, ~as: "edit")
+    @" "
+    @comment{ a specific view of it }
+    @" "
+    @each(value, key in dyn.items){
+      @div{@render(value)}
+    }
+    @" "
+    @comment{ iterate a dynamic seq }
 ```
 
 A `provide` value must be **addressable** — a `.field` or a `.seq[.key]`
@@ -307,16 +318,24 @@ The escape hatch: prefix the **first** attribute on a *legal* tag with
 `@x`. Tutuca treats that tag as if it were `<x>` and reads the next
 attribute as the special op.
 
-```html
-<!-- ❌ <x> stripped by the HTML parser inside <select> -->
-<select>
-  <x render-each=".items" as="option"></x>
-</select>
-
-<!-- ✅ pseudo-x: <option @x render-each=".items" as="option"> -->
-<select>
-  <option @x render-each=".items" as="option"></option>
-</select>
+```tutu
+view:
+  Card:
+    @comment{ ❌ <x> stripped by the HTML parser inside <select> }
+    @" "
+    @select{
+      @each(value, key in it.items){
+        @render(value, ~as: "option")
+      }
+    }
+    @" "
+    @comment{@" ✅ pseudo-x: <option @x render-each=\".items\" as=\"option\"> "}
+    @" "
+    @select{
+      @each(value, key in it.items){
+        @render(value, ~as: "option")
+      }
+    }
 ```
 
 Notes:

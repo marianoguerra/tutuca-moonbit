@@ -13,23 +13,24 @@ you don't want to thread it through every component in between.
 
 `entries.html`:
 
-```html
-<script type="tutuca/spec">
-  state Editor { entries: Array[Any], picker: Selector }
-    state Selector {  }
-</script>
+```tutu
+spec:
+  Editor:
+    field entries :: List.of(Any)
+    field picker :: Instance.of(Selector)
 
-<template id="Editor">
-  <div>
-    <x render=".picker"></x>
-  </div>
-</template>
+  Selector
 
-<template id="Selector">
-  <select class="select">
-    <option @each="*entries" :value="@value.value" @text="@value.label"></option>
-  </select>
-</template>
+view:
+  Editor:
+    @div{@render(it.picker)}
+
+  Selector:
+    @select(~class: "select"){
+      @each(value, key in dyn.entries){
+        @option(~value: value.value){@(value.label)}
+      }
+    }
 ```
 
 `entries.mbt`:

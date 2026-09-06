@@ -1,7 +1,7 @@
 # Tutuca — The Component Spec
 
 Read this file when declaring or changing what a component IS: the
-`<script type="tutuca/spec">` block — how a field's type is spelled, what
+`spec:` section — how a field's type is spelled, what
 mutators a field kind generates, handle/express surfaces, slots, named initial
 states, and the `pred`s and `invariant`s the component keeps.
 
@@ -17,7 +17,7 @@ component is, the **script** block says what it does. Read the first and you
 know the component's shape, its channels, its wiring and its rules without
 reading a handler.
 
-| Spec block (`tutuca/spec`) | Script block (`tutuca/script`) |
+| Spec block (`spec:`) | Script block (`logic:`) |
 | --- | --- |
 | `state`, `struct`, `enum`, `property` — data and private-by-default abstract state | `receive`, `intent`, property `get`/`set` — the transitions |
 | `protocol`, `implements`, `handle`, `express` — the boundary | `enrich`, `enrich-scope` — render-time bindings |
@@ -39,13 +39,14 @@ about one row rather than a rule about the component.
 
 A view file declares its component's data contract in a small language that
 spells its types the way MoonBit does, alongside the templates that read it:
-```html
-<script type="tutuca/spec">
-  state Counter { label: String, count: Int, history: Array[Int] }
-  handle Counter {
-    message { resetTo(Int) }
-  }
-</script>
+```tutu
+spec:
+  Counter:
+    field label :: String
+    field count :: Int
+    field history :: List.of(Int)
+
+    message reset_to(Int)
 ```
 
 One `state` per component, named after the template id it gives views to
@@ -92,11 +93,14 @@ EMPTY — and the enum decides the membership, which is one idea in each place.
 A list of child components is written with the ELEMENT's name, and a sibling
 `state` is a name a field may use:
 
-```html
-<script type="tutuca/spec">
-  state Item  { completed: Bool, text: String }
-  state Items { items: Array[Item] }
-</script>
+```tutu
+spec:
+  Item:
+    field completed :: Bool
+    field text :: String
+
+  Items:
+    field items :: List.of(Instance.of(Item))
 ```
 
 Iterate it with `<div @each=".items"><x render-it></x></div>` and append
@@ -135,29 +139,30 @@ implicit private read/write property. An explicit property can derive its
 value, redirect a write, or do both. Properties are private by default; add
 `pub` only when a parent, host, storybook, or property fuzzer may drive it:
 
-```html
-<script type="tutuca/spec">
-  state Counter {
-    count: Int
-    property {
-      pub count: Int { get .count set .count }
-      pub magnitude: Int { get set }
-      label: String { get }
-    }
-  }
-</script>
+```tutu
+spec:
+  Counter:
+    field count :: Int
 
-<script type="tutuca/script">
-  get magnitude {
-    if (.count < 0) { -.count } else { .count }
-  }
+    property count :: Int ~public:
+      get: it.count
+      set: it.count
 
-  set magnitude {
-    if (.count < 0) { .count = -value } else { .count = value }
-  }
+    property magnitude :: Int ~public
 
-  get label { $'count: {.count}' }
-</script>
+    property label :: String
+
+logic:
+  Counter:
+    property magnitude :: Int:
+      get: if (it.count < 0) | -it.count | it.count
+      set:
+        if (it.count < 0)
+        | it.count := -value
+        | it.count := value
+
+    property label :: String:
+      get: @str{count: @(it.count)}
 ```
 
 The compact form names a backing field after `get` or `set`; its type must
@@ -202,24 +207,38 @@ An event can update an implicit or explicit writable property directly. These
 are synchronous property transitions, not messages, so they do not add cases
 to the generated input enum:
 
-```html
-<input :value=".query" @on.input=".query = e.value">
-<button @on.click=".open = not .open">toggle</button>
-<button @on.click=".items.removeAt @key">remove</button>
-<button @on.click=".tags.toggle @value">tag</button>
-<button @on.click=".selection = default">clear</button>
+```tutu
+spec:
+  Actions:
+    field query :: String
+    field open :: Bool
+    field selection :: String
+    field items :: List.of(String)
+    field tags :: Set.of(String)
+
+view:
+  Actions:
+    @input(~value: it.query, ~on_input: it.query := e.value)
+    @button(~on_click: it.open := !it.open){toggle}
+    @button(~on_click: it.selection := default){clear}
+    @each(value, key in it.items){
+      @div{
+        @button(~on_click: it.items.delete_at(key)){remove}
+        @button(~on_click: it.tags.toggle(value)){tag}
+      }
+    }
 ```
 
 The field's **kind** decides which operations are valid:
 
 | Field kind | MoonBit type | Property operations |
 | ---------- | ------------ | ------------------- |
-| scalar / record / component | the declared type | assignment, `= default` |
-| bool | `Bool` | assignment; toggle with `.x = not .x` |
-| list | `Array[...]` | `push`, `insertAt`, `setAt`, `deleteAt` / `removeAt` |
-| map / omap | `Map[String, ...]` | `setAt`, `deleteAt` / `removeAt` |
-| set | `Set[String]`, `Set[Enum]` | `add`, `delete` / `remove`, `toggle` |
-| nullable | `T?` | assignment; `= default` writes `None` |
+| scalar / record / component | the declared type | assignment, `:= default` |
+| bool | `Bool` | assignment; toggle with `it.x := !it.x` |
+| list | `Array[...]` | `push`, `insert_at`, `set_at`, `delete_at`, `clear` |
+| map / omap | `Map[String, ...]` | `set_at`, `delete_at` |
+| set | `Set[String]`, `Set[Enum]` | `add`, `remove`, `toggle` |
+| nullable | `T?` | assignment; `:= default` writes `None` |
 
 `= default` writes the declared type's zero. For a nullable property that is
 `None`; it is not an empty string. Collection operations are atomic and retain
@@ -256,17 +275,16 @@ A child-component field is a **slot**. It becomes a struct field typed
 child **through the registration scope** at `make()` time, so forward references
 work by name (`component/component_test.mbt:418`):
 
-```html
-<script type="tutuca/spec">
-  state Board {
-    title   : String
-    editor  : Sheet             // a sibling state in this file
-    preview : Component         // a slot, resolved by `slots~`
-    remote  : Instance[Legend] // a component from another module
-  }
+```tutu
+spec:
+  Board:
+    field title :: String
+    field editor :: Instance.of(Sheet)  // a sibling component in this file
+    field preview :: Instance           // a slot, resolved by `slots~`
+    field remote :: Instance.of(Legend) // a component from another module
 
-  state Sheet { text: String }
-</script>
+  Sheet:
+    field text :: String
 ```
 
 `Instance[Legend]` names a component this file does **not** declare — one from
@@ -322,20 +340,25 @@ structural equality read.
 (`BoardReceive` / `BoardIntent`) that `update` matches. `express` is the dual:
 it declares messages and intents that the component may initiate.
 
-```html
-<script type="tutuca/spec">
-  state Board { rows: Array[Any], loading: Bool }
-  handle Board {
-    message {
-      reset, focusRow(Int), loadRowsOk(Array[Any]),
-      loadRowsFailed(String), loadRowsUnhandled
-    }
-    intent { rowPicked(Int) }
-  }
-  express Board {
-    intent { saveRows }
-  }
-</script>
+```tutu
+spec:
+  Board:
+    field rows :: List.of(Any)
+    field loading :: Bool
+
+    message reset
+
+    message focus_row(Int)
+
+    message load_rows_ok(List.of(Any))
+
+    message load_rows_failed(String)
+
+    message load_rows_unhandled
+
+    intent row_picked(Int)
+
+    express intent save_rows
 ```
 
 Declare a case the way it is **used**: `focusRow`, not `FocusRow`. The same
@@ -379,24 +402,30 @@ Named and implicit component contracts are in [protocols.md](./protocols.md).
 For passing a value "context-style" to a deep descendant without threading it
 through every component in between. Two sections inside a `state` body:
 
-```html
-<script type="tutuca/spec">
-  state Board {
-    theme: String
-    sheets: Map[String, String]
-    selId: String
-    slot: Slot
-    provide { theme = .theme, sel = .sheets[.selId], Cell = self }
-  }
-  state Slot {
-    made: String
-    lookup { theme, color = 'gray', Cell }
-  }
-</script>
+```tutu
+spec:
+  Board:
+    field theme :: String
+    field sheets :: Map.of(String, String)
+    field sel_id :: String
+    field slot :: Instance.of(Slot)
+
+    provide theme = it.theme
+    provide sel = it.sheets[it.sel_id]
+    provide Cell = self
+
+  Slot:
+    field made :: String
+
+    lookup theme
+    lookup color = "gray"
+    lookup Cell
 ```
 
-```html
-<template id="Slot"><em :style="$'color: {*theme}'"></em></template>
+```tutu
+view:
+  Slot:
+    @em(~style: @str{color: @(dyn.theme)})
 ```
 
 A **`provide`** publishes a name to the whole subtree below the component,
@@ -429,7 +458,7 @@ pred    onBrand { .accent is *theme }               // spec block
 ```
 
 A transition is answered from its DISPATCH position, along the same `dyn`/`lex`
-route an intent walks. A `compute`, a `pred`, a `@when` and an `enrich` are
+route an intent walks. A `compute`, a `pred`, a `~when` and an `enrich` are
 answered from their RENDER position — they are called while the view is being
 built, so the render stack is what has the answer, and it is the same stack a
 `*theme` in a slot beside them reads. Both resolve the same declared `lookup`,
@@ -437,7 +466,7 @@ so the two agree.
 
 The host resolves this component's declared lookups before it enters the card
 and the body reads one of the answers — from the dispatch position for a
-handler, from the render chain for a `compute` / `pred` / `@when` / `enrich`.
+handler, from the render chain for a `compute` / `pred` / `~when` / `enrich`.
 So a `*name` a body writes and a `*name` a template writes get the same value,
 in a card exactly as in a MoonBit component. A `*name` the `state` block does
 not declare is `DYN_NOT_DECLARED`: whether a producer is above you at render
@@ -466,14 +495,11 @@ The bucket enums are built from the names the views reference, so a `$`-callable
 **no view of this component calls** — a method a PARENT asks of it, say — would
 have no constructor. Name it in the script block, which is where callables live:
 
-```html
-<script type="tutuca/script" for="Entry">
-  /// Whether this entry matches a query, for a parent's `@when` filter.
-  pred containsText(q) {
-    ((contains (lower .title) (lower q)) or
-     (contains (lower .description) (lower q)))
-  }
-</script>
+```tutu
+logic:
+  Entry:
+    /// Whether this entry matches a query, for a parent's `@when` filter.
+    pred contains_text(q): ((it.title.lower()).contains(q.lower()) || (it.description.lower()).contains(q.lower()))
 ```
 
 The spec block declares no BEHAVIOUR — no statements and no effects. It does
@@ -528,116 +554,115 @@ written INFIX (`.tab is 'a'`), `not` in front of its operand.
 A collection is changed by a statement that names the place and the operation,
 receiver first:
 
-```html
-<script type="tutuca/spec">
-  state Playlist { songs: Array[String], tags: Set[String], by: Map[String, String] }
-  handle Playlist {
-    message { add(String), rename(String), drop(Int), mark(String),
-                     credit(String, String)
-    }
-  }
-</script>
+```tutu
+spec:
+  Playlist:
+    field songs :: List.of(String)
+    field tags :: Set.of(String)
+    field by :: Map.of(String, String)
 
-<script type="tutuca/script" for="Playlist">
-  receive add(title)   { .songs.push title }
-  receive rename(t)    { .songs.setAt 0 t }
-  receive drop(i)      { .songs.deleteAt i }
-  receive mark(tag)    { .tags.toggle tag }
-  receive credit(k, v) { .by.setAt k v }
-</script>
+    message add(String)
+    message rename(String)
+    message drop(Int)
+    message mark(String)
+    message credit(String, String)
+
+logic:
+  Playlist:
+    receive add(title):
+      it.songs.push(title)
+
+    receive rename(t):
+      it.songs.set_at(0, t)
+
+    receive drop(i):
+      it.songs.delete_at(i)
+
+    receive mark(tag):
+      it.tags.toggle(tag)
+
+    receive credit(k, v):
+      it.by.set_at(k, v)
+
+view:
+  Playlist:
+    @ul{@each(song in it.songs){@li{@(song)}}}
 ```
 
 These are the same receiver operations available in a view property action.
-The receiver is written directly (`.songs.push`, `.songs.setAt`,
-`.tags.toggle`), so there is one source spelling in both places.
+The receiver is written directly (`it.songs.push`, `it.songs.set_at`,
+`it.tags.toggle`), so there is one source spelling in both places.
 
 | receiver | what it takes |
 | -------- | ------------- |
-| list `Array[T]` | `push v`, `insertAt i v`, `setAt i v`, `deleteAt i` |
-| set `Set[String]` / `Set[Enum]` | `add k`, `remove k`, `toggle k` |
-| map `Map[String, V]` | `setAt k v`, `deleteAt k` |
+| list `List.of(T)` | `push(v)`, `insert_at(i, v)`, `set_at(i, v)`, `delete_at(i)`, `clear()` |
+| set `Set.of(String)` / `Set.of(Enum)` | `add(k)`, `remove(k)`, `toggle(k)` |
+| map `Map.of(String, V)` | `set_at(k, v)`, `delete_at(k)` |
 
-**Use those spellings.** A few aliases parse — `removeAt`, `delete`, `set`,
-`clear` — and `gen` compiles some of them, but the **card compiler**
-implements the canonical names only and refuses the rest as unsupported. A
-handler that compiles as a card and is refused by `gen`, or the other way
-round, may simply be using a non-canonical spelling.
+`clear()` is the list's alone: a list is the one receiver with no other way to
+be emptied, since the value language has no list literal to assign instead.
 
-An index out of range is a **no-op**, not a crash: `setAt`/`deleteAt` past the
-end leave the collection alone, and `insertAt` *at* the length appends, because
-inserting at the end is a real answer.
+**Those are the only spellings.** There is one name per operation and no
+aliases, so a handler either names an operation or names nothing.
 
-> **A property action is not a handler.** `.items.removeAt @key`,
-> `.hideCompleted = not .hideCompleted`, and `.query = e.value` are resolved
-> from the declared member and field kind. They do not dispatch a message and
-> cannot be intercepted by an `update` arm. Write a handler when the action has
-> semantic meaning beyond the property operation; mark a property `pub` only
-> when an external caller should be allowed to read or synchronously set it.
+An index out of range is a **no-op**, not a crash: `set_at`/`delete_at` past
+the end leave the collection alone, and `insert_at` *at* the length appends,
+because inserting at the end is a real answer.
 
-## Building a value (`new <Type>` / `cur`)
+> **A property action is not a handler.** `it.items.delete_at(key)`,
+> `it.hide_completed := !it.hide_completed`, and `it.query := e.value` are
+> resolved from the declared member and field kind. They do not dispatch a
+> message and cannot be intercepted by an `update` arm. Write a handler when
+> the action has semantic meaning beyond the property operation; mark a
+> property `~public` only when an external caller should be allowed to read or
+> synchronously set it.
 
-The block language has **no literal for an aggregate** — no list, no map, no
-record — because a value there is built by *mutating* it, which is what every
-other statement already does. `new <Type>` puts that type's **zero** at the
-**active target**, and the statements under it fill it in through `cur`:
+## Building a value
 
-```html
-<script type="tutuca/spec">
-  struct Song { title : String, plays : Int, moods : Array[String] }
-  state Playlist {
-    draft : String
-    songs : Array[Song]
-    tags  : Array[String]
-  }
-  handle Playlist {
-    message { init
-    }
-  }
-</script>
+An aggregate is spelled where it is used: the type's name, and its fields
+named in parentheses.
 
-<script type="tutuca/script" for="Playlist">
-  receive init {
-    new Song
-    cur.title = 'Ramble On'
-    cur.plays = 0
-    cur.moods.push 'rock'
-    .songs.push cur
-  }
+```tutu
+spec:
+  struct Song(title :: String, plays :: Int, moods :: List.of(String))
 
-  /// A collection is built the same way and assigned whole.
-  receive reset {
-    new Array[String]
-    cur.push 'p'
-    cur.push 'q'
-    .tags = cur
-  }
-</script>
+  Playlist:
+    field draft :: String
+    field songs :: List.of(Song)
+    field tags :: List.of(String)
+
+    message add
+    message reset
+
+logic:
+  Playlist:
+    receive add:
+      it.songs.push(Song(title: it.draft, plays: 0))
+
+    /// A collection is emptied and refilled, not assigned.
+    receive reset:
+      it.tags.clear()
+      it.tags.push("p")
+      it.tags.push("q")
+
+view:
+  Playlist:
+    @ul{@each(song in it.songs){@li{@(song.title)}}}
 ```
 
-- The type is spelled the way the **spec block** spells it — `new Song`,
-  `new Array[String]`, `new Map[String, Int]` — and has to be one that block
-  declares (`struct R { … }` for a record) or a built-in. It shares the name
-  table with the state parser, so `new Int16` and `count : Int16` cannot come
-  to mean different things.
-- A field the build never touches keeps the **type's zero**, so `new Song`
-  followed straight by `.songs.push cur` appends an empty one.
-- A `new` **resets** the target. Two records is two `new`s, and the first is
-  not disturbed once it has been pushed somewhere.
-- A **path into** the target works, so `new Song` then `cur.moods.push 'rock'`
-  fills a list *inside* the record. That is what makes one target enough:
-  values are built outside-in.
-- `cur` is a **workbench, never output**. It belongs to the handler that built
-  it, is gone when that handler ends, and never reaches a view — a template
-  reading `cur` reads nothing. An `enrich` may not bind the name either
-  (`RESERVED_BIND`): an enricher's bindings *become* a view's scope, and the
-  target is not something a component may publish.
-- It is **checked**: the target's type comes from the `new`, and a path into it
-  is walked with the same machinery a state path uses, so `cur.dnoe` reports
-  `Song has no field dnoe` and a `cur` with no `new` above it is `NO_TARGET`.
-
-`cur = expr` with **no path** re-points the target at a value that is already
-built, which is how you copy a row out, edit it and put it back. Note the
-backend limits below before reaching for it.
+- The type is spelled the way the **`spec:` section** spells it — `Song(…)`,
+  and it has to be one that section declares (`struct R(…)` for a record) or a
+  component in the file. It shares the name table with the spec reader, so
+  `Song(…)` and `field songs :: List.of(Song)` cannot come to mean different
+  things.
+- A field the call does not name keeps the **type's zero**, so `Song(title:
+  it.draft)` is a song with no plays and no moods.
+- **There is no list or map literal**, so a collection *inside* an aggregate
+  cannot be filled in the call — it arrives empty, and a later statement fills
+  it through a path (`it.songs[0].moods.push("rock")`) or the field is filled
+  before the aggregate is built.
+- The call is **checked**: `Song(ttile: …)` reports that `Song` has no field
+  `ttile`, from the same declaration the state path walk uses.
 
 ### What the ahead-of-time backend refuses
 
@@ -649,15 +674,13 @@ from what the block answers, and leaves it in your `update` match to write in
 MoonBit. Nothing breaks silently, but a card that runs is not proof the same
 block emits to MoonBit.
 
-Around `new` / `cur`: a `new` inside an `if` does not outlive the branch, and
-`cur = expr` needs a `new` in scope above it. Writing or reading **through an
-index** — `.songs[i]`, `cur.moods[0]` — needs a bounds check the backend does
-not emit, wherever the place is rooted; the named collection methods
-(`setAt` / `deleteAt`) carry their own and are the way to say it.
+Writing or reading **through an index** — `it.songs[i]` — needs a bounds check
+the backend does not emit, wherever the place is rooted; the named collection
+methods (`set_at` / `delete_at`) carry their own and are the way to say it.
 
 Elsewhere, three things a body may otherwise say:
 
-- **a path into a binding** — `@value.completed`, which is what a `@when` over
+- **a path into a binding** — `@value.completed`, which is what a `~when` over
   a list of child component *instances* wants. `@value` whole is fine
   (`lower @value`, `len (str @value)`, `has .picked @value`).
 - **`sendAt`** — an addressed send. The position is what the backend does not
@@ -672,27 +695,24 @@ A type says `currentIndex` holds an `Int`, which is true and useless. What is
 actually true is `0 <= currentIndex < len(items)` — a relation between two
 fields, which no type can state. A `where` clause states it:
 
-```html
-<script type="tutuca/spec">
-  state Gallery {
-    items        : Array[String]
-    entries      : Map[String, String]
-    currentIndex : Int
-    currentKey   : String
-    count        : Int
+```tutu
+spec:
+  Gallery:
+    field items :: List.of(String)
+    field entries :: Map.of(String, String)
+    field current_index :: Int
+    field current_key :: String
+    field count :: Int
 
-    where currentIndex is index of .items
-    where currentKey   is key of .entries
-    where count >= 0
-  }
-</script>
+    where it.current_index is_index_of it.items
 
-<template>
-  <div>
-    <span @text=".currentIndex"></span>
-    <b @text=".currentKey"></b>
-  </div>
-</template>
+    where it.current_key is_key_of it.entries
+
+    where it.count >= 0
+
+view:
+  Gallery:
+    @div{@span{@(it.current_index)} @b{@(it.current_key)}}
 ```
 
 Several clauses may name one field and they **conjoin** (`where n >= 0` beside
@@ -847,35 +867,34 @@ A `pred` gives a rule about the state a **name**, and it is declared in the
 SPEC block, inside the `state` body it is about. Where you ATTACH it says which
 of the three kinds of rule it is, and the runtime keeps all three:
 
-```html
-<script type="tutuca/spec">
-  state Ledger {
-    here  : Int
-    there : Int
-    total : Int
+```tutu
+spec:
+  Ledger:
+    field here :: Int
+    field there :: Int
+    field total :: Int
 
-    pred canPush { .here > 0 }
-    pred empty { .here is 0 }
+    pred can_push: (it.here > 0)
+
+    pred empty: (it.here == 0)
 
     /// An INVARIANT: checked after EVERY dispatch, including the ones written
     /// later that never mention it, and including plain property writes.
-    invariant conserved { (.here + .there) is .total }
-  }
-</script>
+    invariant conserved: ((it.here + it.there) == it.total)
 ```
-```html
-<script type="tutuca/script" for="Ledger">
-  /// A PRECONDITION: asked before the body, against the state as it arrived.
-  receive push requires canPush {
-    .here -= 1
-    .there += 1
-  }
+```tutu
+logic:
+  Ledger:
+    /// A PRECONDITION: asked before the body, against the state as it arrived.
+    receive push:
+      ~requires: can_push
+      it.here -= 1
+      it.there += 1
 
-  /// A POSTCONDITION: asked after the body, against where it landed.
-  receive drain ensures empty {
-    .here = 0
-  }
-</script>
+    /// A POSTCONDITION: asked after the body, against where it landed.
+    receive drain:
+      ~ensures: empty
+      it.here := 0
 ```
 
 **Why the rule and the clause live in different blocks.** The clause is local —
@@ -909,7 +928,7 @@ Four things to know about the clauses themselves:
   naming their `and`: `pred canMove { canPush and (not .busy) }`.
 - Contracts attach to transitions only — `on`, `receive`, `intent`. An `enrich` writes bindings, and a `compute` is a value.
 - An `invariant` is a `pred` with a role, so `$conserved` still reads from a
-  view and `@when="conserved"` still filters a row. It covers **every**
+  view and `~when="conserved"` still filters a row. It covers **every**
   dispatch, in three degrees:
 
   | dispatch | when the rule is asked | effects if it fails |
@@ -931,12 +950,12 @@ Four things to know about the clauses themselves:
 
 - **A rule in the spec block takes no arguments and reads no `@`-binding.** One
   that needs either is about a particular render rather than about the
-  component — a `@when` filter over `@value`, or a `pred containsText(q)` a
+  component — a `~when` filter over `@value`, or a `pred containsText(q)` a
   parent calls. Those stay in the script block, where the other render-time
   callables are, and a parameterised rule in the spec block is refused by name.
 
 - **The declared initial states are checked at build time.** Every
-  `tutuca/fixtures` fixture is asserted against every invariant by a test
+  `fixtures:` fixture is asserted against every invariant by a test
   `gen` writes into the generated module — a rule that does not hold in
   the state the component starts in is broken before anything happens. The
   schema's zero is deliberately not checked: a wrapper is normally called with
@@ -949,24 +968,24 @@ ordinary expression, almost always a `$'…'` template, evaluated against the
 state that was rejected — so the values in it are the ones that made the rule
 false:
 
-```html
-<script type="tutuca/spec">
-  state Post {
-    slug      : String
-    title     : String
-    published : Bool
+```tutu
+spec:
+  Post:
+    field slug :: String
+    field title :: String
+    field published :: Bool
 
     /// A post needs a title before it can go out.
-    pred hasTitle
-      format $'Cannot publish "{.slug}": the title is empty.'
-    { (trim .title) is not '' }
-  }
-</script>
+    pred has_title:
+      ~format: @str{Cannot publish "@(it.slug)": the title is empty.}
+      (it.title.trim() != "")
 ```
-```html
-<script type="tutuca/script" for="Post">
-  receive publish requires hasTitle { .published = true }
-</script>
+```tutu
+logic:
+  Post:
+    receive publish:
+      ~requires: has_title
+      it.published := true
 ```
 
 - The `///` comment and the `format` do different jobs. The comment says what
@@ -1036,12 +1055,15 @@ answer to a file without one is to declare the schema.
 Named initial states go in a block of their own, because a default is a value
 and not a type:
 
-```html
-<script type="tutuca/fixtures">
-{ "fresh": { "value": { "label": "Counter" } },
-  "with-history": { "value": { "count": 3, "history": [1, 2, 3] },
-                    "doc": "What it looks like once it has been used." } }
-</script>
+```tutu
+fixtures:
+  "fresh":
+    it.label = "Counter"
+
+  "with-history":
+    ~doc: "What it looks like once it has been used."
+    it.count = 3
+    it.history = [1, 2, 3]
 ```
 
 A fixture is an **envelope**: `value` holds the field map, and `doc`, `view`,
@@ -1054,17 +1076,16 @@ Each `value` is checked against the schema — a fixture setting a field the
 schema dropped fails the build — and becomes `CounterState::fresh()` plus a
 public `counter_init_args("fresh")` for a ModuleDef example.
 
-`drive` is a list of the steps a `tutuca/test` scene takes, run after the value
+`drive` is a list of the steps a `tests:` scene takes, run after the value
 is seeded. It is the honest way to write a state a component ARRIVES at:
 
-```html
-<script type="tutuca/fixtures">
-{ "three rows": {
-    "value": {},
-    "doc": "A list that has been used, arrived at by using it.",
-    "drive": [ { "type": "input.draft", "value": "one" },
-               { "click": "button.add" } ] } }
-</script>
+```tutu
+fixtures:
+  "three rows":
+    ~doc: "A list that has been used, arrived at by using it."
+    ~drive:
+      type("input.draft", "one")
+      click("button.add")
 ```
 
 A scene then starts from it by name — `"init": "three rows"` — so a state worth
@@ -1077,7 +1098,7 @@ over the same fields. A name the component does not declare falls back to `main`
 `default: true` marks the fixture a host shows when nothing named one — what a
 visitor meets. A card that marks none mounts at the schema's zero; a card that
 marks one is met the way its author meant. It is a HOST's question, not a test's:
-a `tutuca/test` scene with no `"init"` still starts at the zero, because a
+a `tests:` scene with no `"init"` still starts at the zero, because a
 scene's starting point is a thing to write down.
 
 The tutucard playground reads all of this. The **examples** tab edits the block,

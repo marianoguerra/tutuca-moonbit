@@ -6,6 +6,92 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### The repo is written in `.tutu`
+
+Every view file in the repository is a `.tutu` — 85 of them, plus the two
+generated benchmark corpora. No `.html` in the tree declares a component; what
+is left are pages. `tutuca gen` takes a `.tutu`, the playgrounds and the card
+demo load one, and the MoonBit beside each view went through the rename with
+it: fields, message names, the render-time hook keys and the binding names an
+enricher writes.
+
+The conversion is what found the following. Each lived in the gap between the
+two readers a file had — the direct one and the printer's — which is why every
+check was green for all of them.
+
+- **A name's underscore is part of it.** `camel_name` collapsed `_`, so
+  `receive pick_place` dispatched `pickPlace` while the view in the same file
+  spelled `pick_place`: one message, two names, and the collision check refused
+  the file. Only a hyphen separates now.
+- **`ask 'load_data'` is answered `load_data_ok`.** The migration guide said
+  `<name>_ok`; the transactor derived `<name>Ok`. The retired `<name>Error`
+  spelling is gone with it.
+- **A loop that renders its binder is `render-each`.** `@each{@render(binder)}`
+  printed a literal `<render>` tag — an element that parses, renders nothing,
+  and is what a loop body most often is. Every list in the repo rendered empty.
+- **Whitespace is what the file says.** The printer wrote its own indentation
+  into text nodes, so `@span{disagrees}` became `"\n  disagrees\n  "`; the
+  converter dropped the space between two inline elements, which is content.
+  Both fixed, and `@@value.title` — the doubled sigil an existing test
+  DOCUMENTED rather than fixed — is one sigil.
+- **`+cancel` and `+send` name Enter and Escape**, not keys called `Cancel` and
+  `Send`. A void element takes no end tag.
+
+### `clear` is a collection method
+
+It was dropped as one of "the aliases that parsed but only one backend
+implemented". It is not an alias: `removeAt`/`deleteAt` are two spellings of
+one operation and `delete`/`set` are second names for `remove` and `setAt` —
+drop either and the operation is still spellable. Drop `clear` and there is
+nothing left, because the value language has no list literal to assign instead.
+
+### A rule carries its expression, not the text of one
+
+`RuleDecl` held its body as SOURCE, deferred so a package that could not parse
+an expression did not have to — and every consumer parsed it again, in whatever
+notation the text happened to be in. `statedef` parses it where the declaration
+is read.
+
+- a rule that does not parse fails the BLOCK, not a later check
+- the property checker asks the BUILTIN TABLE whether the evaluator can answer
+  a rule, where it used to re-parse the source with the slot grammar — a second
+  opinion about what evaluates, which happened to agree
+- `Expr::show_source` writes an expression back as the notation spells it. For
+  a reader: the inspector's Spec tab shows the rule as it was written.
+- `provide` and `lookup` keep their source, and the comment on each says why: a
+  compiled card carries them verbatim in its manifest and the host parses them
+  there.
+
+### A protocol member is not ours to rename, in both directions
+
+`Container::appendCell` and the `@1` in a protocol id are a wire vocabulary a
+second host dispatches by. The rename stops at `::` on both halves — inside a
+protocol declaration, and inside a scene's
+`"tutuca.dev/universal/Container@1::appendCell"`. The LOCAL half of a binding
+moves with everything else: `property Container::cellField = cell_field`.
+
+That divergence turned up a second thing: `property_opt` now falls through to
+the binding, and the catalog lists a bound member among the properties a
+component offers. The two names used to be one word, so a host asking for the
+member found the property by accident.
+
+### Reading a `.tutu` file without printing it first
+
+All four sections read straight into the shapes the compiler works over, each
+held to the printer by a differential test over the same source read both ways:
+
+- `tutufile/toanode` — a view's `@anode.ANode` and its event table, macros
+  expanded where they are read
+- `tutufile/tologic` — `@tscript.Decl`s
+- `statedef/from_tutu*.mbt` — the same declarations the block parser builds,
+  handed to the same resolution
+- `tutufile/todata` — the JSON `parse_init` and `parse_scenes` take
+
+They are not wired yet, and `docs/tutu-migration.md` says what stands between
+them and the switch: a compiled card's manifest carries each view as HTML text
+that the host parses back, which makes the switch a card-format change rather
+than a port.
+
 ### `tgc/2` — the component format is compiled through wap
 
 `tgc/emit` had no IR. It answered a Wax expression as a STRING and wrote

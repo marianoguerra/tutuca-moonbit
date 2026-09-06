@@ -43,12 +43,12 @@ fn cx_tree_item_comp() -> @component.Component {
     initial=TreeItemState::{
       type_: "dir",
       label: "A Tree Item",
-      isOpen: true,
+      is_open: true,
       items: [],
     },
     compute=m => match m {
       AreChildsVisible =>
-        Some((s, _args, _stack) => Bool(s.isOpen && s.items.length() > 0))
+        Some((s, _args, _stack) => Bool(s.is_open && s.items.length() > 0))
     },
     // a raw `match msg`: an Intent arrives because a walk routed here, so the
     // views cannot declare it and TreeItemMsg cannot type it
@@ -60,7 +60,7 @@ fn cx_tree_item_comp() -> @component.Component {
           false // stop at the leaf: self
         })
         ctx.intent("treeItemSelected", [self_v], @tutuca.IntentOpts::new(route=[Dyn]))
-        Next({ ..s, isOpen: !s.isOpen })
+        Next({ ..s, is_open: !s.is_open })
       }
       Intent("treeItemSelected", _) => Unhandled
       _ => Unhandled
@@ -118,7 +118,7 @@ fn cx_tree_sample(item : @component.Component) -> @tutuca.Value {
 
 fn composability_comp(tree_args : Map[String, @tutuca.Value]) -> @component.Component {
   composability_component(
-    initial={ ..ComposabilityState::zero(), activeSection: "counter" },
+    initial={ ..ComposabilityState::zero(), active_section: "counter" },
     slot_args={ "tree": tree_args },
   )
 }

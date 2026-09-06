@@ -7,7 +7,7 @@
 // survived in five files across two releases after the parameter was removed.
 //
 // A snippet is checked against the REAL generated surface, not a stub. Most
-// recipes show both halves — an ```html view file, then the ```moonbit that uses
+// recipes show both halves — a ```tutu view file, then the ```moonbit that uses
 // it — so this pairs them, runs the same view generator the playground runs
 // (viewgen/ compiled to JS), and compiles the pair together. That is what makes
 // the check able to catch a wrong wrapper parameter at all.
@@ -17,9 +17,9 @@
 //   ```moonbit fragment   a body fragment; wrapped in a fn before compiling
 //   ```moonbit nocheck    skipped; REQUIRES a `// nocheck: <reason>` line
 //
-// An ```html view file is generated whether or not a ```moonbit block follows
-// it: a recipe whose whole answer is the view file — a schema and a
-// `tutuca/script` block, with nothing left for MoonBit to do — is the shape
+// A ```tutu view file is generated whether or not a ```moonbit block follows
+// it: a recipe whose whole answer is the view file — a `spec:` and a
+// `logic:` section, with nothing left for MoonBit to do — is the shape
 // these docs aim for, and it would otherwise be the one shape nothing checks.
 // A generation that succeeds but reports a `script-refusal` FAILS here: the
 // module compiles, but an arm the snippet shows in the block would silently
@@ -182,12 +182,12 @@ for (const file of markdownFiles(SKILL)) {
   for (const b of blocks) {
     // a view file only pairs with snippets in its OWN section
     if (b.heading !== lastHeading) { lastHtml = null; lastHeading = b.heading; }
-    if (b.lang === "html") {
-      // Only a view FILE is a usable pair half — a bare markup fragment has no
-      // schema and no <template>, so it would generate nothing.
-      lastHtml = /<template|tutuca\/state/.test(b.body) ? b.body : null;
+    if (b.lang === "tutu") {
+      // Only a view FILE is a usable pair half — a bare fragment has no
+      // `spec:` and no `view:`, so it would generate nothing.
+      lastHtml = /^(spec|view):$/m.test(b.body) ? b.body : null;
       // Generated even when no ```moonbit block follows it. A recipe whose
-      // whole answer is the view file — a schema and a script block, with
+      // whole answer is the view file — a `spec:` and a `logic:` section, with
       // nothing left for MoonBit to do — is exactly the shape the patterns
       // aim for, and it would otherwise be the one shape nothing checks.
       if (lastHtml !== null) pushHtml(`${rel} § ${b.heading}`, lastHtml);
@@ -224,14 +224,14 @@ for (const file of markdownFiles(SKILL)) {
 // they can compile without inventing stubs the reader never sees.
 //
 // Each paired view file is generated into its own module, so a file may show
-// several. They must name distinct components (`<template id="Counter">`), which
-// a view file worth showing does anyway.
-// The name an UNNAMED `<template>` belongs to. The real CLI takes it from
-// `--name` or the file's basename; a doc snippet has neither, but its schema
-// block names the component — and `state FilePicker` is exactly the
+// several. They must name distinct components (`view:` naming `Counter:`),
+// which a view file worth showing does anyway.
+// The name a file's views belong to. The real CLI takes it from `--name` or
+// the file's basename; a doc snippet has neither, but its `spec:` section
+// names the component — and a `spec:` opening `FilePicker:` is exactly the
 // `FilePicker` the prose then calls `file_picker_component`.
 function fallbackName(html, i) {
-  const m = /\bstate\s+([A-Z]\w*)\s*\{/.exec(html);
+  const m = /^spec:\n\s+([A-Z]\w*)\b/m.exec(html);
   return m ? m[1] : `View${i}`;
 }
 
