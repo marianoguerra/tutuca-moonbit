@@ -55,14 +55,32 @@ Then, in order:
    `tutuca to-tutu` and `tutufile/equiv` — the converter and the equivalence
    check exist only to move the repo across, and the repo is across.
 
-Two things a reader still cannot answer, and both are wire formats with another
-side to them rather than gaps in the reader:
+### The card manifest is what stands between the readers and the switch
 
-- `provide` and `lookup` carry their value as SOURCE into a compiled card's
-  manifest, and the host parses it there with the block grammar. The `spec:`
-  reader raises on them by name. One example card uses them.
+Three things a reader cannot answer, and all three are the same shape: a
+compiled card's manifest carries TEXT, and the host on the other side parses it.
+
+- **each view, as HTML** — `tgc/emit/compile.mbt` writes `{"name": …, "html":
+  …}` and `tgc/host/manifest.mbt` reads it back through `ANode::parse`. A view
+  arrives at the generator as a TREE now, so producing that field means an
+  `ANode` → HTML printer: the same printer stage 6 exists to delete, for the
+  view section only, and it has to be byte-exact or the card conformance suite
+  moves under it.
+- **`provide` and `lookup`, as source** — the host parses them with the block
+  grammar. The `spec:` reader raises on them by name; one example card uses
+  them.
 - the auto-mutator vocabulary (`set<Field>`, `<field>Len`), which
   `core/schema.mbt` builds and 272 call sites spell
+
+So the switch is not a port of the consumers — it is a card-format change with
+its own compatibility story, and it wants to be its own piece of work rather
+than the tail of this one. The readers are in and checked; what they feed is
+where the next decision is.
+
+A rehearsal of the switch got as far as `viewgen`, the CLI and every test
+fixture in both — the corpus converts, `read_file` replaces `split_file`, and
+the two text-shaped lint passes go with the text — before the manifest stopped
+it. That is the shape the work takes when the format question is answered.
 
 `InitState.fields` is MoonBit source and stays that way: the generator writes
 it into a `make` call, and the data reader hands over JSON rather than fields.
