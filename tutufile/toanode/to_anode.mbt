@@ -45,6 +45,14 @@ pub(all) struct MacroDef {
 /// event table they index, and the macros the file declares.
 pub struct ViewBuilder {
   mut next_id : Int
+  /// The namespace elements are being built in.
+  ///
+  /// An element inside `<svg>` is in the SVG namespace, and the HTML parser
+  /// says so on every descendant rather than only on the root — `DomData.ns`
+  /// is what `to_dom` reads to call `createElementNS`. At-notation has no
+  /// namespace syntax, so the enclosing `@svg` is what decides, exactly as the
+  /// tokenizer's insertion mode does.
+  mut ns : @anode.Ns?
   handlers : Array[Array[@anode.NodeEvent]]
   macros : Map[String, MacroDef]
   /// Macro names currently being expanded. A macro that reaches itself is
@@ -56,7 +64,7 @@ pub struct ViewBuilder {
 pub fn ViewBuilder::new(
   macros? : Map[String, MacroDef] = Map([]),
 ) -> ViewBuilder {
-  { next_id: 0, handlers: [], macros, expanding: [], }
+  { next_id: 0, ns: None, handlers: [], macros, expanding: [], }
 }
 
 ///|
@@ -371,8 +379,20 @@ fn ViewBuilder::tag(
   // `data-eid` goes where the first `~on_*` option was written, which is where
   // the HTML parser puts it — appending it would reorder the element's
   // attributes against a tree parsed from the old notation.
+  //
+  // And it is registered BEFORE the children are built, because the parser
+  // reads an element's attributes before its content: a parent's handlers get a
+  // lower id than its children's, and the ids are what `data-eid` carries.
   if !events.is_empty() {
     attrs.insert(eid_at, @anode.eid(self.register(events)))
+  }
+  // `@svg{…}` opens the SVG namespace for everything under it, and `@math{…}`
+  // MathML. Nothing closes one but the end of the element.
+  let outer = self.ns
+  self.ns = match tag {
+    "svg" => Some(Svg)
+    "math" => Some(MathML)
+    _ => self.ns
   }
   let childs = []
   for g in body {
@@ -380,7 +400,8 @@ fn ViewBuilder::tag(
       childs.push(n)
     }
   }
-  let node = @anode.h(tag, attrs, merge_text(childs))
+  let node = @anode.h(tag, attrs, merge_text(childs), ns?=self.ns)
+  self.ns = outer
   // Outermost-first in source order, which is the order `WrapperAttr` records
   // them in — so the last one read is the innermost wrap.
   let mut out = node
@@ -666,10 +687,16 @@ fn ViewBuilder::each(
   // tree carries — but matching the parser's order keeps an ahead-of-time tree
   // comparable with a parsed one, which is what the equivalence tests read.
   let node = self.wrapped_body("each", body, inner, span)
+  // A loop whose whole body is the item itself is what the old notation spelled
+  // `<x render-each>`. The marker is for the linter — it says this `Each` has no
+  // wrapper-attr record to check instead — and the shape is what decides it,
+  // since the new notation has one spelling for both.
+  let from_render_each = node is RenderIt(_)
   @anode.each(
     self.alloc(),
     val,
     node,
+    from_render_each~,
     when_val?=trigger("when"),
     enrich_with_val?=trigger("enrich_with"),
     loop_with_val?=trigger("loop_with"),
@@ -732,7 +759,24 @@ fn ViewBuilder::render(
     Some(v) => Some(to_expr(v, ctx, span))
     None => None
   }
-  @anode.render(self.alloc(), to_expr(pos[0], ctx, span), view?)
+  let val = to_expr(pos[0], ctx, span)
+  // `@render(row)` where `row` is the loop's own binder is RENDER-IT: the node
+  // renders the item the loop is on and carries no value of its own. The old
+  // notation had two spellings for that — `<x render-it>` and a `<x render>`
+  // naming the binding — and the new one has this, so the ARGUMENT decides.
+  if is_loop_item(val) {
+    return @anode.render_it(self.alloc(), view?)
+  }
+  @anode.render(self.alloc(), val, view?)
+}
+
+///|
+/// Whether a value is the loop's own item, which is what `render-it` renders.
+fn is_loop_item(val : @tutuca.Expr) -> Bool {
+  match val.as_bind() {
+    Some(name) => name == "value"
+    None => false
+  }
 }
 
 ///|

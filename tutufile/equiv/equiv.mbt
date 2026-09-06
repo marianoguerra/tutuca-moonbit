@@ -74,7 +74,7 @@ pub fn compare(
   compare_spec(a, b, out)
   compare_logic(a, b, out)
   compare_data(a, b, out)
-  compare_views(a, tutu, out)
+  compare_views(a, tutu, name, out)
   out
 }
 
@@ -206,17 +206,22 @@ fn compare_rules(
 }
 
 ///|
-/// A rule's source text as the expression it is, or the text itself when it is
-/// not one — an unparseable body is a difference worth seeing rather than
-/// hiding behind a `None`.
-fn expr_of(source : String) -> String {
+/// A rule's source text as the expression it is.
+///
+/// The EXPRESSION rather than its rendering, so that the comparison scrubs it
+/// like any other tree — the renaming pass reads `PState("hasSpec")` as a name
+/// and answers `has_spec`, which it cannot do to a string that already holds
+/// the whole dump.
+///
+/// `None` for a body that does not parse, and for an absent one. The two are
+/// distinguished by the caller only in that an absent body is absent on both
+/// sides; a body that stopped parsing is a difference the caller will see as
+/// one side having `None`.
+fn expr_of(source : String) -> @tutuca.Expr? {
   if source.trim(chars=" \n\t") == "" {
-    return ""
+    return None
   }
-  let e = @tscript.parse_expr_source(source) catch {
-    _ => return "unparsed: " + source
-  }
-  @debug.to_string(e)
+  Some(@tscript.parse_expr_source(source) catch { _ => return None })
 }
 
 ///|
@@ -312,6 +317,7 @@ fn compare_data(
 fn compare_views(
   a : @viewfile.ViewFile,
   tutu : String,
+  name : String,
   out : Array[Difference],
 ) -> Unit {
   let scope = FileMacros::of(a.macros)
@@ -331,8 +337,11 @@ fn compare_views(
   // that names it: a component and one of its views.
   for set in a.components {
     for v in set.views {
-      let want = if set.name == "" { v.name } else { set.name + "." + v.name }
-      let decl = find_view(decls, want, v.name)
+      // A file that declared one anonymous component takes the name the
+      // caller supplied, exactly as the converter does.
+      let comp = if set.name == "" { name } else { set.name }
+      let want = if v.name == "main" { comp } else { comp + "." + v.name }
+      let decl = find_view(decls, comp, v.name)
       guard decl is Some(decl) else {
         out.push({
           section: "view",
@@ -379,8 +388,8 @@ fn compare_views(
         out,
         "view",
         want,
-        @toanode.strip_ws(parsed),
-        @toanode.strip_ws(tree),
+        @toanode.strip_ws(@toanode.flatten_ops(parsed)),
+        @toanode.strip_ws(@toanode.flatten_ops(tree)),
       )
       if @toanode.collapse_ws(v.style) != @toanode.collapse_ws(built.style) {
         out.push({
@@ -395,21 +404,21 @@ fn compare_views(
 }
 
 ///|
-/// The declaration for a `Comp.view` pair, falling back to the bare view name
-/// for a file that declares one unnamed component.
+/// The declaration for a `Comp.view` pair.
+///
+/// A `.tutu` file names a component's `main` view by the component alone and
+/// every other view `Comp.view`, which is how the converter writes them. Both
+/// spellings are tried and NOTHING else is: a fallback that took the first view
+/// it could see compared one component's markup against another's and reported
+/// a difference about a view that was never looked at.
 fn find_view(
   decls : Array[@tutufile.Decl],
-  want : String,
+  comp : String,
   view : String,
 ) -> @tutufile.Decl? {
-  let bare = if view == "main" { "" } else { "." + view }
+  let want = if view == "main" { comp } else { comp + "." + view }
   for d in decls {
     if d.kind is View && d.name == want {
-      return Some(d)
-    }
-  }
-  for d in decls {
-    if d.kind is View && (d.name.has_suffix(bare) || bare == "") {
       return Some(d)
     }
   }
@@ -471,8 +480,12 @@ fn[T : @debug.Debug] diff_debug(
   a : T,
   b : T,
 ) -> Unit {
-  let sa = scrub(@debug.to_string(a))
-  let sb = scrub(@debug.to_string(b))
+  // A DEPTH rather than `to_string`: `Debug` elides below its default depth,
+  // and two trees that differ only in how deep they sit render one elided and
+  // one not — a difference about the printer. Deep enough that nothing in the
+  // corpus reaches it.
+  let sa = scrub(@debug.render(Repr::Repr(a), max_depth=200))
+  let sb = scrub(@debug.render(Repr::Repr(b), max_depth=200))
   if sa != sb {
     out.push({ section, what, html: sa, tutu: sb, })
   }

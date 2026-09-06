@@ -12,7 +12,9 @@
 /// `Expr`'s own `Eq`, which ignores spans for the same reason: a span is where
 /// something was read, not what it is.
 ///
-/// **Node ids** are handed out by whoever built the tree, and recovered from
+/// **Node ids** — `Some(n)` on the wrappers, a bare `Int` on `Each`, `Render`
+/// and `RenderIt`, so both spellings are blanked — are handed out by whoever
+/// built the tree, and recovered from
 /// the tree by `ParseContext::from_ir` rather than trusted from outside. Two
 /// trees that address their own nodes consistently are the same tree; which
 /// integers they chose is not a fact about the view. `data-eid` is NOT blanked
@@ -27,7 +29,10 @@ pub fn scrub(s : String) -> String {
     tighten(
       @toanode.collapse_ws(
         blank_ints(
-          blank_ints(blank_after(s, "node_id: Some(", ")"), "start: "),
+          blank_ints(
+            blank_ints(blank_after(s, "node_id: Some(", ")"), "node_id: "),
+            "start: ",
+          ),
           "end_: ",
         ),
       ),
@@ -169,9 +174,10 @@ fn blank_ints(s : String, key : String) -> String {
         i = i + 1
         saw = true
       }
-      out.write_char(if saw { '_' } else { ' ' })
-      if !saw {
-        continue
+      // Only a run of digits is a value to blank. `node_id: Some(_)` has
+      // already been handled and must come through untouched.
+      if saw {
+        out.write_char('_')
       }
     } else {
       out.write_char(cs[i])

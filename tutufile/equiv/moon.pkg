@@ -11,7 +11,11 @@
 //
 //   spec      `@statedef.StateDef`, as the splitter parsed it
 //   logic     `@tscript.Decl`s, as the script parser parsed them
-//   view      `@anode.ANode`, modulo whitespace (`@toanode.strip_ws`)
+//   view      `@anode.ANode`, modulo whitespace (`@toanode.strip_ws`) and
+//             modulo how an operator is spelled (`@toanode.flatten_ops`) — a
+//             slot parser reads `(.a is 'x')` as an application and the block
+//             grammar reads `a == b` as a chain, and `eval_chain` reduces one
+//             to the other before evaluating either
 //   fixtures  `@statedef.InitState`
 //   tests     the parsed scenes
 //
@@ -37,6 +41,7 @@ import {
   "marianoguerra/tutuca/tutufile/names",
   "marianoguerra/tutuca/viewfile",
   "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/statedef",
   "marianoguerra/error-report" @report,

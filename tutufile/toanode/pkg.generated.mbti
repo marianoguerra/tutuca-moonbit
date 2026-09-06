@@ -13,6 +13,10 @@ import {
 // Values
 pub fn collapse_ws(String) -> String
 
+pub fn flat_expr(@core.Expr) -> @core.Expr
+
+pub fn flatten_ops(@anode.ANode) -> @anode.ANode
+
 pub fn macros_of(Array[@tutufile.Decl]) -> Map[String, MacroDef] raise @lower.ExError
 
 pub fn strip_ws(@anode.ANode) -> @anode.ANode
@@ -46,6 +50,7 @@ pub(all) enum NamePos {
 
 pub struct ViewBuilder {
   mut next_id : Int
+  mut ns : @anode.Ns?
   handlers : Array[Array[@anode.NodeEvent]]
   macros : Map[String, MacroDef]
   expanding : Array[String]
