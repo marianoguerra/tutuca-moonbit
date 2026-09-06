@@ -292,8 +292,16 @@ fn print_macro(
     "macro \{@names.snake_of(m.name)}(\{params.join(", ")})"
   }
   out.write_string("  \{head}:\n")
+  // Parsed INSIDE a macro frame, because a `^label` read outside one resolves
+  // to nothing and the value is dropped — which is how a macro body converted
+  // to an element with no content.
+  //
+  // Each parameter is bound to a SENTINEL rather than to itself: binding
+  // `label` to `^label` makes the value parser substitute it into itself for
+  // ever. A `$name` parses, cannot be confused with anything the corpus writes,
+  // and `print_expr` reads the parameter's own name back out of it.
   let px = @anode.ParseContext::new()
-  let tree = @anode.ANode::parse(m.source, px)
+  let tree = @anode.ANode::parse(sentinel_params(m.source), px)
   guard tree is Some(tree) else {
     raise NoSpelling(
       what="a macro whose body did not parse (`\{m.name}`)",
@@ -302,6 +310,32 @@ fn print_macro(
   }
   ignore(scope)
   out.write_string(print_view(tree, px.events, "    "))
+}
+
+///|
+/// A macro's source with every `^name` replaced by the sentinel.
+///
+/// A text substitution, on text — which is what a macro's body IS on the old
+/// path, and the only shape it has before a call site opens a frame for it.
+/// Parsing it with a real frame does not work: binding `label` to `^label`
+/// substitutes it into itself for ever, and binding it to a value would print
+/// the value where the parameter was.
+fn sentinel_params(source : String) -> String {
+  let out = StringBuilder()
+  let cs : Array[Char] = source.iter().collect()
+  let mut i = 0
+  while i < cs.length() {
+    if cs[i] == '^' &&
+      i + 1 < cs.length() &&
+      cs[i + 1] is ('a'..='z' | 'A'..='Z' | '_') {
+      out.write_string(macro_sentinel)
+      i = i + 1
+    } else {
+      out.write_char(cs[i])
+      i = i + 1
+    }
+  }
+  out.to_string()
 }
 
 ///|

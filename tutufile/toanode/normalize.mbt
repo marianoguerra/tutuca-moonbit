@@ -245,3 +245,56 @@ fn map_attrs(
       )
   }
 }
+
+///|
+/// A copy of the tree with every macro call replaced by its expansion.
+///
+/// The old path keeps a `MacroCall` node holding the expansion inside it; the
+/// direct reader substitutes the macro's body in place and adds no node. The
+/// ahead-of-time generator already strips the wrapper (`viewgen`'s
+/// `strip_macro_calls`), so expanding in place is the end state it was reaching
+/// for — and a comparison between the two paths has to look past a node that
+/// only one of them builds.
+///
+/// A call that was never expanded is left alone: it is a macro the scope did
+/// not have, which is a difference worth seeing.
+pub fn strip_macro_calls(node : @anode.ANode) -> @anode.ANode {
+  match node {
+    MacroCall(d) =>
+      match d.node {
+        Some(inner) => strip_macro_calls(inner)
+        None => node
+      }
+    Dom(d) =>
+      Dom({
+        tag: d.tag,
+        attrs: d.attrs,
+        childs: d.childs.map(strip_macro_calls),
+        ns: d.ns,
+        sink_hints: None,
+        bind: d.bind,
+      })
+    Fragment(d) => Fragment({ childs: d.childs.map(strip_macro_calls), })
+    Show(d) =>
+      Show({ node_id: d.node_id, val: d.val, node: strip_macro_calls(d.node), })
+    Hide(d) =>
+      Hide({ node_id: d.node_id, val: d.val, node: strip_macro_calls(d.node), })
+    PushView(d) =>
+      PushView({
+        node_id: d.node_id,
+        val: d.val,
+        node: strip_macro_calls(d.node),
+      })
+    Scope(d) =>
+      Scope({ node_id: d.node_id, val: d.val, node: strip_macro_calls(d.node), })
+    Slot(d) => Slot({ name: d.name, node: strip_macro_calls(d.node), })
+    Each(d) =>
+      Each({
+        node_id: d.node_id,
+        iter_info: d.iter_info,
+        node: strip_macro_calls(d.node),
+        from_render_each: d.from_render_each,
+      })
+    other => other
+  }
+}

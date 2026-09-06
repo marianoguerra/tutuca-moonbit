@@ -18,6 +18,10 @@ pub fn escape_text(String) -> String
 
 pub fn is_type_name(String) -> Bool
 
+pub let macro_sentinel : String
+
+pub let macro_sentinel_name : String
+
 pub fn pascal_of(String) -> String
 
 pub fn print_expr(@core.Expr) -> String raise NoSpelling

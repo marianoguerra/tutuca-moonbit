@@ -19,6 +19,8 @@ pub fn flatten_ops(@anode.ANode) -> @anode.ANode
 
 pub fn macros_of(Array[@tutufile.Decl]) -> Map[String, MacroDef] raise @lower.ExError
 
+pub fn strip_macro_calls(@anode.ANode) -> @anode.ANode
+
 pub fn strip_ws(@anode.ANode) -> @anode.ANode
 
 pub fn to_expr(@lower.Ex, ExCtx, @error-report.Span) -> @core.Expr raise @lower.ExError

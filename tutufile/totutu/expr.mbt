@@ -10,6 +10,25 @@
 // have. Redundant parentheses change nothing about what is read.
 
 ///|
+/// What a macro parameter is bound to while its body is parsed.
+///
+/// A macro body's `^label` resolves against the frame its CALLER opened, so a
+/// body parsed with no frame loses every parameter — the directive value comes
+/// back `None` and the node is dropped. Binding the parameter to itself makes
+/// the value parser substitute it into itself for ever, so it is bound to a
+/// `$name` instead: it parses, nothing in the corpus writes one, and the
+/// parameter's own name is read back out of it here.
+///
+/// No underscores: the value layer's identifier rule does not take a leading
+/// one, and a sentinel that does not parse is a value dropped rather than a
+/// parameter carried.
+pub let macro_sentinel : String = "$zzmacroparam"
+
+///|
+/// The same sentinel without the `$`, which is what reaches the parsed name.
+pub let macro_sentinel_name : String = "zzmacroparam"
+
+///|
 /// Something the new notation cannot spell.
 pub(all) suberror NoSpelling {
   NoSpelling(what~ : String, help~ : String)
@@ -22,7 +41,14 @@ pub fn print_expr(e : @tutuca.Expr) -> String raise NoSpelling {
     ELit(lit~, ..) => print_lit(lit)
     ERead(place~, ..) => print_place(place)
     ERef(place~, ..) => print_place(place)
-    EMethod(name~, ..) => "\{@names.snake_of(name)}()"
+    // A macro parameter, which reaches here as the sentinel a macro body was
+    // parsed under. See `macro_sentinel`.
+    EMethod(name~, ..) =>
+      if name.has_prefix(macro_sentinel_name) {
+        @names.snake_of(name[macro_sentinel_name.length():].to_owned())
+      } else {
+        "\{@names.snake_of(name)}()"
+      }
     EDyn(name~, ..) => "dyn.\{@names.snake_of(name)}"
     EName(name~, ..) => @names.rename_member(name)
     ETypeName(name~, ..) => name

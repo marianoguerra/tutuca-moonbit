@@ -210,28 +210,38 @@ fn print_macro_call(
   } else {
     "@\{@names.snake_of(d.name)}(\{args.join(", ")})"
   }
-  if d.slots.is_empty() {
+  // Only a call that actually passes content gets a body. A macro with no slot
+  // content carries one empty `Fragment` under the default slot name, and
+  // writing `{}` for it would put an empty block in the file.
+  let body = StringBuilder()
+  for _, slot in d.slots {
+    print_node(slot, events, indent + "  ", body)
+  }
+  if body.to_string() == "" {
     out.write_string("\{indent}\{head}\n")
     return
   }
   out.write_string("\{indent}\{head}{\n")
-  for _, slot in d.slots {
-    print_node(slot, events, indent + "  ", out)
-  }
+  out.write_string(body.to_string())
   out.write_string("\{indent}}\n")
 }
 
 ///|
 /// One macro argument, which arrives as text in the old value notation.
 fn macro_arg(source : String) -> String raise NoSpelling {
-  let t = source.trim(chars=" ").to_owned()
-  if t.length() >= 2 && t.has_prefix("'") && t.has_suffix("'") {
-    return quote(t[1:t.length() - 1].to_owned())
+  // A macro argument reaches here as SOURCE TEXT in the old notation
+  // (`Attrs::to_macro_vars`), because that is the only shape the old path had
+  // for one. So it is read with the parser that wrote it and printed like any
+  // other expression — reprinting the text would put the old spelling in a new
+  // file, and a macro argument is an expression in the new notation.
+  let e = @tscript.parse_macro_attr(source, @tscript.ParseCtx::new())
+  guard e is Some(e) else {
+    raise NoSpelling(
+      what="a macro argument that does not parse (`\{source}`)",
+      help="fix it in the `.html` file before converting",
+    )
   }
-  raise NoSpelling(
-    what="a macro argument that is not a literal string (`\{source}`)",
-    help="convert this call by hand: a macro argument reaches here as source text in the old notation, and reprinting it would put the old spelling in a new file",
-  )
+  print_expr(e)
 }
 
 ///|

@@ -158,10 +158,12 @@ fn name_expr(n : String, ctx : ExCtx, sp : @tutuca.Span) -> @tutuca.Expr {
       // to resolve: the argument is already an expression, so there is nothing
       // left to resolve later.
       if ctx.params.get(n) is Some(arg) {
-        to_expr_unchecked(
-          arg,
-          { binds: ctx.binds, pos: ctx.pos, params: Map([]), },
-          sp,
+        from_macro(
+          to_expr_unchecked(
+            arg,
+            { binds: ctx.binds, pos: ctx.pos, params: Map([]), },
+            sp,
+          ),
         )
       } else if ctx.pos is Handler {
         @tutuca.Expr::name(n, span=sp)
@@ -170,6 +172,30 @@ fn name_expr(n : String, ctx : ExCtx, sp : @tutuca.Span) -> @tutuca.Expr {
       } else {
         @tutuca.Expr::bind(bound_name(n, ctx), span=sp)
       }
+  }
+}
+
+///|
+/// A constant that came from a macro argument, marked as one.
+///
+/// The bit is load-bearing rather than bookkeeping: it is what decides whether
+/// a constant may pin a URL origin (`tgc/policy/external_url.mbt`), because the
+/// caller's source and the component's own are different provenances. A
+/// substitution that dropped it would widen what a guest may point at.
+fn from_macro(e : @tutuca.Expr) -> @tutuca.Expr {
+  match e {
+    ELit(lit~, span~, ..) => ELit(lit~, from_macro=true, span~)
+    ETpl(parts~, span~) =>
+      ETpl(
+        parts=parts.map(p => {
+          match p {
+            TText(text~, ..) => TText(text~, from_macro=true)
+            other => other
+          }
+        }),
+        span~,
+      )
+    other => other
   }
 }
 

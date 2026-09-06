@@ -394,8 +394,12 @@ fn compare_views(
         out,
         "view",
         want,
-        @toanode.strip_ws(@toanode.flatten_ops(parsed)),
-        @toanode.strip_ws(@toanode.flatten_ops(tree)),
+        @toanode.strip_ws(
+          @toanode.flatten_ops(@toanode.strip_macro_calls(parsed)),
+        ),
+        @toanode.strip_ws(
+          @toanode.flatten_ops(@toanode.strip_macro_calls(tree)),
+        ),
       )
       if @toanode.collapse_ws(v.style) != @toanode.collapse_ws(built.style) {
         out.push({
