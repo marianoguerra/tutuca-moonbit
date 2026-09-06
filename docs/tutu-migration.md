@@ -15,40 +15,73 @@ file, top to bottom.
 
 ## Status — read this first
 
-The migration is **staged. A `.tutu` file compiles today; the repo has not been converted.**
+The migration is **done through stage 5. Every view file in the repo is a
+`.tutu`; the lowering seam is what is left.**
 
 | Stage | What it is | State |
 | --- | --- | --- |
 | 1 | The file: five sections, their order, the declarations in each | **done** — `tutufile/`, `tutuca outline` |
 | 2 | Every section lowered into the block the front end reads | **done** — `tutufile/lower`, and `tutuca gen` takes a `.tutu` |
-| 3 | Convert the repo's 86 view files and cards | not started |
-| 4 | The card runtime and both playgrounds, which read the four blocks by name | not started |
-| 5 | The skill — 8.7k lines, and what an agent authors from | not started |
-| 6 | Direct readers, replacing the lowering; then delete `viewfile/` and the old parsers | not started |
+| 3 | Convert the repo's 85 view files and cards | **done** — no `.html` in the tree declares a component |
+| 4 | The card runtime, both playgrounds, the benchmarks and the generated corpora | **done** |
+| 5 | The MoonBit beside each view: fields, message names, hook keys, binding names | **done** |
+| 6 | Direct readers, replacing the lowering; then delete `viewfile/` and the old parsers | **in progress** — the view and `logic:` readers are in |
 
-So: **a `.tutu` file compiles today.** `tutuca gen card.tutu --name Card`
-emits the same MoonBit the `.html` beside it does, and `tutuca outline
-card.tutu` says what the file declares. What has not happened is the repo's own
-migration: the 86 files, the card runtime, the playgrounds and the skill still
-read the old blocks, so **keep the `.html` until stage 3 reaches it**.
+### Stage 6, and what is left of it
 
-How stage 2 works, and why it is staged this way: the five sections are
-**lowered** into the blocks the front end already reads, rather than parsed
-into its typed forms directly. `tutufile/lower` is a printer — spec section to
-`state` block, logic section to script block, view section to templates, the
-two data sections to their JSON — so every consumer downstream works on a
-`.tutu` file without a line of it changing. The direct readers are the end
-state (stage 6); the lowering is deleted when they land, not kept as a second
-way in.
+The four sections need four readers. Two exist:
+
+| Section | Reader | State |
+| --- | --- | --- |
+| `view:` | `tutufile/toanode` | done — an `@anode.ANode` and its event table, macros expanded |
+| `logic:` | `tutufile/tologic` | done — `@tscript.Decl`s, held to the printer by a differential test |
+| `spec:` | — | not started — `@statedef.StateDef`: fields, properties, rules, `where`s, channels, protocols, `struct`/`enum`, `provide`/`lookup` |
+| `fixtures:` / `tests:` | — | not started — `@statedef.InitState` and `@scenedef.Scene` |
+
+Then, in order:
+
+1. **`ViewFile` stops carrying text.** `RawView.source` is HTML and
+   `ScriptBlock.text` is the block language; both become the parsed forms the
+   readers already produce. `viewgen/compiled.mbt`'s `compile_view` is the
+   seam — it turns raw text into `(root, events)`, which is exactly what
+   `toanode` answers.
+2. **Switch the consumers.** `cli/gen_views.mbt` lowers a `.tutu` before
+   splitting it (`f.input.has_suffix(".tutu")`); so does `benchmarks`. Both
+   read the direct path instead.
+3. **Delete.** `tutufile/lower`'s printers, `viewfile`'s HTML splitter,
+   `tutuca to-tutu` and `tutufile/equiv` — the converter and the equivalence
+   check exist only to move the repo across, and the repo is across.
+
+Three things the readers must keep producing, because a consumer still reads
+them in the old spelling — each is a rename of its own and none is stage 6's:
+
+- a collection method's name in a `Stmt` (`deleteAt`, not `delete_at`), which
+  `tscript/check`, `tscript/emit_mbt` and the card backend match on
+- the auto-mutator vocabulary (`set<Field>`, `<field>Len`), which
+  `core/schema.mbt` builds and 272 call sites spell
+- `InitState.fields`, which is MoonBit source rather than values, because the
+  generator writes it into a `make` call
+
+The old notation itself — what `docs/` and `skill/` show a reader — is the
+other half of "no traces", and it is prose rather than code.
 
 ### How it is checked
 
-By **equivalence against the file it replaces**. `tutufile/lower` imports none
-of the readers; its tests import all of them, lower a card and assert the
-`StateDef`, the script block, the fixture, the scene and the view that come
-back. End to end, `tutuca gen` over the counter written as `.tutu` emits a
-`counter_view_gen.mbt` byte-identical to the one its `.html` produces, save the
-source name in the header and the schema fingerprint.
+By **equivalence against the path it replaces**. Each direct reader is held to
+the printer by a differential test: the same source read both ways, compared as
+trees. `tutufile/tologic` has one, and it earns its keep — it found three
+disagreements on the first run, each a fact about the printer rather than a gap
+in the reader, and each written down beside the assertions.
+
+That check is what makes a printer safe to delete. A reader that merely parses
+is a reader that could be producing anything; a reader that agrees with the
+thing it replaces, statement shape by statement shape, is one you can take the
+other side away from.
+
+While the corpus was being converted the same idea ran the other way:
+`tutufile/equiv` compared what the pipeline READ out of a `.html` and the
+`.tutu` beside it, and `tutuca to-tutu` refused rather than guessed. Both go
+with the seam — they exist to move a repo across, and this one is across.
 
 **Naming an anonymous component changes its fingerprint.** A `.html` file may
 write `state { … }` with no name; a `.tutu` file always names its components.
