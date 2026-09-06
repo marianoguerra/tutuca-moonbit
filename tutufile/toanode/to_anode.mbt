@@ -369,6 +369,7 @@ fn ViewBuilder::tag(
   let attrs : Array[@anode.AttrItem] = []
   let events : Array[@anode.NodeEvent] = []
   let wrappers : Array[(String, @tutuca.Expr)] = []
+  let binds : Array[@tutuca.Expr] = []
   let mut eid_at = 0
   // An event's MODIFIERS are the options written after its handler, which
   // `read_args` flattens into siblings. They belong to the `~on_*` before them.
@@ -389,7 +390,9 @@ fn ViewBuilder::tag(
             at = at + 1
           }
         }
-        self.attribute(name, value, mods, ctx, span, attrs, events, wrappers)
+        self.attribute(
+          name, value, mods, ctx, span, attrs, events, wrappers, binds,
+        )
       }
       // A bare flag is a valueless attribute, which HTML reads as the boolean
       // it is: `~disabled` and `disabled` are `LBool(true)`, not the empty
@@ -408,6 +411,37 @@ fn ViewBuilder::tag(
           span~,
         )
     }
+  }
+  // `~bind:` finishes here, where the element is known: an `input` of type
+  // checkbox mirrors `checked` rather than `value`, and a `select` writes back
+  // on `change` rather than on `input`. The mirrored property is a real
+  // attribute and goes in before `data-eid`, which is where the HTML parser
+  // leaves it.
+  let mut bind_data : @anode.BindData? = None
+  if binds is [target, ..] {
+    let low = @lower.tag_name(tag).to_lower()
+    let checkbox = low == "input" && static_attr(attrs, "type") == "checkbox"
+    let property = if checkbox { "checked" } else { "value" }
+    let event_name = if low == "select" { "change" } else { "input" }
+    attrs.push(@anode.dyn_attr(property, target))
+    if events.is_empty() {
+      eid_at = attrs.length()
+    }
+    let field = target.as_field().unwrap_or("invalidBindTarget")
+    let event : @anode.NodeEvent = {
+      name: event_name,
+      handler: {
+        handler: @tutuca.Expr::lit(LNull),
+        args: [],
+        action: Some(
+          PropertySet(name=field, value=@tutuca.Expr::event_path(["value"])),
+        ),
+      },
+      modifiers: [],
+      binding: Some(BindPending),
+    }
+    events.push(event)
+    bind_data = Some({ target, property, event, })
   }
   // A scope's id is allocated only when there IS one, and before the element is
   // built, because the element carries it: `data-nid` is how a rendered node
@@ -449,6 +483,7 @@ fn ViewBuilder::tag(
     attrs,
     merge_text(childs),
     ns?=self.ns,
+    bind?=bind_data,
   )
   self.ns = outer
   // Outermost-first in source order, which is the order `WrapperAttr` records
@@ -481,6 +516,7 @@ fn ViewBuilder::attribute(
   attrs : Array[@anode.AttrItem],
   events : Array[@anode.NodeEvent],
   wrappers : Array[(String, @tutuca.Expr)],
+  binds : Array[@tutuca.Expr],
 ) -> Unit raise ExError {
   // `~onclick:` is a raw HTML event attribute, which a handler never is: the
   // value would reach the DOM as script text and be stripped two layers later
@@ -497,6 +533,13 @@ fn ViewBuilder::attribute(
     return
   }
   match name {
+    // `~bind:` is not an attribute at all: it mirrors a place into a property
+    // and registers the event that writes back. `tag` finishes it, because
+    // which property and which event depend on the element it is written on.
+    "bind" => {
+      binds.push(to_expr(value, ctx, span))
+      return
+    }
     "push_view" => {
       wrappers.push(("push_view", to_expr(value, ctx, span)))
       return
@@ -889,4 +932,19 @@ fn ViewBuilder::expand_macro(
   }
   self.expanding.pop() |> ignore
   out
+}
+
+///|
+/// The constant value an attribute was written with, or `""` when it was not
+/// written or is not constant. `~bind:` asks this about `type`, which decides
+/// whether a checkbox mirrors `checked` or `value`.
+fn static_attr(attrs : Array[@anode.AttrItem], wanted : String) -> String {
+  for item in attrs {
+    if item is (Plain(name~, val~) | ConstA(name~, val~)) &&
+      name == wanted &&
+      val.as_lit() is Some(LStr(s)) {
+      return s
+    }
+  }
+  ""
 }

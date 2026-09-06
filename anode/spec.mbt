@@ -511,6 +511,7 @@ declare pub fn h(
   attrs : Array[AttrItem],
   childs : Array[ANode],
   ns? : Ns,
+  bind? : BindData,
 ) -> ANode
 
 ///|

@@ -45,11 +45,18 @@ fn print_element(
           None => extra.push((name, print_expr(val)))
         }
       }
-      Plain(name~, val~) =>
+      Plain(name~, val~) => {
+        // The property a `~bind:` mirrors is written by the bind, not beside
+        // it: the parser inserted `value=` (or `checked=`) from `@bind` and
+        // printing both would give the element the attribute twice.
+        if d.bind is Some(b) && name == b.property {
+          continue
+        }
         match option_name(name) {
           Some(opt) => opts.push("~\{opt}: \{print_expr(val)}")
           None => extra.push((name, print_expr(val)))
         }
+      }
       If(a) => {
         let then_ = match a.then_val {
           Some(v) => print_expr(v)
@@ -256,7 +263,17 @@ fn handlers_at(
 ) -> Array[@anode.NodeEvent] {
   for e in events {
     if e.id == id {
-      return e.handlers
+      // The write-back a `~bind:` registers is part of the bind, not a handler
+      // written beside it. Printing it as `~on_input:` would give the element
+      // an event it never declared — and would put `data-eid` where the first
+      // handler was rather than after the mirrored property.
+      let out = []
+      for h in e.handlers {
+        if !(h.binding is Some(BindPending)) {
+          out.push(h)
+        }
+      }
+      return out
     }
   }
   []

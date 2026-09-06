@@ -47,7 +47,7 @@ pub fn events_of(Array[Array[NodeEvent]]) -> Array[NodeEvents]
 
 pub fn frag(Array[ANode]) -> ANode
 
-pub fn h(String, Array[AttrItem], Array[ANode], ns? : Ns) -> ANode
+pub fn h(String, Array[AttrItem], Array[ANode], ns? : Ns, bind? : BindData) -> ANode
 
 pub fn hide(@core.Expr, ANode, id? : Int) -> ANode
 

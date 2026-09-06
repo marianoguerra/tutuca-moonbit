@@ -103,15 +103,9 @@ pub fn h(
   attrs : Array[AttrItem],
   childs : Array[ANode],
   ns? : Ns,
+  bind? : BindData,
 ) -> ANode {
-  Dom({
-    tag,
-    attrs: attrs_of_items(attrs),
-    childs,
-    ns,
-    sink_hints: None,
-    bind: None,
-  })
+  Dom({ tag, attrs: attrs_of_items(attrs), childs, ns, sink_hints: None, bind, })
 }
 
 ///|

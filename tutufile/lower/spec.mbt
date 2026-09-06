@@ -381,8 +381,13 @@ fn print_where(
         words.push(quote_str(s))
         i = i + 1
       }
+      // A bound is a bare number in the old state block. The value language
+      // parenthesises a negative one so it cannot be read as a subtraction,
+      // but a `where` has no subtraction to be confused with and its parser
+      // takes a number or a `.field` — nothing that starts with `(`.
       Lit(_) => {
-        words.push(print_ex(read_group(t)))
+        let lit = read_group(t)
+        words.push(if lit is ENum(n) { num_text(n) } else { print_ex(lit) })
         i = i + 1
       }
       // `is one of ["file", "dir"]` — the member list is JSON in the old

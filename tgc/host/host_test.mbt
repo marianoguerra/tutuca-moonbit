@@ -1771,8 +1771,7 @@ test "an unreadable member type reads as `any`" {
 /// exactly the population that hits it.
 test "an abiVersion that is not a number says so" {
   for bad in ["\"2\"", "null", "[2]"] {
-    let manifest =
-      "{\"manifestVersion\": 3, \"abiVersion\": " +
+    let manifest = "{\"manifestVersion\": 3, \"abiVersion\": " +
       bad +
       ", \"apiVersion\": 10, \"moduleName\": \"odd\", \"components\": []}"
     let said = try {
@@ -1782,7 +1781,10 @@ test "an abiVersion that is not a number says so" {
       e => e.message()
     }
     assert_true(said.contains("not a number"), msg=bad + " → " + said)
-    assert_false(said.contains("tgc/1"), msg="claimed a version it did not: " + said)
+    assert_false(
+      said.contains("tgc/1"),
+      msg="claimed a version it did not: " + said,
+    )
   }
 }
 

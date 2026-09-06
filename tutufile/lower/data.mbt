@@ -273,7 +273,12 @@ fn expect_json(
   } else if reader == "state" && i < parts.length() && parts[i].it is Id("it") {
     // `expect state it.rows[0].label` — a place, printed as the dotted path
     let stop = comparison_at(parts, i)
-    obj["at"] = Json::string(place_text(parts[i:stop]))
+    // `expect state it == {…}` names no place: the whole state IS what it
+    // compares, and the old notation said that by leaving `at` out.
+    let at = place_text(parts[i:stop])
+    if at != "" {
+      obj["at"] = Json::string(at)
+    }
     i = stop
   }
   // A trailing `~nth:` is an option of the EXPECTATION — which of the matched
@@ -340,7 +345,7 @@ fn place_text(terms : ArrayView[@ast.Node]) -> String {
     }
   }
   let text = out.to_string()
-  if text.has_prefix(".") {
+  if text == "" || text.has_prefix(".") {
     text
   } else {
     "." + text
