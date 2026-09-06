@@ -1,0 +1,136 @@
+spec:
+  /// A list that makes its own rows.
+  ///
+  /// The thing a card could not do until it could: `add` builds a `Todo` while
+  /// the card is running, and the host holds it.
+  Todos:
+    /// What is being typed.
+    field draft :: String
+
+    /// The rows, each a child instance.
+    field items :: List.of(Instance.of(Todo))
+
+    property count :: Int
+
+    /// True while there is something to add.
+    pred typed:
+      ~format: @str{nothing to add}
+      !(it.draft.is_empty())
+
+  /// One row, declared beside the list that makes it.
+  Todo:
+    /// What it says.
+    field text :: String
+
+    /// Whether it is struck through.
+    field done :: Bool
+
+    property caption :: String
+
+logic:
+  Todos:
+    /// Add a row, if there is anything to add.
+    ///
+    /// `new Todo` builds nothing yet: it opens an argument map for the sibling
+    /// component. `@cur.text` fills it in, and the child is made at the moment
+    /// `@cur` is READ — which is the push, and the last point the arguments can
+    /// still change.
+    receive add:
+      ~requires: typed
+      it.items.push(Todo(text: it.draft, done: false))
+      it.draft := ""
+
+    /// Take a row away.
+    ///
+    /// The child's token goes with it, and nothing was superseded — the row was
+    /// not replaced by a successor, it is simply gone. Only reachability finds
+    /// that, which is why the host sweeps from the root.
+    receive drop(i):
+      it.items.delete_at(i)
+
+    /// How many rows there are.
+    property count :: Int:
+      get: it.items.length()
+
+  Todo:
+    /// Strike this row through, or un-strike it.
+    receive toggle:
+      it.done := !it.done
+
+    /// What the row reads as.
+    property caption :: String:
+      get: if it.done | @str{@(it.text) (done)} | it.text
+
+view:
+  Todos:
+    @div{@input(~class: "draft", ~value: it.draft, ~on_input: it.draft := e.value) @button(~class: "add", ~on_click: add){add} @ul{@each(value, key in it.items){
+  @render(value)
+}} @button(~class: "drop", ~on_click: drop(0)){drop the first} @output(~class: "count"){@(it.count)}}
+
+  Todo:
+    @li(~class: "todo", ~on_click: toggle){@(it.caption)}
+
+fixtures:
+  "three rows" ~default:
+    ~doc: "A list that has been used, arrived at by using it."
+    ~drive:
+      type("input.draft", "write the design")
+      click("button.add")
+      type("input.draft", "read it back")
+      click("button.add")
+      type("input.draft", "ship it")
+      click("button.add")
+
+  "three rows" ~default:
+    ~doc: "A list that has been used, arrived at by using it."
+    ~drive:
+      type("input.draft", "write the design")
+      click("button.add")
+      type("input.draft", "read it back")
+      click("button.add")
+      type("input.draft", "ship it")
+      click("button.add")
+
+tests:
+  "typing and adding makes a row":
+    type("input.draft", "write it")
+    click("button.add")
+    expect count("li.todo") == 1
+    expect text("li.todo") == "write it"
+    expect text("output.count") == "1"
+    expect value("input.draft") == ""
+
+  "a row strikes itself through":
+    type("input.draft", "write it")
+    click("button.add")
+    click("li.todo")
+    expect text("li.todo") == "write it (done)"
+
+  "two adds make two rows":
+    type("input.draft", "one")
+    click("button.add")
+    type("input.draft", "two")
+    click("button.add")
+    expect texts("li.todo") == ["one", "two"]
+    expect text("output.count") == "2"
+
+  "a fixture can be arrived at by driving":
+    ~init: "three rows"
+    expect texts("li.todo") == ["write the design", "read it back", "ship it"]
+    expect text("output.count") == "3"
+    click("li.todo", ~nth: 1)
+    expect text("li.todo") == "read it back (done)" ~nth: 1
+
+  "a dropped row goes":
+    type("input.draft", "one")
+    click("button.add")
+    type("input.draft", "two")
+    click("button.add")
+    click("button.drop")
+    expect texts("li.todo") == ["two"]
+    expect text("output.count") == "1"
+
+  "an empty draft adds nothing, and says why":
+    click("button.add")
+    expect count("li.todo") == 0
+    expect log contains "precondition `typed` does not hold"

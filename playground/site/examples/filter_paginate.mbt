@@ -16,7 +16,7 @@
 // @when), the loopCtx `lookup` (read an @-binding published by a scope enrich)
 // and `filter` (reuse the declared @when), and scope @enrich-with feeding it.
 //
-// All five components keep their views in the View tab (filter_paginate.html).
+// All five components keep their views in the View tab (filter_paginate.tutu).
 // The three strategies are written out in full there rather than shared through
 // a helper: the diff between their `<li>` directives IS the example.
 

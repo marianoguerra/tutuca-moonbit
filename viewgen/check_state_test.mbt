@@ -269,7 +269,7 @@ test "a truthiness test that can decide something is left alone" {
   )
   // A string, a number and an option are NOT flagged. `@show=".role"` beside
   // `@text=".role"` hides an empty badge and is the idiomatic spelling —
-  // storybook/examples/personal_site.html does exactly this.
+  // storybook/examples/personal_site.tutu does exactly this.
   assert_eq(
     gen_err(
       board(

@@ -10,7 +10,7 @@ spec:
     /// time, and is what reaches a driver through `control.log`.
     pred room:
       ~format: @str{the counter is full at @(it.n)}
-      it.n < 3
+      (it.n < 3)
 
 logic:
   Guarded:
@@ -21,10 +21,7 @@ logic:
 
 view:
   Guarded:
-    @div{
-      @button(~on_click: bump){+}
-      @output{@(it.n)}
-    }
+    @div{@button(~on_click: bump){+} @output{@(it.n)}}
 
 fixtures:
   "nearly full":

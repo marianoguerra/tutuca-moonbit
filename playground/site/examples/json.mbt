@@ -3,7 +3,7 @@
 // `update` arm answering `Replace`), drag-to-reorder. Components look each
 // other up through a shared `reg` map filled after all are built.
 //
-// All eight views live in the View tab (json.html), one `<template id="…">`
+// All eight views live in the View tab (json.tutu), one `<template id="…">`
 // each, and arrive here compiled: json_null_views(), json_array_views(), …
 // `JsonArrayMsg` / `JsonObjectMsg` type the two components with `@on` handlers
 // of their own — the rest write their own properties straight from the view.

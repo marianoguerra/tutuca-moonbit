@@ -56,7 +56,7 @@ const files = [
   ".gitignore",
   "page/moon.pkg",
   "page/main.mbt",
-  "page/counter.html",
+  "page/counter.tutu",
   "page/counter_view_gen.mbt",
 ];
 for (const rel of files) {

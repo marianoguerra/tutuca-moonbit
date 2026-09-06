@@ -1,0 +1,47 @@
+spec:
+  /// A component that talks to a place in its own subtree rather than to
+  /// whatever happens to be listening.
+  Addressing:
+    /// The rows, each of which is somewhere a message can be sent.
+    field rows :: List.of(Instance)
+
+    /// Named panes, addressed by key rather than by position.
+    field panes :: Map.of(String, Instance)
+
+    /// What to say.
+    field word :: String
+
+    /// Which pane is selected, read live rather than pinned.
+    field sel :: String
+
+logic:
+  Addressing:
+    /// A bare field step: the whole `rows` slot.
+    receive poke_all:
+      send("ping", it.word, ~to: it.rows)
+
+    /// An index resolved from a parameter — frozen to the value in hand.
+    receive poke_row(i):
+      send("ping", it.word, ~to: it.rows[i])
+
+    /// A literal key, which is the same thing written out.
+    receive poke_first:
+      send("ping", ~to: it.rows[0])
+
+    /// A named pane, so the step is an `item` rather than an `at`.
+    receive poke_pane(k):
+      send("ping", it.word, ~to: it.panes[k])
+
+    /// Two steps deep, and a trailing field after the key.
+    receive poke_deep(i):
+      send("ping", ~to: it.rows[i].inner)
+
+    /// REFUSED, deliberately: a key read from live state re-resolves on every
+    /// dispatch, and `control.path-step` has no case that says so.
+    receive poke_selected:
+      send("ping", ~to: it.panes[it.sel])
+
+view:
+  Addressing:
+    @div{@button(~on_click: poke_all){poke}}
+

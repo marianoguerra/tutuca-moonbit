@@ -1,0 +1,12 @@
+spec:
+  DnDExample:
+    field items :: List.of(String)
+    field query :: String
+
+view:
+  DnDExample:
+    @style{[data-dragging="1"] { opacity: 0.5; } [data-draggingover="my-list-item"] { border-top: 2rem solid transparent; outline: 1px solid #77777777; transition: 0.15s border-top ease; }}
+    @section(~class: "flex flex-col gap-3"){@input(~type: "search", ~class: "input", ~value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := "" ~cancel, ~placeholder: "Filter entries") @div{@each(value, key in it.items, ~when: filter_item){
+  @div(~class: "cursor-grab row", ~draggable: "true", ~data_dragtype: "my-list-item", ~data_droptarget: "my-list-item", ~on_drop: on_drop_on_item(key, e.dragInfo)){@span(~class: "k"){@(key)}@": "@(value)}
+}}}
+

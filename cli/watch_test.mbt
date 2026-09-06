@@ -17,11 +17,11 @@ test "watch defaults to the current directory" {
 ///|
 test "watch takes files and directories, and the gen flags" {
   assert_true(
-    plan_watch(["src", "views/counter.html", "--no-ir", "--out=gen"])
+    plan_watch(["src", "views/counter.tutu", "--no-ir", "--out=gen"])
     is Watch(
       _,
       plan={
-        paths: ["src", "views/counter.html"],
+        paths: ["src", "views/counter.tutu"],
         out: Some("gen"),
         ir: false,
         ..
@@ -50,7 +50,7 @@ test "--name is only meaningful for a single file" {
 test "only .html files are worth reacting to" {
   // The generated modules are written BY the watcher; reacting to them would
   // regenerate forever.
-  assert_true(@cli.is_view_path("views/counter.html"))
+  assert_true(@cli.is_view_path("views/counter.tutu"))
   assert_true(!@cli.is_view_path("views/counter_view_gen.mbt"))
   assert_true(!@cli.is_view_path("views/counter.mbt"))
 }
@@ -60,7 +60,7 @@ test "watch and gen agree on output paths and names" {
   // Same file, same answer: a drift here would have watch write somewhere
   // `gen` never looks.
   assert_eq(
-    @cli.watch_target("demo/counterlib/counter.html", None),
+    @cli.watch_target("demo/counterlib/counter.tutu", None),
     "demo/counterlib/counter_view_gen.mbt",
   )
   assert_eq(@cli.watch_target("a/b.html", Some("gen")), "gen/b_view_gen.mbt")

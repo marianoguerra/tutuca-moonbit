@@ -117,7 +117,7 @@
           also gets <code>toggleLoud</code>. A view that calls a mutator needs
           no handler.
         </p>
-        <mb-card src="./site/cards/tut-1-hello.html" margaui codemirror></mb-card>
+        <mb-card src="./site/cards/tut-1-hello.tutu" margaui codemirror></mb-card>
         <p>
           The field <strong>kind</strong> decides what the field generates. The
           kind is the declared type. It is not a choice at the call site:
@@ -170,7 +170,7 @@
           below reads what the first line wrote. Thus the trail records where
           the counter <em>ended</em>.
         </p>
-        <mb-card src="./site/cards/tut-2-handlers.html" margaui codemirror></mb-card>
+        <mb-card src="./site/cards/tut-2-handlers.tutu" margaui codemirror></mb-card>
         <p>
           That card also answers <code>init</code>. A card starts at the schema
           zero: an <code>Int</code> is 0 and an <code>Array</code> is empty.
@@ -199,7 +199,7 @@
           can therefore check a <code>pred</code>, not only evaluate it.
           Neither can assign. Thus neither can be the reason a render is wrong.
         </p>
-        <mb-card src="./site/cards/tut-3-derived.html" margaui codemirror></mb-card>
+        <mb-card src="./site/cards/tut-3-derived.tutu" margaui codemirror></mb-card>
         <p>
           <code>if</code> appears twice in this language, with two meanings.
           In a statement body, <code>if</code> is a branch. There the
@@ -229,7 +229,7 @@
           Moving a row is instead a <code>receive</code> handler. It writes two
           positions, and no single mutator does that.
         </p>
-        <mb-card src="./site/cards/tut-4-lists.html" margaui codemirror></mb-card>
+        <mb-card src="./site/cards/tut-4-lists.tutu" margaui codemirror></mb-card>
         <p>
           Inside a body, write to a collection through its receiver:
           <code>.songs.push v</code> <em>is</em> <code>pushInSongs</code>.
@@ -292,7 +292,7 @@
           <code>enrich</code>. That enrich answers a question <em>about</em>
           the row. The loop binds the answer for the template to read.
         </p>
-        <mb-card src="./site/cards/tut-5-filter.html" margaui codemirror></mb-card>
+        <mb-card src="./site/cards/tut-5-filter.tutu" margaui codemirror></mb-card>
         <p>
           The checkbox reads <code>@picked</code> and does not call a
           predicate. The reason is this scoping rule: a <code>compute</code> or
@@ -323,7 +323,7 @@
           <code>receive</code> block is the only place to declare it, and the
           only place to type its payload.
         </p>
-        <mb-card src="./site/cards/tut-6-messages.html" margaui codemirror></mb-card>
+        <mb-card src="./site/cards/tut-6-messages.tutu" margaui codemirror></mb-card>
         <p>
           <code>send</code> is one of the effects that a body may perform.
           These effects are the vocabulary that a dynamic WebAssembly component
@@ -378,7 +378,7 @@
           rejected promise: <strong>a failure is a value</strong>. It arrives
           on the same path as a success, at the component that asked.
         </p>
-        <mb-card src="./site/cards/tut-7-intent.html" margaui codemirror></mb-card>
+        <mb-card src="./site/cards/tut-7-intent.tutu" margaui codemirror></mb-card>
         <p>
           That card shows its third arm live, with nothing mocked. This page
           registers no handler for <code>loadQuote</code>. The route runs out,
@@ -433,7 +433,7 @@
             component, not to a handler.
           </li>
         </ul>
-        <mb-card src="./site/cards/tut-8-contracts.html" margaui codemirror></mb-card>
+        <mb-card src="./site/cards/tut-8-contracts.tutu" margaui codemirror></mb-card>
         <p>
           None of the three needs a rollback. The framework gives this, not
           the contract: a body either finishes or changes nothing. A rule that
@@ -518,7 +518,7 @@
           compiler that the CLI's <code>gen-margaui-css</code> uses turns them
           into CSS.
         </p>
-        <mb-card src="./site/cards/tut-9-styles.html" margaui codemirror></mb-card>
+        <mb-card src="./site/cards/tut-9-styles.tutu" margaui codemirror></mb-card>
         <p>
           The other way needs nothing extra. A <code>&lt;template&gt;</code>
           may hold a <code>&lt;style&gt;</code> block. The framework scopes it

@@ -1,0 +1,57 @@
+spec:
+  Counter:
+    field label :: String
+    field count :: Int
+    field history :: List.of(Int)
+
+    property summary :: String
+
+    /// A named boolean — the same thing, with its answer declared, which is what
+    /// lets `@show` be checked.
+    pred moved: (it.history.length() > 0)
+
+    message reset_to(Int)
+
+logic:
+  Counter:
+    /// Move the counter by `d`, remembering where it landed.
+    ///
+    /// `.count` on the second line reads what the first one wrote: a statement
+    /// rebinds the state, so the trail records where the counter ENDED rather
+    /// than where it started.
+    receive add(d):
+      it.count += d
+      it.history.push(it.count)
+
+    /// A handler that raises a message at itself, so two buttons can share one
+    /// body without either of them repeating it.
+    receive start:
+      send("reset_to", 0)
+
+    receive reset_to(n):
+      it.count := n
+      it.history.push(it.count)
+
+    /// A derived private property. `.summary` is how a template reads it.
+    ///
+    /// A card starts at the schema's ZERO state — there is no seed to pass, since
+    /// there is no MoonBit here to pass one — so the label is empty until someone
+    /// types it, and this says what to show meanwhile. Both arms are required:
+    /// an expression has to have a value.
+    property summary :: String:
+      get: if (it.label == "") | @str{@(it.count)} | @str{@(it.label): @(it.count)}
+
+view:
+  Counter:
+    @div(~class: "card bg-base-200 max-w-md"){
+      @div(~class: "card-body gap-3"){@h2(~class: "card-title"){@(it.summary)}@div(~class: "join"){@button(~class: "btn btn-sm join-item", ~on_click: add(1)){+1} @button(~class: "btn btn-sm join-item", ~on_click: add(-1)){-1} @button(~class: "btn btn-sm join-item btn-ghost", ~on_click: start){@" reset "}} @label(~class: "flex gap-2 items-center"){@span{label} @input(~class: "input input-sm w-full", ~value: it.label, ~on_input: it.label := e.value, ~placeholder: "name it")} @show(moved()){
+  @ul(~class: "flex gap-2 flex-wrap"){
+    @each(value, key in it.history){
+      @li{@span(~class: "badge badge-sm badge-neutral font-mono"){@(value)}}
+    }
+  }
+} @hide(moved()){
+  @p(~class: "opacity-60 italic"){@" press a button — the trail shows where it landed "}
+}}
+    }
+

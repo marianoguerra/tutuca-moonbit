@@ -1,5 +1,5 @@
 ///|
-/// The counter demo's view, as it will live in demo/counterlib/counter.html.
+/// The counter demo's view, as it will live in demo/counterlib/counter.tutu.
 let counter_html : String =
   #|<template>
   #|  <div class="counter">

@@ -12,10 +12,10 @@ test "the roots reach the shell as written; it expands them" {
   // it that already have a generated sibling, the same rule watch uses. The
   // pure half cannot expand it, so it does not try.
   assert_true(
-    plan_gen(["demo/counterlib/counter.html"])
+    plan_gen(["demo/counterlib/counter.tutu"])
     is GenViews(
       _,
-      roots=["demo/counterlib/counter.html"],
+      roots=["demo/counterlib/counter.tutu"],
       out=None,
       name=None,
       dry_run=false,
@@ -31,7 +31,7 @@ test "the roots reach the shell as written; it expands them" {
 ///|
 test "the input path decides the component name and the output file" {
   assert_eq(
-    @cli.gen_views_target("demo/counterlib/counter.html"),
+    @cli.gen_views_target("demo/counterlib/counter.tutu"),
     ("demo/counterlib/counter_view_gen.mbt", "Counter"),
   )
   // Without --name the basename is capitalized: "todo-list" -> "TodoList".
@@ -107,7 +107,7 @@ test "usage errors" {
   }
   inspect(
     emit_of(plan_gen([])),
-    content="tutuca: gen requires an input .html file or a directory\n  hint: `tutuca gen path/to/counter.html --name Counter`, or `tutuca gen src/`\n",
+    content="tutuca: gen requires an input .tutu file or a directory\n  hint: `tutuca gen path/to/counter.tutu --name Counter`, or `tutuca gen src/`\n",
   )
   // The suggestion is the registry's doing: `parse_flags` offers every
   // spelling the command declares as a candidate, so this is the behaviour

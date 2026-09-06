@@ -6,7 +6,7 @@
 /// original schema in `raw`; `show_raw` toggles between them. `raw_schema`
 /// keeps the plain schema for inspection.
 ///
-/// The state and the view live in schema_viewer.html; `SchemaViewerState` and
+/// The state and the view live in schema_viewer.tutu; `SchemaViewerState` and
 /// `schema_viewer_component` are generated from it.
 fn schema_viewer_comp() -> @component.Component {
   schema_viewer_component(

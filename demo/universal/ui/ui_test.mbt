@@ -221,12 +221,12 @@ test "the library offers rather than loads, and remembers what was ticked" {
   h.send_at_root("set_library", args=[
     List(
       @ui.library_rows([
-        ("Counter.html", "cards/Counter.html"),
-        ("Todos.html", "cards/Todos.html"),
+        ("Counter.tutu", "cards/Counter.tutu"),
+        ("Todos.tutu", "cards/Todos.tutu"),
       ]),
     ),
   ])
-  assert_eq(h.texts("span.row-name"), ["Counter.html", "Todos.html"])
+  assert_eq(h.texts("span.row-name"), ["Counter.tutu", "Todos.tutu"])
   // Nothing is loaded until somebody says so — the whole point of the section.
   assert_eq(h.find_all("span.row-loaded").length(), 0)
   h.check("input.row-chosen", true)
@@ -238,7 +238,7 @@ test "the library offers rather than loads, and remembers what was ticked" {
   h.click("button.row-load")
   let root = h.drive_value()
   assert_eq(root.field("pending"), Str("load"))
-  assert_eq(root.field("argument"), Str("cards/Counter.html"))
+  assert_eq(root.field("argument"), Str("cards/Counter.tutu"))
 }
 
 ///|

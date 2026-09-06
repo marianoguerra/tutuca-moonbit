@@ -1,0 +1,43 @@
+spec:
+  Crew:
+    field query :: String
+    field names :: List.of(String)
+    field picked :: Set.of(String)
+
+    property caption :: String
+
+    message init
+
+logic:
+  Crew:
+    receive init:
+      it.names.push("Ada Lovelace")
+      it.names.push("Grace Hopper")
+      it.names.push("Alan Turing")
+      it.names.push("Barbara Liskov")
+      it.names.push("Edsger Dijkstra")
+
+    /// A row survives when the query is empty or its text contains it,
+    /// folded on both sides so the filter is not a spelling test.
+    ///
+    /// `@when` takes this bare — an iteration filter has always been
+    /// a name.
+    pred matches(value, key): (it.query.is_empty() || (value.lower()).contains(it.query.lower()))
+
+    /// Per-row bindings. The renderer hands an enricher the row's key
+    /// and value; what it writes is in scope for that row and nowhere
+    /// else.
+    enrich row(value, key):
+      picked = it.picked.has(value)
+
+    property caption :: String:
+      get: @str{@(it.picked.length()) picked of @(it.names.length())}
+
+view:
+  Crew:
+    @div(~class: "card bg-base-200 max-w-md"){
+      @div(~class: "card-body gap-3"){@input(~type: "search", ~class: "input input-sm w-full", ~placeholder: "filter", ~value: it.query, ~on_input: it.query := e.value) @ul(~class: "flex flex-col gap-1"){@each(value, key in it.names, ~when: matches, ~enrich_with: row){
+  @li{@label(~class: if picked | "flex gap-2 items-center font-semibold" | "flex gap-2 items-center"){@input(~type: "checkbox", ~class: "checkbox checkbox-sm", ~checked: picked, ~on_click: it.picked.toggle(value)) @(value)}}
+}} @span(~class: "badge badge-sm badge-neutral"){@(it.caption)}}
+    }
+

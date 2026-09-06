@@ -11,7 +11,7 @@
 //   page.js           its JS half — instantiate, fetch, drop
 //   card.js           the `tgc` loader, and `values.mjs` beside it
 //   tutuca-rt.wasm    the runtime every card is instantiated against
-//   cards/*.html      the sample cards, uncompiled, with an index.json
+//   cards/*.tutu      the sample cards, uncompiled, with an index.json
 //   index.html        with the script path repointed at the copy above
 import { execFileSync } from "node:child_process";
 import { copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -50,9 +50,9 @@ execFileSync(
 // tell whether the two still agree.
 const FROM = join(REPO, "tutucard", "examples");
 const rows = [];
-for (const f of readdirSync(FROM).filter((n) => n.endsWith(".html")).sort()) {
+for (const f of readdirSync(FROM).filter((n) => n.endsWith(".tutu")).sort()) {
   copyFileSync(join(FROM, f), join(OUT, "cards", f));
-  rows.push({ name: f.replace(/\.html$/, ""), path: `cards/${f}` });
+  rows.push({ name: f.replace(/\.tutu$/, ""), path: `cards/${f}` });
 }
 writeFileSync(join(OUT, "cards", "index.json"), JSON.stringify(rows, null, 2) + "\n");
 

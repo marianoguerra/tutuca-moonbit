@@ -44,7 +44,7 @@ fn run_equiv(args : Array[String], opts : GlobalOpts) -> Outcome {
         err(
           CODE_USAGE_MISSING_ARGUMENT,
           "equiv requires the .html file and the .tutu file that replaces it",
-          hint="`tutuca equiv Guarded.html Guarded.tutu` compares the two",
+          hint="`tutuca equiv Guarded.tutu Guarded.tutu` compares the two",
         ),
       ),
     )
@@ -80,8 +80,8 @@ let equiv_help : String =
   #|    -h, --help     Show this.
   #|
   #|  Examples:
-  #|    tutuca equiv tutucard/examples/Guarded.html tutucard/examples/Guarded.tutu
-  #|    tutuca equiv counter.html counter.tutu --name Counter --verbose
+  #|    tutuca equiv tutucard/examples/Guarded.tutu tutucard/examples/Guarded.tutu
+  #|    tutuca equiv counter.tutu counter.tutu --name Counter --verbose
 
 ///|
 /// Compare the two sources and report.

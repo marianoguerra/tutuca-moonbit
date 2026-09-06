@@ -129,7 +129,7 @@ test "the component carries the block it was declared in" {
 ///
 /// The property the component was written for, and the one no hand-written
 /// scene reaches: `setValues []` is a legal dispatch that nothing in
-/// `svg_more.html` can produce — no button sends it, and the two handlers that
+/// `svg_more.tutu` can produce — no button sends it, and the two handlers that
 /// exist both guard against emptiness — but the runtime installs it for every
 /// declared field, so a page, a parent, or a host can. `neverEmpty` is what
 /// stands between that and a chart with no bars, and this is what asks whether

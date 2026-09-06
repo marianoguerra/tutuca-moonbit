@@ -1,5 +1,5 @@
 // Tree navigation — click folders to toggle open/closed, files to select
-// (logged below). Both components' views live in the View tab (tree.html) and
+// (logged below). Both components' views live in the View tab (tree.tutu) and
 // arrive here compiled, as `tree_item_views()` and `tree_root_views()`.
 
 

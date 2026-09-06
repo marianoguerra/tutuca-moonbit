@@ -3,7 +3,7 @@
 // `dragInfo.lookupBind("key")`. data-dragtype/data-droptarget pair a source with
 // the targets that accept it. Styled with margaui classes.
 //
-// The view lives in the View tab (dnd.html): `dnd_example_views()` is its
+// The view lives in the View tab (dnd.tutu): `dnd_example_views()` is its
 // compiled tree, and `DnDExampleMsg` types the one `@on` handler it declares,
 // argument shapes included.
 

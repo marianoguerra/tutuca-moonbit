@@ -18,7 +18,7 @@ test "a state block emits the struct, its zero and its declared field kinds" {
   let file = @viewgen.split_file(counter_state_html)
   assert_eq(file.state.length(), 1)
   assert_eq(file.state[0].component, "Counter")
-  let src = @viewgen.emit_module("Counter", "counter.html", file)
+  let src = @viewgen.emit_module("Counter", "counter.tutu", file)
   assert_true(src.contains("pub(all) struct CounterState {"))
   assert_true(src.contains("  label : String"))
   assert_true(src.contains("  count : Int"))
@@ -61,7 +61,7 @@ test "a file with no state block generates exactly what it did before" {
     #|</template>
   let file = @viewgen.split_file(without)
   assert_eq(file.state.length(), 0)
-  let src = @viewgen.emit_module("Counter", "counter.html", file)
+  let src = @viewgen.emit_module("Counter", "counter.tutu", file)
   // Nothing from the state half leaks into an unmigrated file — this is what
   // lets the view files migrate one at a time.
   assert_false(src.contains("pub(all) struct CounterState"))

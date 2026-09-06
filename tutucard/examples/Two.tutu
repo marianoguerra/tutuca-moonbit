@@ -1,0 +1,85 @@
+spec:
+  /// A list that holds rows, and the row beside it. Two components in one
+  /// file, which `viewfile` has always allowed and this backend refused until
+  /// it learned to number them.
+  Board:
+    /// What the header says.
+    field title :: String
+
+    /// How many rows have been counted.
+    field tally :: Int
+
+    /// A child slot: the row this board is looking at.
+    ///
+    /// `Row` is the sibling declared below, so this is `Instance[Row]` without
+    /// having to say so. A card cannot BUILD one — `new` makes a declared
+    /// record, not an instance — but it can hold one a host put here, and that
+    /// is what makes a child token something worth being able to carry.
+    field focus :: Instance.of(Row)
+
+    property caption :: String
+
+  /// A row of the board, declared here rather than in a file of its own —
+  /// which is the point: a component that only ever appears inside another one
+  /// belongs beside it.
+  Row:
+    /// What this row says.
+    field label :: String
+
+    /// Whether it is struck through.
+    field done :: Bool
+
+    property caption :: String
+
+logic:
+  Board:
+    /// Count one more.
+    receive bump:
+      it.tally += 1
+
+    /// The header, as a sentence.
+    property caption :: String:
+      get: @str{@(it.title): @(it.tally)}
+
+  Row:
+    /// Strike this row through, or un-strike it.
+    receive toggle:
+      it.done := !it.done
+
+    /// The same name the board declares, and a different answer — which is the
+    /// whole reason a generated name has to carry its component.
+    property caption :: String:
+      get: if it.done | "done" | it.label
+
+view:
+  Board:
+    @section{@h1(~class: "title"){@(it.caption)} @button(~class: "bump", ~on_click: bump){count}}
+
+  Row:
+    @li(~class: "row", ~class: if it.done | "row done" | "row", ~on_click: toggle){@(it.caption)}
+
+tests:
+  "the board counts":
+    ~component: Board
+    ~args: {title: "Sprint"}
+    expect text("h1.title") == "Sprint: 0"
+    click("button.bump")
+    click("button.bump")
+    expect text("h1.title") == "Sprint: 2"
+    expect state it.tally == 2
+
+  "a row strikes itself through":
+    ~component: Row
+    ~args: {label: "write it"}
+    expect text("li.row") == "write it"
+    click("li.row")
+    expect text("li.row") == "done"
+    expect attr("li", "class") == "row done"
+    expect state it.done == true
+
+  "neither answers the other's message":
+    ~component: Board
+    send("toggle")
+    expect state it == {title: "", tally: 0, focus: none}
+    send("bump")
+    expect state it.tally == 1

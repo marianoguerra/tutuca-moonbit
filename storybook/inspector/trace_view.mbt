@@ -1,6 +1,6 @@
 // A recording, as something to look at.
 //
-// The components are in trace_view.html; this is the projection from a
+// The components are in trace_view.tutu; this is the projection from a
 // `@trace.Trace` onto them, and the reason it is a projection rather than a
 // component that reads a trace is the same reason `record_to_entry` is one: a
 // tutuca component holds STATE, and a trace is a value somebody else owns.

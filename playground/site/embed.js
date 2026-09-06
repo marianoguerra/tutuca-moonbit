@@ -1,4 +1,4 @@
-// <mb-playground src="./site/examples/counter.mbt" view="./site/examples/counter.html">
+// <mb-playground src="./site/examples/counter.mbt" view="./site/examples/counter.tutu">
 // — an embeddable, editable MoonBit playground for the landing page. Each
 // instance shows an editor + a live preview; edits recompile on Ctrl/⌘+Enter
 // (or the Run button).

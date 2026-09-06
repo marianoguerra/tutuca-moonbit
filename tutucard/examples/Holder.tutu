@@ -1,0 +1,77 @@
+spec:
+  /// A hole that names nothing: `child` is a bare `component`, so what goes in
+  /// it is anybody's — a sibling declared below, or something from outside the
+  /// card entirely. A card can build a SIBLING and cannot build a stranger, and
+  /// does not have to: what makes a holder work is that a host can PUT one here
+  /// and the card renders it without knowing which of the two it got.
+  Hole:
+    /// The hole.
+    field child :: Instance
+
+    /// Something beside it, so a test can tell an empty read from a lost one.
+    field kept :: String
+
+  /// The sibling a hole usually holds. Same card, same bundle, which is the
+  /// case a holder meets first: ship your container and your primitives
+  /// together and every hole holds one of your own.
+  Text:
+    /// What it says.
+    field body :: String
+
+    property body :: String:
+      get: it.body
+      set: it.body
+
+logic:
+  Hole:
+    /// Put one of our own in the hole.
+    ///
+    /// A card CAN build a sibling — `new Text` is the same declaration the spec
+    /// block above makes — and it is only a component from ANOTHER module that a
+    /// host has to hand over. That is what makes the scenes below possible at
+    /// all: a scene seeds fields from JSON, and JSON has no way to spell an
+    /// instance, so the card has to be able to make its own.
+    receive fill(body):
+      it.child := Text()
+      it.child.body := body
+
+    /// Write a member of the child this hole holds.
+    ///
+    /// Not a spine rebuild and never was — the instance belongs to the HOST and
+    /// a card holds a token — so it is addressed at the child's position instead,
+    /// through the public door. Before this there was no way to write it at all:
+    /// the `sendAt 'setBody'` workaround went away with the generated mutators.
+    receive rename(to):
+      it.child.body := to
+      it.kept := "wrote"
+
+view:
+  Hole:
+    @div(~class: "hole"){
+      @render(it.child)
+      @b(~class: "kept"){@(it.kept)}
+    }
+
+  Text:
+    @span(~class: "text"){@(it.body)}
+
+tests:
+  "a hole holds what it was given, and says so":
+    ~component: Hole
+    expect count("span.text") == 0
+    send("fill", "first")
+    expect text("span.text") == "first"
+    expect text("b.kept") == ""
+
+  "a holder writes THROUGH the child, and the child keeps its own view":
+    ~component: Hole
+    send("fill", "before")
+    expect text("span.text") == "before"
+    send("rename", "after")
+    expect text("span.text") == "after"
+    expect state it.kept == "wrote"
+
+  "an empty hole refuses the write rather than pretending":
+    ~component: Hole
+    send("rename", "nobody")
+    expect state it.kept == ""

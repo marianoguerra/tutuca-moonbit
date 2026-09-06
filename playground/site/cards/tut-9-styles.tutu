@@ -1,0 +1,26 @@
+spec:
+  Ticket:
+    field title :: String
+    field kind :: String
+    field votes :: Int
+
+    pred is_feature: (it.kind == "feature")
+
+    message init
+
+logic:
+  Ticket:
+    receive init:
+      it.title := "Cards should be styleable"
+      it.kind := "feature"
+
+    receive vote:
+      it.votes += 1
+
+    receive pick(k):
+      it.kind := k
+
+view:
+  Ticket:
+    @div(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@h2(~class: "card-title"){@(it.title) @span(~class: if is_feature() | "badge badge-sm badge-primary" | "badge badge-sm badge-warning"){@(it.kind)}} @input(~class: "input input-sm w-full", ~value: it.title, ~on_input: it.title := e.value, ~placeholder: "what is it") @div(~class: "join"){@button(~class: "btn btn-sm join-item", ~on_click: pick("feature")){@" feature "} @button(~class: "btn btn-sm join-item", ~on_click: pick("bug")){@" bug "}}@div(~class: "card-actions items-center gap-2"){@button(~class: "btn btn-sm btn-primary", ~on_click: vote){@" vote "} @span(~class: "badge badge-neutral"){@(it.votes)}}}}
+

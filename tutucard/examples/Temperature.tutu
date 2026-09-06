@@ -5,16 +5,17 @@ spec:
     field c :: Double
 
     property f :: Double
+
     property both :: String
 
     /// Never below absolute zero.
-    invariant physical: it.c >= -273.15
+    invariant physical: (it.c >= -273.15)
 
 logic:
   Temperature:
     /// The same temperature in Fahrenheit.
     property f :: Double:
-      get: (it.c * 1.8) + 32
+      get: ((it.c * 1.8) + 32)
 
     /// Warmer by one degree.
     receive warmer:
@@ -26,12 +27,9 @@ logic:
 
     /// Both scales, in one sentence.
     property both :: String:
-      get: @str{@(it.c) °C is @((it.c * 1.8) + 32) °F}
+      get: @str{@(it.c) °C is @(((it.c * 1.8) + 32)) °F}
 
 view:
   Temperature:
-    @div{
-      @button(~on_click: cooler){cooler}
-      @button(~on_click: warmer){warmer}
-      @p{@(it.both)}
-    }
+    @div{@button(~on_click: cooler){cooler} @button(~on_click: warmer){warmer} @p{@(it.both)}}
+

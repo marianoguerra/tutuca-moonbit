@@ -1,5 +1,5 @@
 // A counter with no `update` at all. The views live in the View tab
-// (counter.html) and are compiled ahead of time: `counter_component` is the
+// (counter.tutu) and are compiled ahead of time: `counter_component` is the
 // wrapper generated from that file, with the name, the views, the styles, the
 // codec and the schema already filled in.
 //

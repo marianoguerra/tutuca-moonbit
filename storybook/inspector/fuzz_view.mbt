@@ -1,6 +1,6 @@
 // A property run, as something to look at.
 //
-// The components are in fuzz_view.html; this is the projection from
+// The components are in fuzz_view.tutu; this is the projection from
 // `testing/fuzz`'s values onto them, and it is a projection for the same
 // reason `trace_view.mbt` is one: a tutuca component holds STATE, and a run is
 // a value the host owns. What crosses the line is a list of rows.

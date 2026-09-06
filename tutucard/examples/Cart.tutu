@@ -1,0 +1,96 @@
+spec:
+  /// One line of a shopping cart.
+  Cart:
+    /// What is being bought.
+    field item :: String
+
+    /// How many of it.
+    field qty :: Int
+
+    /// What one costs.
+    field price :: Double
+
+    /// Set once the line has been sent upward.
+    field sent :: Bool
+
+    /// Every quantity this line has held.
+    field history :: List.of(Int)
+
+    /// The receipt lines, each one a record this card builds with `new`.
+    field receipt :: List.of(Line)
+
+    property total :: Double
+
+    property line :: String
+
+    property remembered :: Int
+
+    property tidy :: String
+
+    /// A line is only ever worth a non-negative amount.
+    invariant sane: (it.qty >= 0)
+
+    /// True while there is something to send.
+    pred has_item:
+      ~format: @str{a line with no item cannot be checked out (@(it.qty) of nothing)}
+      !(it.item.is_empty())
+
+    /// True once the item names something a receipt would print.
+    pred namable: !((it.item.trim()).is_empty())
+
+  /// One entry on the receipt.
+  struct Line(what :: String, qty :: Int)
+
+logic:
+  Cart:
+    /// What this line costs.
+    property total :: Double:
+      get: (it.qty * it.price)
+
+    /// The line as a sentence.
+    property line :: String:
+      get: @str{@(it.qty) x @(it.item) = @((it.qty * it.price))}
+
+    /// One more.
+    receive more:
+      it.qty += 1
+
+    /// One fewer, but never below nothing.
+    receive fewer:
+      it.qty := math.max(0, (it.qty - 1))
+
+    /// Name the item from what the view passed.
+    receive rename(text):
+      it.item := text
+
+    /// Tell the parent about this line, once it has an item.
+    receive checkout:
+      ~requires: has_item
+      ask("line_ready", it.item, (it.qty * it.price), ~route: dyn)
+      it.sent := true
+      drop()
+
+    /// Remember the quantity.
+    receive remember:
+      it.history.push(it.qty)
+
+    /// Write the line onto the receipt, as a record built here.
+    receive receipt:
+      it.receipt.push(Line(what: it.item, qty: it.qty))
+
+    /// How many quantities have been remembered.
+    property remembered :: Int:
+      get: it.history.length()
+
+    /// The item, tidied: no stray spaces, and compared case-blind.
+    property tidy :: String:
+      get: it.item.trim()
+
+view:
+  Cart:
+    @div{@input(~on_input: rename(e.value), ~value: it.item, ~placeholder: "what?") @button(~on_click: fewer){-} @span{@(it.qty)} @button(~on_click: more){+} @p{@(it.line)} @button(~on_click: remember){remember} @button(~on_click: receipt){to receipt} @p{@(@str{@(it.remembered) remembered: @(it.history)})} @show(has_item()){
+  @button(~on_click: checkout){checkout}
+} @show(it.sent){
+  @p{@("sent")}
+}}
+

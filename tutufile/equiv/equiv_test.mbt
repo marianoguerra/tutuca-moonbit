@@ -1,6 +1,6 @@
 // The check itself, on a file converted by hand.
 //
-// `tutucard/examples/Guarded.html` is the smallest card that has all five
+// `tutucard/examples/Guarded.tutu` is the smallest card that has all five
 // sections, which is why it is the one the migration page works through and the
 // one this test holds both halves of.
 

@@ -1,6 +1,6 @@
 // A component's DECLARATION, as something to look at.
 //
-// The components are in spec_view.html; this is the projection from
+// The components are in spec_view.tutu; this is the projection from
 // `@statedef`'s values onto them. Two panels over one string:
 //
 //   `spec_panel`        — `Component::spec` re-parsed, rendered as what it

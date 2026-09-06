@@ -1,0 +1,72 @@
+spec:
+  Thermostat:
+    field target :: Int
+    field mode :: String
+    field log :: List.of(String)
+
+    property reading :: String
+
+    pred is_away: (it.mode == "away")
+
+    message init
+
+    message nudge(Int)
+
+    message set_mode(String)
+
+logic:
+  Thermostat:
+    receive init:
+      it.target := 20
+      it.mode := "auto"
+      it.log.push("mounted")
+
+    receive nudge(by):
+      it.target := math.clamp((it.target + by), 5, 30)
+      it.log.push(@str{target → @(it.target)})
+
+    receive set_mode(m):
+      it.mode := m
+      it.log.push(@str{mode → @(m)})
+
+    /// Four buttons, two bodies. A handler that raises a message at
+    /// itself is how two call sites share one transition, and the
+    /// dispatch goes through the transactor exactly as a parent's
+    /// would.
+    ///
+    /// `(-1)` is parenthesised because `-` is an OPERATOR here, not
+    /// part of the number — unlike a view slot, where `step -1` is a
+    /// literal.
+    receive warmer:
+      send("nudge", 1)
+
+    receive cooler:
+      send("nudge", -1)
+
+    receive away:
+      send("set_mode", "away")
+
+    receive home:
+      send("set_mode", "auto")
+
+    property reading :: String:
+      get: if is_away | @str{@(it.target)° away} | @str{@(it.target)° @(it.mode)}
+
+view:
+  Thermostat:
+    @div(~class: "card bg-base-200 max-w-md"){
+      @div(~class: "card-body gap-3"){
+        @p(~class: if is_away() | "text-3xl tabular-nums opacity-50" | "text-3xl tabular-nums"){@(it.reading)}
+        @div(~class: "flex gap-2 items-center"){@div(~class: "join"){@button(~class: "btn btn-sm join-item", ~on_click: cooler){−} @button(~class: "btn btn-sm join-item", ~on_click: warmer){+}} @hide(is_away()){
+  @button(~class: "btn btn-sm btn-ghost", ~on_click: away){away}
+} @show(is_away()){
+  @button(~class: "btn btn-sm btn-primary", ~on_click: home){home}
+}}
+        @ul(~class: "max-h-24 overflow-auto font-mono text-xs opacity-70"){
+          @each(value, key in it.log){
+            @li{@(value)}
+          }
+        }
+      }
+    }
+

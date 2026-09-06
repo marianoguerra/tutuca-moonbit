@@ -31,7 +31,7 @@
 
 ///|
 /// n todo rows, mounted. `.checkbox` / `.input` / `.add` / `.rm` are the row
-/// controls; see storybook/examples/todo.html.
+/// controls; see storybook/examples/todo.tutu.
 pub fn mount_todo(n : Int) -> @harness.MemHarness {
   mounted("todo/\{n}", todo_module, "Items", todo_args(n))
 }

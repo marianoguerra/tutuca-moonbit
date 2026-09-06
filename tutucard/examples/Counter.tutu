@@ -3,6 +3,7 @@ spec:
   Counter:
     /// The current value.
     field count :: Int
+
     /// How much a step moves it.
     field step :: Int
 
@@ -11,13 +12,12 @@ spec:
       set: it.count
 
     property magnitude :: Int ~public
+
     property label :: String
 
     /// True while the count is above zero.
-    pred positive: it.count > 0
+    pred positive: (it.count > 0)
 
-    /// What the host says to this component when it mounts. Declared here
-    /// because no view writes it: the schema is the only place it can be.
     message init
 
 logic:
@@ -43,23 +43,17 @@ logic:
       get: @str{the count is @(it.count)}
 
     property magnitude :: Int:
-      get: if it.count < 0 | -it.count | it.count
+      get: if (it.count < 0) | -it.count | it.count
       set:
-        if it.count < 0
+        if (it.count < 0)
         | it.count := -value
         | it.count := value
 
 view:
   Counter:
-    @div{
-      @button(~on_click: dec){-}
-      @output{@(it.count)}
-      @button(~on_click: inc){+}
-      @p{@(it.label)}
-      @show(positive()){
-        @button(~on_click: reset){reset}
-      }
-    }
+    @div{@button(~on_click: dec){-} @output{@(it.count)} @button(~on_click: inc){+} @p{@(it.label)} @show(positive()){
+  @button(~on_click: reset){reset}
+}}
 
 tests:
   "two clicks add two":

@@ -7,7 +7,7 @@
 ///|
 /// The script block, running.
 ///
-/// `add` and `resetTo` are declared in `counter.html`'s
+/// `add` and `resetTo` are declared in `counter.tutu`'s
 /// `<script type="tutuca/script">` block and nowhere else — no MoonBit in this
 /// module mentions either name. So a click that moves the count is the whole
 /// chain end to end: the block parsed, checked against the schema, compiled to

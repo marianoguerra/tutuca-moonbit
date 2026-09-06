@@ -1,0 +1,46 @@
+spec:
+  /// A list whose rows are filtered and decorated before they are drawn.
+  Enriched:
+    /// What the view loops over.
+    field rows :: List.of(String)
+
+    /// Only rows containing this are drawn.
+    field needle :: String
+
+    /// The heading the scope enricher publishes.
+    field title :: String
+
+logic:
+  Enriched:
+    /// A `@when` filter. It is handed the ROW — `@key`, `@value` and `@iter` —
+    /// rather than parameters, which is what a filter is written with and what a
+    /// compiled one could not read until now.
+    pred matches(value, key): (value.to_string()).contains(it.needle)
+
+    /// A second filter, on the key rather than on the value.
+    pred second(value, key): (key == 1)
+
+    /// An in-loop enricher: binds what the row does not carry.
+    enrich row(value, key):
+      tag = value.to_string()
+      echo = tag.to_string()
+      at = key
+
+    /// The scope form is handed no row and answers the whole map.
+    bind_with info:
+      heading = it.title
+      width = it.title.length()
+
+view:
+  Enriched:
+    @ul{
+      @each(value, key in it.rows, ~when: matches, ~enrich_with: row){
+        @li{@(echo)}
+      }
+    }
+    @ul{
+      @each(value, key in it.rows, ~when: second){
+        @li{@(value)}
+      }
+    }
+

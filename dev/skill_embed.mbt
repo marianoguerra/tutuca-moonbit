@@ -80,7 +80,7 @@ pub fn storybook_template_source(files : Array[(String, String)]) -> String {
       #|// — DO NOT EDIT. Embeds a whole gallery project in the CLI so
       #|// `tutuca new-storybook` can write one out.
       #|//
-      #|// Assembled from storybook/template/, whose `page/counter.html` is in the
+      #|// Assembled from storybook/template/, whose `page/counter.tutu` is in the
       #|// repo's `gen` sweep — so the generated view module the template
       #|// hands out cannot drift from the generator that would rewrite it.
     ),

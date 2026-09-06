@@ -87,7 +87,7 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
     // position is the real one. Naming both is what keeps this honest —
     // every OTHER error is a hole, and counting them all as `unsupported`
     // would hide it.
-    let src = @viewgen.emit_ir_module("C", "corpus.html", set) catch {
+    let src = @viewgen.emit_ir_module("C", "corpus.tutu", set) catch {
       MethodInEventPosition(_) | ViewParseIssue(_) => {
         unsupported = unsupported + 1
         continue

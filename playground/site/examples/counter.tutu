@@ -1,0 +1,19 @@
+spec:
+  Counter:
+    field count :: Int
+
+logic:
+  Counter:
+    /// The behaviour, in the same file as the state and the view. `gen`
+    /// compiles this block into MoonBit and the component composes it ahead of
+    /// the `update~` you pass — so a counter needs no `update~` at all.
+    receive inc:
+      it.count += 1
+
+    receive dec:
+      it.count -= 1
+
+view:
+  Counter:
+    @div(~style: "display:flex;gap:.5rem;align-items:center;font-size:1.5rem"){@button(~on_click: dec){-} @b{@(it.count)} @button(~on_click: inc){+}}
+

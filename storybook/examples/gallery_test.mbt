@@ -714,7 +714,7 @@ test "the Fuzz tab drives the story on screen" {
 /// A green verdict is a claim about the ENFORCEMENT, not about the generator
 /// having found nothing.
 ///
-/// `setValues []` is a legal dispatch that no button in `svg_more.html` can
+/// `setValues []` is a legal dispatch that no button in `svg_more.tutu` can
 /// produce, and the generator sends it. `neverEmpty` is what stands between it
 /// and a chart with no bars — the runtime abandons the transition and refuses
 /// — so the run holds AND the refusals are there to prove it got that far.

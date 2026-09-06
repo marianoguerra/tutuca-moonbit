@@ -21,7 +21,7 @@ let activity_cap : Int = 50
 /// value inspectors so no functions or paths are ever stored in state.
 /// `after` is Null (and hidden) for the outgoing side of a request.
 ///
-/// The state and the views live in activity.html.
+/// The state and the views live in activity.tutu.
 fn activity_entry_comp() -> @component.Component {
   activity_entry_component(initial={
     ..ActivityEntryState::zero(),

@@ -1,0 +1,53 @@
+spec:
+  /// A field typed as text and used as a number.
+  Reading:
+    /// What the input carried, verbatim.
+    field raw :: String
+
+    /// The same thing read as a number.
+    field value :: Double
+
+    /// And truncated to a whole unit.
+    field whole :: Int
+
+    /// What the six-argument compute answered.
+    field tally :: Double
+
+    message rows_ok(Any)
+
+    message rows_error(Any)
+
+logic:
+  Reading:
+    /// Six arguments — two more than the argument list used to hold.
+    compute total(a, b, c, d, e, f): (a + b + c + d + e + f)
+
+    /// Read `raw` as a number. A `raw` that is not one leaves the state alone.
+    receive parse:
+      it.value := it.raw.to_number()
+
+    /// The same reading, truncated.
+    receive truncate:
+      it.whole := it.raw.to_int()
+
+    /// A call with six arguments, and a `send` carrying six payload values.
+    receive wide:
+      it.tally := total(1, 2, 3, 4, 5, 6)
+      send("wide", 1, 2, 3, 4, 5, 6)
+
+    /// Ask the scope to look `raw` up. The answer comes back later.
+    receive lookup:
+      ask("rows", it.raw, ~route: lex)
+
+    /// …as an ordinary message, in the same `receive` bucket everything else
+    /// lands in, named for the OUTCOME rather than for the request.
+    receive rows_ok(result):
+      it.raw := result.to_string()
+
+    receive rows_error(error):
+      it.raw := error.to_string()
+
+view:
+  Reading:
+    @div{@p{@(it.raw)}@p{@(it.value)} @button(~on_click: parse){parse}}
+

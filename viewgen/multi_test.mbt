@@ -32,7 +32,7 @@ test "components are grouped by the id prefix, views by the suffix" {
 ///|
 test "one generated module carries every component in the file" {
   let f = @viewgen.split_file(multi_html)
-  let src = @viewgen.emit_module("Ignored", "json.html", f)
+  let src = @viewgen.emit_module("Ignored", "json.tutu", f)
   // Each component gets its own prefix; `--name` is not consulted because
   // the file names them.
   for
@@ -55,7 +55,7 @@ test "one generated module carries every component in the file" {
 ///|
 test "the IR module carries every component too, macros expanded" {
   let f = @viewgen.split_file(multi_html)
-  let ir = @viewgen.emit_ir_module("Ignored", "json.html", f)
+  let ir = @viewgen.emit_ir_module("Ignored", "json.tutu", f)
   for
     want in [
       "pub fn json_root_views", "pub fn json_node_views", "pub fn json_leaf_views",
@@ -70,14 +70,14 @@ test "the IR module carries every component too, macros expanded" {
 ///|
 test "emit_modules produces the same public modules in one compilation" {
   let f = @viewgen.split_file(multi_html)
-  let generated = @viewgen.emit_modules("Ignored", "json.html", f)
+  let generated = @viewgen.emit_modules("Ignored", "json.tutu", f)
   assert_eq(
     generated.types_source,
-    @viewgen.emit_module("Ignored", "json.html", f),
+    @viewgen.emit_module("Ignored", "json.tutu", f),
   )
   assert_eq(
     generated.ir_source,
-    Some(@viewgen.emit_ir_module("Ignored", "json.html", f)),
+    Some(@viewgen.emit_ir_module("Ignored", "json.tutu", f)),
   )
 }
 

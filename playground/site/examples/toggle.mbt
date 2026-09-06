@@ -1,6 +1,6 @@
 // A field named 'open' gets a generated $toggleOpen mutator for free — no
 // hand-written handler. @show/@hide read the field; compute derives the label.
-// The view lives in the View tab (toggle.html), compiled ahead of time into
+// The view lives in the View tab (toggle.tutu), compiled ahead of time into
 // `panel_views()`: no `@on` handler of its own, so no update at all.
 
 fn build() -> @component.ModuleDef {

@@ -253,7 +253,7 @@ pub fn shell_comp() -> @component.Component {
         // `init`, if it declares one, and this is not optional politeness.
         //
         // A card may put its starting state in a `receive init` rather than in
-        // its field defaults — `tutucard/examples/Counter.html` sets `step` to
+        // its field defaults — `tutucard/examples/Counter.tutu` sets `step` to
         // 1 there — and a host that does not send it gets a component built
         // from the schema's ZEROS. That counter renders perfectly and adds zero
         // per click, which reads exactly like a dispatch that never arrived.

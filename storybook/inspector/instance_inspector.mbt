@@ -46,7 +46,7 @@ pub fn instance_snapshot(
 ///|
 /// The field → value rows of an instance. Field names/order come from the
 /// snapshot; each value renders (and recurses) like the other inspectors.
-/// `InstanceFieldsState` is generated from instance_inspector.html.
+/// `InstanceFieldsState` is generated from instance_inspector.tutu.
 
 ///|
 impl Composite for InstanceFieldsState with fn items(self) {

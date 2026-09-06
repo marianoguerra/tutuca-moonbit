@@ -1,0 +1,54 @@
+spec:
+  Draft:
+    field text :: String
+    field limit :: Int
+
+    property left :: Int
+
+    property bar :: String
+
+    property status :: String
+
+    /// A named boolean. `@show`, `@hide` and `@if.<attr>` take one.
+    pred over: (it.text.length() > it.limit)
+
+    message init
+
+logic:
+  Draft:
+    receive init:
+      it.limit := 80
+
+    /// `.left` is how a template reads this, and this is the only
+    /// place the subtraction is written.
+    property left :: Int:
+      get: (it.limit - it.text.length())
+
+    /// The bar's width, as a whole style declaration.
+    ///
+    /// Computed HERE rather than interpolated into the attribute, and
+    /// that is a rule rather than a preference: a view slot names
+    /// things, it does not call them, so `{(len .text)}` written in an
+    /// attribute has nothing to interpolate. A body is where an
+    /// expression may be written.
+    property bar :: String:
+      get: @str{width: @(math.min(it.text.length(), 100))%}
+
+    /// One declaration calling two others, and `if` in a value
+    /// position — where both arms are required, because an expression
+    /// has to have a value.
+    ///
+    /// `over` and `left` are written BARE. The `$` spelling belongs to
+    /// a template, where the render stack answers it; inside a body it
+    /// names nothing, and the compiler refuses it in so many words.
+    property status :: String:
+      get: if over | @str{@((0 - (it.limit - it.text.length()))) over} | @str{@((it.limit - it.text.length())) to spare}
+
+view:
+  Draft:
+    @div(~class: "card bg-base-200 max-w-md"){
+      @div(~class: "card-body gap-3"){@input(~class: "input input-sm w-full", ~value: it.text, ~on_input: it.text := e.value, ~placeholder: "write something and watch the numbers move") @div(~class: if over() | "h-2 rounded bg-error" | "h-2 rounded bg-success", ~style: it.bar)@p(~class: if over() | "font-mono text-sm text-error" | "font-mono text-sm opacity-70"){@(it.status)} @show(over()){
+  @div(~class: "alert alert-warning"){@span{trim it — the same predicate hid this line a moment ago}}
+}}
+    }
+

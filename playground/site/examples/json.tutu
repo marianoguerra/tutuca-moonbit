@@ -1,0 +1,60 @@
+spec:
+  JsonNull
+
+  JsonBool:
+    field value :: Bool
+
+  JsonString:
+    field value :: String
+
+  JsonNumber:
+    field str_value :: String
+    field value :: Double
+
+  JsonSelector
+
+  JsonArray:
+    field items :: List.of(Instance)
+
+  JsonObjectKeyVal:
+    field key :: String
+    field value :: Any
+
+  JsonObject:
+    field items :: List.of(Instance.of(JsonObjectKeyVal))
+
+view:
+  JsonNull:
+    @span(~class: "text-warning text-xs font-mono p-3 json-null"){null}
+
+  JsonBool:
+    @button(~data_bool: "", ~class: if it.value | "btn btn-sm btn-soft btn-success font-mono true" | "btn btn-sm btn-soft btn-error font-mono false", ~on_click: it.value := !it.value){@show(it.value){
+  @span{true}
+} @hide(it.value){
+  @span{false}
+}}
+
+  JsonString:
+    @input(~class: "input input-sm input-ghost text-green-500 font-mono json-string", ~value: it.value, ~on_input: it.value := e.value)
+
+  JsonNumber:
+    @input(~type: "number", ~class: "input input-sm input-ghost text-primary font-mono json-number", ~title: it.value, ~value: it.str_value, ~on_input: set_raw_value(e.value))
+
+  JsonSelector:
+    @div(~class: "join gap-3 font-mono json-selector"){@button(~class: "btn btn-sm btn-soft btn-warning to-null", ~on_click: set_to_null){null} @button(~class: "btn btn-sm btn-soft btn-success to-bool", ~on_click: set_to_bool(e.isCtrl)){bool} @button(~class: "btn btn-sm btn-soft btn-primary to-number", ~on_click: set_to_number){0} @button(~class: "btn btn-sm btn-soft btn-accent to-string", ~on_click: set_to_string){""} @button(~class: "btn btn-sm btn-soft btn-info to-array", ~on_click: set_to_array){[]} @button(~class: "btn btn-sm btn-soft btn-info to-object", ~on_click: set_to_object){@"{}"}}
+
+  JsonArray:
+    @style{[data-draggingover="json-list-item"] { border-top: 4rem solid transparent; transition: 0.15s border-top ease; }}
+    @section(~class: "join join-vertical gap-3 pl-3 border-l-1 border-l-neutral-500 json-array"){@button(~class: "btn btn-sm btn-soft btn-primary add", ~on_click: add_item){+} @div(~class: "join join-vertical gap-3"){@each(value, key in it.items){
+  @div(~class: "join gap-3 justify-between items-center group entry", ~draggable: "true", ~data_dragtype: "json-list-item", ~data_droptarget: "json-list-item", ~on_drop: on_drop_on_item(key, e.dragInfo)){@render(value) @button(~class: "btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm", ~on_click: it.items.delete_at(key)){x}}
+}}}
+
+  JsonObjectKeyVal:
+    @div(~class: "join gap-3 items-center justify-center json-kv"){@input(~class: "input input-sm input-ghost text-green-500 font-mono json-key", ~value: it.key, ~on_input: it.key := e.value) @span(~class: "text-xs font-mono text-gray-500 colon"){:} @render(it.value)}
+
+  JsonObject:
+    @style{[data-draggingover="json-kv-item"] { border-top: 4rem solid transparent; transition: 0.15s border-top ease; }}
+    @section(~class: "join join-vertical gap-3 pl-3 border-l-1 border-l-neutral-500 json-object"){@button(~class: "btn btn-sm btn-soft font-mono btn-primary add", ~on_click: add_item){+} @div(~class: "join join-vertical gap-3"){@each(value, key in it.items){
+  @div(~class: "join gap-3 justify-between items-center group entry", ~draggable: "true", ~data_dragtype: "json-kv-item", ~data_droptarget: "json-kv-item", ~on_drop: on_drop_on_item(key, e.dragInfo)){@render(value) @button(~class: "btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm", ~on_click: it.items.delete_at(key)){x}}
+}}}
+

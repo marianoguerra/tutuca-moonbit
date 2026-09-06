@@ -75,7 +75,7 @@ pub fn gen(source : String) -> Int {
 const WORKLOAD_NAME = "Bench"
 
 ///|
-const WORKLOAD_FILE = "corpus.html"
+const WORKLOAD_FILE = "corpus.tutu"
 
 ///|
 fn split_corpus(source : String) -> @viewfile.ViewFile {

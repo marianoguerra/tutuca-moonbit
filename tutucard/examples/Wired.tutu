@@ -1,0 +1,144 @@
+spec:
+  /// A board that publishes its theme, and rows that read it.
+  ///
+  /// The thing a card could not SAY until it could: where a value comes from.
+  /// `provide` and `lookup` used to be MoonBit-only — arguments a component was
+  /// assembled with — so a card could read a `*name` and never declare one.
+  Board:
+    /// What the whole subtree is themed with.
+    field theme :: String
+
+    /// What is being typed.
+    field draft :: String
+
+    /// The rows, each a child instance.
+    field items :: List.of(Instance.of(Row))
+
+    /// True while there is something to add.
+    pred typed:
+      ~format: @str{nothing to add}
+      !(it.draft.is_empty())
+
+    provide theme = it.theme
+
+  /// One row, declared beside the list that makes it.
+  Row:
+    /// What it says.
+    field label :: String
+
+    property caption :: String
+
+    lookup theme = "plain"
+
+logic:
+  Board:
+    /// Add a row, if there is anything to add.
+    receive add:
+      ~requires: typed
+      it.items.push(Row(label: it.draft))
+      it.draft := ""
+
+    /// Ask the first row about itself.
+    ///
+    /// The board is the SENDER here, which is what gives the row's reply a
+    /// position to reach.
+    receive poke:
+      send("ping", ~to: it.items[0])
+
+    /// The row's answer, arriving as an ordinary message. Nothing here can tell
+    /// it from one anybody else sent — which is the whole of what a reply is.
+    receive pong(t):
+      it.draft := t
+
+  Row:
+    /// What the row reads as.
+    property caption :: String:
+      get: it.label
+
+    /// A HANDLER reading the binding, which is the same question the view asks
+    /// one line down and the same answer: the host resolves this component's
+    /// declared lookups before it enters the card, and `*theme` reads one.
+    ///
+    /// It is a `receive`, so a scene can drive it and read the result back out
+    /// of the state.
+    receive stamp:
+      it.label := @str{@(it.label) (@(dyn.theme))}
+
+    /// Answering whoever sent this one, under a name this handler picked. An
+    /// intent's answer is named by the runtime because its raiser declared arms
+    /// for one; a message's sender declared none, so the replier names it.
+    receive ping:
+      reply("pong", it.label)
+
+view:
+  Board:
+    @div{@input(~class: "theme", ~value: it.theme, ~on_input: it.theme := e.value) @input(~class: "draft", ~value: it.draft, ~on_input: it.draft := e.value) @button(~class: "add", ~on_click: add){add} @ul{@each(value, key in it.items){
+  @render(value)
+}}}
+
+  Row:
+    @li(~class: "row", ~on_click: stamp){@span(~class: "label"){@(it.caption)} @span(~class: "theme"){@(dyn.theme)}}
+
+fixtures:
+  "themed" ~default:
+    ~doc: "Two rows under a theme, arrived at by using the board."
+    ~drive:
+      type("input.theme", "dark")
+      type("input.draft", "write it")
+      click("button.add")
+      type("input.draft", "read it back")
+      click("button.add")
+
+  "themed" ~default:
+    ~doc: "Two rows under a theme, arrived at by using the board."
+    ~drive:
+      type("input.theme", "dark")
+      type("input.draft", "write it")
+      click("button.add")
+      type("input.draft", "read it back")
+      click("button.add")
+
+tests:
+  "a row reads what the board provides":
+    type("input.theme", "dark")
+    type("input.draft", "write it")
+    click("button.add")
+    expect text("span.label") == "write it"
+    expect text("span.theme") == "dark"
+
+  "changing the provide changes every row, with no message sent":
+    ~init: "themed"
+    expect texts("span.theme") == ["dark", "dark"]
+    type("input.theme", "light")
+    expect texts("span.theme") == ["light", "light"]
+
+  "a row with nothing above it reads its declared default":
+    ~component: Row
+    ~args: {label: "alone"}
+    expect text("span.label") == "alone"
+    expect text("span.theme") == "plain"
+
+  "a handler reads the same binding the view does":
+    type("input.theme", "dark")
+    type("input.draft", "write it")
+    click("button.add")
+    click("li.row")
+    expect text("span.label") == "write it (dark)"
+
+  "a handler with no producer above it reads the declared default":
+    ~component: Row
+    ~args: {label: "alone"}
+    send("stamp")
+    expect text("span.label") == "alone (plain)"
+
+  "a row answers whoever sent it a message, under a name it picked":
+    type("input.draft", "write it")
+    click("button.add")
+    send("poke")
+    expect value("input.draft") == "write it"
+
+  "a reply with nobody waiting is refused, and nothing happens":
+    ~component: Row
+    ~args: {label: "alone"}
+    send("ping")
+    expect text("span.label") == "alone"

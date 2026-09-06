@@ -11,7 +11,7 @@
 /// nothing visible — the point is that it is legal.
 ///
 /// MoonBit divergence: `views~` is a required argument, so "no view" is an
-/// empty `<template>` in basics.html rather than JS's absent key.
+/// empty `<template>` in basics.tutu rather than JS's absent key.
 fn minimum_viable_comp() -> @component.Component {
   minimum_viable_component_component()
 }

@@ -5,7 +5,7 @@
 // (The full docs example also folds in the JSON editor, personal site and
 // drag-and-drop — see those playgrounds above; the mechanism is identical.)
 //
-// Six components, ONE view file: composability.html names each with
+// Six components, ONE view file: composability.tutu names each with
 // `<template id="Name">`, and the generator emits a `<name>_views()` builder
 // per component (counter_views(), items_views(), tree_root_views(), …).
 

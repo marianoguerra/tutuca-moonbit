@@ -10,7 +10,7 @@
 ///|
 /// The five collapsible schema-construct components share one shape — the
 /// composite fields plus a type label, badges and title/description/deprecated
-/// — declared once per component in schema_components.html and implemented
+/// — declared once per component in schema_components.tutu and implemented
 /// against the generated states in schema_components.mbt.
 
 ///|

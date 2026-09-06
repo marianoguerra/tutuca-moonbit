@@ -435,7 +435,7 @@ fn wrapper_buckets(
 /// Doc comments go. What is kept has to be re-PARSEABLE — that is the whole
 /// contract, since a reader is `@statedef.parse_state` and nothing else — and
 /// prose is the half of a block that no parser reads and every binary would
-/// otherwise carry. `svg_more.html`'s block is 1.4 KB of which most is the
+/// otherwise carry. `svg_more.tutu`'s block is 1.4 KB of which most is the
 /// explanation of why the two limits are named, which is worth having in the
 /// file the author edits and worth nothing in a wasm module.
 ///

@@ -20,13 +20,13 @@ let wrapper_html : String =
 ///|
 test "a schema-backed component gets a wrapper over component()" {
   let f = @viewgen.split_file(wrapper_html)
-  let ir = @viewgen.emit_ir_module("Counter", "counter.html", f)
+  let ir = @viewgen.emit_ir_module("Counter", "counter.tutu", f)
   // Public, like every other piece of generated vocabulary. It names the
   // state type in its signature, which is why that is `pub(all)` too — and
   // why a component generated in one package can be built from another, or
   // from a blackbox test.
   assert_true(ir.contains("\npub fn counter_component(\n"))
-  // Everything counter.html states, filled in.
+  // Everything counter.tutu states, filled in.
   assert_true(ir.contains("  name? : String = \"Counter\","))
   assert_true(
     ir.contains("  views? : Map[String, @anode.View] = counter_views(),"),
@@ -136,7 +136,7 @@ test "a schema-only component gets no wrapper" {
 
 ///|
 /// The wrapper's `name` default is the name the template id declares, not the
-/// one a component is registered under — `dynamic_selected_edit.html` names a
+/// one a component is registered under — `dynamic_selected_edit.tutu` names a
 /// `DseRoot` template that the module registers as `Root`, and overriding it
 /// has to stay possible.
 test "the wrapper's name default is the declared component name" {

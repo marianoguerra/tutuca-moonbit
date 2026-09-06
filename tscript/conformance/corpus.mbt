@@ -242,7 +242,7 @@ fn value_case(
 /// Every value case, in one list.
 ///
 /// Most of these are lifted from blocks that exist in this repo — the site's
-/// counter card, the tutorial's steps, `storybook/examples/render_child.html`
+/// counter card, the tutorial's steps, `storybook/examples/render_child.tutu`
 /// — rather than invented, because the thing worth pinning is what people
 /// actually write. A corpus of constructed cases would have missed the filter
 /// idiom, which is the one every list component grows.
@@ -310,7 +310,7 @@ pub fn value_cases() -> Array[ValueCase] {
     // -- arguments ---------------------------------------------------------
     value_case(
       "a method reads the argument its call site passed",
-      // `storybook/examples/render_child.html`, shortened: a parent's `@when`
+      // `storybook/examples/render_child.tutu`, shortened: a parent's `@when`
       // asks every child this, and nothing declares what it is handed.
       "pred containsText(q) { contains (lower .name) (lower q) }",
       "containsText",
@@ -389,7 +389,7 @@ pub fn value_cases() -> Array[ValueCase] {
     ),
     value_case(
       "a scope enricher is handed no row, and answers the map",
-      // `storybook/examples/collections.html`'s RenderWithScope, in one line.
+      // `storybook/examples/collections.tutu`'s RenderWithScope, in one line.
       "bindWith info { @len = len .name }",
       "info",
       role=VEnrichScope,

@@ -6,7 +6,7 @@
 // not written anywhere either.
 //
 // What is left is the module definition: `counter_component` is generated from
-// counter.html and already carries the name, the compiled views, the styles,
+// counter.tutu and already carries the name, the compiled views, the styles,
 // the direct codec and the schema. Nothing here restates the view file.
 
 ///|

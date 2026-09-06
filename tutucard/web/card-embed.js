@@ -1,4 +1,4 @@
-// <mb-card src="./cards/counter.html"> — an embeddable, editable CARD.
+// <mb-card src="./cards/counter.tutu"> — an embeddable, editable CARD.
 //
 // The card sibling of `<mb-playground>` (playground/site/embed.js), and the
 // difference between the two is the whole reason this file is short. That one

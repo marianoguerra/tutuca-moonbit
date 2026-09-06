@@ -252,7 +252,7 @@ let gen_views_help : String =
   #|
 
 ///|
-/// "a/b/counter.html" -> ("a/b", "counter")
+/// "a/b/counter.tutu" -> ("a/b", "counter")
 fn split_path(path : String) -> (String, String) {
   let chars = path.to_array()
   let mut slash = -1
@@ -306,8 +306,8 @@ fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome {
         opts,
         err(
           CODE_USAGE_MISSING_ARGUMENT,
-          "gen requires an input .html file or a directory",
-          hint="`tutuca gen path/to/counter.html --name Counter`, or `tutuca gen src/`",
+          "gen requires an input .tutu file or a directory",
+          hint="`tutuca gen path/to/counter.tutu --name Counter`, or `tutuca gen src/`",
         ),
       ),
     )
@@ -545,7 +545,7 @@ pub fn gen_views_ir_target(target : String) -> String {
 }
 
 ///|
-/// "a/b/counter.html" -> "counter.html" (what the generated header cites).
+/// "a/b/counter.tutu" -> "counter.tutu" (what the generated header cites).
 fn basename(path : String) -> String {
   let chars = path.to_array()
   let mut slash = -1
