@@ -10,7 +10,10 @@
 /// Print an expression as tutuca source.
 pub fn print_ex(ex : Ex) -> String raise ExError {
   match ex {
-    ENum(n) => num_text(n)
+    // A negative number is parenthesised for the same reason a negation is:
+    // an argument list is space-separated in the old notation, so
+    // `send 'nudge' -1` reads as a subtraction with nothing after it.
+    ENum(n) => if n < 0 { "(" + num_text(n) + ")" } else { num_text(n) }
     EStr(s) => quote_str(s)
     EBool(b) => if b { "true" } else { "false" }
     // The absent value has a literal in both notations. `x == none` still
@@ -26,7 +29,10 @@ pub fn print_ex(ex : Ex) -> String raise ExError {
     ECall(callee, args) => print_call(callee, args)
     EBin(op, a, b) => print_bin(op, a, b)
     EUn("!", a) => "(not " + print_ex(a) + ")"
-    EUn("-", a) => "-" + print_ex(a)
+    // Parenthesised, because an argument list is space-separated in the old
+    // notation and `send 'nudge' -1` reads as a subtraction that never ends.
+    // A negation is never ambiguous inside its own parentheses.
+    EUn("-", a) => "(-" + print_ex(a) + ")"
     EUn(op, _) =>
       raise ExError(
         message="`\{op}` is not a prefix operator",

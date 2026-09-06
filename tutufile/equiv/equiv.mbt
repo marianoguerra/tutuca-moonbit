@@ -337,9 +337,15 @@ fn compare_views(
   // that names it: a component and one of its views.
   for set in a.components {
     for v in set.views {
-      // A file that declared one anonymous component takes the name the
-      // caller supplied, exactly as the converter does.
-      let comp = if set.name == "" { name } else { set.name }
+      // Resolved exactly as the converter resolves it: the spec block first,
+      // the caller's name only when the spec does not say.
+      let comp = if set.name != "" {
+        set.name
+      } else if a.state.length() == 1 {
+        a.state[0].component
+      } else {
+        name
+      }
       let want = if v.name == "main" { comp } else { comp + "." + v.name }
       let decl = find_view(decls, comp, v.name)
       guard decl is Some(decl) else {

@@ -34,6 +34,8 @@ pub fn print_spec(@statedef.StateDef, root~ : Bool, StringBuilder) -> Unit raise
 
 pub fn print_ty(@core.Ty) -> String raise NoSpelling
 
+pub fn print_user_ty(@statedef.UserTy, StringBuilder) -> Unit raise NoSpelling
+
 pub fn print_value(@core.Value) -> String raise NoSpelling
 
 pub fn print_view(@anode.ANode, Array[@anode.NodeEvents], String) -> String raise NoSpelling

@@ -115,24 +115,46 @@ pub fn print_spec(
   }
   for m in def.receive {
     gap()
+    write_doc(out, m.doc, "    ")
     out.write_string("    message \{msg_sig(m)}\n")
   }
   for m in def.intent {
     gap()
+    write_doc(out, m.doc, "    ")
     out.write_string("    intent \{msg_sig(m)}\n")
   }
   for m in def.express_message {
     gap()
+    write_doc(out, m.doc, "    ")
     out.write_string("    express message \{msg_sig(m)}\n")
   }
   for m in def.express_intent {
     gap()
+    write_doc(out, m.doc, "    ")
     out.write_string("    express intent \{msg_sig(m)}\n")
   }
   for w in def.wheres {
     gap()
     write_doc(out, w.doc, "    ")
     out.write_string("    where \{print_where(w)}\n")
+  }
+  for p in def.provide {
+    gap()
+    // `provide theme = it.theme` — one line each, where the old block was a
+    // section. The value is the value language, read and printed like any other.
+    out.write_string(
+      "    provide \{@names.snake_of(p.name)} = \{expr_text(p.source)}\n",
+    )
+  }
+  for l in def.lookup {
+    gap()
+    match l.default {
+      Some(d) =>
+        out.write_string(
+          "    lookup \{@names.snake_of(l.name)} = \{expr_text(d)}\n",
+        )
+      None => out.write_string("    lookup \{@names.snake_of(l.name)}\n")
+    }
   }
   for id in def.implements {
     gap()
@@ -212,15 +234,6 @@ fn refuse_unconverted(def : @statedef.StateDef) -> Unit raise NoSpelling {
     !def.provide_bindings.is_empty() ||
     !def.lookup_bindings.is_empty() {
     missing.push("a protocol binding")
-  }
-  if !def.types.is_empty() {
-    missing.push("a `struct` / `enum` declaration")
-  }
-  if !def.provide.is_empty() {
-    missing.push("a `provide`")
-  }
-  if !def.lookup.is_empty() {
-    missing.push("a `lookup`")
   }
   guard missing.is_empty() else {
     raise NoSpelling(
@@ -303,5 +316,40 @@ pub fn write_doc(out : StringBuilder, doc : String?, indent : String) -> Unit {
         }
       }
     None => ()
+  }
+}
+
+///|
+/// A `struct` or an `enum` declared beside a component.
+///
+/// A struct's fields are its HEADER — `struct Line(what :: String, qty :: Int)`
+/// — because a declaration with an empty body is not a declaration. An enum
+/// writes one case per line.
+pub fn print_user_ty(
+  t : @statedef.UserTy,
+  out : StringBuilder,
+) -> Unit raise NoSpelling {
+  write_doc(out, t.doc, "  ")
+  match t.kind {
+    URecord(fields) => {
+      let parts = []
+      for f in fields {
+        parts.push("\{@names.snake_of(f.name)} :: \{print_ty(f.ty)}")
+      }
+      out.write_string("  struct \{t.source_name}(\{parts.join(", ")})\n")
+    }
+    UEnum(cases) => {
+      out.write_string("  enum \{t.source_name}:\n")
+      for c in cases {
+        out.write_string("    \{@names.snake_of(c.0)}\n")
+      }
+    }
+    // A case with a payload is a variant, and the notation has no form for one
+    // yet — an enum's cases are bare names.
+    UVariant(_) =>
+      raise NoSpelling(
+        what="an enum whose cases carry payloads (`\{t.source_name}`)",
+        help="the `.tutu` notation writes an enum as one bare case per line; a case with a payload has no form yet",
+      )
   }
 }

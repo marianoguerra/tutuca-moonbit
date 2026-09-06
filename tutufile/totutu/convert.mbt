@@ -64,6 +64,12 @@ fn section_spec(
     }
     first = false
     print_spec(def, root=def.component == file.root, out)
+    // A `struct` or an `enum` is a declaration of the FILE rather than of the
+    // component's body, which is where the old block put it too.
+    for t in def.types {
+      out.write_string("\n")
+      print_user_ty(t, out)
+    }
   }
   out.write_string("\n")
 }
@@ -152,10 +158,18 @@ fn section_view(
         out.write_string("\n")
       }
       first = false
-      // A `.tutu` file always names its components, so a file that declared one
-      // anonymously takes the name `gen --name` would have given it. Its `main`
-      // view is the bare component name; every other view is `Comp.view`.
-      let comp = if set.name == "" { name } else { set.name }
+      // A `.tutu` file always names its components, so a view whose template
+      // carried no name has to be given one. The SPEC block is the first place
+      // to look — a file declaring one component and one unnamed template is
+      // that component's view, whatever the file happens to be called — and
+      // `gen --name` only decides it when the spec does not.
+      let comp = if set.name != "" {
+        set.name
+      } else if file.state.length() == 1 {
+        file.state[0].component
+      } else {
+        name
+      }
       let declared = if v.name == "main" { comp } else { comp + "." + v.name }
       let (tree, events) = compile_view(v, scope)
       let body = print_view(tree, events, "    ")
