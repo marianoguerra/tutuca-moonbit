@@ -57,11 +57,21 @@ if (!existsSync(join(OUT, "manifest.json"))) {
 const genSrc = readFileSync(join(OUT, "viewgen.js"), "utf8");
 new Function(genSrc)(); // publishes globalThis.__tutucaViewgen
 
-// The driver reads the fallback component name from a `<!-- name: X -->`
-// comment; a view file that names its templates ignores it.
-const NAME_RE = /<!--\s*name:\s*([A-Za-z]\w*)\s*-->/;
+// The component name heads the generated types. A `.tutu` names its
+// components itself, in the headings under `spec:` and `view:` — the same
+// reading `playground/web/viewgen-client.js` does, spelled here because a
+// build script cannot import a browser module.
+const HEADING_RE = /^  ([A-Z]\w*)(?:\.\w+)?:/m;
+const nameOf = (src) => {
+  for (const section of src.split(/^(?=[a-z]+:[ \t]*$)/m)) {
+    if (!/^(spec|view):/.test(section)) continue;
+    const m = HEADING_RE.exec(section);
+    if (m) return m[1];
+  }
+  return "View";
+};
 const generate = (html) => {
-  const name = (NAME_RE.exec(html) || [, "View"])[1];
+  const name = nameOf(html);
   const r = JSON.parse(globalThis.__tutucaViewgen(html, name));
   if (!r.ok) throw new Error("generation failed: " + r.error);
   if (!r.ir) throw new Error("expected a compiled tree (a macro blocks it?)");

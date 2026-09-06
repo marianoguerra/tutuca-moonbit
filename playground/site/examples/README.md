@@ -13,9 +13,9 @@ tab), named by the embed's `src` / `view` attributes in `../index.html`. The
 views are compiled ahead of time — the page runs the same generator
 `tutuca gen` does, and hands the result to the compiler as extra files of
 the example's package, so `foo.mbt` can name `<comp>_views()` and `<Comp>Msg`
-with no import. Name every template (`<template id="Counter">`), so one file
-can carry a whole module's components; a view file with no `<template>` id
-would need the `<!-- name: X -->` fallback instead.
+with no import. Every component is named by its heading under `spec:` and
+`view:`, so one file can carry a whole module's components and the page reads
+the names straight out of the file.
 
 No checked-in `*_view_gen.mbt` here: unlike `storybook/examples/`, these are
 generated in the browser on every run, so they are NOT registered in the

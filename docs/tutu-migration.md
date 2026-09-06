@@ -1,14 +1,15 @@
 # Migrating to `.tutu`
 
-A component is written today in four `<script>` blocks and a set of
+A component used to be written in four `<script>` blocks and a set of
 `<template>`s inside an `.html` file, in three notations: the spec language,
-the script language, and JSON. The `.tutu` format replaces all of it with one
+the script language, and JSON. The `.tutu` format replaced all of it with one
 notation — [shrubbery], the line- and indentation-sensitive layer under
 [Rhombus] — in five named sections.
 
 This page is the conversion, construct by construct, with before/after taken
-from this repository's own files. It is written to be executed against a real
-file, top to bottom.
+from this repository's own files. Nothing in the tree is on the left-hand side
+any more, so read it to convert a file of your own — or to find out what a
+construct you remember is called now.
 
 [shrubbery]: https://docs.racket-lang.org/shrubbery/
 [Rhombus]: https://docs.racket-lang.org/rhombus/
@@ -880,57 +881,54 @@ Four things. Everything else in this page is a rewrite rule.
   Lift the branch into the argument: `T(x: if c | a | b)`, or build the two
   calls in the two branches.
 
-## The order to migrate the repo in
+## The order this repo went in
+
+Kept because the reasons still apply to a consumer converting its own tree,
+and because the gate below is the one to reach for.
 
 ### The gate, before the order
 
-**A converted card's scenes must pass unchanged.** `run-tests.mjs` drives 76
-scenes across 31 cards, and a scene is the only thing in this repo that asserts
-what a card *does* rather than what it declares — so round-tripping a card and
-leaving its scenes green is the strongest per-file check available, and it
-already exists. Wire it into the conversion loop rather than running it at the
-end: a batch tells you something broke, a per-file gate tells you which file.
+**A converted card's scenes must pass unchanged.** `run-tests.mjs` drives 121
+scenes, and a scene is the only thing in this repo that asserts what a card
+*does* rather than what it declares — so round-tripping a card and leaving its
+scenes green is the strongest per-file check available. Wire it into the
+conversion loop rather than running it at the end: a batch tells you something
+broke, a per-file gate tells you which file.
+
+**And check the gate itself first.** Both card gates collected their subjects
+with `.endsWith(".html")`, so the moment the cards became `.tutu` they were
+running over the inline starter cards and nothing else — 68 scenes where there
+are 121, reporting success. A collector that finds nothing passes.
 
 Beside it, per file: `tutuca gen-margaui-css --print-classes | wc -l` equal
 before and after, since a class assembled where the collector cannot see it
 leaves the stylesheet with no error anywhere.
 
-And keep the corpus counts in `tutufile/lower/corpus_test.mbt` current as files
-move. A count taken once and trusted afterwards is a fixture, and a fixture
-checked against itself is the failure this whole exercise keeps finding.
-
-### Who converts what
-
-Three files in this repo are claimed, and for reasons worth knowing rather than
-as territory:
-
-| What | Who | Why |
-| --- | --- | --- |
-| `demo/universal/std/std.card.html` | its author | Seven components, three protocols, and ids that are frozen public API with a second host adopting them verbatim. A rename that slips through is not recoverable by editing the card |
-| `tutucard/examples/` | its author, **all of it in one change** | Worked examples an agent authors *from*, so a half-converted directory teaches both notations at once |
-| Anything under another repo | that repo | A snapshot re-keys per renamed field; the owner is who should decide when |
-
-The 86 view files, `storybook/examples/` and `docs/*.html` are unclaimed.
-
-### Then
+### The order
 
 1. **The converter**: `.html` → `.tutu`, checked by lowering the result back
    and asserting the typed forms match, and by the scene gate above.
-2. **The corpus**: `tutucard/examples/`, `storybook/examples/`,
-   `skill/tutuca/patterns/`, `demo/`, `docs/*.mbt.md`, `examples/*`.
+2. **The corpus**: `tutucard/examples/`, `storybook/examples/`, `demo/`,
+   `docs/*.mbt.md`, `examples/*`.
 3. **`tutucard` and the playgrounds**, whose checkers and panes read the four
    blocks by name.
-4. **The skill** — `skill/tutuca/*.md` is 8.7k lines and is what an agent
-   authors from, so it goes as one change rather than file by file. A skill
-   half in each notation teaches both.
+4. **The docs** — `skill/tutuca/*.md` is 8.7k lines and is what an agent
+   authors from, so it went as one change rather than file by file. A skill
+   half in each notation teaches both. Converting it is what found five
+   constructs the notation could not spell, none of which the 85 converted
+   view files had reached: a loop inside a `<select>` or a table, a macro's
+   slots, a protocol's `provide` / `lookup`, `set_at`, and a generated
+   mutator's name. **A doc corpus exercises what the notation is DOCUMENTED to
+   do, which is wider than what the tree happens to do.**
 5. **Deletion**: `viewfile/`, the HTML splitter; `tscript`'s two lexers and
    parsers; the JSON readers in `statedef` and `scenedef`. Per the repo's
    convention there is no retired spelling kept behind a flag — the old
-   notation leaves in the same change that stops needing it.
+   notation leaves in the same change that stops needing it. This is stage 6,
+   and it is what is left.
 
 ## The whole file, before and after
 
-`tutucard/examples/Guarded.html`:
+`tutucard/examples/Guarded.tutu`, before and after:
 
 ```html
 <script type="tutuca/spec">

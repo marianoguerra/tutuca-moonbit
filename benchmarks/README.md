@@ -44,12 +44,11 @@ in one and a cost that scales with a view's size shows up in the other.
 concatenated into one view *file*, with each file's component names prefixed so
 nothing collides (`storybook/examples/json.tutu`'s `JsonArray` becomes
 `SbJsonJsonArray`, `playground/site/examples/json.tutu`'s becomes
-`SiteJsonJsonArray`). A file whose single component is unnamed — a bare
-`<template>` — becomes that prefix's `main` view. 36 source files, 108 views,
-~58 KB.
+`SiteJsonJsonArray`). A file whose single component is unnamed becomes that
+prefix's `main` view. 36 source files, 108 views, ~58 KB.
 
 **`one_big_view.tutu` — one enormous view.** Every one of those views' *bodies*
-inside a single `<template>`: 107 bodies, ~55 KB, one tree.
+inside a single view: 107 bodies, ~55 KB, one tree.
 
 `corpus_gen.mbt` holds both as MoonBit strings (the second as its body, which
 `@benchmarks.giant_view(n)` wraps once or n times over), so the bench needs no
@@ -61,10 +60,10 @@ moon run --target native cmd/dev -- bench-views     # just bench-views
 ```
 
 Two things about the concatenation are not faithful to compiling the files
-separately, neither of which matters for a parser benchmark: file-level
-`<style>` elements all land on the *first* component (that is what `split_file`
-does with them), and a source file with no `<template>` at all would be wrapped
-in one — currently none are.
+separately, neither of which matters for a parser benchmark: a file-level
+`@style{…}` lands on the *first* component (that is what `split_file` does with
+them), and a source file with no `view:` section at all would be given one —
+currently none are.
 
 ## The stages
 

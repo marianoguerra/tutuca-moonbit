@@ -58,10 +58,19 @@ if (!existsSync(VIEWGEN)) {
 }
 new Function(readFileSync(VIEWGEN, "utf8"))();
 
-// The page reads the fallback component name from a `<!-- name: X -->`
-// comment; a view file that names its templates (`<template id="Counter">`)
-// ignores it.
-const NAME_RE = /<!--\s*name:\s*([A-Za-z][\w]*)\s*-->/;
+// The component name heads the generated types. A `.tutu` names its
+// components itself, in the headings under `spec:` and `view:` — the same
+// reading `playground/web/viewgen-client.js` does, spelled here because a
+// build script cannot import a browser module.
+const HEADING_RE = /^  ([A-Z]\w*)(?:\.\w+)?:/m;
+const nameOf = (src) => {
+  for (const section of src.split(/^(?=[a-z]+:[ \t]*$)/m)) {
+    if (!/^(spec|view):/.test(section)) continue;
+    const m = HEADING_RE.exec(section);
+    if (m) return m[1];
+  }
+  return "View";
+};
 
 const examples = readdirSync(EXAMPLES).filter((f) => f.endsWith(".mbt")).sort();
 if (!examples.length) {
@@ -117,7 +126,7 @@ try {
     let ir = "";
     if (html !== null) {
       const r = JSON.parse(
-        globalThis.__tutucaViewgen(html, (NAME_RE.exec(html) || [, "View"])[1]),
+        globalThis.__tutucaViewgen(html, nameOf(html)),
       );
       if (!r.ok) {
         console.log(`FAILED  ${name}`);

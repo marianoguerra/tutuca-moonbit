@@ -351,9 +351,9 @@ worth naming because none of them showed up in the corpus:
   indistinguishable from a click that missed — the state is the same either way
   and the DOM cannot tell them apart. The sentence is `core/warn.mbt`'s, word
   for word, with the rule's own `format` clause after it.
-- **A view set was matched by its raw name**, so a card with a bare
-  `<template>` — which names no component and therefore takes the card's own
-  name — mounted with no view at all. `ViewSet::component_name` is what answers
+- **A view set was matched by its raw name**, so a card whose view names no
+  component — and therefore takes the card's own name — mounted with no view
+  at all. `ViewSet::component_name` is what answers
   that question.
 - **Every instance carried the MODULE's descriptor**, so a card declaring
   several components drew the root's view for every child. A descriptor is per

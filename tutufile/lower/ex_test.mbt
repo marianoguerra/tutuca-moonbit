@@ -82,11 +82,12 @@ test "a sequence access keeps its key" {
 }
 
 ///|
-test "a nested read is refused, and the message names the two repairs" {
-  inspect(
-    ex("it.user.name"),
-    content="<error: a member read needs a binding, an index or the event to read it from>",
-  )
+/// A nested read PRINTS. Whether it is allowed is decided one step later, by
+/// the reader that has the schema: a `logic:` statement may read a held
+/// instance through the property door, and a view slot may not — which is why
+/// refusing it here refused the statement too.
+test "a nested read prints, and is refused by whoever can answer it" {
+  inspect(ex("it.user.name"), content=".user.name")
 }
 
 ///|
