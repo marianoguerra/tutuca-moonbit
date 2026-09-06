@@ -33,9 +33,9 @@ fn spec_block(text : String) -> String {
   guard text.find(open) is Some(at) else { return "" }
   let from = at + open.length()
   guard text.find("</script>") is Some(_) else { return "" }
-  let rest = text.substring(start=from)
+  let rest = text[from:].to_owned()
   match rest.find("</script>") {
-    Some(end_) => rest.substring(start=0, end=end_)
+    Some(end_) => rest[:end_].to_owned()
     None => rest
   }
 }
