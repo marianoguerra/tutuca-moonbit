@@ -64,6 +64,23 @@ for. It is the same pattern as this week's other four defects in a different
 register: not a check looking one step away from what could fail, but a FIX
 standing in for a diagnosis. The dodge worked, so nobody asked what it dodged.
 
+### A version nothing read
+
+`tgc.abi` was exported by every module from the start and read by nothing —
+`grep` finds the declaration and the write, and no reader anywhere. That was
+harmless while the number never moved. `tgc/2` moves it, so there are two ABIs
+in the world and, until this, nothing told them apart at load: a `tgc/1` module
+would instantiate into a `tgc/2` host and fail later at whatever the first
+incompatibility turned out to be.
+
+The manifest carries `abiVersion` now and `DynManifest::from_json_string`
+refuses a mismatch by name. An absent field reads as **1**, because a module
+built before the field existed is a `tgc/1` module and reading its silence as
+anything else would invent a claim it never made.
+
+Found by review rather than by a test, which is the point: a gate that cannot
+fail is indistinguishable from one that is missing.
+
 ### What wap could not say
 
 Recorded because the next person to drive a compiler from MoonBit will meet

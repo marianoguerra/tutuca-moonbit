@@ -27,6 +27,9 @@ pub fn retype_vtables(
   fields : @wax_ast.LocModule,
 ) -> @wax_ast.LocModule raise PreambleError {
   let named = vtable_functions(module_)
+  // The WAP module's name, not the wasm import namespace: it is the prefix wap
+  // put on every declaration this module made.
+  let wap_module = module_.name
   let out : @wax_ast.LocModule = []
   let found : Map[String, Unit] = Map([])
   for f in fields {
@@ -38,12 +41,12 @@ pub fn retype_vtables(
       // inside a recursion group however identically it is spelled.
       ImportGroup(module_~, decls~) =>
         out.push({
-          desc: ImportGroup(module_~, decls=frozen_imports(decls)),
+          desc: ImportGroup(module_~, decls=frozen_imports(wap_module, decls)),
           info: f.info,
         })
       Import(module_~, decl~) =>
         out.push({
-          desc: Import(module_~, decl=frozen_import(decl)),
+          desc: Import(module_~, decl=frozen_import(wap_module, decl)),
           info: f.info,
         })
       Func(name~, sign~, body~, attributes~, ..) =>
@@ -92,22 +95,24 @@ pub fn retype_vtables(
 ///|
 /// Bind every composition import in a group to its frozen function type.
 fn frozen_imports(
+  module_ : String,
   decls : Array[@basic.Annotated[@wax_ast.ImportDecl, @basic.Location]],
 ) -> Array[@basic.Annotated[@wax_ast.ImportDecl, @basic.Location]] {
   let out = []
   for d in decls {
-    out.push(frozen_import(d))
+    out.push(frozen_import(module_, d))
   }
   out
 }
 
 ///|
 fn frozen_import(
+  module_ : String,
   d : @basic.Annotated[@wax_ast.ImportDecl, @basic.Location],
 ) -> @basic.Annotated[@wax_ast.ImportDecl, @basic.Location] {
   match d.desc.kind {
     Func(sign~, exact~, ..) =>
-      match frozen_of(d.desc.id.name) {
+      match frozen_of(module_, d.desc.id.name) {
         Some(t) => {
           let decl : @wax_ast.ImportDecl = {
             id: d.desc.id,
@@ -131,10 +136,20 @@ fn frozen_import(
 ///
 /// Matched on the LOCAL name a module gave the import, which is the name the
 /// lowered declaration carries. The vocabulary's own `name` is that spelling.
-fn frozen_of(declared : String) -> String? {
+///
+/// Anchored on the FULL expected name — `card__get_field` — rather than on the
+/// suffix `__get_field`. The suffix form was ambiguous by construction: two wap
+/// modules defining the same vocabulary name both end in it, so the match would
+/// take whichever field came first. Nothing compiled here declares two today,
+/// because a program is the preamble plus one module; a rule that is only
+/// correct because of that is a rule waiting for the day it is not.
+///
+/// The bare name is still accepted, and has to be: a FOREIGN name — a host
+/// import, an `import was` — is not mangled at all, so it arrives as written.
+fn frozen_of(module_ : String, declared : String) -> String? {
   for f in vocab() {
     if f.frozen is Some(t) &&
-      (declared == f.name || declared.has_suffix("__" + f.name)) {
+      (declared == f.name || declared == mangled(module_, f.name)) {
       return Some(t)
     }
   }

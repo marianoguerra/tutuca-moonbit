@@ -1429,7 +1429,7 @@ test "manifest parses a type written as the type it is" {
   // says what it is a list OF, which the flat table had a field for and the
   // writer never filled.
   let json =
-    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "counterlib", "components": [
+    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 10, "moduleName": "counterlib", "components": [
     #|  {"name": "Counter",
     #|   "views": [{"name": "main", "html": "<div>{.count}</div>"}],
     #|   "fields": [{"name": "count", "ty": {"k": "int", "width": 8, "signed": false}},
@@ -1465,7 +1465,7 @@ test "manifest parses a type written as the type it is" {
 /// anything".
 test "manifest parses from the bridge's JSON projection" {
   let json =
-    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "counterlib", "components": [
+    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 10, "moduleName": "counterlib", "components": [
     #|  {"name": "Counter",
     #|   "views": [{"name": "main", "html": "<div>{.count}</div>"}],
     #|   "fields": [{"name": "count", "ty": {"k": "int"}},
@@ -1668,7 +1668,7 @@ test "a guest view that sets markup directly is refused" {
 /// with.
 test "catalog metadata parses: docs and constraints" {
   let json =
-    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "formlib",
+    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 10, "moduleName": "formlib",
     #| "doc": "Form controls.", "version": "1.2.0", "authors": ["ana"],
     #| "components": [
     #|  {"name": "Signup", "doc": "Collects an address.",
@@ -1726,7 +1726,7 @@ test "catalog metadata parses: docs and constraints" {
 /// hand-written manifest should not have to spell out blanks.
 test "a manifest with no catalog metadata still parses" {
   let json =
-    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "bare", "components": [
+    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 10, "moduleName": "bare", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "fields": [], "properties": [],
     #|   "receives": [], "intents": [], "methods": [],
@@ -1744,7 +1744,7 @@ test "a manifest with no catalog metadata still parses" {
 /// member's type would be the wrong trade.
 test "an unreadable member type reads as `any`" {
   let json =
-    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "m", "components": [
+    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 10, "moduleName": "m", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "fields": [{"name": "known", "ty": {"k": "text"}}, {"name": "gone"}],
     #|   "properties": [],
@@ -1757,9 +1757,36 @@ test "an unreadable member type reads as `any`" {
 }
 
 ///|
+/// A module from the OTHER format is refused at the door.
+///
+/// `tgc.abi` existed from the start and nothing read it, which was harmless for
+/// as long as the number never moved. `tgc/2` moved it: the recursion groups
+/// differ, so no reference could cross between a `tgc/1` module and this host,
+/// and the failure without this gate is whatever the first incompatibility
+/// happens to be — a cast that traps, a link that does not resolve — rather
+/// than a sentence naming the version.
+///
+/// A module built before the field existed carries no `abiVersion` at all,
+/// which reads as 1. That is the case this actually has to catch, and it is why
+/// the fixture omits the field rather than writing 1 into it.
+test "a tgc/1 module is refused, by version" {
+  let manifest =
+    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "old", "components": []}
+  let said = try {
+    @host.DynManifest::from_json_string(manifest) |> ignore
+    "the gate did not fire"
+  } catch {
+    e => e.message()
+  }
+  assert_true(said.contains("tgc/1"), msg=said)
+  assert_true(said.contains("tgc/2"), msg=said)
+  assert_true(said.contains("Rebuild"), msg=said)
+}
+
+///|
 test "manifest with wrong api version is rejected" {
   let bad =
-    #|{"manifestVersion": 3, "apiVersion": 1, "moduleName": "x", "components": []}
+    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 1, "moduleName": "x", "components": []}
   let mut failed = false
   let _ = DynManifest::from_json_string(bad) catch {
     _ => {
@@ -1783,9 +1810,9 @@ test "manifest with wrong api version is rejected" {
 ///|
 test "old manifest shapes and implicit property surfaces are rejected" {
   let old =
-    #|{"manifestVersion": 1, "apiVersion": 10, "moduleName": "x", "components": []}
+    #|{"manifestVersion": 1, "abiVersion": 2, "apiVersion": 10, "moduleName": "x", "components": []}
   let implicit =
-    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "x", "components": [
+    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 10, "moduleName": "x", "components": [
     #| {"name": "C", "views": [], "fields": [], "style": ""}
     #|]}
   let mut refused = 0
@@ -2811,7 +2838,7 @@ test "a restore leaves a same-module child to the guest" {
 /// members correctly is not a broken manifest.
 test "a protocol's properties parse as objects or as bare names" {
   let json =
-    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "holderlib", "components": [
+    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 10, "moduleName": "holderlib", "components": [
     #|  {"name": "Hole",
     #|   "views": [{"name": "main", "html": "<div></div>"}],
     #|   "fields": [], "properties": [],
@@ -3105,7 +3132,7 @@ test "who keeps a slot, for every spelling and every value" {
 /// one component's view over another's fields without failing.
 test "a component says which module declared it" {
   let json =
-    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "kit", "components": [
+    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 10, "moduleName": "kit", "components": [
     #|  {"name": "Hole", "module": "kit",
     #|   "views": [{"name": "main", "html": "<div></div>"}],
     #|   "fields": [], "properties": [], "receives": [], "intents": [], "methods": [], "style": ""},

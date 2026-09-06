@@ -676,6 +676,12 @@ fn manifest_value(
 ) -> @tutuca.Value {
   let out : Map[String, @tutuca.Value] = Map([])
   out["manifestVersion"] = Num(3)
+  // The FORMAT's version, beside the manifest's own. `tgc.abi` exports it too
+  // and that export is the ABI's own declaration — but reading it needs the
+  // instantiated module, and a host wants to refuse a `tgc/1` module before it
+  // instantiates anything. A `tgc/1` manifest has no such field, which reads as
+  // 1 and is refused, which is right.
+  out["abiVersion"] = Num(@abi.ABI_VERSION.to_double())
   out["apiVersion"] = Num(10)
   out["moduleName"] = Str(name)
   out["doc"] = Str("")

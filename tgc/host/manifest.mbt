@@ -726,6 +726,25 @@ pub fn DynManifest::from_json_string(
       "manifest: unsupported manifestVersion \{manifest_version} (host supports \{supported_manifest_version})",
     )
   }
+  // The FORMAT's version. Nothing read it until `tgc/2` existed: the number had
+  // never moved, so a check on it could not have failed and nobody wrote one —
+  // which is exactly the shape of a gate that is missing on the day it matters.
+  // A module built before this field existed reads as 1 and is refused here,
+  // with the version named, rather than instantiating and failing later at
+  // whatever the first incompatibility turns out to be.
+  // Absent means 1. A module built before the field existed is a `tgc/1`
+  // module, and reading its silence as anything else would be inventing a
+  // claim it never made.
+  let abi_version = match root.get("abiVersion") {
+    Some(Number(n, ..)) => n.to_int()
+    _ => 1
+  }
+  if abi_version != @abi.ABI_VERSION {
+    raise ManifestError(
+      "manifest: this module is tgc/\{abi_version} and this host is tgc/\{@abi.ABI_VERSION} — " +
+      "the frozen types differ, so no reference could cross between them. Rebuild the module.",
+    )
+  }
   let api_version = int_field(root, "apiVersion")
   if api_version != supported_api_version {
     raise ManifestError(

@@ -8,6 +8,7 @@
 // in-process fake — so the whole host runs with no wasm at all.
 // Check: moon check tgc/host
 import {
+  "marianoguerra/tutuca/tgc/abi",
   "marianoguerra/tutuca/core" @tutuca,
   // A field's `constraint` is part of the DESCRIPTION rather than of the
   // runtime, so it lives with the thing that projects descriptions. The parser
