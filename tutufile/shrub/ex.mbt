@@ -551,3 +551,16 @@ pub fn node_text(node : @ast.Node) -> String {
     _ => node.it.tag()
   }
 }
+
+///|
+/// The index of the first top-level operator from a set.
+pub fn find_op(parts : Array[@ast.Node], ops : Array[String]) -> Int? {
+  let mut i = 0
+  while i < parts.length() {
+    if parts[i].it is Op(o) && ops.contains(o) {
+      return Some(i)
+    }
+    i = i + 1
+  }
+  None
+}

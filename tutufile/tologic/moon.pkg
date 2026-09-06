@@ -1,0 +1,19 @@
+// The `logic:` section, read straight into the declarations the checker and
+// the backends work over.
+//
+// The other way round — printing the section as the block language and parsing
+// that back — is what `tutufile/lower` did. One reader is the point: a printer
+// and a parser are two descriptions of one grammar, and they drift.
+import {
+  "marianoguerra/tutuca/tutufile",
+  "marianoguerra/tutuca/tutufile/shrub" @sh,
+  "marianoguerra/tutuca/tscript",
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/shrubbery/ast",
+  "marianoguerra/error-report" @report,
+}
+
+import {
+  "marianoguerra/tutuca/tutufile/lower",
+  "moonbitlang/core/debug",
+} for "test"

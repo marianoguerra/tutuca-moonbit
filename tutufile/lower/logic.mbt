@@ -11,7 +11,7 @@ pub fn print_logic(
   let impls = Map([])
   // See `member_doc`: a doc comment sits on the suffix of the member BEFORE the
   // one it documents, so reading a handler's doc needs its predecessor.
-  let members = body_groups(decl)
+  let members = @sh.body_groups(decl)
   for at, group in members {
     let prev = if at > 0 { Some(members[at - 1]) } else { None }
     guard group.it is Group(parts) && parts.length() > 0 else { continue }
@@ -324,7 +324,7 @@ fn print_binds(
 ) -> Unit raise @sh.ExError {
   for g in m.block() {
     guard g.it is Group(parts) else { continue }
-    let split = find_op(parts, ["="])
+    let split = @sh.find_op(parts, ["="])
     guard split is Some(at) && parts[0].it is Id(name) else {
       raise @sh.ExError(
         message="an enricher binds names to values",
@@ -373,7 +373,7 @@ pub fn print_stmt(
     out.write_string("\{indent}}\n")
     return
   }
-  match find_op(parts, [":=", "+=", "-=", "*=", "/="]) {
+  match @sh.find_op(parts, [":=", "+=", "-=", "*=", "/="]) {
     Some(at) => {
       let op = match parts[at].it {
         Op(o) => o
@@ -614,19 +614,6 @@ fn hoist(
     }
   }
   @sh.EName("cur")
-}
-
-///|
-/// The index of the first top-level operator from a set.
-fn find_op(parts : Array[@ast.Node], ops : Array[String]) -> Int? {
-  let mut i = 0
-  while i < parts.length() {
-    if parts[i].it is Op(o) && ops.contains(o) {
-      return Some(i)
-    }
-    i = i + 1
-  }
-  None
 }
 
 ///|

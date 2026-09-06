@@ -328,3 +328,16 @@ fn trailing_doc(node : @ast.Node) -> String? {
     Some(lines.join("\n"))
   }
 }
+
+///|
+/// The groups inside a declaration's block.
+pub fn body_groups(decl : @tutufile.Decl) -> Array[@ast.Node] {
+  match decl.body {
+    Some(node) =>
+      match node.it {
+        Block(gs) => gs
+        _ => []
+      }
+    None => []
+  }
+}

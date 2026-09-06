@@ -14,8 +14,6 @@ pub fn at_span(@shrub.ExError, @error-report.Span) -> @shrub.ExError
 
 pub fn attr_name(String) -> String
 
-pub fn body_groups(@tutufile.Decl) -> Array[@ast.Node]
-
 pub fn body_of(@ast.Node) -> Array[@ast.Node]?
 
 pub fn case_text(Array[@ast.Node], Int) -> String raise @shrub.ExError

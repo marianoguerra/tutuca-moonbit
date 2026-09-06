@@ -15,7 +15,7 @@ pub fn print_view(
   // spells the same pair `Note:edit`.
   let id = decl.name.replace(old=".", new=":")
   out.write_string("<template id=\"\{id}\">")
-  print_items(body_groups(decl), out, Map([]), macros~)
+  print_items(@sh.body_groups(decl), out, Map([]), macros~)
   out.write_string("</template>\n\n")
 }
 

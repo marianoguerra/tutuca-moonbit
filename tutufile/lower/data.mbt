@@ -75,7 +75,7 @@ fn fixture_json(decl : @tutufile.Decl) -> Json raise @sh.ExError {
     Some(d) => env["doc"] = Json::string(d)
     None => ()
   }
-  for group in body_groups(decl) {
+  for group in @sh.body_groups(decl) {
     guard group.it is Group(parts) && parts.length() > 0 else { continue }
     match parts[0].it {
       Kw(name) => {
@@ -91,7 +91,7 @@ fn fixture_json(decl : @tutufile.Decl) -> Json raise @sh.ExError {
       }
       // `it.field = value` — one entry of the state a fixture starts from
       Id("it") => {
-        guard find_op(parts, ["="]) is Some(at) && parts.length() > 2 else {
+        guard @sh.find_op(parts, ["="]) is Some(at) && parts.length() > 2 else {
           continue
         }
         guard parts[2].it is Id(field) else { continue }
@@ -118,7 +118,7 @@ pub fn print_scenes(decls : Array[@tutufile.Decl]) -> String raise @sh.ExError {
 fn scene_json(decl : @tutufile.Decl) -> Json raise @sh.ExError {
   let env = Map([])
   let steps = []
-  for group in body_groups(decl) {
+  for group in @sh.body_groups(decl) {
     guard group.it is Group(parts) && parts.length() > 0 else { continue }
     match parts[0].it {
       Kw(name) => {

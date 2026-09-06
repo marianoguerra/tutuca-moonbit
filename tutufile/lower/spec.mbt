@@ -21,7 +21,7 @@ pub fn print_state(
 ) -> Unit raise @sh.ExError {
   write_doc(out, decl_doc(decl), "")
   let implements = []
-  for group in body_groups(decl) {
+  for group in @sh.body_groups(decl) {
     guard group.it is Group(parts) && parts.length() > 1 else { continue }
     if parts[0].it is Id("implements") {
       let mut i = 1
@@ -49,7 +49,7 @@ pub fn print_state(
   // `prev` is threaded because a doc comment between two members attaches to
   // the FIRST one's suffix — see `member_doc`. Every member but the first read
   // its doc as absent without it.
-  let members = body_groups(decl)
+  let members = @sh.body_groups(decl)
   for at, group in members {
     let prev = if at > 0 { Some(members[at - 1]) } else { None }
     guard group.it is Group(parts) && parts.length() > 0 else { continue }
@@ -132,7 +132,7 @@ pub fn print_state(
 pub fn read_meta(decl : @tutufile.Decl) -> ComponentMeta raise @sh.ExError {
   let mut category = ""
   let keywords = []
-  for group in body_groups(decl) {
+  for group in @sh.body_groups(decl) {
     guard group.it is Group(parts) && parts.length() > 0 else { continue }
     guard parts[0].it is Kw(name) else { continue }
     guard parts.length() >= 2 && parts[1].it is Block(bgs) && bgs.length() == 1 else {
@@ -264,7 +264,7 @@ fn compact_backing(acc : @sh.Member) -> String? {
   // `set(v): it.f := v` is a write, which is a statement rather than a value,
   // so the field is read off the place instead of out of an expression.
   guard groups[0].it is Group(parts) else { return None }
-  let terms = match find_op(parts, [":="]) {
+  let terms = match @sh.find_op(parts, [":="]) {
     Some(at) => parts[:at]
     None => parts[:]
   }
@@ -531,7 +531,7 @@ pub fn print_enum(
 ) -> Unit raise @sh.ExError {
   write_doc(out, doc.bind(x => x), "")
   let cases = []
-  for g in body_groups(decl) {
+  for g in @sh.body_groups(decl) {
     guard g.it is Group(parts) && parts.length() >= 1 && parts[0].it is Id(c) else {
       raise @sh.ExError(
         message="an enum case is a name",
@@ -568,7 +568,7 @@ pub fn print_channels(
   let ex_intents = []
   // Each case carries its own doc, and a doc between two members sits on the
   // FIRST one's suffix — see `member_doc`.
-  let members = body_groups(decl)
+  let members = @sh.body_groups(decl)
   for at, group in members {
     let prev = if at > 0 { Some(members[at - 1]) } else { None }
     let doc = case_doc(@sh.member_doc(group, prev))
@@ -613,19 +613,6 @@ pub fn print_channels(
       out.write_string("  intent { \{ex_intents.join(", ")} }\n")
     }
     out.write_string("}\n")
-  }
-}
-
-///|
-/// The groups inside a declaration's block.
-pub fn body_groups(decl : @tutufile.Decl) -> Array[@ast.Node] {
-  match decl.body {
-    Some(node) =>
-      match node.it {
-        Block(gs) => gs
-        _ => []
-      }
-    None => []
   }
 }
 

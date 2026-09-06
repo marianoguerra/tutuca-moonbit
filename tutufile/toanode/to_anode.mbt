@@ -147,7 +147,7 @@ pub fn macros_of(
       name: decl.name,
       params,
       defaults,
-      body: @lower.body_groups(decl),
+      body: @sh.body_groups(decl),
     }
   }
   out
@@ -168,7 +168,7 @@ pub fn ViewBuilder::view(
 ) -> @anode.View raise ExError {
   let childs = []
   let css = StringBuilder()
-  for g in @lower.body_groups(decl) {
+  for g in @sh.body_groups(decl) {
     // A `@style{…}` written inside a view is the VIEW's style, not a node in
     // it. The section-level reader knows that about a style block at the top of
     // `view:`; one inside a view reaches here as an ordinary group.

@@ -6,6 +6,7 @@
 // lowering printer went: every section reader needs these, and a reader that
 // had to import a printer to get at them would keep the printer alive.
 import {
+  "marianoguerra/tutuca/tutufile",
   "marianoguerra/shrubbery/ast",
   "marianoguerra/shrubbery/raw",
   "marianoguerra/shrubbery/sexp",

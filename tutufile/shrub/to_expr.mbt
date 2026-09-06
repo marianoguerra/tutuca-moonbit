@@ -40,6 +40,11 @@ pub(all) enum NamePos {
   /// A handler slot: a bare name is the name of the thing to run, and is not
   /// evaluated at all.
   Handler
+  /// A `logic:` body: a name the body itself bound is a binding, and anything
+  /// else is a free name — a parameter, or a `compute` called with none. The
+  /// two are told apart by the scope and not by the position, which is what
+  /// makes this its own case rather than one of the two above.
+  Local
 }
 
 ///|
@@ -61,6 +66,12 @@ pub(all) struct ExCtx {
 /// A value-position context with no bindings.
 pub fn ExCtx::value() -> ExCtx {
   { binds: Map([]), pos: Bound, params: Map([]), }
+}
+
+///|
+/// A `logic:` body's scope: bound names are bindings, the rest are free.
+pub fn ExCtx::in_body(binds : Map[String, String]) -> ExCtx {
+  { binds, pos: Local, params: Map([]), }
 }
 
 ///|
@@ -163,6 +174,12 @@ fn name_expr(n : String, ctx : ExCtx, sp : @tutuca.Span) -> @tutuca.Expr {
         )
       } else if ctx.pos is Handler {
         @tutuca.Expr::name(n, span=sp)
+      } else if ctx.pos is Local {
+        if ctx.binds.get(n) is Some(as_) {
+          @tutuca.Expr::bind(as_, span=sp)
+        } else {
+          @tutuca.Expr::name(n, span=sp)
+        }
       } else if @tutuca.is_type_name(n) {
         @tutuca.Expr::type_name(n, span=sp)
       } else {

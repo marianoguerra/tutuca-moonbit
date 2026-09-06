@@ -58,7 +58,7 @@ pub fn print_protocol(
   let ex_intents = []
   let props = []
   let views = []
-  for group in body_groups(decl) {
+  for group in @sh.body_groups(decl) {
     guard group.it is Group(gp) && gp.length() > 0 && gp[0].it is Id(word) else {
       continue
     }
