@@ -75,8 +75,9 @@ The card language, its limits, and what the compiler refuses are in
 The other route is to write the module yourself, in any language that emits core
 wasm with GC. Carry the preamble, export `tgc.abi`, `tgc.describe`, `tgc.make`
 and `tgc.serve`, and import from `tut`. `cmd/dev -- tgc` prints the canonical
-preamble in both WAT and Wax; `tgc/proto/` holds three hand-written modules —
-one WAT, one Wax, one WAT whose preamble is spelled differently on purpose —
+preamble in wap, and the WAT rendering derived from it; `tgc/proto/` holds
+three modules — one hand-written WAT body, one wap, one complete WAT whose
+preamble is spelled differently on purpose —
 that compose with each other and with anything the card compiler emits.
 
 Two things to know before writing one by hand:
@@ -114,11 +115,22 @@ const { manifest } = await loadGuest(wasmBytes, "my-mount-point");
 mountCompiled("my-mount-point", JSON.stringify(manifest), "");
 ```
 
-`tutucard/web/card.js` plus `tutucard/playground/cardguest.mbt` are that pair
-written out in full, and they are the reference host: `card.js` instantiates and
-installs the guest calls on `globalThis.__cardguest`, `cardguest.mbt` implements
-`&Guest` over them and calls `register_module`. Nothing in either is
-card-specific once the module exists.
+`tutucard/web/card.js` plus `tutucard/guest/registry.mbt` are that pair written
+out in full, and they are the reference host. `card.js` instantiates the module
+against the shared runtime and puts both beside each other —
+`globalThis.__tgcmod[key] = { rt, ex, control }`, the runtime, the module's own
+exports, and the buffer effects are pushed into. `registry.mbt` wraps that as a
+`@browser.NativeModule`, whose instances implement `@host.Inst`, and calls
+`register_module`. Nothing in either is card-specific once the module exists.
+
+**What crosses is the `tg_val` itself.** The host reads a value off the module's
+exports directly rather than through a JSON encoding, and holds a child as the
+reference it is — `&Inst` in `tgc/host`, `NativeInst` over a `tg_inst` in
+`tgc/host/browser`. There is no handle, no instance table and nothing to sweep:
+an instance lives as long as something holds it and the engine collects it when
+nothing does. That is §4 of `tgc/SPEC.md` being true of the host and not only of
+the format, and it is why `card.js` went from 478 lines to
+282 when the same values stopped crossing as JSON.
 
 The manifest comes **out of the module** (`tgc.describe`), not out of a file
 beside it. That is what makes one file the whole distribution: there is no way
