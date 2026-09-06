@@ -57,6 +57,7 @@ pub struct ViewBuilder {
   macros : Map[String, MacroDef]
   expanding : Array[String]
 }
+pub fn ViewBuilder::events(Self) -> Array[@anode.NodeEvents]
 pub fn ViewBuilder::new(macros? : Map[String, MacroDef]) -> Self
 pub fn ViewBuilder::view(Self, @tutufile.Decl, style? : String) -> @anode.View raise @lower.ExError
 

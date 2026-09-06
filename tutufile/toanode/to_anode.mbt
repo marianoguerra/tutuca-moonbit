@@ -91,6 +91,16 @@ fn ViewBuilder::register(
 }
 
 ///|
+/// The event table this builder handed out, in registration order.
+///
+/// A view's handlers are not in its tree — an element points at them through
+/// `data-eid` — so anything comparing two trees needs the table to resolve that
+/// index against.
+pub fn ViewBuilder::events(self : ViewBuilder) -> Array[@anode.NodeEvents] {
+  @anode.events_of(self.handlers)
+}
+
+///|
 /// Every `macro` a view section declares, as trees.
 pub fn macros_of(
   decls : Array[@tutufile.Decl],

@@ -380,7 +380,7 @@ fn compare_views(
         })
         continue
       }
-      let parsed = parse_html(v, scope)
+      let (parsed, _) = parse_html(v, scope)
       guard parsed is Some(parsed) else {
         out.push({
           section: "view",
@@ -436,13 +436,16 @@ fn find_view(
 }
 
 ///|
-fn parse_html(v : @viewfile.RawView, scope : FileMacros) -> @anode.ANode? {
+fn parse_html(
+  v : @viewfile.RawView,
+  scope : FileMacros,
+) -> (@anode.ANode?, Array[@anode.NodeEvents]) {
   let view = @anode.View::new(v.name, raw_view=v.source)
   let px = @anode.ParseContext::new()
   view.compile(px, scope) catch {
-    _ => return None
+    _ => return (None, [])
   }
-  view.anode
+  (view.anode, px.events)
 }
 
 ///|

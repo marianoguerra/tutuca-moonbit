@@ -19,7 +19,9 @@
 /// trees that address their own nodes consistently are the same tree; which
 /// integers they chose is not a fact about the view. `data-eid` is NOT blanked
 /// — that one indexes the handler table an element points into, so it is
-/// behaviour.
+/// behaviour — and `data-nid` is not: it names the scope FRAME a node is in,
+/// recovered from the tree the same way a node id is, so which integer it got
+/// is not a fact about the view either.
 ///
 /// **Layout**: `Debug` wraps a value across lines once it is long enough, so
 /// the same tree renders differently depending on how deep it sits. Collapsing
@@ -30,7 +32,13 @@ pub fn scrub(s : String) -> String {
       @toanode.collapse_ws(
         blank_ints(
           blank_ints(
-            blank_ints(blank_after(s, "node_id: Some(", ")"), "node_id: "),
+            blank_ints(
+              blank_ints(
+                blank_after(s, "node_id: Some(", ")"),
+                "\"data-nid\": LNum(",
+              ),
+              "node_id: ",
+            ),
             "start: ",
           ),
           "end_: ",
