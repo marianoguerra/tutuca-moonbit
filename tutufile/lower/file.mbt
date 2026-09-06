@@ -78,7 +78,7 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
       // their predecessor in hand, exactly as a component's members are.
       for at, decl in section.decls {
         let prev = if at > 0 { Some(section.decls[at - 1].node) } else { None }
-        let doc = member_doc(decl.node, prev)
+        let doc = @sh.member_doc(decl.node, prev)
         let body = StringBuilder()
         try {
           match decl.kind {
@@ -182,7 +182,7 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
 fn print_file_style(
   decl : @tutufile.Decl,
   out : StringBuilder,
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   guard decl.node.it is Group(parts) else { return }
   print_element("style", parts, out, {})
   out.write_string("\n")
@@ -193,8 +193,8 @@ fn print_file_style(
 fn print_macro(
   decl : @tutufile.Decl,
   out : StringBuilder,
-) -> Unit raise ExError {
-  let m = read_member(decl.node)
+) -> Unit raise @sh.ExError {
+  let m = @sh.read_member(decl.node)
   let attrs = []
   // Inside the body a parameter is `^name`: it is substituted at the call
   // site, which is neither a field nor something a loop put in scope.
@@ -210,9 +210,9 @@ fn print_macro(
     if t.it is Parens(gs) {
       for g in gs {
         try {
-          for a in read_args([g]) {
+          for a in @sh.read_args([g]) {
             match a {
-              AKw(name, value) =>
+              @sh.AKw(name, value) =>
                 defaults.push(
                   "data-\{attr_name(name)}=\"\{attr_escape(print_ex(value))}\"",
                 )
@@ -236,11 +236,11 @@ fn print_macro(
 ///|
 /// An expression failure as a report, with the repair it names.
 pub fn ex_report(
-  e : ExError,
+  e : @sh.ExError,
   source : @report.SourceId,
   fallback? : @report.Span = @report.Span::at(0),
 ) -> @report.Report {
-  let ExError(message~, help~, span~) = e
+  let @sh.ExError(message~, help~, span~) = e
   // A printer works over an expression, which carries no span — so a failure
   // raised inside one points nowhere, and the enclosing declaration is the
   // narrowest place that does. Better the right line than the first one.

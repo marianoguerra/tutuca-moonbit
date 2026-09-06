@@ -14,8 +14,9 @@
 // printed for.
 import {
   "marianoguerra/tutuca/tutufile",
+  // The shrubbery readers: `Ex`, `Member`, the doc above one.
+  "marianoguerra/tutuca/tutufile/shrub" @sh,
   "marianoguerra/shrubbery/ast",
-  "marianoguerra/shrubbery/raw",
   "marianoguerra/shrubbery/sexp",
   "marianoguerra/error-report" @report,
   "moonbitlang/core/debug",

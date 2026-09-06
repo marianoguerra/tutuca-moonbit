@@ -18,16 +18,16 @@
 // fold.
 
 ///|
-using @lower {type Ex}
+using @sh {type Ex}
 
 ///|
-using @lower {type ExError}
+using @sh {type ExError}
 
 ///|
-using @lower {type Arg}
+using @sh {type Arg}
 
 ///|
-using @lower {type TPart}
+using @sh {type TPart}
 
 ///|
 /// Where a name is being read, which is the one thing the `Ex` tree does not
@@ -122,7 +122,7 @@ pub fn to_expr(
     EUn("!", a) => EUnary(op=UNot, operand=to_expr(a, ctx, span), span=sp)
     EUn("-", a) => EUnary(op=UNeg, operand=to_expr(a, ctx, span), span=sp)
     EUn(op, _) =>
-      raise @lower.ExError(
+      raise ExError(
         message="`\{op}` is not a prefix operator",
         help="the prefix operators are `!` and `-`",
         span~,
@@ -136,7 +136,7 @@ pub fn to_expr(
       )
     ETemplate(parts) => tpl_expr(parts, ctx, sp, span)
     EList(_) | EMap(_) =>
-      raise @lower.ExError(
+      raise ExError(
         message="a list or map literal has no place in an expression",
         help="build a collection with the receiver methods — `it.xs.push(v)`",
         span~,
@@ -238,7 +238,7 @@ fn member_expr(
       @tutuca.Expr::event_path([a, b, m], span=sp)
     EName(b) => @tutuca.Expr::bind_member(bound_name(b, ctx), m, span=sp)
     _ =>
-      raise @lower.ExError(
+      raise ExError(
         message="a member read needs a binding or the event to read it from",
         help="`it.a.b` is refused: render the child as a component, or name the value with a `compute`",
         span=@report.Span::at(0),
@@ -257,7 +257,7 @@ fn index_expr(
 ) -> @tutuca.Expr raise ExError {
   let head = to_expr(base, ctx, span)
   guard head is ERead(place~, ..) else {
-    raise @lower.ExError(
+    raise ExError(
       message="only a place can be indexed",
       help="index a property or a binding — `it.rows[it.key]`",
       span~,
@@ -291,7 +291,7 @@ fn call_expr(
     // `math.max(a, b)`: a namespace, because these have no receiver
     EMember(EName("math"), name) => {
       guard ["max", "min", "clamp"].contains(name) else {
-        raise @lower.ExError(
+        raise ExError(
           message="`math.\{name}` is not one of the builtins",
           help="the numeric builtins are `math.min`, `math.max` and `math.clamp`",
           span~,
@@ -309,7 +309,7 @@ fn call_expr(
           @tutuca.Expr::app(word, out, span=sp)
         }
         None =>
-          raise @lower.ExError(
+          raise ExError(
             message="`\{name}` is not a method of a value",
             help="the reading vocabulary is closed — a derivation of your own is a `compute`, called as `\{name}(…)`",
             span~,
@@ -323,7 +323,7 @@ fn call_expr(
         @tutuca.Expr::app(f, args_to_exprs(pos, ctx, span), span=sp)
       }
     _ =>
-      raise @lower.ExError(
+      raise ExError(
         message="only a name or a method can be called",
         help="write `name(…)` for a compute, or `value.method(…)` for a builtin",
         span~,
@@ -377,7 +377,7 @@ fn bin_expr(
           span=sp,
         )
       _ =>
-        raise @lower.ExError(
+        raise ExError(
           message="`none` compares with `==` and `!=` only",
           help="write `x == none` or `x != none`",
           span~,
@@ -385,7 +385,7 @@ fn bin_expr(
     }
   }
   if op is (":=" | "+=" | "-=" | "*=" | "/=") {
-    raise @lower.ExError(
+    raise ExError(
       message="a write is not a value",
       help="write to a property in an event — `~on_input: it.query := e.value` — or read one here",
       span~,
@@ -420,7 +420,7 @@ fn op_family(
     "+" | "-" => (FAdd, op)
     "*" | "/" | "mod" => (FMul, op)
     _ =>
-      raise @lower.ExError(
+      raise ExError(
         message="`\{op}` is not an operator here",
         help="the operators are the comparisons, `&&`, `||`, `implies`, `+`, `-`, `*`, `/` and `mod`",
         span~,

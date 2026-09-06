@@ -7,7 +7,7 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/tutufile",
-  "marianoguerra/tutuca/tutufile/lower",
+  "marianoguerra/tutuca/tutufile/shrub",
 }
 
 // Values
@@ -17,13 +17,13 @@ pub fn flat_expr(@core.Expr) -> @core.Expr
 
 pub fn flatten_ops(@anode.ANode) -> @anode.ANode
 
-pub fn macros_of(Array[@tutufile.Decl]) -> Map[String, MacroDef] raise @lower.ExError
+pub fn macros_of(Array[@tutufile.Decl]) -> Map[String, MacroDef] raise @shrub.ExError
 
 pub fn strip_macro_calls(@anode.ANode) -> @anode.ANode
 
 pub fn strip_ws(@anode.ANode) -> @anode.ANode
 
-pub fn to_expr(@lower.Ex, ExCtx, @error-report.Span) -> @core.Expr raise @lower.ExError
+pub fn to_expr(@shrub.Ex, ExCtx, @error-report.Span) -> @core.Expr raise @shrub.ExError
 
 // Errors
 
@@ -31,17 +31,17 @@ pub fn to_expr(@lower.Ex, ExCtx, @error-report.Span) -> @core.Expr raise @lower.
 pub(all) struct ExCtx {
   binds : Map[String, String]
   pos : NamePos
-  params : Map[String, @lower.Ex]
+  params : Map[String, @shrub.Ex]
 }
 pub fn ExCtx::as_handler(Self) -> Self
 pub fn ExCtx::value() -> Self
 pub fn ExCtx::with_bind(Self, String, String) -> Self
-pub fn ExCtx::with_params(Self, Map[String, @lower.Ex]) -> Self
+pub fn ExCtx::with_params(Self, Map[String, @shrub.Ex]) -> Self
 
 pub(all) struct MacroDef {
   name : String
   params : Array[String]
-  defaults : Map[String, @lower.Ex]
+  defaults : Map[String, @shrub.Ex]
   body : Array[@ast.Node]
 }
 
@@ -59,7 +59,7 @@ pub struct ViewBuilder {
 }
 pub fn ViewBuilder::events(Self) -> Array[@anode.NodeEvents]
 pub fn ViewBuilder::new(macros? : Map[String, MacroDef]) -> Self
-pub fn ViewBuilder::view(Self, @tutufile.Decl, style? : String) -> @anode.View raise @lower.ExError
+pub fn ViewBuilder::view(Self, @tutufile.Decl, style? : String) -> @anode.View raise @shrub.ExError
 
 // Type aliases
 

@@ -371,7 +371,7 @@ fn compare_views(
   let scope = FileMacros::of(a.macros)
   let decls = view_decls(tutu)
   let macros = @toanode.macros_of(decls) catch {
-    @lower.ExError(message~, ..) => {
+    @sh.ExError(message~, ..) => {
       out.push({
         section: "view",
         what: "macro: \{message}",
@@ -409,7 +409,7 @@ fn compare_views(
       // printed something the reader refuses is the commonest failure there is,
       // and the refusal already names the construct.
       let built = @toanode.ViewBuilder::new(macros~).view(decl) catch {
-        @lower.ExError(message~, help~, ..) => {
+        @sh.ExError(message~, help~, ..) => {
           out.push({
             section: "view",
             what: "`\{want}` did not read: \{message} — \{help}",

@@ -12,11 +12,11 @@
 // the reason the comparison is possible at all.
 
 ///|
-/// Read one group of shrubbery as an `Ex`.
-fn read_one_ex(src : String) -> @lower.Ex? {
+/// Read one group of shrubbery as an `@sh.Ex`.
+fn read_one_ex(src : String) -> @sh.Ex? {
   let parsed = @shrub.parse(src + "\n") catch { _ => return None }
   guard parsed.root().it is Multi(gs) && gs.length() == 1 else { return None }
-  Some(@lower.read_group(gs[0]) catch { _ => return None })
+  Some(@sh.read_group(gs[0]) catch { _ => return None })
 }
 
 ///|

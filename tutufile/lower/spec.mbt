@@ -18,7 +18,7 @@ pub fn print_state(
   decl : @tutufile.Decl,
   impls : Map[String, PropImpl],
   out : StringBuilder,
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   write_doc(out, decl_doc(decl), "")
   let implements = []
   for group in body_groups(decl) {
@@ -56,40 +56,41 @@ pub fn print_state(
     guard parts[0].it is Id(word) else { continue }
     try {
       match word {
-        "field" => print_field(read_member(group, prev~), out)
+        "field" => print_field(@sh.read_member(group, prev~), out)
         // `property Holder::filled = filled` binds a protocol member to a local
         // one; it is a line of the property section rather than a declaration.
         "property" =>
           match binding_line(parts) {
             Some(text) => props.push(text)
-            None => props.push(print_property(read_member(group, prev~), impls))
+            None =>
+              props.push(print_property(@sh.read_member(group, prev~), impls))
           }
         "view" =>
           match binding_line(parts) {
             Some(text) => view_binds.push(text)
             None =>
-              raise ExError(
+              raise @sh.ExError(
                 message="a `view` in a component binds a protocol role",
                 help="write `view <Protocol>::<role> = <local view>`",
-                span=span_of(parts[0]),
+                span=@sh.span_of(parts[0]),
               )
           }
-        "pred" | "invariant" => rules.push(read_member(group, prev~))
-        "where" => wheres.push((group, member_doc(group, prev)))
+        "pred" | "invariant" => rules.push(@sh.read_member(group, prev~))
+        "where" => wheres.push((group, @sh.member_doc(group, prev)))
         "provide" => provides.push(group)
         "lookup" => lookups.push(group)
         // channels and helper types are declarations of the file, not of the
         // state body, and are printed after it
         "message" | "intent" | "express" | "implements" => ()
         _ =>
-          raise ExError(
+          raise @sh.ExError(
             message="`\{word}` is not a spec member",
             help="a component declares `field`, `property`, `pred`, `invariant`, `where`, `provide`, `lookup`, `message`, `intent` and `express`",
-            span=span_of(parts[0]),
+            span=@sh.span_of(parts[0]),
           )
       }
     } catch {
-      e => raise at_span(e, span_of(group))
+      e => raise at_span(e, @sh.span_of(group))
     }
   }
   if !props.is_empty() {
@@ -128,57 +129,57 @@ pub fn print_state(
 /// option that carries a value does. Neither has an old spelling — the card
 /// compiler emitted both keys empty and there was no syntax for either — so
 /// they leave through `Lowered.meta` rather than through the printed text.
-pub fn read_meta(decl : @tutufile.Decl) -> ComponentMeta raise ExError {
+pub fn read_meta(decl : @tutufile.Decl) -> ComponentMeta raise @sh.ExError {
   let mut category = ""
   let keywords = []
   for group in body_groups(decl) {
     guard group.it is Group(parts) && parts.length() > 0 else { continue }
     guard parts[0].it is Kw(name) else { continue }
     guard parts.length() >= 2 && parts[1].it is Block(bgs) && bgs.length() == 1 else {
-      raise ExError(
+      raise @sh.ExError(
         message="`~\{name}` needs a value",
         help="write `~\{name}: <value>` on its own line inside the component",
-        span=span_of(parts[0]),
+        span=@sh.span_of(parts[0]),
       )
     }
-    let value = read_group(bgs[0])
+    let value = @sh.read_group(bgs[0])
     match name {
       "category" =>
         match value {
-          EStr(text) => category = text
+          @sh.EStr(text) => category = text
           _ =>
-            raise ExError(
+            raise @sh.ExError(
               message="a category is a string",
               help="write `~category: \"layout\"` — it is matched against what a person types, so it is text and not a name",
-              span=span_of(parts[0]),
+              span=@sh.span_of(parts[0]),
             )
         }
       "keywords" =>
         match value {
-          EList(items) =>
+          @sh.EList(items) =>
             for item in items {
               match item {
-                EStr(text) => keywords.push(text)
+                @sh.EStr(text) => keywords.push(text)
                 _ =>
-                  raise ExError(
+                  raise @sh.ExError(
                     message="a keyword is a string",
                     help="write `~keywords: [\"layout\", \"box\"]`",
-                    span=span_of(parts[0]),
+                    span=@sh.span_of(parts[0]),
                   )
               }
             }
           _ =>
-            raise ExError(
+            raise @sh.ExError(
               message="`~keywords` takes a list",
               help="write `~keywords: [\"layout\", \"box\"]` — a comma only separates inside brackets",
-              span=span_of(parts[0]),
+              span=@sh.span_of(parts[0]),
             )
         }
       other =>
-        raise ExError(
+        raise @sh.ExError(
           message="`~\{other}` is not something a component declares about itself",
           help="a component's options are `~category` and `~keywords`",
-          span=span_of(parts[0]),
+          span=@sh.span_of(parts[0]),
         )
     }
   }
@@ -188,10 +189,10 @@ pub fn read_meta(decl : @tutufile.Decl) -> ComponentMeta raise ExError {
 ///|
 /// `field n :: Int = 0` → `n: Int`, with the initialiser dropped into the
 /// fixture the old notation would have needed for it.
-fn print_field(m : Member, out : StringBuilder) -> Unit raise ExError {
+fn print_field(m : @sh.Member, out : StringBuilder) -> Unit raise @sh.ExError {
   write_doc(out, m.doc, "  ")
   guard m.ty is Some(ty) else {
-    raise ExError(
+    raise @sh.ExError(
       message="`\{m.name}` has no type",
       help="write `field \{m.name} :: <Type>`",
       span=m.span,
@@ -203,13 +204,13 @@ fn print_field(m : Member, out : StringBuilder) -> Unit raise ExError {
 ///|
 /// A property, in whichever of the two old spellings its body calls for.
 fn print_property(
-  m : Member,
+  m : @sh.Member,
   impls : Map[String, PropImpl],
-) -> String raise ExError {
+) -> String raise @sh.ExError {
   let out = StringBuilder()
   write_doc(out, m.doc, "    ")
   guard m.ty is Some(ty) else {
-    raise ExError(
+    raise @sh.ExError(
       message="property `\{m.name}` has no type",
       help="write `property \{m.name} :: <Type>`",
       span=m.span,
@@ -219,12 +220,12 @@ fn print_property(
   // a body written in the spec section is the compact, field-backed form
   let mut accessors = ""
   for g in m.block() {
-    let acc = read_member(g)
+    let acc = @sh.read_member(g)
     let backing = compact_backing(acc)
     match backing {
       Some(field) => accessors = accessors + " \{acc.word} .\{field}"
       None =>
-        raise ExError(
+        raise @sh.ExError(
           message="a `\{acc.word}` in the spec section reads one field and nothing else",
           help="move the body to the `logic:` section, or write `\{acc.word}: it.<field>`",
           span=acc.span,
@@ -247,7 +248,7 @@ fn print_property(
 /// members to something this component has. Nothing about the protocol's
 /// spelling is touched: the name on the left is a wire name.
 fn binding_line(parts : Array[@ast.Node]) -> String? {
-  guard qualified(parts, 1) is Some((name, next)) else { return None }
+  guard @sh.qualified(parts, 1) is Some((name, next)) else { return None }
   guard next < parts.length() && parts[next].it is Op("=") else { return None }
   guard next + 1 < parts.length() && parts[next + 1].it is Id(here) else {
     return None
@@ -257,7 +258,7 @@ fn binding_line(parts : Array[@ast.Node]) -> String? {
 
 ///|
 /// The field a one-line accessor reads, if that is all it does.
-fn compact_backing(acc : Member) -> String? {
+fn compact_backing(acc : @sh.Member) -> String? {
   let groups = acc.block()
   guard groups.length() == 1 else { return None }
   // `set(v): it.f := v` is a write, which is a statement rather than a value,
@@ -278,7 +279,7 @@ fn compact_backing(acc : Member) -> String? {
 
 ///|
 /// `pred` / `invariant`, with `~format` printed where `format` used to sit.
-fn print_rule(m : Member, out : StringBuilder) -> Unit raise ExError {
+fn print_rule(m : @sh.Member, out : StringBuilder) -> Unit raise @sh.ExError {
   write_doc(out, m.doc, "  ")
   out.write_string("  \{m.word} \{m.name}")
   match m.option("format") {
@@ -287,13 +288,13 @@ fn print_rule(m : Member, out : StringBuilder) -> Unit raise ExError {
   }
   let groups = m.block()
   guard groups.length() == 1 else {
-    raise ExError(
+    raise @sh.ExError(
       message="a `\{m.word}` is one expression",
       help="write the rule as one boolean — `and` two of them together if it is really two",
       span=m.span,
     )
   }
-  out.write_string(" { \{print_ex(read_group(groups[0]))} }\n")
+  out.write_string(" { \{print_ex(@sh.read_group(groups[0]))} }\n")
 }
 
 ///|
@@ -303,19 +304,19 @@ fn print_binding_decl(
   group : @ast.Node,
   word : String,
   out : StringBuilder,
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   guard group.it is Group(parts) && parts.length() >= 2 else {
-    raise ExError(
+    raise @sh.ExError(
       message="a `\{word}` names what it \{if word == "provide" { "publishes" } else { "wants" }}",
       help="write `\{word} <name>`",
-      span=span_of(group),
+      span=@sh.span_of(group),
     )
   }
   guard parts[1].it is Id(name) else {
-    raise ExError(
+    raise @sh.ExError(
       message="a `\{word}` names one binding",
       help="write `\{word} <name>`",
-      span=span_of(parts[1]),
+      span=@sh.span_of(parts[1]),
     )
   }
   if parts.length() == 2 {
@@ -323,16 +324,16 @@ fn print_binding_decl(
     return
   }
   guard parts[2].it is Op("=") else {
-    raise ExError(
+    raise @sh.ExError(
       message="a `\{word}` is a name, or a name and a value",
       help="write `\{word} \{name} = <value>`",
-      span=span_of(parts[2]),
+      span=@sh.span_of(parts[2]),
     )
   }
   let value = if parts.length() >= 4 && parts[3].it is Id("self") {
     "self"
   } else {
-    print_ex(read_ex(parts[3:]))
+    print_ex(@sh.read_ex(parts[3:]))
   }
   out.write_string("  \{word} { \{name} = \{value} }\n")
 }
@@ -343,13 +344,13 @@ fn print_where(
   group : @ast.Node,
   doc : String?,
   out : StringBuilder,
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   write_doc(out, doc, "  ")
   guard group.it is Group(parts) && parts.length() >= 2 else {
-    raise ExError(
+    raise @sh.ExError(
       message="a `where` states a relation",
       help="write `where it.<field> <relation> <target>`",
-      span=span_of(group),
+      span=@sh.span_of(group),
     )
   }
   let terms = parts[1:]
@@ -362,7 +363,7 @@ fn print_where(
       Kw(_) => i = i + 1
       Id("it") =>
         if i + 2 < terms.length() && terms[i + 1].it is Op(".") {
-          let field = node_text(terms[i + 2])
+          let field = @sh.node_text(terms[i + 2])
           // the SUBJECT is bare and every other field read carries its dot
           words.push(if words.is_empty() { field } else { "." + field })
           i = i + 3
@@ -386,8 +387,8 @@ fn print_where(
       // but a `where` has no subtraction to be confused with and its parser
       // takes a number or a `.field` — nothing that starts with `(`.
       Lit(_) => {
-        let lit = read_group(t)
-        words.push(if lit is ENum(n) { num_text(n) } else { print_ex(lit) })
+        let lit = @sh.read_group(t)
+        words.push(if lit is @sh.ENum(n) { num_text(n) } else { print_ex(lit) })
         i = i + 1
       }
       // `is one of ["file", "dir"]` — the member list is JSON in the old
@@ -396,7 +397,7 @@ fn print_where(
       Brackets(gs) => {
         let items = []
         for g in gs {
-          items.push(where_member(read_group(g)))
+          items.push(where_member(@sh.read_group(g)))
         }
         words.push("[" + items.join(", ") + "]")
         i = i + 1
@@ -405,13 +406,13 @@ fn print_where(
         // `in_range(0, 100)` is the one relation written as a call
         let items = []
         for g in gs {
-          items.push(print_ex(read_group(g)))
+          items.push(print_ex(@sh.read_group(g)))
         }
         guard items.length() == 2 && words.length() >= 1 else {
-          raise ExError(
+          raise @sh.ExError(
             message="`in_range` takes a low and a high bound",
             help="write `where it.n in_range(0, 100)`",
-            span=span_of(t),
+            span=@sh.span_of(t),
           )
         }
         let _ = words.pop()
@@ -427,9 +428,9 @@ fn print_where(
 
 ///|
 /// One member of an `is one of` list, in the state block's own quoting.
-fn where_member(ex : Ex) -> String raise ExError {
+fn where_member(ex : @sh.Ex) -> String raise @sh.ExError {
   match ex {
-    EStr(s) => Json::string(s).stringify()
+    @sh.EStr(s) => Json::string(s).stringify()
     other => print_ex(other)
   }
 }
@@ -490,17 +491,17 @@ pub fn print_struct(
   decl : @tutufile.Decl,
   out : StringBuilder,
   doc? : String?,
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   write_doc(out, doc.bind(x => x), "")
   guard decl.node.it is Group(parts) && parts.length() >= 3 else {
-    raise ExError(
+    raise @sh.ExError(
       message="`\{decl.name}` declares no fields",
       help="write `struct \{decl.name}(what :: String, qty :: Int)`",
       span=decl.span,
     )
   }
   guard parts[2].it is Parens(gs) else {
-    raise ExError(
+    raise @sh.ExError(
       message="`\{decl.name}` declares no fields",
       help="write `struct \{decl.name}(what :: String, qty :: Int)`",
       span=decl.span,
@@ -508,12 +509,12 @@ pub fn print_struct(
   }
   let fields = []
   for g in gs {
-    let p = read_param(g)
+    let p = @sh.read_param(g)
     guard p.ty is Some(ty) else {
-      raise ExError(
+      raise @sh.ExError(
         message="field `\{p.name}` of `\{decl.name}` has no type",
         help="write `\{p.name} :: <Type>`",
-        span=span_of(g),
+        span=@sh.span_of(g),
       )
     }
     fields.push("\{p.name}: \{print_ty(ty)}")
@@ -527,15 +528,15 @@ pub fn print_enum(
   decl : @tutufile.Decl,
   out : StringBuilder,
   doc? : String?,
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   write_doc(out, doc.bind(x => x), "")
   let cases = []
   for g in body_groups(decl) {
     guard g.it is Group(parts) && parts.length() >= 1 && parts[0].it is Id(c) else {
-      raise ExError(
+      raise @sh.ExError(
         message="an enum case is a name",
         help="write one case per line under `enum \{decl.name}:`, with its payload in parentheses if it has one",
-        span=span_of(g),
+        span=@sh.span_of(g),
       )
     }
     // A case may carry a payload: `picked(String, Int)`. One that does makes
@@ -544,7 +545,7 @@ pub fn print_enum(
     if parts.length() > 1 && parts[1].it is Parens(gs) {
       let tys = []
       for a in gs {
-        tys.push(print_ty(read_group(a)))
+        tys.push(print_ty(@sh.read_group(a)))
       }
       cases.push(c + "(" + tys.join(", ") + ")")
     } else {
@@ -560,7 +561,7 @@ pub fn print_enum(
 pub fn print_channels(
   decl : @tutufile.Decl,
   out : StringBuilder,
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   let messages = []
   let intents = []
   let ex_messages = []
@@ -570,7 +571,7 @@ pub fn print_channels(
   let members = body_groups(decl)
   for at, group in members {
     let prev = if at > 0 { Some(members[at - 1]) } else { None }
-    let doc = case_doc(member_doc(group, prev))
+    let doc = case_doc(@sh.member_doc(group, prev))
     guard group.it is Group(parts) && parts.length() > 0 else { continue }
     guard parts[0].it is Id(word) else { continue }
     match word {
@@ -578,10 +579,10 @@ pub fn print_channels(
       "intent" => intents.push(doc + case_text(parts, 1))
       "express" => {
         guard parts.length() >= 2 && parts[1].it is Id(kind) else {
-          raise ExError(
+          raise @sh.ExError(
             message="`express` says which channel it initiates on",
             help="write `express message <name>` or `express intent <name>`",
-            span=span_of(parts[0]),
+            span=@sh.span_of(parts[0]),
           )
         }
         if kind == "intent" {
@@ -631,7 +632,7 @@ pub fn body_groups(decl : @tutufile.Decl) -> Array[@ast.Node] {
 ///|
 /// The `///` above a declaration.
 pub fn decl_doc(decl : @tutufile.Decl) -> String? {
-  doc_of(decl.node)
+  @sh.doc_of(decl.node)
 }
 
 ///|

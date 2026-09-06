@@ -7,7 +7,7 @@ pub fn print_logic(
   decl : @tutufile.Decl,
   out : StringBuilder,
   rows? : Array[String] = [],
-) -> Map[String, PropImpl] raise ExError {
+) -> Map[String, PropImpl] raise @sh.ExError {
   let impls = Map([])
   // See `member_doc`: a doc comment sits on the suffix of the member BEFORE the
   // one it documents, so reading a handler's doc needs its predecessor.
@@ -16,11 +16,11 @@ pub fn print_logic(
     let prev = if at > 0 { Some(members[at - 1]) } else { None }
     guard group.it is Group(parts) && parts.length() > 0 else { continue }
     guard parts[0].it is Id(word) else { continue }
-    let m = read_member(group, prev~)
+    let m = @sh.read_member(group, prev~)
     // Everything below prints an expression, which has no span of its own —
     // so a failure is re-raised against the member it was printing, which is
     // the narrowest place that does have one.
-    let m = { ..m, span: span_of(group), }
+    let m = { ..m, span: @sh.span_of(group), }
     try {
       match word {
         "receive" | "answer" => print_transition(m, out)
@@ -30,10 +30,10 @@ pub fn print_logic(
         "bind_with" => print_bind_with(m, out)
         "property" => impls[m.name] = print_accessors(m, out)
         _ =>
-          raise ExError(
+          raise @sh.ExError(
             message="`\{word}` is not a logic member",
             help="a component's behaviour is `receive`, `answer`, `compute`, `pred`, `enrich`, `bind_with` and `property`",
-            span=span_of(parts[0]),
+            span=@sh.span_of(parts[0]),
           )
       }
     } catch {
@@ -49,10 +49,10 @@ pub fn print_logic(
 /// A printer works over an expression and an expression carries no span, so
 /// the enclosing declaration is the narrowest thing that can point anywhere.
 /// Better the right line than the first one.
-pub fn at_span(e : ExError, at : @report.Span) -> ExError {
-  let ExError(message~, help~, span~) = e
+pub fn at_span(e : @sh.ExError, at : @report.Span) -> @sh.ExError {
+  let @sh.ExError(message~, help~, span~) = e
   if span.start == 0 && span.len == 0 {
-    ExError(message~, help~, span=at)
+    @sh.ExError(message~, help~, span=at)
   } else {
     e
   }
@@ -61,7 +61,10 @@ pub fn at_span(e : ExError, at : @report.Span) -> ExError {
 ///|
 /// `receive` / `answer`, with the contract options where the clauses used to
 /// sit on the header.
-fn print_transition(m : Member, out : StringBuilder) -> Unit raise ExError {
+fn print_transition(
+  m : @sh.Member,
+  out : StringBuilder,
+) -> Unit raise @sh.ExError {
   write_doc(out, m.doc, "")
   out.write_string(m.word + " " + m.name)
   if !m.params.is_empty() {
@@ -72,9 +75,9 @@ fn print_transition(m : Member, out : StringBuilder) -> Unit raise ExError {
     out.write_string("(" + names.join(", ") + ")")
   }
   match m.option("requires") {
-    Some(EName(r)) => out.write_string(" requires " + r)
+    Some(@sh.EName(r)) => out.write_string(" requires " + r)
     Some(_) =>
-      raise ExError(
+      raise @sh.ExError(
         message="`~requires` names a rule",
         help="declare the rule with `pred` in the spec section and name it here",
         span=m.span,
@@ -82,9 +85,9 @@ fn print_transition(m : Member, out : StringBuilder) -> Unit raise ExError {
     None => ()
   }
   match m.option("ensures") {
-    Some(EName(r)) => out.write_string(" ensures " + r)
+    Some(@sh.EName(r)) => out.write_string(" ensures " + r)
     Some(_) =>
-      raise ExError(
+      raise @sh.ExError(
         message="`~ensures` names a rule",
         help="declare the rule with `pred` in the spec section and name it here",
         span=m.span,
@@ -98,7 +101,7 @@ fn print_transition(m : Member, out : StringBuilder) -> Unit raise ExError {
 
 ///|
 /// A parameterised derivation.
-fn print_compute(m : Member, out : StringBuilder) -> Unit raise ExError {
+fn print_compute(m : @sh.Member, out : StringBuilder) -> Unit raise @sh.ExError {
   write_doc(out, m.doc, "")
   out.write_string("compute " + m.name)
   if !m.params.is_empty() {
@@ -117,10 +120,10 @@ fn print_compute(m : Member, out : StringBuilder) -> Unit raise ExError {
 /// A row filter. Its parameters are what the renderer hands it, so they are
 /// renamed to the bindings the old notation reads them out of.
 fn print_row_pred(
-  m : Member,
+  m : @sh.Member,
   out : StringBuilder,
   rows : Array[String],
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   write_doc(out, m.doc, "")
   // A row filter takes no parameters in the old notation — it reads the row out
   // of the air — so the names that ARE the row are not written back out.
@@ -131,7 +134,7 @@ fn print_row_pred(
 
 ///|
 /// A member's parameter list, or nothing when its parameters are the row.
-fn param_text(m : Member, rows : Array[String]) -> String {
+fn param_text(m : @sh.Member, rows : Array[String]) -> String {
   if rows.contains(m.name) || m.params.is_empty() {
     return ""
   }
@@ -145,10 +148,10 @@ fn param_text(m : Member, rows : Array[String]) -> String {
 ///|
 /// An in-loop enricher: its statements are bindings rather than writes.
 fn print_enrich(
-  m : Member,
+  m : @sh.Member,
   out : StringBuilder,
   rows : Array[String],
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   write_doc(out, m.doc, "")
   out.write_string("enrich " + m.name + " {\n")
   print_binds(m, out, row_renames(m, rows))
@@ -157,7 +160,10 @@ fn print_enrich(
 
 ///|
 /// The scope form, which is handed no row.
-fn print_bind_with(m : Member, out : StringBuilder) -> Unit raise ExError {
+fn print_bind_with(
+  m : @sh.Member,
+  out : StringBuilder,
+) -> Unit raise @sh.ExError {
   write_doc(out, m.doc, "")
   out.write_string("bindWith " + m.name + " {\n")
   print_binds(m, out, {})
@@ -166,7 +172,7 @@ fn print_bind_with(m : Member, out : StringBuilder) -> Unit raise ExError {
 
 ///|
 /// `item, i` are the renderer's row and key, whatever the loop called them.
-fn row_renames(m : Member, rows : Array[String]) -> Map[String, String] {
+fn row_renames(m : @sh.Member, rows : Array[String]) -> Map[String, String] {
   let out = Map([])
   guard rows.contains(m.name) else { return out }
   if m.params.length() > 0 {
@@ -238,11 +244,14 @@ pub fn row_members(decls : Array[@tutufile.Decl]) -> Array[String] {
 
 ///|
 /// A property's accessors, and what they add up to for the spec block.
-fn print_accessors(m : Member, out : StringBuilder) -> PropImpl raise ExError {
+fn print_accessors(
+  m : @sh.Member,
+  out : StringBuilder,
+) -> PropImpl raise @sh.ExError {
   let mut has_get = false
   let mut has_set = false
   for g in m.block() {
-    let acc = read_member(g)
+    let acc = @sh.read_member(g)
     match acc.word {
       "get" => {
         has_get = true
@@ -263,7 +272,7 @@ fn print_accessors(m : Member, out : StringBuilder) -> PropImpl raise ExError {
         out.write_string("}\n\n")
       }
       other =>
-        raise ExError(
+        raise @sh.ExError(
           message="`\{other}` is not a property accessor",
           help="a property has a `get` and, if it is writable, a `set`",
           span=acc.span,
@@ -278,29 +287,29 @@ fn print_accessors(m : Member, out : StringBuilder) -> PropImpl raise ExError {
 /// `compute`, a `pred`. The old notation writes the same thing between the
 /// same braces, so what changes is only that this one is an expression.
 fn print_value_body(
-  m : Member,
+  m : @sh.Member,
   out : StringBuilder,
   renames : Map[String, String],
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   let groups = m.block()
   guard groups.length() == 1 else {
-    raise ExError(
+    raise @sh.ExError(
       message="a `\{m.word}` answers one value",
       help="write one expression — a body with steps in it is a `receive`",
       span=m.span,
     )
   }
-  let ex = rename_ex(read_group(groups[0]), renames)
+  let ex = rename_ex(@sh.read_group(groups[0]), renames)
   out.write_string("  " + print_ex(ex) + "\n")
 }
 
 ///|
 /// Every statement of a member's block.
 fn print_body(
-  m : Member,
+  m : @sh.Member,
   out : StringBuilder,
   renames : Map[String, String],
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   for g in m.block() {
     print_stmt(g, out, "  ", renames)
   }
@@ -309,21 +318,21 @@ fn print_body(
 ///|
 /// An enricher's block: `name = value` becomes `@name = value`.
 fn print_binds(
-  m : Member,
+  m : @sh.Member,
   out : StringBuilder,
   renames : Map[String, String],
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   for g in m.block() {
     guard g.it is Group(parts) else { continue }
     let split = find_op(parts, ["="])
     guard split is Some(at) && parts[0].it is Id(name) else {
-      raise ExError(
+      raise @sh.ExError(
         message="an enricher binds names to values",
         help="write `<name> = <value>`",
-        span=span_of(g),
+        span=@sh.span_of(g),
       )
     }
-    let value = rename_ex(read_ex(parts[at + 1:]), renames)
+    let value = rename_ex(@sh.read_ex(parts[at + 1:]), renames)
     out.write_string("  @\{name} = \{print_ex(value)}\n")
     // A name this body bound is a BINDING from here on: a later line reading
     // it reads the bind, not a free name. The old notation wrote the sigil on
@@ -339,7 +348,7 @@ pub fn print_stmt(
   out : StringBuilder,
   indent : String,
   renames : Map[String, String],
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   guard group.it is Group(parts) && parts.length() > 0 else { return }
   // an `if` statement keeps its two arms
   // An `if` STATEMENT takes one arm or two. Two is the shape a value `if` has,
@@ -348,13 +357,13 @@ pub fn print_stmt(
   // would leave the commonest branch in the block language with no spelling.
   if parts[0].it is Id("if") && parts[parts.length() - 1].it is Alts(arms) {
     guard arms.length() is (1 | 2) else {
-      raise ExError(
+      raise @sh.ExError(
         message="an `if` takes one arm or two, and this has \{arms.length()}",
         help="write `if <cond> | <then>`, or `if <cond> | <then> | <else>`",
-        span=span_of(group),
+        span=@sh.span_of(group),
       )
     }
-    let cond = rename_ex(read_ex(parts[1:parts.length() - 1]), renames)
+    let cond = rename_ex(@sh.read_ex(parts[1:parts.length() - 1]), renames)
     out.write_string("\{indent}if (\{print_ex(cond)}) {\n")
     print_arm(arms[0], out, indent + "  ", renames)
     if arms.length() == 2 {
@@ -370,15 +379,15 @@ pub fn print_stmt(
         Op(o) => o
         _ => ":="
       }
-      let place = rename_ex(read_ex(parts[:at]), renames)
-      let value = rename_ex(read_ex(parts[at + 1:]), renames)
+      let place = rename_ex(@sh.read_ex(parts[:at]), renames)
+      let value = rename_ex(@sh.read_ex(parts[at + 1:]), renames)
       let word = if op == ":=" { "=" } else { op }
       let hoisted = hoist(value, out, indent)
       out.write_string(
         "\{indent}\{print_place(place)} \{word} \{print_ex(hoisted)}\n",
       )
     }
-    None => print_call_stmt(read_ex(parts[:]), out, indent, renames)
+    None => print_call_stmt(@sh.read_ex(parts[:]), out, indent, renames)
   }
 }
 
@@ -388,7 +397,7 @@ fn print_arm(
   out : StringBuilder,
   indent : String,
   renames : Map[String, String],
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   guard node.it is Block(gs) else { return }
   for g in gs {
     print_stmt(g, out, indent, renames)
@@ -398,24 +407,24 @@ fn print_arm(
 ///|
 /// A statement that is a call: a collection operation, or an effect.
 fn print_call_stmt(
-  ex : Ex,
+  ex : @sh.Ex,
   out : StringBuilder,
   indent : String,
   renames : Map[String, String],
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   let ex = rename_ex(ex, renames)
-  guard ex is ECall(callee, args) else {
-    raise ExError(
+  guard ex is @sh.ECall(callee, args) else {
+    raise @sh.ExError(
       message="a statement is a write, a collection operation or an effect",
       help="a bare value does nothing — write `it.x := <value>` to keep it",
       span=@report.Span::at(0),
     )
   }
   match callee {
-    EName(verb) => print_effect(verb, args, out, indent)
-    EMember(recv, op) => {
+    @sh.EName(verb) => print_effect(verb, args, out, indent)
+    @sh.EMember(recv, op) => {
       guard collection_op(op) is Some(word) else {
-        raise ExError(
+        raise @sh.ExError(
           message="`\{op}` is not a collection operation",
           help="the operations are `push`, `insert_at`, `set_at`, `delete_at`, `clear`, `add`, `remove` and `toggle`",
           span=@report.Span::at(0),
@@ -430,7 +439,7 @@ fn print_call_stmt(
       out.write_string("\{indent}\{print_place(recv)}.\{word}\{tail}\n")
     }
     _ =>
-      raise ExError(
+      raise @sh.ExError(
         message="only a name or a place can be called as a statement",
         help="write `send(…)`, `ask(…)`, or `it.<field>.<operation>(…)`",
         span=@report.Span::at(0),
@@ -461,10 +470,10 @@ pub fn collection_op(name : String) -> String? {
 /// The effect verbs, with the route and the target that decorated them.
 fn print_effect(
   verb : String,
-  args : Array[Arg],
+  args : Array[@sh.Arg],
   out : StringBuilder,
   indent : String,
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   let pos = positional(args)
   let printed = []
   for a in pos {
@@ -498,7 +507,7 @@ fn print_effect(
       )
     "forward" | "drop" => out.write_string("\{indent}\{verb}\n")
     other =>
-      raise ExError(
+      raise @sh.ExError(
         message="`\{other}` is not an effect",
         help="the effects are `send`, `ask`, `notify`, `reply`, `fail`, `forward` and `drop`",
         span=@report.Span::at(0),
@@ -508,16 +517,16 @@ fn print_effect(
 
 ///|
 /// `~route: dyn` or `~route: [lex, dyn]` — legs in the order written.
-fn route_words(ex : Ex) -> String raise ExError {
+fn route_words(ex : @sh.Ex) -> String raise @sh.ExError {
   match ex {
-    EName(leg) => leg
-    EList(legs) => {
+    @sh.EName(leg) => leg
+    @sh.EList(legs) => {
       let out = []
       for l in legs {
         match l {
-          EName(n) => out.push(n)
+          @sh.EName(n) => out.push(n)
           _ =>
-            raise ExError(
+            raise @sh.ExError(
               message="a route is a list of legs",
               help="the legs are `dyn` and `lex`",
               span=@report.Span::at(0),
@@ -527,7 +536,7 @@ fn route_words(ex : Ex) -> String raise ExError {
       out.join(" ")
     }
     _ =>
-      raise ExError(
+      raise @sh.ExError(
         message="a route is a leg or a list of legs",
         help="write `~route: dyn`, `~route: lex`, or `~route: [lex, dyn]`",
         span=@report.Span::at(0),
@@ -536,9 +545,9 @@ fn route_words(ex : Ex) -> String raise ExError {
 }
 
 ///|
-pub fn kw_arg(args : Array[Arg], name : String) -> Ex? {
+pub fn kw_arg(args : Array[@sh.Arg], name : String) -> @sh.Ex? {
   for a in args {
-    if a is AKw(n, v) && n == name {
+    if a is @sh.AKw(n, v) && n == name {
       return Some(v)
     }
   }
@@ -547,12 +556,12 @@ pub fn kw_arg(args : Array[Arg], name : String) -> Ex? {
 
 ///|
 /// A PLACE, which is what a write and a receiver address.
-fn print_place(ex : Ex) -> String raise ExError {
+fn print_place(ex : @sh.Ex) -> String raise @sh.ExError {
   match ex {
-    EIt(f) => "." + f
-    EState(f) => "state." + f
-    EIndex(base, k) => print_place(base) + "[" + print_ex(k) + "]"
-    EMember(EIt(f), m) => "." + f + "." + m
+    @sh.EIt(f) => "." + f
+    @sh.EState(f) => "state." + f
+    @sh.EIndex(base, k) => print_place(base) + "[" + print_ex(k) + "]"
+    @sh.EMember(@sh.EIt(f), m) => "." + f + "." + m
     _ => print_ex(ex)
   }
 }
@@ -564,15 +573,19 @@ fn print_place(ex : Ex) -> String raise ExError {
 /// The value language has no aggregate literal there — a value is built by
 /// mutating a target — so a constructor call becomes the target and the writes
 /// that fill it, and what is left in the expression is the target itself.
-fn hoist(ex : Ex, out : StringBuilder, indent : String) -> Ex raise ExError {
-  guard ex is ECall(EName(name), args) else { return ex }
-  guard is_upper(name) else { return ex }
+fn hoist(
+  ex : @sh.Ex,
+  out : StringBuilder,
+  indent : String,
+) -> @sh.Ex raise @sh.ExError {
+  guard ex is @sh.ECall(@sh.EName(name), args) else { return ex }
+  guard @sh.is_upper(name) else { return ex }
   out.write_string("\{indent}new \{name}\n")
   for a in args {
     match a {
-      AField(field, value) => {
-        guard !(value is ECall(EName(_), _)) else {
-          raise ExError(
+      @sh.AField(field, value) => {
+        guard !(value is @sh.ECall(@sh.EName(_), _)) else {
+          raise @sh.ExError(
             message="a constructor inside a constructor cannot be built here",
             help="build the inner one first and write it into a field, then build the outer",
             span=@report.Span::at(0),
@@ -580,34 +593,27 @@ fn hoist(ex : Ex, out : StringBuilder, indent : String) -> Ex raise ExError {
         }
         out.write_string("\{indent}cur.\{field} = \{print_ex(value)}\n")
       }
-      AKw(k, _) =>
-        raise ExError(
+      @sh.AKw(k, _) =>
+        raise @sh.ExError(
           message="`~\{k}` is not a field of `\{name}`",
           help="write `\{name}(field: <value>, …)`",
           span=@report.Span::at(0),
         )
-      APos(_) =>
-        raise ExError(
+      @sh.APos(_) =>
+        raise @sh.ExError(
           message="`\{name}` is built by naming its fields",
           help="write `\{name}(field: <value>, …)`",
           span=@report.Span::at(0),
         )
-      AFlag(f) =>
-        raise ExError(
+      @sh.AFlag(f) =>
+        raise @sh.ExError(
           message="`~\{f}` is not a field of `\{name}`",
           help="write `\{name}(field: <value>, …)`",
           span=@report.Span::at(0),
         )
     }
   }
-  EName("cur")
-}
-
-///|
-fn is_upper(name : String) -> Bool {
-  guard name.length() > 0 else { return false }
-  let c = name.get_char(0)
-  c is Some(ch) && ch >= 'A' && ch <= 'Z'
+  @sh.EName("cur")
 }
 
 ///|
@@ -626,62 +632,72 @@ fn find_op(parts : Array[@ast.Node], ops : Array[String]) -> Int? {
 ///|
 /// Rewrite the names a body was written with into the ones the renderer
 /// hands it.
-pub fn rename_ex(ex : Ex, renames : Map[String, String]) -> Ex {
+pub fn rename_ex(ex : @sh.Ex, renames : Map[String, String]) -> @sh.Ex {
   if renames.is_empty() {
     return ex
   }
   match ex {
-    EName(n) =>
+    @sh.EName(n) =>
       match renames.get(n) {
-        Some(to) => if to.has_prefix("@") { EName(to) } else { EName(to) }
+        Some(to) =>
+          if to.has_prefix("@") {
+            @sh.EName(to)
+          } else {
+            @sh.EName(to)
+          }
         None => ex
       }
-    EMember(base, m) =>
+    @sh.EMember(base, m) =>
       match base {
-        EName(n) =>
+        @sh.EName(n) =>
           match renames.get(n) {
-            Some(to) => EMember(EName(to), m)
-            None => EMember(rename_ex(base, renames), m)
+            Some(to) => @sh.EMember(@sh.EName(to), m)
+            None => @sh.EMember(rename_ex(base, renames), m)
           }
-        _ => EMember(rename_ex(base, renames), m)
+        _ => @sh.EMember(rename_ex(base, renames), m)
       }
-    EIndex(a, b) => EIndex(rename_ex(a, renames), rename_ex(b, renames))
-    ECall(c, args) => {
+    @sh.EIndex(a, b) => @sh.EIndex(rename_ex(a, renames), rename_ex(b, renames))
+    @sh.ECall(c, args) => {
       let out = []
       for a in args {
         out.push(
           match a {
-            APos(e) => APos(rename_ex(e, renames))
-            AKw(k, e) => AKw(k, rename_ex(e, renames))
-            AField(k, e) => AField(k, rename_ex(e, renames))
-            AFlag(_) => a
+            @sh.APos(e) => @sh.APos(rename_ex(e, renames))
+            @sh.AKw(k, e) => @sh.AKw(k, rename_ex(e, renames))
+            @sh.AField(k, e) => @sh.AField(k, rename_ex(e, renames))
+            @sh.AFlag(_) => a
           },
         )
       }
-      ECall(rename_ex(c, renames), out)
+      @sh.ECall(rename_ex(c, renames), out)
     }
-    EBin(op, a, b) => EBin(op, rename_ex(a, renames), rename_ex(b, renames))
-    EUn(op, a) => EUn(op, rename_ex(a, renames))
-    EIf(c, a, b) =>
-      EIf(rename_ex(c, renames), rename_ex(a, renames), rename_ex(b, renames))
-    ETemplate(parts) => {
+    @sh.EBin(op, a, b) =>
+      @sh.EBin(op, rename_ex(a, renames), rename_ex(b, renames))
+    @sh.EUn(op, a) => @sh.EUn(op, rename_ex(a, renames))
+    @sh.EIf(c, a, b) =>
+      @sh.EIf(
+        rename_ex(c, renames),
+        rename_ex(a, renames),
+        rename_ex(b, renames),
+      )
+    @sh.ETemplate(parts) => {
       let out = []
       for p in parts {
         out.push(
           match p {
-            TText(t) => TText(t)
-            THole(e) => THole(rename_ex(e, renames))
+            @sh.TText(t) => @sh.TText(t)
+            @sh.THole(e) => @sh.THole(rename_ex(e, renames))
           },
         )
       }
-      ETemplate(out)
+      @sh.ETemplate(out)
     }
-    EList(xs) => {
+    @sh.EList(xs) => {
       let out = []
       for x in xs {
         out.push(rename_ex(x, renames))
       }
-      EList(out)
+      @sh.EList(out)
     }
     _ => ex
   }

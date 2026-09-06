@@ -10,7 +10,7 @@ pub fn print_view(
   decl : @tutufile.Decl,
   out : StringBuilder,
   macros? : Array[String] = [],
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   // `Note.edit` is one component and one of its views; the old notation
   // spells the same pair `Note:edit`.
   let id = decl.name.replace(old=".", new=":")
@@ -26,15 +26,15 @@ pub fn print_view(
 /// nothing on it — is something a loop or an enricher put in scope. The old
 /// notation spells that `@name`, so the sigil goes back on at the last moment
 /// rather than being carried through the reader.
-fn bound(ex : Ex, renames : Map[String, String]) -> Ex {
+fn bound(ex : @sh.Ex, renames : Map[String, String]) -> @sh.Ex {
   let ex = rename_ex(ex, renames)
   bind_names(ex)
 }
 
 ///|
-fn bind_names(ex : Ex) -> Ex {
+fn bind_names(ex : @sh.Ex) -> @sh.Ex {
   match ex {
-    EName(n) =>
+    @sh.EName(n) =>
       // A name that already carries a sigil has been placed by a binder that
       // knows better: `^param` is substituted at a macro's call site and
       // `@value` is what a loop put in scope.
@@ -45,29 +45,29 @@ fn bind_names(ex : Ex) -> Ex {
         n == "null" {
         ex
       } else {
-        EName("@" + n)
+        @sh.EName("@" + n)
       }
-    EMember(EName(n), m) =>
+    @sh.EMember(@sh.EName(n), m) =>
       if n.has_prefix("@") || n.has_prefix("^") || n == "e" {
         ex
       } else {
-        EMember(EName("@" + n), m)
+        @sh.EMember(@sh.EName("@" + n), m)
       }
-    EBin(op, a, b) => EBin(op, bind_names(a), bind_names(b))
-    EUn(op, a) => EUn(op, bind_names(a))
-    EIf(c, a, b) => EIf(bind_names(c), bind_names(a), bind_names(b))
-    EIndex(a, b) => EIndex(bind_names(a), bind_names(b))
-    ETemplate(parts) => {
+    @sh.EBin(op, a, b) => @sh.EBin(op, bind_names(a), bind_names(b))
+    @sh.EUn(op, a) => @sh.EUn(op, bind_names(a))
+    @sh.EIf(c, a, b) => @sh.EIf(bind_names(c), bind_names(a), bind_names(b))
+    @sh.EIndex(a, b) => @sh.EIndex(bind_names(a), bind_names(b))
+    @sh.ETemplate(parts) => {
       let out = []
       for p in parts {
         out.push(
           match p {
-            TText(t) => TText(t)
-            THole(h) => THole(bind_names(h))
+            @sh.TText(t) => @sh.TText(t)
+            @sh.THole(h) => @sh.THole(bind_names(h))
           },
         )
       }
-      ETemplate(out)
+      @sh.ETemplate(out)
     }
     _ => ex
   }
@@ -89,7 +89,7 @@ fn print_items(
   out : StringBuilder,
   renames : Map[String, String],
   macros? : Array[String] = [],
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   let run = StringBuilder()
   let flush = fn() -> Unit {
     let text = run.to_string()
@@ -125,7 +125,7 @@ fn print_items(
 fn inline_body(
   items : Array[@ast.Node],
   renames : Map[String, String],
-) -> String? raise ExError {
+) -> String? raise @sh.ExError {
   let out = StringBuilder()
   let run = StringBuilder()
   fn flush() -> Unit {
@@ -147,7 +147,7 @@ fn inline_body(
           return None
         }
         flush()
-        let ex = bound(read_group(gs[0]), renames)
+        let ex = bound(@sh.read_group(gs[0]), renames)
         out.write_string("<x text=\"\{attr_escape(print_ex(ex))}\"></x>")
       }
     }
@@ -220,7 +220,7 @@ fn print_content(
   out : StringBuilder,
   renames : Map[String, String],
   macros? : Array[String] = [],
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   guard group.it is Group(parts) && parts.length() > 0 else { return }
   // A LINE of an at-notation body is one group, and it may hold several items:
   // `@(it.label):@span{n}` is a hole, a piece of text and an element with
@@ -239,7 +239,7 @@ fn print_content(
       // `@(expr)` — a value with no element around it
       Parens(gs) => {
         guard gs.length() == 1 else { return }
-        let ex = bound(read_group(gs[0]), renames)
+        let ex = bound(@sh.read_group(gs[0]), renames)
         out.write_string("<x text=\"\{attr_escape(print_ex(ex))}\"></x>")
         i = i + 1
       }
@@ -260,10 +260,10 @@ fn print_content(
         i = i + take
       }
       _ =>
-        raise ExError(
+        raise @sh.ExError(
           message="this is not markup",
           help="a view holds elements, text and `@(…)` holes",
-          span=span_of(group),
+          span=@sh.span_of(group),
         )
     }
   }
@@ -278,7 +278,7 @@ fn print_element(
   out : StringBuilder,
   renames : Map[String, String],
   macros? : Array[String] = [],
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   if macros.contains(word) {
     return print_macro_call(word, parts, out, renames)
   }
@@ -310,16 +310,16 @@ fn print_macro_call(
   out : StringBuilder,
   renames : Map[String, String],
   macros? : Array[String] = [],
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   let (raw, body) = split_call(parts)
   let attrs = []
   for a in args_of(raw) {
     match a {
       // a literal argument passes as a static attribute, the way the old
       // notation's `label="Sale"` did; anything else is bound
-      AKw(arg, EStr(text)) =>
+      @sh.AKw(arg, @sh.EStr(text)) =>
         attrs.push("\{attr_name(arg)}=\"\{attr_escape(text)}\"")
-      AKw(arg, value) =>
+      @sh.AKw(arg, value) =>
         attrs.push(
           ":\{attr_name(arg)}=\"\{attr_escape(print_ex(bound(value, renames)))}\"",
         )
@@ -344,12 +344,12 @@ fn print_macro_call(
 /// A plain element.
 fn print_tag(
   tag : String,
-  args : Array[Arg],
+  args : Array[@sh.Arg],
   body : Array[@ast.Node],
   out : StringBuilder,
   renames : Map[String, String],
   macros? : Array[String] = [],
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   let attrs = []
   // An event's MODIFIERS are the options written after its handler, flattened
   // into siblings by `read_args`. They belong to the `~on_*` before them, so
@@ -360,7 +360,7 @@ fn print_tag(
     let a = args[i]
     i = i + 1
     match a {
-      AKw(name, value) =>
+      @sh.AKw(name, value) =>
         if name.has_prefix("on_") {
           let mods = []
           while i < args.length() && is_modifier(args[i]) {
@@ -373,15 +373,15 @@ fn print_tag(
             attrs.push(one)
           }
         }
-      AFlag(name) => attrs.push(attr_name(name))
-      AField(name, _) =>
-        raise ExError(
+      @sh.AFlag(name) => attrs.push(attr_name(name))
+      @sh.AField(name, _) =>
+        raise @sh.ExError(
           message="`\{name}:` is not an attribute",
           help="write `~\{name}: <value>` — an attribute is an option of the element",
           span=@report.Span::at(0),
         )
-      APos(_) =>
-        raise ExError(
+      @sh.APos(_) =>
+        raise @sh.ExError(
           message="an element takes named attributes only",
           help="write `~class: \"x\"` rather than a bare value",
           span=@report.Span::at(0),
@@ -409,10 +409,10 @@ fn print_tag(
 /// `~key:` names the key a keydown is about; every bare flag is a behaviour
 /// (`~prevent`, `~stop`, `~once`). Anything with a value that is not `~key` is
 /// the next attribute, not a modifier.
-fn is_modifier(a : Arg) -> Bool {
+fn is_modifier(a : @sh.Arg) -> Bool {
   match a {
-    AFlag(_) => true
-    AKw("key", _) => true
+    @sh.AFlag(_) => true
+    @sh.AKw("key", _) => true
     _ => false
   }
 }
@@ -422,10 +422,10 @@ fn is_modifier(a : Arg) -> Bool {
 /// notation spread over several options.
 fn print_event(
   name : String,
-  value : Ex,
-  mods : Array[Arg],
+  value : @sh.Ex,
+  mods : Array[@sh.Arg],
   renames : Map[String, String],
-) -> String raise ExError {
+) -> String raise @sh.ExError {
   let event = StringBuilder()
   // An underscore is a hyphen here as it is in every other attribute name:
   // `~on_emoji_click:` is the DOM's `emoji-click`.
@@ -433,14 +433,14 @@ fn print_event(
   let flags = []
   for m in mods {
     match m {
-      AKw("key", EStr(k)) => event.write_string("." + k.to_lower())
-      AKw("key", _) =>
-        raise ExError(
+      @sh.AKw("key", @sh.EStr(k)) => event.write_string("." + k.to_lower())
+      @sh.AKw("key", _) =>
+        raise @sh.ExError(
           message="`~key` names a key",
           help="write `~key: \"Enter\"`",
           span=@report.Span::at(0),
         )
-      AFlag(f) => flags.push(f)
+      @sh.AFlag(f) => flags.push(f)
       _ => ()
     }
   }
@@ -454,15 +454,15 @@ fn print_event(
 /// One attribute: a literal stays static, everything else is bound.
 fn print_attr(
   name : String,
-  value : Ex,
+  value : @sh.Ex,
   renames : Map[String, String],
-) -> Array[String] raise ExError {
+) -> Array[String] raise @sh.ExError {
   // `~onclick:` is a raw HTML event attribute, which a handler never is: the
   // value would reach the DOM as script text and be stripped two layers later
   // by a sanitizer, with a message about sanitising rather than about
   // spelling.
   if name.has_prefix("on") && !name.has_prefix("on_") {
-    raise ExError(
+    raise @sh.ExError(
       message="`~\{name}` is not how a view names an event",
       help="write `~on_\{name[2:].to_owned()}:` — a handler is dispatched, and a raw `\{name}` attribute is script text a sanitizer removes",
       span=@report.Span::at(0),
@@ -472,7 +472,7 @@ fn print_attr(
     let event = name[3:].to_owned()
     return ["@on.\{event}=\"\{attr_escape(print_action(value, renames))}\""]
   }
-  let bound_as = fn(directive : String) -> Array[String] raise ExError {
+  let bound_as = fn(directive : String) -> Array[String] raise @sh.ExError {
     ["\{directive}=\"\{attr_escape(print_ex(rename_ex(value, renames)))}\""]
   }
   match name {
@@ -491,12 +491,12 @@ fn print_attr(
   }
   let attr = attr_name(name)
   match value {
-    EStr(s) => ["\{attr}=\"\{attr_escape(s)}\""]
+    @sh.EStr(s) => ["\{attr}=\"\{attr_escape(s)}\""]
     // A conditional VALUE has no spelling in the old notation — a bound
     // attribute cannot carry an `if`, which is what `@if.<attr>` with its
     // `@then` and `@else` is for. Every one names its attribute, because HTML
     // drops a second `@then=` before anything sees it.
-    EIf(cond, then_, else_) =>
+    @sh.EIf(cond, then_, else_) =>
       [
         "@if.\{attr}=\"\{attr_escape(print_ex(bound(cond, renames)))}\"",
         "@then.\{attr}=\"\{attr_escape(print_ex(bound(then_, renames)))}\"",
@@ -508,46 +508,46 @@ fn print_attr(
 
 ///|
 /// An event's value: a handler call, or a property action.
-fn action_arg(a : Ex) -> String raise ExError {
+fn action_arg(a : @sh.Ex) -> String raise @sh.ExError {
   // A handler's arguments are separated by SPACES, so a parenthesis has no
   // meaning there and the parser refuses one. The value language wraps a
   // negative number so it cannot be read as a subtraction; an argument list
   // with no infix operators in it has no subtraction to be confused with.
   match a {
-    ENum(n) => num_text(n)
+    @sh.ENum(n) => num_text(n)
     other => print_ex(other)
   }
 }
 
 ///|
 fn print_action(
-  value : Ex,
+  value : @sh.Ex,
   renames : Map[String, String],
-) -> String raise ExError {
+) -> String raise @sh.ExError {
   let value = rename_ex(value, renames)
   match value {
-    EName(handler) => handler
-    ECall(EName(handler), args) => {
+    @sh.EName(handler) => handler
+    @sh.ECall(@sh.EName(handler), args) => {
       let parts = [handler]
       for a in positional(args) {
         parts.push(action_arg(a))
       }
       parts.join(" ")
     }
-    EBin(":=", place, v) => print_place(place) + " = " + print_ex(v)
-    EBin(op, place, v) =>
+    @sh.EBin(":=", place, v) => print_place(place) + " = " + print_ex(v)
+    @sh.EBin(op, place, v) =>
       if op is ("+=" | "-=" | "*=" | "/=") {
         print_place(place) + " " + op + " " + print_ex(v)
       } else {
-        raise ExError(
+        raise @sh.ExError(
           message="an event names a handler or writes a property",
           help="write `~on_click: inc`, or `~on_input: it.query := e.value`",
           span=@report.Span::at(0),
         )
       }
-    ECall(EMember(recv, op), args) => {
+    @sh.ECall(@sh.EMember(recv, op), args) => {
       guard collection_op(op) is Some(word) else {
-        raise ExError(
+        raise @sh.ExError(
           message="`\{op}` is not a property action",
           help="the actions are `push`, `insert_at`, `set_at`, `delete_at`, `clear`, `add`, `remove` and `toggle`",
           span=@report.Span::at(0),
@@ -560,7 +560,7 @@ fn print_action(
       parts.join(" ")
     }
     _ =>
-      raise ExError(
+      raise @sh.ExError(
         message="an event names a handler or writes a property",
         help="write `~on_click: inc`, or `~on_input: it.query := e.value`",
         span=@report.Span::at(0),
@@ -572,22 +572,22 @@ fn print_action(
 /// `@show(c){…}` / `@hide(c){…}`, which annotate the element they wrap.
 fn print_guard(
   word : String,
-  args : Array[Arg],
+  args : Array[@sh.Arg],
   body : Array[@ast.Node],
   out : StringBuilder,
   renames : Map[String, String],
   macros? : Array[String] = [],
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   let pos = positional(args)
   guard pos.length() == 1 else {
-    raise ExError(
+    raise @sh.ExError(
       message="`@\{word}` takes one condition",
       help="write `@\{word}(<condition>){ … }`",
       span=@report.Span::at(0),
     )
   }
   guard body.length() == 1 else {
-    raise ExError(
+    raise @sh.ExError(
       message="`@\{word}` wraps one element here",
       help="the old notation puts the condition ON an element, so give this one element to wrap",
       span=@report.Span::at(0),
@@ -612,7 +612,7 @@ fn print_each(
   out : StringBuilder,
   renames : Map[String, String],
   macros? : Array[String] = [],
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   let (names, seq, after) = split_binder(raw)
   let args = args_of(raw[after:].to_owned())
   let inner : Map[String, String] = Map([])
@@ -627,9 +627,9 @@ fn print_each(
   }
   let extra = ["@each=\"\{attr_escape(print_ex(rename_ex(seq, renames)))}\""]
   match kw_arg(args, "when") {
-    Some(EName(f)) => extra.push("@when=\"\{f}\"")
+    Some(@sh.EName(f)) => extra.push("@when=\"\{f}\"")
     Some(_) =>
-      raise ExError(
+      raise @sh.ExError(
         message="`~when` names a filter",
         help="declare it with `pred <name>(item, i)` in the logic section",
         span=@report.Span::at(0),
@@ -637,17 +637,17 @@ fn print_each(
     None => ()
   }
   match kw_arg(args, "enrich_with") {
-    Some(EName(f)) => extra.push("@enrich-with=\"\{f}\"")
+    Some(@sh.EName(f)) => extra.push("@enrich-with=\"\{f}\"")
     Some(_) => ()
     None => ()
   }
   match kw_arg(args, "loop_with") {
-    Some(EName(f)) => extra.push("@loop-with=\"\{f}\"")
+    Some(@sh.EName(f)) => extra.push("@loop-with=\"\{f}\"")
     Some(_) => ()
     None => ()
   }
   guard body.length() == 1 else {
-    raise ExError(
+    raise @sh.ExError(
       message="`@each` repeats one element here",
       help="the old notation puts the loop ON an element, so give this one element to repeat",
       span=@report.Span::at(0),
@@ -661,7 +661,7 @@ fn print_each(
   if renders_the_binder(body[0], names) {
     let mut tail = ""
     match kw_arg(args, "as") {
-      Some(EStr(v)) => tail = " as=\"\{v}\""
+      Some(@sh.EStr(v)) => tail = " as=\"\{v}\""
       Some(other) => tail = " as=\"\{attr_escape(print_ex(other))}\""
       None => ()
     }
@@ -685,7 +685,7 @@ fn print_each(
 /// them, which is what makes a member read on one checkable.
 pub fn split_binder(
   raw : Array[@ast.Node],
-) -> (Array[String], Ex, Int) raise ExError {
+) -> (Array[String], @sh.Ex, Int) raise @sh.ExError {
   let names = []
   let mut g = 0
   while g < raw.length() {
@@ -708,14 +708,18 @@ pub fn split_binder(
     }
     if saw_in {
       guard names.length() > 0 && i < parts.length() else { break }
-      return (names, read_ex(parts[i:]), g + 1)
+      return (names, @sh.read_ex(parts[i:]), g + 1)
     }
     g = g + 1
   }
-  raise ExError(
+  raise @sh.ExError(
     message="`@each` needs `<name> in <sequence>`",
     help="write `@each(item in it.items){ … }`, or `@each(item, i in it.items)`",
-    span=if raw.length() > 0 { span_of(raw[0]) } else { @report.Span::at(0) },
+    span=if raw.length() > 0 {
+      @sh.span_of(raw[0])
+    } else {
+      @report.Span::at(0)
+    },
   )
 }
 
@@ -724,7 +728,7 @@ pub fn split_binder(
 fn renders_the_binder(
   group : @ast.Node,
   names : Array[String],
-) -> Bool raise ExError {
+) -> Bool raise @sh.ExError {
   guard names.length() > 0 else { return false }
   guard group.it is Group(parts) &&
     parts.length() > 0 &&
@@ -735,21 +739,21 @@ fn renders_the_binder(
   guard body.is_empty() else { return false }
   let pos = positional(args_of(raw))
   guard pos.length() == 1 else { return false }
-  pos[0] is EName(n) && n == names[0]
+  pos[0] is @sh.EName(n) && n == names[0]
 }
 
 ///|
 /// `@render(value, ~as: view)`.
 fn print_render(
-  args : Array[Arg],
+  args : Array[@sh.Arg],
   out : StringBuilder,
   renames : Map[String, String],
   extra? : String = "",
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   let extra = if extra == "" { "" } else { " " + extra }
   let pos = positional(args)
   guard pos.length() == 1 else {
-    raise ExError(
+    raise @sh.ExError(
       message="`@render` takes one value",
       help="write `@render(it.item)`",
       span=@report.Span::at(0),
@@ -762,7 +766,7 @@ fn print_render(
   if value == "@value" {
     let mut only = ""
     match kw_arg(args, "as") {
-      Some(EStr(v)) => only = " as=\"\{v}\""
+      Some(@sh.EStr(v)) => only = " as=\"\{v}\""
       Some(other) => only = " as=\"\{attr_escape(print_ex(other))}\""
       None => ()
     }
@@ -771,7 +775,7 @@ fn print_render(
   }
   let mut tail = ""
   match kw_arg(args, "as") {
-    Some(EStr(v)) => tail = " as=\"\{v}\""
+    Some(@sh.EStr(v)) => tail = " as=\"\{v}\""
     Some(other) => tail = " as=\"\{attr_escape(print_ex(other))}\""
     None => ()
   }
@@ -795,13 +799,13 @@ fn print_comment(body : Array[@ast.Node], out : StringBuilder) -> Unit {
 ///|
 /// `@style{…}` / `@style(~global){…}`.
 fn print_style(
-  args : Array[Arg],
+  args : Array[@sh.Arg],
   body : Array[@ast.Node],
   out : StringBuilder,
 ) -> Unit {
   let mut mark = ""
   for a in args {
-    if a is AFlag("global") {
+    if a is @sh.AFlag("global") {
       mark = " data-global"
     }
   }
@@ -824,7 +828,7 @@ fn print_with_extra(
   renames : Map[String, String],
   extra : String,
   macros? : Array[String] = [],
-) -> Unit raise ExError {
+) -> Unit raise @sh.ExError {
   // A hole is content rather than an element, and a form may govern one:
   // `@show(c){@(it.n)}` is a conditional text node. The old notation writes
   // that as `<x text="…" @show="…">`, which is the same escape hatch it uses
@@ -833,15 +837,15 @@ fn print_with_extra(
     hole.length() == 1 &&
     hole[0].it is Parens(gs) &&
     gs.length() == 1 {
-    let ex = bound(read_group(gs[0]), renames)
+    let ex = bound(@sh.read_group(gs[0]), renames)
     out.write_string("<x text=\"\{attr_escape(print_ex(ex))}\" \{extra}></x>")
     return
   }
   guard group.it is Group(parts) && parts.length() > 0 && parts[0].it is Id(tag) else {
-    raise ExError(
+    raise @sh.ExError(
       message="this form wraps an element or a hole",
       help="give it one element or one `@(…)` to annotate",
-      span=span_of(group),
+      span=@sh.span_of(group),
     )
   }
   let (raw, body) = split_call(parts)
@@ -857,11 +861,11 @@ fn print_with_extra(
   let attrs = [extra]
   for a in args {
     match a {
-      AKw(name, value) =>
+      @sh.AKw(name, value) =>
         for one in print_attr(name, value, renames) {
           attrs.push(one)
         }
-      AFlag(name) => attrs.push(attr_name(name))
+      @sh.AFlag(name) => attrs.push(attr_name(name))
       _ => ()
     }
   }
@@ -891,7 +895,7 @@ fn print_with_extra(
 /// `@each(item in it.items)` binds `item`, and a binder is not a value.
 pub fn split_call(
   parts : Array[@ast.Node],
-) -> (Array[@ast.Node], Array[@ast.Node]) raise ExError {
+) -> (Array[@ast.Node], Array[@ast.Node]) raise @sh.ExError {
   let args = []
   let body = []
   let mut i = 1
@@ -913,16 +917,16 @@ pub fn split_call(
       // nothing to attach to, and dropping it writes a view with no styling
       // and says nothing.
       Kw(name) =>
-        raise ExError(
+        raise @sh.ExError(
           message="`~\{name}` is outside the element it belongs to",
           help="an attribute goes in the parentheses: `@tag(~\{name}: <value>){ … }`",
-          span=span_of(parts[i]),
+          span=@sh.span_of(parts[i]),
         )
       Block(_) =>
-        raise ExError(
+        raise @sh.ExError(
           message="a block cannot follow an element",
           help="an element's content goes in braces: `@tag{ … }`",
-          span=span_of(parts[i]),
+          span=@sh.span_of(parts[i]),
         )
       _ => ()
     }
@@ -933,8 +937,8 @@ pub fn split_call(
 
 ///|
 /// The argument groups, read as values.
-fn args_of(groups : Array[@ast.Node]) -> Array[Arg] raise ExError {
-  read_args(groups)
+fn args_of(groups : Array[@ast.Node]) -> Array[@sh.Arg] raise @sh.ExError {
+  @sh.read_args(groups)
 }
 
 ///|

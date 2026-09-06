@@ -1,0 +1,18 @@
+// Reading a `.tutu` file's shrubbery into the shapes the section readers work
+// over: an expression (`Ex`), a member (`Member`), and the doc comment above
+// one.
+//
+// The READER half of what used to be `tutufile/lower`, split out when the
+// lowering printer went: every section reader needs these, and a reader that
+// had to import a printer to get at them would keep the printer alive.
+import {
+  "marianoguerra/shrubbery/ast",
+  "marianoguerra/shrubbery/raw",
+  "marianoguerra/shrubbery/sexp",
+  "marianoguerra/error-report" @report,
+  "moonbitlang/core/string",
+}
+
+import {
+  "moonbitlang/core/debug",
+} for "test"

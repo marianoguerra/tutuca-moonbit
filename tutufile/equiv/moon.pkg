@@ -37,6 +37,7 @@
 import {
   "marianoguerra/tutuca/tutufile",
   "marianoguerra/tutuca/tutufile/lower",
+  "marianoguerra/tutuca/tutufile/shrub" @sh,
   "marianoguerra/tutuca/tutufile/toanode",
   "marianoguerra/tutuca/tutufile/names",
   "marianoguerra/tutuca/viewfile",

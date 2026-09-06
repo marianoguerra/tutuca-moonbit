@@ -108,7 +108,7 @@ pub fn macros_of(
   let out : Map[String, MacroDef] = Map([])
   for decl in decls {
     guard decl.kind is Macro else { continue }
-    let m = @lower.read_member(decl.node)
+    let m = @sh.read_member(decl.node)
     let params = []
     for p in m.params {
       params.push(p.name)
@@ -120,7 +120,7 @@ pub fn macros_of(
     for t in parts {
       if t.it is Parens(gs) {
         for g in gs {
-          for a in @lower.read_args([g]) {
+          for a in @sh.read_args([g]) {
             if a is AKw(name, value) {
               defaults[name] = value
             }
@@ -264,7 +264,7 @@ fn ViewBuilder::content(
   // nothing between them, so nothing separated them into groups. Reading only
   // the first would drop the rest silently.
   let out = []
-  let span = @lower.span_of(group)
+  let span = @sh.span_of(group)
   let mut i = 0
   while i < parts.length() {
     match parts[i].it {
@@ -276,7 +276,7 @@ fn ViewBuilder::content(
       // `@(expr)` — a value with no element around it
       Parens(gs) => {
         guard gs.length() == 1 else { return out }
-        let ex = @lower.read_group(gs[0])
+        let ex = @sh.read_group(gs[0])
         out.push(@anode.dyn_text(to_expr(ex, ctx, span), id=self.alloc()))
         i = i + 1
       }
@@ -301,7 +301,7 @@ fn ViewBuilder::content(
         i = i + take
       }
       _ =>
-        raise @lower.ExError(
+        raise ExError(
           message="this is not markup",
           help="a view holds elements, text and `@(…)` holes",
           span~,
@@ -334,7 +334,7 @@ fn ViewBuilder::element(
     // A style block is not a node. It is the view's style, collected by the
     // caller, and reaching one here means it was written inside an element.
     "style" =>
-      raise @lower.ExError(
+      raise ExError(
         message="a style block is not part of an element",
         help="write `@style{ … }` at the top of the view, or at the top of `view:` for the whole component",
         span~,
@@ -373,7 +373,7 @@ fn ViewBuilder::tag(
   let mut eid_at = 0
   // An event's MODIFIERS are the options written after its handler, which
   // `read_args` flattens into siblings. They belong to the `~on_*` before them.
-  let args = @lower.read_args(raw)
+  let args = @sh.read_args(raw)
   let mut at = 0
   while at < args.length() {
     let a = args[at]
@@ -399,13 +399,13 @@ fn ViewBuilder::tag(
       // string an `=""` spelling would give.
       AFlag(name) => attrs.push(@anode.attr_bool(@lower.attr_name(name), true))
       AField(name, _) =>
-        raise @lower.ExError(
+        raise ExError(
           message="`\{name}:` is not an attribute",
           help="write `~\{name}: <value>` — an attribute is an option of the element",
           span~,
         )
       APos(_) =>
-        raise @lower.ExError(
+        raise ExError(
           message="an element takes named attributes only",
           help="write `~class: \"x\"` rather than a bare value",
           span~,
@@ -522,7 +522,7 @@ fn ViewBuilder::attribute(
   // value would reach the DOM as script text and be stripped two layers later
   // by a sanitizer, with a message about sanitising rather than about spelling.
   if name.has_prefix("on") && !name.has_prefix("on_") {
-    raise @lower.ExError(
+    raise ExError(
       message="`~\{name}` is not how a view names an event",
       help="write `~on_\{name[2:].to_owned()}:` — a handler is dispatched, and a raw `\{name}` attribute is script text a sanitizer removes",
       span~,
@@ -638,14 +638,14 @@ fn ViewBuilder::event(
       )
     ECall(EMember(recv, op), args) => {
       guard @lower.collection_op(op) is Some(word) else {
-        raise @lower.ExError(
+        raise ExError(
           message="`\{op}` is not a property action",
           help="the actions are `push`, `insert_at`, `set_at`, `delete_at`, `add`, `remove` and `toggle`",
           span~,
         )
       }
       guard recv is EIt(field) else {
-        raise @lower.ExError(
+        raise ExError(
           message="a property action writes one of this component's own properties",
           help="write `it.<name>.\{op}(…)`",
           span~,
@@ -663,7 +663,7 @@ fn ViewBuilder::event(
       )
     }
     _ =>
-      raise @lower.ExError(
+      raise ExError(
         message="an event names a handler or writes a property",
         help="write `~on_click: inc`, or `~on_input: it.query := e.value`",
         span~,
@@ -684,7 +684,7 @@ fn ViewBuilder::property_write(
 ) -> @tscript.PropertyAction raise ExError {
   ignore(self)
   guard place is EIt(field) else {
-    raise @lower.ExError(
+    raise ExError(
       message="an event writes one of this component's own properties",
       help="write `it.<name> := <value>`",
       span~,
@@ -740,9 +740,9 @@ fn ViewBuilder::guard_(
   ctx : ExCtx,
   span : @report.Span,
 ) -> @anode.ANode raise ExError {
-  let pos = positional_args(@lower.read_args(raw))
+  let pos = positional_args(@sh.read_args(raw))
   guard pos.length() == 1 else {
-    raise @lower.ExError(
+    raise ExError(
       message="`@\{word}` takes one condition",
       help="write `@\{word}(<condition>){ … }`",
       span~,
@@ -767,7 +767,7 @@ fn ViewBuilder::each(
   span : @report.Span,
 ) -> @anode.ANode raise ExError {
   let (names, seq, after) = @lower.split_binder(raw)
-  let args = @lower.read_args(raw[after:].to_owned())
+  let args = @sh.read_args(raw[after:].to_owned())
   // The renderer answers a loop with `value` and `key`; the file's own binder
   // names are what this maps onto them.
   let mut inner = ctx
@@ -782,7 +782,7 @@ fn ViewBuilder::each(
     match @lower.kw_arg(args, opt) {
       Some(EName(f)) => Some(@tutuca.Expr::name(f))
       Some(_) =>
-        raise @lower.ExError(
+        raise ExError(
           message="`~\{opt}` names a handler",
           help="declare it in the logic section and name it here",
           span~,
@@ -833,7 +833,7 @@ fn ViewBuilder::wrapped_body(
   }
   let childs = merge_text(childs)
   guard childs.length() > 0 else {
-    raise @lower.ExError(
+    raise ExError(
       message="`@\{word}` has nothing to wrap",
       help="give it the content it governs: `@\{word}(…){ … }`",
       span~,
@@ -854,10 +854,10 @@ fn ViewBuilder::render(
   ctx : ExCtx,
   span : @report.Span,
 ) -> @anode.ANode raise ExError {
-  let args = @lower.read_args(raw)
+  let args = @sh.read_args(raw)
   let pos = positional_args(args)
   guard pos.length() == 1 else {
-    raise @lower.ExError(
+    raise ExError(
       message="`@render` takes one value",
       help="write `@render(it.item)`",
       span~,
@@ -901,7 +901,7 @@ fn ViewBuilder::expand_macro(
   span : @report.Span,
 ) -> Array[@anode.ANode] raise ExError {
   guard !self.expanding.contains(name) else {
-    raise @lower.ExError(
+    raise ExError(
       message="macro `\{name}` reaches itself",
       help="a macro cannot expand into its own body, directly or through another",
       span~,
@@ -913,7 +913,7 @@ fn ViewBuilder::expand_macro(
   for k, v in def.defaults {
     bound[k] = v
   }
-  for a in @lower.read_args(raw) {
+  for a in @sh.read_args(raw) {
     match a {
       AKw(arg, value) => bound[arg] = value
       AFlag(arg) => bound[arg] = EBool(true)
@@ -922,7 +922,7 @@ fn ViewBuilder::expand_macro(
   }
   for p in def.params {
     guard bound.get(p) is Some(_) else {
-      raise @lower.ExError(
+      raise ExError(
         message="macro `\{name}` was not given `\{p}`",
         help="pass it at the call site — `@\{name}(~\{p}: <value>)` — or give the parameter a default",
         span~,

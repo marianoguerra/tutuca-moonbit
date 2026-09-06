@@ -6,20 +6,21 @@
 
 ///|
 /// Print a type annotation as the state parser spells it.
-pub fn print_ty(ex : Ex) -> String raise ExError {
+pub fn print_ty(ex : @sh.Ex) -> String raise @sh.ExError {
   match ex {
-    EName(n) => n
-    ECall(EMember(EName("List"), "of"), args) =>
+    @sh.EName(n) => n
+    @sh.ECall(@sh.EMember(@sh.EName("List"), "of"), args) =>
       "Array[" + print_ty_arg(args, "List.of") + "]"
-    ECall(EMember(EName("Set"), "of"), args) =>
+    @sh.ECall(@sh.EMember(@sh.EName("Set"), "of"), args) =>
       "Set[" + print_ty_arg(args, "Set.of") + "]"
-    ECall(EMember(EName("Instance"), "of"), args) =>
+    @sh.ECall(@sh.EMember(@sh.EName("Instance"), "of"), args) =>
       "Instance[" + print_instance_arg(args) + "]"
-    ECall(EMember(EName("Map"), "of"), args) => print_map_ty(args)
-    ECall(EMember(EName("Tuple"), "of"), args) => print_tuple_ty(args)
-    ECall(EName("maybe"), args) => print_ty_arg(args, "maybe") + "?"
+    @sh.ECall(@sh.EMember(@sh.EName("Map"), "of"), args) => print_map_ty(args)
+    @sh.ECall(@sh.EMember(@sh.EName("Tuple"), "of"), args) =>
+      print_tuple_ty(args)
+    @sh.ECall(@sh.EName("maybe"), args) => print_ty_arg(args, "maybe") + "?"
     _ =>
-      raise ExError(
+      raise @sh.ExError(
         message="this is not a type",
         help="a type is a name, or one of `List.of`, `Map.of`, `Set.of`, `Tuple.of`, `Instance.of`, `maybe`",
         span=@report.Span::at(0),
@@ -28,10 +29,13 @@ pub fn print_ty(ex : Ex) -> String raise ExError {
 }
 
 ///|
-fn print_ty_arg(args : Array[Arg], what : String) -> String raise ExError {
+fn print_ty_arg(
+  args : Array[@sh.Arg],
+  what : String,
+) -> String raise @sh.ExError {
   let pos = positional(args)
   guard pos.length() == 1 else {
-    raise ExError(
+    raise @sh.ExError(
       message="`\{what}` takes one type",
       help="write `\{what}(T)`",
       span=@report.Span::at(0),
@@ -41,10 +45,10 @@ fn print_ty_arg(args : Array[Arg], what : String) -> String raise ExError {
 }
 
 ///|
-fn print_map_ty(args : Array[Arg]) -> String raise ExError {
+fn print_map_ty(args : Array[@sh.Arg]) -> String raise @sh.ExError {
   let pos = positional(args)
   guard pos.length() == 2 else {
-    raise ExError(
+    raise @sh.ExError(
       message="`Map.of` takes a key type and a value type",
       help="write `Map.of(String, V)` — a map's key is a string",
       span=@report.Span::at(0),
@@ -54,7 +58,7 @@ fn print_map_ty(args : Array[Arg]) -> String raise ExError {
 }
 
 ///|
-fn print_tuple_ty(args : Array[Arg]) -> String raise ExError {
+fn print_tuple_ty(args : Array[@sh.Arg]) -> String raise @sh.ExError {
   let pos = positional(args)
   let parts = []
   for p in pos {
@@ -65,28 +69,28 @@ fn print_tuple_ty(args : Array[Arg]) -> String raise ExError {
 
 ///|
 /// `Instance.of(Name)`, or `Instance.of(P && Q)` for a protocol set.
-fn print_instance_arg(args : Array[Arg]) -> String raise ExError {
+fn print_instance_arg(args : Array[@sh.Arg]) -> String raise @sh.ExError {
   let pos = positional(args)
   guard pos.length() == 1 else {
-    raise ExError(
+    raise @sh.ExError(
       message="`Instance.of` takes one component or protocol set",
       help="write `Instance.of(Legend)` or `Instance.of(P && Q)`",
       span=@report.Span::at(0),
     )
   }
   match pos[0] {
-    EBin("&&", _, _) => "protocol " + protocol_set(pos[0])
+    @sh.EBin("&&", _, _) => "protocol " + protocol_set(pos[0])
     other => print_ty(other)
   }
 }
 
 ///|
-fn protocol_set(ex : Ex) -> String raise ExError {
+fn protocol_set(ex : @sh.Ex) -> String raise @sh.ExError {
   match ex {
-    EBin("&&", a, b) => protocol_set(a) + " & " + protocol_set(b)
-    EName(n) => n
+    @sh.EBin("&&", a, b) => protocol_set(a) + " & " + protocol_set(b)
+    @sh.EName(n) => n
     _ =>
-      raise ExError(
+      raise @sh.ExError(
         message="a protocol set is names joined with `&&`",
         help="write `Instance.of(P && Q)`",
         span=@report.Span::at(0),

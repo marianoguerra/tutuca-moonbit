@@ -8,8 +8,8 @@ fn ex(src : String) -> String {
   guard parsed.root().it is Multi(gs) && gs.length() == 1 else {
     return "<not one group>"
   }
-  print_ex(read_group(gs[0])) catch {
-    ExError(message~, ..) => "<error: " + message + ">"
+  print_ex(@sh.read_group(gs[0])) catch {
+    @sh.ExError(message~, ..) => "<error: " + message + ">"
   }
 }
 

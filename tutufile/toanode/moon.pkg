@@ -28,6 +28,7 @@
 import {
   "marianoguerra/tutuca/tutufile",
   "marianoguerra/tutuca/tutufile/lower",
+  "marianoguerra/tutuca/tutufile/shrub" @sh,
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/tscript",

@@ -1,0 +1,96 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tutufile/shrub"
+
+import {
+  "marianoguerra/error-report",
+  "marianoguerra/shrubbery/ast",
+}
+
+// Values
+pub fn doc_of(@ast.Node) -> String?
+
+pub fn is_upper(String) -> Bool
+
+pub fn member_doc(@ast.Node, @ast.Node?) -> String?
+
+pub fn member_name(Array[@ast.Node], Int) -> (String, Int)?
+
+pub fn node_text(@ast.Node) -> String
+
+pub fn qualified(Array[@ast.Node], Int) -> (String, Int)?
+
+pub fn read_args(Array[@ast.Node]) -> Array[Arg] raise ExError
+
+pub fn read_ex(ArrayView[@ast.Node]) -> Ex raise ExError
+
+pub fn read_group(@ast.Node) -> Ex raise ExError
+
+pub fn read_member(@ast.Node, prev? : @ast.Node?) -> Member raise ExError
+
+pub fn read_param(@ast.Node) -> Param raise ExError
+
+pub fn span_of(@ast.Node) -> @error-report.Span
+
+// Errors
+pub(all) suberror ExError {
+  ExError(message~ : String, help~ : String, span~ : @error-report.Span)
+}
+
+// Types and methods
+pub(all) enum Arg {
+  APos(Ex)
+  AKw(String, Ex)
+  AField(String, Ex)
+  AFlag(String)
+}
+
+pub(all) enum Ex {
+  ENum(Double)
+  EStr(String)
+  EBool(Bool)
+  ENone
+  EName(String)
+  EIt(String)
+  EState(String)
+  EDyn(String)
+  EMember(Ex, String)
+  EIndex(Ex, Ex)
+  ECall(Ex, Array[Arg])
+  EBin(String, Ex, Ex)
+  EUn(String, Ex)
+  EIf(Ex, Ex, Ex)
+  ETemplate(Array[TPart])
+  EList(Array[Ex])
+  EMap(Array[(String, Ex)])
+}
+
+pub(all) struct Member {
+  word : String
+  name : String
+  params : Array[Param]
+  ty : Ex?
+  init : Ex?
+  options : Array[(String, Ex?)]
+  body : @ast.Node?
+  stmts : Array[@ast.Node]
+  rest : Array[@ast.Node]
+  span : @error-report.Span
+  doc : String?
+}
+pub fn Member::block(Self) -> Array[@ast.Node]
+pub fn Member::has_option(Self, String) -> Bool
+pub fn Member::option(Self, String) -> Ex?
+
+pub(all) struct Param {
+  name : String
+  ty : Ex?
+}
+
+pub(all) enum TPart {
+  TText(String)
+  THole(Ex)
+}
+
+// Type aliases
+
+// Traits

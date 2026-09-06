@@ -7,36 +7,36 @@
 
 ///|
 /// A value expression as JSON.
-pub fn json_of(ex : Ex) -> Json raise ExError {
+pub fn json_of(ex : @sh.Ex) -> Json raise @sh.ExError {
   match ex {
-    ENum(n) => Json::number(n)
-    EStr(s) => Json::string(s)
-    EBool(b) => Json::boolean(b)
-    ENone => Json::null()
-    EName("true") => Json::boolean(true)
-    EName("false") => Json::boolean(false)
-    EList(xs) => {
+    @sh.ENum(n) => Json::number(n)
+    @sh.EStr(s) => Json::string(s)
+    @sh.EBool(b) => Json::boolean(b)
+    @sh.ENone => Json::null()
+    @sh.EName("true") => Json::boolean(true)
+    @sh.EName("false") => Json::boolean(false)
+    @sh.EList(xs) => {
       let out = []
       for x in xs {
         out.push(json_of(x))
       }
       Json::array(out)
     }
-    EMap(entries) => {
+    @sh.EMap(entries) => {
       let out = Map([])
       for e in entries {
         out[e.0] = json_of(e.1)
       }
       Json::object(out)
     }
-    ECall(EName(name), args) => {
+    @sh.ECall(@sh.EName(name), args) => {
       // `ok [...]`, `failed "…"` and `pass` are an intent's three answers
       let pos = positional(args)
       match (name, pos.length()) {
         ("ok", 1) => Json::object({ "ok": json_of(pos[0]) })
         ("failed", 1) => Json::object({ "failed": json_of(pos[0]) })
         _ =>
-          raise ExError(
+          raise @sh.ExError(
             message="`\{name}` is not a value",
             help="a value is a number, a string, `true`, `false`, a list or a map",
             span=@report.Span::at(0),
@@ -44,7 +44,7 @@ pub fn json_of(ex : Ex) -> Json raise ExError {
       }
     }
     _ =>
-      raise ExError(
+      raise @sh.ExError(
         message="this is not a value a fixture or a scene can carry",
         help="a value is a number, a string, `true`, `false`, a list or a map",
         span=@report.Span::at(0),
@@ -54,7 +54,9 @@ pub fn json_of(ex : Ex) -> Json raise ExError {
 
 ///|
 /// The `fixtures:` section as its JSON object.
-pub fn print_fixtures(decls : Array[@tutufile.Decl]) -> String raise ExError {
+pub fn print_fixtures(
+  decls : Array[@tutufile.Decl],
+) -> String raise @sh.ExError {
   let out = Map([])
   for d in decls {
     out[d.name] = fixture_json(d)
@@ -63,7 +65,7 @@ pub fn print_fixtures(decls : Array[@tutufile.Decl]) -> String raise ExError {
 }
 
 ///|
-fn fixture_json(decl : @tutufile.Decl) -> Json raise ExError {
+fn fixture_json(decl : @tutufile.Decl) -> Json raise @sh.ExError {
   let env = Map([])
   let value = Map([])
   if decl.options.contains("default") {
@@ -83,7 +85,7 @@ fn fixture_json(decl : @tutufile.Decl) -> Json raise ExError {
           "intents" => env["intents"] = intents_json(bgs)
           _ => {
             guard bgs.length() == 1 else { continue }
-            env[name] = json_of(read_group(bgs[0]))
+            env[name] = json_of(@sh.read_group(bgs[0]))
           }
         }
       }
@@ -93,7 +95,7 @@ fn fixture_json(decl : @tutufile.Decl) -> Json raise ExError {
           continue
         }
         guard parts[2].it is Id(field) else { continue }
-        value[field] = json_of(read_ex(parts[at + 1:]))
+        value[field] = json_of(@sh.read_ex(parts[at + 1:]))
       }
       _ => ()
     }
@@ -104,7 +106,7 @@ fn fixture_json(decl : @tutufile.Decl) -> Json raise ExError {
 
 ///|
 /// The `tests:` section as its JSON object.
-pub fn print_scenes(decls : Array[@tutufile.Decl]) -> String raise ExError {
+pub fn print_scenes(decls : Array[@tutufile.Decl]) -> String raise @sh.ExError {
   let out = Map([])
   for d in decls {
     out[d.name] = scene_json(d)
@@ -113,7 +115,7 @@ pub fn print_scenes(decls : Array[@tutufile.Decl]) -> String raise ExError {
 }
 
 ///|
-fn scene_json(decl : @tutufile.Decl) -> Json raise ExError {
+fn scene_json(decl : @tutufile.Decl) -> Json raise @sh.ExError {
   let env = Map([])
   let steps = []
   for group in body_groups(decl) {
@@ -134,7 +136,7 @@ fn scene_json(decl : @tutufile.Decl) -> Json raise ExError {
           }
           _ => {
             guard bgs.length() == 1 else { continue }
-            env[name] = json_of(read_group(bgs[0]))
+            env[name] = json_of(@sh.read_group(bgs[0]))
           }
         }
       }
@@ -149,14 +151,19 @@ fn scene_json(decl : @tutufile.Decl) -> Json raise ExError {
 /// A bare name written as a value, for the options that name a thing.
 fn group_name(group : @ast.Node) -> String {
   match group.it {
-    Group(parts) => if parts.length() > 0 { node_text(parts[0]) } else { "" }
-    _ => node_text(group)
+    Group(parts) =>
+      if parts.length() > 0 {
+        @sh.node_text(parts[0])
+      } else {
+        ""
+      }
+    _ => @sh.node_text(group)
   }
 }
 
 ///|
 /// The steps of a `~drive` or a scene.
-fn steps_json(groups : Array[@ast.Node]) -> Json raise ExError {
+fn steps_json(groups : Array[@ast.Node]) -> Json raise @sh.ExError {
   let out = []
   for g in groups {
     out.push(step_json(g))
@@ -166,35 +173,35 @@ fn steps_json(groups : Array[@ast.Node]) -> Json raise ExError {
 
 ///|
 /// One step: a driving verb, or a reading `expect`.
-fn step_json(group : @ast.Node) -> Json raise ExError {
+fn step_json(group : @ast.Node) -> Json raise @sh.ExError {
   guard group.it is Group(parts) && parts.length() > 0 else {
-    raise ExError(
+    raise @sh.ExError(
       message="a step is a verb",
       help="write `click(\"button\")`, or `expect text(\"o\") == \"3\"`",
-      span=span_of(group),
+      span=@sh.span_of(group),
     )
   }
   guard parts[0].it is Id(verb) else {
-    raise ExError(
+    raise @sh.ExError(
       message="a step is a verb",
       help="write `click(\"button\")`, or `expect text(\"o\") == \"3\"`",
-      span=span_of(parts[0]),
+      span=@sh.span_of(parts[0]),
     )
   }
   if verb == "expect" {
     return expect_json(parts, group)
   }
   guard parts.length() >= 2 && parts[1].it is Parens(gs) else {
-    raise ExError(
+    raise @sh.ExError(
       message="`\{verb}` is called with what it acts on",
       help="write `\{verb}(\"<selector>\")`",
-      span=span_of(parts[0]),
+      span=@sh.span_of(parts[0]),
     )
   }
-  let args = read_args(gs)
+  let args = @sh.read_args(gs)
   let pos = positional(args)
   let obj = Map([])
-  let arg = fn(i : Int) -> Json raise ExError { json_of(pos[i]) }
+  let arg = fn(i : Int) -> Json raise @sh.ExError { json_of(pos[i]) }
   match verb {
     "click" => obj["click"] = arg(0)
     "type" => {
@@ -232,10 +239,10 @@ fn step_json(group : @ast.Node) -> Json raise ExError {
       }
     }
     other =>
-      raise ExError(
+      raise @sh.ExError(
         message="`\{other}` is not a step",
         help="the verbs are `click`, `type`, `key`, `check`, `fire`, `drag` and `send`",
-        span=span_of(parts[0]),
+        span=@sh.span_of(parts[0]),
       )
   }
   match kw_arg(args, "nth") {
@@ -250,19 +257,19 @@ fn step_json(group : @ast.Node) -> Json raise ExError {
 fn expect_json(
   parts : Array[@ast.Node],
   group : @ast.Node,
-) -> Json raise ExError {
+) -> Json raise @sh.ExError {
   guard parts.length() >= 2 && parts[1].it is Id(reader) else {
-    raise ExError(
+    raise @sh.ExError(
       message="`expect` names what to read",
       help="write `expect text(\"o\") == \"3\"`",
-      span=span_of(group),
+      span=@sh.span_of(group),
     )
   }
   let obj = Map([("expect", Json::string(reader))])
   let mut i = 2
   // a reader with a subject: `text("o")`, `attr("a", "href")`
   if i < parts.length() && parts[i].it is Parens(gs) {
-    let pos = positional(read_args(gs))
+    let pos = positional(@sh.read_args(gs))
     if pos.length() > 0 {
       obj["at"] = json_of(pos[0])
     }
@@ -294,13 +301,14 @@ fn expect_json(
   // the comparison, if there is one; without it the step records instead
   if i < stop {
     match parts[i].it {
-      Op("==") => obj["is"] = json_of(read_ex(parts[i + 1:stop]))
-      Id("contains") => obj["contains"] = json_of(read_ex(parts[i + 1:stop]))
+      Op("==") => obj["is"] = json_of(@sh.read_ex(parts[i + 1:stop]))
+      Id("contains") =>
+        obj["contains"] = json_of(@sh.read_ex(parts[i + 1:stop]))
       _ =>
-        raise ExError(
+        raise @sh.ExError(
           message="an expectation compares with `==` or `contains`",
           help="leave the comparison out to record what it reads instead",
-          span=span_of(parts[i]),
+          span=@sh.span_of(parts[i]),
         )
     }
   }
@@ -336,7 +344,7 @@ fn place_text(terms : ArrayView[@ast.Node]) -> String {
       Brackets(gs) => {
         out.write_string("[")
         for g in gs {
-          out.write_string(node_text(g))
+          out.write_string(@sh.node_text(g))
         }
         out.write_string("]")
       }
@@ -361,7 +369,7 @@ fn kw_arg_of(parts : Array[@ast.Node]) -> (String, Json)? {
       i + 1 < parts.length() &&
       parts[i + 1].it is Block(bgs) &&
       bgs.length() == 1 {
-      let v = json_of(read_group(bgs[0])) catch { _ => return None }
+      let v = json_of(@sh.read_group(bgs[0])) catch { _ => return None }
       return Some((name, v))
     }
     i = i + 1
@@ -371,7 +379,7 @@ fn kw_arg_of(parts : Array[@ast.Node]) -> (String, Json)? {
 
 ///|
 /// `~intents:` — the three answers, keyed by the name they answer.
-fn intents_json(groups : Array[@ast.Node]) -> Json raise ExError {
+fn intents_json(groups : Array[@ast.Node]) -> Json raise @sh.ExError {
   let out = Map([])
   for g in groups {
     guard g.it is Group(parts) && parts.length() >= 1 && parts[0].it is Id(name) else {
@@ -382,9 +390,9 @@ fn intents_json(groups : Array[@ast.Node]) -> Json raise ExError {
       continue
     }
     guard parts[1].it is Block(bgs) && bgs.length() == 1 else { continue }
-    let answer = read_group(bgs[0])
+    let answer = @sh.read_group(bgs[0])
     out[name] = match answer {
-      EName("pass") => Json::string("pass")
+      @sh.EName("pass") => Json::string("pass")
       other => json_of(other)
     }
   }
