@@ -10,6 +10,8 @@ import {
 }
 
 // Values
+pub fn checked_mutator(String) -> String raise NoSpelling
+
 pub fn convert(String, name~ : String) -> Converted
 
 pub fn escape_text(String) -> String

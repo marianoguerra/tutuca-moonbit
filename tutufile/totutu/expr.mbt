@@ -37,9 +37,22 @@ pub fn print_expr(e : @tutuca.Expr) -> String raise NoSpelling {
         UNot => "!" + print_atom(operand)
         UNeg => "-" + print_atom(operand)
       }
+    // The arms are parenthesised because alternatives do not nest by writing
+    // more of them: `if a | b | if c | d | e` is FOUR arms at one level, and an
+    // `if` takes two.
     EIf(cond~, then_~, else_~, ..) =>
-      "if \{print_expr(cond)} | \{print_expr(then_)} | \{print_expr(else_)}"
+      "if \{print_expr(cond)} | \{print_arm_expr(then_)} | \{print_arm_expr(else_)}"
     ETpl(parts~, ..) => print_tpl(parts)
+  }
+}
+
+///|
+/// One arm of a conditional. A nested conditional is parenthesised so its own
+/// alternatives stay its own.
+fn print_arm_expr(e : @tutuca.Expr) -> String raise NoSpelling {
+  match e {
+    EIf(..) => "(" + print_expr(e) + ")"
+    _ => print_expr(e)
   }
 }
 

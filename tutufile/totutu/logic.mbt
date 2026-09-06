@@ -129,7 +129,10 @@ fn print_decl(d : @tscript.Decl, out : StringBuilder) -> Unit raise NoSpelling {
     DEnrich => print_body_decl(d, "enrich \{name}\{params}", out, binds=true)
     DBindWith => print_body_decl(d, "bind_with \{name}", out, binds=true)
     DReceive => print_body_decl(d, "receive \{name}\{params}", out)
-    DAnswer => print_body_decl(d, "intent \{name}\{params}", out)
+    // A routed name is answered with `answer`, which is the word the logic
+    // section takes: `intent` DECLARES one in `spec:`, and answering it is a
+    // different thing in a different section.
+    DAnswer => print_body_decl(d, "answer \{name}\{params}", out)
   }
 }
 
@@ -284,7 +287,7 @@ fn print_consumer(
         parts.push(one(a))
       }
       out.write_string(
-        "\{indent}\{print_stmt_place(place)}.\{@names.mutator_of(call)}(\{parts.join(", ")})\n",
+        "\{indent}\{print_stmt_place(place)}.\{checked_mutator(call)}(\{parts.join(", ")})\n",
       )
     }
     SAssign(place~, op~, value~, ..) => {
@@ -340,7 +343,7 @@ fn print_stmt(
         parts.push(print_expr(a))
       }
       out.write_string(
-        "\{indent}\{print_stmt_place(place)}.\{@names.mutator_of(call)}(\{parts.join(", ")})\n",
+        "\{indent}\{print_stmt_place(place)}.\{checked_mutator(call)}(\{parts.join(", ")})\n",
       )
     }
     SEffect(name~, args~, route~, ..) =>
@@ -467,4 +470,25 @@ fn print_effect_text(
 /// spelling, in the package that owns the type.
 fn leg_word(leg : @tutuca.Leg) -> String {
   leg.word()
+}
+
+///|
+/// A collection mutator the new notation has a method for.
+///
+/// The old block language had aliases only one backend implemented — `clear`,
+/// `delete`, `set`, `removeAt` — and the new notation keeps the ones that are
+/// methods. `removeAt` is `delete_at`; the other three are not methods at all,
+/// so a call to one is refused rather than printed as a method that does not
+/// exist.
+pub fn checked_mutator(name : String) -> String raise NoSpelling {
+  let m = @names.mutator_of(name)
+  guard ["push", "insert_at", "set_at", "delete_at", "add", "remove", "toggle"].contains(
+    m,
+  ) else {
+    raise NoSpelling(
+      what="`\{name}`, which is not a collection method",
+      help="the methods are `push`, `insert_at`, `set_at`, `delete_at`, `add`, `remove` and `toggle` — `clear`, `delete` and `set` parsed in the old notation and only one backend implemented them",
+    )
+  }
+  m
 }

@@ -8,7 +8,9 @@ fn print_handler(h : @anode.NodeEvent) -> String raise NoSpelling {
     None => print_call(h.handler)
   }
   let opts = StringBuilder()
-  opts.write_string("~on_\{@names.snake_of(h.name)}: \{body}")
+  // An event name reaches an option through the same rule an attribute does:
+  // an underscore is a hyphen. `@on.emoji-click` is `~on_emoji_click:`.
+  opts.write_string("~on_\{option_event(h.name)}: \{body}")
   // The modifiers the old notation spelled in the name (`@on.keydown.enter+prevent`)
   // are options here. A key name is `~key:`; everything else is a bare flag.
   for m in h.modifiers {
@@ -22,6 +24,21 @@ fn print_handler(h : @anode.NodeEvent) -> String raise NoSpelling {
 }
 
 ///|
+/// An event name as an option name: a hyphen is an underscore, and the rest is
+/// the name the DOM knows it by.
+fn option_event(name : String) -> String {
+  let out = StringBuilder()
+  for c in @names.snake_of(name) {
+    if c == '-' {
+      out.write_char('_')
+    } else {
+      out.write_char(c)
+    }
+  }
+  out.to_string()
+}
+
+///|
 /// A write to one of this component's own properties.
 fn print_action(action : @tscript.PropertyAction) -> String raise NoSpelling {
   match action {
@@ -31,7 +48,7 @@ fn print_action(action : @tscript.PropertyAction) -> String raise NoSpelling {
       for a in args {
         parts.push(print_expr(a))
       }
-      "it.\{@names.snake_of(name)}.\{@names.mutator_of(operation)}(\{parts.join(", ")})"
+      "it.\{@names.snake_of(name)}.\{checked_mutator(operation)}(\{parts.join(", ")})"
     }
     // `+=` and `-=` reach the tree as a `PropertySet` of the field plus the
     // operand, which is what `parse_property_action` built them into. Reading

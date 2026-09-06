@@ -392,7 +392,9 @@ fn print_event(
   renames : Map[String, String],
 ) -> String raise ExError {
   let event = StringBuilder()
-  event.write_string(name[3:].to_owned())
+  // An underscore is a hyphen here as it is in every other attribute name:
+  // `~on_emoji_click:` is the DOM's `emoji-click`.
+  event.write_string(attr_name(name[3:].to_owned()))
   let flags = []
   for m in mods {
     match m {
