@@ -36,12 +36,13 @@ fn print_node(
     // The one exception is the comment `ANode::parse` synthesises for a view
     // with no content. That is a parser artifact rather than something the
     // author wrote, and it is what an empty `<template>` comes back as.
+    // A comment NODE reaches the DOM and has a form of its own; `//` in
+    // shrubbery is a comment in the FILE and would drop it. The one exception
+    // is the comment `ANode::parse` synthesises for a view with no content,
+    // which is a parser artifact rather than something the author wrote.
     Comment(d) =>
       if d.val.trim(chars=" \n\t\r") != "" && !is_parse_artifact(d.val) {
-        raise NoSpelling(
-          what="a comment node in a view (`\{collapse(d.val)}`)",
-          help="at-notation has no spelling for a comment that reaches the DOM — delete it, or convert this view by hand",
-        )
+        out.write_string("\{indent}@comment{\{escape_text(collapse(d.val))}}\n")
       }
     RenderText(d) => out.write_string("\{indent}@(\{print_expr(d.val)})\n")
     Dom(d) => print_element(d, events, indent, out)

@@ -257,6 +257,9 @@ fn print_element(
     "each" => print_each(raw, body, out, indent, renames, macros~)
     "render" => print_render(args_of(raw), out, indent, renames)
     "slot" => out.write_string("\{indent}<slot></slot>\n")
+    // A comment NODE, which reaches the DOM. `//` is a comment in the FILE and
+    // a different thing entirely, so a comment that renders has a form.
+    "comment" => print_comment(body, out, indent)
     "style" => print_style(args_of(raw), body, out, indent)
     _ => print_tag(word, args_of(raw), body, out, indent, renames, macros~)
   }
@@ -687,6 +690,24 @@ fn print_render(
     None => ()
   }
   out.write_string("\{indent}<x render=\"\{attr_escape(value)}\"\{tail}></x>\n")
+}
+
+///|
+/// `@comment{ … }` — a comment node, which is content rather than a note about
+/// the file.
+fn print_comment(
+  body : Array[@ast.Node],
+  out : StringBuilder,
+  indent : String,
+) -> Unit raise ExError {
+  let text = StringBuilder()
+  for g in body {
+    guard g.it is Group(parts) && parts.length() == 1 else { continue }
+    if parts[0].it is Lit(Str(t)) {
+      text.write_string(t)
+    }
+  }
+  out.write_string("\{indent}<!--\{text}-->\n")
 }
 
 ///|

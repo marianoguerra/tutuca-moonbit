@@ -311,6 +311,8 @@ fn ViewBuilder::element(
     "each" => [self.each(raw, body, ctx, span)]
     "render" => [self.render(raw, ctx, span)]
     "slot" => [@anode.slot("", @anode.frag([]))]
+    // A comment NODE, which reaches the DOM. `//` is a comment in the FILE.
+    "comment" => [@anode.comment(body_text(body))]
     // A style block is not a node. It is the view's style, collected by the
     // caller, and reaching one here means it was written inside an element.
     "style" =>
@@ -321,6 +323,19 @@ fn ViewBuilder::element(
       )
     _ => [self.tag(word, raw, body, ctx, span)]
   }
+}
+
+///|
+/// The text of a body written as literal pieces, joined.
+fn body_text(body : Array[@ast.Node]) -> String {
+  let out = StringBuilder()
+  for g in body {
+    guard g.it is Group(parts) && parts.length() == 1 else { continue }
+    if parts[0].it is Lit(Str(t)) {
+      out.write_string(t)
+    }
+  }
+  out.to_string()
 }
 
 ///|
