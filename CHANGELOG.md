@@ -4,6 +4,62 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### The card playground is written in `.tutu`, and six more holes
+
+`tutucard/web/examples.js` held 26 starter cards in the old notation, and
+`regions.js` — the structured editor's whole model — found `<script
+type="tutuca/spec">` and `<template id=…>` BY REGEX and spliced
+`<template id="…">` into the buffer to add a view. Converting the cards
+without it would have broken the editor silently, which is why they moved
+together. A `.tutu` makes the model simpler than the notation it replaced: a
+section is a word at column 0 with an indented body, so the regions are found
+by INDENTATION — no open/close pair to get out of step, and no id attribute to
+splice into the middle of.
+
+Converting them found six more, all in the converter or the lowering:
+
+- **Two handlers for one event, inside a wrapper, became one.**
+  `print_with_extra` had its own attribute loop without the event/modifier
+  folding `print_tag` does, so `@show(c){@input(~on_keydown: commit ~send,
+  ~on_keydown: cancel ~cancel)}` lowered to ONE keydown with no modifier — the
+  todo card committed its edit on Escape. One function prints an element's
+  options now.
+- **A handler's parameter was printed as a binding.** `print_member` put a
+  sigil on any bare name, so `receive pick(f) { .name = f.name }` came back
+  reading `@f`. The sigil belongs to the VIEW, where a bare name IS a binding.
+- **A `logic:` `pred` dropped its `~format:`**, so a rule that declined had
+  nothing to say.
+- **`invariant` was refused in `logic:`.** It means something specific there —
+  checked after every dispatch, and not projected into `spec_source` — so a
+  file has to be able to say it in either section.
+- **A `key` step dropped its value**, driving the key with an empty box.
+- **A bracketed key was rendered by `node_text`**, whose fallback is the
+  NODE'S TAG — so `it.labels[1]` reached the parser as `.labels[group]` and it
+  answered about a field the file does not have.
+- **A guard inside a guard was dropped.** `@show(a){@hide(b){…}}` is two
+  attributes on one element, and the wrapped path read the inner condition as
+  an attribute — then dropped it, because its `_ => ()` arm swallowed
+  everything it did not know. The inspector shipped `@anode.h("hide", …)` in
+  its checked-in tree: a `<hide>` ELEMENT, which renders its children
+  unconditionally. It says which element it could not read now.
+
+And a scene's `~intents:` has a spelling: `ok("rows", […])`, `failed("save",
+"boom")`, `pass("picked")`. The fixture half was being dropped in silence.
+
+### The card gate reported a pass on zero scenes
+
+`run-tests.mjs` selected cards by `type="tutuca/test"`. Pointed at `tests:` it
+found 31 cards where it used to find 24 — and every one came back with an
+empty scene table, because the driver still split the RAW source and a `.tutu`
+has no `<script>` for the splitter to find. It printed `0/0 scenes pass` and
+exited 0.
+
+The driver lowers a `.tutu` first, the same seam `@tgc.compile` reaches. And a
+card that declares `tests:` and drives no scenes is now a FAILURE: 76/76
+scenes across 31 cards, where the gate used to see 44 across 24.
+
 ## [0.54.0] - 2026-09-07
 
 ### The skill is written in `.tutu`, and five holes the writing found

@@ -426,6 +426,36 @@ fn print_tag(
   parent? : String = "",
 ) -> Unit raise @sh.ExError {
   ignore(parent)
+  let attrs = attr_texts(args, renames, tag~)
+  let tag = tag_name(tag)
+  let head = if attrs.is_empty() { tag } else { tag + " " + attrs.join(" ") }
+  if body.is_empty() {
+    out.write_string("<\{head}>\{close_tag(tag)}")
+    return
+  }
+  if inline_body(body, renames, parent=tag) is Some(text) {
+    out.write_string("<\{head}>\{text}</\{tag}>")
+    return
+  }
+  out.write_string("<\{head}>")
+  print_items(body, out, renames, macros~, parent=tag)
+  out.write_string("</\{tag}>")
+}
+
+///|
+/// An element's options, as the attributes the old notation writes.
+///
+/// One function, because a wrapped element goes through `print_with_extra`
+/// and an unwrapped one through `print_tag`: the second had the event/modifier
+/// folding and the first did not, so `@show(c){@input(~on_keydown: commit
+/// ~send, ~on_keydown: cancel ~cancel)}` came out as ONE keydown with no
+/// modifier — the row committed on Escape.
+fn attr_texts(
+  args : Array[@sh.Arg],
+  renames : Map[String, String],
+  tag? : String = "",
+) -> Array[String] raise @sh.ExError {
+  let where_ = if tag == "" { "" } else { " on `@\{tag}`" }
   let attrs = []
   // An event's MODIFIERS are the options written after its handler, flattened
   // into siblings by `read_args`. They belong to the `~on_*` before them, so
@@ -452,31 +482,19 @@ fn print_tag(
       @sh.AFlag(name) => attrs.push(attr_name(name))
       @sh.AField(name, _) =>
         raise @sh.ExError(
-          message="`\{name}:` is not an attribute",
+          message="`\{name}:`\{where_} is not an attribute",
           help="write `~\{name}: <value>` — an attribute is an option of the element",
           span=@report.Span::at(0),
         )
       @sh.APos(_) =>
         raise @sh.ExError(
-          message="an element takes named attributes only",
+          message="an element takes named attributes only\{where_}",
           help="write `~class: \"x\"` rather than a bare value",
           span=@report.Span::at(0),
         )
     }
   }
-  let tag = tag_name(tag)
-  let head = if attrs.is_empty() { tag } else { tag + " " + attrs.join(" ") }
-  if body.is_empty() {
-    out.write_string("<\{head}>\{close_tag(tag)}")
-    return
-  }
-  if inline_body(body, renames, parent=tag) is Some(text) {
-    out.write_string("<\{head}>\{text}</\{tag}>")
-    return
-  }
-  out.write_string("<\{head}>")
-  print_items(body, out, renames, macros~, parent=tag)
-  out.write_string("</\{tag}>")
+  attrs
 }
 
 ///|
@@ -954,17 +972,33 @@ fn print_with_extra(
     print_each(raw, body, out, renames, macros~, extra~, parent~)
     return
   }
-  let args = args_of(raw)
-  let attrs = [extra]
-  for a in args {
-    match a {
-      @sh.AKw(name, value) =>
-        for one in print_attr(name, value, renames) {
-          attrs.push(one)
-        }
-      @sh.AFlag(name) => attrs.push(attr_name(name))
-      _ => ()
+  // A guard under a guard is two attributes on ONE element:
+  // `@show(a){@hide(b){…}}` is `<div @show="a" @hide="b">`. Reaching the
+  // generic path read the inner condition as an attribute — and the arm that
+  // did so DROPPED it, so the inner guard was silently gone.
+  if tag is ("show" | "hide") {
+    let pos = @sh.positional(args_of(raw))
+    guard pos.length() == 1 && body.length() == 1 else {
+      raise @sh.ExError(
+        message="`@\{tag}` takes one condition and wraps one element",
+        help="write `@\{tag}(<condition>){ … }`",
+        span=@sh.span_of(group),
+      )
     }
+    let cond = print_ex(bound(pos[0], renames))
+    print_with_extra(
+      body[0],
+      out,
+      renames,
+      "\{extra} @\{tag}=\"\{attr_escape(cond)}\"",
+      macros~,
+      parent~,
+    )
+    return
+  }
+  let attrs = [extra]
+  for one in attr_texts(args_of(raw), renames, tag~) {
+    attrs.push(one)
   }
   // A hyphen in a tag is written as an underscore, the same way it is in an
   // attribute: `@emoji_picker` is `<emoji-picker>`. The plain element printer

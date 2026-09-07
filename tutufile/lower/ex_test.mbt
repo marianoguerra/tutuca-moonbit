@@ -14,11 +14,16 @@ fn ex(src : String) -> String {
 }
 
 ///|
-test "names carry their binder into the sigil the old notation used" {
+/// A bare name is printed BARE here, and the view is what puts the sigil on
+/// (`bind_names`, in view.mbt): in a view a bare name is a binding, and in a
+/// `logic:` body it is the handler's own parameter, which the old notation
+/// reads bare. Printing `@` here read `receive pick(f) { .name = f.name }` as
+/// a bind nobody declared.
+test "a place prints as the old notation spells it, and a name prints bare" {
   inspect(ex("it.count"), content=".count")
   inspect(ex("it.state.count"), content="state.count")
   inspect(ex("dyn.theme"), content="*theme")
-  inspect(ex("item.title"), content="@item.title")
+  inspect(ex("item.title"), content="item.title")
   inspect(ex("e.value"), content="e.value")
   inspect(ex("label"), content="label")
 }

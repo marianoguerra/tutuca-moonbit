@@ -58,24 +58,16 @@ pub fn print_ex(ex : @sh.Ex) -> String raise @sh.ExError {
 }
 
 ///|
-/// A binding's name with its sigil, added only if it is not already there.
-fn sigil(name : String) -> String {
-  if name.has_prefix("@") || name.has_prefix("^") {
-    name
-  } else {
-    "@" + name
-  }
-}
-
-///|
 /// `e.value` reads the DOM event; every other member is a binding's.
 fn print_member(base : @sh.Ex, m : String) -> String raise @sh.ExError {
   match base {
     @sh.EName("e") => "e." + m
-    // The sigil goes on once. A name that already carries one was placed by a
-    // binder that knows better — a loop's `@value`, a macro's `^param` — and
-    // adding a second gives `@@value`, which reaches no reader.
-    @sh.EName(b) => sigil(b) + "." + m
+    // The sigil is `bind_names`', and it goes on in the VIEW: there a bare
+    // name is a binding, so `value.title` is `@value.title`. A `logic:` body
+    // is the other half — there a bare name is the handler's own PARAMETER,
+    // which the old notation reads bare — so putting one on here read
+    // `receive pick(f) { .name = f.name }` as a bind nobody declared.
+    @sh.EName(b) => b + "." + m
     // The event is a DOM value, so a path into it is as deep as the DOM is:
     // `e.target.dataset.rowId` is three steps, and stopping at two refused a
     // handler the old notation wrote.

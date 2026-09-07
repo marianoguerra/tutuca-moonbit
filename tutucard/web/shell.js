@@ -225,9 +225,9 @@ function ensurePartEditor() {
 let paneEcho = null;
 
 function componentName(source) {
-  // The template's id names the component, when it has one. Otherwise the
-  // state block's own name does, and failing both we pick something — `load`
-  // only uses it as the fallback name.
+  // A `view:` heading names the component, when there is one. Otherwise the
+  // `spec:` section's own heading does, and failing both we pick something —
+  // `load` only uses it as the fallback name.
   return componentOf(source) || "Card";
 }
 
@@ -428,7 +428,7 @@ async function reload() {
  * instances. Each scene gets its own scope and its own in-memory DOM, so
  * nothing it drives touches the card in the preview beside it.
  *
- * A card with no `<script type="tutuca/test">` block says so and stops. That is
+ * A card with no `tests:` section says so and stops. That is
  * most cards: a starter that teaches one directive has nothing to drive, and a
  * panel nagging about it would be a panel people learn to ignore.
  */
@@ -436,8 +436,8 @@ function drawScenes(src, report) {
   els.scenes.replaceChildren();
   els.scenesNote.textContent = "";
   if (!report.ok || !report.mounted || !report.build?.ok) return;
-  if (!src.includes('type="tutuca/test"')) {
-    els.scenesNote.textContent = "no <script type=\"tutuca/test\"> block";
+  if (!/^tests:[ \t]*$/m.test(src)) {
+    els.scenesNote.textContent = "no `tests:` section";
     return;
   }
   let out;
@@ -498,7 +498,7 @@ const exampleId = (name) =>
   `example-${name.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "x"}`;
 
 /**
- * Mount the card once per `tutuca/fixtures` fixture, each in its own box.
+ * Mount the card once per `fixtures:` fixture, each in its own box.
  *
  * The preview beside this shows ONE state — the card's `default` fixture, or
  * its schema's zero. A component is usually interesting at several, and a card
@@ -532,7 +532,7 @@ async function drawExamples(report) {
   // what every mount site on this page means by taking the head of the list.
   const inits = report.build.manifest.components?.[0]?.inits ?? [];
   if (inits.length === 0) {
-    els.examplesNote.textContent = 'no <script type="tutuca/fixtures"> fixtures';
+    els.examplesNote.textContent = "no `fixtures:` section";
     return;
   }
   const shown = inits.slice(0, EXAMPLE_CAP);
@@ -716,15 +716,15 @@ function currentRegion() {
 
 /** What to say when the part the tab names is not in the card yet. */
 const MISSING = {
-  state: 'no <script type="tutuca/spec"> block yet — add one in the raw view',
+  state: "no `spec:` section yet — add one in the raw view",
   script:
-    'no <script type="tutuca/script"> block yet — add one in the raw view',
-  views: "no <template> yet",
-  macros: "no <template id=\"macro:…\"> yet — a macro is markup this file can call by name",
+    "no `logic:` section yet — add one in the raw view",
+  views: "no view yet",
+  macros: "no `macro …:` yet — a macro is markup this file can call by name",
   tests:
-    'no <script type="tutuca/test"> block yet — add one in the raw view, and the Tests pane will drive it',
+    "no `tests:` section yet — add one in the raw view, and the Tests pane will drive it",
   examples:
-    'no <script type="tutuca/fixtures"> block yet — add one in the raw view, and the Examples pane will show each fixture',
+    "no `fixtures:` section yet — add one in the raw view, and the Examples pane will show each fixture",
 };
 
 /** Put the current part in the pane. */
@@ -740,8 +740,8 @@ function drawPart() {
   els.partEmpty.hidden = true;
   const wasHidden = els.partEdit.hidden;
   els.partEdit.hidden = false;
-  // The state and script blocks are one language and a view is another, so the
-  // pane's mode follows its tabs. Only on a change: this runs on the same
+  // Every section is the same notation now, so the pane's mode is one mode —
+  // the reconfigure below stays because a pane may still swap languages. Only on a change: this runs on the same
   // debounce as the reload, and a reconfigure per keystroke would be work
   // nobody asked for.
   if (cm.part && partLangNow !== partLang()) {
@@ -767,7 +767,7 @@ function drawPart() {
  * them: where the index lives, what a new one is called, and the two splices.
  *
  * Views and macros are the same tab bar over two lists — a card has as many of
- * each as it likes, against one state block and one script block — so the only
+ * each as it likes, against one `spec:` and one `logic:` — so the only
  * honest way to draw both is to name what differs and share the rest.
  */
 function listOf(p) {

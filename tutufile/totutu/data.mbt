@@ -46,8 +46,49 @@ pub fn print_fixture(
     for step in steps {
       out.write_string("      \{print_step(step)}\n")
     }
-    guard f.intents is (Null | Object(_)) else { return }
-    return
+  }
+  print_intents(answers_of(f.intents, "fixture `\{f.name}`"), out)
+}
+
+///|
+/// A fixture's intent answers, which reach here as the JSON the splitter kept.
+fn answers_of(
+  j : Json,
+  where_ : String,
+) -> Map[String, @tutuca.IntentAnswer] raise NoSpelling {
+  guard j is Object(_) else { return Map([]) }
+  @scenedef.parse_answers(j, where_) catch {
+    _ =>
+      raise NoSpelling(
+        what="an intent answer table that does not read as one (\{where_})",
+        help="fix it in the `.html` file before converting",
+      )
+  }
+}
+
+///|
+/// `~intents:` — one answer per intent the fixture or scene stands in for.
+///
+/// A statement each, in the same shape as a drive step, because that is what
+/// they are: `ok`, `failed` and `pass` are the three answers an intent has,
+/// and a name with no answer here is the `<name>_unhandled` path.
+fn print_intents(
+  answers : Map[String, @tutuca.IntentAnswer],
+  out : StringBuilder,
+) -> Unit raise NoSpelling {
+  guard !answers.is_empty() else { return }
+  out.write_string("    ~intents:\n")
+  let names = answers.keys().collect()
+  names.sort()
+  for name in names {
+    match answers.get(name) {
+      Some(Ok(v)) =>
+        out.write_string("      ok(\{quote(name)}, \{print_value(v)})\n")
+      Some(Failed(v)) =>
+        out.write_string("      failed(\{quote(name)}, \{print_value(v)})\n")
+      Some(Pass) => out.write_string("      pass(\{quote(name)})\n")
+      None => ()
+    }
   }
 }
 
@@ -71,12 +112,7 @@ pub fn print_scene(
     }
     out.write_string("    ~args: {\{parts.join(", ")}}\n")
   }
-  guard s.intents.is_empty() else {
-    raise NoSpelling(
-      what="a scene with `intents` (`\{s.name}`)",
-      help="an intent answer table is not printed yet — convert this scene by hand",
-    )
-  }
+  print_intents(s.intents, out)
   for step in s.steps {
     out.write_string("    \{print_step(step)}\n")
   }
@@ -179,16 +215,29 @@ fn place_text(steps : Array[@tutuca.Step]) -> String raise NoSpelling {
         out.write_string(
           ".\{@names.snake_of(seq_field)}[it.\{@names.snake_of(key_field)}]",
         )
-      // A key resolved at runtime, and an `@each`'s own render step. Neither is
-      // something an author writes in a scene, so neither has a spelling.
-      SeqStep(..) | EachRenderItStep(..) =>
+      // A literal index or key, which is what a scene writes: the step the
+      // parser builds for `.labels[1]` and `.by_id["a"]`.
+      SeqStep(field~, key~) =>
+        out.write_string(".\{@names.snake_of(field)}[\{key_text(key)}]")
+      // An `@each`'s own render step: put there by the RENDERER, at the
+      // position a loop was rendering. Nothing an author writes.
+      EachRenderItStep(..) =>
         raise NoSpelling(
-          what="a `state` expectation at a runtime-resolved step",
-          help="convert this scene by hand",
+          what="a `state` expectation at a loop's own render step",
+          help="a scene addresses a place the file writes; this one came from the renderer",
         )
     }
   }
   out.to_string()
+}
+
+///|
+/// A literal path key, as a scene writes it.
+fn key_text(k : @tutuca.PathKey) -> String {
+  match k {
+    KInt(i) => i.to_string()
+    KStr(s) => quote(s)
+  }
 }
 
 ///|

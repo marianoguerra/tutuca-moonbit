@@ -225,7 +225,7 @@ export async function downloadRuntime() {
  * Check, compile, instantiate and DRIVE — the same card, with no page.
  *
  * `mountCard` proves a card renders. This presses the buttons the card's own
- * `<script type="tutuca/test">` block names, and hands back the rendered HTML,
+ * `tests:` section names, and hands back the rendered HTML,
  * so what a build step and an agent can both check is what it DID.
  *
  * `scenes` overrides that block — pass a JSON string to drive a card that

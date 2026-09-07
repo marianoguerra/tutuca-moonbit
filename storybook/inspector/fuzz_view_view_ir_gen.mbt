@@ -1609,7 +1609,8 @@ fn fuzz_verdict_main_view_ir() -> @anode.View {
                 @anode.const_str("held"),
               ]),
             ]),
-            @anode.h("hide", [], [
+            @anode.hide(
+              @tutuca.Expr::field("has_reproducer"),
               @anode.h(
                 "button",
                 [
@@ -1618,7 +1619,7 @@ fn fuzz_verdict_main_view_ir() -> @anode.View {
                 ],
                 [@anode.text("Shrink it")],
               ),
-            ]),
+            ),
           ),
         ],
       ),

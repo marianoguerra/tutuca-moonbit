@@ -263,7 +263,18 @@ pub fn drive(
       e => return drive_failed(e.message())
     }
   } else {
-    let file = @viewfile.split_file(source, name="Card") catch {
+    // A `.tutu` is lowered first, the same seam `@tgc.compile` reaches — the
+    // splitter reads the old blocks, and a `.tutu` handed to it straight has
+    // none, so `tests` came back EMPTY and the runner reported no scenes
+    // rather than a card it could not read.
+    let text = if @lower.is_tutu_source(source) {
+      let sources = @report.Sources::new()
+      let id = sources.add("card.tutu", source)
+      @lower.lower(source, id).text
+    } else {
+      source
+    }
+    let file = @viewfile.split_file(text, name="Card") catch {
       e => return drive_failed(e.message())
     }
     file.tests

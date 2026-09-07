@@ -7,7 +7,7 @@
 //
 // This is the fourth gate. It mounts each card on the in-memory DOM through
 // the same bundle the page uses, runs the steps its
-// `<script type="tutuca/test">` block names, and reports what disagreed. It
+// `tests:` section names, and reports what disagreed. It
 // runs HEADLESS — no browser, no server, no MoonBit toolchain — which is what
 // makes it a thing CI runs and a thing an agent that generated a card can
 // shell out to.
@@ -77,7 +77,7 @@ let scenes = 0;
 for (const card of cards) {
   // Cheap and exact: a card with no block has no scenes to drive, and
   // compiling it to find that out would cost a wasm module per card.
-  if (!card.source.includes('type="tutuca/test"')) continue;
+  if (!/^tests:[ \t]*$/m.test(card.source)) continue;
 
   const report = await driveCard(card.source, "Card");
   if (report.ok === false && report.scenes === undefined) {
@@ -86,6 +86,18 @@ for (const card of cards) {
     continue;
   }
   withScenes++;
+  // A card whose source HAS a `tests:` section and drives NO scenes is a card
+  // the driver could not read — and it used to be reported as a pass. When the
+  // cards became `.tutu` and the driver still split the raw source, every one
+  // of the 31 came back with an empty scene table and this printed
+  // "0/0 scenes pass" and exited 0.
+  if (Object.keys(report.scenes).length === 0) {
+    console.error(
+      `✗ ${card.name}: declares \`tests:\` and drove no scenes — the driver could not read them`,
+    );
+    failed++;
+    continue;
+  }
   for (const [name, s] of Object.entries(report.scenes)) {
     scenes++;
     if (s.ok) {

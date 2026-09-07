@@ -208,6 +208,11 @@ fn step_json(group : @ast.Node) -> Json raise @sh.ExError {
     "key" => {
       obj["key"] = arg(0)
       obj["is"] = arg(1)
+      // The value the box holds when the key goes down — optional, the way
+      // `fire`'s is. Dropping it drove the key with an empty input.
+      if pos.length() > 2 {
+        obj["value"] = arg(2)
+      }
     }
     "check" => {
       obj["check"] = arg(0)
@@ -338,10 +343,22 @@ fn place_text(terms : ArrayView[@ast.Node]) -> String {
       Id("it") => ()
       Id(n) => out.write_string(n)
       Op(".") => out.write_string(".")
+      // A key is a literal (`[0]`, `["a"]`) or a FIELD that holds one, and the
+      // old notation spells the second `[.group]`. Rendering the group as its
+      // raw text wrote `it.group`, which is not a key the parser has — and
+      // dropping `it.` only at the top level wrote `group`, which it reads as
+      // a bare name it refuses on purpose.
+      // A key is a literal (`[0]`, `["a"]`) or a FIELD that holds one, and the
+      // old notation spells the second `[.group]`.
+      //
+      // Rendered with `node_text` this wrote `[group]` — `node_text` falls
+      // back to the NODE'S TAG, and a bracket holds a `Group`, so the word
+      // "group" reached the parser as if it were a field name. The message it
+      // answered with named a field the file does not have.
       Brackets(gs) => {
         out.write_string("[")
         for g in gs {
-          out.write_string(@sh.node_text(g))
+          out.write_string(key_text(g))
         }
         out.write_string("]")
       }
@@ -355,6 +372,26 @@ fn place_text(terms : ArrayView[@ast.Node]) -> String {
   } else {
     "." + text
   }
+}
+
+///|
+/// One key inside a `[…]`: a literal, or the field that holds one.
+fn key_text(g : @ast.Node) -> String {
+  let parts = match g.it {
+    Group(ps) => ps
+    _ => [g]
+  }
+  // A single literal is the key itself; anything else is a path, and
+  // `place_text` is what writes one.
+  if parts.length() == 1 {
+    match parts[0].it {
+      Lit(Str(s)) => return "'\{s}'"
+      Lit(Int_(i)) => return i.to_string()
+      Lit(Flo(f)) => return f.to_string()
+      _ => ()
+    }
+  }
+  place_text(parts[:])
 }
 
 ///|
@@ -379,18 +416,44 @@ fn kw_arg_of(parts : Array[@ast.Node]) -> (String, Json)? {
 fn intents_json(groups : Array[@ast.Node]) -> Json raise @sh.ExError {
   let out = Map([])
   for g in groups {
-    guard g.it is Group(parts) && parts.length() >= 1 && parts[0].it is Id(name) else {
+    guard g.it is Group(parts) && parts.length() >= 1 && parts[0].it is Id(verb) else {
       continue
     }
-    if parts.length() == 1 {
-      out[name] = Json::string("pass")
-      continue
+    let args = match parts.get(1) {
+      Some(n) =>
+        match n.it {
+          Parens(gs) => @sh.positional(@sh.read_args(gs))
+          _ => []
+        }
+      None => []
     }
-    guard parts[1].it is Block(bgs) && bgs.length() == 1 else { continue }
-    let answer = @sh.read_group(bgs[0])
-    out[name] = match answer {
-      @sh.EName("pass") => Json::string("pass")
-      other => json_of(other)
+    guard args.length() >= 1 && args[0] is @sh.EStr(name) else {
+      raise @sh.ExError(
+        message="an intent answer names the intent it answers",
+        help="write `ok(\"<name>\", <value>)`, `failed(\"<name>\", <value>)` or `pass(\"<name>\")`",
+        span=@sh.span_of(parts[0]),
+      )
+    }
+    match verb {
+      "pass" => out[name] = Json::string("pass")
+      "ok" | "failed" => {
+        guard args.length() == 2 else {
+          raise @sh.ExError(
+            message="`\{verb}` answers with one value",
+            help="write `\{verb}(\"\{name}\", <value>)`",
+            span=@sh.span_of(parts[0]),
+          )
+        }
+        let one : Map[String, Json] = Map([])
+        one[verb] = json_of(args[1])
+        out[name] = Json::object(one)
+      }
+      other =>
+        raise @sh.ExError(
+          message="`\{other}` is not an intent answer",
+          help="an intent is answered `ok`, `failed` or `pass`, and nothing else",
+          span=@sh.span_of(parts[0]),
+        )
     }
   }
   Json::object(out)

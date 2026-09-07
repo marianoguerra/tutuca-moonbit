@@ -1255,7 +1255,8 @@ fn recorder_bar_main_view_ir() -> @anode.View {
           @anode.text(" "),
           @anode.show(
             @tutuca.Expr::field("has_trace"),
-            @anode.h("hide", [], [
+            @anode.hide(
+              @tutuca.Expr::field("recording"),
               @anode.h(
                 "button",
                 [
@@ -1264,7 +1265,7 @@ fn recorder_bar_main_view_ir() -> @anode.View {
                 ],
                 [@anode.text(" Discard ")],
               ),
-            ]),
+            ),
           ),
         ],
       ),

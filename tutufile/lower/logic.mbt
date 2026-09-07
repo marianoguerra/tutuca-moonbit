@@ -26,13 +26,18 @@ pub fn print_logic(
         "receive" | "answer" => print_transition(m, out)
         "compute" => print_compute(m, out)
         "pred" => print_row_pred(m, out, rows)
+        // An `invariant` here is the one the OLD notation writes in the script
+        // block: checked after every dispatch, and — unlike one in `spec:` —
+        // not projected into `spec_source`, so the schema does not carry it.
+        // Two homes, two meanings, and a file has to be able to say either.
+        "invariant" => print_row_pred(m, out, rows, word="invariant")
         "enrich" => print_enrich(m, out, rows)
         "bind_with" => print_bind_with(m, out)
         "property" => impls[m.name] = print_accessors(m, out)
         _ =>
           raise @sh.ExError(
             message="`\{word}` is not a logic member",
-            help="a component's behaviour is `receive`, `answer`, `compute`, `pred`, `enrich`, `bind_with` and `property`",
+            help="a component's behaviour is `receive`, `answer`, `compute`, `pred`, `invariant`, `enrich`, `bind_with` and `property`",
             span=@sh.span_of(parts[0]),
           )
       }
@@ -123,11 +128,20 @@ fn print_row_pred(
   m : @sh.Member,
   out : StringBuilder,
   rows : Array[String],
+  word? : String = "pred",
 ) -> Unit raise @sh.ExError {
   write_doc(out, m.doc, "")
   // A row filter takes no parameters in the old notation — it reads the row out
   // of the air — so the names that ARE the row are not written back out.
-  out.write_string("pred " + m.name + param_text(m, rows) + " {\n")
+  out.write_string(word + " " + m.name + param_text(m, rows))
+  // `~format:` is what the rule SAYS when it declines, and a rule declared
+  // here carries one exactly as one in `spec:` does. Dropping it left a
+  // refusal with nothing to report.
+  match m.option("format") {
+    Some(f) => out.write_string("\n  format " + print_ex(f))
+    None => ()
+  }
+  out.write_string(" {\n")
   print_value_body(m, out, row_renames(m, rows))
   out.write_string("}\n\n")
 }

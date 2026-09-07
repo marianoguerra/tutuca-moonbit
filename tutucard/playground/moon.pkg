@@ -37,6 +37,10 @@ import {
   // in-memory one, which is what keeps "click the third row" one thing.
   "marianoguerra/tutuca/testing/harness",
   "marianoguerra/tutuca/viewfile",
+  // A `.tutu` card is lowered before the splitter reads it, the same seam
+  // `@tgc.compile` reaches.
+  "marianoguerra/tutuca/tutufile/lower",
+  "marianoguerra/error-report" @report,
   // What the compiled card is mounted AS: an ordinary loaded module. The
   // `&Guest` over the instantiated module is `tutucard/guest`, which the
   // composition demo loads several cards through at once, and `policy` is what

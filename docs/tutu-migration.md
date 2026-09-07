@@ -16,9 +16,9 @@ construct you remember is called now.
 
 ## Status — read this first
 
-The migration is **done through stage 5. Every view file in the repo, and
-every view block in the skill, is a `.tutu`; the lowering seam is what is
-left.**
+The migration is **done through stage 5. Nothing in the tree is written in the
+old notation — not a view file, not a card, not a doc block, not a starter in
+the playground. The lowering seam underneath them is what is left.**
 
 | Stage | What it is | State |
 | --- | --- | --- |
@@ -28,6 +28,7 @@ left.**
 | 4 | The card runtime, both playgrounds, the benchmarks and the generated corpora | **done** |
 | 5 | The MoonBit beside each view: fields, message names, hook keys, binding names | **done** |
 | 5b | The docs: the skill's 90 view blocks and its prose, `README`, `docs/`, and every diagnostic an author reads | **done** |
+| 5c | The card playground: its 26 starter cards, the structured editor's region model, and the gates over both | **done** — nothing in the tree is written in the old notation |
 | 6 | Direct readers, replacing the lowering; then delete `viewfile/` and the old parsers | **in progress** — the view and `logic:` readers are in |
 
 ### Stage 6, and what is left of it
@@ -872,7 +873,9 @@ Four things. Everything else in this page is a rewrite rule.
   converter sees the body — with no call frame it collapses to its own default
   children — so a macro with one is refused by name rather than printed as a
   macro with no slot. Write it by hand: `@slot` and `@slot("name")` in the
-  body, `@fill("name"){ … }` at the call site.
+  body, `@fill("name"){ … }` at the call site. This is the ONE construct in the
+  repo that needed a hand pass: 25 of the card playground's 26 starters
+  converted mechanically.
 - **A property with both accessors on one line.** Shrubbery's `;` continues the
   innermost block, so `property count :: Int ~public: get: it.count; set(v): …`
   puts the `set` inside the `get`. Write one accessor per line.

@@ -132,10 +132,15 @@ test "render workload shape" {
   // Every story in the gallery, rendered once. It moves whenever a story is
   // added — which is the only reason it is asserted at all: a workload that
   // silently stopped covering half the corpus would still be "fast".
+  //
+  // It went 80449 -> 80436 when a guard inside a guard stopped compiling to an
+  // element: the inspector's `@show(a){@hide(b){…}}` had been `<hide>`, a tag
+  // that renders its children whatever `b` says, so thirteen nodes were being
+  // drawn that the file says to leave out.
   inspect(
     @benchmarks.render_all_examples(),
     content=(
-      #|80449
+      #|80436
     ),
   )
 }

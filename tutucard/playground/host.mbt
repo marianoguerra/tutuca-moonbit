@@ -72,7 +72,7 @@ fn slot_of(id : String) -> Slot {
 /// `drive` is the other thing to do with a compiled card, and the one no page
 /// is needed for: `mountCompiled` puts it on a screen, which proves it renders
 /// and proves nothing about what it does when pressed. `drive` mounts the same
-/// module on the IN-MEMORY DOM, runs the card's `<script type="tutuca/test">`
+/// module on the IN-MEMORY DOM, runs the card's `tests:`
 /// scenes through the same transactor, and answers the rendered HTML — so the
 /// same module that serves this page also answers to `node`, which is what a
 /// build step and an agent both are.

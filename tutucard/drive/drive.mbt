@@ -57,7 +57,7 @@ fn run_one(
   // would wrap this scene's child tokens through a module left behind.
   on_bundle(loaded)
   // The component: the scene's own, then the caller's root, then the first the
-  // manifest declares — which is the first `<template>` in the file, and the
+  // manifest declares — which is the first view in the file, and the
   // only answer a card with one component has.
   let names = loaded.component_names()
   let comp = if scene.component != "" {

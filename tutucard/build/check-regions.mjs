@@ -2,8 +2,8 @@
 //
 // `regions.js` is the one piece of the playground that EDITS the card rather
 // than drawing it, and it does so by character offset — so a base computed one
-// token wrong splices a rename into the middle of a tag. It has no MoonBit to
-// hide behind, and no browser is needed to hold it to its contract.
+// token wrong splices a rename into the middle of a heading. It has no MoonBit
+// to hide behind, and no browser is needed to hold it to its contract.
 //
 // Run by the `tutucard-playground` task, beside check-examples.mjs.
 
@@ -25,78 +25,82 @@ function check(name, got, want) {
 }
 
 const CARD = [
-  '<script type="tutuca/spec">',
-  "  state Counter { n: Int }",
-  "</script>",
+  "spec:",
+  "  Counter:",
+  "    field n :: Int",
   "",
-  '<script type="tutuca/script">',
-  "  receive bump { .n += 1 }",
-  "</script>",
+  "logic:",
+  "  Counter:",
+  "    receive bump:",
+  "      it.n += 1",
   "",
-  '<script type="tutuca/fixtures">',
-  '  { "fresh": { "value": { "n": 0 } } }',
-  "</script>",
+  "view:",
+  "  Counter:",
+  "    @p{main}",
   "",
-  '<template id="Counter">',
-  "  <p>main</p>",
-  "</template>",
-  '<template id="Counter:row">',
-  "  <b>row</b>",
-  "</template>",
+  "  Counter.row:",
+  "    @b{row}",
+  "",
+  "fixtures:",
+  '  "fresh":',
+  "    it.n = 0",
   "",
 ].join("\n");
 
 const p = R.parts(CARD);
-check("the spec block is sliced exactly", p.spec.text, "\n  state Counter { n: Int }\n");
-check("the script block is sliced exactly", p.script.text, "\n  receive bump { .n += 1 }\n");
+check("the spec section is sliced exactly", p.spec.text, "\n  Counter:\n    field n :: Int");
+check("the logic section is sliced exactly", p.script.text, "\n  Counter:\n    receive bump:\n      it.n += 1");
 // The examples tab edits this one, and the Examples pane mounts what it names.
 check(
-  "the fixtures block is sliced exactly",
+  "the fixtures section is sliced exactly",
   p.fixtures.text,
-  '\n  { "fresh": { "value": { "n": 0 } } }\n',
+  '\n  "fresh":\n    it.n = 0',
 );
 // …and a card without one says so rather than throwing, which is what the tab's
 // empty state is drawn from.
-check("a card with no fixtures block has none", R.parts("<template><p>x</p></template>").fixtures, null);
-// A new block is the ENVELOPE, not a bare field map: the format has no
-// shorthand, and the thing an author opens is the thing they should copy.
+check("a card with no fixtures section has none", R.parts("view:\n  X:\n    @p{x}\n").fixtures, null);
+// A new section is the ENVELOPE, not a bare name: the thing an author opens is
+// the thing they should copy.
 check(
-  "addInit writes a fixture, not a field map",
-  R.addInit("<template><p>x</p></template>\n").includes('"value": {}'),
+  "addInit writes a fixture, not a bare name",
+  R.addInit("view:\n  X:\n    @p{x}\n").includes('"fresh" ~default:'),
   true,
 );
-check("views are named by the half after the colon", p.views.map((v) => v.name), ["main", "row"]);
+check("views are named by the half after the dot", p.views.map((v) => v.name), ["main", "row"]);
 
 // …unless the file declares more than one component, and then the half after
-// the colon names nothing: two components' `main` views would both be `main`,
+// the dot names nothing: two components' `main` views would both be `main`,
 // and a tab strip is what a reader picks a component with.
 const TWO = [
-  '<script type="tutuca/spec">',
-  "  state Todos { n: Int }",
-  "  state Todo { t: String }",
-  "</script>",
-  '<template id="Todos:main">',
-  "  <ul></ul>",
-  "</template>",
-  '<template id="Todo:main">',
-  "  <li></li>",
-  "</template>",
-  '<template id="Todo:row">',
-  "  <b></b>",
-  "</template>",
+  "spec:",
+  "  Todos:",
+  "    field n :: Int",
+  "",
+  "  Todo:",
+  "    field t :: String",
+  "",
+  "view:",
+  "  Todos:",
+  "    @ul",
+  "",
+  "  Todo:",
+  "    @li",
+  "",
+  "  Todo.row:",
+  "    @b",
   "",
 ].join("\n");
 check(
   "a file with two components names its tabs by component",
   R.parts(TWO).views.map((v) => v.name),
-  ["Todos", "Todo", "Todo:row"],
+  ["Todos", "Todo", "Todo.row"],
 );
 check(
   "…and the ids are untouched, so a rename still splices",
   R.parts(TWO).views.map((v) => v.id),
-  ["Todos:main", "Todo:main", "Todo:row"],
+  ["Todos", "Todo", "Todo.row"],
 );
-check("a view's text is its own", p.views[1].text, "\n  <b>row</b>\n");
+check("a view's text is its own", p.views[1].text, "\n    @b{row}");
 
 // The offsets are what everything else stands on.
 check(
@@ -107,108 +111,98 @@ check(
 check(
   "an id's offsets slice back to the id",
   CARD.slice(p.views[1].idStart, p.views[1].idEnd),
-  "Counter:row",
+  "Counter.row",
 );
 
 // Splicing is the whole edit path: the structured view writes through it.
 check(
   "a splice replaces only its own region",
-  R.splice(CARD, p.script, "\n  receive bump { .n += 2 }\n"),
-  CARD.replace(".n += 1", ".n += 2"),
+  R.splice(CARD, p.script, "\n  Counter:\n    receive bump:\n      it.n += 2"),
+  CARD.replace("it.n += 1", "it.n += 2"),
 );
 
-// A rename edits the id and NOTHING else, which is the bug this file exists
-// for: the offset was computed from `<template` + 1 rather than + 9, and the
-// splice landed inside the tag.
+// A rename edits the heading and NOTHING else, which is the bug this file
+// exists for: an offset computed one token wrong splices into the middle of a
+// heading.
 const renamed = R.renameView(CARD, p, 1, "compact");
-check("a rename changes the id", renamed.includes('id="Counter:compact"'), true);
+check("a rename changes the heading", renamed.includes("Counter.compact:"), true);
 check("…and leaves the rest of the card alone", renamed.replace("compact", "row"), CARD);
 
-// Adding a view appends, and names the bare template on the way if it has to.
+// Adding a view appends inside `view:`, and nothing else moves.
 const added = R.addView(CARD, "edit");
-check("adding a view appends a template", added.includes('<template id="Counter:edit">'), true);
-check("…and keeps everything that was there", added.startsWith(CARD), true);
+check("adding a view appends a heading", added.includes("  Counter.edit:"), true);
+check("…and keeps every character that was there", R.parts(added).spec.text, p.spec.text);
+check("…and the new view is the last one", R.parts(added).views.map((v) => v.id).at(-1), "Counter.edit");
 
-const BARE = '<script type="tutuca/spec">\n  state Note { t: String }\n</script>\n<template><p></p></template>\n';
-check("a bare template is the main view", R.parts(BARE).views.map((v) => v.name), ["main"]);
-const named = R.addView(BARE, "edit");
-check(
-  "…and adding a second view names the first",
-  named.includes('<template id="Note">') && named.includes('<template id="Note:edit">'),
-  true,
-);
+const BARE = "spec:\n  Note:\n    field t :: String\n\nview:\n  Note:\n    @p\n";
+check("a heading with no dot is the main view", R.parts(BARE).views.map((v) => v.name), ["main"]);
 
-// A card missing a block is not a crash: "there is no script yet" is what an
+// A card missing a section is not a crash: "there is no logic yet" is what an
 // author is about to fix, and the pane says so.
-check("a card with no script block has none", R.parts(BARE).script, null);
+check("a card with no logic section has none", R.parts(BARE).script, null);
 
-// The pane shows the block's body, not where the block sits in the file. The
-// pair has to compose to the identity on an untouched pane — a projection that
+// The pane shows the section's body, not where it sits in the file. The pair
+// has to compose to the identity on an untouched pane — a projection that
 // rewrites the card just by being LOOKED at is worse than an indented pane.
-check("a pane starts at column zero", R.dedented(p.views[1].text), "<b>row</b>");
-check("…with no line the tags left behind", R.dedented(p.spec.text), "state Counter { n: Int }");
+check("a pane starts at column zero", R.dedented(p.views[1].text), "@b{row}");
+check("…with no line the heading left behind", R.dedented(p.spec.text), "Counter:\n  field n :: Int");
 check(
   "an untouched pane splices back the same characters",
   R.reindented(p.views[1].text, R.dedented(p.views[1].text)),
   p.views[1].text,
 );
 check(
-  "an edited pane comes back indented like the block",
-  R.reindented(p.views[1].text, "<b>row</b>\n<i>and more</i>"),
-  "\n  <b>row</b>\n  <i>and more</i>\n",
+  "an edited pane comes back indented like the section",
+  R.reindented(p.views[1].text, "@b{row}\n@i{and more}"),
+  "\n    @b{row}\n    @i{and more}",
 );
 // A line the author left empty stays empty: indenting it is how a file grows
 // the trailing whitespace nobody typed.
 check(
   "a blank line comes back blank",
-  R.reindented(p.views[1].text, "<b>row</b>\n\n<i>more</i>"),
-  "\n  <b>row</b>\n\n  <i>more</i>\n",
+  R.reindented(p.views[1].text, "@b{row}\n\n@i{more}"),
+  "\n    @b{row}\n\n    @i{more}",
 );
-// Content on the tag's own line has no indentation to take, and inventing one
-// would rewrite the line on the first keystroke.
-const inline = R.parts(BARE).views[0];
-check("an inline template is left as it is", R.dedented(inline.text), "<p></p>");
-check(
-  "…and splices back as it is",
-  R.reindented(inline.text, "<p>hi</p>"),
-  "<p>hi</p>",
-);
-
 
 // --- macros ----------------------------------------------------------------
-// A `<template id="macro:…">` is a declaration of the FILE, not a view of the
-// component, so it belongs to its own list: collected with the views it would
-// show as a view called `field` of a component called `macro`.
+// A `macro …:` is a declaration of the FILE, not a view of the component, so it
+// belongs to its own list: collected with the views it would show as a view of
+// a component called `macro`.
 
 const WITH_MACRO = [
-  '<script type="tutuca/spec">',
-  "  state Form { name : String }",
-  "</script>",
-  '<template id="macro:field" data-label="\'Field\'">',
-  "  <label><span @text=\"^label\"></span><x:slot></x:slot></label>",
-  "</template>",
-  '<template id="Form">',
-  '  <div><x:field label="Name"></x:field></div>',
-  "</template>",
+  "spec:",
+  "  Form:",
+  "    field name :: String",
+  "",
+  "view:",
+  '  macro field(~label: "Field"):',
+  "    @label{@span{@(label)} @slot}",
+  "",
+  "  Form:",
+  '    @div{@field(~label: "Name")}',
   "",
 ].join("\n");
 
 const pm = R.parts(WITH_MACRO);
 check("one macro", pm.macros.length, 1);
-check("the macro's name is what follows `macro:`", pm.macros[0].name, "field");
+check("the macro's name is what follows `macro`", pm.macros[0].name, "field");
 check("the macro is not counted as a view", pm.views.length, 1);
 check("…and the real view is still main", pm.views[0].name, "main");
-check("the macro region is its body", WITH_MACRO.slice(pm.macros[0].start, pm.macros[0].end).includes("x:slot"), true);
+check("the macro region is its body", WITH_MACRO.slice(pm.macros[0].start, pm.macros[0].end).includes("@slot"), true);
 
 const renamedMacro = R.renameMacro(WITH_MACRO, pm, 0, "row");
-check("renaming keeps the macro: prefix, which is what makes it a macro", renamedMacro.includes('<template id="macro:row"'), true);
+check("renaming a macro edits its heading", renamedMacro.includes("macro row("), true);
 check("…and does not turn it into a view", R.parts(renamedMacro).views.length, 1);
 
 const addedMacro = R.addMacro(WITH_MACRO, "row");
 const pa = R.parts(addedMacro);
 check("an added macro joins the macro list", pa.macros.length, 2);
-check("…under the name it was given", pa.macros[1].name, "row");
-check("…with a slot, since a macro without one drops its children", pa.macros[1].text.includes("<x:slot>"), true);
+check("…under the name it was given", pa.macros.map((m) => m.name).includes("row"), true);
+check(
+  "…with a slot, since a macro without one drops its children",
+  pa.macros.find((m) => m.name === "row").text.includes("@slot"),
+  true,
+);
 check("…and the views are untouched", pa.views.length, 1);
 
 console.log(failed === 0 ? "\nregions: all checks pass" : `\n${failed} region check(s) failed`);

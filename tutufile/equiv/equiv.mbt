@@ -365,8 +365,53 @@ fn compare_data(
   b : @viewfile.ViewFile,
   out : Array[Difference],
 ) -> Unit {
-  diff_debug(out, "fixtures", "fixtures", a.init, b.init)
+  diff_debug(
+    out,
+    "fixtures",
+    "fixtures",
+    a.init.map(sorted_init),
+    b.init.map(sorted_init),
+  )
   diff_debug(out, "tests", "scenes", a.tests, b.tests)
+}
+
+///|
+/// One fixture with its JSON keys in a settled order.
+///
+/// A fixture's `drive` and `intents` are kept as JSON, and a JSON object is a
+/// MAP: `{"type": …, "nth": 1, "value": "-2"}` and the same three keys written
+/// in another order are the same step. `Debug` prints insertion order, so
+/// comparing the renderings asserted the order the two writers happened to
+/// choose — a difference that is not one.
+fn sorted_init(
+  pair : (String, @statedef.InitState),
+) -> (String, @statedef.InitState) {
+  let (name, it) = pair
+  (
+    name,
+    { ..it, drive: sorted_json(it.drive), intents: sorted_json(it.intents), },
+  )
+}
+
+///|
+/// A JSON value with every object's keys in ascending order, recursively.
+fn sorted_json(j : Json) -> Json {
+  match j {
+    Object(m) => {
+      let keys = m.keys().collect()
+      keys.sort()
+      let out : Map[String, Json] = Map([])
+      for k in keys {
+        match m.get(k) {
+          Some(v) => out[k] = sorted_json(v)
+          None => ()
+        }
+      }
+      Json::object(out)
+    }
+    Array(xs) => Json::array(xs.map(sorted_json))
+    _ => j
+  }
 }
 
 ///|
