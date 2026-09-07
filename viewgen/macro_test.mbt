@@ -10,15 +10,13 @@ let macro_src : String =
   #|
   #|view:
   #|  macro icon(~size: "24", ~color: "currentColor", ~path: ""):
-  #|    @svg(~width: size, ~height: size, ~viewBox: "0 0 24 24", ~stroke: color){
-  #|      @path(~d: path)
-  #|    }
+  #|    svg(width: size, height: size, viewBox: "0 0 24 24", stroke: color):
+  #|      path(d: path)
   #|
   #|  Icons:
-  #|    @div(~class: "icons"){
-  #|      @icon(~size: it.size, ~color: "#e11d48", ~path: it.heart)
-  #|      @icon(~size: "20", ~path: it.star)
-  #|    }
+  #|    div(class: "icons"):
+  #|      icon(~size: it.size, ~color: "#e11d48", ~path: it.heart)
+  #|      icon(~size: "20", ~path: it.star)
 
 ///|
 test "a macro declared in the view file is split out, not treated as a view" {

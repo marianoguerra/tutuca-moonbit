@@ -22,7 +22,7 @@ let broken_tutu : String =
   #|
   #|view:
   #|  Counter:
-  #|    @output{@(it.count)}
+  #|    output(): @(it.count)
 
 ///|
 test "a .tutu card that does not lower says so, by message and by line" {

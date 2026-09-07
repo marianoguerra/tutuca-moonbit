@@ -59,7 +59,7 @@ fn card(view : String) -> String {
 
 ///|
 test "an element, its attributes and its text" {
-  reads(card("  Card:\n    @div(~class: \"box\"){hello}"))
+  reads(card("  Card:\n    div(class: \"box\"): \"hello\""))
 }
 
 ///|
@@ -152,7 +152,7 @@ test "a render node, with and without a named view" {
 
 ///|
 test "a conditional attribute value" {
-  reads(card("  Card:\n    @div(~class: if it.on | \"a\" | \"b\"){x}"))
+  reads(card("  Card:\n    div(class: if it.on | \"a\" | \"b\"): \"x\""))
 }
 
 ///|

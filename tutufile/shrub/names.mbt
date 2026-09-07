@@ -184,13 +184,7 @@ pub fn split_call(
     match parts[i].it {
       Parens(gs) =>
         for g in gs {
-          match body_of(g) {
-            Some(items) =>
-              for item in items {
-                body.push(item)
-              }
-            None => args.push(g)
-          }
+          args.push(g)
         }
       // An option AFTER the call is the mistake a first `.tutu` file makes:
       // `~opt: value` reads as though it attaches to what precedes it, and
@@ -204,13 +198,7 @@ pub fn split_call(
           span=span_of(parts[i]),
         )
       // The element's CHILDREN. Law 1: an element is a call and its children
-      // are its block, so a `Block` here is the body rather than a mistake.
-      //
-      // The two notations are told apart structurally, with no flag: the old
-      // at-notation body arrives as a `Brackets` INSIDE the parentheses (what
-      // `body_of` answers above), and the new one as a `Block` AFTER them.
-      // Neither shape can be read as the other, so both are accepted while the
-      // corpus is converted and the `Brackets` leg is deleted after.
+      // are its block.
       Block(gs) =>
         for g in gs {
           body.push(g)
@@ -248,10 +236,3 @@ pub fn attr_name(name : String) -> String {
   out.to_string()
 }
 
-///|
-/// The bracketed content list an at-notation body arrives as.
-pub fn body_of(group : @ast.Node) -> Array[@ast.Node]? {
-  guard group.it is Group(parts) && parts.length() == 1 else { return None }
-  guard parts[0].it is Brackets(items) else { return None }
-  Some(items)
-}
