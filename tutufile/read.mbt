@@ -298,12 +298,23 @@ fn keyword_decl(
       reports.push(report_struct_has_no_fields(source, span_of(group), name))
       return None
     }
-  } else if body is None {
+  } else if body is None && !(kind is Protocol) {
     reports.push(
       report_declaration_has_no_body(source, span_of(group), kind, name),
     )
     return None
   }
+  // A `protocol X = "id"` with no block is a MARKER: it declares an id and no
+  // members, and a field typed `Instance.of(X)` is the whole of what it is
+  // for. The old notation wrote it `protocol X = "id" {}` and this one cannot
+  // — shrubbery has no empty block, so a `:` with nothing under it is a parse
+  // error rather than an empty protocol. Refusing it here left the construct
+  // with no spelling at all, and a card that used one was told its own
+  // protocol was unknown.
+  //
+  // Every other kind still needs a body, and for the reason the message gives:
+  // a component, a `struct` or an `enum` with nothing in it is a line somebody
+  // did not finish. A protocol with nothing in it is a statement.
   Some({
     kind,
     name,

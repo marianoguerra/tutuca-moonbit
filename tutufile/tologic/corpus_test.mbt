@@ -231,3 +231,86 @@ test "a transition keeps its doc comment" {
     ),
   )
 }
+
+///|
+/// A path attached to a handler's own parameter is a path into the ARGUMENT.
+///
+/// `member_expr` sent every bare-name base to `bind_member`, so `t.iso` read
+/// as the loop binding `@t` — and the refusal a card's author saw was "`@t` is
+/// a binding, which a handler does not have — the renderer hands them to a
+/// `@when`", about a construct they had not written. `PParam` is the root the
+/// old script parser built for the same shape, and `tscript/check` has
+/// answered `NO_PARAM` about it all along; the whole of what was missing was
+/// this reader.
+///
+/// A body's free name is the parameter, and a name the body BOUND is the
+/// binding — the two are told apart by the scope, which is what `Local` is
+/// for.
+test "a path on a parameter reads the argument, not a binding" {
+  inspect(
+    read_one(
+      (
+        #|spec:
+        #|  T:
+        #|    field now :: Any
+        #|logic:
+        #|  T:
+        #|    receive ticked(t):
+        #|      it.now := t.iso
+        #|
+      ),
+    ),
+    content=(
+      #|[{kind: DReceive, name: "ticked", params: [{name: "t", span: _}], requires_: None, ensures_: None, format: None, body: Stmts([SAssign(place={root: PState("now"), steps: []}, op=ASet, value=ERead(place={root: PParam("t"), steps: [PField("iso")]}), span: _)]), doc: "", span: _, name_span: _}]
+    ),
+  )
+}
+
+///|
+/// An index on a parameter is the same path, so the two agree about what the
+/// name is.
+test "an index on a parameter reads the argument too" {
+  inspect(
+    read_one(
+      (
+        #|spec:
+        #|  T:
+        #|    field first :: Any
+        #|logic:
+        #|  T:
+        #|    receive rows(rs):
+        #|      it.first := rs[0]
+        #|
+      ),
+    ),
+    content=(
+      #|[{kind: DReceive, name: "rows", params: [{name: "rs", span: _}], requires_: None, ensures_: None, format: None, body: Stmts([SAssign(place={root: PState("first"), steps: []}, op=ASet, value=ERead(place={root: PParam("rs"), steps: [PIndex(ELit(lit=LNum(0), from_macro=false))]}), span: _)]), doc: "", span: _, name_span: _}]
+    ),
+  )
+}
+
+///|
+/// A name the body BOUND is still a binding, path and all.
+///
+/// The half that keeps the fix narrow: an enricher's `@name` and a loop's row
+/// are bindings wherever they are in scope, and only a FREE name is the
+/// argument.
+test "a bound name keeps its member read as a binding's" {
+  inspect(
+    read_one(
+      (
+        #|spec:
+        #|  T:
+        #|    field label :: Any
+        #|logic:
+        #|  T:
+        #|    enrich mark(item, i):
+        #|      badge = item.title
+        #|
+      ),
+    ),
+    content=(
+      #|[{kind: DEnrich, name: "mark", params: [], requires_: None, ensures_: None, format: None, body: Stmts([SAssign(place={root: PBind("badge"), steps: []}, op=ASet, value=ERead(place={root: PBind("value"), steps: [PField("title")]}), span: _)]), doc: "", span: _, name_span: _}]
+    ),
+  )
+}

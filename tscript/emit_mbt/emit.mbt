@@ -2204,9 +2204,16 @@ fn E::read(self : E, p : @tutuca.Place) -> (String, @tutuca.Ty) raise NoWay {
       raise Cannot("`\{param}` is not a parameter of this handler")
     }
     // A typed argument arrives UNWRAPPED — `Str(name)` binds a String — and
-    // none of the types a call site can state has fields. The path is for the
-    // arguments that stay values: a bind, a drag, a message payload.
-    guard ty is None else {
+    // none of the SCALAR types a call site can state has fields. The path is
+    // for the arguments that stay values: a bind, a drag, a message payload.
+    //
+    // `Any` is one of those. It binds raw above — the same binder an
+    // undeclared argument gets, because an `Any` IS a `@tutuca.Value` — so
+    // refusing it here refused the case this path exists for: a host answering
+    // `ask` with an object, whose `message ticked(Any)` declaration is the
+    // honest one to write. It was measured on a card reading `t.iso` off the
+    // clock's `{ms, iso, …}`.
+    guard ty is None || ty is Some(TyAny) else {
       raise Cannot(
         "`\{param}` arrives as \{ty.unwrap().show_source()} from the call sites, and a \{ty.unwrap().show_source()} has no field `\{p.steps.map(s => if s is PField(n) { n } else { "?" }).join(".")}`",
       )

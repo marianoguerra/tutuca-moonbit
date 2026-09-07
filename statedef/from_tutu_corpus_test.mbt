@@ -329,3 +329,103 @@ test "an imported protocol resolves, and a component implements it" {
     ),
   )
 }
+
+///|
+/// One protocol name inside `Instance.of` is a CONSTRAINT, not a component.
+///
+/// `Instance[protocol P]` had no `.tutu` spelling: `Instance.of(P && Q)` said
+/// two and nothing said one, so a slot meaning "anything that implements P"
+/// read as a component slot named `P` — a legitimate type, so nothing had
+/// anything to report, and every value the slot was handed was rejected at run
+/// time as the wrong component.
+///
+/// Both spellings are asserted together, because what makes the one-protocol
+/// case right is that it answers what the two-protocol case answers with one
+/// id in it rather than with the same id twice.
+test "one protocol name in a component slot is a constraint" {
+  let src =
+    #|spec:
+    #|  protocol P = "x/P@1":
+    #|    message ping
+    #|
+    #|  protocol Q = "x/Q@1":
+    #|    message pong
+    #|
+    #|  T:
+    #|    field one :: Instance.of(P)
+    #|    field many :: List.of(Instance.of(P))
+    #|    field both :: Instance.of(P && Q)
+    #|    field free :: Instance
+  let sources = @report.Sources::new()
+  let id = sources.add("t.tutu", src)
+  let file = @tutufile.read(src, id)
+  guard file.section(Spec) is Some(section) else { fail("no spec section") }
+  let defs = @statedef.state_of_tutu(section.decls, name="T")
+  @debug.assert_eq(defs[0].fields.map(f => (f.name, f.ty)), [
+    ("one", TyCompProtocols(["x/P@1"])),
+    ("many", TyList(TyCompProtocols(["x/P@1"]))),
+    ("both", TyCompProtocols(["x/P@1", "x/Q@1"])),
+    ("free", TyComp(None)),
+  ])
+}
+
+///|
+/// A name no protocol is declared under still names a component.
+///
+/// The other half of the rule above, and the one that keeps
+/// `Instance.of(Legend)` meaning what it always meant: a component from
+/// another module, resolved through the registration scope at make time.
+test "a name no protocol claims is a component slot" {
+  let src =
+    #|spec:
+    #|  T:
+    #|    field child :: Instance.of(Legend)
+  let sources = @report.Sources::new()
+  let id = sources.add("t.tutu", src)
+  let file = @tutufile.read(src, id)
+  guard file.section(Spec) is Some(section) else { fail("no spec section") }
+  let defs = @statedef.state_of_tutu(section.decls, name="T")
+  @debug.assert_eq(defs[0].fields.map(f => f.ty), [TyComp(Some("Legend"))])
+}
+
+///|
+/// A protocol with no members is a MARKER, and has to be writable.
+///
+/// The old notation wrote it `protocol X = "id" {}`; shrubbery has no empty
+/// block, so a `:` with nothing under it is a parse error and the construct
+/// had no spelling at all. A card that used one was told its own protocol was
+/// unknown — the declaration having been dropped with a report about a missing
+/// body, one section earlier than the error the author read.
+test "a protocol with no members declares its id" {
+  let src =
+    #|spec:
+    #|  protocol Value = "x/Value@1"
+    #|
+    #|  T:
+    #|    implements Value
+    #|    field held :: Instance.of(Value)
+  let sources = @report.Sources::new()
+  let id = sources.add("t.tutu", src)
+  let file = @tutufile.read(src, id)
+  @debug.assert_eq(file.reports.map(r => r.message), [])
+  guard file.section(Spec) is Some(section) else { fail("no spec section") }
+  let defs = @statedef.state_of_tutu(section.decls, name="T")
+  @debug.assert_eq(defs[0].implements, ["x/Value@1"])
+  @debug.assert_eq(defs[0].fields.map(f => f.ty), [
+    TyCompProtocols(["x/Value@1"]),
+  ])
+}
+
+///|
+/// Every other kind still needs a body, and says so.
+///
+/// The exception is the protocol's alone: an `enum` with nothing in it is a
+/// line somebody did not finish, and the message that says so is worth
+/// keeping.
+test "an enum with no body is still a line nobody finished" {
+  let src = "spec:\n  enum Mode\n"
+  let sources = @report.Sources::new()
+  let id = sources.add("t.tutu", src)
+  let file = @tutufile.read(src, id)
+  @debug.assert_eq(file.reports.map(r => r.message), ["`Mode` declares nothing"])
+}

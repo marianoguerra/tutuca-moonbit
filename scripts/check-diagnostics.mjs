@@ -39,6 +39,12 @@ const SKIP = new Set([
   // A fetched copy of a PUBLISHED tutuca. Its faults are already shipped and
   // are not this working tree to fix.
   ".mooncakes",
+  // Agent worktrees: a second COPY of this repo, which git already excludes
+  // (`.git/info/exclude`) and which this walk reached because it reads the
+  // filesystem rather than the index. Every fault in one is a fault here, seen
+  // twice — and one left behind by a killed session failed the gate for
+  // everybody until it was deleted.
+  ".claude",
 ]);
 // `\u{FFFD}` is an escape, not an interpolation.
 const HIT = /(?<![\\u])\{([A-Za-z_][\w.]*(?:\([^)]*\))?)\}/g;

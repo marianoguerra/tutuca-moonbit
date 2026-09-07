@@ -79,7 +79,7 @@ inside a template would be read as an `<Int>` element.
 | set, closed members | `Set[E]`, where `E` is an `enum` |
 | set, open members | `Set[String]` |
 | ordered map | `Map[String, V]` |
-| a child component | a sibling `state`'s name, `Component`, `Instance[Name]`, or `Instance[protocol P & Q]` |
+| a child component | `Instance`, `Instance.of(Sibling)`, or `Instance.of(P)` / `Instance.of(P && Q)` for a protocol constraint |
 | anything at all | `Any`, `Array[Any]` |
 
 The builtin names are **reserved** — a user type called `Any` would silently
@@ -109,8 +109,8 @@ pairing is in [patterns/todo-list.md](./patterns/todo-list.md)). `Array[Item]`
 and `Array[Any]` generate the SAME field — `items : Array[@tutuca.Value]` —
 so the element type costs nothing at runtime and buys the check: the `each`
 body is read against `Item`'s schema, and `@value.txet` is caught. A component
-from another file is `Array[Instance[Item]]`; a list of components whose
-shapes genuinely differ is `Array[Component]`.
+from another file is `List.of(Instance.of(Item))`; a list of components whose
+shapes genuinely differ is `List.of(Instance)`.
 
 `Array[Any]` is the last resort, for a list whose elements are not even all
 components — a decoded JSON payload, say. `Any` is its scalar counterpart: one
@@ -289,9 +289,10 @@ spec:
     field text :: String
 ```
 
-`Instance[Legend]` names a component this file does **not** declare — one from
-another module, resolved through the registration scope at make time. A sibling
-`state` is the better answer when there is one.
+`Instance.of(Legend)` names a component this file does **not** declare — one
+from another module, resolved through the registration scope at make time — or
+a PROTOCOL, where the file declares one under that name. A sibling component is
+the better answer when there is one.
 
 The one thing no type can state is the child's **construction arguments**, and
 that is all `slot_args~` carries:

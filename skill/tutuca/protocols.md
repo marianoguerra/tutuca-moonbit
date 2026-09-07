@@ -75,11 +75,32 @@ send Lifecycle::resumed         // imported protocol
 ask Lifecycle::wantsAttention 'editor'
 ```
 
-Use protocols as component constraints with
-`Instance[protocol ListItem & Selectable]`. The constraint survives in the
-declared `Ty`, so installing a dynamic component checks its runtime schema and
-its explicit protocol claims; a mismatch rejects that value, keeps the previous
-one, and reports `PROTOCOL_TARGET_MISMATCH`.
+Use protocols as component constraints with `Instance.of(ListItem)` for one
+and `Instance.of(ListItem && Selectable)` for several. A bare name inside
+`Instance.of` is a protocol where one is declared under it and a component
+otherwise, so the declarations decide and there is no second spelling to
+choose. The constraint survives in the declared `Ty`, so installing a dynamic
+component checks its runtime schema and its explicit protocol claims; a
+mismatch rejects that value, keeps the previous one, and reports
+`PROTOCOL_TARGET_MISMATCH`.
+
+A protocol may declare NO members:
+
+```tutu
+spec:
+  protocol Value = "your.domain/Value@1"
+
+  Slot:
+    field held :: Instance.of(Value)
+
+view:
+  Slot:
+    div():
+      render(it.held)
+```
+
+That is a marker — an id, and a slot meaning "anything that claims it". There
+is no `:` and no block, because there is nothing to put under one.
 
 Whole-batch validation reports **strict** when every referenced definition is
 present and every checkable claim validates, and **gradual** when a fact can

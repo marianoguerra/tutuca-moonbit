@@ -266,6 +266,21 @@ fn bound_name(n : String, ctx : ExCtx) -> String {
 }
 
 ///|
+/// The `PParam` root this name is, when a path attached to it is a path into a
+/// handler's argument.
+///
+/// Only in a `logic:` body, and only for a name the body did not bind: a
+/// binding shadows a parameter for the same reason a `let` shadows anything,
+/// and outside a body there are no parameters to read. `None` everywhere else
+/// leaves the name to the arms that already handle it.
+fn param_root(n : String, ctx : ExCtx) -> @tutuca.PlaceRoot? {
+  guard ctx.pos is Local else { return None }
+  guard ctx.binds.get(n) is None else { return None }
+  guard ctx.params.get(n) is None else { return None }
+  Some(PParam(n))
+}
+
+///|
 /// `e.value` reads the DOM event; every other member is a binding's.
 fn member_expr(
   base : Ex,
@@ -291,6 +306,16 @@ fn member_expr(
       head.push(m)
       @tutuca.Expr::event_path(head, span=sp)
     }
+    // `t.iso` where `t` is the handler's own parameter. A body's free name is
+    // a parameter, so a path attached to one is a path into the argument the
+    // caller handed over — which `PParam` is the root for, and which
+    // `tscript/check` already answers `NO_PARAM` about when the name is not
+    // one. Matched before the binding arm below, because that arm reads every
+    // bare name as a binding: a card taking `{ms, iso, …}` from a host and
+    // reading `.iso` off it was told `@t` is a binding a handler does not
+    // have, and the handler was refused.
+    EName(b) if param_root(b, ctx) is Some(root) =>
+      ERead(place={ root, steps: [PField(m)], span: sp, }, span=sp)
     EName(b) => @tutuca.Expr::bind_member(bound_name(b, ctx), m, span=sp)
     // `it.a.b` in a `logic:` BODY is a step below a step, and legal: a body is
     // checked code and the generator knows every type along the path. In a
@@ -376,7 +401,14 @@ fn index_expr(
   sp : @tutuca.Span,
   span : @report.Span,
 ) -> @tutuca.Expr raise ExError {
-  let head = to_expr(base, ctx, span)
+  // A parameter is a place when something is attached to it, and only then:
+  // a bare `t` stays the free name the backend resolves. Same seam as
+  // `member_expr`, so `f.items` and `f[0]` agree about what `f` is.
+  let head = match base {
+    EName(b) if param_root(b, ctx) is Some(root) =>
+      @tutuca.Expr::ERead(place={ root, steps: [], span: sp, }, span=sp)
+    _ => to_expr(base, ctx, span)
+  }
   guard head is ERead(place~, ..) else {
     raise ExError(
       message="only a place can be indexed",

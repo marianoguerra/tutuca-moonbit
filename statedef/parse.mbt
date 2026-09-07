@@ -1901,10 +1901,24 @@ fn named(
             }
             TyCompProtocols(ids)
           }
-          // `Instance["Legend"]` names a component from another module. A
-          // string rather than a bare name because it resolves through the
-          // registration scope at make time and this file cannot see it.
-          RNamed(name=n, args=[], ..) => TyComp(Some(upper_name(n)))
+          // One bare name, and the declarations decide which of two things it
+          // is. A protocol declared under that name makes it a CONSTRAINT —
+          // the one-protocol case, which `Instance.of(P && Q)` could say for
+          // two and nothing could say for one, so a slot meaning "anything
+          // that implements P" came out as a component slot named `P` and
+          // rejected every value at run time. Silently: `TyComp(Some(…))` is a
+          // legitimate type, so nothing had anything to report.
+          //
+          // Anything else is a component from another module — the
+          // `Instance["Legend"]` case, which resolves through the registration
+          // scope at make time and which this file cannot see. A name that is
+          // both is one name for two things, and the protocol wins because it
+          // is the one declared HERE.
+          RNamed(name=n, args=[], ..) =>
+            match env.protocols.get(n) {
+              Some(id) => TyCompProtocols([id])
+              None => TyComp(Some(upper_name(n)))
+            }
           other =>
             raise UnsupportedType(
               ty="Instance[…]",
