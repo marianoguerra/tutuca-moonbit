@@ -6,6 +6,35 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.55.3] - 2026-09-07
+
+### Removed: the HTML linter, and the notation it was about
+
+3278 lines, and none of them could run. `check_html` tokenized a view's TEXT
+with the WHATWG tokenizer and predicted insertion modes over the result;
+`check_collected` read what a shadow parse of that text collected. Both were
+called from `gen` under `if view.source != ""` — and `viewgen/read.mbt` sets
+`source` to `""` unconditionally and always answers a tree, so the guard has
+been false since the `.tutu` reader landed.
+
+`docs/tutu-migration.md` already said the HTML linter went with the notation
+it was about. Its INVOCATION went; the machine stayed, and nothing said so,
+because unreachable code compiles.
+
+Gone with it: `LintCollector` and its `ParseHandler` impl, the 18 `HTML_*`
+lint codes, and `MAYBE_ADD_AT_PREFIX` / `MAYBE_DROP_AT_PREFIX` — which advised
+on a `@` prefix the notation no longer has, and which nothing raised in either
+case.
+
+**A duplicated table in dead code is not fixed by sourcing it from upstream.**
+Re-sourcing `lint/tables.mbt`'s void-element and SVG-casing tables from
+`marianoguerra/html` was the last item of the alignment plan; deleting them is
+the answer that plan should have had.
+
+What stays is what runs: `check_event_paths`, `closest_name`, `code_name` and
+`finding_message`. `gen` still reports directive rules and event paths, and
+`skill/tutuca/cli.md` now lists those two families instead of four.
+
 ## [0.55.2] - 2026-09-07
 
 ### The two readers of the notation are held to each other
