@@ -98,7 +98,7 @@ fn dn_d_example_main_view_ir() -> @anode.View {
         ]),
       ],
     ],
-    style="[data-dragging=\"1\"] { opacity: 0.5; } [data-draggingover=\"my-list-item\"] { border-top: 2rem solid transparent; outline: 1px solid #77777777; transition: 0.15s border-top ease; }",
+    style="[data-dragging=\"1\"]{opacity:0.5}[data-draggingover=\"my-list-item\"]{border-top:2rem solid transparent;outline:1px solid #77777777;transition:0.15s border-top ease}",
   )
 }
 

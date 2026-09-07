@@ -36,10 +36,10 @@ const CARD = [
   "",
   "view:",
   "  Counter:",
-  "    @p{main}",
+  "    p(): \"main\"",
   "",
   "  Counter.row:",
-  "    @b{row}",
+  "    b(): \"row\"",
   "",
   "fixtures:",
   '  "fresh":',
@@ -58,12 +58,12 @@ check(
 );
 // …and a card without one says so rather than throwing, which is what the tab's
 // empty state is drawn from.
-check("a card with no fixtures section has none", R.parts("view:\n  X:\n    @p{x}\n").fixtures, null);
+check("a card with no fixtures section has none", R.parts("view:\n  X:\n    p(): \"x\"\n").fixtures, null);
 // A new section is the ENVELOPE, not a bare name: the thing an author opens is
 // the thing they should copy.
 check(
   "addInit writes a fixture, not a bare name",
-  R.addInit("view:\n  X:\n    @p{x}\n").includes('"fresh" ~default:'),
+  R.addInit("view:\n  X:\n    p(): \"x\"\n").includes('"fresh" ~default:'),
   true,
 );
 check("views are named by the half after the dot", p.views.map((v) => v.name), ["main", "row"]);
@@ -100,7 +100,7 @@ check(
   R.parts(TWO).views.map((v) => v.id),
   ["Todos", "Todo", "Todo.row"],
 );
-check("a view's text is its own", p.views[1].text, "\n    @b{row}");
+check("a view's text is its own", p.views[1].text, "\n    b(): \"row\"");
 
 // The offsets are what everything else stands on.
 check(
@@ -144,7 +144,7 @@ check("a card with no logic section has none", R.parts(BARE).script, null);
 // The pane shows the section's body, not where it sits in the file. The pair
 // has to compose to the identity on an untouched pane — a projection that
 // rewrites the card just by being LOOKED at is worse than an indented pane.
-check("a pane starts at column zero", R.dedented(p.views[1].text), "@b{row}");
+check("a pane starts at column zero", R.dedented(p.views[1].text), "b(): \"row\"");
 check("…with no line the heading left behind", R.dedented(p.spec.text), "Counter:\n  field n :: Int");
 check(
   "an untouched pane splices back the same characters",

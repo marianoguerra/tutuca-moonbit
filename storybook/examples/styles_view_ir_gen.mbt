@@ -51,7 +51,7 @@ fn styles_example_main_view_ir() -> @anode.View {
       ]),
     ]),
     [],
-    style=".mine { color: red; }",
+    style=".mine{color:red}",
   )
 }
 
@@ -96,7 +96,7 @@ fn styles_example_two_view_ir() -> @anode.View {
       ]),
     ]),
     [],
-    style=".mine { color: orange; text-decoration: underline; }",
+    style=".mine{color:orange;text-decoration:underline}",
   )
 }
 

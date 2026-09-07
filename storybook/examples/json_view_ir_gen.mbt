@@ -559,7 +559,7 @@ fn json_array_main_view_ir() -> @anode.View {
         ]),
       ],
     ],
-    style="[data-draggingover=\"json-list-item\"] { border-top: 4rem solid transparent; transition: 0.15s border-top ease; }",
+    style="[data-draggingover=\"json-list-item\"]{border-top:4rem solid transparent;transition:0.15s border-top ease}",
   )
 }
 
@@ -776,7 +776,7 @@ fn json_object_main_view_ir() -> @anode.View {
         ]),
       ],
     ],
-    style="[data-draggingover=\"json-kv-item\"] { border-top: 4rem solid transparent; transition: 0.15s border-top ease; }",
+    style="[data-draggingover=\"json-kv-item\"]{border-top:4rem solid transparent;transition:0.15s border-top ease}",
   )
 }
 

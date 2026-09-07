@@ -367,7 +367,7 @@ fn tree_item_main_view_ir() -> @anode.View {
       ),
     ]),
     [[@anode.on("click", @tutuca.Expr::name("on_item_click"))]],
-    style="user-select: none; .head { cursor: pointer; } .head:before { content: \"⏺️\"; margin-right: 0.25rem; } .head.type-file:before { content: \"📄️\"; } .head.open.type-dir:before { content: \"📂️\"; } .head.closed.type-dir:before { content: \"📁️\"; }",
+    style="user-select:none;.head{cursor:pointer}.head::before{content:\"⏺️\";margin-right:0.25rem}.head.type-file::before{content:\"📄️\"}.head.open.type-dir::before{content:\"📂️\"}.head.closed.type-dir::before{content:\"📁️\"}",
   )
 }
 

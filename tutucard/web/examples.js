@@ -75,10 +75,38 @@ logic:
 
 view:
   Counter:
-    @div(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@h2(~class: "card-title"){@(summary())}@div(~class: "join"){@button(~class: "btn btn-sm join-item", ~on_click: add(1)){+1} @button(~class: "btn btn-sm join-item", ~on_click: add(-1)){-1} @button(~class: "btn btn-sm join-item btn-ghost", ~on_click: it.count := default){reset}} @label(~class: "flex gap-2 items-center"){@span(~class: "opacity-70"){label} @input(~class: "input input-sm w-full", ~value: it.label, ~on_input: it.label := e.value)} @ul(~class: "flex gap-1 flex-wrap"){@each(value, key in it.history){@li(~class: "badge badge-sm badge-neutral"){@(value)}}}}}
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        h2(class: "card-title"):
+          @(summary())
+        div(class: "join"):
+          button(class: "btn btn-sm join-item", ~on_click: add(1)):
+            "+1"
+          " "
+          button(class: "btn btn-sm join-item", ~on_click: add(-1)):
+            "-1"
+          " "
+          button(class: "btn btn-sm join-item btn-ghost", ~on_click: it.count := default):
+            "reset"
+        " "
+        label(class: "flex gap-2 items-center"):
+          span(class: "opacity-70"):
+            "label"
+          " "
+          input(class: "input input-sm w-full", value: it.label, ~on_input: it.label := e.value)
+        " "
+        ul(class: "flex gap-1 flex-wrap"):
+          each(value, key in it.history):
+            li(class: "badge badge-sm badge-neutral"):
+              @(value)
 
   Counter.row:
-    @div(~class: "flex gap-2 items-center"){@span(~class: "badge badge-neutral"){@(summary())} @button(~class: "btn btn-xs", ~on_click: add(1)){+1}}
+    div(class: "flex gap-2 items-center"):
+      span(class: "badge badge-neutral"):
+        @(summary())
+      " "
+      button(class: "btn btn-xs", ~on_click: add(1)):
+        "+1"
 
 fixtures:
   "as a row":
@@ -220,10 +248,43 @@ logic:
 
 view:
   Todo:
-    @div(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@h2(~class: "card-title"){Todos}@div(~class: "flex gap-2 items-center"){@input(~class: "input input-sm w-full draft", ~placeholder: "what needs doing", ~value: it.draft, ~on_input: it.draft := e.value, ~on_keydown: add_item ~send) @button(~class: "btn btn-sm btn-primary add", ~on_click: add_item){add}} @comment{@" \`<x render-each>\` renders each item as a component in its own right, with its own state and its own handlers — where \`@each\` would render a value with THIS component's. "} @show(any_items()){@ul(~class: "flex flex-col gap-2"){@each(value, key in it.items){@render(value)}}} @hide(any_items()){@p(~class: "opacity-60 italic"){nothing yet}} @span(~class: "badge badge-sm badge-neutral tally"){@(caption())}}}
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        h2(class: "card-title"):
+          "Todos"
+        div(class: "flex gap-2 items-center"):
+          input(class: "input input-sm w-full draft", placeholder: "what needs doing", value: it.draft, ~on_input: it.draft := e.value, ~on_keydown: add_item ~send)
+          " "
+          button(class: "btn btn-sm btn-primary add", ~on_click: add_item):
+            "add"
+        " "
+        comment(): " \`<x render-each>\` renders each item as a component in its own right, with its own state and its own handlers — where \`@each\` would render a value with THIS component's. "
+        " "
+        show(any_items()):
+          ul(class: "flex flex-col gap-2"):
+            each(value, key in it.items):
+              render(value)
+        " "
+        hide(any_items()):
+          p(class: "opacity-60 italic"):
+            "nothing yet"
+        " "
+        span(class: "badge badge-sm badge-neutral tally"):
+          @(caption())
 
   TodoItem:
-    @li(~class: "flex gap-3 items-center w-full"){@input(~type: "checkbox", ~class: "checkbox checkbox-sm check", ~on_click: toggle) @hide(it.editing){@span(~class: "w-full label", ~on_dblclick: start_edit){@(label())}} @show(it.editing){@input(~class: "input input-xs w-full edit", ~value: it.draft, ~on_input: it.draft := e.value, ~on_keydown: commit_edit ~send, ~on_keydown: cancel_edit ~cancel)} @button(~class: "btn btn-xs btn-soft btn-error btn-circle remove", ~on_click: request_remove){×}}
+    li(class: "flex gap-3 items-center w-full"):
+      input(type: "checkbox", class: "checkbox checkbox-sm check", ~on_click: toggle)
+      " "
+      hide(it.editing):
+        span(class: "w-full label", ~on_dblclick: start_edit):
+          @(label())
+      " "
+      show(it.editing):
+        input(class: "input input-xs w-full edit", value: it.draft, ~on_input: it.draft := e.value, ~on_keydown: commit_edit ~send, ~on_keydown: cancel_edit ~cancel)
+      " "
+      button(class: "btn btn-xs btn-soft btn-error btn-circle remove", ~on_click: request_remove):
+        "×"
 
 fixtures:
   "empty" ~default:
@@ -335,16 +396,18 @@ logic:
 
 view:
   Filter:
-    @div(~class: "card bg-base-200 max-w-md"){
-      @div(~class: "card-body gap-3"){
-        @div(~class: "flex gap-2 items-center"){@input(~class: "input input-sm w-full", ~placeholder: "filter", ~value: it.query, ~on_input: it.query := e.value) @span(~class: "badge badge-sm badge-neutral"){@(caption())}}
-        @ul(~class: "flex flex-col gap-1"){
-          @each(value, key in it.names, ~when: matches){
-            @li(~class: "badge badge-ghost w-full justify-start"){@(value)}
-          }
-        }
-      }
-    }
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        div(class: "flex gap-2 items-center"):
+          input(class: "input input-sm w-full", placeholder: "filter", value: it.query, ~on_input: it.query := e.value)
+          " "
+          span(class: "badge badge-sm badge-neutral"):
+            @(caption())
+        "\\n"
+        ul(class: "flex flex-col gap-1"):
+          each(value, key in it.names, ~when: matches):
+            li(class: "badge badge-ghost w-full justify-start"):
+              @(value)
 
 fixtures:
   "narrowed to gr":
@@ -405,13 +468,27 @@ logic:
 
 view:
   Inbox:
-    @div(~class: "card bg-base-200 max-w-md"){
-      @div(~class: "card-body gap-3"){
-        @h2(~class: "card-title"){@(it.status)}
-        @p(~class: "flex gap-2 items-center"){@span(~class: "opacity-70"){seen} @span(~class: "badge badge-sm badge-primary"){@(it.seen)}}
-        @div(~class: "join"){@button(~class: "btn btn-sm join-item", ~on_click: shout){shout} @button(~class: "btn btn-sm join-item", ~on_click: quiet){quiet} @button(~class: "btn btn-sm join-item btn-primary", ~on_click: five){bump 5}}
-      }
-    }
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        h2(class: "card-title"):
+          @(it.status)
+        "\\n"
+        p(class: "flex gap-2 items-center"):
+          span(class: "opacity-70"):
+            "seen"
+          " "
+          span(class: "badge badge-sm badge-primary"):
+            @(it.seen)
+        "\\n"
+        div(class: "join"):
+          button(class: "btn btn-sm join-item", ~on_click: shout):
+            "shout"
+          " "
+          button(class: "btn btn-sm join-item", ~on_click: quiet):
+            "quiet"
+          " "
+          button(class: "btn btn-sm join-item btn-primary", ~on_click: five):
+            "bump 5"
 
 fixtures:
   "a few notes in":
@@ -523,7 +600,42 @@ logic:
 
 view:
   Feed:
-    @div(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@show(it.busy){@p(~class: "opacity-60 italic"){asking the host…}} @hide(it.error.is_empty()){@div(~class: "alert alert-error"){@span(~class: "font-mono text-sm"){@(it.error)}}} @hide(it.busy){@ul(~class: "flex flex-col gap-1"){@each(value, key in it.rows){@li(~class: "rounded bg-base-100 p-2"){@p(~class: "font-bold"){@(value.title)}@p(~class: "text-sm opacity-70"){@(value.description)}}}}} @div(~class: "flex gap-2 items-center"){@input(~class: "input input-sm w-full", ~placeholder: "say something", ~value: it.query, ~on_input: it.query := e.value, ~on_keydown: echo_query ~send) @button(~class: "btn btn-sm", ~on_click: echo_query){echo it}} @hide(it.echoed.is_empty()){@p(~class: "badge badge-sm badge-neutral"){@(it.echoed)}} @div(~class: "join"){@button(~class: "btn btn-sm btn-primary join-item", ~on_click: reload){reload} @button(~class: "btn btn-sm btn-soft btn-error join-item", ~on_click: break_it){break it}}}}
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        show(it.busy):
+          p(class: "opacity-60 italic"):
+            "asking the host…"
+        " "
+        hide(it.error.is_empty()):
+          div(class: "alert alert-error"):
+            span(class: "font-mono text-sm"):
+              @(it.error)
+        " "
+        hide(it.busy):
+          ul(class: "flex flex-col gap-1"):
+            each(value, key in it.rows):
+              li(class: "rounded bg-base-100 p-2"):
+                p(class: "font-bold"):
+                  @(value.title)
+                p(class: "text-sm opacity-70"):
+                  @(value.description)
+        " "
+        div(class: "flex gap-2 items-center"):
+          input(class: "input input-sm w-full", placeholder: "say something", value: it.query, ~on_input: it.query := e.value, ~on_keydown: echo_query ~send)
+          " "
+          button(class: "btn btn-sm", ~on_click: echo_query):
+            "echo it"
+        " "
+        hide(it.echoed.is_empty()):
+          p(class: "badge badge-sm badge-neutral"):
+            @(it.echoed)
+        " "
+        div(class: "join"):
+          button(class: "btn btn-sm btn-primary join-item", ~on_click: reload):
+            "reload"
+          " "
+          button(class: "btn btn-sm btn-soft btn-error join-item", ~on_click: break_it):
+            "break it"
 
 fixtures:
   "a feed that travels with the card":
@@ -576,7 +688,28 @@ logic:
 
 view:
   TrafficLight:
-    @section(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-2"){@button(~class: "btn btn-primary", ~on_click: next_light){Next light} @p{@"Light is: "@code{@(light())}}@p(~class: "advice"){@" You must "@show((light() == "red")){@span{STOP}} @show((light() == "orange")){@span{SLOW DOWN}} @show((light() == "green")){@span{GO}}}}}
+    section(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-2"):
+        button(class: "btn btn-primary", ~on_click: next_light):
+          "Next light"
+        " "
+        p():
+          "Light is: "
+          code():
+            @(light())
+        p(class: "advice"):
+          " You must "
+          show((light() == "red")):
+            span():
+              "STOP"
+          " "
+          show((light() == "orange")):
+            span():
+              "SLOW DOWN"
+          " "
+          show((light() == "green")):
+            span():
+              "GO"
 
 fixtures:
   "fresh" ~default:
@@ -616,7 +749,38 @@ tests:
 
 view:
   TabbedUI:
-    @section(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@div(~role: "tablist", ~class: "tabs tabs-border"){@button(~role: "tab", ~class: if (it.tab == "overview") | "tab tab-active" | "tab", ~on_click: it.tab := "overview"){Overview} @button(~role: "tab", ~class: if (it.tab == "features") | "tab tab-active" | "tab", ~on_click: it.tab := "features"){Features} @button(~role: "tab", ~class: if (it.tab == "pricing") | "tab tab-active" | "tab", ~on_click: it.tab := "pricing"){Pricing}} @show((it.tab == "overview")){@div(~class: "p-3"){@h4{Overview}@p{A short summary of what this product does.}}} @show((it.tab == "features")){@div(~class: "p-3"){@h4{Features}@p{The list of features lives on this tab.}}} @show((it.tab == "pricing")){@div(~class: "p-3"){@h4{Pricing}@p{What it costs.}}}}}
+    section(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        div(role: "tablist", class: "tabs tabs-border"):
+          button(role: "tab", class: if (it.tab == "overview") | "tab tab-active" | "tab", ~on_click: it.tab := "overview"):
+            "Overview"
+          " "
+          button(role: "tab", class: if (it.tab == "features") | "tab tab-active" | "tab", ~on_click: it.tab := "features"):
+            "Features"
+          " "
+          button(role: "tab", class: if (it.tab == "pricing") | "tab tab-active" | "tab", ~on_click: it.tab := "pricing"):
+            "Pricing"
+        " "
+        show((it.tab == "overview")):
+          div(class: "p-3"):
+            h4():
+              "Overview"
+            p():
+              "A short summary of what this product does."
+        " "
+        show((it.tab == "features")):
+          div(class: "p-3"):
+            h4():
+              "Features"
+            p():
+              "The list of features lives on this tab."
+        " "
+        show((it.tab == "pricing")):
+          div(class: "p-3"):
+            h4():
+              "Pricing"
+            p():
+              "What it costs."
 
 fixtures:
   "overview open" ~default:
@@ -657,7 +821,35 @@ logic:
 
 view:
   ShowHide:
-    @section(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-2"){@button(~class: "btn btn-primary", ~on_click: it.is_open := !it.is_open){@(label())} @show(it.is_open){@div(~class: "p-3"){@p{@"Details panel — only visible when "@code{isOpen}@" is true."} @button(~class: "btn btn-sm", ~on_click: inc_count){Click me} @p{@"Clicked "@(it.count)@" times."}}} @hide(it.is_open){@p(~class: "opacity-60"){(details are hidden)}} @p{@"Count, only when open: "@show(it.is_open){@(it.count)}}}}
+    section(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-2"):
+        button(class: "btn btn-primary", ~on_click: it.is_open := !it.is_open):
+          @(label())
+        " "
+        show(it.is_open):
+          div(class: "p-3"):
+            p():
+              "Details panel — only visible when "
+              code():
+                "isOpen"
+              " is true."
+            " "
+            button(class: "btn btn-sm", ~on_click: inc_count):
+              "Click me"
+            " "
+            p():
+              "Clicked "
+              @(it.count)
+              " times."
+        " "
+        hide(it.is_open):
+          p(class: "opacity-60"):
+            "(details are hidden)"
+        " "
+        p():
+          "Count, only when open: "
+          show(it.is_open):
+            @(it.count)
 
 fixtures:
   "closed" ~default:
@@ -696,7 +888,30 @@ tests:
 
 view:
   AttributeBinding:
-    @section(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@input(~class: "input input-sm", ~value: it.str, ~on_input: it.str := e.value, ~title: @str{Content is @(it.str)}) @comment{ \`valueAsInt\` rather than a handler that parses the string: the argument names are where a card does its conversions. } @input(~class: "input input-sm", ~type: "number", ~value: it.num, ~on_input: it.num := e.valueAsInt) @label(~class: "flex gap-2 items-center"){@input(~class: "checkbox checkbox-sm", ~type: "checkbox", ~checked: it.bool, ~on_input: it.bool := e.value)@" bool "} @p{@"String: "@span{@(it.str)}}@p{@"Number: "@span{@(it.num)}}@p{@"Boolean: "@span{@(it.bool)}}}}
+    section(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        input(class: "input input-sm", value: it.str, ~on_input: it.str := e.value, title: @str{Content is @(it.str)})
+        " "
+        comment(): " \`valueAsInt\` rather than a handler that parses the string: the argument names are where a card does its conversions. "
+        " "
+        input(class: "input input-sm", type: "number", value: it.num, ~on_input: it.num := e.valueAsInt)
+        " "
+        label(class: "flex gap-2 items-center"):
+          input(class: "checkbox checkbox-sm", type: "checkbox", checked: it.bool, ~on_input: it.bool := e.value)
+          " bool "
+        " "
+        p():
+          "String: "
+          span():
+            @(it.str)
+        p():
+          "Number: "
+          span():
+            @(it.num)
+        p():
+          "Boolean: "
+          span():
+            @(it.bool)
 
 fixtures:
   "blank" ~default:
@@ -728,7 +943,18 @@ tests:
 
 view:
   EventModifiers:
-    @section(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@comment{ Three handlers, no script block: every one of them is a mutator the schema generated. The modifiers are guards — +send is Enter, +cancel is Escape. } @input(~type: "search", ~class: "input input-sm", ~value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.last_sent_search := e.value ~send, ~on_keydown: it.query := default ~cancel, ~placeholder: "Search (Enter to send, Esc to clear)") @show(it.last_sent_search.is_truthy()){@p{@" Search: \\""@span(~class: "sent"){@(it.last_sent_search)}@"\\" "}}}}
+    section(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        comment(): " Three handlers, no script block: every one of them is a mutator the schema generated. The modifiers are guards — +send is Enter, +cancel is Escape. "
+        " "
+        input(type: "search", class: "input input-sm", value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.last_sent_search := e.value ~send, ~on_keydown: it.query := default ~cancel, placeholder: "Search (Enter to send, Esc to clear)")
+        " "
+        show(it.last_sent_search.is_truthy()):
+          p():
+            " Search: \\""
+            span(class: "sent"):
+              @(it.last_sent_search)
+            "\\" "
 
 fixtures:
   "a sent search":
@@ -792,7 +1018,36 @@ logic:
 
 view:
   FilePicker:
-    @div(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@label(~class: "flex flex-col gap-1"){@span(~class: "text-sm opacity-70"){Pick a file} @input(~type: "file", ~class: "file-input file-input-sm", ~on_change: pick(e.value))} @show(it.has_file){@table(~class: "table"){@tbody{@tr{@th{Name}@td{@(it.name)}}@tr{@th{Size}@td{@(size_label())}}@tr{@th{Type}@td{@(type_label())}}}}} @hide(it.has_file){@p(~class: "opacity-70"){Nothing picked yet.}}}}
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        label(class: "flex flex-col gap-1"):
+          span(class: "text-sm opacity-70"):
+            "Pick a file"
+          " "
+          input(type: "file", class: "file-input file-input-sm", ~on_change: pick(e.value))
+        " "
+        show(it.has_file):
+          table(class: "table"):
+            tbody():
+              tr():
+                th():
+                  "Name"
+                td():
+                  @(it.name)
+              tr():
+                th():
+                  "Size"
+                td():
+                  @(size_label())
+              tr():
+                th():
+                  "Type"
+                td():
+                  @(type_label())
+        " "
+        hide(it.has_file):
+          p(class: "opacity-70"):
+            "Nothing picked yet."
 
 fixtures:
   "a picked file":
@@ -827,7 +1082,23 @@ logic:
 
 view:
   RenderWithScope:
-    @section(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@input(~class: "input input-sm", ~value: it.text, ~on_input: it.text := e.value) @div(~enrich_with: info){@p{@"Text: "@span{@(it.text)}}@p{@"Len: "@span(~class: "len"){@(len)}}@p{@"Upper: "@span(~class: "upper"){@(upper)}}}}}
+    section(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        input(class: "input input-sm", value: it.text, ~on_input: it.text := e.value)
+        " "
+        div(~enrich_with: info):
+          p():
+            "Text: "
+            span():
+              @(it.text)
+          p():
+            "Len: "
+            span(class: "len"):
+              @(len)
+          p():
+            "Upper: "
+            span(class: "upper"):
+              @(upper)
 
 fixtures:
   "fresh" ~default:
@@ -889,10 +1160,29 @@ logic:
 
 view:
   Palette:
-    @section(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@label(~class: "text-sm opacity-70"){Theme, provided to the whole subtree} @input(~class: "theme input input-sm", ~value: it.theme, ~on_input: set_theme(e.value)) @div(~class: "flex gap-2"){@input(~class: "draft input input-sm flex-1", ~value: it.draft, ~on_input: set_draft(e.value)) @button(~class: "btn btn-sm", ~on_click: add){add}}@ul(~class: "flex flex-col gap-1"){@each(value, key in it.swatches){@render(value)}}}}
+    section(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        label(class: "text-sm opacity-70"):
+          "Theme, provided to the whole subtree"
+        " "
+        input(class: "theme input input-sm", value: it.theme, ~on_input: set_theme(e.value))
+        " "
+        div(class: "flex gap-2"):
+          input(class: "draft input input-sm flex-1", value: it.draft, ~on_input: set_draft(e.value))
+          " "
+          button(class: "btn btn-sm", ~on_click: add):
+            "add"
+        ul(class: "flex flex-col gap-1"):
+          each(value, key in it.swatches):
+            render(value)
 
   Swatch:
-    @li(~class: "row flex gap-2"){@span(~class: "label font-medium"){@(it.label)} @span(~class: "theme badge badge-sm"){@(dyn.theme)}}
+    li(class: "row flex gap-2"):
+      span(class: "label font-medium"):
+        @(it.label)
+      " "
+      span(class: "theme badge badge-sm"):
+        @(dyn.theme)
 
 fixtures:
   "two swatches" ~default:
@@ -944,7 +1234,20 @@ logic:
 
 view:
   ListFilterEnrich:
-    @section(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@input(~type: "search", ~class: "input input-sm", ~value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := default ~cancel, ~placeholder: "Filter entries") @ul(~class: "flex flex-col gap-1"){@each(value, key in it.items, ~when: filter_item, ~enrich_with: enrich_item){@li{@span{@(key)}@": "@(value)@" ("@(count)@" characters) "}}}}}
+    section(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        input(type: "search", class: "input input-sm", value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := default ~cancel, placeholder: "Filter entries")
+        " "
+        ul(class: "flex flex-col gap-1"):
+          each(value, key in it.items, ~when: filter_item, ~enrich_with: enrich_item):
+            li():
+              span():
+                @(key)
+              ": "
+              @(value)
+              " ("
+              @(count)
+              " characters) "
 
 fixtures:
   "all four" ~default:
@@ -981,7 +1284,17 @@ logic:
 
 view:
   Iteration:
-    @section(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-2"){@comment{ The two names a loop binds, and nothing else in the file. } @ul(~class: "flex flex-col gap-1"){@each(value, key in it.items){@li{@span(~class: "badge badge-sm badge-neutral"){@(key)} @(value)}}}}}
+    section(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-2"):
+        comment(): " The two names a loop binds, and nothing else in the file. "
+        " "
+        ul(class: "flex flex-col gap-1"):
+          each(value, key in it.items):
+            li():
+              span(class: "badge badge-sm badge-neutral"):
+                @(key)
+              " "
+              @(value)
 
 tests:
   "each row binds a key and a value":
@@ -1009,7 +1322,12 @@ logic:
 
 view:
   MdPreview:
-    @div(~class: "flex gap-3 items-stretch"){@textarea(~class: "textarea flex-1 font-mono text-xs", ~spellcheck: "false", ~value: it.source, ~on_input: it.source := e.value) @comment{ Markdown, rendered straight into the vdom by the render-time filter — no handler, no library on the page. } @div(~class: "flex-1 p-3 bg-base-100 rounded overflow-auto", ~inner_md: it.source)}
+    div(class: "flex gap-3 items-stretch"):
+      textarea(class: "textarea flex-1 font-mono text-xs", spellcheck: "false", value: it.source, ~on_input: it.source := e.value)
+      " "
+      comment(): " Markdown, rendered straight into the vdom by the render-time filter — no handler, no library on the page. "
+      " "
+      div(class: "flex-1 p-3 bg-base-100 rounded overflow-auto", inner_md: it.source)
 
 fixtures:
   "a different document":
@@ -1054,7 +1372,38 @@ logic:
 
 view:
   TextDirective:
-    @div(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body grid grid-cols-[auto_auto] gap-x-4 gap-y-2 items-center"){@span{String:} @span{@(it.str)} @span{Number:} @span{@(it.num)} @span{Boolean:} @(it.bool) @comment{ A Null renders as nothing at all, not as the word "null". } @span{notSet:} @span{@(it.not_set)} @span{Method call:} @span{@(get_str_upper())}}}
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body grid grid-cols-[auto_auto] gap-x-4 gap-y-2 items-center"):
+        span():
+          "String:"
+        " "
+        span():
+          @(it.str)
+        " "
+        span():
+          "Number:"
+        " "
+        span():
+          @(it.num)
+        " "
+        span():
+          "Boolean:"
+        " "
+        @(it.bool)
+        " "
+        comment(): " A Null renders as nothing at all, not as the word \"null\". "
+        " "
+        span():
+          "notSet:"
+        " "
+        span():
+          @(it.not_set)
+        " "
+        span():
+          "Method call:"
+        " "
+        span():
+          @(get_str_upper())
 
 tests:
   "what each spelling renders":
@@ -1080,7 +1429,13 @@ logic:
 
 view:
   DangerSetInnerHtml:
-    @div(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@comment{ The escape hatch, named so nobody reaches for it by accident. } @div(~class: "p-2 bg-base-100 rounded", ~dangerously_inner_html: it.content) @textarea(~class: "textarea font-mono text-xs", ~value: it.content, ~on_input: it.content := e.value)}}
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        comment(): " The escape hatch, named so nobody reaches for it by accident. "
+        " "
+        div(class: "p-2 bg-base-100 rounded", dangerously_inner_html: it.content)
+        " "
+        textarea(class: "textarea font-mono text-xs", value: it.content, ~on_input: it.content := e.value)
 `,
   },
   {
@@ -1091,7 +1446,18 @@ view:
 
 view:
   ConditionalAttributes:
-    @div(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body"){@comment{@" Two @if on one element, so every @then/@else after the first names its attribute: HTML forbids duplicate attributes, and the parser would drop the second pair before tutuca saw it. "} @button(~class: if it.is_active | "btn btn-success" | "btn btn-ghost", ~title: if it.is_active | "Click to disable" | "Click to enable", ~on_click: it.is_active := !it.is_active){@show(it.is_active){@span{Enabled}} @hide(it.is_active){@span{Disabled}}}}}
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body"):
+        comment(): " Two @if on one element, so every @then/@else after the first names its attribute: HTML forbids duplicate attributes, and the parser would drop the second pair before tutuca saw it. "
+        " "
+        button(class: if it.is_active | "btn btn-success" | "btn btn-ghost", title: if it.is_active | "Click to disable" | "Click to enable", ~on_click: it.is_active := !it.is_active):
+          show(it.is_active):
+            span():
+              "Enabled"
+          " "
+          hide(it.is_active):
+            span():
+              "Disabled"
 
 fixtures:
   "disabled" ~default:
@@ -1122,15 +1488,33 @@ logic:
     compute label: if it.loud | "quieten it" | "make it loud"
 
 view:
-  @style{.common { color: mediumaquamarine; font-style: italic; }}
+  style():
+    class(common):
+      color: mediumaquamarine
+      font_style: italic
 
-  @style(~global){.styled-global { color: violet; text-decoration: underline dotted; }}
+  style(~global):
+    class(styled_global):
+      color: violet
+      text_decoration: underline dotted
 
   Styled:
-    @style{.mine { color: gold; font-weight: 600; } .mine.loud { font-size: 1.4rem; letter-spacing: .05em; }}
-    @comment{ A <style> inside a template belongs to THAT view: the runtime scopes it to the component's own nodes, so \`.mine\` here reaches neither the page around the card nor another card on it. }
-    @" "
-    @div(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@comment{ A class list and a scoped rule compose: \`card\`, \`btn\` and the rest are compiled by margaui, \`mine\` is this file's. Switching between whole literals is what keeps both readable to the collector. } @p(~class: if it.loud | "mine loud" | "mine"){@" styled by the view's own block "}@p(~class: "common"){styled by the file's common block}@p(~class: "styled-global"){styled by the global block} @button(~class: "btn btn-sm", ~on_click: it.loud := !it.loud){@(label())}}}
+    style(): @{.mine { color: gold; font-weight: 600; } .mine.loud { font-size: 1.4rem; letter-spacing: .05em; }}
+    comment(): " A <style> inside a template belongs to THAT view: the runtime scopes it to the component's own nodes, so \`.mine\` here reaches neither the page around the card nor another card on it. "
+    " "
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        comment(): " A class list and a scoped rule compose: \`card\`, \`btn\` and the rest are compiled by margaui, \`mine\` is this file's. Switching between whole literals is what keeps both readable to the collector. "
+        " "
+        p(class: if it.loud | "mine loud" | "mine"):
+          " styled by the view's own block "
+        p(class: "common"):
+          "styled by the file's common block"
+        p(class: "styled-global"):
+          "styled by the global block"
+        " "
+        button(class: "btn btn-sm", ~on_click: it.loud := !it.loud):
+          @(label())
 
 fixtures:
   "loud":
@@ -1178,7 +1562,17 @@ logic:
 
 view:
   SwatchPicker:
-    @div(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-2"){@svg(~viewBox: "0 0 380 130", ~role: "img"){@rect(~x: "20", ~y: "12", ~width: "340", ~height: "52", ~rx: "8", ~fill: it.color) @each(value, key in it.palette, ~enrich_with: swatch){@circle(~cx: cx, ~cy: "98", ~r: "18", ~fill: value, ~stroke_width: "3", ~stroke: ring, ~on_click: it.color := value)}} @p(~class: "text-sm"){@"Selected: "@(it.color)}}}
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-2"):
+        svg(viewBox: "0 0 380 130", role: "img"):
+          rect(x: "20", y: "12", width: "340", height: "52", rx: "8", fill: it.color)
+          " "
+          each(value, key in it.palette, ~enrich_with: swatch):
+            circle(cx: cx, cy: "98", r: "18", fill: value, stroke_width: "3", stroke: ring, ~on_click: it.color := value)
+        " "
+        p(class: "text-sm"):
+          "Selected: "
+          @(it.color)
 
 fixtures:
   "blue picked":
@@ -1225,7 +1619,58 @@ logic:
 
 view:
   Quadratic:
-    @div(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@div(~class: "flex gap-3 text-sm"){@label(~class: "flex items-center gap-1"){@"a "@input(~type: "number", ~class: "input input-sm w-16", ~value: it.a, ~on_input: it.a := e.valueAsInt)} @label(~class: "flex items-center gap-1"){@"b "@input(~type: "number", ~class: "input input-sm w-16", ~value: it.b, ~on_input: it.b := e.valueAsInt)} @label(~class: "flex items-center gap-1"){@"c "@input(~type: "number", ~class: "input input-sm w-16", ~value: it.c, ~on_input: it.c := e.valueAsInt)}} @comment{ MathML, namespaced by the subtree it sits in — no directive needed. } @math(~display: "block"){@mn{@(it.a)}@mo{⁢} @msup{@mi{x}@mn{2}}@mo{+} @mn{@(it.b)}@mo{⁢}@mi{x}@mo{+} @mn{@(it.c)}@mo{=}@mn{0}} @p(~class: "verdict"){@"Discriminant: "@(discriminant())@" — "@(classify())}}}
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        div(class: "flex gap-3 text-sm"):
+          label(class: "flex items-center gap-1"):
+            "a "
+            input(type: "number", class: "input input-sm w-16", value: it.a, ~on_input: it.a := e.valueAsInt)
+          " "
+          label(class: "flex items-center gap-1"):
+            "b "
+            input(type: "number", class: "input input-sm w-16", value: it.b, ~on_input: it.b := e.valueAsInt)
+          " "
+          label(class: "flex items-center gap-1"):
+            "c "
+            input(type: "number", class: "input input-sm w-16", value: it.c, ~on_input: it.c := e.valueAsInt)
+        " "
+        comment(): " MathML, namespaced by the subtree it sits in — no directive needed. "
+        " "
+        math(display: "block"):
+          mn():
+            @(it.a)
+          mo():
+            "⁢"
+          " "
+          msup():
+            mi():
+              "x"
+            mn():
+              "2"
+          mo():
+            "+"
+          " "
+          mn():
+            @(it.b)
+          mo():
+            "⁢"
+          mi():
+            "x"
+          mo():
+            "+"
+          " "
+          mn():
+            @(it.c)
+          mo():
+            "="
+          mn():
+            "0"
+        " "
+        p(class: "verdict"):
+          "Discriminant: "
+          @(discriminant())
+          " — "
+          @(classify())
 
 fixtures:
   "repeated root":
@@ -1286,17 +1731,22 @@ logic:
 
 view:
   Nested:
-    @div(~class: "card bg-base-200 max-w-md"){
-      @div(~class: "card-body gap-3"){
-        @h2(~class: "card-title"){@(it.title)}
-        @div(~class: "flex gap-2 items-center"){@input(~class: "input input-sm w-full draft", ~placeholder: "add a label", ~value: it.draft, ~on_input: it.draft := e.value, ~on_keydown: add_label ~send) @button(~class: "btn btn-sm btn-primary", ~on_click: add_label){add}}
-        @ul(~class: "flex flex-col gap-1"){
-          @each(value, key in it.labels){
-            @li{@button(~class: if value.done | "btn btn-xs btn-success" | "btn btn-xs", ~on_click: toggle_label(key)){@(value.text)}}
-          }
-        }
-      }
-    }
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        h2(class: "card-title"):
+          @(it.title)
+        "\\n"
+        div(class: "flex gap-2 items-center"):
+          input(class: "input input-sm w-full draft", placeholder: "add a label", value: it.draft, ~on_input: it.draft := e.value, ~on_keydown: add_label ~send)
+          " "
+          button(class: "btn btn-sm btn-primary", ~on_click: add_label):
+            "add"
+        "\\n"
+        ul(class: "flex flex-col gap-1"):
+          each(value, key in it.labels):
+            li():
+              button(class: if value.done | "btn btn-xs btn-success" | "btn btn-xs", ~on_click: toggle_label(key)):
+                @(value.text)
 
 fixtures:
   "one added by doing":
@@ -1407,30 +1857,65 @@ logic:
 
 view:
   Seats:
-    @div(~class: "card bg-base-200 max-w-md"){
-      @div(~class: "card-body gap-3"){
-        @div(~class: "stats bg-base-100"){
-          @div(~class: "stat"){
-            @div(~class: "stat-title"){seated}
-            @div(~class: "stat-value text-2xl"){@(it.taken)}
-          }
-          @div(~class: "stat"){
-            @div(~class: "stat-title"){waiting}
-            @div(~class: "stat-value text-2xl"){@(it.waiting)}
-          }
-          @div(~class: "stat"){
-            @div(~class: "stat-title"){capacity}
-            @div(~class: "stat-value text-2xl"){@(it.capacity)}
-          }
-        }
-        @div(~class: "flex gap-2 items-center flex-wrap"){@div(~class: "join"){@button(~class: "btn btn-sm join-item", ~on_click: seat){seat one} @button(~class: "btn btn-sm join-item", ~on_click: stand){stand one} @button(~class: "btn btn-sm join-item", ~on_click: queue){queue one}}@div(~class: "join"){@button(~class: "btn btn-sm btn-primary join-item", ~on_click: seat_all, ~title: "a postcondition it keeps"){seat all} @button(~class: "btn btn-sm btn-soft btn-warning join-item", ~on_click: rush, ~title: "a postcondition it only keeps when one was all there was"){rush}} @button(~class: "btn btn-sm btn-soft btn-error", ~on_click: overbook, ~title: "refused by the invariant, and reported"){overbook}}
-        @ul(~class: "flex flex-col gap-1 font-mono text-xs"){
-          @li(~class: "flex gap-2 items-center"){@span(~class: if within_capacity() | "badge badge-sm badge-success" | "badge badge-sm badge-error"){@(within_capacity())}@" withinCapacity: the invariant, kept after every handler "}
-          @li(~class: "flex gap-2 items-center"){@span(~class: if can_seat() | "badge badge-sm badge-success" | "badge badge-sm badge-error"){@(can_seat())}@" canSeat: what \`seat\` asks before it moves anybody "}
-          @li(~class: "flex gap-2 items-center"){@span(~class: if none_waiting() | "badge badge-sm badge-success" | "badge badge-sm badge-error"){@(none_waiting())}@" noneWaiting: where \`seat all\` and \`rush\` have to land "}
-        }
-      }
-    }
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        div(class: "stats bg-base-100"):
+          div(class: "stat"):
+            div(class: "stat-title"):
+              "seated"
+            "\\n"
+            div(class: "stat-value text-2xl"):
+              @(it.taken)
+          "\\n"
+          div(class: "stat"):
+            div(class: "stat-title"):
+              "waiting"
+            "\\n"
+            div(class: "stat-value text-2xl"):
+              @(it.waiting)
+          "\\n"
+          div(class: "stat"):
+            div(class: "stat-title"):
+              "capacity"
+            "\\n"
+            div(class: "stat-value text-2xl"):
+              @(it.capacity)
+        "\\n"
+        div(class: "flex gap-2 items-center flex-wrap"):
+          div(class: "join"):
+            button(class: "btn btn-sm join-item", ~on_click: seat):
+              "seat one"
+            " "
+            button(class: "btn btn-sm join-item", ~on_click: stand):
+              "stand one"
+            " "
+            button(class: "btn btn-sm join-item", ~on_click: queue):
+              "queue one"
+          div(class: "join"):
+            button(class: "btn btn-sm btn-primary join-item", ~on_click: seat_all, title: "a postcondition it keeps"):
+              "seat all"
+            " "
+            button(class: "btn btn-sm btn-soft btn-warning join-item", ~on_click: rush, title: "a postcondition it only keeps when one was all there was"):
+              "rush"
+          " "
+          button(class: "btn btn-sm btn-soft btn-error", ~on_click: overbook, title: "refused by the invariant, and reported"):
+            "overbook"
+        "\\n"
+        ul(class: "flex flex-col gap-1 font-mono text-xs"):
+          li(class: "flex gap-2 items-center"):
+            span(class: if within_capacity() | "badge badge-sm badge-success" | "badge badge-sm badge-error"):
+              @(within_capacity())
+            " withinCapacity: the invariant, kept after every handler "
+          "\\n"
+          li(class: "flex gap-2 items-center"):
+            span(class: if can_seat() | "badge badge-sm badge-success" | "badge badge-sm badge-error"):
+              @(can_seat())
+            " canSeat: what \`seat\` asks before it moves anybody "
+          "\\n"
+          li(class: "flex gap-2 items-center"):
+            span(class: if none_waiting() | "badge badge-sm badge-success" | "badge badge-sm badge-error"):
+              @(none_waiting())
+            " noneWaiting: where \`seat all\` and \`rush\` have to land "
 
 fixtures:
   "early doors" ~default:
@@ -1490,42 +1975,46 @@ logic:
       it.count += 1
 
 view:
-  /// A macro is pure template expansion: no state, no handlers, no lifecycle.
-  /// \`~on_click: inc\` inside one calls \`inc\` on the COMPONENT it expanded
-  /// into, which is the whole difference from a child component.
   macro badge(~label: "New", ~kind: "neutral"):
-    @span(~class: if kind | @str{badge badge-@(kind)} | "badge"){@(label)}
+    span(class: if kind | @str{badge badge-@(kind)} | "badge"):
+      @(label)
 
-  /// \`@slot\` is where the call's children go, and \`@slot("name")\` is a second
-  /// place to put some of them.
   macro panel(~title: "Panel"):
-    @div(~class: "card bg-base-100"){
-      @div(~class: "card-body gap-2"){
-        @h3(~class: "card-title text-base"){@(title)}
-        @slot
-        @div(~class: "card-actions"){@slot("actions")}
-      }
-    }
+    div(class: "card bg-base-100"):
+      div(class: "card-body gap-2"):
+        h3(class: "card-title text-base"):
+          @(title)
+        "\\n"
+        slot()
+        "\\n"
+        div(class: "card-actions"):
+          slot("actions")
 
   MacroDemo:
-    @div(~class: "card bg-base-200 max-w-md"){
-      @div(~class: "card-body gap-3"){
-        @comment{ A parameter, a default, and a DYNAMIC one read off the state. }
-        @p(~class: "flex gap-2 items-center"){
-          @badge()
-          @badge(~label: "Sale", ~kind: "success")
-          @badge(~label: "Live", ~kind: it.status)
-        }
-        @comment{ The default slot takes the children; a named one takes the ones that ask for it by name. }
-        @panel(~title: "Slots"){
-          @p{This paragraph is the macro call's child.}
-          @fill("actions"){
-            @button(~class: "btn btn-sm btn-primary", ~on_click: inc){+1}
-          }
-        }
-        @p{@"Count: "@(it.count)}
-      }
-    }
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        comment(): " A parameter, a default, and a DYNAMIC one read off the state. "
+        "\\n"
+        p(class: "flex gap-2 items-center"):
+          badge()
+          "\\n"
+          badge(~label: "Sale", ~kind: "success")
+          "\\n"
+          badge(~label: "Live", ~kind: it.status)
+        "\\n"
+        comment(): " The default slot takes the children; a named one takes the ones that ask for it by name. "
+        "\\n"
+        panel(~title: "Slots"):
+          p():
+            "This paragraph is the macro call's child."
+          "\\n"
+          fill("actions"):
+            button(class: "btn btn-sm btn-primary", ~on_click: inc):
+              "+1"
+        "\\n"
+        p():
+          "Count: "
+          @(it.count)
 
 fixtures:
   "fresh" ~default:
@@ -1590,8 +2079,20 @@ logic:
 
 view:
   Reorder:
-    @style{/* The two attributes tutuca manages during a drag. No class route exists for either — they are set on the live nodes — so this is the one card that has to say something a utility class cannot. */ [data-dragging="1"] { opacity: .5; } [data-draggingover="reorder-row"] { outline: 1px dashed currentColor; outline-offset: 2px; }}
-    @section(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@input(~type: "search", ~class: "input input-sm", ~value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := default ~cancel, ~placeholder: "Filter entries") @comment{ data-dragtype on the source and data-droptarget on the target pair a draggable with where it may land; both are on the same row here, since every row is both. } @ul(~class: "flex flex-col gap-1"){@each(value, key in it.items, ~when: filter_item){@li(~class: "badge badge-ghost w-full justify-start gap-2 cursor-grab", ~draggable: "true", ~data_dragtype: "reorder-row", ~data_droptarget: "reorder-row", ~on_drop: move_row(key, e.dragKey)){@span(~class: "opacity-60"){@(key)} @(value)}}}}}
+    style(): @{/* The two attributes tutuca manages during a drag. No class route exists for either — they are set on the live nodes — so this is the one card that has to say something a utility class cannot. */ [data-dragging="1"] { opacity: .5; } [data-draggingover="reorder-row"] { outline: 1px dashed currentColor; outline-offset: 2px; }}
+    section(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        input(type: "search", class: "input input-sm", value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := default ~cancel, placeholder: "Filter entries")
+        " "
+        comment(): " data-dragtype on the source and data-droptarget on the target pair a draggable with where it may land; both are on the same row here, since every row is both. "
+        " "
+        ul(class: "flex flex-col gap-1"):
+          each(value, key in it.items, ~when: filter_item):
+            li(class: "badge badge-ghost w-full justify-start gap-2 cursor-grab", draggable: "true", data_dragtype: "reorder-row", data_droptarget: "reorder-row", ~on_drop: move_row(key, e.dragKey)):
+              span(class: "opacity-60"):
+                @(key)
+              " "
+              @(value)
 
 fixtures:
   "filtered to the t rows":

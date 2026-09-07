@@ -158,10 +158,9 @@ cases.push({
     "",
     "view:",
     "  Ledger:",
-    "    @div{",
-    "      @span{@(it.here)}",
-    '      @button(~on_click: push){push}',
-    "    }",
+    "    div():",
+    "      span(): @(it.here)",
+    '      button(~on_click: push): "push"',
   ].join("\n"),
 });
 

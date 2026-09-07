@@ -33,15 +33,18 @@ test "styles-example: style is per-view, commonStyle per-component, globalStyle 
   // (the component id is a global counter, so assert the shape, not the number)
   inspect(css.contains("[data-vid=\"main\"]{"), content="true")
   inspect(css.contains("[data-vid=\"two\"]{"), content="true")
-  // view "two" overrides .mine — red in main/one, orange + underlined in two
-  inspect(css.contains("text-decoration: underline"), content="true")
+  // view "two" overrides .mine — red in main/one, orange + underlined in two.
+  // The CSS is PRINTED now rather than passed through as text, so the
+  // assertions are on its minified spelling: the block is written as notation
+  // and `marianoguerra/css` writes it back out.
+  inspect(css.contains("text-decoration:underline"), content="true")
   // commonStyle reaches every view of the component
-  inspect(css.contains(".common { color: yellow; }"), content="true")
+  inspect(css.contains(".common{color:yellow}"), content="true")
   // BARE declarations (no selector) land in the wrapper => they style the ROOT
-  inspect(css.contains("border-radius: 0.5rem"), content="true")
+  inspect(css.contains("border-radius:0.5rem"), content="true")
   // globalStyle is emitted verbatim, with no scoping wrapper at all
   inspect(
-    css.contains(".styles-example-global-class { color: green; }"),
+    css.contains(".styles-example-global-class{color:green}"),
     content="true",
   )
 }

@@ -23,7 +23,7 @@ const ALLOW = new Set([
   "cli/new_storybook.mbt",          // `{{name}}` scaffold slots
   "cli/storybook_template_gen.mbt", // embedded gallery template, same slots
   "cli/skill_assets_gen.mbt",       // embedded skill docs, quoting the notation
-  // Both embed `.tutu` SOURCE as text, and a view's `@div{x}` puts a brace
+  // Both embed `.tutu` SOURCE as text, and a view's `div(): "x"` puts a quote
   // pair around a word. Neither line is a diagnostic; both are a file quoted
   // whole.
   "demo/universal/std/std_card_gen.mbt",

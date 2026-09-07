@@ -39,13 +39,12 @@ logic:
 
 view:
   Counter:
-    @style{display:flex;gap:.5rem;align-items:center;font-size:1.5rem}
-    @div{
-      @button(~id: "dec", ~on_click: add(-1)){-}
-      @b(~id: "count"){@(it.count)}
-      @button(~id: "inc", ~on_click: add(1)){+}
-      @span(~style: "font-size:.8rem;opacity:.6"){@(it.label)}
-    }
+    style(): @{display:flex;gap:.5rem;align-items:center;font-size:1.5rem}
+    div():
+      button(id: "dec", ~on_click: add(-1)): "-"
+      b(id: "count"): @(it.count)
+      button(id: "inc", ~on_click: add(1)): "+"
+      span(style: "font-size:.8rem;opacity:.6"): @(it.label)
 `,
     code: `// The view lives in the View tab. \`tutuca gen\` turns its three
 // blocks into the module in the Generated tab, which is compiled as part of

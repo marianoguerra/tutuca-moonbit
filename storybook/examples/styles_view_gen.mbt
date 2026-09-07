@@ -47,11 +47,11 @@ impl @component.Fields for StylesExampleState with fn decode(_f) {
 
 ///|
 /// The file-level style — pass as `common_style~`.
-pub let styles_example_common_style : String = "padding: 0.75rem; border: 1px solid currentColor; border-radius: 0.5rem; .common { color: yellow; }"
+pub let styles_example_common_style : String = "padding:0.75rem;border:1px solid currentColor;border-radius:0.5rem;.common{color:yellow}"
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
-pub let styles_example_global_style : String = ".styles-example-global-class { color: green; }"
+pub let styles_example_global_style : String = ".styles-example-global-class{color:green}"
 
 ///|
 /// What this component's schema declares, for `schema~`.

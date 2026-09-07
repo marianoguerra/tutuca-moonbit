@@ -71,10 +71,9 @@ logic:
 
 view:
   Shelf:
-    @div(~class: "shelf"){
-      @render(it.holds)
-      @b(~class: "seen"){@(it.seen)}
-    }
+    div(class: "shelf"):
+      render(it.holds)
+      b(class: "seen"): @(it.seen)
 `;
 
 // The stranger. An ordinary counter with an ordinary \`receive\`.
@@ -102,10 +101,9 @@ logic:
 
 view:
   Counter:
-    @div(~class: "counter"){
-      @button(~class: "inc", ~on_click: inc){+}
-      @output(~class: "n"){@(it.count)}
-    }
+    div(class: "counter"):
+      button(class: "inc", ~on_click: inc): "+"
+      output(class: "n"): @(it.count)
 `;
 
 async function load(source, stem) {

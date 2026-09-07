@@ -121,7 +121,7 @@ fn counter_main_view_ir() -> @anode.View {
         ),
       ],
     ],
-    style="font-family: sans-serif",
+    style="font-family:sans-serif;",
   )
 }
 
