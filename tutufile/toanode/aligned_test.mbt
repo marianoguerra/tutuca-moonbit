@@ -241,3 +241,111 @@ test "a macro's named slots, and the fills for them" {
     "  macro box():\n    div():\n      header(): slot(\"a\")\n      main(): slot()\n\n  Card:\n    box():\n      fill(\"a\"): b(): \"A\"\n      p(): \"x\"\n",
   )
 }
+
+///|
+test "a style block written as notation lowers to CSS" {
+  // The other half of the raw-text hook: `@{…}` is CSS verbatim, an ordinary
+  // block is `marianoguerra/shrubbery-css`. The shape decides, not a flag.
+  inspect(
+    view_style(
+      card(
+        "  Card:\n    style():\n      class(mine):\n        color: red\n    p(): \"x\"",
+      ),
+    ),
+    content=".mine{color:red}",
+  )
+}
+
+///|
+test "a bare declaration is legal in a scoped block, and styles the root" {
+  // `styles.md` documents this: with no selector a declaration lands in the
+  // component's scope wrapper. It is legal here because the block is lowered
+  // as a rule BODY -- at top level `shrubbery-css` refuses it, correctly.
+  inspect(
+    view_style(
+      card(
+        "  Card:\n    style():\n      padding: rem(0.75)\n      class(mine):\n        color: red\n    p(): \"x\"",
+      ),
+    ),
+    content="padding:0.75rem;.mine{color:red}",
+  )
+}
+
+///|
+test "the two spellings of one stylesheet agree" {
+  let raw = view_style(
+    card("  Card:\n    style(): @{.mine{color:red}}\n    p(): \"x\""),
+  )
+  let notation = view_style(
+    card(
+      "  Card:\n    style():\n      class(mine):\n        color: red\n    p(): \"x\"",
+    ),
+  )
+  assert_eq(notation, raw)
+}
+
+///|
+test "a conditional group rule nests inside a scoped block" {
+  // `@media` and its family DO nest, so they are legal in a view's own style.
+  // Written as notation the `@` never appears -- which is the repair the
+  // raw-text refusal names.
+  inspect(
+    view_style(
+      card(
+        "  Card:\n    style():\n      media(min_width: em(40)):\n        class(a):\n          color: red\n    p(): \"x\"",
+      ),
+    ),
+    content="@media (min-width:40em){.a{color:red}}",
+  )
+}
+
+///|
+/// The style a FILE-level declaration carries -- `style()` at the top of
+/// `view:`, which is the component's `common_style`, or `style(~global)`,
+/// which is the page's.
+fn file_style(src : String) -> String {
+  for d in view_decls(src) {
+    if d.kind is Style {
+      return @toanode.style_of(d) catch { _ => "!refused" }
+    }
+  }
+  "!no style"
+}
+
+///|
+test "a global block is a stylesheet in its own right" {
+  // The scope decides the CONTEXT, and that is the whole gain: `@font-face` is
+  // top-level-only, so it is legal here and nowhere else. `styles.md` says a
+  // browser silently drops it from a scoped block and that nothing checks
+  // that; lowering the two scopes in their own contexts is what makes the
+  // reader the thing that checks.
+  inspect(
+    file_style(
+      "spec:\n  Card:\n    field n :: Int\n\nview:\n  style(~global):\n    font_face():\n      font_family: \"X\"\n\n  Card:\n    p(): \"x\"\n",
+    ),
+    content="@font-face{font-family:\"X\"}",
+  )
+}
+
+///|
+test "a top-level-only at-rule is NOT caught in a scoped block" {
+  // Recorded because it is the limit of what this buys, and the plan claimed
+  // more. `styles.md` says `@font-face` in a scoped block is silently dropped
+  // by the browser and that nothing checks it -- and `shrubbery-css` does not
+  // check it either: it is legal in a rule body as far as the grammar is
+  // concerned, so it lowers and the browser still drops it.
+  //
+  // What the notation DOES buy here is smaller and real: the CSS is parsed
+  // rather than passed through as text, bare declarations are legal where the
+  // scope wrapper makes them mean something, and no at-rule needs an `@`
+  // escape. Catching a misplaced at-rule is a check somebody still has to
+  // write.
+  inspect(
+    view_style(
+      card(
+        "  Card:\n    style():\n      font_face():\n        font_family: \"X\"\n    p(): \"x\"",
+      ),
+    ),
+    content="@font-face{font-family:\"X\"}",
+  )
+}

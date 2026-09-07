@@ -27,6 +27,9 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/tscript",
   "marianoguerra/shrubbery/ast",
+  "marianoguerra/shrubbery-css/lower" @csslower,
+  "marianoguerra/css/write" @csswrite,
+  "marianoguerra/css/ast" @cssast,
   "marianoguerra/error-report" @report,
 }
 

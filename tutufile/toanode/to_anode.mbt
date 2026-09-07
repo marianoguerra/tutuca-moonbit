@@ -236,7 +236,7 @@ pub fn ViewBuilder::view(
 /// because the section-level reader has the same question about a style block
 /// at the top of `view:` that this package has about one inside a view.
 pub fn style_of(decl : @tutufile.Decl) -> String raise ExError {
-  style_body(decl.node).unwrap_or("")
+  style_body(decl.node, global=style_is_global(decl)).unwrap_or("")
 }
 
 ///|
@@ -263,7 +263,7 @@ pub fn style_is_global(decl : @tutufile.Decl) -> Bool {
 
 ///|
 /// The CSS a `@style{…}` group holds, or `None` when the group is not one.
-fn style_body(group : @ast.Node) -> String? raise ExError {
+fn style_body(group : @ast.Node, global? : Bool = false) -> String? raise ExError {
   guard group.it is Group(parts) && parts.length() >= 1 else { return None }
   guard parts[0].it is Id("style") else { return None }
   let out = StringBuilder()
@@ -287,13 +287,30 @@ fn style_body(group : @ast.Node) -> String? raise ExError {
       // at the MATCHING brace, so a stylesheet whose braces balance — which is
       // every stylesheet — passes through untouched, and the `@` in `@media`
       // needs no escape.
-      Block(gs) =>
+      Block(gs) => {
+        // Which spelling is in use is decided by the body's own SHAPE. `@{…}`
+        // is at-notation and its text is CSS verbatim; an ordinary block is
+        // notation, lowered by `marianoguerra/shrubbery-css`. Neither can be
+        // read as the other, so there is no flag and no second element name.
+        let raw = StringBuilder()
+        let notation = []
         for g in gs {
           match at_text_of(g) {
-            Some(t) => out.write_string(t)
-            None => ()
+            Some(t) => raw.write_string(t)
+            None => notation.push(g)
           }
         }
+        out.write_string(raw.to_string())
+        if notation.length() > 0 {
+          out.write_string(
+            if global {
+              global_css(notation, @sh.span_of(group))
+            } else {
+              scoped_css(notation, @sh.span_of(group))
+            },
+          )
+        }
+      }
       _ => ()
     }
   }
