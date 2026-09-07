@@ -6,6 +6,62 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.55.4] - 2026-09-07
+
+### Three things the old spec language could say and `.tutu` could not
+
+Fixes only; 0.55.3 stays valid for anyone it is not blocking. Each was reported
+from a repo crossing off the notation 0.55 removed, and each is an ABSENCE — a
+construct the `.html` spec language expressed and the reader has no spelling
+for. Two are silent and the third names the wrong thing, which is why an
+absence is worth a release.
+
+- **One protocol name in a component slot is a CONSTRAINT.** `Instance[protocol
+  P]` became `Instance.of(P)`, and the reader only reached a protocol set
+  through `&&` — so one name fell to `TyComp(Some("P"))`, a component slot
+  named `P`. A legitimate type, so nothing had anything to report, and every
+  value the slot was handed was rejected at run time as the wrong component.
+  The declarations decide now: a protocol declared under that name is a
+  constraint, and a name no protocol claims is still a component from another
+  module.
+- **A protocol may declare NO members.** The old notation wrote a marker
+  `protocol X = "id" {}`; shrubbery has no empty block, so a `:` with nothing
+  under it is a parse error and the construct had no spelling at all. It was
+  dropped for having no body — one section earlier than the "unknown protocol"
+  its author read, which is why that read as their mistake. Every other kind
+  still needs a body.
+- **A path on a handler's parameter is a path into the ARGUMENT.** `t.iso` read
+  as the loop binding `@t`, so the refusal named a `@when` the author had not
+  written. `PParam` is the root the old script parser built for the same shape
+  and `tscript/check` has answered `NO_PARAM` about it all along: the whole of
+  what was missing was this reader. `f.items` and `f[0]` go through one seam,
+  so they agree about what `f` is.
+
+### `Any` has fields
+
+Found by the third fix, and the reason it is worth having. The backend refused
+a path on any argument whose type a call site had stated, for a reason — "none
+of the types a call site can state has fields" — that is true of `Int` and
+`String` and exactly false of `Any`, which binds RAW, as the same
+`@tutuca.Value` an undeclared argument gets.
+
+So the case the path exists for was the case it refused: a host answering `ask`
+with `{ms, iso, …}`, whose `message ticked(Any)` declaration is the honest one
+to write. In a CARD that refusal is silent — the module compiles, the dispatch
+table is one name short, and the clock never ticks. A scalar argument is still
+refused, and the message still names the type it got.
+
+### Also
+
+- `skill/tutuca/protocols.md` and `schema.md` spell the constraint the way the
+  notation does, and document the marker. The skill ships inside the CLI, so a
+  spelling in it is what an agent reads before writing any tutuca code.
+- `scripts/check-diagnostics.mjs` skips `.claude/` for the reason it already
+  skips `.mooncakes`: an agent worktree is a second COPY of this repo, which
+  git excludes and which the walk reached because it reads the filesystem
+  rather than the index. One left behind by a killed session failed the gate
+  for everybody.
+
 ### The universal demo's two bulk load buttons did nothing, and the cards it loads were unstyled
 
 `load all` and `load selected` posted `loadAll` and `loadChosen` into the
