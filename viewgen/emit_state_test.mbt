@@ -13,7 +13,10 @@ let counter_state_src : String =
   #|
   #|view:
   #|  Counter:
-  #|    @h1{@(it.label): @(it.count)}
+  #|    h1():
+  #|      @(it.label)
+  #|      ": "
+  #|      @(it.count)
 
 ///|
 test "a `spec:` section emits the struct, its zero and its field kinds" {
@@ -60,7 +63,8 @@ test "a file with no `spec:` section generates only the view half" {
   let without =
     #|view:
     #|  Counter:
-    #|    @h1{@(it.label)}
+    #|    h1():
+    #|      @(it.label)
   let file = @viewgen.read_file(without)
   assert_eq(file.state.length(), 0)
   let src = @viewgen.emit_module("Counter", "counter.tutu", file)
@@ -98,10 +102,12 @@ test "sets, ordered maps and child slots are described in the schema" {
         #|
         #|view:
         #|  Card:
-        #|    @p{@(it.title)}
+        #|    p():
+        #|      @(it.title)
         #|
         #|  Board:
-        #|    @div{@render(it.lead)}
+        #|    div():
+        #|      render(it.lead)
       ),
     ),
   )
@@ -147,7 +153,8 @@ test "named types become MoonBit types, and a keyword field escapes" {
         #|
         #|view:
         #|  Editor:
-        #|    @p{@(it.m)}
+        #|    p():
+        #|      @(it.m)
       ),
     ),
   )
@@ -173,7 +180,7 @@ test "a `spec:` entry with no view declares state anyway" {
   // mistyped component name looks like, so the CLI reports it on its
   // non-fatal diagnostic channel rather than failing generation.
   let file = @viewgen.read_file(
-    "spec:\n  Countr:\n    field n :: Int\n\nview:\n  Counter:\n    @p{hi}\n",
+    "spec:\n  Countr:\n    field n :: Int\n\nview:\n  Counter:\n    p():\n      \"hi\"\n",
   )
   assert_eq(@viewgen.declared_components(file, "Counter"), ["Counter"])
   let src = @viewgen.emit_module("Counter", "c.tutu", file)
@@ -190,7 +197,7 @@ test "a `spec:` error names the repair" {
   // verdict with no next step is a finding an author has to go and derive.
   let msg = try {
     @viewgen.read_file(
-      "spec:\n  Counter:\n    field n :: Int64\n\nview:\n  Counter:\n    @p{hi}\n",
+      "spec:\n  Counter:\n    field n :: Int64\n\nview:\n  Counter:\n    p():\n      \"hi\"\n",
     )
     |> ignore
     "no error"
@@ -239,7 +246,8 @@ test "a compound type reads as the type it spells" {
       #|
       #|view:
       #|  C:
-      #|    @p{hi}
+      #|    p():
+      #|      "hi"
     ),
   )
   assert_eq(file.state.length(), 1)

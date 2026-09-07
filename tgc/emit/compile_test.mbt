@@ -21,7 +21,8 @@ test "a counter card compiles" {
     #|
     #|view:
     #|  Counter:
-    #|    @output{@(shown())}
+    #|    output():
+    #|      @(shown())
   let out = @emit.compile(card, name="counter")
   assert_eq(out.component, "Counter")
   assert_eq(out.fields, ["count", "label"])
@@ -46,7 +47,7 @@ test "a card that does not check is rejected whole" {
     #|
     #|view:
     #|  Counter:
-    #|    @b{}
+    #|    b()
   let got = try {
     let _ = @emit.compile(card, name="counter")
     "compiled"
@@ -83,7 +84,7 @@ test "one declaration is refused and the rest still compiles" {
     #|
     #|view:
     #|  Counter:
-    #|    @b{}
+    #|    b()
   let out = @emit.compile(card, name="counter")
   assert_eq(out.refusals.map(r => r.name), ["wipe"])
   assert_true(
@@ -121,7 +122,8 @@ test "a card that performs no effect imports no effect" {
     #|
     #|view:
     #|  Pure:
-    #|    @b{@(doubled())}
+    #|    b():
+    #|      @(doubled())
   let out = @emit.compile(pure, name="pure")
   assert_true(out.wap.contains("op_mul"), msg="the arithmetic it does use")
   // The wap spelling: one `import "tut":` block, one `fn` line per name. An
@@ -143,7 +145,7 @@ test "a card that performs no effect imports no effect" {
     #|
     #|view:
     #|  Loud:
-    #|    @b{}
+    #|    b()
   let loud = @emit.compile(sender, name="loud")
   assert_true(loud.wap.contains("fn eff_send("), msg="a sender")
   assert_false(loud.wap.contains("fn eff_ask("), msg="but not an asker")
@@ -177,7 +179,7 @@ test "sendAt reifies its place" {
     #|
     #|view:
     #|  Board:
-    #|    @b{}
+    #|    b()
   let out = @emit.compile(card, name="board")
   assert_eq(out.refusals.map(r => r.name), [])
   assert_true(out.wap.contains("eff_send_at"), msg="the effect")
@@ -208,7 +210,7 @@ test "a sendAt key read from live state is refused" {
     #|
     #|view:
     #|  Board:
-    #|    @b{}
+    #|    b()
   let out = @emit.compile(card, name="board")
   assert_eq(out.refusals.map(r => r.name), ["poke"])
   assert_true(
@@ -238,10 +240,11 @@ test "a component's descriptor names the module that made it" {
     #|
     #|view:
     #|  Hole:
-    #|    @render(it.child)
+    #|    render(it.child)
     #|
     #|  Text:
-    #|    @b{@(it.body)}
+    #|    b():
+    #|      @(it.body)
   let out = @emit.compile(card, name="kit")
   let str_at = (j : Json, key : String) => {
     match j {

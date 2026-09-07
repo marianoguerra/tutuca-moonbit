@@ -55,16 +55,25 @@ let whole_card : String =
   #|
   #|view:
   #|  Todos:
-  #|    @div{
-  #|      @input(~class: "draft", ~value: it.draft)
-  #|      @button(~class: "add", ~on_click: add){add}
-  #|      @ul{@each(row in it.items){@render(row)}}
-  #|    }
+  #|    div():
+  #|      input(class: "draft", value: it.draft)
+  #|      "\n"
+  #|      button(class: "add", ~on_click: add):
+  #|        "add"
+  #|      "\n"
+  #|      ul():
+  #|        each(row in it.items):
+  #|          render(row)
+  #|
   #|  Todo:
-  #|    @li(~class: "todo", ~on_click: toggle){@(it.caption)}
+  #|    li(class: "todo", ~on_click: toggle):
+  #|      @(it.caption)
+  #|
   #|  macro badge(~label: "New"):
-  #|    @span(~class: "badge"){@(label)}
-  #|  @style{ .todo { color: red; } }
+  #|    span(class: "badge"):
+  #|      @(label)
+  #|
+  #|  style(): @{ .todo { color: red; } }
   #|
   #|fixtures:
   #|  "three rows" ~default:
@@ -76,7 +85,6 @@ let whole_card : String =
   #|    type("input.draft", "write it")
   #|    click("button.add")
   #|    expect count("li.todo") == 1
-  #|
 
 ///|
 test "a whole card reads into five sections" {
@@ -457,10 +465,11 @@ test "a view may carry the view name as well as the component's" {
   let src =
     #|view:
     #|  Note:
-    #|    @p{@(it.title)}
-    #|  Note.edit:
-    #|    @input(~value: it.title)
+    #|    p():
+    #|      @(it.title)
     #|
+    #|  Note.edit:
+    #|    input(value: it.title)
   let (file, _) = read_one(src)
   assert_true(file.ok())
   debug_inspect(

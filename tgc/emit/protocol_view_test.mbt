@@ -317,10 +317,12 @@ test "one component's views are not another component's problem" {
     #|
     #|view:
     #|  Board:
-    #|    @button(~on_click: addRow){+}
+    #|    button(~on_click: addRow):
+    #|      "+"
     #|
     #|  Row:
-    #|    @button(~on_click: strike){x}
+    #|    button(~on_click: strike):
+    #|      "x"
   let c = @emit.check_card(src, name="b")
   // `Board` does not answer `strike` and must not be asked to.
   let unanswered = c.issues.filter(i => i.code == "NO_VIEW_HANDLER")
@@ -492,7 +494,7 @@ test "a component that implements nothing is held to nothing" {
     "logic:\n" +
     "  A:\n    receive Holder::hold(x):\n      it.n += 1.0\n" +
     "  B:\n    receive bump:\n      it.m += 1.0\n" +
-    "view:\n  A:\n    @div{}\n\n  B:\n    @div{}\n"
+    "view:\n  A:\n    div()\n\n  B:\n    div()\n"
   let c = @emit.check_card(src, name="b")
   assert_eq(c.issues.filter(i => i.severity == "error"), [])
 }

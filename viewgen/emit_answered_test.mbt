@@ -26,11 +26,13 @@ fn bucket_src(script : String) -> (String, String) raise {
     script +
     "\nview:\n" +
     "  Mail:\n" +
-    "    @div{\n" +
+    "    div():\n" +
     "      @(hasAttachments())\n" +
     "      @(rowLabel())\n" +
-    "      @ul{@each(value, key in it.items, ~when: keepItem){@li{@(value)}}}\n" +
-    "    }\n",
+    "      ul():\n" +
+    "        each(value, key in it.items, ~when: keepItem):\n" +
+    "          li():\n" +
+    "            @(value)\n",
     name="Mail",
   )
   let mods = @viewgen.emit_modules("Mail", "mail.tutu", file, include_ir=true)

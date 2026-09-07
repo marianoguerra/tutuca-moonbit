@@ -15,19 +15,25 @@ let multi_src : String =
   #|
   #|view:
   #|  macro chip(~tone: "plain", ~body: ""):
-  #|    @span(~class: "chip", ~data_tone: tone){@(body)}
+  #|    span(class: "chip", data_tone: tone):
+  #|      @(body)
   #|
   #|  JsonRoot:
-  #|    @div(~class: "root"){@render(it.node)}
+  #|    div(class: "root"):
+  #|      render(it.node)
   #|
   #|  JsonNode:
-  #|    @div(~class: "node"){@(it.label)@chip(~tone: "loud", ~body: "json")}
+  #|    div(class: "node"):
+  #|      @(it.label)
+  #|      chip(~tone: "loud", ~body: "json")
   #|
   #|  JsonNode.compact:
-  #|    @span(~class: "compact"){@(it.label)}
+  #|    span(class: "compact"):
+  #|      @(it.label)
   #|
   #|  JsonLeaf:
-  #|    @b(~on_click: pick(it.id)){@(it.value)}
+  #|    b(~on_click: pick(it.id)):
+  #|      @(it.value)
 
 ///|
 test "components are grouped by the id prefix, views by the suffix" {
@@ -99,7 +105,7 @@ test "a component name that is not a MoonBit identifier is rejected" {
   // left to reject is a name a generated module cannot carry.
   let msg = try {
     @viewgen.read_file(
-      "spec:\n  Foo_Bar:\n    field n :: Int\n\nview:\n  Foo_Bar:\n    @b{a}\n",
+      "spec:\n  Foo_Bar:\n    field n :: Int\n\nview:\n  Foo_Bar:\n    b():\n      \"a\"\n",
     )
     |> ignore
     "no error"

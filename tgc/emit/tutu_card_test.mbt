@@ -19,7 +19,8 @@ test "a .tutu card compiles" {
     #|
     #|view:
     #|  Counter:
-    #|    @output{@(shown())}
+    #|    output():
+    #|      @(shown())
   let out = @emit.compile(card, name="counter")
   assert_eq(out.component, "Counter")
   assert_eq(out.fields, ["count", "label"])

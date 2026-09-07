@@ -15,8 +15,12 @@ let wrapper_src : String =
   #|
   #|view:
   #|  Counter:
-  #|    @h1{@(it.label): @(it.count)}
-  #|    @button(~on_click: add(1)){+1}
+  #|    h1():
+  #|      @(it.label)
+  #|      ": "
+  #|      @(it.count)
+  #|    button(~on_click: add(1)):
+  #|      "+1"
 
 ///|
 test "a schema-backed component gets a wrapper over component()" {
@@ -93,7 +97,8 @@ test "a nested record still gets a direct codec, named by the wrapper" {
       #|
       #|view:
       #|  Card:
-      #|    @i{@(it.at)}
+      #|    i():
+      #|      @(it.at)
     ),
   )
   let ir = @viewgen.emit_ir_module("Card", "card.tutu", f)
@@ -112,7 +117,7 @@ test "a nested record still gets a direct codec, named by the wrapper" {
 /// No schema means no state type, so there are no typed parameters to make a
 /// wrapper out of. Those components keep calling `component()` directly.
 test "a component with views but no schema gets no wrapper" {
-  let f = @viewgen.read_file("view:\n  Plain:\n    @b{hi}\n")
+  let f = @viewgen.read_file("view:\n  Plain:\n    b():\n      \"hi\"\n")
   let ir = @viewgen.emit_ir_module("Plain", "plain.tutu", f)
   assert_true(ir.contains("pub fn plain_views()"))
   assert_false(ir.contains("plain_component("))

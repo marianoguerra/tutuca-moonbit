@@ -30,7 +30,8 @@ let ledger_src : String =
   #|
   #|view:
   #|  Ledger:
-  #|    @button(~on_click: push){@(it.here)}
+  #|    button(~on_click: push):
+  #|      @(it.here)
   #|
   #|fixtures:
   #|  "eight":
@@ -98,7 +99,8 @@ test "a file with no fixtures gets no build-time assertion" {
       #|
       #|view:
       #|  Ledger:
-      #|    @b{@(it.here)}
+      #|    b():
+      #|      @(it.here)
     ),
   )
   let ir = @viewgen.emit_ir_module("Ledger", "ledger.tutu", f)
@@ -121,7 +123,8 @@ test "a rule with no `logic:` section anywhere still gets a body" {
       #|
       #|view:
       #|  Ledger:
-      #|    @b{@(it.here)}
+      #|    b():
+      #|      @(it.here)
     ),
   )
   let ir = @viewgen.emit_ir_module("Ledger", "ledger.tutu", f)
@@ -142,7 +145,8 @@ let gallery_src : String =
   #|
   #|view:
   #|  Gallery:
-  #|    @div{@(it.currentIndex)}
+  #|    div():
+  #|      @(it.currentIndex)
 
 ///|
 test "a `where` in the `spec:` section reaches the generated schema as DATA" {
@@ -189,7 +193,8 @@ let gallery_logic_src : String =
   #|
   #|view:
   #|  Gallery:
-  #|    @button(~on_click: toggleView){@(it.view)}
+  #|    button(~on_click: toggleView):
+  #|      @(it.view)
 
 ///|
 test "a `where` is woven into the arm, beside the invariants" {

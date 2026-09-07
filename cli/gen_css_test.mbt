@@ -107,10 +107,12 @@ test "collect_view_classes gathers literal classes across views and files" {
     (
       #|view:
       #|  T:
-      #|    @div(~class: "card p-4"){@span(~class: "badge"){x}}
+      #|    div(class: "card p-4"):
+      #|      span(class: "badge"):
+      #|        "x"
       #|
       #|  T.row:
-      #|    @li(~class: "row p-4")
+      #|    li(class: "row p-4")
     ),
   )
   assert_eq(classes, ["badge", "card", "p-4", "row"])
@@ -122,8 +124,8 @@ test "collect_view_classes reads :class and @if.class literals" {
     (
       #|view:
       #|  T:
-      #|    @a(~class: if it.tab == "a" | "tab tab-active" | "tab")
-      #|    @b(~class: @str{badge badge-@(it.kind)})
+      #|    a(class: if it.tab == "a" | "tab tab-active" | "tab")
+      #|    b(class: @str{badge badge-@(it.kind)})
     ),
   )
   // The literal fragments only: the interpolated tail of the template string is
@@ -146,10 +148,11 @@ test "collect_view_classes sees classes inside an expanded macro" {
     (
       #|view:
       #|  macro chip(~tone: "neutral"):
-      #|    @span(~class: "chip chip-sm", ~data_tone: tone)
+      #|    span(class: "chip chip-sm", data_tone: tone)
       #|
       #|  T:
-      #|    @div(~class: "wrap"){@chip()}
+      #|    div(class: "wrap"):
+      #|      chip()
     ),
   )
   assert_true(classes.contains("wrap"))
@@ -173,9 +176,8 @@ test "collect_view_classes builds a view against the file's schema" {
       #|
       #|view:
       #|  Counter:
-      #|    @div(~class: "card bg-base-100"){
-      #|      @input(~class: "input input-bordered", ~type: "text", ~bind: it.name)
-      #|    }
+      #|    div(class: "card bg-base-100"):
+      #|      input(class: "input input-bordered", type: "text", ~bind: it.name)
     ),
   )
   assert_eq(classes, ["bg-base-100", "card", "input", "input-bordered"])
@@ -193,7 +195,7 @@ test "collect_view_classes still refuses an @bind with no schema to read" {
         (
           #|view:
           #|  Counter:
-          #|    @input(~class: "input", ~type: "text", ~bind: it.name)
+          #|    input(class: "input", type: "text", ~bind: it.name)
         ),
       ),
     ]) {
@@ -224,7 +226,7 @@ test "the collected class list is byte-lexicographic" {
     (
       #|view:
       #|  T:
-      #|    @div(~class: "on b add btn")
+      #|    div(class: "on b add btn")
     ),
   )
   assert_eq(classes, ["add", "b", "btn", "on"])

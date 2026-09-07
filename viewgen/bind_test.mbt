@@ -100,7 +100,7 @@ test "@bind requires a direct root field and a schema" {
       "Form",
       "form.tutu",
       @viewgen.read_file(
-        "view:\n  Form:\n    @input(~bind: it.name)\n",
+        "view:\n  Form:\n    input(~bind: it.name)\n",
         name="Form",
       ),
     )

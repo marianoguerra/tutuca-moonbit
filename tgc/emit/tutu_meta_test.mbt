@@ -16,7 +16,8 @@ test "a .tutu card's category and keywords reach the manifest unrenamed" {
     #|
     #|view:
     #|  TextInput:
-    #|    @output{@(it.value)}
+    #|    output():
+    #|      @(it.value)
   let out = @emit.compile(card, name="forms")
   let comp = component_in(out.manifest, "TextInput")
   // The space and the capital both survive: under identifiers this could not
@@ -34,7 +35,8 @@ test "a component that says nothing says nothing, rather than guessing" {
     #|
     #|view:
     #|  Plain:
-    #|    @output{@(it.n)}
+    #|    output():
+    #|      @(it.n)
   let out = @emit.compile(card, name="plain")
   let comp = component_in(out.manifest, "Plain")
   assert_eq(str_key(comp, "category"), "")

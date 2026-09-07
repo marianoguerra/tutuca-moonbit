@@ -71,17 +71,17 @@ test "the universal holder converts, compiles, and keeps its vocabulary" {
     #|
     #|view:
     #|  Hole:
-    #|    @div(~class: "tut-hole flex items-center justify-center w-full"){
-    #|      @render(it.child)
-    #|    }
+    #|    div(class: "tut-hole flex items-center justify-center w-full"):
+    #|      render(it.child)
     #|
     #|  Hole.chrome:
-    #|    @div(~class: "tut-chrome"){
-    #|      @button(~class: "tut-x", ~on_click: toggle_config){x}
-    #|      @show(it.filled){
-    #|        @div(~push_view: child_view()){@render(it.child)}
-    #|      }
-    #|    }
+    #|    div(class: "tut-chrome"):
+    #|      button(class: "tut-x", ~on_click: toggle_config):
+    #|        "x"
+    #|      "\n"
+    #|      show(it.filled):
+    #|        div(~push_view: child_view()):
+    #|          render(it.child)
   let out = @emit.compile(card, name="std")
   assert_eq(out.component, "Hole")
   assert_eq(out.fields, ["child", "editable", "configuring"])

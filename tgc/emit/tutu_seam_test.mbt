@@ -16,8 +16,8 @@ test "a `.tutu` view compiles, value by value" {
         #|  T:
         #|    field text :: String
         #|view:
-        #|  T ~root:
-        #|    @input(~value: it.text, ~on_input: it.text := e.value){}
+        #|  T:
+        #|    input(value: it.text, ~on_input: it.text := e.value)
       ),
     ),
     // a compute called inside a string template
@@ -32,8 +32,9 @@ test "a `.tutu` view compiles, value by value" {
         #|    compute mode(): if it.on | "wrap" | "nowrap"
         #|    compute style(): @str{flex-wrap:@(mode())}
         #|view:
-        #|  T ~root:
-        #|    @div(~style: style()){x}
+        #|  T:
+        #|    div(style: style()):
+        #|      "x"
       ),
     ),
     // a conditional attribute value, which the old notation spells with
@@ -45,8 +46,9 @@ test "a `.tutu` view compiles, value by value" {
         #|  T:
         #|    field on :: Bool
         #|view:
-        #|  T ~root:
-        #|    @div(~style: if it.on | "a" | "b"){x}
+        #|  T:
+        #|    div(style: if it.on | "a" | "b"):
+        #|      "x"
       ),
     ),
     // rendering the loop's own item from inside a wrapper element
@@ -57,14 +59,11 @@ test "a `.tutu` view compiles, value by value" {
         #|  T:
         #|    field cells :: List.of(Any)
         #|view:
-        #|  T ~root:
-        #|    @div{
-        #|      @each(cell in it.cells){
-        #|        @div(~class: "wrap"){
-        #|          @render(cell)
-        #|        }
-        #|      }
-        #|    }
+        #|  T:
+        #|    div():
+        #|      each(cell in it.cells):
+        #|        div(class: "wrap"):
+        #|          render(cell)
       ),
     ),
   ]

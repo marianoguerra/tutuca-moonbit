@@ -32,7 +32,7 @@ fn board(spec : String, view : String) -> String {
 test "a misspelt root field fails generation and suggests the right name" {
   let msg = gen_err(
     board(
-      "  Board:\n    field label :: String\n    field count :: Int\n", "    @p{@(it.labelx)}",
+      "  Board:\n    field label :: String\n    field count :: Int\n", "    p():\n      @(it.labelx)",
     ),
     "Board",
   )
@@ -44,7 +44,7 @@ test "a misspelt root field fails generation and suggests the right name" {
 test "a field with no near miss is told where to declare it" {
   let msg = gen_err(
     board(
-      "  Board:\n    field label :: String\n", "    @p{@(it.somethingElse)}",
+      "  Board:\n    field label :: String\n", "    p():\n      @(it.somethingElse)",
     ),
     "Board",
   )
@@ -60,7 +60,7 @@ test "reads inside an @each are checked against the ELEMENT type" {
   let msg = gen_err(
     board(
       "  struct Card(title :: String, done :: Bool)\n\n  Board:\n    field cards :: List.of(Card)\n",
-      "    @ul{@each(value, key in it.cards){@li{@(it.titel)}}}",
+      "    ul():\n      each(value, key in it.cards):\n        li():\n          @(it.titel)",
     ),
     "Board",
   )
@@ -73,7 +73,7 @@ test "@value.member inside a loop is checked too" {
   let msg = gen_err(
     board(
       "  struct Card(title :: String)\n\n  Board:\n    field cards :: List.of(Card)\n",
-      "    @ul{@each(value, key in it.cards){@li{@(value.titel)}}}",
+      "    ul():\n      each(value, key in it.cards):\n        li():\n          @(value.titel)",
     ),
     "Board",
   )
@@ -87,7 +87,7 @@ test "a correct loop body generates cleanly" {
     gen_err(
       board(
         "  struct Card(title :: String, done :: Bool)\n\n  Board:\n    field cards :: List.of(Card)\n",
-        "    @ul{@each(value, key in it.cards){@li{@(it.title)@(value.done)}}}",
+        "    ul():\n      each(value, key in it.cards):\n        li():\n          @(it.title)\n          @(value.done)",
       ),
       "Board",
     ),
@@ -99,7 +99,7 @@ test "a correct loop body generates cleanly" {
 test "@each over a scalar is refused" {
   let msg = gen_err(
     board(
-      "  Board:\n    field count :: Int\n", "    @ul{@each(value, key in it.count){@li{x}}}",
+      "  Board:\n    field count :: Int\n", "    ul():\n      each(value, key in it.count):\n        li():\n          \"x\"",
     ),
     "Board",
   )
@@ -130,7 +130,7 @@ test "@each over a set, a list or an ordered map is fine" {
 test "<x render> on a non-component is refused" {
   let msg = gen_err(
     board(
-      "  Board:\n    field label :: String\n", "    @div{@render(it.label)}",
+      "  Board:\n    field label :: String\n", "    div():\n      render(it.label)",
     ),
     "Board",
   )
@@ -158,7 +158,7 @@ test "an opaque scope silences the checks inside it" {
     gen_err(
       board(
         "  Board:\n    field detail :: Any\n    field slot :: Instance\n    field rows :: List.of(Any)\n",
-        "    @div{@render(it.slot) @ul{@each(value, key in it.rows){@li{@(it.whatever)}}}}",
+        "    div():\n      render(it.slot)\n      \" \"\n      ul():\n        each(value, key in it.rows):\n          li():\n            @(it.whatever)",
       ),
       "Board",
     ),
@@ -170,7 +170,7 @@ test "an opaque scope silences the checks inside it" {
 test "a file with no `spec:` section is checked against nothing" {
   // No schema, no checks — unknown is not wrong.
   assert_eq(
-    gen_err("view:\n  Board:\n    @p{@(it.anythingAtAll)}\n", "Board"),
+    gen_err("view:\n  Board:\n    p():\n      @(it.anythingAtAll)\n", "Board"),
     "",
   )
 }
@@ -181,8 +181,8 @@ test "the counter demo's own view passes its schema" {
   let src = "spec:\n" +
     "  Counter:\n    field label :: String\n    field count :: Int\n    field history :: List.of(Int)\n" +
     "\nview:\n  Counter:\n" +
-    "    @h1{@(it.label): @(it.count)}\n" +
-    "    @ul{@each(value, key in it.history){@li{@(value)}}}\n"
+    "    h1():\n      @(it.label)\n      \": \"\n      @(it.count)\n" +
+    "    ul():\n      each(value, key in it.history):\n        li():\n          @(value)"
   assert_eq(gen_err(src, "Counter"), "")
 }
 
@@ -191,7 +191,7 @@ test "a nested record two levels down is still checked" {
   let msg = gen_err(
     board(
       "  struct Inner(deep :: String)\n\n  struct Outer(inner :: Inner)\n\n  Board:\n    field o :: Outer\n",
-      "    @p{@(it.o)@each(value, key in it.o){@span{x}}}",
+      "    p():\n      @(it.o)\n      each(value, key in it.o):\n        span():\n          \"x\"",
     ),
     "Board",
   )
@@ -232,7 +232,7 @@ test "a container in `@show` is a test that cannot fail" {
   // EMPTY list too. It reads as a guard and is not one.
   let msg = gen_err(
     board(
-      "  Board:\n    field alts :: List.of(String)\n", "    @show(it.alts){@div{alternatives}}",
+      "  Board:\n    field alts :: List.of(String)\n", "    show(it.alts):\n      div():\n        \"alternatives\"",
     ),
     "Board",
   )
@@ -241,7 +241,7 @@ test "a container in `@show` is a test that cannot fail" {
   // A record is the same story, and so is `@hide`.
   let rec = gen_err(
     board(
-      "  struct Card(title :: String)\n\n  Board:\n    field c :: Card\n", "    @hide(it.c){@div{x}}",
+      "  struct Card(title :: String)\n\n  Board:\n    field c :: Card\n", "    hide(it.c):\n      div():\n        \"x\"",
     ),
     "Board",
   )
@@ -256,7 +256,7 @@ test "a truthiness test that can decide something is left alone" {
   assert_eq(
     gen_err(
       board(
-        "  Board:\n    field alts :: List.of(String)\n", "    @show(it.alts.is_empty()){@div{none}}",
+        "  Board:\n    field alts :: List.of(String)\n", "    show(it.alts.is_empty()):\n      div():\n        \"none\"",
       ),
       "Board",
     ),
@@ -269,8 +269,8 @@ test "a truthiness test that can decide something is left alone" {
     gen_err(
       board(
         "  Board:\n    field role :: String\n    field count :: Int\n    field note :: maybe(String)\n    field on :: Bool\n",
-        "    @show(it.role){@p{r}}\n    @show(it.count){@p{c}}\n" +
-        "    @show(it.note){@p{n}}\n    @hide(it.on){@p{o}}",
+        "    show(it.role):\n      p():\n        \"r\"\n    show(it.count):\n      p():\n        \"c\"\n" +
+        "    show(it.note):\n      p():\n        \"n\"\n    hide(it.on):\n      p():\n        \"o\"",
       ),
       "Board",
     ),
@@ -280,7 +280,7 @@ test "a truthiness test that can decide something is left alone" {
   assert_eq(
     gen_err(
       board(
-        "  Board:\n    field anything :: Any\n", "    @show(it.anything){@div{x}}",
+        "  Board:\n    field anything :: Any\n", "    show(it.anything):\n      div():\n        \"x\"",
       ),
       "Board",
     ),
@@ -295,7 +295,7 @@ test "a constant id inside a loop is not an id" {
   // not visible to an HTML linter reading the source.
   let msg = gen_err(
     board(
-      "  Board:\n    field items :: List.of(Any)\n", "    @ul{@each(value, key in it.items){@li(~id: \"row\"){@(value)}}}",
+      "  Board:\n    field items :: List.of(Any)\n", "    ul():\n      each(value, key in it.items):\n        li(id: \"row\"):\n          @(value)",
     ),
     "Board",
   )
@@ -305,7 +305,7 @@ test "a constant id inside a loop is not an id" {
   assert_true(
     gen_err(
       board(
-        "  Board:\n    field items :: List.of(Any)\n", "    @ul{@each(value, key in it.items){@li{@span(~id: \"cell\"){x}}}}",
+        "  Board:\n    field items :: List.of(Any)\n", "    ul():\n      each(value, key in it.items):\n        li():\n          span(id: \"cell\"):\n            \"x\"",
       ),
       "Board",
     ).contains("`~id: \"cell\"`"),
@@ -317,7 +317,7 @@ test "an id outside the loop, and a per-item id, are both fine" {
   assert_eq(
     gen_err(
       board(
-        "  Board:\n    field items :: List.of(Any)\n", "    @ul(~id: \"list\"){@each(value, key in it.items){@li(~id: @str{row-@(key)}){@(value)}}}",
+        "  Board:\n    field items :: List.of(Any)\n", "    ul(id: \"list\"):\n      each(value, key in it.items):\n        li(id: @str{row-@(key)}):\n          @(value)",
       ),
       "Board",
     ),
@@ -328,7 +328,7 @@ test "an id outside the loop, and a per-item id, are both fine" {
   assert_eq(
     gen_err(
       board(
-        "  Board:\n    field items :: List.of(Any)\n", "    @div(~id: \"pane\"){@each(value, key in it.items){@render(value)}}",
+        "  Board:\n    field items :: List.of(Any)\n", "    div(id: \"pane\"):\n      each(value, key in it.items):\n        render(value)",
       ),
       "Board",
     ),
@@ -369,7 +369,7 @@ test "a read inside a loop over CHILD components is checked against that child" 
   // component — a thing one StateDef could never answer.
   let msg = gen_err(
     page_and_row(
-      "    @ul{@each(value, key in it.rows){@li{@(it.titel)}}}", "  Row:\n    @span{@(it.title)}\n",
+      "    ul():\n      each(value, key in it.rows):\n        li():\n          @(it.titel)", "  Row:\n    @span{@(it.title)}\n",
     ),
     "Page",
   )
@@ -379,7 +379,7 @@ test "a read inside a loop over CHILD components is checked against that child" 
   assert_true(
     gen_err(
       page_and_row(
-        "    @ul{@each(value, key in it.rows){@li{@(value.titel)}}}", "  Row:\n    @span{@(it.title)}\n",
+        "    ul():\n      each(value, key in it.rows):\n        li():\n          @(value.titel)", "  Row:\n    @span{@(it.title)}\n",
       ),
       "Page",
     ).contains("not a field of the loop item (the Row component)"),
@@ -388,7 +388,7 @@ test "a read inside a loop over CHILD components is checked against that child" 
   assert_eq(
     gen_err(
       page_and_row(
-        "    @ul{@each(value, key in it.rows){@li{@(it.title)@(value.title)}}}",
+        "    ul():\n      each(value, key in it.rows):\n        li():\n          @(it.title)\n          @(value.title)",
         "  Row:\n    @span{@(it.title)}\n",
       ),
       "Page",
@@ -403,7 +403,7 @@ test "an `as=` naming a view the child does not have is reported" {
   // renders the wrong one. Only a table spanning both components can see it.
   let hints = gen_hints(
     page_and_row(
-      "    @render(it.sel, ~as: \"edit\")", "  Row:\n    @span{@(it.title)}\n\n  Row.edt:\n    @span{}\n",
+      "    render(it.sel, ~as: \"edit\")", "  Row:\n    @span{@(it.title)}\n\n  Row.edt:\n    @span{}\n",
     ),
     "Page",
   )
@@ -414,7 +414,7 @@ test "an `as=` naming a view the child does not have is reported" {
   // `render-each` reaches the same check through the loop's element type.
   let each_hints = gen_hints(
     page_and_row(
-      "    @each(value, key in it.rows){@render(value, ~as: \"edit\")}", "  Row:\n    @span{@(it.title)}\n",
+      "    each(value, key in it.rows):\n      render(value, ~as: \"edit\")", "  Row:\n    @span{@(it.title)}\n",
     ),
     "Page",
   )
@@ -428,7 +428,7 @@ test "a view name that does resolve, or cannot be known, is reported by nothing"
   assert_eq(
     gen_hints(
       page_and_row(
-        "    @render(it.sel, ~as: \"edit\")", "  Row:\n    @span{@(it.title)}\n\n  Row.edit:\n    @input\n",
+        "    render(it.sel, ~as: \"edit\")", "  Row:\n    @span{@(it.title)}\n\n  Row.edit:\n    @input\n",
       ),
       "Page",
     ).length(),
@@ -438,7 +438,7 @@ test "a view name that does resolve, or cannot be known, is reported by nothing"
   assert_eq(
     gen_hints(
       page_and_row(
-        "    @render(it.sel, ~as: it.pick)", "  Row:\n    @span{@(it.title)}\n",
+        "    render(it.sel, ~as: it.pick)", "  Row:\n    @span{@(it.title)}\n",
       ),
       "Page",
     ).length(),
@@ -448,7 +448,7 @@ test "a view name that does resolve, or cannot be known, is reported by nothing"
   // the hints channel as much as in the fatal one.
   assert_eq(
     gen_hints(
-      "spec:\n  Page:\n    field sel :: Instance\n\nview:\n  Page:\n    @render(it.sel, ~as: \"edit\")\n",
+      "spec:\n  Page:\n    field sel :: Instance\n\nview:\n  Page:\n    render(it.sel, ~as: \"edit\")\n",
       "Page",
     ).length(),
     0,
@@ -463,7 +463,7 @@ test "a view name that does resolve, or cannot be known, is reported by nothing"
 test "a generated mutator sent as a message is reported, and names the write" {
   let hints = gen_hints(
     board(
-      "  Board:\n    field items :: List.of(String)\n", "    @each(value, key in it.items){@div{@button(~on_click: remove_in_items_at(key)){x}}}",
+      "  Board:\n    field items :: List.of(String)\n", "    each(value, key in it.items):\n      div():\n        button(~on_click: remove_in_items_at(key)):\n          \"x\"",
     ),
     "Board",
   )
@@ -480,7 +480,7 @@ test "a generated mutator sent as a message is reported, and names the write" {
 test "the repair names the write for every mutator shape" {
   let set_hints = gen_hints(
     board(
-      "  Board:\n    field tags :: Set.of(String)\n", "    @button(~on_click: add_in_tags(\"x\")){x}",
+      "  Board:\n    field tags :: Set.of(String)\n", "    button(~on_click: add_in_tags(\"x\")):\n      \"x\"",
     ),
     "Board",
   )
@@ -488,7 +488,7 @@ test "the repair names the write for every mutator shape" {
   assert_true(set_hints[0].contains("write `it.tags.add(<member>)`"))
   let scalar_hints = gen_hints(
     board(
-      "  Board:\n    field count :: Int\n", "    @button(~on_click: set_count(1)){x}",
+      "  Board:\n    field count :: Int\n", "    button(~on_click: set_count(1)):\n      \"x\"",
     ),
     "Board",
   )
@@ -498,7 +498,7 @@ test "the repair names the write for every mutator shape" {
   // — so the repair is the expression that says the same thing.
   let bool_hints = gen_hints(
     board(
-      "  Board:\n    field open :: Bool\n", "    @button(~on_click: toggle_open){x}",
+      "  Board:\n    field open :: Bool\n", "    button(~on_click: toggle_open):\n      \"x\"",
     ),
     "Board",
   )
@@ -515,7 +515,7 @@ test "the path form, a real handler name and a declared message are silent" {
   assert_eq(
     gen_hints(
       board(
-        "  Board:\n    field items :: List.of(String)\n", "    @each(value, key in it.items){@div{@button(~on_click: it.items.delete_at(key)){x}}}",
+        "  Board:\n    field items :: List.of(String)\n", "    each(value, key in it.items):\n      div():\n        button(~on_click: it.items.delete_at(key)):\n          \"x\"",
       ),
       "Board",
     ),
@@ -524,7 +524,7 @@ test "the path form, a real handler name and a declared message are silent" {
   assert_eq(
     gen_hints(
       board(
-        "  Board:\n    field count :: Int\n", "    @button(~on_click: bump){x}",
+        "  Board:\n    field count :: Int\n", "    button(~on_click: bump):\n      \"x\"",
       ),
       "Board",
     ),
@@ -533,7 +533,7 @@ test "the path form, a real handler name and a declared message are silent" {
   assert_eq(
     gen_hints(
       "spec:\n  Board:\n    field open :: Bool\n    message set_open(Bool)\n" +
-      "\nview:\n  Board:\n    @button(~on_click: set_open(true)){x}\n",
+      "\nview:\n  Board:\n    button(~on_click: set_open(true)):\n      \"x\"\n",
       "Board",
     ),
     [],

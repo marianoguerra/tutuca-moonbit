@@ -3,14 +3,28 @@
 let counter_src : String =
   #|view:
   #|  Counter:
-  #|    @div(~class: "counter"){
-  #|      @h1{@(it.label): @span(~id: "count"){@(it.count)}}
-  #|      @button(~id: "inc", ~on_click: add(1)){+1}
-  #|      @button(~id: "dec", ~on_click: add(-1)){-1}
-  #|      @button(~id: "reset", ~on_click: resetCount){reset}
-  #|      @input(~id: "label", ~value: it.label, ~on_input: setLabel(e.value), ~on_keydown: setLabel("sent!") ~send)
-  #|      @ul(~id: "history"){@each(value, key in it.history){@li{@(value)}}}
-  #|    }
+  #|    div(class: "counter"):
+  #|      h1():
+  #|        @(it.label)
+  #|        ": "
+  #|        span(id: "count"):
+  #|          @(it.count)
+  #|      "\n"
+  #|      button(id: "inc", ~on_click: add(1)):
+  #|        "+1"
+  #|      "\n"
+  #|      button(id: "dec", ~on_click: add(-1)):
+  #|        "-1"
+  #|      "\n"
+  #|      button(id: "reset", ~on_click: resetCount):
+  #|        "reset"
+  #|      "\n"
+  #|      input(id: "label", value: it.label, ~on_input: setLabel(e.value), ~on_keydown: setLabel("sent!") ~send)
+  #|      "\n"
+  #|      ul(id: "history"):
+  #|        each(value, key in it.history):
+  #|          li():
+  #|            @(value)
 
 ///|
 /// The generated module for the counter view, in full. This snapshot IS the
@@ -218,15 +232,20 @@ test "a view with a $method, several views and styles" {
       @viewgen.read_file(
         (
           #|view:
-          #|  @style{.todo { display: grid }}
+          #|  style(): @{.todo { display: grid }}
           #|
           #|  TodoList:
-          #|    @ul{@each(value, key in it.items){@li{@render(value, ~as: "row")}}}
-          #|    @button(~on_click: clearDone, ~title: doneLabel()){clear}
+          #|    ul():
+          #|      each(value, key in it.items):
+          #|        li():
+          #|          render(value, ~as: "row")
+          #|    button(~on_click: clearDone, title: doneLabel()):
+          #|      "clear"
           #|
           #|  TodoList.row:
-          #|    @style{li { margin: 0 }}
-          #|    @li{@(value)}
+          #|    style(): @{li { margin: 0 }}
+          #|    li():
+          #|      @(value)
         ),
         name="TodoList",
       ),
@@ -350,10 +369,10 @@ test "gen emits the safe markup directives" {
       (
         #|view:
         #|  Doc:
-        #|    @div{
-        #|      @article(~inner_html: it.body)
-        #|      @svg(~inner_svg: it.chart)
-        #|    }
+        #|    div():
+        #|      article(inner_html: it.body)
+        #|      "\n"
+        #|      svg(inner_svg: it.chart)
       ),
       name="Doc",
     ),

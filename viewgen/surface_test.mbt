@@ -1,14 +1,28 @@
 ///|
 /// The counter demo's view, as it lives in demo/counterlib/counter.tutu.
 let counter_view : String =
-  #|    @div(~class: "counter"){
-  #|      @h1{@(it.label): @span(~id: "count"){@(it.count)}}
-  #|      @button(~id: "inc", ~on_click: add(1)){+1}
-  #|      @button(~id: "dec", ~on_click: add(-1)){-1}
-  #|      @button(~id: "reset", ~on_click: resetCount){reset}
-  #|      @input(~id: "label", ~value: it.label, ~on_input: setLabel(e.value), ~on_keydown: setLabel("sent!") ~send)
-  #|      @ul(~id: "history"){@each(value, key in it.history){@li{@(value)}}}
-  #|    }
+  #|    div(class: "counter"):
+  #|      h1():
+  #|        @(it.label)
+  #|        ": "
+  #|        span(id: "count"):
+  #|          @(it.count)
+  #|      "\n"
+  #|      button(id: "inc", ~on_click: add(1)):
+  #|        "+1"
+  #|      "\n"
+  #|      button(id: "dec", ~on_click: add(-1)):
+  #|        "-1"
+  #|      "\n"
+  #|      button(id: "reset", ~on_click: resetCount):
+  #|        "reset"
+  #|      "\n"
+  #|      input(id: "label", value: it.label, ~on_input: setLabel(e.value), ~on_keydown: setLabel("sent!") ~send)
+  #|      "\n"
+  #|      ul(id: "history"):
+  #|        each(value, key in it.history):
+  #|          li():
+  #|            @(value)
 
 ///|
 /// One view, read the way `tutuca gen` reads one.
@@ -48,11 +62,12 @@ test "value's type follows the host element: checkbox Bool, file Value" {
   // every runtime dispatch would fall into Unknown.
   let s = surface_of(
     (
-      #|    @div{
-      #|      @input(~type: "checkbox", ~on_input: setDone(e.value))
-      #|      @input(~type: "file", ~on_change: onPick(e.value))
-      #|      @input(~type: "text", ~on_input: setName(e.value))
-      #|    }
+      #|    div():
+      #|      input(type: "checkbox", ~on_input: setDone(e.value))
+      #|      "\n"
+      #|      input(type: "file", ~on_change: onPick(e.value))
+      #|      "\n"
+      #|      input(type: "text", ~on_input: setName(e.value))
     ),
   )
   assert_eq(s.inputs.map(i => i.name), ["onPick", "setDone", "setName"])
@@ -64,7 +79,7 @@ test "value's type follows the host element: checkbox Bool, file Value" {
 ///|
 test "a dynamic type keeps the default String inference for value" {
   // Only a static type option is visible at generation time.
-  let s = surface_of("    @input(~type: it.kind, ~on_input: setIt(e.value))")
+  let s = surface_of("    input(type: it.kind, ~on_input: setIt(e.value))")
   assert_eq(s.inputs[0].args, Some([VString]))
 }
 
@@ -72,10 +87,10 @@ test "a dynamic type keeps the default String inference for value" {
 test "checkbox and text call sites of one handler join to Value" {
   let s = surface_of(
     (
-      #|    @div{
-      #|      @input(~type: "checkbox", ~on_input: setIt(e.value))
-      #|      @input(~on_input: setIt(e.value))
-      #|    }
+      #|    div():
+      #|      input(type: "checkbox", ~on_input: setIt(e.value))
+      #|      "\n"
+      #|      input(~on_input: setIt(e.value))
     ),
   )
   assert_eq(s.inputs[0].args, Some([VValue]))
@@ -85,10 +100,12 @@ test "checkbox and text call sites of one handler join to Value" {
 test "call sites that disagree on arity carry the raw args" {
   let s = surface_of(
     (
-      #|    @div{
-      #|      @button(~on_click: go(1)){a}
-      #|      @button(~on_dblclick: go(1, "two")){b}
-      #|    }
+      #|    div():
+      #|      button(~on_click: go(1)):
+      #|        "a"
+      #|      "\n"
+      #|      button(~on_dblclick: go(1, "two")):
+      #|        "b"
     ),
   )
   assert_eq(s.inputs[0].name, "go")
@@ -99,10 +116,12 @@ test "call sites that disagree on arity carry the raw args" {
 test "call sites that disagree on a position fall back to Value" {
   let s = surface_of(
     (
-      #|    @div{
-      #|      @button(~on_click: go(1)){a}
-      #|      @button(~on_dblclick: go("two")){b}
-      #|    }
+      #|    div():
+      #|      button(~on_click: go(1)):
+      #|        "a"
+      #|      "\n"
+      #|      button(~on_dblclick: go("two")):
+      #|        "b"
     ),
   )
   assert_eq(s.inputs[0].args, Some([VValue]))
@@ -120,10 +139,10 @@ test "call sites that disagree on a position fall back to Value" {
 /// dispatch. That rule still runs over views built as markup through
 /// `@anode.View::new`, where the distinction can still be written.
 test "a compute in a value position is a method" {
-  let s = surface_of("    @button(~on_click: inc, ~title: label()){x}")
+  let s = surface_of("    button(~on_click: inc, title: label()):\n      \"x\"")
   assert_eq(s.methods, ["label"])
   assert_eq(s.inputs.map(i => i.name), ["inc"])
-  let same = surface_of("    @button(~on_click: inc()){x}")
+  let same = surface_of("    button(~on_click: inc()):\n      \"x\"")
   assert_eq(same.inputs.map(i => i.name), ["inc"])
   assert_eq(same.methods, [])
 }
@@ -134,11 +153,15 @@ test "fields under a scope-changing node are not this component's" {
   // read through their own binder, so neither is a field of this state.
   let s = surface_of(
     (
-      #|    @div{
+      #|    div():
       #|      @(it.label)
-      #|      @ul{@each(row in it.rows){@li{@(row.name)}}}
-      #|      @render(it.child, ~as: it.title)
-      #|    }
+      #|      "\n"
+      #|      ul():
+      #|        each(row in it.rows):
+      #|          li():
+      #|            @(row.name)
+      #|      "\n"
+      #|      render(it.child, ~as: it.title)
     ),
   )
   assert_eq(s.fields, ["child", "label", "rows", "title"])
@@ -171,14 +194,14 @@ test "a view the reader will not read fails generation" {
 test "the alter handler names, by bucket" {
   let s = surface_of(
     (
-      #|    @div{
-      #|      @ul{
-      #|        @each(value, key in it.items, ~when: keepItem, ~loop_with: firstPage, ~enrich_with: enrichItem){
-      #|          @li{@(value)}
-      #|        }
-      #|      }
-      #|      @div(~enrich_with: pagerInfo){@(total)}
-      #|    }
+      #|    div():
+      #|      ul():
+      #|        each(value, key in it.items, ~when: keepItem, ~loop_with: firstPage, ~enrich_with: enrichItem):
+      #|          li():
+      #|            @(value)
+      #|      "\n"
+      #|      div(~enrich_with: pagerInfo):
+      #|        @(total)
     ),
   )
   assert_eq(s.whens, ["keepItem"])
@@ -212,7 +235,7 @@ fn view_hints(view : String) -> Array[String] raise {
 
 ///|
 test "an e. path in an argument slot parses and types" {
-  let s = surface_of("    @input(~on_input: setIt(e.value))")
+  let s = surface_of("    input(~on_input: setIt(e.value))")
   assert_eq(s.inputs.length(), 1)
   assert_eq(s.inputs[0].name, "setIt")
   // The accessor's own type, from layer 1's table — an `e.` path does not
@@ -228,7 +251,7 @@ test "a path off the allowlist is a hint naming the step, not an error" {
   // guest-supplied views holds its policy's safe profile to this same list
   // and turns it away at registration.
   let hints = view_hints(
-    "    @button(~on_click: go(e.target.ownerDocument.defaultView.localStorage.length)){x}",
+    "    button(~on_click: go(e.target.ownerDocument.defaultView.localStorage.length)):\n      \"x\"",
   )
   assert_eq(hints.length(), 1)
   assert_eq(
@@ -236,19 +259,19 @@ test "a path off the allowlist is a hint naming the step, not an error" {
     "view main: `~on_click=\"… e.target.ownerDocument.defaultView.localStorage.length\"` — `ownerDocument` (at 1) is off the event-path allowlist. It resolves here, but a host compiling guest-supplied views refuses it: every step through a host object must be one of currentTarget, dataTransfer, dataset, detail, relatedTarget, target",
   )
   // ...and nothing generates as an error for either escape path.
-  assert_eq(view_err("    @button(~on_click: go(e.target.form.action)){x}"), "")
+  assert_eq(view_err("    button(~on_click: go(e.target.form.action)):\n      \"x\""), "")
   // A permitted one draws no hint at all.
-  assert_eq(view_hints("    @button(~on_click: go(e.target.value)){x}"), [])
+  assert_eq(view_hints("    button(~on_click: go(e.target.value)):\n      \"x\""), [])
   assert_eq(
-    view_hints("    @button(~on_click: go(e.target.dataset.rowId)){x}"),
+    view_hints("    button(~on_click: go(e.target.dataset.rowId)):\n      \"x\""),
     [],
   )
-  assert_eq(view_hints("    @button(~on_click: go(e.detail.a.b.c)){x}"), [])
+  assert_eq(view_hints("    button(~on_click: go(e.detail.a.b.c)):\n      \"x\""), [])
 }
 
 ///|
 test "a rooted path naming no known property is a hint, with the nearest" {
-  let hints = view_hints("    @button(~on_click: go(e.valeu)){x}")
+  let hints = view_hints("    button(~on_click: go(e.valeu)):\n      \"x\"")
   assert_eq(hints.length(), 1)
   assert_eq(
     hints[0],
@@ -257,22 +280,22 @@ test "a rooted path naming no known property is a hint, with the nearest" {
   // A computed accessor is known even though no specification has it: `value`
   // is the glue's, and a check against the specs alone would warn about the
   // most common read in the language.
-  assert_eq(view_hints("    @button(~on_click: go(e.value)){x}"), [])
-  assert_eq(view_hints("    @button(~on_click: go(e.isCtrl)){x}"), [])
+  assert_eq(view_hints("    button(~on_click: go(e.value)):\n      \"x\""), [])
+  assert_eq(view_hints("    button(~on_click: go(e.isCtrl)):\n      \"x\""), [])
   // ...and a real one from the generated table.
-  assert_eq(view_hints("    @button(~on_click: go(e.deltaY)){x}"), [])
-  assert_eq(view_hints("    @button(~on_click: go(e.pointerId)){x}"), [])
+  assert_eq(view_hints("    button(~on_click: go(e.deltaY)):\n      \"x\""), [])
+  assert_eq(view_hints("    button(~on_click: go(e.pointerId)):\n      \"x\""), [])
 }
 
 ///|
 test "an argument says where it reads from" {
   // The three prefixed spellings are accepted, and say nothing.
-  assert_eq(view_hints("    @input(~on_input: setIt(e.value))"), [])
-  assert_eq(view_hints("    @input(~on_input: setIt(it.draft))"), [])
-  assert_eq(view_err("    @input(~on_input: setIt(it.draft))"), "")
+  assert_eq(view_hints("    input(~on_input: setIt(e.value))"), [])
+  assert_eq(view_hints("    input(~on_input: setIt(it.draft))"), [])
+  assert_eq(view_err("    input(~on_input: setIt(it.draft))"), "")
   assert_eq(
     view_hints(
-      "    @ul{@each(row in it.rows){@button(~on_click: setIt(row)){x}}}",
+      "    ul():\n      each(row in it.rows):\n        button(~on_click: setIt(row)):\n          \"x\"",
     ),
     [],
   )
@@ -288,13 +311,25 @@ test "an operator is transparent to the surface walk" {
   // declare, and a call under one is still a method.
   let s = surface_of(
     (
-      #|    @div{
-      #|      @show(!(it.kind.is_empty())){@p{a}}
-      #|      @hide(it.items.length() == 1){@p{b}}
-      #|      @show(it.open && (it.n > 0)){@p{c}}
-      #|      @p(~class: if !canSubmit() | "on" | "off"){d}
-      #|      @show(it.view == "detail"){@p{e}}
-      #|    }
+      #|    div():
+      #|      show(!(it.kind.is_empty())):
+      #|        p():
+      #|          "a"
+      #|      "\n"
+      #|      hide(it.items.length() == 1):
+      #|        p():
+      #|          "b"
+      #|      "\n"
+      #|      show(it.open && (it.n > 0)):
+      #|        p():
+      #|          "c"
+      #|      "\n"
+      #|      p(class: if !canSubmit() | "on" | "off"):
+      #|        "d"
+      #|      "\n"
+      #|      show(it.view == "detail"):
+      #|        p():
+      #|          "e"
     ),
   )
   assert_eq(s.fields, ["items", "kind", "n", "open", "view"])
@@ -317,18 +352,20 @@ test "a macro argument is an operand in a conditional slot" {
     #|
     #|view:
     #|  macro row(~value: "", ~label: ""):
-    #|    @div(~class: "row"){
-    #|      @hide(value.is_empty()){
-    #|        @span{@(label)}
-    #|        @show(!(value.is_empty())){@b{@(value)}}
-    #|      }
-    #|    }
+    #|    div(class: "row"):
+    #|      hide(value.is_empty()):
+    #|        span():
+    #|          @(label)
+    #|        "\n"
+    #|        show(!(value.is_empty())):
+    #|          b():
+    #|            @(value)
     #|
     #|  T:
-    #|    @div{
-    #|      @row(~value: it.title, ~label: "Title")
-    #|      @row(~value: it.blurb, ~label: "Blurb")
-    #|    }
+    #|    div():
+    #|      row(~value: it.title, ~label: "Title")
+    #|      "\n"
+    #|      row(~value: it.blurb, ~label: "Blurb")
   let f = @viewgen.read_file(src)
   let s = @viewgen.view_surface(f.components[0].views, macros=f.macros)
   assert_eq(s.fields, ["blurb", "title"])

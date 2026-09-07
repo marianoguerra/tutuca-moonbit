@@ -590,50 +590,87 @@ fn counter_manifest() -> DynManifest {
     tutu: (
       #|view:
       #|  Counter:
-      #|    @div(~class: "counter"){
-      #|      @button(~class: "dec", ~on_click: dec){-}
-      #|      @span(~class: "count"){@(it.count)}
-      #|      @span(~class: "secret"){@(it.secret)}
-      #|      @button(~class: "inc", ~on_click: inc){+}
-      #|      @button(~class: "double", ~on_click: double){double}
-      #|      @button(~class: "notify", ~on_click: notify){notify}
-      #|      @button(~class: "undeclared", ~on_click: readUndeclared){undeclared}
-      #|      @button(~class: "announce", ~on_click: announce){announce}
-      #|      @button(~class: "triple", ~on_click: triple){triple}
-      #|      @button(~class: "zero", ~on_click: it.count := 0){zero}
-      #|      @span(~class: "label"){@(label())}
-      #|      @span(~class: "theme"){@(dyn.theme)}
-      #|      @ul(~class: "hist"){
-      #|        @each(value, key in it.history, ~when: nonZero){
-      #|          @li(~class: "h"){@(value)}
-      #|        }
-      #|      }
-      #|      @input(~class: "kbd", ~on_keydown: reset ~cancel)
-      #|    }
+      #|    div(class: "counter"):
+      #|      button(class: "dec", ~on_click: dec):
+      #|        "-"
+      #|      "\n"
+      #|      span(class: "count"):
+      #|        @(it.count)
+      #|      "\n"
+      #|      span(class: "secret"):
+      #|        @(it.secret)
+      #|      "\n"
+      #|      button(class: "inc", ~on_click: inc):
+      #|        "+"
+      #|      "\n"
+      #|      button(class: "double", ~on_click: double):
+      #|        "double"
+      #|      "\n"
+      #|      button(class: "notify", ~on_click: notify):
+      #|        "notify"
+      #|      "\n"
+      #|      button(class: "undeclared", ~on_click: readUndeclared):
+      #|        "undeclared"
+      #|      "\n"
+      #|      button(class: "announce", ~on_click: announce):
+      #|        "announce"
+      #|      "\n"
+      #|      button(class: "triple", ~on_click: triple):
+      #|        "triple"
+      #|      "\n"
+      #|      button(class: "zero", ~on_click: it.count := 0):
+      #|        "zero"
+      #|      "\n"
+      #|      span(class: "label"):
+      #|        @(label())
+      #|      "\n"
+      #|      span(class: "theme"):
+      #|        @(dyn.theme)
+      #|      "\n"
+      #|      ul(class: "hist"):
+      #|        each(value, key in it.history, ~when: nonZero):
+      #|          li(class: "h"):
+      #|            @(value)
+      #|      "\n"
+      #|      input(class: "kbd", ~on_keydown: reset ~cancel)
       #|
       #|  Pair:
-      #|    @div(~class: "pair"){
-      #|      @button(~class: "resetleft", ~on_click: reset_left){reset left}
-      #|      @div(~class: "left"){@render(it.left)}
-      #|      @div(~class: "right"){@render(it.right)}
-      #|    }
+      #|    div(class: "pair"):
+      #|      button(class: "resetleft", ~on_click: reset_left):
+      #|        "reset left"
+      #|      "\n"
+      #|      div(class: "left"):
+      #|        render(it.left)
+      #|      "\n"
+      #|      div(class: "right"):
+      #|        render(it.right)
       #|
       #|  Framed:
-      #|    @div(~class: "framed"){
-      #|      @span(~class: "frame-title"){@(it.title)}
-      #|      @button(~class: "retitle", ~on_click: it.title := "renamed"){rename}
-      #|      @div(~class: "frame-body"){@render(it.body)}
-      #|    }
+      #|    div(class: "framed"):
+      #|      span(class: "frame-title"):
+      #|        @(it.title)
+      #|      "\n"
+      #|      button(class: "retitle", ~on_click: it.title := "renamed"):
+      #|        "rename"
+      #|      "\n"
+      #|      div(class: "frame-body"):
+      #|        render(it.body)
       #|
       #|  Shelf:
-      #|    @div(~class: "shelf"){@render(it.holds)}
+      #|    div(class: "shelf"):
+      #|      render(it.holds)
       #|
       #|  Rack:
-      #|    @div(~class: "rack"){
-      #|      @button(~class: "rack-poke", ~on_click: bumpHeld){poke}
-      #|      @div(~class: "rack-one"){@render(it.holds)}
-      #|      @div(~class: "rack-cells"){@each(value, key in it.cells){@render(value)}}
-      #|    }
+      #|    div(class: "rack"):
+      #|      button(class: "rack-poke", ~on_click: bumpHeld):
+      #|        "poke"
+      #|      "\n"
+      #|      div(class: "rack-one"):
+      #|        render(it.holds)
+      #|      "\n"
+      #|      div(class: "rack-cells"):
+      #|        each(value, key in it.cells):
+      #|          render(value)
     ),
     components: [
       {
@@ -1420,7 +1457,7 @@ test "manifest parses a type written as the type it is" {
   // writer never filled.
   let json =
     #|{"manifestVersion": 4, "abiVersion": 2, "apiVersion": 10, "moduleName": "counterlib",
-    #| "tutu": ["view:\n  Counter:\n    @div{@(it.count)}\n"], "components": [
+    #| "tutu": ["view:\n  Counter:\n    div():\n      @(it.count)\n"], "components": [
     #|  {"name": "Counter",
     #|   "views": [{"name": "main", "bytes": 30}],
     #|   "fields": [{"name": "count", "ty": {"k": "int", "width": 8, "signed": false}},
@@ -1457,7 +1494,7 @@ test "manifest parses a type written as the type it is" {
 test "manifest parses from the bridge's JSON projection" {
   let json =
     #|{"manifestVersion": 4, "abiVersion": 2, "apiVersion": 10, "moduleName": "counterlib",
-    #| "tutu": ["view:\n  Counter:\n    @div{@(it.count)}\n"], "components": [
+    #| "tutu": ["view:\n  Counter:\n    div():\n      @(it.count)\n"], "components": [
     #|  {"name": "Counter",
     #|   "views": [{"name": "main", "bytes": 30}],
     #|   "fields": [{"name": "count", "ty": {"k": "int"}},
@@ -1473,8 +1510,10 @@ test "manifest parses from the bridge's JSON projection" {
     content=(
       #|view:
       #|  Counter:
-      #|    @div{@(it.count)}
+      #|    div():
+      #|      @(it.count)
       #|
+
     ),
   )
   let fields = m.components[0].field_infos()
@@ -1618,7 +1657,7 @@ test "a guest view that sets markup directly is refused" {
   let m : DynManifest = {
     ..base,
     module_name: "sneakylib",
-    tutu: "view:\n  Sneaky:\n    @div(~class: \"sneaky-marker\", ~dangerously_inner_html: it.payload)\n",
+    tutu: "view:\n  Sneaky:\n    div(class: \"sneaky-marker\", dangerously_inner_html: it.payload)\n",
     components: [
       {
         ..base.components[0],
@@ -1656,7 +1695,7 @@ test "a guest view that sets markup directly is refused" {
   let ok_m : DynManifest = {
     ..m,
     module_name: "tidylib",
-    tutu: "view:\n  Sneaky:\n    @div(~class: \"tidy-marker\")\n",
+    tutu: "view:\n  Sneaky:\n    div(class: \"tidy-marker\")\n",
     components: [{ ..m.components[0], views: [{ name: "main", bytes: 42, }], }],
   }
   assert_true(register(ok_m))
@@ -1977,11 +2016,18 @@ test "a `compute` the manifest never declared is reported at load" {
     tutu: (
       #|view:
       #|  Stat:
-      #|    @div(~style: boxStyle(), ~class: valueClass()){
-      #|      @button(~on_click: set_count(0)){zero}
-      #|      @button(~on_click: bumpIt()){bump}
-      #|      @span{@str{@(it.count) / @(boxStyl())}}
-      #|    }
+      #|    div(style: boxStyle(), class: valueClass()):
+      #|      button(~on_click: set_count(0)):
+      #|        "zero"
+      #|      "\n"
+      #|      button(~on_click: bumpIt()):
+      #|        "bump"
+      #|      "\n"
+      #|      span():
+      #|        str():
+      #|          @(it.count)
+      #|          " / "
+      #|          @(boxStyl())
     ),
     components: [
       {
@@ -2215,7 +2261,7 @@ fn config_manifest(module_name : String) -> DynManifest {
   {
     ..base,
     module_name,
-    tutu: "view:\n  Counter:\n    @img(~src: @str{@(host.mediaOrigin)avatars/@(it.count).png})\n",
+    tutu: "view:\n  Counter:\n    img(src: @str{@(host.mediaOrigin)avatars/@(it.count).png})\n",
     config: [
       {
         name: "mediaOrigin",
@@ -2877,7 +2923,7 @@ test "a restore leaves a same-module child to the guest" {
 test "a protocol's properties parse as objects or as bare names" {
   let json =
     #|{"manifestVersion": 4, "abiVersion": 2, "apiVersion": 10, "moduleName": "holderlib",
-    #| "tutu": ["view:\n  Hole:\n    @div{}\n"],
+    #| "tutu": ["view:\n  Hole:\n    div()\n"],
     #| "components": [
     #|  {"name": "Hole",
     #|   "views": [{"name": "main", "bytes": 20}],

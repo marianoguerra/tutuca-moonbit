@@ -15,7 +15,7 @@ fn msgs_src(channels : String, types? : String = "") -> String raise {
       types +
       "  Chat:\n    field n :: Int\n" +
       channels +
-      "\nview:\n  Chat:\n    @p{@(it.n)}\n",
+      "\nview:\n  Chat:\n    p():\n      @(it.n)\n",
       name="Chat",
     ),
   )
@@ -163,7 +163,7 @@ fn answered_src(logic : String) -> String raise {
       "spec:\n  Chat:\n    field n :: Int\n\nlogic:\n  Chat:\n" +
       logic +
       "\nview:\n  Chat:\n" +
-      "    @p{@(it.n)@button(~on_click: bump(1)){+}@button(~on_click: reset){0}}\n",
+      "    p():\n      @(it.n)\n      button(~on_click: bump(1)):\n        \"+\"\n      button(~on_click: reset):\n        \"0\"",
       name="Chat",
     ),
   )
@@ -372,7 +372,7 @@ test "a bare view name beside a protocol-qualified declaration is a second messa
       "  protocol Openable = \"x/Openable@1\":\n    message setOpen(Bool)\n\n" +
       "  Chat:\n    field open :: Bool\n    implements Openable\n    message Openable::setOpen(Bool)\n" +
       "\nview:\n  Chat:\n" +
-      "    @button(~on_click: setOpen(true)){x}\n",
+      "    button(~on_click: setOpen(true)):\n      \"x\"",
       name="Chat",
     ),
   )
@@ -406,7 +406,7 @@ test "the same declaration with no view sending it answers one name" {
       "  protocol Openable = \"x/Openable@1\":\n    message setOpen(Bool)\n\n" +
       "  Chat:\n    field open :: Bool\n    implements Openable\n    message Openable::setOpen(Bool)\n" +
       "\nview:\n  Chat:\n" +
-      "    @p{@(it.open)}\n",
+      "    p():\n      @(it.open)",
       name="Chat",
     ),
   )

@@ -136,7 +136,7 @@ test "usage errors" {
 test "the compiled tree is a second file, unless --no-ir" {
   assert_true(plan_gen(["a.html", "--no-ir"]) is GenViews(_, ir=false, ..))
   let r = @cli.gen_views(
-    "view:\n  Counter:\n    @button(~id: \"go\", ~on_click: go(1)){x}\n",
+    "view:\n  Counter:\n    button(id: \"go\", ~on_click: go(1)):\n      \"x\"\n",
     name="Counter",
     input="views/counter.tutu",
     target="views/counter_view_gen.mbt",
@@ -162,10 +162,11 @@ test "a declared macro is expanded into the compiled tree" {
     (
       #|view:
       #|  macro card(~tone: "plain", ~body: ""):
-      #|    @section(~class: "card", ~data_tone: tone){@(body)}
+      #|    section(class: "card", data_tone: tone):
+      #|      @(body)
       #|
       #|  Cards:
-      #|    @card(~tone: "loud", ~body: "hi")
+      #|    card(~tone: "loud", ~body: "hi")
     ),
     name="Cards",
     input="views/cards.tutu",
@@ -203,7 +204,7 @@ test "generation failures come back as a coded CLI error" {
 ///|
 test "a successful plan carries one file" {
   let r = @cli.gen_views(
-    "view:\n  Counter:\n    @button(~on_click: go){x}\n",
+    "view:\n  Counter:\n    button(~on_click: go):\n      \"x\"\n",
     name="Counter",
     input="views/counter.tutu",
     target="views/counter_view_gen.mbt",
@@ -237,9 +238,10 @@ test "view-only advisory rules report at generation time" {
     (
       #|view:
       #|  LintMe:
-      #|    @div{
-      #|      @each(value, key in it.rows){@button(~on_click: go(e.target.ownerDocument.x)){x}}
-      #|    }
+      #|    div():
+      #|      each(value, key in it.rows):
+      #|        button(~on_click: go(e.target.ownerDocument.x)):
+      #|          "x"
     ),
     name="LintMe",
     input="views/lintme.tutu",
@@ -282,7 +284,8 @@ test "a protocol member keeps its payload and draws no case warning" {
       #|
       #|view:
       #|  Node:
-      #|    @b{@(it.open)}
+      #|    b():
+      #|      @(it.open)
     ),
     name="Node",
     input="views/node.tutu",
@@ -317,7 +320,8 @@ test "a transition that reads no state takes an underscored parameter" {
       #|
       #|view:
       #|  Toggle:
-      #|    @b{@(it.theme)}
+      #|    b():
+      #|      @(it.theme)
     ),
     name="Toggle",
     input="views/toggle.tutu",
@@ -346,7 +350,8 @@ test "a transition that reads state keeps its parameter" {
       #|
       #|view:
       #|  Counter:
-      #|    @b{@(it.count)}
+      #|    b():
+      #|      @(it.count)
     ),
     name="Counter",
     input="views/counter.tutu",
@@ -383,10 +388,13 @@ test "a component-typed list payload stays in the script language" {
       #|
       #|view:
       #|  Group:
-      #|    @b{@(it.label)}
+      #|    b():
+      #|      @(it.label)
       #|
       #|  App:
-      #|    @div{@each(value, key in it.models){@render(value)}}
+      #|    div():
+      #|      each(value, key in it.models):
+      #|        render(value)
     ),
     name="App",
     input="views/app.tutu",
@@ -430,7 +438,8 @@ test "a script handler for a protocol message answers the canonical name" {
       #|
       #|view:
       #|  Node:
-      #|    @b{@(it.open)}
+      #|    b():
+      #|      @(it.open)
     ),
     name="Node",
     input="views/node.tutu",
@@ -460,7 +469,8 @@ test "a mis-cased protocol member is reported under its alias" {
       #|
       #|view:
       #|  Node:
-      #|    @b{@(it.open)}
+      #|    b():
+      #|      @(it.open)
     ),
     name="Node",
     input="views/node.tutu",
@@ -494,7 +504,8 @@ test "a message declared in a spelling nothing uses is reported" {
       #|
       #|view:
       #|  Thermostat:
-      #|    @button(~on_click: init){go}
+      #|    button(~on_click: init):
+      #|      "go"
     ),
     name="Thermostat",
     input="views/thermostat.tutu",
@@ -526,7 +537,8 @@ test "a message declared the way it is used is silent" {
       #|
       #|view:
       #|  Thermostat:
-      #|    @button(~on_click: init){go}
+      #|    button(~on_click: init):
+      #|      "go"
     ),
     name="Thermostat",
     input="views/thermostat.tutu",
@@ -540,7 +552,7 @@ test "a message declared the way it is used is silent" {
 ///|
 test "a clean view produces no diagnostics" {
   let r = @cli.gen_views(
-    "view:\n  Clean:\n    @div{@button(~on_click: go){x}}\n",
+    "view:\n  Clean:\n    div():\n      button(~on_click: go):\n        \"x\"\n",
     name="Clean",
     input="views/clean.tutu",
     target="views/clean_view_gen.mbt",
@@ -568,7 +580,7 @@ test "a batch names every file that failed, and writes none of them" {
         input: "views/b.tutu",
         target: "views/b_view_gen.mbt",
         name: "B",
-        source: "view:\n  B:\n    @button(~on_click: go){x}\n",
+        source: "view:\n  B:\n    button(~on_click: go):\n      \"x\"\n",
       },
       {
         input: "views/c.tutu",
@@ -605,7 +617,7 @@ test "one failing file in a batch still reads as one file" {
         input: "views/a.tutu",
         target: "views/a_view_gen.mbt",
         name: "A",
-        source: "view:\n  A:\n    @button(~on_click: go){x}\n",
+        source: "view:\n  A:\n    button(~on_click: go):\n      \"x\"\n",
       },
       {
         input: "views/b.tutu",
@@ -633,13 +645,13 @@ test "a file that does not read stops the batch before the emit pass" {
         input: "views/bad.tutu",
         target: "views/bad_view_gen.mbt",
         name: "Bad",
-        source: "spec:\n  Bad:\n    field n :: Nope\n\nview:\n  Bad:\n    @b{x}\n",
+        source: "spec:\n  Bad:\n    field n :: Nope\n\nview:\n  Bad:\n    b():\n      \"x\"\n",
       },
       {
         input: "views/uses.tutu",
         target: "views/uses_view_gen.mbt",
         name: "Uses",
-        source: "view:\n  Uses:\n    @card()\n",
+        source: "view:\n  Uses:\n    card()\n",
       },
     ],
     ir=false,
@@ -685,8 +697,9 @@ test "gen does not guess at a handler it cannot see" {
       #|
       #|view:
       #|  Editor:
-      #|    @input(~on_input: setName(e.value))
-      #|    @button(~on_click: save){s}
+      #|    input(~on_input: setName(e.value))
+      #|    button(~on_click: save):
+      #|      "s"
     ),
     name="Editor",
     input="views/editor.tutu",

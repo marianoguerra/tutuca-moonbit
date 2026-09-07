@@ -32,8 +32,8 @@ test "the outline is one line per section, in file order" {
     #|
     #|view:
     #|  Todos:
-    #|    @div{x}
-    #|
+    #|    div():
+    #|      "x"
   let emit = @cli.outline_apply({ path: "card.tutu", json: false, }, src)
   assert_eq(emit.exit_code, 0)
   inspect(

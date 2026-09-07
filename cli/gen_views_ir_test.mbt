@@ -62,16 +62,36 @@ let ir_src : String =
   #|
   #|view:
   #|  Ir:
-  #|    @div(~class: "counter", ~title: it.label){
-  #|      @h1{@(it.label): @span(~id: "count"){@(it.count)}}
-  #|      @show(it.count){@p{shown}}
-  #|      @hide(it.count){@p{hidden}}
-  #|      @button(~id: "inc", ~on_click: add(1), ~on_keydown: add(-2.5) ~send){+1}
-  #|      @input(~id: "label", ~value: it.label, ~on_input: setLabel(e.value))
-  #|      @b(~class: if it.count | "on" | "off"){flag}
-  #|      @ul(~id: "history"){@each(value, key in it.history){@li{@(value)}}}
-  #|      @svg(~viewBox: "0 0 1 1"){@circle(~r: "1")}
-  #|    }
+  #|    div(class: "counter", title: it.label):
+  #|      h1():
+  #|        @(it.label)
+  #|        ": "
+  #|        span(id: "count"):
+  #|          @(it.count)
+  #|      "\n"
+  #|      show(it.count):
+  #|        p():
+  #|          "shown"
+  #|      "\n"
+  #|      hide(it.count):
+  #|        p():
+  #|          "hidden"
+  #|      "\n"
+  #|      button(id: "inc", ~on_click: add(1), ~on_keydown: add(-2.5) ~send):
+  #|        "+1"
+  #|      "\n"
+  #|      input(id: "label", value: it.label, ~on_input: setLabel(e.value))
+  #|      "\n"
+  #|      b(class: if it.count | "on" | "off"):
+  #|        "flag"
+  #|      "\n"
+  #|      ul(id: "history"):
+  #|        each(value, key in it.history):
+  #|          li():
+  #|            @(value)
+  #|      "\n"
+  #|      svg(viewBox: "0 0 1 1"):
+  #|        circle(r: "1")
 
 ///|
 test "a component built from the compiled tree renders what the file says" {
@@ -190,10 +210,12 @@ let macro_view_src : String =
   #|
   #|view:
   #|  macro badge(~tone: "plain", ~label: ""):
-  #|    @span(~class: "badge", ~data_tone: tone){@(label)}
+  #|    span(class: "badge", data_tone: tone):
+  #|      @(label)
   #|
   #|  Badge:
-  #|    @div{@badge(~label: it.title, ~tone: "loud")}
+  #|    div():
+  #|      badge(~label: it.title, ~tone: "loud")
 
 ///|
 priv struct BadgeState {
