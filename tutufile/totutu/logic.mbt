@@ -605,3 +605,14 @@ pub fn checked_mutator(name : String) -> String raise NoSpelling {
   }
   m
 }
+
+///|
+/// Whether a printed body is one line, so it can sit after its `:`.
+///
+/// Lived in the view printer, which is deleted: it printed the old at-notation
+/// spelling and nothing called it any more. The logic printer is the only
+/// caller left.
+fn is_one_line(s : String) -> Bool {
+  let body = s.trim(chars=" \n")
+  body != "" && !body.contains("\n")
+}

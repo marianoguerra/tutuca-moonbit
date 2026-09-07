@@ -1,20 +1,22 @@
-// Whitespace, which is the one thing going direct deliberately changes.
+// Whitespace, which is the deepest thing the aligned notation changes.
 //
-// The rule: a text node exists where the file writes one, with the text the
-// file wrote. Nothing is trimmed, nothing is condensed, and nothing is
-// inferred from what kind of element it sits in.
+// THE RULE: whitespace only ever exists inside a string. It is
+// `marianoguerra/shrubbery-html`'s third law, taken verbatim, and it is what
+// makes the indentation free -- a space cannot mean anything unless a string
+// says so, and a string says so by containing it.
 //
-// The rule it replaces was two passes deep. An HTML tokenizer turns source
-// LAYOUT into text nodes — the newline and indent between two tags are
-// characters in the document — and `anode/whitespace.mbt` then removes the ones
-// it decides were layout, using a table of which tags are block-level. That
-// table is not a fact about the view; it is a repair for something the
-// tokenizer did. At-notation never does it, so there is nothing to repair.
+// It replaces two rules, one on top of the other. An HTML tokenizer turns
+// source LAYOUT into text nodes -- the newline and indent between two tags are
+// characters in the document -- and `anode/whitespace.mbt` then removed the
+// ones it decided were layout, using a table of which tags are block-level.
+// That table was never a fact about the view; it was a repair for something
+// the tokenizer did. At-notation manufactured less but still manufactured: a
+// body written across lines carried a `"\n"` text node per break, and an escape
+// split one text run into three pieces whose seams had to be joined back.
 //
-// The printer path made this worse than a wash, because the printer INDENTS.
-// `@button{+}` printed as `<button>\n      +\n    </button>` and the text node
-// that came back was `"\n      +\n    "` — not whitespace-only, so the
-// condensing pass left it alone. The printer's own formatting became content.
+// Under law 3 there is nothing to repair and nothing to join. A text node
+// exists where a string literal is written, holding exactly what the literal
+// holds, and nowhere else.
 
 ///|
 /// The text nodes of a tree, in order, with their exact contents.
@@ -51,100 +53,89 @@ fn view_texts(view : String) -> Array[String] {
 }
 
 ///|
-test "text is what the file wrote, with nothing trimmed" {
-  @debug.assert_eq(view_texts("  Card:\n    @button{+}"), ["+"])
-  @debug.assert_eq(view_texts("  Card:\n    @p{ padded }"), [" padded "])
+test "text is what the string holds" {
+  @debug.assert_eq(view_texts("  Card:\n    button(): \"+\""), ["+"])
+  @debug.assert_eq(view_texts("  Card:\n    p(): \" padded \""), [" padded "])
 }
 
 ///|
-/// The case the block/inline table existed to get right, and the case it could
-/// still get wrong: spacing BETWEEN inline elements is content, and here it is
-/// simply the text that was written.
-test "spacing between inline elements is kept exactly" {
-  @debug.assert_eq(view_texts("  Card:\n    @p{a @b{c} d}"), ["a ", "c", " d"])
-  @debug.assert_eq(view_texts("  Card:\n    @p{@b{a} @b{b}}"), ["a", " ", "b"])
-}
-
-///|
-/// A body written across lines gets the newline it was written with, and NOT
-/// the indentation — shrubbery strips a multi-line at-body's indent before this
-/// package sees it, so "explicit" does not mean "the file's leading spaces".
-test "a multi-line body keeps its newlines and loses its indentation" {
+/// Spacing between inline elements is CONTENT, and it is written as content.
+///
+/// The old spelling put it in the layout -- `@p{a @b{c} d}` -- where it was a
+/// space that happened to survive, and layout that happens to survive is layout
+/// a formatter can lose. Here it is a string, so nothing can lose it.
+test "spacing between inline elements is a string" {
   @debug.assert_eq(
-    view_texts("  Card:\n    @div{\n      @span{a}\n      @span{b}\n    }"),
-    ["a", "\n", "b"],
+    view_texts("  Card:\n    p():\n      \"a \"\n      b(): \"c\"\n      \" d\""),
+    ["a ", "c", " d"],
+  )
+  @debug.assert_eq(
+    view_texts("  Card:\n    p():\n      b(): \"a\"\n      \" \"\n      b(): \"b\""),
+    ["a", " ", "b"],
   )
 }
 
 ///|
-/// Nothing infers a text node that was not written. An element written with no
-/// content has no children at all, rather than an empty text node the
-/// condensing pass would have had to remove.
+/// The property that earns the design: the layout is free.
+///
+/// The same view at two indentations, and on one line versus several, is the
+/// same tree. Under every previous spelling this was false -- the at-notation
+/// body gained a `"\n"` per line break, and the printer path before it wrote
+/// its own indentation into the text -- which is why reformatting a view file
+/// was a thing nobody could do safely.
+test "reindenting a view cannot change the page" {
+  let one = view_texts("  Card:\n    p(): b(): \"a\"")
+  let many = view_texts("  Card:\n    p():\n      b():\n        \"a\"")
+  @debug.assert_eq(many, one)
+  @debug.assert_eq(one, ["a"])
+}
+
+///|
+/// A body written across lines manufactures NOTHING.
+///
+/// This is the case that changed. The at-notation body answered
+/// `["a", "\n", "b"]` here -- a text node per line break, which rendered as a
+/// space between two inline elements and as nothing between two block ones, so
+/// the same file meant different things depending on what it wrapped.
+test "a multi-line body has no text but its strings" {
+  @debug.assert_eq(
+    view_texts("  Card:\n    div():\n      span(): \"a\"\n      span(): \"b\""),
+    ["a", "b"],
+  )
+}
+
+///|
+/// Nothing infers a text node that was not written.
 test "an empty element has no text node" {
-  @debug.assert_eq(view_texts("  Card:\n    @div{}"), [])
-  @debug.assert_eq(view_texts("  Card:\n    @input(~class: \"x\")"), [])
+  @debug.assert_eq(view_texts("  Card:\n    div()"), [])
+  @debug.assert_eq(view_texts("  Card:\n    input(class: \"x\")"), [])
 }
 
 ///|
-/// The property that was broken, and the one worth watching: the text a
-/// consumer reads is the text the file holds, and nothing on the way adds a
-/// character nobody wrote.
+/// There is no escape, and there are no pieces.
 ///
-/// The printer path used to fail this by INDENTING. `@button{+}` printed as
-/// `<button>\n      +\n    </button>` and the text node that came back was
-/// `"\n      +\n    "` — its own formatting, become content. There is nothing
-/// between the file and the tree now, so there is nowhere for that to happen.
-test "nothing makes its own formatting into text" {
-  let src = card("  Card:\n    @button{+}")
-  @debug.assert_eq(direct_view(src).map(texts), Some(["+"]))
-}
-
-///|
-/// A body that arrives as SEVERAL content pieces still reads as one text node,
-/// with the whitespace at the seams intact.
-///
-/// An escape splits a body — `@p{x @"@" y}` is the three pieces `"x "`, `"@"`,
-/// `" y"` — but so does anything else that interrupts a text run, so this is not
-/// a fact about escapes. The spaces live at the EDGES of the neighbouring
-/// pieces, which is exactly what a per-piece trim or a joining separator would
-/// destroy, and neither is here.
-///
-/// Asserted on the STRING. `strip_ws` collapses whitespace by design, so a
-/// comparison that went through it would agree whether the spaces were there or
-/// not — which is how the same bug reached the writer unnoticed.
-test "a body split into pieces keeps the whitespace at the seams" {
-  @debug.assert_eq(view_texts("  Card:\n    @p{write to me @\"@\" home}"), [
+/// The at-notation body needed `@"…"` for a literal `@`, `{` or `}`, and using
+/// it split one text run into three whose seams had to be joined back with
+/// nothing inserted -- a rule that had to be got right in the reader, in the
+/// printer and in the converter, and was got wrong in the converter. A string
+/// literal holds the characters it holds.
+test "a string literal needs no escape and splits into nothing" {
+  @debug.assert_eq(view_texts("  Card:\n    p(): \"write to me @ home\""), [
     "write to me @ home",
   ])
-  @debug.assert_eq(view_texts("  Card:\n    @p{x @\"@\" y}"), ["x @ y"])
-  @debug.assert_eq(view_texts("  Card:\n    @p{a@\"@\"b}"), ["a@b"])
+  @debug.assert_eq(view_texts("  Card:\n    p(): \"a@b\""), ["a@b"])
+  @debug.assert_eq(view_texts("  Card:\n    p(): \"{ and }\""), ["{ and }"])
 }
 
 ///|
-/// Wrapped prose, which arrives as more pieces than it looks like.
+/// A newline in the text is a newline IN THE STRING.
 ///
-/// A continuation line indented deeper than the shared indent contributes the
-/// EXCESS as a piece of its own: `@p{one two\n     three four}` is the four
-/// pieces `"one two"`, `"\n"`, `"  "`, `"three four"`, where a plain two-line
-/// body is three. So the piece count varies with how the prose is laid out, and
-/// anything switching on it — or assuming text-newline-text — sees a different
-/// shape on wrapped prose than on the same content unwrapped.
-///
-/// The rule, as `marianoguerra/shrubbery`'s README states it in doctests: one
-/// piece per run of text on a line, a newline piece per break, a piece for
-/// whatever indentation a line has beyond the shared indent, a piece per escape
-/// result — concatenate them.
-///
-/// Joining with nothing inserted is what makes them come out right, and it is
-/// also what preserves the relative indentation the author wrote. The
-/// de-indentation itself is the notation's specification rather than a loss:
-/// the columns shared with the first line's start are not part of the text.
-test "wrapped prose joins to the text that was written" {
-  @debug.assert_eq(view_texts("  Card:\n    @p{write to me\n       home}"), [
+/// Wrapped prose used to be the subtlest case in this file: a continuation line
+/// indented past the shared indent contributed its excess as a piece of its
+/// own, so the piece count varied with how the prose was laid out. There is one
+/// piece now, and it says what it contains.
+test "a newline in text is written in the string" {
+  @debug.assert_eq(view_texts("  Card:\n    p(): \"write to me\\nhome\""), [
     "write to me\nhome",
   ])
-  @debug.assert_eq(
-    view_texts("  Card:\n    @p{one two\n         three four}"),
-    ["one two\n  three four"],
-  )
 }

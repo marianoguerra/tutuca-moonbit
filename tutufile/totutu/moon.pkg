@@ -19,7 +19,6 @@ import {
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/scenedef",
   "marianoguerra/tutuca/tscript",
-  "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/tutufile/names",
   "moonbitlang/core/json",
