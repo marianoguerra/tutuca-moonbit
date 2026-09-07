@@ -6,6 +6,77 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.55.1] - 2026-09-07
+
+Fixes only; 0.55.0 stays valid for anyone it is not blocking. Every one of
+these was reported from the `tutuca-components` port — a repo crossing both
+the `.html` → `.tutu` and the at-notation → Shrubbery HTML migrations at once,
+which exercised the format in ways this corpus does not.
+
+### `import protocol` has a reader
+
+`.tutu` could not import a protocol declared in another file:
+
+    import protocol Openable = "your.domain/Openable@1"
+
+was read as a component named `import` and refused with
+`tutu::not_a_type_name`. Everything below the notation was already there —
+`RProtocolImport` and its resolution were written for the old spelling — so
+the reader was the whole of what was missing. The local name resolves to the
+canonical id in `implements` and in every member it qualifies, which is what
+lets one declaring file serve every file that imports it.
+
+**Nothing here could have caught it.** All 133 `.tutu` files in this repo
+declare their protocols inline, so `grep -rn 'import protocol' --include=*.tutu`
+finds none — while `skill/tutuca/protocols.md` documents the line and
+`tutufile/totutu` printed it. A documented construct that no file uses is a
+construct nobody is checking.
+
+### 72 text nodes the conversion invented
+
+The `.html` → `.tutu` conversion turned HTML LAYOUT whitespace into
+at-notation CONTENT. `anode/whitespace.mbt` removed the newline between two
+block elements because a tokenizer had manufactured it from source layout;
+at-notation manufactures none, so once the view was laid across lines every
+one of those newlines became a text node that renders.
+
+Measured against the pre-migration artifact, which settles it: the old
+generated IR carried ZERO `@anode.text("\n")` nodes.
+`storybook/examples/pseudo_x` had five, three between `<td>`s inside a `<tr>`.
+72 across 15 view files and 7 doc fences, every parent a `div`, `section`,
+`tr` or `span` — nowhere a newline is content.
+
+**And the check could not see it.** `@equiv.compare` reported no difference,
+because its scrub normalises whitespace — the one dimension the conversion
+changes. A check that normalises a dimension is structurally blind to a change
+in that dimension. What caught it was a component test two layers down,
+asserting rendered text.
+
+### A `(` right after a hole is refused by name
+
+`@str{@(it.name)(x)}` was rejected with "a list or map literal has no place in
+an expression" — a message about a construct that was not in the file, with no
+span. At-notation reads `@(x)(y)` as a command and its argument list, so the
+template reader bailed and the ordinary expression reader met the `Brackets` a
+template is made of. It now says what the shape is and writes out the
+spelling that works. `@str{@(it.name)(@(it.params))}` is how a function
+signature is spelled, so the obvious thing reached it.
+
+### Stale references to the notation before last
+
+`gen`, `outline`, `watch` and both CSS commands still said they take `.html`,
+and `help` still listed `to-tutu` and `equiv` — 21 lines for two commands
+`dispatch.mbt` has no arm for. One was behaviour rather than prose:
+`is_view_path` returned true for `.html`, so the watcher woke on files nothing
+can read. `mutator-as-message` still spelled its site `@on.click="name …"`
+while the name inside it was already current — the shape a sweep leaves when
+it replaces identifiers and not the syntax around them.
+
+### The composition demo is carried by the site
+
+`/universal/` answered 404 on Pages. `dist_steps` never mentioned the demo, so
+the site had never carried it, while `ci` built and checked it on every run.
+
 ## [0.55.0] - 2026-09-07
 
 ### The view notation is Shrubbery HTML
