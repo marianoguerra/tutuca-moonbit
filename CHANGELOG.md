@@ -6,6 +6,103 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.55.0] - 2026-09-07
+
+### The view notation is Shrubbery HTML
+
+`marianoguerra/shrubbery-html` states three laws for HTML in shrubbery
+notation. The `view:` section was transcribed from the old `<template>` syntax
+rather than designed from them, and disagreed with all three: children were
+braces, attributes were `~keyword` options, and a space between two elements
+was layout that happened to survive.
+
+    @div{@button(~class: "dec", ~on_click: dec){-} @span(~class: "count"){@(it.count)}}
+
+    div():
+      button(class: "dec", ~on_click: dec):
+        "-"
+      " "
+      span(class: "count"):
+        @(it.count)
+
+Three laws are inherited verbatim — an element is a call and its children are
+its BLOCK, an attribute is a plain declaration, text is a string literal — and
+three widen rather than contradict them:
+
+- **A `~keyword` is a DIRECTIVE, not an attribute.** The sigil marks exactly
+  the seam between the two languages: `~on_*`, `~when`, `~as`, `~bind`,
+  `~enrich_with`, `~loop_with`, `~push_view`, `~key`, `~global`, and a macro
+  call's arguments. A plain declaration is an HTML attribute and is
+  byte-identical to what Shrubbery HTML writes.
+- **An attribute's value is an expression**; a literal is the constant case.
+- **A parenthesised group in a child position is a hole.** `@(x)` reduces to a
+  bare `Parens` — the `@` is consumed by the lexer — and Shrubbery HTML leaves
+  that position unassigned, so the spelling survives unchanged.
+
+**The layout is free.** Whitespace only ever exists inside a string, so the
+same view on one line and across four is the same tree. That was false under
+every previous spelling: the at-notation body gained a text node per line
+break, which rendered as a space between two inline elements and as nothing
+between two block ones, so the same file meant different things depending on
+what it wrapped. Reformatting a view file is safe now, and `@"…"` — the escape
+that split one text run into three pieces whose seams had to be rejoined — is
+gone with the notation that needed it.
+
+### A style body is raw CSS or notation, and its shape decides
+
+    style(): @{ .mine { color: red; } }    // CSS, verbatim
+
+    style():                                // shrubbery-css
+      class(mine):
+        color: red
+
+No flag and no second element name: `@{…}` is an at-notation literal block and
+an ordinary block is notation, and neither can be read as the other. It reaches
+the reader through `shrubbery-html`'s raw-text hook, which exists for exactly
+this composition.
+
+The SCOPE decides the context. A view's style is injected inside
+`[data-cid="N"]{…}`, so it is a rule BODY and goes through `shrubbery-css`'s
+`lower_block` — which makes a bare declaration legal exactly where the scope
+wrapper gives it meaning, and a top-level-only at-rule refused. `styles.md` has
+said for two releases that a browser silently drops `@font-face` from a scoped
+block and that nothing checks it; something does now. A `~global` block is a
+stylesheet in its own right.
+
+Every style block in the repo is written as notation. No raw-text block
+remains.
+
+### Fixed
+
+- **An `@` in a raw-text block is refused rather than dropped.** `@media`
+  inside `@{…}` is at-notation whose command is `media`, so the reader saw no
+  string and wrote nothing: the stylesheet came out as
+  ` (min-width: 40em) { .a { color: red } }`, which a browser accepts and
+  ignores. It predates this release, and `styles.md` says a conditional group
+  rule belongs in a scoped style — so following the documentation reached it.
+  Written as notation the `@` never appears at all, which is the repair the
+  message names.
+- **Four generators emitted the old spelling**, so regenerating would have
+  reverted the migration silently: `cmd/conformance`, `cmd/tgc-corpus`,
+  `demo/universal/std`, and the storybook scaffold `tutuca new-storybook`
+  hands users — which shipped it to anyone starting a gallery.
+- **Diagnostics name the aligned repair.** A message that spells a notation the
+  reader refuses is worse than no message, because it looks authoritative.
+
+### Removed
+
+- The at-notation view spelling, and the reader for it.
+- `tutufile/totutu`'s view printer — the last thing in the tree that could
+  WRITE the old notation, and so the last thing that could quietly bring it
+  back. Its spec and logic printers stay; nothing called the view one.
+
+### Added
+
+- `marianoguerra/html@0.1.0`, `marianoguerra/shrubbery-html@0.1.0`,
+  `marianoguerra/css@0.1.1`, `marianoguerra/shrubbery-css@0.2.0`. A view IS
+  Shrubbery HTML plus tutuca's extensions, so the name tables come from
+  upstream rather than a second copy.
+
 ### The lowering is gone, and a card carries its own source
 
 The last stage of the `.tutu` migration: every section is read directly into the
