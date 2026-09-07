@@ -6,6 +6,45 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.55.2] - 2026-09-07
+
+### The two readers of the notation are held to each other
+
+"The static subset of a tutuca view is Shrubbery HTML" was a claim in a
+README. It is decided by the suite now: the same source is read twice — once
+by `marianoguerra/shrubbery-html`, which knows nothing about tutuca, and once
+by `tutufile/toanode` — and the two markup trees are canonicalised and
+compared. Where they differ, one of the two is wrong about a notation both
+implement.
+
+Trees rather than printed HTML, because tutuca has no markup printer: a card's
+manifest carries its `.tutu`. What is canonicalised is what the two formats
+share — element names, attributes and their values, text — because everything
+else is one side's extension and the other is right to lack it.
+
+It is pinned against going vacuous. The canonical form is asserted to be the
+markup it should be, and a one-character difference is asserted to show, so a
+comparison that starts canonicalising both sides to nothing fails rather than
+passes. That is the failure shape this migration hit six times.
+
+### The `_`-to-`-` rule has one definition
+
+`attr_name` delegates to `@shrubbery_html/names.unkebab` rather than carrying
+a copy. The two differed in one place and the upstream rule is the right one:
+a name that already contains a `-` passes through untouched, because the only
+way a `-` reaches an identifier is a `#{...}` escape, and a name written that
+way was written literally on purpose.
+
+### Noted, not changed
+
+`lint/tables.mbt`'s void-element and SVG-casing tables duplicate
+`marianoguerra/html`'s, and re-sourcing them was the plan. They are not
+re-sourced, because they serve an HTML linter that cannot fire:
+`viewgen/read.mbt` sets `view.source` to `""` unconditionally and
+`cli/gen_views.mbt` guards the whole text-shaped pass on `view.source != ""`,
+so `check_html` and the 1872 lines behind it are unreachable. Coupling dead
+code to upstream buys nothing; deleting it is a separate change.
+
 ## [0.55.1] - 2026-09-07
 
 Fixes only; 0.55.0 stays valid for anyone it is not blocking. Every one of
