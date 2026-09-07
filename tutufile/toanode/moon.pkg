@@ -1,10 +1,10 @@
 // `.tutu` read straight into the tree the renderer indexes.
 //
-// The other way — `tutufile/lower` — prints each section as the text the old
-// front end reads, and something re-parses it. That detour is where the
-// fidelity bugs live: a printer holds the tree and loses it in the text, and
-// every escape it forgets is a construct that silently changes meaning. This
-// package skips it. Shrubbery in, `@anode.ANode` out, no string in between.
+// The way this replaced printed each section as the text an HTML front end
+// read, and something re-parsed it. That detour is where the fidelity bugs
+// live: a printer holds the tree and loses it in the text, and every escape it
+// forgets is a construct that silently changes meaning. Shrubbery in,
+// `@anode.ANode` out, no string in between.
 //
 // Three things follow from going direct, and each is a DECISION rather than a
 // consequence:
@@ -17,14 +17,9 @@
 //     whitespace and then condenses it with a block/inline table
 //     (`anode/whitespace.mbt`). At-notation has no such convention to inherit,
 //     so nothing is inferred: a text node exists where the file writes one.
-//   - THE EXPRESSION LANGUAGE HAS ONE READER. `Ex` (in `tutufile/lower`) is it.
-//     What changes is only where it goes — `@tutuca.Expr` directly, rather than
-//     tscript source that tscript parses back.
-//
-// It imports `tutufile/lower` for the reader and the `Ex` tree, and NOT for the
-// printers. The printers are the thing being replaced; the equivalence tests in
-// `to_expr_test.mbt` and `to_anode_test.mbt` are what say the replacement
-// agrees with them, and they are the reason `lower` stays until stage 6 closes.
+//   - THE EXPRESSION LANGUAGE HAS ONE READER. `Ex` (in `tutufile/shrub`) is
+//     it, and it answers `@tutuca.Expr` directly rather than source that
+//     something parses back.
 import {
   "marianoguerra/tutuca/tutufile",
   "marianoguerra/tutuca/tutufile/shrub" @sh,

@@ -2,7 +2,7 @@
 // over: an expression (`Ex`), a member (`Member`), and the doc comment above
 // one.
 //
-// The READER half of what used to be `tutufile/lower`, split out when the
+// The READER half of what used to be the lowering package, split out when the
 // lowering printer went: every section reader needs these, and a reader that
 // had to import a printer to get at them would keep the printer alive.
 import {

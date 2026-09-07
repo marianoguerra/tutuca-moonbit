@@ -31,7 +31,7 @@
 ///
 /// A bare name means three different things depending on position, and the old
 /// path spelled the difference with sigils it printed at the last moment
-/// (`bound` in `tutufile/lower/view.mbt`). It is a parameter here instead:
+/// (`bound`, in the printer this replaced). It is a parameter here instead:
 /// nothing is spelled, so nothing has to be re-read.
 pub(all) enum NamePos {
   /// A value slot: a bare name is a binding a loop or an enricher put in

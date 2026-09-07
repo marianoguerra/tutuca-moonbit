@@ -4,7 +4,7 @@
 ///|
 /// One type, in the new spelling.
 ///
-/// The inverse of `tutufile/lower`'s `print_ty`, taken from the TYPE rather
+/// The inverse of the block language's type spelling, taken from the TYPE rather
 /// than from the text it was written as — so a spelling the old parser accepted
 /// loosely comes out canonical.
 pub fn print_ty(t : @tutuca.Ty) -> String raise NoSpelling {

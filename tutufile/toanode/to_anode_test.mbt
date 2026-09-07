@@ -1,13 +1,15 @@
-// The markup translation, against the path it replaces.
+// The markup translation: every construct the notation has, read into a tree.
 //
-// Same oracle as `to_expr_test.mbt` and the same reason: `tutufile/lower`
-// prints the file as the blocks the old front end reads, `@viewfile.split_file`
-// splits them, and `@anode.View::compile` parses the template. Where the two
-// trees agree, going direct changed nothing.
+// Same corpus as `to_expr_test.mbt` and the same history: this was a
+// DIFFERENTIAL against the path it replaced — the printer wrote the file as the
+// blocks an HTML front end read, the splitter split them, and
+// `@anode.View::compile` parsed the template, and the two trees were compared
+// modulo whitespace. That is what made the printer safe to delete, and it went
+// with it. What is left is the corpus. See `reads` below.
 //
-// They are compared MODULO WHITESPACE, which is the one deliberate difference
-// rather than a gap in the test — `whitespace_test.mbt` pins what it is, in
-// both directions.
+// Whitespace was the one deliberate difference rather than a gap in the test,
+// and it is still the one thing worth pinning on its own:
+// `whitespace_test.mbt` says what the rule is.
 
 ///|
 /// The `view:` section's declarations.

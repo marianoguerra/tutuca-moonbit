@@ -1,11 +1,10 @@
 // A `.tutu` file, read into the shapes the generator works over.
 //
-// The other half of `split_file`, and the one that is meant to survive. The
-// splitter recovers blocks of TEXT from an `.html` file and every consumer
-// parses them again; this reads each section into the shape it means, once,
-// with the four readers `tutufile/` provides. Nothing is printed on the way,
-// so there is no notation between the file and the generator and no printer
-// to keep in step with a parser.
+// The one reader there is. The splitter it replaced recovered blocks of TEXT
+// from an `.html` file and every consumer parsed them again; this reads each
+// section into the shape it means, once, with the four readers `tutufile/`
+// provides. Nothing is printed on the way, so there is no notation between the
+// file and the generator and no printer to keep in step with a parser.
 //
 // It answers a `@viewfile.ViewFile` rather than a shape of its own, because
 // everything downstream already takes one — the difference is that a view
