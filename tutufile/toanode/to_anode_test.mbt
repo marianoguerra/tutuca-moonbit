@@ -109,7 +109,11 @@ test "show and hide wrap what they govern" {
 
 ///|
 test "an each carries its sequence and its binder" {
-  reads(card("  Card:\n    ul():\n      each(row in it.rows):\n        li(): @(row)"))
+  reads(
+    card(
+      "  Card:\n    ul():\n      each(row in it.rows):\n        li(): @(row)",
+    ),
+  )
 }
 
 ///|
@@ -136,7 +140,9 @@ test "an each with a filter and an index" {
 /// once, in `ExCtx`, and a member read is a `Place` with one step. Both are
 /// asserted, because the two paths agreeing is the whole claim.
 test "a loop binding's member is a place with one step" {
-  let src = card("  Card:\n    ul():\n      each(row in it.rows):\n        li(): @(row.title)")
+  let src = card(
+    "  Card:\n    ul():\n      each(row in it.rows):\n        li(): @(row.title)",
+  )
   let sources = @report.Sources::new()
   let id = sources.add("card.tutu", src)
   ignore(id)

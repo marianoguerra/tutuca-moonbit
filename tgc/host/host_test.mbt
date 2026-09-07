@@ -1513,7 +1513,6 @@ test "manifest parses from the bridge's JSON projection" {
       #|    div():
       #|      @(it.count)
       #|
-
     ),
   )
   let fields = m.components[0].field_infos()

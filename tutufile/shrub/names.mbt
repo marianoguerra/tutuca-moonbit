@@ -173,7 +173,7 @@ pub fn split_binder(
 /// An at-notation call's argument groups and its body.
 ///
 /// The groups come back unparsed because one form reads NAMES out of them:
-/// `@each(item in it.items)` binds `item`, and a binder is not a value.
+/// `each(item in it.items)` binds `item`, and a binder is not a value.
 pub fn split_call(
   parts : Array[@ast.Node],
 ) -> (Array[@ast.Node], Array[@ast.Node]) raise ExError {
@@ -235,4 +235,3 @@ pub fn attr_name(name : String) -> String {
   }
   out.to_string()
 }
-

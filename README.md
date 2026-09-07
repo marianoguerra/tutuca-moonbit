@@ -27,7 +27,7 @@ logic:
 
 view:
   Counter:
-    @button(~on_click: inc){@(it.count)}
+    button(~on_click: inc): @(it.count)
 ```
 
 ```moonbit

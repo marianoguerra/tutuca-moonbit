@@ -118,7 +118,10 @@ test "@each over a set, a list or an ordered map is fine" {
     let (spec, path) = expr
     assert_eq(
       gen_err(
-        board(spec, "    ul():\n      each(value, key in \{path}):\n        li(): \"x\""),
+        board(
+          spec,
+          "    ul():\n      each(value, key in \{path}):\n        li(): \"x\"",
+        ),
         "Board",
       ),
       "",
@@ -369,7 +372,8 @@ test "a read inside a loop over CHILD components is checked against that child" 
   // component — a thing one StateDef could never answer.
   let msg = gen_err(
     page_and_row(
-      "    ul():\n      each(value, key in it.rows):\n        li():\n          @(it.titel)", "  Row:\n    span(): @(it.title)\n",
+      "    ul():\n      each(value, key in it.rows):\n        li():\n          @(it.titel)",
+      "  Row:\n    span(): @(it.title)\n",
     ),
     "Page",
   )
@@ -379,7 +383,8 @@ test "a read inside a loop over CHILD components is checked against that child" 
   assert_true(
     gen_err(
       page_and_row(
-        "    ul():\n      each(value, key in it.rows):\n        li():\n          @(value.titel)", "  Row:\n    span(): @(it.title)\n",
+        "    ul():\n      each(value, key in it.rows):\n        li():\n          @(value.titel)",
+        "  Row:\n    span(): @(it.title)\n",
       ),
       "Page",
     ).contains("not a field of the loop item (the Row component)"),

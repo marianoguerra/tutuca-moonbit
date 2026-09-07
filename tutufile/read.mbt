@@ -236,7 +236,7 @@ fn view_suffix(parts : Array[@ast.Node], kind : DeclKind) -> String {
 
 ///|
 /// A declaration written with its own keyword: `struct`, `enum`, `protocol`,
-/// `macro`, or the `@style{…}` block a view section may hold.
+/// `macro`, or the `style()` block a view section may hold.
 fn keyword_decl(
   group : @ast.Node,
   parts : Array[@ast.Node],

@@ -92,7 +92,7 @@ fn read_into(
       )
     }
   }
-  // A `@style{…}` at the top of `view:` is the file's, and `@style(~global){…}`
+  // A `style()` at the top of `view:` is the file's, and `style(~global)`
   // is the page's. The two go to different places — one is scoped to the
   // component, the other is emitted verbatim — so they are collected apart.
   let file_style = StringBuilder()

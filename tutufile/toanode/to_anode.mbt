@@ -19,7 +19,8 @@ using @sh {type ExCtx}
 // back — two grammars and an escaping layer for a translation that is a fold.
 // This is the fold.
 //
-// WHITESPACE IS WHAT THE FILE SAYS. Written `@p{a @b{c} d}`, a paragraph has
+// WHITESPACE IS ONLY EVER INSIDE A STRING. Written `p(): "a " b(): "c" " d"`,
+// a paragraph has
 // a text node holding `a` and a trailing space, then an element, then a text
 // node holding a leading space and `d` — because that is what was written.
 // Nothing is trimmed, nothing is condensed, and there is no block/inline table
@@ -200,7 +201,7 @@ pub fn ViewBuilder::view(
   let childs = []
   let css = StringBuilder()
   for g in @sh.body_groups(decl) {
-    // A `@style{…}` written inside a view is the VIEW's style, not a node in
+    // A `style()` written inside a view is the VIEW's style, not a node in
     // it. The section-level reader knows that about a style block at the top of
     // `view:`; one inside a view reaches here as an ordinary group.
     if style_body(g) is Some(text) {
@@ -229,7 +230,7 @@ pub fn ViewBuilder::view(
 }
 
 ///|
-/// The CSS a `@style{…}` declaration holds.
+/// The CSS a `style()` declaration holds.
 ///
 /// The body is one string literal, which is how a style block has to be
 /// written: at-notation owns `@`, `{` and `}`, and CSS uses all three. Public
@@ -262,7 +263,7 @@ pub fn style_is_global(decl : @tutufile.Decl) -> Bool {
 }
 
 ///|
-/// The CSS a `@style{…}` group holds, or `None` when the group is not one.
+/// The CSS a `style()` group holds, or `None` when the group is not one.
 fn style_body(
   group : @ast.Node,
   global? : Bool = false,
@@ -370,15 +371,16 @@ fn at_text_of(group : @ast.Node) -> String? raise ExError {
 ///|
 /// Adjacent text nodes joined into one.
 ///
-/// A body that contains an at-form escape comes back as SEVERAL content pieces:
-/// `@p{a@"@"b}` is the three strings `"a"`, `"@"`, `"b"`, not one `"a@b"`. The
-/// DOM has no such distinction — adjacent text is one node — and a tree parsed
-/// from HTML has one node there, so a reader that kept the pieces would answer
-/// a different tree for the same page.
+/// Two string literals in a row are two `Text` nodes and the DOM has no such
+/// distinction, so `p(): "a" "b"` and `p(): "ab"` have to answer one node
+/// either way.
 ///
-/// The converter avoids the split by writing a text run that holds an owned
-/// character WHOLE, as one `@"…"`. This is for the other direction: a file
-/// somebody wrote by hand.
+/// It used to carry more weight than that. An at-notation body was broken at
+/// every escape -- `@p{a@"@"b}` was the three pieces `"a"`, `"@"`, `"b"` -- so
+/// the seams had to be rejoined with nothing inserted, and getting that wrong
+/// was a class of bug rather than a case. Law 3 removed the escape and the
+/// pieces with it; what is left is the ordinary case a reader still has to
+/// handle.
 fn merge_text(nodes : Array[@anode.ANode]) -> Array[@anode.ANode] {
   let out : Array[@anode.ANode] = []
   for n in nodes {
@@ -418,7 +420,7 @@ fn ViewBuilder::content(
 ) -> Array[@anode.ANode] raise ExError {
   guard group.it is Group(parts) && parts.length() > 0 else { return [] }
   // A LINE of an at-notation body is one group, and it may hold several items:
-  // `@(it.label):@span{n}` is a hole, a piece of text and an element with
+  // `@(it.label) ": " span(): "n"` is a hole, a text literal and an element with
   // nothing between them, so nothing separated them into groups. Reading only
   // the first would drop the rest silently.
   let out = []
@@ -953,7 +955,7 @@ fn read_modifiers(mods : Array[Arg]) -> Array[String] {
 }
 
 ///|
-/// `@show(c){ … }` / `@hide(c){ … }`.
+/// `show(c): …` / `hide(c): …`.
 fn ViewBuilder::guard_(
   self : ViewBuilder,
   word : String,
@@ -980,7 +982,7 @@ fn ViewBuilder::guard_(
 }
 
 ///|
-/// `@each(item, i in xs, ~when: f){ … }`.
+/// `each(item, i in xs, ~when: f): …`.
 fn ViewBuilder::each(
   self : ViewBuilder,
   raw : Array[@ast.Node],
@@ -1069,7 +1071,7 @@ fn ViewBuilder::wrapped_body(
 }
 
 ///|
-/// `@render(v)` / `@render(v, ~as: "edit")`.
+/// `render(v)` / `render(v, ~as: "edit")`.
 fn ViewBuilder::render(
   self : ViewBuilder,
   raw : Array[@ast.Node],
@@ -1090,7 +1092,7 @@ fn ViewBuilder::render(
     None => None
   }
   let val = @sh.to_expr(pos[0], ctx, span)
-  // `@render(row)` where `row` is the loop's own binder is RENDER-IT: the node
+  // `render(row)` where `row` is the loop's own binder is RENDER-IT: the node
   // renders the item the loop is on and carries no value of its own. The old
   // notation had two spellings for that — `<x render-it>` and a `<x render>`
   // naming the binding — and the new one has this, so the ARGUMENT decides.

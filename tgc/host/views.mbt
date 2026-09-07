@@ -43,7 +43,7 @@ fn read_views(
     guard d.kind is View else { continue }
     // The component's scoped style, on its `main` view — which is where a
     // manifest puts it, and where `Component::compile` looks for it. A view
-    // with a `@style{…}` of its own keeps that one; this is the fallback.
+    // with a `style()` of its own keeps that one; this is the fallback.
     let style = styles.get(d.name).unwrap_or("")
     let built = @toanode.ViewBuilder::new(macros~, config=config_vars).view(
       d,

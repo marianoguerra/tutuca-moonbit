@@ -68,7 +68,7 @@ logic:
 
 view:
   Counter:
-    @button(~on_click: inc){+}
+    button(~on_click: inc): "+"
     @output{@(label())}
 ```
 

@@ -174,7 +174,9 @@ test "a view the reader will not read fails generation" {
   // `@nope=".x"` looked like both and was caught by a list. Here an element
   // name IS the vocabulary, and `~nope:` is simply an attribute called `nope`.
   let msg = try {
-    surface_of("    div():\n      each(value in it.rows, ~when: visible()):\n        p(): \"x\"")
+    surface_of(
+      "    div():\n      each(value in it.rows, ~when: visible()):\n        p(): \"x\"",
+    )
     |> ignore
     "no error"
   } catch {
@@ -259,14 +261,25 @@ test "a path off the allowlist is a hint naming the step, not an error" {
     "view main: `~on_click=\"… e.target.ownerDocument.defaultView.localStorage.length\"` — `ownerDocument` (at 1) is off the event-path allowlist. It resolves here, but a host compiling guest-supplied views refuses it: every step through a host object must be one of currentTarget, dataTransfer, dataset, detail, relatedTarget, target",
   )
   // ...and nothing generates as an error for either escape path.
-  assert_eq(view_err("    button(~on_click: go(e.target.form.action)):\n      \"x\""), "")
-  // A permitted one draws no hint at all.
-  assert_eq(view_hints("    button(~on_click: go(e.target.value)):\n      \"x\""), [])
   assert_eq(
-    view_hints("    button(~on_click: go(e.target.dataset.rowId)):\n      \"x\""),
+    view_err("    button(~on_click: go(e.target.form.action)):\n      \"x\""),
+    "",
+  )
+  // A permitted one draws no hint at all.
+  assert_eq(
+    view_hints("    button(~on_click: go(e.target.value)):\n      \"x\""),
     [],
   )
-  assert_eq(view_hints("    button(~on_click: go(e.detail.a.b.c)):\n      \"x\""), [])
+  assert_eq(
+    view_hints(
+      "    button(~on_click: go(e.target.dataset.rowId)):\n      \"x\"",
+    ),
+    [],
+  )
+  assert_eq(
+    view_hints("    button(~on_click: go(e.detail.a.b.c)):\n      \"x\""),
+    [],
+  )
 }
 
 ///|
@@ -284,7 +297,10 @@ test "a rooted path naming no known property is a hint, with the nearest" {
   assert_eq(view_hints("    button(~on_click: go(e.isCtrl)):\n      \"x\""), [])
   // ...and a real one from the generated table.
   assert_eq(view_hints("    button(~on_click: go(e.deltaY)):\n      \"x\""), [])
-  assert_eq(view_hints("    button(~on_click: go(e.pointerId)):\n      \"x\""), [])
+  assert_eq(
+    view_hints("    button(~on_click: go(e.pointerId)):\n      \"x\""),
+    [],
+  )
 }
 
 ///|

@@ -66,11 +66,15 @@ test "text is what the string holds" {
 /// a formatter can lose. Here it is a string, so nothing can lose it.
 test "spacing between inline elements is a string" {
   @debug.assert_eq(
-    view_texts("  Card:\n    p():\n      \"a \"\n      b(): \"c\"\n      \" d\""),
+    view_texts(
+      "  Card:\n    p():\n      \"a \"\n      b(): \"c\"\n      \" d\"",
+    ),
     ["a ", "c", " d"],
   )
   @debug.assert_eq(
-    view_texts("  Card:\n    p():\n      b(): \"a\"\n      \" \"\n      b(): \"b\""),
+    view_texts(
+      "  Card:\n    p():\n      b(): \"a\"\n      \" \"\n      b(): \"b\"",
+    ),
     ["a", " ", "b"],
   )
 }

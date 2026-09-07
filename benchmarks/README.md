@@ -61,7 +61,7 @@ moon run --target native cmd/dev -- bench-views     # just bench-views
 
 Two things about the concatenation are not faithful to compiling the files
 separately, neither of which matters for a parser benchmark: a file-level
-`@style{…}` lands on the *first* component (that is what `split_file` does with
+`style()` lands on the *first* component (that is what `split_file` does with
 them), and a source file with no `view:` section at all would be given one —
 currently none are.
 

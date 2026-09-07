@@ -36,14 +36,17 @@ test "an `@` inside a raw-text block is refused, not silently dropped" {
   // ignores. `styles.md` says a conditional group rule belongs in a scoped
   // style, so following the documentation reached it.
   //
-  // Both spellings are refused now, and the message names both repairs.
-  for
-    src in [
-      "  Card:\n    @style{@media (min-width: 40em) { .a { color: red } }}\n    @p{x}",
-      "  Card:\n    style(): @{@media (min-width: 40em) { .a { color: red } }}\n    p(): \"x\"",
-    ] {
-    inspect(view_style(card(src)), content="!refused")
-  }
+  // It is refused now, and the message names both repairs -- escape the `@`,
+  // or write the block as notation, where `media(…)` is a call and no `@`
+  // appears at all.
+  inspect(
+    view_style(
+      card(
+        "  Card:\n    style(): @{@media (min-width: 40em) { .a { color: red } }}\n    p(): \"x\"",
+      ),
+    ),
+    content="!refused",
+  )
 }
 
 ///|
@@ -71,4 +74,3 @@ test "a bare declaration list is a style too" {
   )
   inspect(s, content="padding: 0.75rem; color: red;")
 }
-

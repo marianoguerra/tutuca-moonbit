@@ -326,7 +326,9 @@ test "a call site that disagrees with the schema is a build error" {
     "`bump` is declared in the `spec:` section as `bump(Int)` and called from ~on_click as `bump(a number, a number)` — the schema declares what a message carries, so the call sites have to match it",
   )
   assert_eq(
-    merge_err("    message bump(Int)\n", "button(~on_click: bump(\"x\")): \"+\""),
+    merge_err(
+      "    message bump(Int)\n", "button(~on_click: bump(\"x\")): \"+\"",
+    ),
     "`bump` is declared in the `spec:` section as `bump(Int)` and called from ~on_click as `bump(text)` — the schema declares what a message carries, so the call sites have to match it",
   )
   // Agreeing is silent, and so is a call site the inference could not read:

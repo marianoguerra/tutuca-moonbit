@@ -121,9 +121,9 @@ test "property actions are checked against member access and collection kind" {
     "",
   )
   assert_true(
-    bind_error("name :: String", "button(~on_click: it.name.push(\"x\")): \"x\"").contains(
-      "does not apply to String",
-    ),
+    bind_error(
+      "name :: String", "button(~on_click: it.name.push(\"x\")): \"x\"",
+    ).contains("does not apply to String"),
   )
   assert_true(
     bind_error(
@@ -131,9 +131,9 @@ test "property actions are checked against member access and collection kind" {
     ).contains("read-only property `.label`"),
   )
   assert_true(
-    bind_error("name :: String", "button(~on_click: it.missing := \"x\"): \"x\"").contains(
-      "unknown member `.missing`",
-    ),
+    bind_error(
+      "name :: String", "button(~on_click: it.missing := \"x\"): \"x\"",
+    ).contains("unknown member `.missing`"),
   )
 }
 
