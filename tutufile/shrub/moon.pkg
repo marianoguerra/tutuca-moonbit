@@ -15,6 +15,10 @@ import {
   // tree the rest of the compiler works over.
   "marianoguerra/tutuca/core" @tutuca,
   "moonbitlang/core/string",
+  // The `_` to `-` rule, from the module that states it. A view IS Shrubbery
+  // HTML plus tutuca's extensions, so a name transform the two must agree on
+  // has one definition rather than a copy on each side.
+  "marianoguerra/shrubbery-html/names" @htmlnames,
 }
 
 import {

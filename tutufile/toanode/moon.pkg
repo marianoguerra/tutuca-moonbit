@@ -36,4 +36,8 @@ import {
 import {
   "marianoguerra/shrubbery" @shrub,
   "moonbitlang/core/debug",
+  // The other implementation of the notation, for the conformance oracle:
+  // the same source read by both, and the two markup trees compared.
+  "marianoguerra/shrubbery-html" @shrubbery_html,
+  "marianoguerra/html/ast" @htmlast,
 } for "test"

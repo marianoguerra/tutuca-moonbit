@@ -224,14 +224,13 @@ pub fn tag_name(name : String) -> String {
 
 ///|
 /// An underscore is a hyphen; case is preserved.
+///
+/// `marianoguerra/shrubbery-html`'s rule, not a copy of it. It differs from
+/// the one this used to carry in exactly one place, and the difference is the
+/// upstream one being right: a name that ALREADY contains a `-` is passed
+/// through untouched, because the only way a `-` reaches an identifier is a
+/// `#{...}` escape, and a name written that way was written literally on
+/// purpose.
 pub fn attr_name(name : String) -> String {
-  let out = StringBuilder()
-  for c in name {
-    if c == '_' {
-      out.write_char('-')
-    } else {
-      out.write_char(c)
-    }
-  }
-  out.to_string()
+  @htmlnames.unkebab(name)
 }
