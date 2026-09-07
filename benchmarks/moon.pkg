@@ -14,8 +14,6 @@ import {
   // The corpus is a `.tutu`, and the splitter reads the blocks it lowers to —
   // which is the shape of the pipeline being measured, so the lowering is
   // inside the measurement rather than beside it.
-  "marianoguerra/tutuca/tutufile/lower",
-  "marianoguerra/error-report" @report,
   // The render benchmarks mount the ported examples as live apps, exactly as
   // the headless tests and the storybook do.
   "marianoguerra/tutuca/core" @tutuca,

@@ -379,7 +379,7 @@ fn ViewBuilder::element(
   if self.macros.get(word) is Some(_) {
     return self.expand_macro(word, parts, ctx, span)
   }
-  let (raw, body) = @lower.split_call(parts)
+  let (raw, body) = @sh.split_call(parts)
   match word {
     "show" | "hide" => [self.guard_(word, raw, body, ctx, span)]
     "each" => [self.each(raw, body, ctx, span)]
@@ -453,7 +453,7 @@ fn ViewBuilder::tag(
       // A bare flag is a valueless attribute, which HTML reads as the boolean
       // it is: `~disabled` and `disabled` are `LBool(true)`, not the empty
       // string an `=""` spelling would give.
-      AFlag(name) => attrs.push(@anode.attr_bool(@lower.attr_name(name), true))
+      AFlag(name) => attrs.push(@anode.attr_bool(@sh.attr_name(name), true))
       AField(name, _) =>
         raise ExError(
           message="`\{name}:` is not an attribute",
@@ -475,7 +475,7 @@ fn ViewBuilder::tag(
   // leaves it.
   let mut bind_data : @anode.BindData? = None
   if binds is [target, ..] {
-    let low = @lower.tag_name(tag).to_lower()
+    let low = @sh.tag_name(tag).to_lower()
     let checkbox = low == "input" && static_attr(attrs, "type") == "checkbox"
     let property = if checkbox { "checked" } else { "value" }
     let event_name = if low == "select" { "change" } else { "input" }
@@ -535,7 +535,7 @@ fn ViewBuilder::tag(
     attrs.insert(eid_at, @anode.eid(self.register(events)))
   }
   let node = @anode.h(
-    @lower.tag_name(tag),
+    @sh.tag_name(tag),
     attrs,
     merge_text(childs),
     ns?=self.ns,
@@ -641,7 +641,7 @@ fn ViewBuilder::attribute(
     }
     _ => ()
   }
-  let attr = @lower.attr_name(name)
+  let attr = @sh.attr_name(name)
   match value {
     // A constant stays a constant, which is what lets a whole element collapse
     // to `ConstAttrs` and never be re-evaluated. A string and a boolean are
@@ -840,7 +840,7 @@ fn ViewBuilder::each(
   ctx : ExCtx,
   span : @report.Span,
 ) -> @anode.ANode raise ExError {
-  let (names, seq, after) = @lower.split_binder(raw)
+  let (names, seq, after) = @sh.split_binder(raw)
   let args = @sh.read_args(raw[after:].to_owned())
   // The renderer answers a loop with `value` and `key`; the file's own binder
   // names are what this maps onto them.
@@ -982,7 +982,7 @@ fn ViewBuilder::expand_macro(
     )
   }
   guard self.macros.get(name) is Some(def) else { return [] }
-  let (raw, _) = @lower.split_call(parts)
+  let (raw, _) = @sh.split_call(parts)
   let bound : Map[String, Ex] = Map([])
   for k, v in def.defaults {
     bound[k] = v

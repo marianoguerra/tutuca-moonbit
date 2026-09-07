@@ -37,66 +37,16 @@ pub fn direct_view(src : String, name? : String = "") -> @anode.ANode? {
 }
 
 ///|
-/// The same view through the printer, the file splitter and the HTML parser —
-/// every step the pipeline takes today.
-pub fn printed_view(src : String, name? : String = "") -> @anode.ANode? {
-  let sources = @report.Sources::new()
-  let id = sources.add("card.tutu", src)
-  let out = @lower.lower(src, id)
-  let file = @viewfile.split_file(out.text, name="Card") catch {
-    _ => return None
-  }
-  let scope = FileMacros::of(file.macros)
-  for comp in file.components {
-    for v in comp.views {
-      if name == "" || v.name == name {
-        let view = @anode.View::new(v.name, raw_view=v.source)
-        let px = @anode.ParseContext::new()
-        view.compile(px, scope) catch {
-          _ => return None
-        }
-        return view.anode
-      }
-    }
-  }
-  None
-}
-
-///|
-/// A macro scope over the file's own printed macro templates.
-priv struct FileMacros {
-  by_name : Map[String, @anode.Macro]
-}
-
-///|
-fn FileMacros::of(defs : Array[@viewfile.MacroDef]) -> FileMacros {
-  let by_name : Map[String, @anode.Macro] = Map([])
-  for d in defs {
-    by_name[d.name] = { defaults: d.defaults, raw_view: d.source, }
-  }
-  { by_name, }
-}
-
-///|
-impl @anode.MacroScope for FileMacros with fn lookup_macro(self, name) {
-  self.by_name.get(name)
-}
-
-///|
-/// Both trees, whitespace normalized, as one assertion.
+/// The construct reads, and the tree it reads into.
 ///
-/// Normalizing is what makes the comparison about STRUCTURE. The two paths
-/// disagree about whitespace by design, and a comparison that would not look
-/// past that would say nothing about everything else they agree on.
-fn same_tree(src : String, name? : String = "") -> Unit raise {
-  let a = direct_view(src, name~)
-  let b = printed_view(src, name~)
-  assert_true(a is Some(_))
-  assert_true(b is Some(_))
-  assert_eq(
-    @debug.to_string(a.map(strip_ws)),
-    @debug.to_string(b.map(strip_ws)),
-  )
+/// This was a DIFFERENTIAL assertion while the printer existed: the same
+/// source read both ways, whitespace normalized, compared as trees. That is
+/// what made the printer safe to delete, and it went with it — what is left is
+/// the corpus, which is the half worth keeping. Every case below is a
+/// construct the notation has, and the claim is that the reader answers a tree
+/// for each of them.
+fn reads(src : String, name? : String = "") -> Unit raise {
+  assert_true(direct_view(src, name~) is Some(_), msg=src)
 }
 
 ///|
@@ -107,12 +57,12 @@ fn card(view : String) -> String {
 
 ///|
 test "an element, its attributes and its text" {
-  same_tree(card("  Card:\n    @div(~class: \"box\"){hello}"))
+  reads(card("  Card:\n    @div(~class: \"box\"){hello}"))
 }
 
 ///|
 test "a dynamic attribute, a constant one, and a flag" {
-  same_tree(
+  reads(
     card(
       "  Card:\n    @input(~class: \"draft\", ~value: it.n, ~disabled, ~aria_label: \"draft\")",
     ),
@@ -121,48 +71,48 @@ test "a dynamic attribute, a constant one, and a flag" {
 
 ///|
 test "a hole is a render-text node" {
-  same_tree(card("  Card:\n    @output{@(it.n)}"))
+  reads(card("  Card:\n    @output{@(it.n)}"))
 }
 
 ///|
 test "an event handler registers, and the element carries its eid" {
-  same_tree(card("  Card:\n    @button(~on_click: add){+}"))
+  reads(card("  Card:\n    @button(~on_click: add){+}"))
 }
 
 ///|
 test "a handler with arguments reads the event" {
-  same_tree(card("  Card:\n    @input(~on_input: search(e.value))"))
+  reads(card("  Card:\n    @input(~on_input: search(e.value))"))
 }
 
 ///|
 test "a property write is an action rather than a handler" {
-  same_tree(card("  Card:\n    @input(~on_input: it.n := e.value)"))
+  reads(card("  Card:\n    @input(~on_input: it.n := e.value)"))
 }
 
 ///|
 test "an increment write carries the read it is built from" {
-  same_tree(card("  Card:\n    @button(~on_click: it.n += 1){+}"))
+  reads(card("  Card:\n    @button(~on_click: it.n += 1){+}"))
 }
 
 ///|
 test "a collection action names the operation" {
-  same_tree(card("  Card:\n    @button(~on_click: it.rows.push(it.n)){add}"))
+  reads(card("  Card:\n    @button(~on_click: it.rows.push(it.n)){add}"))
 }
 
 ///|
 test "show and hide wrap what they govern" {
-  same_tree(card("  Card:\n    @show(it.open){@div{body}}"))
-  same_tree(card("  Card:\n    @hide(it.open){@div{body}}"))
+  reads(card("  Card:\n    @show(it.open){@div{body}}"))
+  reads(card("  Card:\n    @hide(it.open){@div{body}}"))
 }
 
 ///|
 test "an each carries its sequence and its binder" {
-  same_tree(card("  Card:\n    @ul{@each(row in it.rows){@li{@(row)}}}"))
+  reads(card("  Card:\n    @ul{@each(row in it.rows){@li{@(row)}}}"))
 }
 
 ///|
 test "an each with a filter and an index" {
-  same_tree(
+  reads(
     card(
       "  Card:\n    @ul{@each(row, i in it.rows, ~when: unfinished){@li{@(row)}}}",
     ),
@@ -183,40 +133,37 @@ test "an each with a filter and an index" {
 /// Going direct there is no sigil to apply twice: a binder maps to a binding
 /// once, in `ExCtx`, and a member read is a `Place` with one step. Both are
 /// asserted, because the two paths agreeing is the whole claim.
-test "a loop binding's member, read the same way down both paths" {
+test "a loop binding's member is a place with one step" {
   let src = card("  Card:\n    @ul{@each(row in it.rows){@li{@(row.title)}}}")
   let sources = @report.Sources::new()
   let id = sources.add("card.tutu", src)
-  let text = @lower.lower(src, id).text
-  assert_true(text.contains("@value.title") && !text.contains("@@"))
-  let printed = @debug.to_string(printed_view(src).map(strip_ws))
+  ignore(id)
   let direct = @debug.to_string(direct_view(src).map(strip_ws))
-  assert_true(printed.contains("RenderText"))
   assert_true(direct.contains("PBind(\"value\"), steps: [PField(\"title\")]"))
 }
 
 ///|
 test "a render node, with and without a named view" {
-  same_tree(card("  Card:\n    @render(it.child)"))
-  same_tree(card("  Card:\n    @render(it.child, ~as: \"edit\")"))
+  reads(card("  Card:\n    @render(it.child)"))
+  reads(card("  Card:\n    @render(it.child, ~as: \"edit\")"))
 }
 
 ///|
 test "a conditional attribute value" {
-  same_tree(card("  Card:\n    @div(~class: if it.on | \"a\" | \"b\"){x}"))
+  reads(card("  Card:\n    @div(~class: if it.on | \"a\" | \"b\"){x}"))
 }
 
 ///|
 test "the markup directives, each in its own variant" {
-  same_tree(card("  Card:\n    @div(~inner_html: it.body)"))
-  same_tree(card("  Card:\n    @div(~inner_md: it.body)"))
-  same_tree(card("  Card:\n    @div(~inner_svg: it.body)"))
-  same_tree(card("  Card:\n    @div(~dangerously_inner_html: it.body)"))
+  reads(card("  Card:\n    @div(~inner_html: it.body)"))
+  reads(card("  Card:\n    @div(~inner_md: it.body)"))
+  reads(card("  Card:\n    @div(~inner_svg: it.body)"))
+  reads(card("  Card:\n    @div(~dangerously_inner_html: it.body)"))
 }
 
 ///|
 test "a nested tree keeps its shape" {
-  same_tree(
+  reads(
     card(
       "  Card:\n    @div(~class: \"box\"){\n      @button(~class: \"add\", ~on_click: add){+}\n      @output{@(it.n)}\n    }",
     ),
@@ -232,20 +179,17 @@ test "a nested tree keeps its shape" {
 /// expansion inside it, which the ahead-of-time generator then strips
 /// (`viewgen`'s `strip_macro_calls`). Expanding in place is the end state that
 /// strip was reaching for, so a macro adds no node of its own at any point.
-test "a macro parameter reaches the body on both paths" {
+test "a macro parameter reaches the body" {
   let src = card(
     "  macro badge(~label: \"New\"):\n    @span(~class: \"badge\"){@(label)}\n  Card:\n    @div{@badge(~label: \"Sale\")}",
   )
-  let printed = @debug.to_string(printed_view(src).map(strip_ws))
   let direct = @debug.to_string(direct_view(src).map(strip_ws))
-  // the argument is in the tree on both sides, and neither leaves an unbound
-  // binding where it goes
-  assert_true(printed.contains("ELit(lit=LStr(\"Sale\")"))
+  // the argument is in the tree, and nothing is left of the binding it went
+  // through
   assert_true(direct.contains("ELit(lit=LStr(\"Sale\")"))
-  assert_false(printed.contains("PBind(\"label\")"))
   assert_false(direct.contains("PBind(\"label\")"))
-  // and the one difference left is the wrapper
-  assert_true(printed.contains("MacroCall"))
+  // …and a macro adds no node of its own: the call is grafted where it stands,
+  // so there is no `MacroCall` for the generator to strip afterwards.
   assert_false(direct.contains("MacroCall"))
 }
 

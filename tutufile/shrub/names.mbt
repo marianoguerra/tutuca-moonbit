@@ -125,3 +125,127 @@ pub fn row_members(decls : Array[@tutufile.Decl]) -> Array[String] {
   }
   out
 }
+
+///|
+/// `item in xs`, or `item, i in xs`.
+///
+/// A comma separates GROUPS inside parentheses, so `item, i in it.pages` is
+/// two of them and the binder is not one term sequence but several. This is
+/// the one place a view reads NAMES rather than values — the loop introduces
+/// them, which is what makes a member read on one checkable.
+pub fn split_binder(
+  raw : Array[@ast.Node],
+) -> (Array[String], Ex, Int) raise ExError {
+  let names = []
+  let mut g = 0
+  while g < raw.length() {
+    guard raw[g].it is Group(parts) else { break }
+    let mut i = 0
+    let mut saw_in = false
+    while i < parts.length() {
+      match parts[i].it {
+        Id("in") => {
+          saw_in = true
+          i = i + 1
+          break
+        }
+        Id(n) => {
+          names.push(n)
+          i = i + 1
+        }
+        _ => i = i + 1
+      }
+    }
+    if saw_in {
+      guard names.length() > 0 && i < parts.length() else { break }
+      return (names, read_ex(parts[i:]), g + 1)
+    }
+    g = g + 1
+  }
+  raise ExError(
+    message="`@each` needs `<name> in <sequence>`",
+    help="write `@each(item in it.items){ … }`, or `@each(item, i in it.items)`",
+    span=if raw.length() > 0 { span_of(raw[0]) } else { @report.Span::at(0) },
+  )
+}
+
+///|
+/// An at-notation call's argument groups and its body.
+///
+/// The groups come back unparsed because one form reads NAMES out of them:
+/// `@each(item in it.items)` binds `item`, and a binder is not a value.
+pub fn split_call(
+  parts : Array[@ast.Node],
+) -> (Array[@ast.Node], Array[@ast.Node]) raise ExError {
+  let args = []
+  let body = []
+  let mut i = 1
+  while i < parts.length() {
+    match parts[i].it {
+      Parens(gs) =>
+        for g in gs {
+          match body_of(g) {
+            Some(items) =>
+              for item in items {
+                body.push(item)
+              }
+            None => args.push(g)
+          }
+        }
+      // An option AFTER the call is the mistake a first `.tutu` file makes:
+      // `~opt: value` reads as though it attaches to what precedes it, and
+      // elsewhere in the notation options do trail their forms. Here it has
+      // nothing to attach to, and dropping it writes a view with no styling
+      // and says nothing.
+      Kw(name) =>
+        raise ExError(
+          message="`~\{name}` is outside the element it belongs to",
+          help="an attribute goes in the parentheses: `@tag(~\{name}: <value>){ … }`",
+          span=span_of(parts[i]),
+        )
+      Block(_) =>
+        raise ExError(
+          message="a block cannot follow an element",
+          help="an element's content goes in braces: `@tag{ … }`",
+          span=span_of(parts[i]),
+        )
+      _ => ()
+    }
+    i = i + 1
+  }
+  (args, body)
+}
+
+///|
+/// A TAG name, under the same rule an attribute name follows: an underscore is
+/// a hyphen, and case is preserved.
+///
+/// A custom element must contain a hyphen (`<emoji-picker>`), and shrubbery
+/// reads `emoji-picker` as three terms — a name, an operator and a name — so
+/// the hyphen cannot be written directly. No HTML tag contains an underscore,
+/// which is what makes the mapping unambiguous.
+pub fn tag_name(name : String) -> String {
+  attr_name(name)
+}
+
+///|
+/// An underscore is a hyphen; case is preserved.
+pub fn attr_name(name : String) -> String {
+  let out = StringBuilder()
+  for c in name {
+    if c == '_' {
+      out.write_char('-')
+    } else {
+      out.write_char(c)
+    }
+  }
+  out.to_string()
+}
+
+///|
+/// The bracketed content list an at-notation body arrives as.
+pub fn body_of(group : @ast.Node) -> Array[@ast.Node]? {
+  guard group.it is Group(parts) && parts.length() == 1 else { return None }
+  guard parts[0].it is Brackets(items) else { return None }
+  Some(items)
+}

@@ -26,7 +26,6 @@ import {
 }
 
 import {
-  // The printer this front end is held against, and nothing in the package
-  // itself imports it.
-  "marianoguerra/tutuca/tutufile/lower",
+// The printer this front end is held against, and nothing in the package
+// itself imports it.
 } for "test"

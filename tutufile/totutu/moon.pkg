@@ -1,26 +1,21 @@
-// `tutuca to-tutu` — an `.html` view file, written out as the `.tutu` file that
-// replaces it.
+// A parsed declaration, written back as the notation.
 //
-// It is the inverse of `tutufile/lower`, and it is built the same way round:
-// from the PARSED file rather than from its text. `@viewfile.split_file` has
-// already turned the blocks into a `StateDef`, a script block, view trees,
-// fixtures and scenes, so what is left is printing each of those as shrubbery.
-// A converter that worked on the text would be a second HTML parser and a
-// second script lexer, both of which exist and neither of which needs a rival.
+// This was the migration converter — `tutuca to-tutu`, an `.html` view file in
+// and the `.tutu` that replaces it out — and the repo is across, so the
+// entry point that read an `.html` is gone with the file format it read. What
+// is left is the half that had another reader: the printers, from a
+// `StateDef`, a `@tscript.Decl`, an `ANode` and a `Value` to shrubbery.
 //
-// **It refuses rather than guesses.** Every construct it cannot spell in the
-// new notation comes back as a line in `refusals`, and the caller does not
-// write the file. A conversion that silently dropped a handler would be worse
-// than no conversion at all: the card would compile, render, and do less than
-// it did, which reads as a runtime bug rather than as a migration that is not
-// finished.
+// One caller: `cmd/conformance`. `tscript`'s corpus SPECIFIES the block
+// language — that is what a `@tscript.Decl` is a parse of — and the file `gen`
+// compiles is a `.tutu` like every other view file in the repo, so the
+// projection is printed rather than converted.
 //
-// The check that says a conversion is sound is `tutufile/equiv`, not this
-// package. `tutuca to-tutu` runs it before writing, and refuses on any
-// difference — so nothing this prints can reach a file without having been
-// compared against the file it replaces.
+// **It refuses rather than guesses.** Every construct it cannot spell raises
+// `NoSpelling`, and the caller does not write the file. A projection that
+// silently dropped a case would be worse than none: the corpus would compile,
+// run, and prove less than it claims.
 import {
-  "marianoguerra/tutuca/viewfile",
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/scenedef",
   "marianoguerra/tutuca/tscript",
@@ -31,9 +26,7 @@ import {
 }
 
 import {
-  "marianoguerra/tutuca/tutufile/equiv",
   // The two properties the reader promises, asserted over what this package
   // PRODUCES rather than over sources written by hand beside the assertion.
-  "marianoguerra/shrubbery" @shrub,
   "moonbitlang/core/debug",
 } for "test"

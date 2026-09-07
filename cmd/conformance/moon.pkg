@@ -16,9 +16,11 @@ import {
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/tscript/conformance" @corpus,
-  // The corpus is projected in the OLD block notation — that is the language
-  // it specifies — and converted here, so what is checked in is a `.tutu` like
-  // every other view file in the repo.
+  // The corpus SPECIFIES the block language — that is what a `@tscript.Decl`
+  // is a parse of — and the file `gen` reads is a `.tutu` like every other
+  // view file in the repo. `totutu` writes the shrubbery: what used to be the
+  // migration converter is now the one printer that turns a parsed declaration
+  // back into the notation, and this is what it is for.
   "marianoguerra/tutuca/tutufile/totutu",
   "moonbitlang/x/fs",
   "moonbitlang/core/env",

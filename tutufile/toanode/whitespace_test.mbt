@@ -86,17 +86,17 @@ test "an empty element has no text node" {
 }
 
 ///|
-/// The printer path used to make its own indentation into content: the same
-/// source through the two paths, and one of them added characters nobody
-/// wrote. It now prints an all-inline body on one line, so both answer `"+"`.
+/// The property that was broken, and the one worth watching: the text a
+/// consumer reads is the text the file holds, and nothing on the way adds a
+/// character nobody wrote.
 ///
-/// Kept as an equality between the paths rather than deleted, because that is
-/// the property that was broken and the one worth watching: whichever path a
-/// consumer takes, the text it reads is the text the file holds.
-test "neither path makes its own formatting into text" {
+/// The printer path used to fail this by INDENTING. `@button{+}` printed as
+/// `<button>\n      +\n    </button>` and the text node that came back was
+/// `"\n      +\n    "` — its own formatting, become content. There is nothing
+/// between the file and the tree now, so there is nowhere for that to happen.
+test "nothing makes its own formatting into text" {
   let src = card("  Card:\n    @button{+}")
   @debug.assert_eq(direct_view(src).map(texts), Some(["+"]))
-  @debug.assert_eq(printed_view(src).map(texts), Some(["+"]))
 }
 
 ///|

@@ -139,6 +139,25 @@ rather than a relaxation: the rule was about a sigil, and `~on_click: f()` and
 `~on_click: f` are one dispatch here — which is what the rule was arguing they
 should be. It still runs over views built as markup through `@anode.View::new`.
 
+### Removed
+
+- **`tutufile/lower`**, the printer that turned each `.tutu` section into the
+  block the old front end read. Nothing prints the old notation any more.
+- **`tutufile/equiv`** and **`tutuca equiv`**, the acceptance check for a
+  converted file, and **`tutuca to-tutu`**, the converter. Both existed to move
+  a repo across, and this one is across.
+- **`tutufile/totutu`'s `.html` entry point.** Its PRINTERS survive under the
+  same name for one caller: `tscript`'s conformance corpus specifies the block
+  language, and `cmd/conformance` now prints the projection as `.tutu` instead
+  of converting it.
+
+The differential tests went with the printer they held the readers to — a
+reader that agrees with the thing it replaces, shape by shape, is one you can
+take the other side away from, and there is no other side now. What each of
+them kept is its CORPUS, snapshotted: `tutufile/tologic/corpus_test.mbt`,
+`tutufile/todata/differential_test.mbt`, `statedef/from_tutu_corpus_test.mbt`
+and the `reads` cases in `tutufile/toanode`.
+
 ### The card playground is written in `.tutu`, and six more holes
 
 `tutucard/web/examples.js` held 26 starter cards in the old notation, and

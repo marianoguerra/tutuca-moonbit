@@ -27,7 +27,9 @@
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let corpus_spec_source : String =
   #|spec:
-  #|  Corpus:
+  #|  struct Label(text :: String, done :: Bool)
+  #|
+  #|  Corpus ~root:
   #|    field name :: String
   #|    field count :: Int
   #|    field ratio :: Double
@@ -95,8 +97,6 @@ pub let corpus_spec_source : String =
   #|    intent case24(String)
   #|
   #|    intent case25(String)
-  #|
-  #|  struct Label(text :: String, done :: Bool)
 
 ///|
 /// The compiled `main` view.

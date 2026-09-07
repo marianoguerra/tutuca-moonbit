@@ -27,7 +27,6 @@
 // agrees with them, and they are the reason `lower` stays until stage 6 closes.
 import {
   "marianoguerra/tutuca/tutufile",
-  "marianoguerra/tutuca/tutufile/lower",
   "marianoguerra/tutuca/tutufile/shrub" @sh,
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/anode",
@@ -38,10 +37,5 @@ import {
 
 import {
   "marianoguerra/shrubbery" @shrub,
-  // The readers the printer path prints FOR. They are test dependencies only:
-  // the equivalence tests are the whole reason `tutufile/lower` is still here,
-  // and this package itself imports neither the printer's output format nor the
-  // parsers that read it.
-  "marianoguerra/tutuca/viewfile",
   "moonbitlang/core/debug",
 } for "test"

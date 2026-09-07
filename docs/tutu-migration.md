@@ -104,6 +104,13 @@ While the corpus was being converted the same idea ran the other way:
 `.tutu` beside it, and `tutuca to-tutu` refused rather than guessed. Both went
 with the seam — they existed to move a repo across, and this one is across.
 
+What survives of the converter is its PRINTERS, under the same name
+(`tutufile/totutu`), for one caller. `tscript`'s conformance corpus specifies
+the block language — that is what a `@tscript.Decl` is a parse of — and the
+file `gen` compiles is a `.tutu` like every other view file here, so
+`cmd/conformance` prints the projection rather than converting it. The entry
+point that read an `.html` is gone with the format it read.
+
 **Naming an anonymous component changes its fingerprint.** A `.html` file could
 write `state { … }` with no name; a `.tutu` file always names its components.
 The fields, views, codec and generated MoonBit are identical — the fingerprint

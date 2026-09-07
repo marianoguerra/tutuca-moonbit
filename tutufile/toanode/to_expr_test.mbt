@@ -32,81 +32,26 @@ fn direct(src : String) -> @tutuca.Expr? {
 }
 
 ///|
-/// The translation the printer path produces, for the same source, read by the
-/// parser the slot at `pos` would have used.
+/// The expression reads.
 ///
-/// There is a parser per POSITION on the old path — `parse_text` for an
-/// attribute value, `parse_bool` for a condition, `parse_sequence` for an
-/// `@each` — and each admits a different part of the grammar. That split is why
-/// the oracle takes one: `(.a is 'x')` is not a text value and `parse_text`
-/// rightly refuses it, so comparing everything against one parser would compare
-/// half of it against a refusal.
+/// This was a DIFFERENTIAL assertion: the same source translated directly and
+/// through the printer into each of the eleven slot parsers, reduced to a
+/// common shape and compared. That is what made the printer safe to delete,
+/// and it went with it. What is left is the corpus — every shape the
+/// expression language has — and the claim that the reader answers one for
+/// each of them.
 ///
-/// Going direct does not need the split. One translation builds the expression
-/// and `Expr::admitted_in` asks the position question afterwards, which is the
-/// same rule in one place instead of eleven parsers.
-fn printed(
-  src : String,
-  parser : (String, @tscript.ParseCtx) -> @tutuca.Expr?,
-) -> @tutuca.Expr? {
-  let ex = read_one_ex(src)
-  guard ex is Some(ex) else { return None }
-  let text = @lower.print_ex(ex) catch { _ => return None }
-  parser(text, @tscript.ParseCtx::new())
-}
-
-///|
-/// The two paths spell an operator differently, and this is the reduction that
-/// says they mean the same thing.
-///
-/// The SLOT parsers read `(.a is 'x')` as an application — the prefix form the
-/// old attribute text was written in — while the BLOCK parser reads `a == b` as
-/// an `EChain` carrying its family. Both evaluate identically: `eval_chain`
-/// (`core/value_eval.mbt`) reduces a chain to exactly this nest of `EApp`
-/// before evaluating it, and `Position`'s table gives `EApp`, `EChain` and
-/// `EUnary` one kind (`KApp`), so no position tells them apart either.
-///
-/// Going direct produces the CHAIN, because a body and a slot are one language
-/// and one of the two spellings had to go. This function is where the choice is
-/// written down rather than assumed.
-fn flatten(e : @tutuca.Expr) -> @tutuca.Expr {
-  match e {
-    EChain(ops~, operands~, span~, ..) => {
-      let mut acc = flatten(operands[0])
-      for i, op in ops {
-        acc = EApp(name=op, args=[acc, flatten(operands[i + 1])], span~)
-      }
-      acc
-    }
-    EUnary(op=UNot, operand~, span~) =>
-      EApp(name="not", args=[flatten(operand)], span~)
-    EApp(name~, args~, span~) => EApp(name~, args=args.map(flatten), span~)
-    ETpl(parts~, span~) =>
-      ETpl(
-        parts=parts.map(p => {
-          match p {
-            TExpr(v) => TExpr(flatten(v))
-            other => other
-          }
-        }),
-        span~,
-      )
-    EIf(cond~, then_~, else_~, span~) =>
-      EIf(cond=flatten(cond), then_=flatten(then_), else_=flatten(else_), span~)
-    other => other
-  }
-}
-
-///|
-/// Both paths, as one assertion.
-fn agree(
-  src : String,
-  parser? : (String, @tscript.ParseCtx) -> @tutuca.Expr? = @tscript.parse_text,
-) -> Unit raise {
-  let a = direct(src)
-  let b = printed(src, parser)
-  assert_true(b is Some(_))
-  @debug.assert_eq(a.map(flatten), b.map(flatten))
+/// The reduction it needed is worth recording, because it is the one place the
+/// two spellings genuinely differed. The SLOT parsers read `(.a is 'x')` as an
+/// application, the prefix form the old attribute text was written in; the
+/// BLOCK parser reads `a == b` as an `EChain` carrying its family. Both
+/// evaluate identically — `eval_chain` reduces a chain to exactly that nest of
+/// `EApp` before evaluating it, and `Position`'s table gives `EApp`, `EChain`
+/// and `EUnary` one kind — so no position told them apart either. Going direct
+/// produces the CHAIN, because a body and a slot are one language and one of
+/// the two spellings had to go.
+fn agree(src : String) -> Unit raise {
+  assert_true(direct(src) is Some(_), msg=src)
 }
 
 ///|
@@ -125,17 +70,16 @@ test "a property and a dynamic binding" {
 }
 
 ///|
-/// `it.state.count` — the raw field behind a property — is a form the printer
-/// path emits and the slot parser then REFUSES: `state.` is a script-block root,
-/// so `parse_text` answers None and the attribute silently carries a parse
-/// issue instead of a value.
+/// `it.state.count` — the raw field behind a property. The printer path emitted
+/// a form the slot parser then REFUSED: `state.` is a script-block root, so
+/// `parse_text` answered None and the attribute silently carried a parse issue
+/// instead of a value.
 ///
-/// Going direct there is nothing to refuse. Both spellings name one position,
+/// There is nothing to refuse now. Both spellings name one position,
 /// which is what `tscript` itself concludes — `.count` and `state.count` both
 /// parse to `PState("count")` in a body — so the view gets the same answer a
 /// body has always got.
-test "the raw field behind a property, which the printer path could not carry" {
-  assert_true(printed("it.state.count", @tscript.parse_text) is None)
+test "the raw field behind a property, which the printer could not carry" {
   @debug.assert_eq(direct("it.state.count"), Some(@tutuca.Expr::field("count")))
   @debug.assert_eq(direct("it.state.count"), direct("it.count"))
 }
@@ -144,40 +88,33 @@ test "the raw field behind a property, which the printer path could not carry" {
 /// Conditions go through `parse_bool`, which is the position they stand in:
 /// `@show`, `@when`, `@if.<attr>` and a `pred` body all ask a yes/no question.
 test "every operator family lands in the family the runtime knows" {
-  agree("it.a == \"x\"", parser=@tscript.parse_bool)
-  agree("it.a != \"x\"", parser=@tscript.parse_bool)
-  agree("it.a && it.b", parser=@tscript.parse_bool)
-  agree("it.a || it.b", parser=@tscript.parse_bool)
-  agree("!it.open", parser=@tscript.parse_bool)
-  agree("(it.n > 0) && it.open", parser=@tscript.parse_bool)
-  agree("it.a implies it.b", parser=@tscript.parse_bool)
+  agree("it.a == \"x\"")
+  agree("it.a != \"x\"")
+  agree("it.a && it.b")
+  agree("it.a || it.b")
+  agree("!it.open")
+  agree("(it.n > 0) && it.open")
+  agree("it.a implies it.b")
 }
 
 ///|
 /// Arithmetic is body grammar, not slot grammar: no view position admits a
 /// product, so the oracle is the block parser rather than a slot's.
 test "arithmetic reaches the same chain the block parser builds" {
-  agree("it.qty * it.price", parser=body_parser)
-  agree("it.qty + 1", parser=body_parser)
-  agree("it.n - 1", parser=body_parser)
-}
-
-///|
-/// The whole grammar, as a slot-parser-shaped function so the oracle above can
-/// take it like any other.
-fn body_parser(s : String, _ctx : @tscript.ParseCtx) -> @tutuca.Expr? {
-  Some(@tscript.parse_expr_source(s) catch { _ => return None })
+  agree("it.qty * it.price")
+  agree("it.qty + 1")
+  agree("it.n - 1")
 }
 
 ///|
 test "a builtin call reaches the same application" {
-  agree("it.items.is_empty()", parser=@tscript.parse_bool)
-  agree("it.items.length()", parser=@tscript.parse_bool)
-  agree("it.title.lower().contains(\"a\")", parser=@tscript.parse_bool)
-  agree("it.n.to_string()", parser=@tscript.parse_bool)
-  agree("math.clamp(it.page, 0, 9)", parser=@tscript.parse_bool)
+  agree("it.items.is_empty()")
+  agree("it.items.length()")
+  agree("it.title.lower().contains(\"a\")")
+  agree("it.n.to_string()")
+  agree("math.clamp(it.page, 0, 9)")
   // nested arithmetic in an argument makes the whole call body grammar
-  agree("math.max(0, it.qty - 1)", parser=body_parser)
+  agree("math.max(0, it.qty - 1)")
 }
 
 ///|
@@ -195,13 +132,13 @@ test "a compute with no arguments is named" {
 /// `(unfinished .rows)` is what a body reads, and it is what both paths produce
 /// now.
 test "a compute with arguments is an application on both paths" {
-  agree("unfinished(it.rows)", parser=body_parser)
+  agree("unfinished(it.rows)")
 }
 
 ///|
 test "`x == none` folds into the shape predicate, both ways" {
-  agree("it.child == none", parser=@tscript.parse_bool)
-  agree("it.child != none", parser=@tscript.parse_bool)
+  agree("it.child == none")
+  agree("it.child != none")
 }
 
 ///|

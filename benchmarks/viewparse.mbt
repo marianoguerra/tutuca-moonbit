@@ -79,14 +79,8 @@ const WORKLOAD_FILE = "corpus.tutu"
 
 ///|
 fn split_corpus(source : String) -> @viewfile.ViewFile {
-  let sources = @report.Sources::new()
-  let id = sources.add("corpus.tutu", source)
-  let lowered = @lower.lower(source, id)
-  if lowered.reports.length() > 0 {
-    abort("benchmark corpus did not lower: " + lowered.reports[0].message)
-  }
-  @viewgen.split_file(lowered.text) catch {
-    e => fail_stage("split", e)
+  @viewgen.read_file(source, name=WORKLOAD_NAME) catch {
+    e => fail_stage("read", e)
   }
 }
 

@@ -14,6 +14,5 @@ import {
 }
 
 import {
-  "marianoguerra/tutuca/tutufile/lower",
   "moonbitlang/core/debug",
 } for "test"
