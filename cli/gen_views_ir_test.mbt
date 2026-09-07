@@ -1,12 +1,17 @@
-// The load-bearing test for ahead-of-time view compilation: a component
-// built from the GENERATED TREE must render byte-identically to the same
-// component built by parsing the same view source at startup.
+// The load-bearing test for ahead-of-time view compilation: a component built
+// from the tree the reader produced must RENDER, dispatch and index the way a
+// component does.
+//
+// It used to be a differential — the same view source parsed at startup and
+// compiled ahead of time, compared byte for byte — and that half went with the
+// notation. A `.tutu` view has one form: the tree the reader answers. What is
+// left is the claim the differential was standing in for, asserted directly.
 //
 // It lives in cli/ because this is the one package that already imports both
 // ends — @viewgen (which produces the tree) and @render/@memdom/@component
 // (which consume it). The generated module normally reaches the runtime as
 // MoonBit source; here the same values are built directly from @viewgen's
-// parse, which exercises every seam except the emitter's text formatting
+// read, which exercises every seam except the emitter's text formatting
 // (the emitter is snapshot-tested in viewgen/emit_test.mbt).
 
 ///|
@@ -48,52 +53,50 @@ fn render_comp(comp : @component.Component) -> String raise {
 /// constant and dynamic attributes, text slots, an @each loop, conditional
 /// wrappers, an @if attribute, event handlers with several argument kinds,
 /// and a nested SVG namespace.
-let ir_html : String =
-  #|<template>
-  #|  <div class="counter" :title=".label">
-  #|    <h1><x text=".label"></x>: <span id="count"><x text=".count"></x></span></h1>
-  #|    <p @show=".count"><x text="'shown'"></x></p>
-  #|    <p @hide=".count">hidden</p>
-  #|    <button id="inc" @on.click="add 1" @on.keydown+send="add -2.5">+1</button>
-  #|    <input id="label" :value=".label" @on.input="setLabel e.value">
-  #|    <b @if.class=".count" @then.class="'on'" @else.class="'off'">flag</b>
-  #|    <ul id="history"><li @each=".history"><x text="@value"></x></li></ul>
-  #|    <svg viewBox="0 0 1 1"><circle r="1"></circle></svg>
-  #|  </div>
-  #|</template>
+let ir_src : String =
+  #|spec:
+  #|  Ir:
+  #|    field label :: String
+  #|    field count :: Int
+  #|    field history :: List.of(Int)
+  #|
+  #|view:
+  #|  Ir:
+  #|    @div(~class: "counter", ~title: it.label){
+  #|      @h1{@(it.label): @span(~id: "count"){@(it.count)}}
+  #|      @show(it.count){@p{shown}}
+  #|      @hide(it.count){@p{hidden}}
+  #|      @button(~id: "inc", ~on_click: add(1), ~on_keydown: add(-2.5) ~send){+1}
+  #|      @input(~id: "label", ~value: it.label, ~on_input: setLabel(e.value))
+  #|      @b(~class: if it.count | "on" | "off"){flag}
+  #|      @ul(~id: "history"){@each(value, key in it.history){@li{@(value)}}}
+  #|      @svg(~viewBox: "0 0 1 1"){@circle(~r: "1")}
+  #|    }
 
 ///|
-test "a component built from the compiled tree renders identically" {
-  let views = @viewgen.split_file(ir_html)
-  let from_source = @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=views.components[0].views[0].source,
-        style=views.components[0].views[0].style,
-      ),
-    },
-    name="IrFromSource",
-    initial=ir_state(),
-  )
+test "a component built from the compiled tree renders what the file says" {
+  let views = @viewgen.read_file(ir_src, name="Ir")
   let from_tree = @component.component(
     name="IrFromTree",
     views=@viewgen.build_views(views.components[0], macros=views.macros),
     initial=ir_state(),
   )
-  let want = render_comp(from_source)
-  let got = render_comp(from_tree)
-  // Component ids differ between the two, and data-cid is stamped per
-  // component, so compare with that one attribute normalized away.
-  assert_eq(strip_cid(got), strip_cid(want))
-  // Not vacuous: the view really did render.
-  assert_true(want.contains("<span id=\"count\">2</span>"))
-  assert_true(want.contains("<li>1</li><li>2</li>"))
+  let got = strip_cid(render_comp(from_tree))
+  // Every construct the reader has to reproduce, in the rendered output: a
+  // constant and a dynamic attribute, a text slot, a guard on each side, an
+  // `if` in an attribute, a loop, and a nested SVG namespace.
+  assert_true(got.contains("<span id=\"count\">2</span>"), msg=got)
+  assert_true(got.contains("<li>1</li><li>2</li>"), msg=got)
+  assert_true(got.contains("title=\"Counter\""), msg=got)
+  assert_true(got.contains("shown"), msg=got)
+  assert_false(got.contains("hidden"), msg=got)
+  assert_true(got.contains("class=\"on\""), msg=got)
+  assert_true(got.contains("<circle r=\"1\">"), msg=got)
 }
 
 ///|
 test "handlers dispatch through a compiled tree" {
-  let views = @viewgen.split_file(ir_html)
+  let views = @viewgen.read_file(ir_src, name="Ir")
   let comp = @component.component(
     name="IrDispatch",
     views=@viewgen.build_views(views.components[0], macros=views.macros),
@@ -171,18 +174,26 @@ fn strip_cid(html : String) -> String {
 }
 
 ///|
-/// The same view twice: once with the macro declared in the FILE (expanded by
-/// the generator into the compiled tree), once with it registered from
-/// MoonBit and expanded at startup. The rendered output must not be able to
-/// tell the difference — that equivalence is what lets HTML-declared macros
-/// replace runtime-registered ones.
-let macro_view_html : String =
-  #|<template id="macro:badge" data-tone="'plain'">
-  #|  <span class="badge" :data-tone="^tone"><x text="^label"></x></span>
-  #|</template>
-  #|<template>
-  #|  <div><x:badge :label=".title" tone="loud"></x:badge></div>
-  #|</template>
+/// A macro declared in the FILE, expanded by the reader into the compiled
+/// tree, renders the same markup a runtime-registered one does.
+///
+/// This was the second differential — the same view once with a file macro and
+/// once with the body registered from MoonBit — and it went with the notation:
+/// there is no printed macro body for a `@anode.Macro` to be built from any
+/// more, because a view arrives EXPANDED. What is left is the claim it was
+/// standing in for: the call's argument reaches the body, and the call's `tone`
+/// beats the macro's default.
+let macro_view_src : String =
+  #|spec:
+  #|  Badge:
+  #|    field title :: String
+  #|
+  #|view:
+  #|  macro badge(~tone: "plain", ~label: ""):
+  #|    @span(~class: "badge", ~data_tone: tone){@(label)}
+  #|
+  #|  Badge:
+  #|    @div{@badge(~label: it.title, ~tone: "loud")}
 
 ///|
 priv struct BadgeState {
@@ -190,57 +201,17 @@ priv struct BadgeState {
 }
 
 ///|
-test "a file-declared macro renders like a MoonBit-registered one" {
-  let vs = @viewgen.split_file(macro_view_html)
+test "a file-declared macro is expanded into the compiled tree" {
+  let vs = @viewgen.read_file(macro_view_src, name="Badge")
   let from_tree = @component.component(
     name="BadgeTree",
     views=@viewgen.build_views(vs.components[0], macros=vs.macros),
     initial=BadgeState::{ title: "hi", },
   )
-  // The runtime equivalent: the same macro body, registered as a value.
-  let from_macro = @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=vs.components[0].views[0].source,
-      ),
-    },
-    name="BadgeRuntime",
-    initial=BadgeState::{ title: "hi", },
-  )
-  let scope = @component.ComponentStack::new()
-  scope.register_macros({
-    "badge": { defaults: vs.macros[0].defaults, raw_view: vs.macros[0].source, },
-  })
-  scope.register_components([from_macro])
-  scope.compile_all()
-  let inst = from_macro.make(Map([]))
-  let want = @render.render_root(
-      inst,
-      @render.RenderStack::new(inst, comps=scope.comps),
-      @render.RenderCtx::new(view_resolver=scope.comps),
-    )
-    |> to_html
-  let got = render_comp(from_tree)
-  assert_eq(strip_cid(got), strip_cid(want))
-  // Not vacuous, and the call's `tone` beat the macro's default.
-  assert_true(want.contains("data-tone=\"loud\""))
-  assert_true(want.contains(">hi</span>"))
-}
-
-///|
-fn to_html(v : @vdom.Vdom?) -> String {
-  match v {
-    Some(v) =>
-      match @render.clean_vdom(v) {
-        Some(clean) => {
-          let doc = @memdom.document()
-          @vdom.to_dom(clean, @vdom.RenderOpts::new(doc)).to_html()
-        }
-        None => "<!-- nothing -->"
-      }
-    None => "<!-- nothing -->"
-  }
+  let got = strip_cid(render_comp(from_tree))
+  assert_true(got.contains("data-tone=\"loud\""), msg=got)
+  assert_true(got.contains(">hi</span>"), msg=got)
+  assert_true(got.contains("class=\"badge\""), msg=got)
 }
 
 ///|

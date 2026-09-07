@@ -563,8 +563,8 @@ fn pagination_inline_update(
 }
 
 ///|
-/// `invariant page_exists` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant page_exists` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn pagination_compute_page_exists(
   s : PaginationState,
   _args : Array[@tutuca.Value],
@@ -580,7 +580,7 @@ fn pagination_compute_page_exists(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn pagination_inline_compute() -> Map[
   String,
   (PaginationState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

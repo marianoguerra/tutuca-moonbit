@@ -201,8 +201,8 @@ pub fn instance_fields_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant page_exists` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant page_exists` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn instance_fields_compute_page_exists(
   s : InstanceFieldsState,
   _args : Array[@tutuca.Value],
@@ -219,7 +219,7 @@ fn instance_fields_compute_page_exists(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn instance_fields_inline_compute() -> Map[
   String,
   (InstanceFieldsState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -518,8 +518,8 @@ pub fn instance_explorer_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant component_tab_needs_a_component` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant component_tab_needs_a_component` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn instance_explorer_compute_component_tab_needs_a_component(
   s : InstanceExplorerState,
   _args : Array[@tutuca.Value],
@@ -535,7 +535,7 @@ fn instance_explorer_compute_component_tab_needs_a_component(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn instance_explorer_inline_compute() -> Map[
   String,
   (InstanceExplorerState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

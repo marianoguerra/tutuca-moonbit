@@ -1,18 +1,17 @@
-// The shape of a `.html` view file: the blocks it is made of, recovered as
-// RAW SOURCE TEXT with the offsets they came from.
+// The shape of a read view file: its components' views, the declarations
+// under them, its schema, its fixtures and its scenes.
 //
-// Split out of `viewgen/` because two very different consumers need it and
-// only one of them is a code generator. `viewgen` slices a file in order to
-// EMIT MoonBit; `tutucard` slices the same file in order to RUN it, in a
-// browser, with no generator anywhere in the payload. A runtime that had to
-// import an emitter to find out where the templates are would be carrying the
-// whole `emit_*` layer for the sake of a tokenizer loop.
+// A SHAPE and no longer a reader. This package used to split: it ran the
+// WHATWG tokenizer over an `.html` file to find element boundaries and sliced
+// the source between them, so a view came back as raw text and every consumer
+// parsed it again. `viewgen/read.mbt` reads a `.tutu` into this shape once,
+// with `tutufile`'s readers, and nothing is parsed twice.
 //
-// Pure and target-agnostic like `statedef` and `viewgen`: source text in,
-// typed blocks out, never touching the filesystem.
-//
-// It parses the state and init blocks and does NOT parse the script block,
-// and that asymmetry is deliberate rather than unfinished — see `ViewFile`.
+// It stays its own package for the reason it was split out of `viewgen/`: two
+// very different consumers hold one of these and only one of them is a code
+// generator. A card runtime that had to import an emitter to find out what a
+// file declares would be carrying the whole `emit_*` layer for the sake of a
+// struct.
 import {
   "marianoguerra/tutuca/statedef",
   // A view READ from a `.tutu` arrives as a tree, and a `logic:` section as
@@ -21,6 +20,5 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/scenedef",
-  "moonbit-community/html/src" @html5,
   "moonbitlang/core/debug",
 }

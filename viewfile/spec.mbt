@@ -1,26 +1,23 @@
-// Spec for the view-file splitter: the public data types plus `declare`
-// stubs. The implementation lives in split.mbt.
+// The view file's public data types, plus `declare` stubs for the three
+// questions asked of one. The implementation lives in file.mbt.
 //
-//   source text --split_file--> ViewFile   (raw per-view HTML, styles, blocks)
+//   `.tutu` source --@viewgen.read_file--> ViewFile
 //
-// One stage, and it is the only one in the pipeline that knows what an `.html`
-// file looks like. Everything above it — the generator, the checker, the card
-// runtime — takes a `ViewFile` and never sees a tokenizer.
+// Everything above it — the generator, the checker, the card runtime — takes a
+// `ViewFile` and never sees a reader.
 
 ///|
-/// One view recovered from the input file: its raw HTML source with any
-/// `<style>` elements lifted out.
+/// One view of a component: its tree, and the style scoped to it.
 pub(all) struct RawView {
   name : String
+  /// Empty, and kept for the one consumer that still reads a view as markup:
+  /// `@anode.View::new`, which a MoonBit caller uses to build a view by hand.
+  /// A view READ from a file is the tree below and nothing else.
   source : String
   style : String
-  /// The tree, when the file was READ rather than split.
-  ///
-  /// A `.tutu` is read straight into `@anode.ANode` by `tutufile/toanode`;
-  /// there is no HTML in between and nothing to parse a second time. A file
-  /// that came through the splitter has None here and its `source` is what
-  /// every consumer parses, which is what this field exists to stop being the
-  /// only way.
+  /// The tree. `tutufile/toanode` reads a `.tutu` straight into
+  /// `@anode.ANode`, so there is no notation in between and nothing to parse a
+  /// second time.
   tree : CompiledTree?
 }
 
@@ -33,16 +30,22 @@ pub(all) struct RawView {
 pub(all) struct CompiledTree {
   root : @anode.ANode
   events : Array[@anode.NodeEvents]
+  /// How much SOURCE this view is, in bytes.
+  ///
+  /// A number and not the text it measures. A compiled card's manifest carries
+  /// it so that a host's quota can refuse a view before reading one — a
+  /// refusal is meant to cost no parsing — and only the reader is in a
+  /// position to say, because it is the only thing that ever held the slice.
+  bytes : Int
 }
 
 ///|
-/// A macro declared in the view file as `<template id="macro:name">`. Its
-/// `data-*` attributes are the defaults for the `^var` references in the body
-/// (values are tutuca source, so a literal string default is `'24'`).
+/// A macro declared in the `view:` section as `macro name(~p: default):`.
 ///
 /// Declaring macros in the view file rather than registering them from
-/// MoonBit is what lets the generator EXPAND them: a macro whose body is a
-/// runtime value could never be compiled ahead of time.
+/// MoonBit is what lets the reader EXPAND them: a macro whose body is a
+/// runtime value could never be compiled ahead of time. A view arrives with
+/// its calls already grafted, so what a consumer needs of one is its name.
 pub(all) struct MacroDef {
   name : String
   defaults : Map[String, String]
@@ -153,88 +156,6 @@ pub(all) struct ViewFile {
   /// side effect of saying which component is the interesting one.
   root : String
 }
-
-///|
-/// The script block for one component, or None when the file writes none.
-///
-/// A bare block answers for the file's single component, so a file with one
-/// unnamed block and one component matches whatever that component is called.
-declare pub fn ViewFile::script_for(self : ViewFile, comp : String) -> Block?
-
-///|
-/// Anything that makes a file unsplittable: its structure is wrong, or a
-/// block it carries does not describe what it claims to.
-///
-/// Separate from the generator's own failures because these are facts about
-/// the FILE, and every consumer of a file hits them — the card runtime that
-/// never generates a line of MoonBit reports the same duplicate view.
-pub suberror FileError {
-  /// Non-whitespace text outside every `<template>` in a file that has some.
-  StrayText(String)
-  /// Two `<template>` elements claim the same view name.
-  DuplicateView(String)
-  /// Two `<template id="macro:...">` elements claim the same macro name.
-  DuplicateMacro(String)
-  /// `id="macro:"` with nothing after the colon.
-  BadMacroName(String)
-  /// The file mixes `Comp:view` ids with bare ones, so a bare id could mean
-  /// either a view of the unnamed component or a component of its own.
-  MixedViewIds
-  /// A component in the file declares no `main` view.
-  NoMainViewFor(String)
-  /// A `<template>` is never closed.
-  UnclosedTemplate(String)
-  /// Two spec blocks in one file — including one written `tutuca/spec` and one
-  /// written `tutuca/spec`, which are two blocks however they are spelled.
-  DuplicateStateBlock
-  /// Two `<script type="tutuca/script">` blocks answer for the same component
-  /// — the name is the `for=` attribute, or "" for an unqualified block.
-  DuplicateScriptBlock(String)
-  /// The spec block does not describe a component. `line` is the line in
-  /// the HTML file, not in the block, because that is the file the author has
-  /// open.
-  BadStateBlock(line~ : Int, message~ : String)
-  /// The init block does not fit the schema.
-  BadInitBlock(line~ : Int, message~ : String)
-  /// Two `<template>`s carry `data-root`. A file has one root, and two markers
-  /// do not say which — the same reason two state blocks are refused.
-  TwoRoots(String, String)
-  /// Two `<script type="tutuca/test">` blocks in one file. The same rule the
-  /// state block has, and for a plainer reason: the block is one JSON object,
-  /// and two of them would have to be merged in an order the file does not
-  /// state.
-  DuplicateTestBlock
-  /// The test block does not read as scenes. `line` is the line in the HTML
-  /// file, not in the block, for the reason `BadInitBlock` gives.
-  BadTestBlock(line~ : Int, message~ : String)
-}
-
-///|
-/// The user-facing one-line message for a file failure.
-declare pub fn FileError::message(self : FileError) -> String
-
-///|
-/// Split an input file into the components it declares.
-///
-/// Template `id` conventions:
-///
-///   (none)          the single unnamed component's `main` view
-///   `row`           …its `row` view
-///   `Counter:main`  the `Counter` component's `main` view
-///   `Counter`       shorthand for `Counter:main`
-///   `macro:icon`    a macro shared by every component in the file
-///
-/// A file either names its components or does not; mixing the two forms is
-/// an error, because `row` would then be ambiguous between a view of the
-/// unnamed component and a component called `row`.
-///
-/// `<style>` elements are lifted out of the emitted source: inside a template
-/// it becomes that view's style; at file level it is the first component's
-/// common style, or its global style with `data-global`.
-declare pub fn split_file(
-  source : String,
-  name? : String,
-) -> ViewFile raise FileError
 
 ///|
 /// The component name for a ViewSet: its own, or the caller's fallback for a

@@ -1338,6 +1338,15 @@ tests:
     field taken :: Int
     field waiting :: Int
 
+    /// THE INVARIANT — the one rule nothing has to mention. It is checked after
+    /// every transition this block declares, including the ones written
+    /// without a thought for it.
+    ///
+    /// A rule is declared in \`spec:\` beside the fields it is about, with the
+    /// \`pred\`s a handler names: what a component GUARANTEES is part of what it
+    /// is, not part of what it does.
+    invariant within_capacity: (it.taken <= it.capacity)
+
     message init
 
 logic:
@@ -1386,11 +1395,6 @@ logic:
       ~ensures: none_waiting
       it.taken += 1
       it.waiting -= 1
-
-    /// THE INVARIANT — the one rule nothing has to mention. It is checked after
-    /// every transition this block declares, including the two below, which
-    /// were written without a thought for it.
-    invariant within_capacity: (it.taken <= it.capacity)
 
     receive queue:
       it.waiting += 1

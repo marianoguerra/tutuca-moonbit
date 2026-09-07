@@ -25,7 +25,10 @@ fn main raise {
               "intent"
             },
           ),
-          "handler": Json::string(c.handler),
+          // Under the name the CARD carries: a `.tutu` spells a member in
+          // snake_case, so `resetTo` is declared `reset_to` and the module
+          // answers that.
+          "handler": Json::string(@names.snake_of(c.handler)),
           "args": Json::array(c.args.map(json_of)),
           "before": map_json(c.before),
           "after": match c.after {
@@ -72,7 +75,7 @@ fn main raise {
   // transition case was asking about.
   let vrows : Array[Json] = []
   for i, c in @conformance.value_cases() {
-    let card = card_of(c.schema, c.script)
+    let card = card_of(c.schema, c.script, row=row_of(c.role, c.callable))
     let row : Json = match
       (Ok(@emit.compile(card, name="value\{i}")) catch { e => Err(e) }) {
       Ok(out) => {
@@ -83,7 +86,11 @@ fn main raise {
           "module": Json::string("value\{i}.wasm"),
           "component": Json::string(out.component),
           "role": Json::string(role_word(c.role)),
-          "callable": Json::string(c.callable),
+          // Under the name the CARD carries. A `.tutu` spells a member in
+          // snake_case, so `containsText` is declared `contains_text` and the
+          // compiled module answers that — the row has to name what the
+          // module has, not what the corpus wrote.
+          "callable": Json::string(@names.snake_of(c.callable)),
           "args": Json::array(c.args.map(json_of)),
           "key": json_of(c.key),
           "value": json_of(c.value),
@@ -137,36 +144,82 @@ fn answer_json(a : @conformance.Answer) -> Json {
 
 ///|
 /// A corpus row as the smallest card that carries it.
-fn card_of(schema : String, script : String) -> String {
-  let comp = component_of(schema)
-  "<script type=\"tutuca/spec\">\n" +
-  schema +
-  "\n</script>\n<script type=\"tutuca/script\">\n" +
-  script +
-  "\n</script>\n<template id=\"" +
-  comp +
-  ":main\" data-root><b></b></template>\n"
+///
+/// The corpus SPECIFIES the block language — that is what a `@statedef.StateDef`
+/// and a `@tscript.Decl` are parses of — and a card is a `.tutu`, so the row is
+/// read once and printed as shrubbery. `cmd/conformance` does the same thing
+/// for the same reason.
+fn card_of(
+  schema : String,
+  script : String,
+  row? : String = "",
+) -> String raise {
+  let defs = @statedef.parse_state(schema)
+  guard defs is [def, ..] else {
+    abort("tgc-corpus: a corpus schema declares no component")
+  }
+  let decls = @tscript.parse_script(script).map(d => {
+    if row != "" && d.name == row {
+      // A ROW MEMBER names its row. The old notation gave a `when` filter and an
+      // in-loop enricher none — they read `@value` out of the air — and the new
+      // one has no way to spell that, so the projection declares the parameters
+      // the renderer binds. `tutufile/tologic` reads them back as the bindings
+      // the body's `value` and `key` already are.
+      {
+        ..d,
+        params: [
+          ({ name: "value", span: d.name_span, } : @tscript.Param),
+          { name: "key", span: d.name_span, },
+        ],
+      }
+    } else {
+      d
+    }
+  })
+  let spec = StringBuilder()
+  for t in def.types {
+    @totutu.print_user_ty(t, spec) catch {
+      @totutu.NoSpelling(what~, help~) =>
+        abort(
+          "tgc-corpus: a declared type does not spell: " + what + " — " + help,
+        )
+    }
+    spec.write_string("\n")
+  }
+  @totutu.print_spec(def, root=true, names=Map([]), spec) catch {
+    @totutu.NoSpelling(what~, help~) =>
+      abort("tgc-corpus: a schema does not spell: " + what + " — " + help)
+  }
+  let logic = StringBuilder()
+  @totutu.print_logic(def.component, decls, Some(def), logic) catch {
+    @totutu.NoSpelling(what~, help~) =>
+      abort("tgc-corpus: a case does not spell: " + what + " — " + help)
+  }
+  // The view NAMES a row member, because that is the only place a `pred` says
+  // which of its two shapes it has — a slot calls one and a render-time option
+  // hands the other its row.
+  let view = if row == "" {
+    "    @b{}\n"
+  } else {
+    "    @ul{@each(value, key in it.items, ~when: \{@names.snake_of(row)}){@li{}}}\n"
+  }
+  "spec:\n" +
+  spec.to_string() +
+  "\nlogic:\n" +
+  logic.to_string() +
+  "\nview:\n  " +
+  def.component +
+  ":\n" +
+  view
 }
 
 ///|
-/// The component a schema declares — the word after the first `state`.
-fn component_of(schema : String) -> String {
-  for line in schema.split("\n") {
-    let text = line.trim(chars=" \t").to_owned()
-    if text.has_prefix("state ") {
-      let rest = text[6:].trim(chars=" \t").to_owned()
-      let out = StringBuilder()
-      for ch in rest {
-        if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' {
-          out.write_char(ch)
-        } else {
-          break
-        }
-      }
-      return out.to_string()
-    }
+/// The member a render-time option names, when this case's role is one.
+fn row_of(role : @conformance.ValueRole, callable : String) -> String {
+  match role {
+    VWhen => callable
+    _ => ""
   }
-  "C"
 }
 
 ///|

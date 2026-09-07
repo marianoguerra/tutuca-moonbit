@@ -118,8 +118,8 @@ pub fn swatch_picker_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant color_is_on_the_palette` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant color_is_on_the_palette` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn swatch_picker_compute_color_is_on_the_palette(
   s : SwatchPickerState,
   _args : Array[@tutuca.Value],
@@ -130,7 +130,7 @@ fn swatch_picker_compute_color_is_on_the_palette(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn swatch_picker_inline_compute() -> Map[
   String,
   (SwatchPickerState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

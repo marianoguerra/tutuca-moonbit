@@ -319,7 +319,7 @@ fn bucket_router(
   out.write_string(
     "/// The `\{b.param}` names the file's `logic:` section answers.\n",
   )
-  out.write_string("/// GENERATED — edit the block, not this.\n")
+  out.write_string("/// GENERATED — edit the `logic:` section, not this.\n")
   out.write_string("fn \{name}() -> Map[String, \{b.handler}] {\n  {\n")
   for n in names {
     out.write_string(

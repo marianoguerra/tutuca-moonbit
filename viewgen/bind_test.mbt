@@ -28,13 +28,13 @@ test "@bind accepts the scalar field/tag matrix" {
     case in [
       ("name :: String", "@input(~bind: it.name)"),
       ("notes :: String", "@textarea(~bind: it.notes)"),
-      (
-        "choice :: String", "@select(~bind: it.choice){@option{a}}",
-      ),
+      ("choice :: String", "@select(~bind: it.choice){@option{a}}"),
       ("done :: Bool", "@input(~type: \"checkbox\", ~bind: it.done)"),
       ("count :: Int", "@input(~type: \"number\", ~bind: it.count)"),
       ("small :: UInt8", "@input(~type: \"range\", ~bind: it.small)"),
-      ("ratio :: Double", "@input(~type: \"number\", ~step: \"any\", ~bind: it.ratio)"),
+      (
+        "ratio :: Double", "@input(~type: \"number\", ~step: \"any\", ~bind: it.ratio)",
+      ),
     ] {
     assert_eq(bind_error(case.0, case.1), "")
   }
@@ -92,15 +92,17 @@ test "@bind requires a direct root field and a schema" {
   )
   assert_true(
     bind_error(
-      "names :: List.of(String)",
-      "@each(value, key in it.names){@input(~bind: it.name)}",
+      "names :: List.of(String)", "@each(value, key in it.names){@input(~bind: it.name)}",
     ).contains("outside `@each`"),
   )
   let no_schema = try {
     @viewgen.emit_module(
       "Form",
       "form.tutu",
-      @viewgen.read_file("view:\n  Form:\n    @input(~bind: it.name)\n", name="Form"),
+      @viewgen.read_file(
+        "view:\n  Form:\n    @input(~bind: it.name)\n",
+        name="Form",
+      ),
     )
     |> ignore
     ""
@@ -114,26 +116,24 @@ test "@bind requires a direct root field and a schema" {
 test "property actions are checked against member access and collection kind" {
   assert_eq(
     bind_error(
-      "items :: List.of(String)",
-      "@button(~on_click: it.items.delete_at(0)){x}",
+      "items :: List.of(String)", "@button(~on_click: it.items.delete_at(0)){x}",
     ),
     "",
   )
   assert_true(
-    bind_error(
-      "name :: String", "@button(~on_click: it.name.push(\"x\")){x}",
-    ).contains("does not apply to String"),
+    bind_error("name :: String", "@button(~on_click: it.name.push(\"x\")){x}").contains(
+      "does not apply to String",
+    ),
   )
   assert_true(
     bind_error(
-      "name :: String\n    property label :: String:\n      get: it.name",
-      "@button(~on_click: it.label := \"x\"){x}",
+      "name :: String\n    property label :: String:\n      get: it.name", "@button(~on_click: it.label := \"x\"){x}",
     ).contains("read-only property `.label`"),
   )
   assert_true(
-    bind_error(
-      "name :: String", "@button(~on_click: it.missing := \"x\"){x}",
-    ).contains("unknown member `.missing`"),
+    bind_error("name :: String", "@button(~on_click: it.missing := \"x\"){x}").contains(
+      "unknown member `.missing`",
+    ),
   )
 }
 

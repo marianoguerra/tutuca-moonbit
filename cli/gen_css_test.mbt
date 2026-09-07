@@ -95,7 +95,7 @@ test "gen-css -h prints the command's help" {
 
 ///|
 fn classes_of(source : String) -> Array[String] {
-  match @cli.collect_view_classes([("t.html", source)]) {
+  match @cli.collect_view_classes([("t.tutu", source)]) {
     Ok(classes) => classes
     Err(shape) => abort("collect failed: \{shape.message}")
   }
@@ -105,8 +105,12 @@ fn classes_of(source : String) -> Array[String] {
 test "collect_view_classes gathers literal classes across views and files" {
   let classes = classes_of(
     (
-      #|<template><div class="card p-4"><span class="badge">x</span></div></template>
-      #|<template id="row"><li class="row p-4"></li></template>
+      #|view:
+      #|  T:
+      #|    @div(~class: "card p-4"){@span(~class: "badge"){x}}
+      #|
+      #|  T.row:
+      #|    @li(~class: "row p-4")
     ),
   )
   assert_eq(classes, ["badge", "card", "p-4", "row"])
@@ -116,10 +120,10 @@ test "collect_view_classes gathers literal classes across views and files" {
 test "collect_view_classes reads :class and @if.class literals" {
   let classes = classes_of(
     (
-      #|<template>
-      #|  <a @if.class=".tab is 'a'" @then="'tab tab-active'" @else="'tab'"></a>
-      #|  <b :class="$'badge badge-{.kind}'"></b>
-      #|</template>
+      #|view:
+      #|  T:
+      #|    @a(~class: if it.tab == "a" | "tab tab-active" | "tab")
+      #|    @b(~class: @str{badge badge-@(it.kind)})
     ),
   )
   // The literal fragments only: the interpolated tail of the template string is
@@ -140,10 +144,12 @@ test "collect_view_classes reads :class and @if.class literals" {
 test "collect_view_classes sees classes inside an expanded macro" {
   let classes = classes_of(
     (
-      #|<template id="macro:chip" data-tone="'neutral'">
-      #|  <span class="chip chip-sm" :data-tone="^tone"></span>
-      #|</template>
-      #|<template><div class="wrap"><x:chip></x:chip></div></template>
+      #|view:
+      #|  macro chip(~tone: "neutral"):
+      #|    @span(~class: "chip chip-sm", ~data_tone: tone)
+      #|
+      #|  T:
+      #|    @div(~class: "wrap"){@chip()}
     ),
   )
   assert_true(classes.contains("wrap"))
@@ -160,14 +166,16 @@ test "collect_view_classes sees classes inside an expanded macro" {
 test "collect_view_classes builds a view against the file's schema" {
   let classes = classes_of(
     (
-      #|<script type="tutuca/spec">
-      #|  state Counter { name: String, count: Int }
-      #|</script>
-      #|<template id="Counter">
-      #|  <div class="card bg-base-100">
-      #|    <input class="input input-bordered" type="text" @bind=".name" />
-      #|  </div>
-      #|</template>
+      #|spec:
+      #|  Counter:
+      #|    field name :: String
+      #|    field count :: Int
+      #|
+      #|view:
+      #|  Counter:
+      #|    @div(~class: "card bg-base-100"){
+      #|      @input(~class: "input input-bordered", ~type: "text", ~bind: it.name)
+      #|    }
     ),
   )
   assert_eq(classes, ["bg-base-100", "card", "input", "input-bordered"])
@@ -181,11 +189,11 @@ test "collect_view_classes still refuses an @bind with no schema to read" {
   let shape = match
     @cli.collect_view_classes([
       (
-        "nospec.html",
+        "nospec.tutu",
         (
-          #|<template id="Counter">
-          #|  <input class="input" type="text" @bind=".name" />
-          #|</template>
+          #|view:
+          #|  Counter:
+          #|    @input(~class: "input", ~type: "text", ~bind: it.name)
         ),
       ),
     ]) {
@@ -199,13 +207,13 @@ test "collect_view_classes still refuses an @bind with no schema to read" {
 ///|
 test "collect_view_classes reports the file a bad view came from" {
   let shape = match
-    @cli.collect_view_classes([("broken.html", "oops<template></template>")]) {
+    @cli.collect_view_classes([("broken.tutu", "oops:\n  T:\n    x\n")]) {
     Err(shape) => shape
     Ok(_) => abort("expected the malformed view to fail")
   }
   assert_eq(shape.code, @cli.CODE_VIEW_GEN_FAILED)
-  assert_eq(shape.where_, Some("broken.html"))
-  assert_true(shape.message.has_prefix("broken.html:"))
+  assert_eq(shape.where_, Some("broken.tutu"))
+  assert_true(shape.message.has_prefix("broken.tutu:"))
 }
 
 ///|
@@ -214,7 +222,9 @@ test "collect_view_classes reports the file a bad view came from" {
 test "the collected class list is byte-lexicographic" {
   let classes = classes_of(
     (
-      #|<template><div class="on b add btn"></div></template>
+      #|view:
+      #|  T:
+      #|    @div(~class: "on b add btn")
     ),
   )
   assert_eq(classes, ["add", "b", "btn", "on"])

@@ -484,8 +484,8 @@ fn trace_row_inline_update(
 }
 
 ///|
-/// `invariant has_walk_tracks_walk` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant has_walk_tracks_walk` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn trace_row_compute_has_walk_tracks_walk(
   s : TraceRowState,
   _args : Array[@tutuca.Value],
@@ -504,7 +504,7 @@ fn trace_row_compute_has_walk_tracks_walk(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn trace_row_inline_compute() -> Map[
   String,
   (TraceRowState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -690,8 +690,8 @@ fn trace_log_inline_update(
 }
 
 ///|
-/// `invariant has_rows_tracks_rows` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant has_rows_tracks_rows` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn trace_log_compute_has_rows_tracks_rows(
   s : TraceLogState,
   _args : Array[@tutuca.Value],
@@ -706,7 +706,7 @@ fn trace_log_compute_has_rows_tracks_rows(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn trace_log_inline_compute() -> Map[
   String,
   (TraceLogState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -888,8 +888,8 @@ pub fn trace_header_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant inputs_are_events` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant inputs_are_events` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn trace_header_compute_inputs_are_events(
   s : TraceHeaderState,
   _args : Array[@tutuca.Value],
@@ -899,8 +899,8 @@ fn trace_header_compute_inputs_are_events(
 }
 
 ///|
-/// `invariant turns_are_events` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant turns_are_events` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn trace_header_compute_turns_are_events(
   s : TraceHeaderState,
   _args : Array[@tutuca.Value],
@@ -910,8 +910,8 @@ fn trace_header_compute_turns_are_events(
 }
 
 ///|
-/// `invariant is_relocated_tracks_from` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant is_relocated_tracks_from` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn trace_header_compute_is_relocated_tracks_from(
   s : TraceHeaderState,
   _args : Array[@tutuca.Value],
@@ -926,7 +926,7 @@ fn trace_header_compute_is_relocated_tracks_from(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn trace_header_inline_compute() -> Map[
   String,
   (TraceHeaderState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -1190,8 +1190,8 @@ pub fn trace_places_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant has_places_tracks_places` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant has_places_tracks_places` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn trace_places_compute_has_places_tracks_places(
   s : TracePlacesState,
   _args : Array[@tutuca.Value],
@@ -1206,7 +1206,7 @@ fn trace_places_compute_has_places_tracks_places(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn trace_places_inline_compute() -> Map[
   String,
   (TracePlacesState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -1760,8 +1760,8 @@ fn recorder_bar_inline_update(
 }
 
 ///|
-/// `invariant turns_are_events` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant turns_are_events` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn recorder_bar_compute_turns_are_events(
   s : RecorderBarState,
   _args : Array[@tutuca.Value],
@@ -1772,7 +1772,7 @@ fn recorder_bar_compute_turns_are_events(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn recorder_bar_inline_compute() -> Map[
   String,
   (RecorderBarState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -3024,8 +3024,8 @@ fn trace_panel_inline_update(
 }
 
 ///|
-/// `invariant has_notice_tracks_notice` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant has_notice_tracks_notice` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn trace_panel_compute_has_notice_tracks_notice(
   s : TracePanelState,
   _args : Array[@tutuca.Value],
@@ -3039,8 +3039,8 @@ fn trace_panel_compute_has_notice_tracks_notice(
 }
 
 ///|
-/// `invariant can_replay_needs_a_trace` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant can_replay_needs_a_trace` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn trace_panel_compute_can_replay_needs_a_trace(
   s : TracePanelState,
   _args : Array[@tutuca.Value],
@@ -3050,8 +3050,8 @@ fn trace_panel_compute_can_replay_needs_a_trace(
 }
 
 ///|
-/// `invariant replaying_needs_a_replay` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant replaying_needs_a_replay` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn trace_panel_compute_replaying_needs_a_replay(
   s : TracePanelState,
   _args : Array[@tutuca.Value],
@@ -3061,8 +3061,8 @@ fn trace_panel_compute_replaying_needs_a_replay(
 }
 
 ///|
-/// `invariant at_within_total` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant at_within_total` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn trace_panel_compute_at_within_total(
   s : TracePanelState,
   _args : Array[@tutuca.Value],
@@ -3072,8 +3072,8 @@ fn trace_panel_compute_at_within_total(
 }
 
 ///|
-/// `invariant show_trace_needs_a_trace` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant show_trace_needs_a_trace` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn trace_panel_compute_show_trace_needs_a_trace(
   s : TracePanelState,
   _args : Array[@tutuca.Value],
@@ -3083,8 +3083,8 @@ fn trace_panel_compute_show_trace_needs_a_trace(
 }
 
 ///|
-/// `invariant show_replay_needs_a_trace` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant show_replay_needs_a_trace` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn trace_panel_compute_show_replay_needs_a_trace(
   s : TracePanelState,
   _args : Array[@tutuca.Value],
@@ -3095,7 +3095,7 @@ fn trace_panel_compute_show_replay_needs_a_trace(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn trace_panel_inline_compute() -> Map[
   String,
   (TracePanelState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

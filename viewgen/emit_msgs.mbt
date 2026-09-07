@@ -191,9 +191,9 @@ fn answered_note(answered : Array[String]) -> String {
     return ""
   }
   "///\n" +
-  "/// The script block answers \{answered.join(", ")}, so an `update` arm for\n" +
+  "/// The `logic:` section answers \{answered.join(", ")}, so an `update` arm for\n" +
   "/// one of those can never run — the wrapper consults `update` only for a\n" +
-  "/// dispatch the block did not claim. They are still here because raising\n" +
+  "/// dispatch the section did not claim. They are still here because raising\n" +
   "/// one is what a parent does, and `to_dispatch` is how.\n"
 }
 

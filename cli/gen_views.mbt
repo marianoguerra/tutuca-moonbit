@@ -411,21 +411,12 @@ pub fn gen_views_all(
   // makes fixing three problems take three builds to even SEE the three.
   let failures : Array[(String, String)] = []
   for f in files {
-    // A `.tutu` is READ — each section into the shape it means, with no
-    // notation in between. The splitter is for the `.html` a file used to be.
-    let views = if f.input.has_suffix(".tutu") {
-      @viewgen.read_file(f.source, name=f.name) catch {
-        e => {
-          failures.push((f.input, @viewgen.GenError::message(e)))
-          continue
-        }
-      }
-    } else {
-      @viewgen.split_file(f.source, name=f.name) catch {
-        e => {
-          failures.push((f.input, @viewgen.GenError::message(e)))
-          continue
-        }
+    // READ — each section into the shape it means, with no notation in
+    // between. There is one file format and one reader for it.
+    let views = @viewgen.read_file(f.source, name=f.name) catch {
+      e => {
+        failures.push((f.input, @viewgen.GenError::message(e)))
+        continue
       }
     }
     index.add(views, f.name)

@@ -390,8 +390,8 @@ fn fuzz_row_inline_update(
 }
 
 ///|
-/// `invariant refusal_names_something` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant refusal_names_something` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn fuzz_row_compute_refusal_names_something(
   s : FuzzRowState,
   _args : Array[@tutuca.Value],
@@ -401,8 +401,8 @@ fn fuzz_row_compute_refusal_names_something(
 }
 
 ///|
-/// `invariant break_names_a_rule` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant break_names_a_rule` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn fuzz_row_compute_break_names_a_rule(
   s : FuzzRowState,
   _args : Array[@tutuca.Value],
@@ -413,7 +413,7 @@ fn fuzz_row_compute_break_names_a_rule(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn fuzz_row_inline_compute() -> Map[
   String,
   (FuzzRowState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -515,8 +515,8 @@ pub fn fuzz_log_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant has_rows_tracks_rows` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant has_rows_tracks_rows` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn fuzz_log_compute_has_rows_tracks_rows(
   s : FuzzLogState,
   _args : Array[@tutuca.Value],
@@ -531,7 +531,7 @@ fn fuzz_log_compute_has_rows_tracks_rows(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn fuzz_log_inline_compute() -> Map[
   String,
   (FuzzLogState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -1456,8 +1456,8 @@ fn fuzz_controls_inline_update(
 }
 
 ///|
-/// `invariant hint_explains_the_disabled_button` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant hint_explains_the_disabled_button` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn fuzz_controls_compute_hint_explains_the_disabled_button(
   s : FuzzControlsState,
   _args : Array[@tutuca.Value],
@@ -1469,8 +1469,8 @@ fn fuzz_controls_compute_hint_explains_the_disabled_button(
 }
 
 ///|
-/// `invariant playing_needs_a_plan` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant playing_needs_a_plan` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn fuzz_controls_compute_playing_needs_a_plan(
   s : FuzzControlsState,
   _args : Array[@tutuca.Value],
@@ -1480,8 +1480,8 @@ fn fuzz_controls_compute_playing_needs_a_plan(
 }
 
 ///|
-/// `invariant draw_hint_explains_the_hidden_buttons` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant draw_hint_explains_the_hidden_buttons` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn fuzz_controls_compute_draw_hint_explains_the_hidden_buttons(
   s : FuzzControlsState,
   _args : Array[@tutuca.Value],
@@ -1493,8 +1493,8 @@ fn fuzz_controls_compute_draw_hint_explains_the_hidden_buttons(
 }
 
 ///|
-/// `invariant playing_needs_something_to_draw` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant playing_needs_something_to_draw` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn fuzz_controls_compute_playing_needs_something_to_draw(
   s : FuzzControlsState,
   _args : Array[@tutuca.Value],
@@ -1505,7 +1505,7 @@ fn fuzz_controls_compute_playing_needs_something_to_draw(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn fuzz_controls_inline_compute() -> Map[
   String,
   (FuzzControlsState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -1785,8 +1785,8 @@ fn fuzz_verdict_inline_update(
 }
 
 ///|
-/// `invariant findings_name_their_rule` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant findings_name_their_rule` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn fuzz_verdict_compute_findings_name_their_rule(
   s : FuzzVerdictState,
   _args : Array[@tutuca.Value],
@@ -1801,8 +1801,8 @@ fn fuzz_verdict_compute_findings_name_their_rule(
 }
 
 ///|
-/// `invariant has_reproducer_tracks_reproducer` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant has_reproducer_tracks_reproducer` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn fuzz_verdict_compute_has_reproducer_tracks_reproducer(
   s : FuzzVerdictState,
   _args : Array[@tutuca.Value],
@@ -1816,8 +1816,8 @@ fn fuzz_verdict_compute_has_reproducer_tracks_reproducer(
 }
 
 ///|
-/// `invariant has_unchecked_tracks_unchecked` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant has_unchecked_tracks_unchecked` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn fuzz_verdict_compute_has_unchecked_tracks_unchecked(
   s : FuzzVerdictState,
   _args : Array[@tutuca.Value],
@@ -1832,7 +1832,7 @@ fn fuzz_verdict_compute_has_unchecked_tracks_unchecked(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn fuzz_verdict_inline_compute() -> Map[
   String,
   (FuzzVerdictState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -1948,8 +1948,8 @@ pub fn fuzz_panel_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant at_within_total` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant at_within_total` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn fuzz_panel_compute_at_within_total(
   s : FuzzPanelState,
   _args : Array[@tutuca.Value],
@@ -1960,7 +1960,7 @@ fn fuzz_panel_compute_at_within_total(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn fuzz_panel_inline_compute() -> Map[
   String,
   (FuzzPanelState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

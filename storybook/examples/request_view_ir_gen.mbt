@@ -279,8 +279,8 @@ fn request_example_inline_update(
 }
 
 ///|
-/// `invariant not_failed_while_loading` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant not_failed_while_loading` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn request_example_compute_not_failed_while_loading(
   s : RequestExampleState,
   _args : Array[@tutuca.Value],
@@ -304,7 +304,7 @@ fn request_example_compute_not_failed_while_loading(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn request_example_inline_compute() -> Map[
   String,
   (RequestExampleState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

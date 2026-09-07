@@ -379,8 +379,8 @@ pub fn tree_item_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant files_are_leaves` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant files_are_leaves` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn tree_item_compute_files_are_leaves(
   s : TreeItemState,
   _args : Array[@tutuca.Value],
@@ -396,7 +396,7 @@ fn tree_item_compute_files_are_leaves(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn tree_item_inline_compute() -> Map[
   String,
   (TreeItemState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

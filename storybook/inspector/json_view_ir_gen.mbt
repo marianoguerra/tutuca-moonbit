@@ -657,8 +657,8 @@ pub fn json_array_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant page_exists` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant page_exists` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn json_array_compute_page_exists(
   s : JsonArrayState,
   _args : Array[@tutuca.Value],
@@ -675,7 +675,7 @@ fn json_array_compute_page_exists(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn json_array_inline_compute() -> Map[
   String,
   (JsonArrayState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -908,8 +908,8 @@ pub fn json_object_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant page_exists` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant page_exists` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn json_object_compute_page_exists(
   s : JsonObjectState,
   _args : Array[@tutuca.Value],
@@ -926,7 +926,7 @@ fn json_object_compute_page_exists(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn json_object_inline_compute() -> Map[
   String,
   (JsonObjectState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

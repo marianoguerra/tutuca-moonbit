@@ -1420,7 +1420,7 @@ test "manifest parses a type written as the type it is" {
   // writer never filled.
   let json =
     #|{"manifestVersion": 4, "abiVersion": 2, "apiVersion": 10, "moduleName": "counterlib",
-    #| "tutu": "view:\n  Counter:\n    @div{@(it.count)}\n", "components": [
+    #| "tutu": ["view:\n  Counter:\n    @div{@(it.count)}\n"], "components": [
     #|  {"name": "Counter",
     #|   "views": [{"name": "main", "bytes": 30}],
     #|   "fields": [{"name": "count", "ty": {"k": "int", "width": 8, "signed": false}},
@@ -1457,7 +1457,7 @@ test "manifest parses a type written as the type it is" {
 test "manifest parses from the bridge's JSON projection" {
   let json =
     #|{"manifestVersion": 4, "abiVersion": 2, "apiVersion": 10, "moduleName": "counterlib",
-    #| "tutu": "view:\n  Counter:\n    @div{@(it.count)}\n", "components": [
+    #| "tutu": ["view:\n  Counter:\n    @div{@(it.count)}\n"], "components": [
     #|  {"name": "Counter",
     #|   "views": [{"name": "main", "bytes": 30}],
     #|   "fields": [{"name": "count", "ty": {"k": "int"}},
@@ -2877,7 +2877,7 @@ test "a restore leaves a same-module child to the guest" {
 test "a protocol's properties parse as objects or as bare names" {
   let json =
     #|{"manifestVersion": 4, "abiVersion": 2, "apiVersion": 10, "moduleName": "holderlib",
-    #| "tutu": "view:\n  Hole:\n    @div{}\n",
+    #| "tutu": ["view:\n  Hole:\n    @div{}\n"],
     #| "components": [
     #|  {"name": "Hole",
     #|   "views": [{"name": "main", "bytes": 20}],

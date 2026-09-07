@@ -182,8 +182,8 @@ pub fn state_editor_row_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant editable_tracks_kind` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant editable_tracks_kind` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn state_editor_row_compute_editable_tracks_kind(
   s : StateEditorRowState,
   _args : Array[@tutuca.Value],
@@ -201,7 +201,7 @@ fn state_editor_row_compute_editable_tracks_kind(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn state_editor_row_inline_compute() -> Map[
   String,
   (StateEditorRowState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

@@ -107,8 +107,8 @@ fn counter_inline_update(
 }
 
 ///|
-/// `get magnitude` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
+/// `get magnitude` from the `logic:` section. GENERATED — edit
+/// the file, not this.
 fn counter_compute_magnitude(
   s : CounterState,
   _args : Array[@tutuca.Value],

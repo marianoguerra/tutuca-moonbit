@@ -232,8 +232,8 @@ fn bar_chart_inline_update(
 }
 
 ///|
-/// `pred has_room` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `pred has_room` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn bar_chart_compute_has_room(
   s : BarChartState,
   _args : Array[@tutuca.Value],
@@ -243,8 +243,8 @@ fn bar_chart_compute_has_room(
 }
 
 ///|
-/// `pred has_spare` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `pred has_spare` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn bar_chart_compute_has_spare(
   s : BarChartState,
   _args : Array[@tutuca.Value],
@@ -254,8 +254,8 @@ fn bar_chart_compute_has_spare(
 }
 
 ///|
-/// `invariant never_empty` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant never_empty` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn bar_chart_compute_never_empty(
   s : BarChartState,
   _args : Array[@tutuca.Value],
@@ -266,7 +266,7 @@ fn bar_chart_compute_never_empty(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn bar_chart_inline_compute() -> Map[
   String,
   (BarChartState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

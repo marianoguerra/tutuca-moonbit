@@ -4,18 +4,20 @@
 // diff here is a deliberate change to what every migrated component gets.
 
 ///|
-let counter_state_html : String =
-  #|<script type="tutuca/spec">
-  #|  state Counter { label: String, count: Int, history: Array[Int] }
-  #|</script>
+let counter_state_src : String =
+  #|spec:
+  #|  Counter:
+  #|    field label :: String
+  #|    field count :: Int
+  #|    field history :: List.of(Int)
   #|
-  #|<template>
-  #|  <h1><x text=".label"></x>: <x text=".count"></x></h1>
-  #|</template>
+  #|view:
+  #|  Counter:
+  #|    @h1{@(it.label): @(it.count)}
 
 ///|
-test "a state block emits the struct, its zero and its declared field kinds" {
-  let file = @viewgen.split_file(counter_state_html)
+test "a `spec:` section emits the struct, its zero and its field kinds" {
+  let file = @viewgen.read_file(counter_state_src)
   assert_eq(file.state.length(), 1)
   assert_eq(file.state[0].component, "Counter")
   let src = @viewgen.emit_module("Counter", "counter.tutu", file)
@@ -54,12 +56,12 @@ test "a state block emits the struct, its zero and its declared field kinds" {
 }
 
 ///|
-test "a file with no state block generates exactly what it did before" {
+test "a file with no `spec:` section generates only the view half" {
   let without =
-    #|<template>
-    #|  <h1><x text=".label"></x></h1>
-    #|</template>
-  let file = @viewgen.split_file(without)
+    #|view:
+    #|  Counter:
+    #|    @h1{@(it.label)}
+  let file = @viewgen.read_file(without)
   assert_eq(file.state.length(), 0)
   let src = @viewgen.emit_module("Counter", "counter.tutu", file)
   // Nothing from the state half leaks into an unmigrated file — this is what
@@ -74,19 +76,34 @@ test "a file with no state block generates exactly what it did before" {
 
 ///|
 test "sets, ordered maps and child slots are described in the schema" {
-  let html =
-    #|<script type="tutuca/spec">
-    #|  enum Visibility { Done, Active }
-    #|  state Card { title: String }
-    #|  state Board { vis: Set[Visibility], tags: Set[String], order: Map[String, Any], lead: Card, plain: String }
-    #|</script>
-    #|
-    #|<template id="Card"><p><x text=".title"></x></p></template>
-    #|<template id="Board"><div><x render=".lead"></x></div></template>
   let src = @viewgen.emit_module(
     "Ignored",
-    "board.html",
-    @viewgen.split_file(html),
+    "board.tutu",
+    @viewgen.read_file(
+      (
+        #|spec:
+        #|  enum Visibility:
+        #|    Done
+        #|    Active
+        #|
+        #|  Card:
+        #|    field title :: String
+        #|
+        #|  Board:
+        #|    field vis :: Set.of(Visibility)
+        #|    field tags :: Set.of(String)
+        #|    field order :: Map.of(String, Any)
+        #|    field lead :: Instance.of(Card)
+        #|    field plain :: String
+        #|
+        #|view:
+        #|  Card:
+        #|    @p{@(it.title)}
+        #|
+        #|  Board:
+        #|    @div{@render(it.lead)}
+      ),
+    ),
   )
   // Every field is described by its TYPE, and the things a runtime spec has
   // no room for follow from it: the WIT spelling, a collection's element type,
@@ -111,17 +128,28 @@ test "sets, ordered maps and child slots are described in the schema" {
 
 ///|
 test "named types become MoonBit types, and a keyword field escapes" {
-  let html =
-    #|<script type="tutuca/spec">
-    #|  enum Mode { View, Edit }
-    #|  struct Item { title: String, done: Bool }
-    #|  state Editor { m: Mode, items: Array[Item], type: String }
-    #|</script>
-    #|<template><p><x text=".m"></x></p></template>
   let src = @viewgen.emit_module(
     "Editor",
-    "editor.html",
-    @viewgen.split_file(html),
+    "editor.tutu",
+    @viewgen.read_file(
+      (
+        #|spec:
+        #|  enum Mode:
+        #|    View
+        #|    Edit
+        #|
+        #|  struct Item(title :: String, done :: Bool)
+        #|
+        #|  Editor:
+        #|    field m :: Mode
+        #|    field items :: List.of(Item)
+        #|    field type :: String
+        #|
+        #|view:
+        #|  Editor:
+        #|    @p{@(it.m)}
+      ),
+    ),
   )
   // `pub(all)`, like the rest of the generated vocabulary: an `update` matches
   // these and a test constructs them.
@@ -139,19 +167,16 @@ test "named types become MoonBit types, and a keyword field escapes" {
 }
 
 ///|
-test "a schema interface with no template declares state anyway" {
+test "a `spec:` entry with no view declares state anyway" {
   // Legitimate: a component whose views are built in MoonBit still wants a
   // state type, and one file often holds both kinds. It is ALSO what a
-  // mistyped interface name looks like, so the CLI reports it on its
+  // mistyped component name looks like, so the CLI reports it on its
   // non-fatal diagnostic channel rather than failing generation.
-  let html =
-    #|<script type="tutuca/spec">
-    #|  state Countr { n: Int }
-    #|</script>
-    #|<template><p>hi</p></template>
-  let file = @viewgen.split_file(html)
+  let file = @viewgen.read_file(
+    "spec:\n  Countr:\n    field n :: Int\n\nview:\n  Counter:\n    @p{hi}\n",
+  )
   assert_eq(@viewgen.declared_components(file, "Counter"), ["Counter"])
-  let src = @viewgen.emit_module("Counter", "c.html", file)
+  let src = @viewgen.emit_module("Counter", "c.tutu", file)
   // The state is generated...
   assert_true(src.contains("pub(all) struct CountrState {"))
   // ...but no view surface is invented for it.
@@ -159,102 +184,95 @@ test "a schema interface with no template declares state anyway" {
 }
 
 ///|
-test "a schema error points at the line in the HTML file" {
-  let html =
-    #|<template><p>hi</p></template>
+test "a `spec:` error names the repair" {
+  // The reader points at the declaration, and says what to write instead —
+  // `Int64` is the one integer type the value layer cannot carry, and a
+  // verdict with no next step is a finding an author has to go and derive.
+  let msg = try {
+    @viewgen.read_file(
+      "spec:\n  Counter:\n    field n :: Int64\n\nview:\n  Counter:\n    @p{hi}\n",
+    )
+    |> ignore
+    "no error"
+  } catch {
+    e => @viewgen.GenError::message(e)
+  }
+  assert_true(msg.contains("2^53"), msg~)
+}
+
+///|
+test "two `spec:` sections in one file are refused" {
+  let src =
+    #|spec:
+    #|  A:
+    #|    field n :: Int
     #|
-    #|<script type="tutuca/spec">
-    #|  state Counter { n: Int64 }
-    #|</script>
-  try @viewgen.split_file(html) |> ignore catch {
-    File(BadStateBlock(line~, message~)) => {
-      // `n: Int64` is on line 4 of the file, not line 2 of the block: the
-      // author has the HTML file open, not the slice we cut out of it.
-      assert_eq(line, 4)
-      assert_true(message.contains("2^53"))
-    }
-    e => fail("expected a state-block error, got \{e.message()}")
-  } noraise {
-    _ => fail("expected a state-block error")
+    #|spec:
+    #|  B:
+    #|    field n :: Int
+    #|
+    #|view:
+    #|  A:
+    #|    @p{hi}
+  let msg = try {
+    @viewgen.read_file(src) |> ignore
+    "no error"
+  } catch {
+    e => @viewgen.GenError::message(e)
   }
+  assert_true(msg.contains("twice"), msg~)
 }
 
 ///|
-test "two state blocks in one file are refused" {
-  let html =
-    #|<script type="tutuca/spec">
-    #|  state A { n: Int }
-    #|</script>
-    #|<script type="tutuca/spec">
-    #|  state B { n: Int }
-    #|</script>
-    #|<template><p>hi</p></template>
-  try @viewgen.split_file(html) |> ignore catch {
-    e => assert_true(e.message().contains("one file declares one spec"))
-  } noraise {
-    _ => fail("expected the duplicate block to be reported")
-  }
-}
-
-///|
-test "the block's angle brackets survive the HTML tokenizer" {
-  // The reason the schema rides in a <script> and not a <template>: an HTML
-  // parser reads template content as markup, so `list<s32>` would become an
-  // `<s32>` element and `option<string>` an `<string>` one.
-  let html =
-    #|<script type="tutuca/spec">
-    #|  state C { a: Array[Int], b: String?, c: (Int, Bool) }
-    #|</script>
-    #|<template><p>hi</p></template>
-  let file = @viewgen.split_file(html)
+test "a compound type reads as the type it spells" {
+  // The reason the old notation put the schema in a `<script>` rather than a
+  // `<template>`: an HTML parser reads template content as markup, so
+  // `Array[Int]` became an `<Int>` element. There is no tokenizer between the
+  // file and the reader now, so a type is read as written.
+  let file = @viewgen.read_file(
+    (
+      #|spec:
+      #|  C:
+      #|    field a :: List.of(Int)
+      #|    field b :: maybe(String)
+      #|    field c :: Tuple.of(Int, Bool)
+      #|
+      #|view:
+      #|  C:
+      #|    @p{hi}
+    ),
+  )
   assert_eq(file.state.length(), 1)
   assert_eq(file.state[0].fields.map(f => f.name), ["a", "b", "c"])
-  let src = @viewgen.emit_module("C", "c.html", file)
+  let src = @viewgen.emit_module("C", "c.tutu", file)
   assert_true(src.contains("  a : Array[Int]"))
   assert_true(src.contains("  b : String?"))
   assert_true(src.contains("  c : (Int, Bool)"))
 }
 
 ///|
-test "a schema-only file declares state for views built at runtime" {
-  // No <template> at all. This is how a component whose views are assembled
-  // in MoonBit — a macro user, a dynamically built tree — still gets a
-  // generated state type: the schema lives in a view file, so it needs a
+test "a spec-only file declares state for views built at runtime" {
+  // No `view:` section at all. This is how a component whose views are
+  // assembled in MoonBit — a macro user, a dynamically built tree — still gets
+  // a generated state type: the schema lives in a view file, so it needs a
   // view file even when it has no views.
-  let html =
-    #|<script type="tutuca/spec">
-    #|  state BarChart { title: String, values: Array[Any] }
-    #|</script>
-  let file = @viewgen.split_file(html)
+  let file = @viewgen.read_file(
+    (
+      #|spec:
+      #|  BarChart:
+      #|    field title :: String
+      #|    field values :: List.of(Any)
+    ),
+  )
   assert_eq(file.components.length(), 0)
   assert_eq(file.state.length(), 1)
-  let src = @viewgen.emit_module("BarChart", "bar_chart.html", file)
+  let src = @viewgen.emit_module("BarChart", "bar_chart.tutu", file)
   assert_true(src.contains("pub(all) struct BarChartState {"))
   assert_true(src.contains("FieldInfo::new(\"title\", TyText)"))
-  // ...and NO view surface: there are no views to describe, and the schema
-  // block itself must not become one.
+  // ...and NO view surface: there are no views to describe.
   assert_false(src.contains("bar_chart_common_style"))
   assert_false(src.contains("bar_chart_views"))
   assert_false(src.contains("@anode"))
-  assert_false(src.contains("script"))
   // There is no tree to compile either, so the IR module is simply absent.
-  assert_true(@viewgen.emit_ir_module_opt("BarChart", "b.html", file) is None)
-}
-
-///|
-test "a schema block is lifted out of a file that is its own main view" {
-  // A file with no <template> IS the main view. The schema must not end up
-  // inside it — before the block was lifted like a <style>, it compiled to a
-  // literal <script> element in the view tree.
-  let html =
-    #|<script type="tutuca/spec">
-    #|  state Widget { n: Int }
-    #|</script>
-    #|<p><x text=".n"></x></p>
-  let file = @viewgen.split_file(html)
-  assert_eq(file.components.length(), 1)
-  let view = file.components[0].views[0]
-  assert_false(view.source.contains("script"))
-  assert_false(view.source.contains("interface widget"))
-  assert_true(view.source.contains("<x text=\".n\">"))
+  assert_true(@viewgen.emit_ir_module_opt("BarChart", "b.tutu", file) is None)
 }

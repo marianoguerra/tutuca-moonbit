@@ -72,6 +72,13 @@ pub struct ViewBuilder {
   /// Macro names currently being expanded. A macro that reaches itself is
   /// refused rather than followed, which is `RecursiveMacro` on the old path.
   expanding : Array[String]
+  /// The children of the macro call being expanded, innermost last.
+  ///
+  /// `@slot` inside a macro body is where the CALL's children go, and
+  /// `@slot("name")` is a second place for the ones a `@fill("name")` sent
+  /// there. They are read in the CALLER's scope and grafted where the slot
+  /// stands, which is what makes a macro a tree rather than a second parse.
+  slots : Array[Slots]
   /// What `host.name` resolves to, when a HOST is reading this.
   ///
   /// `None` ahead of time: the generator has no host, so a `host.name` stays
@@ -82,11 +89,27 @@ pub struct ViewBuilder {
 }
 
 ///|
+/// One macro call's children: the ones with no `@fill` around them, and the
+/// ones that named a slot.
+pub(all) struct Slots {
+  default_ : Array[@anode.ANode]
+  named : Map[String, Array[@anode.ANode]]
+}
+
+///|
 pub fn ViewBuilder::new(
   macros? : Map[String, MacroDef] = Map([]),
   config? : Map[String, String],
 ) -> ViewBuilder {
-  { next_id: 0, ns: None, handlers: [], macros, expanding: [], config, }
+  {
+    next_id: 0,
+    ns: None,
+    handlers: [],
+    macros,
+    expanding: [],
+    slots: [],
+    config,
+  }
 }
 
 ///|
@@ -384,7 +407,36 @@ fn ViewBuilder::element(
     "show" | "hide" => [self.guard_(word, raw, body, ctx, span)]
     "each" => [self.each(raw, body, ctx, span)]
     "render" => [self.render(raw, ctx, span)]
-    "slot" => [@anode.slot("", @anode.frag([]))]
+    // The call's children, grafted where the macro body asks for them. Outside
+    // a macro there is no call and nothing to graft, and the empty slot is
+    // what a view with none renders.
+    "slot" => {
+      let want = slot_name(raw)
+      match self.slots.last() {
+        Some(s) => {
+          let kids = if want == "" {
+            s.default_
+          } else {
+            s.named.get(want).unwrap_or([])
+          }
+          if kids.length() == 1 {
+            [kids[0]]
+          } else {
+            [@anode.frag(kids)]
+          }
+        }
+        None => [@anode.slot(want, @anode.frag([]))]
+      }
+    }
+    // `@fill("name"){…}` is only meaningful as a macro call's child, where
+    // `expand_macro` takes it apart. Reaching here means it was written
+    // somewhere nothing collects it.
+    "fill" =>
+      raise ExError(
+        message="`@fill` fills a macro's named slot, and there is no macro call around this one",
+        help="write `@fill(\"<name>\"){ … }` among the children of a macro call whose body writes `@slot(\"<name>\")`",
+        span~,
+      )
     // A comment NODE, which reaches the DOM. `//` is a comment in the FILE.
     "comment" => [@anode.comment(body_text(body))]
     // A style block is not a node. It is the view's style, collected by the
@@ -982,7 +1034,7 @@ fn ViewBuilder::expand_macro(
     )
   }
   guard self.macros.get(name) is Some(def) else { return [] }
-  let (raw, _) = @sh.split_call(parts)
+  let (raw, body) = @sh.split_call(parts)
   let bound : Map[String, Ex] = Map([])
   for k, v in def.defaults {
     bound[k] = v
@@ -1003,16 +1055,61 @@ fn ViewBuilder::expand_macro(
       )
     }
   }
+  // The call's children, read in the CALLER's scope — a `@fill` names a slot
+  // and everything else is the default one. They are read BEFORE the body is
+  // expanded, so a macro that never writes `@slot` simply drops them, which is
+  // what a template with no slot means.
+  let default_ = []
+  let named : Map[String, Array[@anode.ANode]] = Map([])
+  for g in body {
+    match fill_of(g) {
+      Some((slot, kids)) => {
+        let into = named.get(slot).unwrap_or([])
+        for k in kids {
+          for n in self.content(k, ctx) {
+            into.push(n)
+          }
+        }
+        named[slot] = into
+      }
+      None =>
+        for n in self.content(g, ctx) {
+          default_.push(n)
+        }
+    }
+  }
   let inner = ctx.with_params(bound)
   self.expanding.push(name)
+  self.slots.push({ default_, named, })
   let out = []
   for g in def.body {
     for n in self.content(g, inner) {
       out.push(n)
     }
   }
+  self.slots.pop() |> ignore
   self.expanding.pop() |> ignore
   out
+}
+
+///|
+/// `@fill("actions"){ … }` — the slot it names and the children it sends.
+fn fill_of(group : @ast.Node) -> (String, Array[@ast.Node])? raise ExError {
+  guard group.it is Group(parts) && parts.length() > 0 else { return None }
+  guard parts[0].it is Id("fill") else { return None }
+  let (raw, body) = @sh.split_call(parts)
+  Some((slot_name(raw), body))
+}
+
+///|
+/// The slot a `@slot(…)` or `@fill(…)` names, or "" for the default one.
+fn slot_name(raw : Array[@ast.Node]) -> String raise ExError {
+  for a in @sh.read_args(raw) {
+    if a is APos(EStr(text)) {
+      return text
+    }
+  }
+  ""
 }
 
 ///|

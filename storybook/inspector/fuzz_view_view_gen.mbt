@@ -171,9 +171,9 @@ impl @component.Fields for FuzzRowState with fn decode(f) {
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
 ///
-/// The script block answers toggle, so an `update` arm for
+/// The `logic:` section answers toggle, so an `update` arm for
 /// one of those can never run — the wrapper consults `update` only for a
-/// dispatch the block did not claim. They are still here because raising
+/// dispatch the section did not claim. They are still here because raising
 /// one is what a parent does, and `to_dispatch` is how.
 pub(all) enum FuzzRowMsg {
   Toggle
@@ -504,9 +504,9 @@ impl @component.Fields for FuzzControlsState with fn decode(f) {
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
 ///
-/// The script block answers set_seed, set_steps, set_source, burst, play, stop, step, reset, so an `update` arm for
+/// The `logic:` section answers set_seed, set_steps, set_source, burst, play, stop, step, reset, so an `update` arm for
 /// one of those can never run — the wrapper consults `update` only for a
-/// dispatch the block did not claim. They are still here because raising
+/// dispatch the section did not claim. They are still here because raising
 /// one is what a parent does, and `to_dispatch` is how.
 pub(all) enum FuzzControlsMsg {
   Burst
@@ -776,9 +776,9 @@ impl @component.Fields for FuzzVerdictState with fn decode(f) {
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
 ///
-/// The script block answers shrink, so an `update` arm for
+/// The `logic:` section answers shrink, so an `update` arm for
 /// one of those can never run — the wrapper consults `update` only for a
-/// dispatch the block did not claim. They are still here because raising
+/// dispatch the section did not claim. They are still here because raising
 /// one is what a parent does, and `to_dispatch` is how.
 pub(all) enum FuzzVerdictMsg {
   Shrink

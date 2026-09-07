@@ -122,8 +122,8 @@ pub fn file_picker_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant picked_file_is_described` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant picked_file_is_described` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn file_picker_compute_picked_file_is_described(
   s : FilePickerState,
   _args : Array[@tutuca.Value],
@@ -134,7 +134,7 @@ fn file_picker_compute_picked_file_is_described(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn file_picker_inline_compute() -> Map[
   String,
   (FilePickerState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

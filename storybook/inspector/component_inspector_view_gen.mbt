@@ -473,7 +473,7 @@ pub let comp_section_global_style : String = ""
 ///|
 /// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
-/// Absent, because the script block answers them: page_exists.
+/// Absent, because the `logic:` section answers them: page_exists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
 /// these could never run.
 pub(all) enum CompSectionCompute {

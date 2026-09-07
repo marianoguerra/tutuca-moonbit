@@ -65,11 +65,12 @@ test "workload shape" {
   )
   // 1066834 -> 1068078 with the reader's own whitespace: a view written over
   // several lines keeps the newlines between them, so the generated builders
-  // carry the text nodes the file wrote.
+  // carry the text nodes the file wrote. -> 1073880 when the generated doc
+  // comments started naming the `spec:` and `logic:` sections.
   inspect(
     @benchmarks.gen(@benchmarks.all_views),
     content=(
-      #|1073946
+      #|1073880
     ),
   )
   inspect(

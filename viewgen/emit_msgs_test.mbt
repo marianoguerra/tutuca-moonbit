@@ -6,20 +6,26 @@
 // directions. What is asserted here is that the name is now written once.
 
 ///|
-fn msgs_src(bucket_decls : String) -> String raise {
-  @viewgen.generate(
-    "<script type=\"tutuca/spec\">\n" +
-    bucket_decls +
-    "\nstate Chat { n: Int }\n</script>\n" +
-    "<template><p><x text=\".n\"></x></p></template>",
-    name="Chat",
-    source_file="chat.html",
+fn msgs_src(channels : String, types? : String = "") -> String raise {
+  @viewgen.emit_module(
+    "Chat",
+    "chat.tutu",
+    @viewgen.read_file(
+      "spec:\n" +
+      types +
+      "  Chat:\n    field n :: Int\n" +
+      channels +
+      "\nview:\n  Chat:\n    @p{@(it.n)}\n",
+      name="Chat",
+    ),
   )
 }
 
 ///|
 test "a declared receive bucket gets an enum, a decode and a sender" {
-  let src = msgs_src("handle Chat { message { init, tick, setAll(String) } }")
+  let src = msgs_src(
+    "    message init\n    message tick\n    message setAll(String)\n",
+  )
   assert_true(src.contains("pub(all) enum ChatMsg {"))
   assert_true(src.contains("  Init\n"))
   assert_true(src.contains("  SetAll(String)\n"))
@@ -47,7 +53,7 @@ test "a declared receive bucket gets an enum, a decode and a sender" {
 
 ///|
 test "each bucket decodes only its own dispatch arm" {
-  let src = msgs_src("handle Chat { message { tick } intent { Changed(Int) } }")
+  let src = msgs_src("    message tick\n    intent Changed(Int)\n")
   assert_true(src.contains("guard d is Receive(name, args)"))
   assert_true(src.contains("guard d is Intent(name, args)"))
   // Two buckets, two enums, and neither decodes the other's arm.
@@ -58,9 +64,7 @@ test "each bucket decodes only its own dispatch arm" {
 
 ///|
 test "an integer payload is range- and integrality-checked, not truncated" {
-  let src = msgs_src(
-    "handle Chat { message { setCount(Int), setByte(UInt8) } }",
-  )
+  let src = msgs_src("    message setCount(Int)\n    message setByte(UInt8)\n")
   // 2.5 arriving at an Int handler is a wrong send, and silently truncating
   // it to 2 would hide that — so the guard drops it into Unknown instead.
   assert_true(src.contains("a0.to_int().to_double() == a0"))
@@ -72,7 +76,7 @@ test "an integer payload is range- and integrality-checked, not truncated" {
 
 ///|
 test "a multi-argument message is spelled as a tuple payload" {
-  let src = msgs_src("handle Chat { message { moveTo(Int, Int) } }")
+  let src = msgs_src("    message moveTo(Int, Int)\n")
   assert_true(src.contains("  MoveTo(Int, Int)\n"))
   assert_true(src.contains("[Num(a0), Num(a1)]"))
   assert_true(src.contains("MoveTo(a0.to_int(), a1.to_int())"))
@@ -88,8 +92,8 @@ test "a multi-argument message is spelled as a tuple payload" {
 /// and a field of the same declared type are read by one rule rather than two.
 test "a composite payload is decoded at its declared type, not erased" {
   let src = msgs_src(
-    "struct Row { title: String, n: Int }\n" +
-    "handle Chat { message { gotRows(Array[Row]), errs(Map[String, String]) } }",
+    "    message gotRows(List.of(Row))\n    message errs(Map.of(String, String))\n",
+    types="  struct Row(title :: String, n :: Int)\n\n",
   )
   assert_true(src.contains("  GotRows(Array[ChatRow])\n"))
   assert_true(src.contains("  Errs(Map[String, String])\n"))
@@ -110,7 +114,7 @@ test "a composite payload is decoded at its declared type, not erased" {
 /// `Any` and a component slot are NOT decoded, because `@tutuca.Value` is what
 /// they declare — there is nothing to read them into.
 test "an Any payload stays the Value it declares" {
-  let src = msgs_src("handle Chat { message { raw(Any), kid(Instance) } }")
+  let src = msgs_src("    message raw(Any)\n    message kid(Instance)\n")
   assert_true(src.contains("  Raw(@tutuca.Value)\n"))
   assert_true(src.contains("  Kid(@tutuca.Value)\n"))
   assert_true(src.contains("(\"raw\", [a0]) => Raw(a0)"))
@@ -126,8 +130,8 @@ test "an Any payload stays the Value it declares" {
 /// ANSWER is unchanged; only the saying is new.
 test "a declared name handed the wrong shape is reported, not just Unknown" {
   let src = msgs_src(
-    "struct Row { title: String }\n" +
-    "handle Chat { message { setAll(String), gotRows(Array[Row]) } }",
+    "    message setAll(String)\n    message gotRows(List.of(Row))\n",
+    types="  struct Row(title :: String)\n\n",
   )
   // The scalar arm cannot match, so it falls to `_` — which looks the name up
   // before answering, and quotes what the schema declared.
@@ -151,17 +155,17 @@ test "a component with no declared buckets emits none of this" {
 
 ///|
 /// A file whose script block answers some of its `@on` names.
-fn answered_src(script : String) -> String raise {
-  @viewgen.generate(
-    "<script type=\"tutuca/spec\">\nstate Chat { n: Int }\n</script>\n" +
-    "<script type=\"tutuca/script\">\n" +
-    script +
-    "\n</script>\n" +
-    "<template><p><x text=\".n\"></x>" +
-    "<button @on.click=\"bump 1\">+</button>" +
-    "<button @on.click=\"reset\">0</button></p></template>",
-    name="Chat",
-    source_file="chat.html",
+fn answered_src(logic : String) -> String raise {
+  @viewgen.emit_module(
+    "Chat",
+    "chat.tutu",
+    @viewgen.read_file(
+      "spec:\n  Chat:\n    field n :: Int\n\nlogic:\n  Chat:\n" +
+      logic +
+      "\nview:\n  Chat:\n" +
+      "    @p{@(it.n)@button(~on_click: bump(1)){+}@button(~on_click: reset){0}}\n",
+      name="Chat",
+    ),
   )
 }
 
@@ -194,18 +198,20 @@ fn enum_body(src : String, ty : String) -> String {
 /// and the block answering the name is exactly WHY it would. Dropping the case
 /// would take the typed raise away with the dead arm, so the note is what is
 /// left: it says which cases can never reach an `update` arm.
-test "a name the script block answers stays, and the doc says it is dead" {
-  let src = answered_src("receive bump(d) { .n += d }")
+test "a name the `logic:` section answers stays, and the doc says it is dead" {
+  let src = answered_src("    receive bump(d):\n      it.n += d\n")
   assert_true(enum_body(src, "ChatMsg").contains("  Bump(Double)\n"))
   assert_true(enum_body(src, "ChatMsg").contains("  Reset\n"))
-  assert_true(src.contains("The script block answers bump, so an `update` arm"))
+  assert_true(
+    src.contains("The `logic:` section answers bump, so an `update` arm"),
+  )
   // …and the typed raise it is kept for.
   assert_true(src.contains("Bump(a0) => (\"bump\", [Num(a0)])"))
 }
 
 ///|
 test "a block that answers nothing leaves the enum exactly as it was" {
-  let src = answered_src("compute label { .n }")
+  let src = answered_src("    compute label: it.n\n")
   assert_true(src.contains("  Bump(Double)\n"))
   assert_true(src.contains("  Reset\n"))
   assert_false(src.contains("Absent, because the script block answers"))
@@ -216,7 +222,7 @@ test "a declaration the backend refuses is NOT counted as answered" {
   // The arm was not emitted, so `update` still sees the dispatch and still
   // needs a case for it. Reporting it as answered would delete the only place
   // the author could handle it.
-  let src = answered_src("receive bump(d) { .n[0] = d }")
+  let src = answered_src("    receive bump(d):\n      it.n[0] := d\n")
   assert_true(src.contains("  Bump(Double)\n"))
   assert_false(src.contains("Absent, because the script block answers"))
 }
@@ -225,17 +231,19 @@ test "a declaration the backend refuses is NOT counted as answered" {
 
 ///|
 /// A file with both a schema and views, so the merge has both halves.
-fn merged_src(bucket_decls : String, view_body : String) -> String raise {
-  @viewgen.generate(
-    "<script type=\"tutuca/spec\">\n" +
-    bucket_decls +
-    "\nstate Chat { n: Int, name: String }\n</script>\n" +
-    "<template><p>" +
-    view_body +
-    "</p></template>",
-    name="Chat",
-    source_file="chat.html",
-  )
+fn merged_src(channels : String, view_body : String) -> String raise {
+  @viewgen.read_file(merged_file(channels, view_body), name="Chat")
+  |> f => { @viewgen.emit_module("Chat", "chat.tutu", f) }
+}
+
+///|
+/// The file both of those read.
+fn merged_file(channels : String, view_body : String) -> String {
+  "spec:\n  Chat:\n    field n :: Int\n    field name :: String\n" +
+  channels +
+  "\nview:\n  Chat:\n    @p{" +
+  view_body +
+  "}\n"
 }
 
 ///|
@@ -243,16 +251,8 @@ fn merged_src(bucket_decls : String, view_body : String) -> String raise {
 ///
 /// `gen_err` in `check_state_test.mbt` is the same idea over a whole document;
 /// this one builds the document from the two halves the merge needs.
-fn merge_err(bucket_decls : String, view_body : String) -> String {
-  gen_err(
-    "<script type=\"tutuca/spec\">\n" +
-    bucket_decls +
-    "\nstate Chat { n: Int, name: String }\n</script>\n" +
-    "<template><p>" +
-    view_body +
-    "</p></template>",
-    "Chat",
-  )
+fn merge_err(channels : String, view_body : String) -> String {
+  gen_err(merged_file(channels, view_body), "Chat")
 }
 
 ///|
@@ -261,9 +261,7 @@ test "the receive bucket merges the schema with the view names" {
   // schema — and nothing relates them. v2 has ONE bucket for a message whoever
   // sent it, so one enum holds both.
   let src = merged_src(
-    "handle Chat { message { init, setAll(String) } }",
-    "<button @on.click=\"bump 1\">+</button>" +
-    "<button @on.click=\"reset\">0</button>",
+    "    message init\n    message setAll(String)\n", "@button(~on_click: bump(1)){+}@button(~on_click: reset){0}",
   )
   let body = enum_body(src, "ChatMsg")
   // From the schema...
@@ -287,7 +285,7 @@ test "a view name the schema also declares is declared once, by the schema" {
   // Not twice. The schema wins, and the payload is the schema's — which is
   // exactly why the disagreement below can be reported at all.
   let src = merged_src(
-    "handle Chat { message { bump(Int) } }", "<button @on.click=\"bump 1\">+</button>",
+    "    message bump(Int)\n", "@button(~on_click: bump(1)){+}",
   )
   let body = enum_body(src, "ChatMsg")
   assert_true(body.contains("  Bump(Int)\n"))
@@ -305,29 +303,21 @@ test "a call site that disagrees with the schema is a build error" {
   // writes `Bump(Int)` prints that instead — accurate, and the whole reason
   // `message-case` nudges the declaration into the used spelling.
   assert_eq(
-    merge_err(
-      "handle Chat { message { bump(Int) } }", "<button @on.click=\"bump 1 2\">+</button>",
-    ),
+    merge_err("    message bump(Int)\n", "@button(~on_click: bump(1, 2)){+}"),
     "`bump` is declared in the `spec:` section as `bump(Int)` and called from ~on_click as `bump(a number, a number)` — the schema declares what a message carries, so the call sites have to match it",
   )
   assert_eq(
-    merge_err(
-      "handle Chat { message { bump(Int) } }", "<button @on.click=\"bump 'x'\">+</button>",
-    ),
+    merge_err("    message bump(Int)\n", "@button(~on_click: bump(\"x\")){+}"),
     "`bump` is declared in the `spec:` section as `bump(Int)` and called from ~on_click as `bump(text)` — the schema declares what a message carries, so the call sites have to match it",
   )
   // Agreeing is silent, and so is a call site the inference could not read:
   // unknown is not wrong, which is the rule the whole generator turns on.
   assert_eq(
-    merge_err(
-      "handle Chat { message { bump(Int) } }", "<button @on.click=\"bump 1\">+</button>",
-    ),
+    merge_err("    message bump(Int)\n", "@button(~on_click: bump(1)){+}"),
     "",
   )
   assert_eq(
-    merge_err(
-      "handle Chat { message { bump(Int) } }", "<button @on.click=\"bump .n\">+</button>",
-    ),
+    merge_err("    message bump(Int)\n", "@button(~on_click: bump(it.n)){+}"),
     "",
   )
 }
@@ -335,7 +325,7 @@ test "a call site that disagrees with the schema is a build error" {
 ///|
 test "an intent bucket gets an enum, a decode and a dispatch" {
   let src = msgs_src(
-    "handle Chat { intent { rowPicked(Int), saveDraft(String) } }",
+    "    intent rowPicked(Int)\n    intent saveDraft(String)\n",
   )
   assert_true(src.contains("pub(all) enum ChatIntent {"))
   assert_true(src.contains("  RowPicked(Int)\n"))
@@ -374,15 +364,17 @@ test "an intent bucket gets an enum, a decode and a dispatch" {
 /// member's, and it is documented in 0.48.0's migration table. This is a real
 /// thing standing beside it, and nothing was watching it either.
 test "a bare view name beside a protocol-qualified declaration is a second message" {
-  let src = @viewgen.generate(
-    "<script type=\"tutuca/spec\">\n" +
-    "protocol Openable = \"x/Openable@1\" { handle { message { setOpen(Bool) } } }\n" +
-    "state Chat implements Openable { open: Bool }\n" +
-    "handle Chat { message { Openable::setOpen(Bool) } }\n" +
-    "</script>\n" +
-    "<template><button @on.click=\"setOpen true\">x</button></template>",
-    name="Chat",
-    source_file="chat.html",
+  let src = @viewgen.emit_module(
+    "Chat",
+    "chat.tutu",
+    @viewgen.read_file(
+      "spec:\n" +
+      "  protocol Openable = \"x/Openable@1\":\n    message setOpen(Bool)\n\n" +
+      "  Chat:\n    field open :: Bool\n    implements Openable\n    message Openable::setOpen(Bool)\n" +
+      "\nview:\n  Chat:\n" +
+      "    @button(~on_click: setOpen(true)){x}\n",
+      name="Chat",
+    ),
   )
   // Two enum cases for one operation…
   assert_true(src.contains("  OpenableSetOpen(Bool)\n"))
@@ -406,15 +398,17 @@ test "a bare view name beside a protocol-qualified declaration is a second messa
 /// The control for the test above: the difference between them is a view, not
 /// a schema, which is the part that makes the behaviour hard to see.
 test "the same declaration with no view sending it answers one name" {
-  let src = @viewgen.generate(
-    "<script type=\"tutuca/spec\">\n" +
-    "protocol Openable = \"x/Openable@1\" { handle { message { setOpen(Bool) } } }\n" +
-    "state Chat implements Openable { open: Bool }\n" +
-    "handle Chat { message { Openable::setOpen(Bool) } }\n" +
-    "</script>\n" +
-    "<template><p><x text=\".open\"></x></p></template>",
-    name="Chat",
-    source_file="chat.html",
+  let src = @viewgen.emit_module(
+    "Chat",
+    "chat.tutu",
+    @viewgen.read_file(
+      "spec:\n" +
+      "  protocol Openable = \"x/Openable@1\":\n    message setOpen(Bool)\n\n" +
+      "  Chat:\n    field open :: Bool\n    implements Openable\n    message Openable::setOpen(Bool)\n" +
+      "\nview:\n  Chat:\n" +
+      "    @p{@(it.open)}\n",
+      name="Chat",
+    ),
   )
   assert_true(src.contains("  OpenableSetOpen(Bool)\n"))
   assert_false(src.contains("  SetOpen(Bool)\n"))

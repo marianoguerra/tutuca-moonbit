@@ -181,8 +181,8 @@ fn counter_inline_update(
 }
 
 ///|
-/// `pred recorded` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `pred recorded` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn counter_compute_recorded(
   s : CounterState,
   _args : Array[@tutuca.Value],
@@ -192,8 +192,8 @@ fn counter_compute_recorded(
 }
 
 ///|
-/// `invariant history_follows_count` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant history_follows_count` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn counter_compute_history_follows_count(
   s : CounterState,
   _args : Array[@tutuca.Value],
@@ -208,7 +208,7 @@ fn counter_compute_history_follows_count(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn counter_inline_compute() -> Map[
   String,
   (CounterState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -274,7 +274,7 @@ pub fn counter_component(
 /// A rule that does not hold in the state a component STARTS in is broken
 /// before anything happens, and every transition after it is refused — so
 /// this is the one check worth making before the component ever runs.
-/// GENERATED — edit the spec block, not this.
+/// GENERATED — edit the `spec:` section, not this.
 test "Counter: the declared initial states keep the invariants" {
   let s = CounterState::fresh()
   assert_false(

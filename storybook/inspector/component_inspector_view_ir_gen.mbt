@@ -498,8 +498,8 @@ pub fn comp_section_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant page_exists` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant page_exists` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn comp_section_compute_page_exists(
   s : CompSectionState,
   _args : Array[@tutuca.Value],
@@ -516,7 +516,7 @@ fn comp_section_compute_page_exists(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn comp_section_inline_compute() -> Map[
   String,
   (CompSectionState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

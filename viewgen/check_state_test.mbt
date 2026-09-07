@@ -8,9 +8,10 @@
 
 ///|
 /// Generate, returning the error message or "" on success.
-fn gen_err(html : String, name : String) -> String {
+fn gen_err(src : String, name : String) -> String {
   try {
-    @viewgen.generate(html, name~, source_file="t.html") |> ignore
+    @viewgen.emit_module(name, "t.tutu", @viewgen.read_file(src, name~))
+    |> ignore
     ""
   } catch {
     e => e.message()
@@ -18,20 +19,20 @@ fn gen_err(html : String, name : String) -> String {
 }
 
 ///|
-/// A state block wrapping the given declarations for the `Board` component.
-fn board(state : String, view : String) -> String {
-  "<script type=\"tutuca/spec\">\n" +
-  state +
-  "\n</script>\n<template>" +
-  view +
-  "</template>"
+/// A `spec:` section wrapping the given declarations for the `Board`
+/// component, and a `view:` section holding its only view.
+///
+/// Both arrive already indented for the section they go in — a helper that
+/// re-indented them would be a helper that reads shrubbery to write it.
+fn board(spec : String, view : String) -> String {
+  "spec:\n" + spec + "\nview:\n  Board:\n" + view + "\n"
 }
 
 ///|
 test "a misspelt root field fails generation and suggests the right name" {
   let msg = gen_err(
     board(
-      "state Board { label: String, count: Int }", "<p><x text=\".labelx\"></x></p>",
+      "  Board:\n    field label :: String\n    field count :: Int\n", "    @p{@(it.labelx)}",
     ),
     "Board",
   )
@@ -43,7 +44,7 @@ test "a misspelt root field fails generation and suggests the right name" {
 test "a field with no near miss is told where to declare it" {
   let msg = gen_err(
     board(
-      "state Board { label: String }", "<p><x text=\".somethingElse\"></x></p>",
+      "  Board:\n    field label :: String\n", "    @p{@(it.somethingElse)}",
     ),
     "Board",
   )
@@ -58,8 +59,8 @@ test "reads inside an @each are checked against the ELEMENT type" {
   // it was not even looked at.
   let msg = gen_err(
     board(
-      "struct Card { title: String, done: Bool }\nstate Board { cards: Array[Card] }",
-      "<ul><li @each=\".cards\"><x text=\".titel\"></x></li></ul>",
+      "  struct Card(title :: String, done :: Bool)\n\n  Board:\n    field cards :: List.of(Card)\n",
+      "    @ul{@each(value, key in it.cards){@li{@(it.titel)}}}",
     ),
     "Board",
   )
@@ -71,7 +72,8 @@ test "reads inside an @each are checked against the ELEMENT type" {
 test "@value.member inside a loop is checked too" {
   let msg = gen_err(
     board(
-      "struct Card { title: String }\nstate Board { cards: Array[Card] }", "<ul><li @each=\".cards\"><x text=\"@value.titel\"></x></li></ul>",
+      "  struct Card(title :: String)\n\n  Board:\n    field cards :: List.of(Card)\n",
+      "    @ul{@each(value, key in it.cards){@li{@(value.titel)}}}",
     ),
     "Board",
   )
@@ -84,8 +86,8 @@ test "a correct loop body generates cleanly" {
   assert_eq(
     gen_err(
       board(
-        "struct Card { title: String, done: Bool }\nstate Board { cards: Array[Card] }",
-        "<ul><li @each=\".cards\"><x text=\".title\"></x><x text=\"@value.done\"></x></li></ul>",
+        "  struct Card(title :: String, done :: Bool)\n\n  Board:\n    field cards :: List.of(Card)\n",
+        "    @ul{@each(value, key in it.cards){@li{@(it.title)@(value.done)}}}",
       ),
       "Board",
     ),
@@ -96,7 +98,9 @@ test "a correct loop body generates cleanly" {
 ///|
 test "@each over a scalar is refused" {
   let msg = gen_err(
-    board("state Board { count: Int }", "<ul><li @each=\".count\">x</li></ul>"),
+    board(
+      "  Board:\n    field count :: Int\n", "    @ul{@each(value, key in it.count){@li{x}}}",
+    ),
     "Board",
   )
   assert_true(msg.contains("`@each` needs a collection"))
@@ -107,13 +111,16 @@ test "@each over a scalar is refused" {
 test "@each over a set, a list or an ordered map is fine" {
   for
     expr in [
-      ("state Board { tags: Set[String] }", ".tags"),
-      ("state Board { xs: Array[Int] }", ".xs"),
-      ("state Board { m: Map[String, Any] }", ".m"),
+      ("  Board:\n    field tags :: Set.of(String)\n", "it.tags"),
+      ("  Board:\n    field xs :: List.of(Int)\n", "it.xs"),
+      ("  Board:\n    field m :: Map.of(String, Any)\n", "it.m"),
     ] {
-    let (state, path) = expr
+    let (spec, path) = expr
     assert_eq(
-      gen_err(board(state, "<ul><li @each=\"\{path}\">x</li></ul>"), "Board"),
+      gen_err(
+        board(spec, "    @ul{@each(value, key in \{path}){@li{x}}}"),
+        "Board",
+      ),
       "",
     )
   }
@@ -123,7 +130,7 @@ test "@each over a set, a list or an ordered map is fine" {
 test "<x render> on a non-component is refused" {
   let msg = gen_err(
     board(
-      "state Board { label: String }", "<div><x render=\".label\"></x></div>",
+      "  Board:\n    field label :: String\n", "    @div{@render(it.label)}",
     ),
     "Board",
   )
@@ -133,13 +140,13 @@ test "<x render> on a non-component is refused" {
 
 ///|
 test "<x render> on a declared child slot is fine" {
-  let html = "<script type=\"tutuca/spec\">\n" +
-    "state Card { title: String }\n" +
-    "state Board { lead: Card }\n" +
-    "</script>\n" +
-    "<template id=\"Card\"><p><x text=\".title\"></x></p></template>\n" +
-    "<template id=\"Board\"><div><x render=\".lead\"></x></div></template>"
-  assert_eq(gen_err(html, "Ignored"), "")
+  let src = "spec:\n" +
+    "  Card:\n    field title :: String\n\n" +
+    "  Board:\n    field lead :: Instance.of(Card)\n" +
+    "\nview:\n" +
+    "  Card:\n    @p{@(it.title)}\n\n" +
+    "  Board:\n    @div{@render(it.lead)}\n"
+  assert_eq(gen_err(src, "Ignored"), "")
 }
 
 ///|
@@ -150,10 +157,8 @@ test "an opaque scope silences the checks inside it" {
   assert_eq(
     gen_err(
       board(
-        "state Board { detail: Any, slot: Instance, rows: Array[Any] }",
-        "<div><x render=\".slot\"></x>" +
-        "<ul><li @each=\".rows\"><x text=\".whatever\"></x></li></ul>" +
-        "</div>",
+        "  Board:\n    field detail :: Any\n    field slot :: Instance\n    field rows :: List.of(Any)\n",
+        "    @div{@render(it.slot) @ul{@each(value, key in it.rows){@li{@(it.whatever)}}}}",
       ),
       "Board",
     ),
@@ -162,13 +167,10 @@ test "an opaque scope silences the checks inside it" {
 }
 
 ///|
-test "a file with no state block is checked exactly as before" {
-  // No schema, no checks — this is what lets the corpus migrate one file at
-  // a time instead of all at once.
+test "a file with no `spec:` section is checked against nothing" {
+  // No schema, no checks — unknown is not wrong.
   assert_eq(
-    gen_err(
-      "<template><p><x text=\".anythingAtAll\"></x></p></template>", "Board",
-    ),
+    gen_err("view:\n  Board:\n    @p{@(it.anythingAtAll)}\n", "Board"),
     "",
   )
 }
@@ -176,24 +178,20 @@ test "a file with no state block is checked exactly as before" {
 ///|
 test "the counter demo's own view passes its schema" {
   // The migrated reference example, checked here as well as by compiling.
-  let html = "<script type=\"tutuca/spec\">\n" +
-    "state Counter { label: String, count: Int, history: Array[Int] }\n" +
-    "</script>\n" +
-    "<template>\n" +
-    "  <h1><x text=\".label\"></x>: <x text=\".count\"></x></h1>\n" +
-    "  <ul><li @each=\".history\"><x text=\"@value\"></x></li></ul>\n" +
-    "</template>"
-  assert_eq(gen_err(html, "Counter"), "")
+  let src = "spec:\n" +
+    "  Counter:\n    field label :: String\n    field count :: Int\n    field history :: List.of(Int)\n" +
+    "\nview:\n  Counter:\n" +
+    "    @h1{@(it.label): @(it.count)}\n" +
+    "    @ul{@each(value, key in it.history){@li{@(value)}}}\n"
+  assert_eq(gen_err(src, "Counter"), "")
 }
 
 ///|
 test "a nested record two levels down is still checked" {
   let msg = gen_err(
     board(
-      "struct Inner { deep: String }" +
-      "struct Outer { inner: Inner }" +
-      "state Board { o: Outer }",
-      "<p><x text=\".o\"></x><span @each=\".o\">x</span></p>",
+      "  struct Inner(deep :: String)\n\n  struct Outer(inner :: Inner)\n\n  Board:\n    field o :: Outer\n",
+      "    @p{@(it.o)@each(value, key in it.o){@span{x}}}",
     ),
     "Board",
   )
@@ -203,17 +201,16 @@ test "a nested record two levels down is still checked" {
 }
 
 ///|
-test "@push-view and @enrich-with keep the state scope" {
-  // `@push-view` pushes a VIEW NAME onto the render stack, not a value
-  // (render/render.mbt:63), and `@enrich-with` pushes binds. The state under
-  // both is still this component's, so its fields must stay checkable — and
-  // reads that are fine must not be flagged.
+test "`~push_view` keeps the state scope" {
+  // `~push_view` pushes a VIEW NAME onto the render stack, not a value
+  // (render/render.mbt:63). The state under it is still this component's, so
+  // its fields must stay checkable — and reads that are fine must not be
+  // flagged.
+  let spec = "  Board:\n    field items :: List.of(Any)\n    field view :: String\n    field q :: String\n"
   assert_eq(
     gen_err(
       board(
-        "state Board { items: Array[Any], view: String, q: String }",
-        "<div @push-view=\".view\"><x render-each=\".items\"></x>" +
-        "<p><x text=\".q\"></x></p></div>",
+        spec, "    @div(~push_view: it.view){@each(value, key in it.items){@render(value)} @p{@(it.q)}}",
       ),
       "Board",
     ),
@@ -222,22 +219,20 @@ test "@push-view and @enrich-with keep the state scope" {
   // ...and a typo under a push-view is still caught, which it would not be
   // if the scope went opaque.
   let msg = gen_err(
-    board(
-      "state Board { items: Array[Any], view: String, q: String }", "<div @push-view=\".view\"><p><x text=\".qq\"></x></p></div>",
-    ),
+    board(spec, "    @div(~push_view: it.view){@p{@(it.qq)}}"),
     "Board",
   )
   assert_true(msg.contains("`.qq` is not a field of the Board state"))
 }
 
 ///|
-test "a container in @show is a test that cannot fail" {
+test "a container in `@show` is a test that cannot fail" {
   // `Value::is_truthy` answers `true` for List, Map and Obj unconditionally
   // (core/value_eval.mbt:98), so `@show=".alts"` shows the element for an
   // EMPTY list too. It reads as a guard and is not one.
   let msg = gen_err(
     board(
-      "state Board { alts: Array[String] }", "<div @show=\".alts\">alternatives</div>",
+      "  Board:\n    field alts :: List.of(String)\n", "    @show(it.alts){@div{alternatives}}",
     ),
     "Board",
   )
@@ -246,11 +241,11 @@ test "a container in @show is a test that cannot fail" {
   // A record is the same story, and so is `@hide`.
   let rec = gen_err(
     board(
-      "struct Card { title: String }\nstate Board { c: Card }", "<div @hide=\".c\">x</div>",
+      "  struct Card(title :: String)\n\n  Board:\n    field c :: Card\n", "    @hide(it.c){@div{x}}",
     ),
     "Board",
   )
-  assert_true(rec.contains("`@hide=\".c\"`"))
+  assert_true(rec.contains("@hide"), msg=rec)
   assert_true(rec.contains("always truthy"))
 }
 
@@ -261,7 +256,7 @@ test "a truthiness test that can decide something is left alone" {
   assert_eq(
     gen_err(
       board(
-        "state Board { alts: Array[String] }", "<div @show=\"empty? .alts\">none</div>",
+        "  Board:\n    field alts :: List.of(String)\n", "    @show(it.alts.is_empty()){@div{none}}",
       ),
       "Board",
     ),
@@ -273,9 +268,9 @@ test "a truthiness test that can decide something is left alone" {
   assert_eq(
     gen_err(
       board(
-        "state Board { role: String, count: Int, note: String?, on: Bool }",
-        "<p @show=\".role\">r</p><p @show=\".count\">c</p>" +
-        "<p @show=\".note\">n</p><p @hide=\".on\">o</p>",
+        "  Board:\n    field role :: String\n    field count :: Int\n    field note :: maybe(String)\n    field on :: Bool\n",
+        "    @show(it.role){@p{r}}\n    @show(it.count){@p{c}}\n" +
+        "    @show(it.note){@p{n}}\n    @hide(it.on){@p{o}}",
       ),
       "Board",
     ),
@@ -284,7 +279,9 @@ test "a truthiness test that can decide something is left alone" {
   // An unknown type still checks nothing: unknown is not wrong.
   assert_eq(
     gen_err(
-      board("state Board { anything: Any }", "<div @show=\".anything\">x</div>"),
+      board(
+        "  Board:\n    field anything :: Any\n", "    @show(it.anything){@div{x}}",
+      ),
       "Board",
     ),
     "",
@@ -298,7 +295,7 @@ test "a constant id inside a loop is not an id" {
   // not visible to an HTML linter reading the source.
   let msg = gen_err(
     board(
-      "state Board { items: Array[Any] }", "<ul><li @each=\".items\" id=\"row\"><x text=\"@value\"></x></li></ul>",
+      "  Board:\n    field items :: List.of(Any)\n", "    @ul{@each(value, key in it.items){@li(~id: \"row\"){@(value)}}}",
     ),
     "Board",
   )
@@ -308,7 +305,7 @@ test "a constant id inside a loop is not an id" {
   assert_true(
     gen_err(
       board(
-        "state Board { items: Array[Any] }", "<ul><li @each=\".items\"><span id=\"cell\">x</span></li></ul>",
+        "  Board:\n    field items :: List.of(Any)\n", "    @ul{@each(value, key in it.items){@li{@span(~id: \"cell\"){x}}}}",
       ),
       "Board",
     ).contains("`~id: \"cell\"`"),
@@ -320,9 +317,7 @@ test "an id outside the loop, and a per-item id, are both fine" {
   assert_eq(
     gen_err(
       board(
-        "state Board { items: Array[Any] }",
-        "<ul id=\"list\"><li @each=\".items\" :id=\"$'row-{@key}'\">" +
-        "<x text=\"@value\"></x></li></ul>",
+        "  Board:\n    field items :: List.of(Any)\n", "    @ul(~id: \"list\"){@each(value, key in it.items){@li(~id: @str{row-@(key)}){@(value)}}}",
       ),
       "Board",
     ),
@@ -333,7 +328,7 @@ test "an id outside the loop, and a per-item id, are both fine" {
   assert_eq(
     gen_err(
       board(
-        "state Board { items: Array[Any] }", "<div id=\"pane\"><x render-each=\".items\"></x></div>",
+        "  Board:\n    field items :: List.of(Any)\n", "    @div(~id: \"pane\"){@each(value, key in it.items){@render(value)}}",
       ),
       "Board",
     ),
@@ -344,10 +339,10 @@ test "an id outside the loop, and a per-item id, are both fine" {
 ///|
 /// Generate, returning the ADVISORY findings (the `hints` channel) rather than
 /// the fatal ones.
-fn gen_hints(html : String, name : String) -> Array[String] {
+fn gen_hints(src : String, name : String) -> Array[String] {
   let hints : Array[String] = []
   try
-    @viewgen.emit_module(name, "t.html", @viewgen.split_file(html), hints~)
+    @viewgen.emit_module(name, "t.tutu", @viewgen.read_file(src, name~), hints~)
     |> ignore
   catch {
     _ => ()
@@ -358,14 +353,14 @@ fn gen_hints(html : String, name : String) -> Array[String] {
 ///|
 /// Two components in one file: a Page holding a list of Rows.
 fn page_and_row(page_view : String, row_views : String) -> String {
-  "<script type=\"tutuca/spec\">\n" +
-  "state Page { rows: Array[Row], sel: Row }\n" +
-  "state Row { title: String }\n" +
-  "</script>\n" +
-  "<template id=\"Page\">" +
+  "spec:\n" +
+  "  Page:\n    field rows :: List.of(Instance.of(Row))\n    field sel :: Instance.of(Row)\n\n" +
+  "  Row:\n    field title :: String\n" +
+  "\nview:\n  Page:\n" +
   page_view +
-  "</template>" +
-  row_views
+  "\n" +
+  row_views +
+  "\n"
 }
 
 ///|
@@ -374,7 +369,7 @@ test "a read inside a loop over CHILD components is checked against that child" 
   // component — a thing one StateDef could never answer.
   let msg = gen_err(
     page_and_row(
-      "<ul><li @each=\".rows\"><x text=\".titel\"></x></li></ul>", "<template id=\"Row\"><span @text=\".title\"></span></template>",
+      "    @ul{@each(value, key in it.rows){@li{@(it.titel)}}}", "  Row:\n    @span{@(it.title)}\n",
     ),
     "Page",
   )
@@ -384,7 +379,7 @@ test "a read inside a loop over CHILD components is checked against that child" 
   assert_true(
     gen_err(
       page_and_row(
-        "<ul><li @each=\".rows\"><x text=\"@value.titel\"></x></li></ul>", "<template id=\"Row\"><span @text=\".title\"></span></template>",
+        "    @ul{@each(value, key in it.rows){@li{@(value.titel)}}}", "  Row:\n    @span{@(it.title)}\n",
       ),
       "Page",
     ).contains("not a field of the loop item (the Row component)"),
@@ -393,9 +388,8 @@ test "a read inside a loop over CHILD components is checked against that child" 
   assert_eq(
     gen_err(
       page_and_row(
-        "<ul><li @each=\".rows\"><x text=\".title\"></x>" +
-        "<x text=\"@value.title\"></x></li></ul>",
-        "<template id=\"Row\"><span @text=\".title\"></span></template>",
+        "    @ul{@each(value, key in it.rows){@li{@(it.title)@(value.title)}}}",
+        "  Row:\n    @span{@(it.title)}\n",
       ),
       "Page",
     ),
@@ -409,9 +403,7 @@ test "an `as=` naming a view the child does not have is reported" {
   // renders the wrong one. Only a table spanning both components can see it.
   let hints = gen_hints(
     page_and_row(
-      "<x render=\".sel\" as=\"edit\"></x>",
-      "<template id=\"Row\"><span @text=\".title\"></span></template>" +
-      "<template id=\"Row:edt\"><span></span></template>",
+      "    @render(it.sel, ~as: \"edit\")", "  Row:\n    @span{@(it.title)}\n\n  Row.edt:\n    @span{}\n",
     ),
     "Page",
   )
@@ -422,7 +414,7 @@ test "an `as=` naming a view the child does not have is reported" {
   // `render-each` reaches the same check through the loop's element type.
   let each_hints = gen_hints(
     page_and_row(
-      "<x render-each=\".rows\" as=\"edit\"></x>", "<template id=\"Row\"><span @text=\".title\"></span></template>",
+      "    @each(value, key in it.rows){@render(value, ~as: \"edit\")}", "  Row:\n    @span{@(it.title)}\n",
     ),
     "Page",
   )
@@ -436,9 +428,7 @@ test "a view name that does resolve, or cannot be known, is reported by nothing"
   assert_eq(
     gen_hints(
       page_and_row(
-        "<x render=\".sel\" as=\"edit\"></x>",
-        "<template id=\"Row\"><span @text=\".title\"></span></template>" +
-        "<template id=\"Row:edit\"><input></template>",
+        "    @render(it.sel, ~as: \"edit\")", "  Row:\n    @span{@(it.title)}\n\n  Row.edit:\n    @input\n",
       ),
       "Page",
     ).length(),
@@ -448,7 +438,7 @@ test "a view name that does resolve, or cannot be known, is reported by nothing"
   assert_eq(
     gen_hints(
       page_and_row(
-        "<x render=\".sel\" as=\".pick\"></x>", "<template id=\"Row\"><span @text=\".title\"></span></template>",
+        "    @render(it.sel, ~as: it.pick)", "  Row:\n    @span{@(it.title)}\n",
       ),
       "Page",
     ).length(),
@@ -458,8 +448,7 @@ test "a view name that does resolve, or cannot be known, is reported by nothing"
   // the hints channel as much as in the fatal one.
   assert_eq(
     gen_hints(
-      "<script type=\"tutuca/spec\">\nstate Page { sel: Instance }\n</script>" +
-      "<template id=\"Page\"><x render=\".sel\" as=\"edit\"></x></template>",
+      "spec:\n  Page:\n    field sel :: Instance\n\nview:\n  Page:\n    @render(it.sel, ~as: \"edit\")\n",
       "Page",
     ).length(),
     0,
@@ -474,7 +463,7 @@ test "a view name that does resolve, or cannot be known, is reported by nothing"
 test "a generated mutator sent as a message is reported, and names the write" {
   let hints = gen_hints(
     board(
-      "state Board { items: Array[String] }", "<div @each=\".items\"><button @on.click=\"remove_in_items_at @key\">x</button></div>",
+      "  Board:\n    field items :: List.of(String)\n", "    @each(value, key in it.items){@div{@button(~on_click: remove_in_items_at(key)){x}}}",
     ),
     "Board",
   )
@@ -491,7 +480,7 @@ test "a generated mutator sent as a message is reported, and names the write" {
 test "the repair names the write for every mutator shape" {
   let set_hints = gen_hints(
     board(
-      "state Board { tags: Set[String] }", "<button @on.click=\"add_in_tags 'x'\">x</button>",
+      "  Board:\n    field tags :: Set.of(String)\n", "    @button(~on_click: add_in_tags(\"x\")){x}",
     ),
     "Board",
   )
@@ -499,7 +488,7 @@ test "the repair names the write for every mutator shape" {
   assert_true(set_hints[0].contains("write `it.tags.add(<member>)`"))
   let scalar_hints = gen_hints(
     board(
-      "state Board { count: Int }", "<button @on.click=\"set_count 1\">x</button>",
+      "  Board:\n    field count :: Int\n", "    @button(~on_click: set_count(1)){x}",
     ),
     "Board",
   )
@@ -509,7 +498,7 @@ test "the repair names the write for every mutator shape" {
   // — so the repair is the expression that says the same thing.
   let bool_hints = gen_hints(
     board(
-      "state Board { open: Bool }", "<button @on.click=\"toggle_open\">x</button>",
+      "  Board:\n    field open :: Bool\n", "    @button(~on_click: toggle_open){x}",
     ),
     "Board",
   )
@@ -526,7 +515,7 @@ test "the path form, a real handler name and a declared message are silent" {
   assert_eq(
     gen_hints(
       board(
-        "state Board { items: Array[String] }", "<div @each=\".items\"><button @on.click=\".items.removeAt @key\">x</button></div>",
+        "  Board:\n    field items :: List.of(String)\n", "    @each(value, key in it.items){@div{@button(~on_click: it.items.delete_at(key)){x}}}",
       ),
       "Board",
     ),
@@ -535,7 +524,7 @@ test "the path form, a real handler name and a declared message are silent" {
   assert_eq(
     gen_hints(
       board(
-        "state Board { count: Int }", "<button @on.click=\"bump\">x</button>",
+        "  Board:\n    field count :: Int\n", "    @button(~on_click: bump){x}",
       ),
       "Board",
     ),
@@ -543,9 +532,8 @@ test "the path form, a real handler name and a declared message are silent" {
   )
   assert_eq(
     gen_hints(
-      "<script type=\"tutuca/spec\">\n" +
-      "state Board { open: Bool\n  message { set_open(Bool) } }\n" +
-      "</script>\n<template><button @on.click=\"set_open true\">x</button></template>",
+      "spec:\n  Board:\n    field open :: Bool\n    message set_open(Bool)\n" +
+      "\nview:\n  Board:\n    @button(~on_click: set_open(true)){x}\n",
       "Board",
     ),
     [],

@@ -523,8 +523,8 @@ pub fn spec_viewer_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant hint_explains_the_empty_view` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant hint_explains_the_empty_view` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn spec_viewer_compute_hint_explains_the_empty_view(
   s : SpecViewerState,
   _args : Array[@tutuca.Value],
@@ -535,7 +535,7 @@ fn spec_viewer_compute_hint_explains_the_empty_view(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn spec_viewer_inline_compute() -> Map[
   String,
   (SpecViewerState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -638,8 +638,8 @@ pub fn spec_source_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant has_source_tracks_source` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant has_source_tracks_source` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn spec_source_compute_has_source_tracks_source(
   s : SpecSourceState,
   _args : Array[@tutuca.Value],
@@ -653,8 +653,8 @@ fn spec_source_compute_has_source_tracks_source(
 }
 
 ///|
-/// `invariant hint_explains_the_empty_source` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant hint_explains_the_empty_source` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn spec_source_compute_hint_explains_the_empty_source(
   s : SpecSourceState,
   _args : Array[@tutuca.Value],
@@ -665,7 +665,7 @@ fn spec_source_compute_hint_explains_the_empty_source(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn spec_source_inline_compute() -> Map[
   String,
   (SpecSourceState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

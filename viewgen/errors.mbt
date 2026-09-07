@@ -6,7 +6,6 @@
 /// The user-facing one-line message for a generation failure.
 pub fn GenError::message(self : GenError) -> String {
   match self {
-    File(e) => e.message()
     ViewParseIssue(view~, issue~) => "view \"\{view}\": \{issue}"
     EmptyView(name) => "view \"\{name}\" is empty"
     ReadIssue(msg) => msg
@@ -40,7 +39,7 @@ pub fn GenError::message(self : GenError) -> String {
     NotRenderable(view~, expr~, ty~) =>
       "view \"\{view}\": `<x render>` needs a component, but `\{expr}` is \{ty}"
     BadScriptBlock(comp~, line~, message~) =>
-      "line \{line}: script block for \{comp}: \{message}"
+      "line \{line}: `logic:` section for \{comp}: \{message}"
   }
 }
 
@@ -57,7 +56,6 @@ pub fn GenError::message(self : GenError) -> String {
 /// one table: two copies of a list is how two lists drift apart.
 pub fn GenError::code(self : GenError) -> String {
   match self {
-    File(_) => "FILE"
     ViewParseIssue(..) => "VIEW_PARSE"
     EmptyView(_) => "EMPTY_VIEW"
     ReadIssue(_) => "READ"

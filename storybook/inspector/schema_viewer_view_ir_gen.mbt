@@ -98,8 +98,8 @@ pub fn schema_viewer_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant raw_pane_has_something_in_it` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant raw_pane_has_something_in_it` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn schema_viewer_compute_raw_pane_has_something_in_it(
   s : SchemaViewerState,
   _args : Array[@tutuca.Value],
@@ -117,7 +117,7 @@ fn schema_viewer_compute_raw_pane_has_something_in_it(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn schema_viewer_inline_compute() -> Map[
   String,
   (SchemaViewerState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

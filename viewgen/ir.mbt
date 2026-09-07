@@ -733,7 +733,7 @@ fn emit_init_invariants(
     "/// A rule that does not hold in the state a component STARTS in is broken\n" +
     "/// before anything happens, and every transition after it is refused — so\n" +
     "/// this is the one check worth making before the component ever runs.\n" +
-    "/// GENERATED — edit the spec block, not this.\n" +
+    "/// GENERATED — edit the `spec:` section, not this.\n" +
     "test " +
     quote(where_ + ": the declared initial states keep the invariants") +
     " {\n",

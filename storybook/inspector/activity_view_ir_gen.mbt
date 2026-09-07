@@ -213,8 +213,8 @@ pub fn activity_entry_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant has_after_tracks_after` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant has_after_tracks_after` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn activity_entry_compute_has_after_tracks_after(
   s : ActivityEntryState,
   _args : Array[@tutuca.Value],
@@ -238,7 +238,7 @@ fn activity_entry_compute_has_after_tracks_after(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn activity_entry_inline_compute() -> Map[
   String,
   (ActivityEntryState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -328,8 +328,8 @@ pub fn activity_log_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant has_events_tracks_events` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant has_events_tracks_events` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn activity_log_compute_has_events_tracks_events(
   s : ActivityLogState,
   _args : Array[@tutuca.Value],
@@ -344,7 +344,7 @@ fn activity_log_compute_has_events_tracks_events(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn activity_log_inline_compute() -> Map[
   String,
   (ActivityLogState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

@@ -5,7 +5,7 @@
 // down in `viewfile` — a runtime that mounts a view file needs to find its
 // blocks and has no use for an emitter:
 //
-//   source text  --@viewfile.split_file--> @viewfile.ViewFile (raw HTML, styles, blocks)
+//   source text  --read_file--> @viewfile.ViewFile (trees, styles, declarations)
 //                --view_surface---------->  Surface (handler names, args, ids)
 //                --emit_module----------->   String (the generated .mbt)
 //
@@ -78,11 +78,6 @@ pub(all) struct GeneratedModules {
 /// Anything that makes generation impossible. Rendered by `Show` into the
 /// message the CLI reports.
 pub suberror GenError {
-  /// The file does not split: its structure is wrong, or the state or init
-  /// block it carries does not describe what it claims to. Wrapped rather
-  /// than restated, so the two layers cannot drift into two wordings of one
-  /// failure.
-  File(@viewfile.FileError)
   /// The view does not parse, or parses with issues (a view that would warn
   /// at runtime is a generation failure — the types would be built on sand).
   ViewParseIssue(view~ : String, issue~ : String)
@@ -150,7 +145,7 @@ pub suberror GenError {
   NotIterable(view~ : String, expr~ : String, ty~ : String)
   /// `<x render>` on something that is not a component slot.
   NotRenderable(view~ : String, expr~ : String, ty~ : String)
-  /// The `<script type="tutuca/script">` block does not parse. `line` is the
+  /// The `logic:` section does not read. `line` is the
   /// line in the HTML file, not in the block, for the same reason a state
   /// block's is: that is the file the author has open.
   BadScriptBlock(comp~ : String, line~ : Int, message~ : String)
@@ -159,15 +154,6 @@ pub suberror GenError {
 ///|
 /// The user-facing one-line message for a generation failure.
 declare pub fn GenError::message(self : GenError) -> String
-
-///|
-/// Split an input file into the components it declares — `@viewfile.split_file`
-/// with its failure wrapped as a `GenError`, so one pipeline has one error
-/// type. See `viewfile` for what the conventions are.
-declare pub fn split_file(
-  source : String,
-  name? : String,
-) -> @viewfile.ViewFile raise GenError
 
 ///|
 /// Compile the views and extract the typed surface. Every view is parsed into
@@ -242,14 +228,6 @@ declare pub fn build_views(
   macros? : Array[@viewfile.MacroDef],
   state? : @statedef.StateDef?,
 ) -> Map[String, @anode.View] raise GenError
-
-///|
-/// The whole pipeline: input file text -> generated MoonBit source.
-declare pub fn generate(
-  source : String,
-  name~ : String,
-  source_file~ : String,
-) -> String raise GenError
 
 ///|
 /// The component names a file gives views to. A schema interface outside

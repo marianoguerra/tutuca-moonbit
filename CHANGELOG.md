@@ -139,9 +139,34 @@ rather than a relaxation: the rule was about a sigil, and `~on_click: f()` and
 `~on_click: f` are one dispatch here — which is what the rule was arguing they
 should be. It still runs over views built as markup through `@anode.View::new`.
 
+Converting the last of the `viewgen` tests found three more, and the card
+gates found two:
+
+- **A macro's slots were not expanded.** `@slot` answered an empty fragment and
+  a macro call's children were dropped, so the playground's `macros` starter
+  rendered a panel with nothing in it. `@fill("name")` had no reader at all.
+  A macro call's children are read in the CALLER's scope and grafted where the
+  body asks for them, which is what "a macro is a tree" was supposed to buy.
+- **A card's own source could not cross to a host.** A string literal lowers to
+  `array.new_fixed`, and v8 refuses one over 10000 elements — so `tutu` is a
+  LIST of pieces, cut on character boundaries, joined by the host.
+- **`@viewgen.generate` still read `.html`.** It wrapped the splitter, so every
+  check reached through it — the `~bind` rules, the schema-aware view checks —
+  was reading a notation the CLI had stopped producing.
+- **`~id: "row"` and `~bind`'s diagnostics** spelled the old notation.
+- **`invariant` in a `logic:` section.** The playground's `contracts` starter
+  declared one there; a rule belongs in `spec:` beside the fields it is about,
+  and the lowering had been accepting it in either place.
+
 Two more author-facing spellings caught up with the notation: `~bind` and
 `~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
 and an `~id:` in a loop is quoted the way a file writes it.
+
+`cmd/conformance` and `cmd/tgc-corpus` print their projections as `.tutu` now
+rather than writing an `.html` and converting it. Both take rows that SPECIFY
+the block language — that is what a `@tscript.Decl` is a parse of — and a row
+whose member is a row member declares the parameters the renderer binds, which
+the old notation left it to read out of the air.
 
 ### Removed
 
@@ -1457,9 +1482,34 @@ property (`pub count: Int { get .count set .count }`) had no accessor; and
 the bindings. A fifth, found while fixing the fourth: a call to a card's own
 callable passed the caller's arguments.
 
+Converting the last of the `viewgen` tests found three more, and the card
+gates found two:
+
+- **A macro's slots were not expanded.** `@slot` answered an empty fragment and
+  a macro call's children were dropped, so the playground's `macros` starter
+  rendered a panel with nothing in it. `@fill("name")` had no reader at all.
+  A macro call's children are read in the CALLER's scope and grafted where the
+  body asks for them, which is what "a macro is a tree" was supposed to buy.
+- **A card's own source could not cross to a host.** A string literal lowers to
+  `array.new_fixed`, and v8 refuses one over 10000 elements — so `tutu` is a
+  LIST of pieces, cut on character boundaries, joined by the host.
+- **`@viewgen.generate` still read `.html`.** It wrapped the splitter, so every
+  check reached through it — the `~bind` rules, the schema-aware view checks —
+  was reading a notation the CLI had stopped producing.
+- **`~id: "row"` and `~bind`'s diagnostics** spelled the old notation.
+- **`invariant` in a `logic:` section.** The playground's `contracts` starter
+  declared one there; a rule belongs in `spec:` beside the fields it is about,
+  and the lowering had been accepting it in either place.
+
 Two more author-facing spellings caught up with the notation: `~bind` and
 `~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
 and an `~id:` in a loop is quoted the way a file writes it.
+
+`cmd/conformance` and `cmd/tgc-corpus` print their projections as `.tutu` now
+rather than writing an `.html` and converting it. Both take rows that SPECIFY
+the block language — that is what a `@tscript.Decl` is a parse of — and a row
+whose member is a row member declares the parameters the renderer binds, which
+the old notation left it to read out of the air.
 
 ### Removed
 
@@ -1561,9 +1611,34 @@ compiler names every site.
 | `swap~` bucket | an `update` arm answering `Replace(v)` |
 | a generated mutator (`setX`, `toggleX`, `resetX`, `removeInXAt`) | a property action in the view: `.x = v`, `.x = not .x`, `.x = default`, `.x.removeAt @key` |
 
+Converting the last of the `viewgen` tests found three more, and the card
+gates found two:
+
+- **A macro's slots were not expanded.** `@slot` answered an empty fragment and
+  a macro call's children were dropped, so the playground's `macros` starter
+  rendered a panel with nothing in it. `@fill("name")` had no reader at all.
+  A macro call's children are read in the CALLER's scope and grafted where the
+  body asks for them, which is what "a macro is a tree" was supposed to buy.
+- **A card's own source could not cross to a host.** A string literal lowers to
+  `array.new_fixed`, and v8 refuses one over 10000 elements — so `tutu` is a
+  LIST of pieces, cut on character boundaries, joined by the host.
+- **`@viewgen.generate` still read `.html`.** It wrapped the splitter, so every
+  check reached through it — the `~bind` rules, the schema-aware view checks —
+  was reading a notation the CLI had stopped producing.
+- **`~id: "row"` and `~bind`'s diagnostics** spelled the old notation.
+- **`invariant` in a `logic:` section.** The playground's `contracts` starter
+  declared one there; a rule belongs in `spec:` beside the fields it is about,
+  and the lowering had been accepting it in either place.
+
 Two more author-facing spellings caught up with the notation: `~bind` and
 `~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
 and an `~id:` in a loop is quoted the way a file writes it.
+
+`cmd/conformance` and `cmd/tgc-corpus` print their projections as `.tutu` now
+rather than writing an `.html` and converting it. Both take rows that SPECIFY
+the block language — that is what a `@tscript.Decl` is a parse of — and a row
+whose member is a row member declares the parameters the renderer binds, which
+the old notation left it to read out of the air.
 
 ### Removed in the next release
 
@@ -2983,9 +3058,34 @@ next number rather than the same one.
   because the host's policy is the single source of what a view may reach.
   The refusal now reads "this host does not allow external URLs in views".
 
+Converting the last of the `viewgen` tests found three more, and the card
+gates found two:
+
+- **A macro's slots were not expanded.** `@slot` answered an empty fragment and
+  a macro call's children were dropped, so the playground's `macros` starter
+  rendered a panel with nothing in it. `@fill("name")` had no reader at all.
+  A macro call's children are read in the CALLER's scope and grafted where the
+  body asks for them, which is what "a macro is a tree" was supposed to buy.
+- **A card's own source could not cross to a host.** A string literal lowers to
+  `array.new_fixed`, and v8 refuses one over 10000 elements — so `tutu` is a
+  LIST of pieces, cut on character boundaries, joined by the host.
+- **`@viewgen.generate` still read `.html`.** It wrapped the splitter, so every
+  check reached through it — the `~bind` rules, the schema-aware view checks —
+  was reading a notation the CLI had stopped producing.
+- **`~id: "row"` and `~bind`'s diagnostics** spelled the old notation.
+- **`invariant` in a `logic:` section.** The playground's `contracts` starter
+  declared one there; a rule belongs in `spec:` beside the fields it is about,
+  and the lowering had been accepting it in either place.
+
 Two more author-facing spellings caught up with the notation: `~bind` and
 `~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
 and an `~id:` in a loop is quoted the way a file writes it.
+
+`cmd/conformance` and `cmd/tgc-corpus` print their projections as `.tutu` now
+rather than writing an `.html` and converting it. Both take rows that SPECIFY
+the block language — that is what a `@tscript.Decl` is a parse of — and a row
+whose member is a row member declares the parameters the renderer binds, which
+the old notation left it to read out of the air.
 
 ### Removed
 
@@ -3844,9 +3944,34 @@ loads: the host refuses it by its export namespace with a message saying to
 rebuild. That retires the promise 0.23.0 made deliberately, and it is the whole
 cost of this release.
 
+Converting the last of the `viewgen` tests found three more, and the card
+gates found two:
+
+- **A macro's slots were not expanded.** `@slot` answered an empty fragment and
+  a macro call's children were dropped, so the playground's `macros` starter
+  rendered a panel with nothing in it. `@fill("name")` had no reader at all.
+  A macro call's children are read in the CALLER's scope and grafted where the
+  body asks for them, which is what "a macro is a tree" was supposed to buy.
+- **A card's own source could not cross to a host.** A string literal lowers to
+  `array.new_fixed`, and v8 refuses one over 10000 elements — so `tutu` is a
+  LIST of pieces, cut on character boundaries, joined by the host.
+- **`@viewgen.generate` still read `.html`.** It wrapped the splitter, so every
+  check reached through it — the `~bind` rules, the schema-aware view checks —
+  was reading a notation the CLI had stopped producing.
+- **`~id: "row"` and `~bind`'s diagnostics** spelled the old notation.
+- **`invariant` in a `logic:` section.** The playground's `contracts` starter
+  declared one there; a rule belongs in `spec:` beside the fields it is about,
+  and the lowering had been accepting it in either place.
+
 Two more author-facing spellings caught up with the notation: `~bind` and
 `~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
 and an `~id:` in a loop is quoted the way a file writes it.
+
+`cmd/conformance` and `cmd/tgc-corpus` print their projections as `.tutu` now
+rather than writing an `.html` and converting it. Both take rows that SPECIFY
+the block language — that is what a `@tscript.Decl` is a parse of — and a row
+whose member is a row member declares the parameters the renderer binds, which
+the old notation left it to read out of the air.
 
 ### Removed
 
@@ -4046,9 +4171,34 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   reason. A warning rather than a refusal: both spellings compile to the same
   message, and the fix is always the name the warning prints.
 
+Converting the last of the `viewgen` tests found three more, and the card
+gates found two:
+
+- **A macro's slots were not expanded.** `@slot` answered an empty fragment and
+  a macro call's children were dropped, so the playground's `macros` starter
+  rendered a panel with nothing in it. `@fill("name")` had no reader at all.
+  A macro call's children are read in the CALLER's scope and grafted where the
+  body asks for them, which is what "a macro is a tree" was supposed to buy.
+- **A card's own source could not cross to a host.** A string literal lowers to
+  `array.new_fixed`, and v8 refuses one over 10000 elements — so `tutu` is a
+  LIST of pieces, cut on character boundaries, joined by the host.
+- **`@viewgen.generate` still read `.html`.** It wrapped the splitter, so every
+  check reached through it — the `~bind` rules, the schema-aware view checks —
+  was reading a notation the CLI had stopped producing.
+- **`~id: "row"` and `~bind`'s diagnostics** spelled the old notation.
+- **`invariant` in a `logic:` section.** The playground's `contracts` starter
+  declared one there; a rule belongs in `spec:` beside the fields it is about,
+  and the lowering had been accepting it in either place.
+
 Two more author-facing spellings caught up with the notation: `~bind` and
 `~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
 and an `~id:` in a loop is quoted the way a file writes it.
+
+`cmd/conformance` and `cmd/tgc-corpus` print their projections as `.tutu` now
+rather than writing an `.html` and converting it. Both take rows that SPECIFY
+the block language — that is what a `@tscript.Decl` is a parse of — and a row
+whose member is a row member declares the parameters the renderer binds, which
+the old notation left it to read out of the air.
 
 ### Removed
 
@@ -4105,9 +4255,34 @@ and an `~id:` in a loop is quoted the way a file writes it.
 
 ## [0.22.0] - 2026-08-15
 
+Converting the last of the `viewgen` tests found three more, and the card
+gates found two:
+
+- **A macro's slots were not expanded.** `@slot` answered an empty fragment and
+  a macro call's children were dropped, so the playground's `macros` starter
+  rendered a panel with nothing in it. `@fill("name")` had no reader at all.
+  A macro call's children are read in the CALLER's scope and grafted where the
+  body asks for them, which is what "a macro is a tree" was supposed to buy.
+- **A card's own source could not cross to a host.** A string literal lowers to
+  `array.new_fixed`, and v8 refuses one over 10000 elements — so `tutu` is a
+  LIST of pieces, cut on character boundaries, joined by the host.
+- **`@viewgen.generate` still read `.html`.** It wrapped the splitter, so every
+  check reached through it — the `~bind` rules, the schema-aware view checks —
+  was reading a notation the CLI had stopped producing.
+- **`~id: "row"` and `~bind`'s diagnostics** spelled the old notation.
+- **`invariant` in a `logic:` section.** The playground's `contracts` starter
+  declared one there; a rule belongs in `spec:` beside the fields it is about,
+  and the lowering had been accepting it in either place.
+
 Two more author-facing spellings caught up with the notation: `~bind` and
 `~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
 and an `~id:` in a loop is quoted the way a file writes it.
+
+`cmd/conformance` and `cmd/tgc-corpus` print their projections as `.tutu` now
+rather than writing an `.html` and converting it. Both take rows that SPECIFY
+the block language — that is what a `@tscript.Decl` is a parse of — and a row
+whose member is a row member declares the parameters the renderer binds, which
+the old notation left it to read out of the air.
 
 ### Removed
 
@@ -5445,9 +5620,34 @@ and an `~id:` in a loop is quoted the way a file writes it.
 > 0.13.0 on the boundary is clean: `[Unreleased]` above starts empty, and the
 > next release moves its own entries and nobody else's, per CONTRIBUTING.md.
 
+Converting the last of the `viewgen` tests found three more, and the card
+gates found two:
+
+- **A macro's slots were not expanded.** `@slot` answered an empty fragment and
+  a macro call's children were dropped, so the playground's `macros` starter
+  rendered a panel with nothing in it. `@fill("name")` had no reader at all.
+  A macro call's children are read in the CALLER's scope and grafted where the
+  body asks for them, which is what "a macro is a tree" was supposed to buy.
+- **A card's own source could not cross to a host.** A string literal lowers to
+  `array.new_fixed`, and v8 refuses one over 10000 elements — so `tutu` is a
+  LIST of pieces, cut on character boundaries, joined by the host.
+- **`@viewgen.generate` still read `.html`.** It wrapped the splitter, so every
+  check reached through it — the `~bind` rules, the schema-aware view checks —
+  was reading a notation the CLI had stopped producing.
+- **`~id: "row"` and `~bind`'s diagnostics** spelled the old notation.
+- **`invariant` in a `logic:` section.** The playground's `contracts` starter
+  declared one there; a rule belongs in `spec:` beside the fields it is about,
+  and the lowering had been accepting it in either place.
+
 Two more author-facing spellings caught up with the notation: `~bind` and
 `~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
 and an `~id:` in a loop is quoted the way a file writes it.
+
+`cmd/conformance` and `cmd/tgc-corpus` print their projections as `.tutu` now
+rather than writing an `.html` and converting it. Both take rows that SPECIFY
+the block language — that is what a `@tscript.Decl` is a parse of — and a row
+whose member is a row member declares the parameters the renderer binds, which
+the old notation left it to read out of the air.
 
 ### Removed
 
@@ -6029,9 +6229,34 @@ and an `~id:` in a loop is quoted the way a file writes it.
   And every `*_view_ir_gen.mbt` regenerates, since the emitted IR names the
   builtin as a string instead of a constructor.
 
+Converting the last of the `viewgen` tests found three more, and the card
+gates found two:
+
+- **A macro's slots were not expanded.** `@slot` answered an empty fragment and
+  a macro call's children were dropped, so the playground's `macros` starter
+  rendered a panel with nothing in it. `@fill("name")` had no reader at all.
+  A macro call's children are read in the CALLER's scope and grafted where the
+  body asks for them, which is what "a macro is a tree" was supposed to buy.
+- **A card's own source could not cross to a host.** A string literal lowers to
+  `array.new_fixed`, and v8 refuses one over 10000 elements — so `tutu` is a
+  LIST of pieces, cut on character boundaries, joined by the host.
+- **`@viewgen.generate` still read `.html`.** It wrapped the splitter, so every
+  check reached through it — the `~bind` rules, the schema-aware view checks —
+  was reading a notation the CLI had stopped producing.
+- **`~id: "row"` and `~bind`'s diagnostics** spelled the old notation.
+- **`invariant` in a `logic:` section.** The playground's `contracts` starter
+  declared one there; a rule belongs in `spec:` beside the fields it is about,
+  and the lowering had been accepting it in either place.
+
 Two more author-facing spellings caught up with the notation: `~bind` and
 `~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
 and an `~id:` in a loop is quoted the way a file writes it.
+
+`cmd/conformance` and `cmd/tgc-corpus` print their projections as `.tutu` now
+rather than writing an `.html` and converting it. Both take rows that SPECIFY
+the block language — that is what a `@tscript.Decl` is a parse of — and a row
+whose member is a row member declares the parameters the renderer binds, which
+the old notation left it to read out of the air.
 
 ### Removed
 
@@ -6626,9 +6851,34 @@ and an `~id:` in a loop is quoted the way a file writes it.
   overrode `.indicator-item`'s and moved the button out from under the cursor
   between mousedown and mouseup.
 
+Converting the last of the `viewgen` tests found three more, and the card
+gates found two:
+
+- **A macro's slots were not expanded.** `@slot` answered an empty fragment and
+  a macro call's children were dropped, so the playground's `macros` starter
+  rendered a panel with nothing in it. `@fill("name")` had no reader at all.
+  A macro call's children are read in the CALLER's scope and grafted where the
+  body asks for them, which is what "a macro is a tree" was supposed to buy.
+- **A card's own source could not cross to a host.** A string literal lowers to
+  `array.new_fixed`, and v8 refuses one over 10000 elements — so `tutu` is a
+  LIST of pieces, cut on character boundaries, joined by the host.
+- **`@viewgen.generate` still read `.html`.** It wrapped the splitter, so every
+  check reached through it — the `~bind` rules, the schema-aware view checks —
+  was reading a notation the CLI had stopped producing.
+- **`~id: "row"` and `~bind`'s diagnostics** spelled the old notation.
+- **`invariant` in a `logic:` section.** The playground's `contracts` starter
+  declared one there; a rule belongs in `spec:` beside the fields it is about,
+  and the lowering had been accepting it in either place.
+
 Two more author-facing spellings caught up with the notation: `~bind` and
 `~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
 and an `~id:` in a loop is quoted the way a file writes it.
+
+`cmd/conformance` and `cmd/tgc-corpus` print their projections as `.tutu` now
+rather than writing an `.html` and converting it. Both take rows that SPECIFY
+the block language — that is what a `@tscript.Decl` is a parse of — and a row
+whose member is a row member declares the parameters the renderer binds, which
+the old notation left it to read out of the air.
 
 ### Removed
 
@@ -7494,9 +7744,34 @@ and an `~id:` in a loop is quoted the way a file writes it.
   `switch view` −13.4%, `page people 1000` −11.9%, `refilter people 100`
   −11.9%.
 
+Converting the last of the `viewgen` tests found three more, and the card
+gates found two:
+
+- **A macro's slots were not expanded.** `@slot` answered an empty fragment and
+  a macro call's children were dropped, so the playground's `macros` starter
+  rendered a panel with nothing in it. `@fill("name")` had no reader at all.
+  A macro call's children are read in the CALLER's scope and grafted where the
+  body asks for them, which is what "a macro is a tree" was supposed to buy.
+- **A card's own source could not cross to a host.** A string literal lowers to
+  `array.new_fixed`, and v8 refuses one over 10000 elements — so `tutu` is a
+  LIST of pieces, cut on character boundaries, joined by the host.
+- **`@viewgen.generate` still read `.html`.** It wrapped the splitter, so every
+  check reached through it — the `~bind` rules, the schema-aware view checks —
+  was reading a notation the CLI had stopped producing.
+- **`~id: "row"` and `~bind`'s diagnostics** spelled the old notation.
+- **`invariant` in a `logic:` section.** The playground's `contracts` starter
+  declared one there; a rule belongs in `spec:` beside the fields it is about,
+  and the lowering had been accepting it in either place.
+
 Two more author-facing spellings caught up with the notation: `~bind` and
 `~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
 and an `~id:` in a loop is quoted the way a file writes it.
+
+`cmd/conformance` and `cmd/tgc-corpus` print their projections as `.tutu` now
+rather than writing an `.html` and converting it. Both take rows that SPECIFY
+the block language — that is what a `@tscript.Decl` is a parse of — and a row
+whose member is a row member declares the parameters the renderer binds, which
+the old notation left it to read out of the air.
 
 ### Removed (BREAKING)
 
@@ -7683,9 +7958,34 @@ and an `~id:` in a loop is quoted the way a file writes it.
   built entirely ahead of time does not link one. `demo/counter_wasm`:
   438,803 → 241,941 bytes. No call site changed.
 
+Converting the last of the `viewgen` tests found three more, and the card
+gates found two:
+
+- **A macro's slots were not expanded.** `@slot` answered an empty fragment and
+  a macro call's children were dropped, so the playground's `macros` starter
+  rendered a panel with nothing in it. `@fill("name")` had no reader at all.
+  A macro call's children are read in the CALLER's scope and grafted where the
+  body asks for them, which is what "a macro is a tree" was supposed to buy.
+- **A card's own source could not cross to a host.** A string literal lowers to
+  `array.new_fixed`, and v8 refuses one over 10000 elements — so `tutu` is a
+  LIST of pieces, cut on character boundaries, joined by the host.
+- **`@viewgen.generate` still read `.html`.** It wrapped the splitter, so every
+  check reached through it — the `~bind` rules, the schema-aware view checks —
+  was reading a notation the CLI had stopped producing.
+- **`~id: "row"` and `~bind`'s diagnostics** spelled the old notation.
+- **`invariant` in a `logic:` section.** The playground's `contracts` starter
+  declared one there; a rule belongs in `spec:` beside the fields it is about,
+  and the lowering had been accepting it in either place.
+
 Two more author-facing spellings caught up with the notation: `~bind` and
 `~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
 and an `~id:` in a loop is quoted the way a file writes it.
+
+`cmd/conformance` and `cmd/tgc-corpus` print their projections as `.tutu` now
+rather than writing an `.html` and converting it. Both take rows that SPECIFY
+the block language — that is what a `@tscript.Decl` is a parse of — and a row
+whose member is a row member declares the parameters the renderer binds, which
+the old notation left it to read out of the air.
 
 ### Removed
 
@@ -7996,9 +8296,34 @@ and an `~id:` in a loop is quoted the way a file writes it.
 - `@tutuca.same_node`: physical identity across the `&PathNode` trait-object
   boxing, which a plain `physical_equal` defeats.
 
+Converting the last of the `viewgen` tests found three more, and the card
+gates found two:
+
+- **A macro's slots were not expanded.** `@slot` answered an empty fragment and
+  a macro call's children were dropped, so the playground's `macros` starter
+  rendered a panel with nothing in it. `@fill("name")` had no reader at all.
+  A macro call's children are read in the CALLER's scope and grafted where the
+  body asks for them, which is what "a macro is a tree" was supposed to buy.
+- **A card's own source could not cross to a host.** A string literal lowers to
+  `array.new_fixed`, and v8 refuses one over 10000 elements — so `tutu` is a
+  LIST of pieces, cut on character boundaries, joined by the host.
+- **`@viewgen.generate` still read `.html`.** It wrapped the splitter, so every
+  check reached through it — the `~bind` rules, the schema-aware view checks —
+  was reading a notation the CLI had stopped producing.
+- **`~id: "row"` and `~bind`'s diagnostics** spelled the old notation.
+- **`invariant` in a `logic:` section.** The playground's `contracts` starter
+  declared one there; a rule belongs in `spec:` beside the fields it is about,
+  and the lowering had been accepting it in either place.
+
 Two more author-facing spellings caught up with the notation: `~bind` and
 `~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
 and an `~id:` in a loop is quoted the way a file writes it.
+
+`cmd/conformance` and `cmd/tgc-corpus` print their projections as `.tutu` now
+rather than writing an `.html` and converting it. Both take rows that SPECIFY
+the block language — that is what a `@tscript.Decl` is a parse of — and a row
+whose member is a row member declares the parameters the renderer binds, which
+the old notation left it to read out of the air.
 
 ### Removed
 

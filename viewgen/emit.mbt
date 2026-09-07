@@ -109,7 +109,7 @@ fn absent_note(answered : Array[String], mechanism : String) -> String {
   }
   let out = StringBuilder()
   out.write_string(
-    "///\n/// Absent, because the script block answers them: \{answered.join(", ")}.\n",
+    "///\n/// Absent, because the `logic:` section answers them: \{answered.join(", ")}.\n",
   )
   for line in mechanism.split("\n") {
     out.write_string("/// \{line}\n")
@@ -700,30 +700,4 @@ fn state_for(
   fallback : String,
 ) -> @statedef.StateDef? {
   file.state_of(comp, fallback~)
-}
-
-///|
-/// `@viewfile.split_file` in the generator's error vocabulary.
-///
-/// The splitter is a package down and raises its own `FileError`, which is
-/// right for a card runtime that never generates anything. A caller who is
-/// about to call `emit_module` wants one error type for the whole pipeline,
-/// and `File` is only constructible here — so the conversion lives here,
-/// once, instead of at every call site.
-pub fn split_file(
-  source : String,
-  name? : String = "",
-) -> @viewfile.ViewFile raise GenError {
-  @viewfile.split_file(source, name~) catch {
-    e => raise File(e)
-  }
-}
-
-///|
-pub fn generate(
-  source : String,
-  name~ : String,
-  source_file~ : String,
-) -> String raise GenError {
-  emit_module(name, source_file, split_file(source, name~))
 }

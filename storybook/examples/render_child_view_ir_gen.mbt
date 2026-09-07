@@ -253,8 +253,8 @@ pub fn entry_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `pred contains_text` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
+/// `pred contains_text` from the `logic:` section. GENERATED — edit
+/// the file, not this.
 fn entry_compute_contains_text(
   s : EntryState,
   args : Array[@tutuca.Value],
@@ -271,7 +271,7 @@ fn entry_compute_contains_text(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn entry_inline_compute() -> Map[
   String,
   (EntryState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

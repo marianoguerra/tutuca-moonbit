@@ -72,9 +72,9 @@ impl @component.Fields for PushViewState with fn decode(f) {
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
 ///
-/// The script block answers toggle_view, so an `update` arm for
+/// The `logic:` section answers toggle_view, so an `update` arm for
 /// one of those can never run — the wrapper consults `update` only for a
-/// dispatch the block did not claim. They are still here because raising
+/// dispatch the section did not claim. They are still here because raising
 /// one is what a parent does, and `to_dispatch` is how.
 pub(all) enum PushViewMsg {
   ToggleView
@@ -385,9 +385,9 @@ impl @component.Fields for PaginationState with fn decode(f) {
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
 ///
-/// The script block answers prev, next, so an `update` arm for
+/// The `logic:` section answers prev, next, so an `update` arm for
 /// one of those can never run — the wrapper consults `update` only for a
-/// dispatch the block did not claim. They are still here because raising
+/// dispatch the section did not claim. They are still here because raising
 /// one is what a parent does, and `to_dispatch` is how.
 pub(all) enum PaginationMsg {
   Next
@@ -461,7 +461,7 @@ pub let pagination_global_style : String = ""
 ///|
 /// Every callable the views name, plus the file's own `pred` / `compute` names — the bucket `compute~` keys.
 ///
-/// Absent, because the script block answers them: page_exists.
+/// Absent, because the `logic:` section answers them: page_exists.
 /// The block's own handlers are merged into this bucket, so an arm for one of
 /// these could never run.
 pub(all) enum PaginationCompute {

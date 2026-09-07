@@ -134,7 +134,7 @@ fn read_into(
       name: vname,
       source: "",
       style: built.style,
-      tree: Some({ root, events, }),
+      tree: Some({ root, events, bytes: d.span.end() - d.span.start, }),
     }
     // `main` first, which is what every consumer of a view set assumes.
     if vname == "main" {

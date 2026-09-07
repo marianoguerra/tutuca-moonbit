@@ -428,8 +428,8 @@ fn corpus_inline_update(
 }
 
 ///|
-/// `pred has_some` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
+/// `pred has_some` from the `logic:` section. GENERATED — edit
+/// the file, not this.
 fn corpus_compute_has_some(
   s : CorpusState,
   _args : Array[@tutuca.Value],
@@ -439,8 +439,8 @@ fn corpus_compute_has_some(
 }
 
 ///|
-/// `pred small` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
+/// `pred small` from the `logic:` section. GENERATED — edit
+/// the file, not this.
 fn corpus_compute_small(
   s : CorpusState,
   _args : Array[@tutuca.Value],
@@ -451,7 +451,7 @@ fn corpus_compute_small(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn corpus_inline_compute() -> Map[
   String,
   (CorpusState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

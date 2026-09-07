@@ -209,8 +209,8 @@ fn picker_row_inline_update(
 }
 
 ///|
-/// `compute label` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
+/// `compute label` from the `logic:` section. GENERATED — edit
+/// the file, not this.
 fn picker_row_compute_label(
   s : PickerRowState,
   _args : Array[@tutuca.Value],
@@ -228,7 +228,7 @@ fn picker_row_compute_label(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn picker_row_inline_compute() -> Map[
   String,
   (PickerRowState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -979,8 +979,8 @@ fn shell_inline_update(
 }
 
 ///|
-/// `compute editing` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
+/// `compute editing` from the `logic:` section. GENERATED — edit
+/// the file, not this.
 fn shell_compute_editing(
   s : ShellState,
   _args : Array[@tutuca.Value],
@@ -992,8 +992,8 @@ fn shell_compute_editing(
 }
 
 ///|
-/// `compute edit_label` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
+/// `compute edit_label` from the `logic:` section. GENERATED — edit
+/// the file, not this.
 fn shell_compute_edit_label(
   s : ShellState,
   _args : Array[@tutuca.Value],
@@ -1011,7 +1011,7 @@ fn shell_compute_edit_label(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn shell_inline_compute() -> Map[
   String,
   (ShellState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

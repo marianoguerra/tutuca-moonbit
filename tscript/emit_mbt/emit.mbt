@@ -629,14 +629,12 @@ fn E::value_body(
   let b = StringBuilder()
   b.write_string("///|\n")
   b.write_string("/// `\{@tscript.kind_word(d.kind)} \{d.name}` from the ")
-  // Which block it came from. A rule lives in the spec block and everything
-  // else in the script block, and a generated comment that pointed at the
-  // wrong one would send a reader to edit a file that does not hold it.
-  let block = if self.def.rule(d.name) is Some(_) { "spec" } else { "script" }
-  b.write_string(
-    "`<script type=\"tutuca/\{block}\">` block. GENERATED — edit\n",
-  )
-  b.write_string("/// the block, not this.\n")
+  // Which SECTION it came from. A rule is declared in `spec:` and everything
+  // else in `logic:`, and a generated comment that pointed at the wrong one
+  // would send a reader to edit a part of the file that does not hold it.
+  let section = if self.def.rule(d.name) is Some(_) { "spec" } else { "logic" }
+  b.write_string("`\{section}:` section. GENERATED — edit\n")
+  b.write_string("/// the file, not this.\n")
   b.write_string("fn \{name}(\{params.join(", ")}) -> \{ret} {\n")
   b.write_string(body.to_string())
   b.write_string("}\n\n")

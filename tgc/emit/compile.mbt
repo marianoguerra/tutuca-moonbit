@@ -673,7 +673,7 @@ fn manifest_value(
   // the HTML one, and the two sides read the SAME text with the SAME reader —
   // which is what a differential test can be written about. A host reads it
   // with `tutufile/toanode`, macros in hand, exactly as `viewgen` does.
-  out["tutu"] = Str(source)
+  out["tutu"] = List(chunks_of(source).map(c => Str(c)))
   // A macro is markup the HOST expands when it parses a view, so a manifest
   // that dropped them is a view reaching for a name nothing declares. Its
   // defaults are named here because a caller may override them and the reader
@@ -701,6 +701,40 @@ fn manifest_value(
     }),
   )
   Map(out)
+}
+
+///|
+/// The card source, in pieces a wasm module can hold.
+///
+/// A string literal lowers to `array.new_fixed`, and v8 refuses one with more
+/// than 10000 elements — so a card of any size at all cannot cross as one
+/// literal. The pieces are joined by whoever reads them, which is the host and
+/// nothing else.
+///
+/// Cut on CHARACTER boundaries, not on the string's own indices: a cut through
+/// a surrogate pair would make two pieces that are each invalid and a join that
+/// is not the source.
+fn chunks_of(source : String) -> Array[String] {
+  let chars = source.to_array()
+  let out = []
+  let mut at = 0
+  while at < chars.length() {
+    let end = if at + 4096 < chars.length() {
+      at + 4096
+    } else {
+      chars.length()
+    }
+    let piece = StringBuilder()
+    for i in at..<end {
+      piece.write_char(chars[i])
+    }
+    out.push(piece.to_string())
+    at = end
+  }
+  if out.is_empty() {
+    out.push("")
+  }
+  out
 }
 
 ///|
@@ -804,7 +838,19 @@ fn component_value(
   // NAMES, in the order the file declares them, `main` first. The bodies are
   // in the manifest's `tutu`, under `<Component>.<name>` — a host reads them
   // there rather than being handed each one twice.
-  out["views"] = List(c.views.map(v => Map({ "name": Str(v.name) })))
+  out["views"] = List(
+    c.views.map(v => {
+      Map({
+        "name": Str(v.name),
+        "bytes": Num(
+          (match v.tree {
+            Some(t) => t.bytes
+            None => v.source.length()
+          }).to_double(),
+        ),
+      })
+    }),
+  )
   out["fields"] = List(
     c.fields.map(f => {
       Map({

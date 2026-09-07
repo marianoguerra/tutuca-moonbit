@@ -93,9 +93,9 @@ impl @component.Fields for RequestExampleState with fn decode(f) {
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
 ///
-/// The script block answers toggle_view, so an `update` arm for
+/// The `logic:` section answers toggle_view, so an `update` arm for
 /// one of those can never run — the wrapper consults `update` only for a
-/// dispatch the block did not claim. They are still here because raising
+/// dispatch the section did not claim. They are still here because raising
 /// one is what a parent does, and `to_dispatch` is how.
 pub(all) enum RequestExampleMsg {
   Init

@@ -136,16 +136,16 @@ pub fn collect_view_classes(
   for pair in sources {
     let (path, source) = pair
     try {
-      let file = @viewgen.split_file(source)
+      let file = @viewgen.read_file(source)
       for comp in file.components {
         // The schema, paired the way the generator pairs it. Building without
         // it is not a shortcut: `@bind` reads the field's type to pick its
         // coercion, so a view file gen compiles happily would be refused
         // here and the whole stylesheet would stop rebuilding.
         //
-        // The fallback is "" on both sides — `split_file` above is called
-        // without a `name~`, so an unnamed component and an unnamed `state`
-        // block meet under the same empty name, which is the pairing they have.
+        // The fallback is "" on both sides — `read_file` above is called
+        // without a `name~`, and a `.tutu` always names its components, so the
+        // fallback is only what the shared half of `statedef` asks for.
         let cname = comp.component_name("")
         let views = @viewgen.build_views(
           comp,

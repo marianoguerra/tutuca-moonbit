@@ -95,9 +95,9 @@ impl @component.Fields for PickerRowState with fn decode(f) {
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
 ///
-/// The script block answers pick, so an `update` arm for
+/// The `logic:` section answers pick, so an `update` arm for
 /// one of those can never run — the wrapper consults `update` only for a
-/// dispatch the block did not claim. They are still here because raising
+/// dispatch the section did not claim. They are still here because raising
 /// one is what a parent does, and `to_dispatch` is how.
 pub(all) enum PickerRowMsg {
   SetSelected(Bool)
@@ -279,9 +279,9 @@ impl @component.Fields for ComponentPickerState with fn decode(f) {
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
 ///
-/// The script block answers typed, so an `update` arm for
+/// The `logic:` section answers typed, so an `update` arm for
 /// one of those can never run — the wrapper consults `update` only for a
-/// dispatch the block did not claim. They are still here because raising
+/// dispatch the section did not claim. They are still here because raising
 /// one is what a parent does, and `to_dispatch` is how.
 pub(all) enum ComponentPickerMsg {
   SetCursor(Int)
@@ -505,9 +505,9 @@ impl @component.Fields for CardRowState with fn decode(f) {
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
 ///
-/// The script block answers load, choose, so an `update` arm for
+/// The `logic:` section answers load, choose, so an `update` arm for
 /// one of those can never run — the wrapper consults `update` only for a
-/// dispatch the block did not claim. They are still here because raising
+/// dispatch the section did not claim. They are still here because raising
 /// one is what a parent does, and `to_dispatch` is how.
 pub(all) enum CardRowMsg {
   SetLoaded(Bool)
@@ -806,9 +806,9 @@ impl @component.Fields for ShellState with fn decode(f) {
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
 ///
-/// The script block answers type_source, toggle_edit, compile_source, load_all, load_chosen, save, restore, clear_canvas, so an `update` arm for
+/// The `logic:` section answers type_source, toggle_edit, compile_source, load_all, load_chosen, save, restore, clear_canvas, so an `update` arm for
 /// one of those can never run — the wrapper consults `update` only for a
-/// dispatch the block did not claim. They are still here because raising
+/// dispatch the section did not claim. They are still here because raising
 /// one is what a parent does, and `to_dispatch` is how.
 pub(all) enum ShellMsg {
   OpenPicker

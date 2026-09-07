@@ -544,6 +544,28 @@ fn parse_macros(
 }
 
 ///|
+/// A field that crosses as a LIST of string pieces, joined.
+///
+/// A string literal lowers to `array.new_fixed`, and v8 refuses one over 10000
+/// elements — so a card of any size cannot cross as one. `tgc/emit`'s
+/// `chunks_of` cuts it and this is the other half.
+fn joined(root : Map[String, Json], key : String) -> String {
+  match root.get(key) {
+    Some(Array(parts)) => {
+      let out = StringBuilder()
+      for p in parts {
+        if p is String(s) {
+          out.write_string(s)
+        }
+      }
+      out.to_string()
+    }
+    Some(String(s)) => s
+    _ => ""
+  }
+}
+
+///|
 /// The declared fields of a component, in declaration order.
 pub fn DynComponentDef::field_infos(
   self : DynComponentDef,
@@ -857,7 +879,7 @@ pub fn DynManifest::from_json_string(
     authors: str_array(root, "authors"),
     config: parse_config(root),
     components,
-    tutu: opt_str(root, "tutu"),
+    tutu: joined(root, "tutu"),
     macros: parse_macros(root),
   }
 }

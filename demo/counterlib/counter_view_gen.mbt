@@ -123,9 +123,9 @@ impl @component.Fields for CounterState with fn decode(f) {
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
 ///
-/// The script block answers add, so an `update` arm for
+/// The `logic:` section answers add, so an `update` arm for
 /// one of those can never run — the wrapper consults `update` only for a
-/// dispatch the block did not claim. They are still here because raising
+/// dispatch the section did not claim. They are still here because raising
 /// one is what a parent does, and `to_dispatch` is how.
 pub(all) enum CounterMsg {
   ResetTo(Int)

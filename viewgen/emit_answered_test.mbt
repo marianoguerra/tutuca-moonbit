@@ -49,7 +49,7 @@ test "a $name the block answers is dropped from the Method enum" {
   assert_true(types.contains("pub(all) enum MailCompute {\n  RowLabel\n}"))
   assert_true(
     types.contains(
-      "Absent, because the script block answers them: hasAttachments.",
+      "Absent, because the `logic:` section answers them: hasAttachments.",
     ),
   )
   // The name still keys the bucket at runtime — it is answered, not removed —

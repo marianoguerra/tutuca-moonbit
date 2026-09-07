@@ -16,23 +16,12 @@ construct you remember is called now.
 
 ## Status — read this first
 
-The migration is **done for everything that ships. Nothing in the tree is
-written in the old notation, nothing prints it, and nothing on the path from a
-file to a running component reads it: every section is read directly into the
-shape it means, and a compiled card carries its own `.tutu` source for a host
-to read the same way.** What is left below is the record of how it was done,
-and the conversion table you came for.
-
-**What is left is one package's tests.** `@viewgen.split_file` and
-`@viewgen.generate` still wrap `@viewfile.split_file`, and ten test files in
-`viewgen/` still hand them `.html` fixtures — around ninety of them, several
-with whole-module snapshots beside them. Nothing outside those tests calls
-either function: the CLI, the card compiler, both playgrounds and the
-benchmarks all read directly. Converting them is what takes `viewfile`'s
-splitter, and it is mechanical rather than uncertain — the fixtures are the
-same constructs the rest of the corpus already spells, and
-`viewgen/surface_test.mbt` and `viewgen/bind_test.mbt` are the two that have
-been converted, as the shape to follow.
+The migration is **done. Nothing in the tree is written in the old notation,
+nothing prints it, and nothing reads it: every section is read directly into
+the shape it means, a compiled card carries its own `.tutu` source for a host
+to read the same way, and the splitter, the printers, the converter and the
+equivalence check are deleted.** What is left below is the record of how it was
+done, and the conversion table you came for.
 
 | Stage | What it is | State |
 | --- | --- | --- |
@@ -43,7 +32,7 @@ been converted, as the shape to follow.
 | 5 | The MoonBit beside each view: fields, message names, hook keys, binding names | **done** |
 | 5b | The docs: the skill's 90 view blocks and its prose, `README`, `docs/`, and every diagnostic an author reads | **done** |
 | 5c | The card playground: its 26 starter cards, the structured editor's region model, and the gates over both | **done** |
-| 6 | Direct readers, replacing the lowering; then delete the old parsers | **done for the pipeline** — see below |
+| 6 | Direct readers, replacing the lowering; then delete the old parsers | **done** — see below |
 
 ### Stage 6, as it landed
 
@@ -59,9 +48,22 @@ All four sections read directly:
 `ViewFile` stopped carrying text: `RawView` carries its tree and `ScriptBlock`
 its declarations, so `viewgen/compiled.mbt`'s `compile_view` has nothing to
 parse. `viewgen.read_file` replaced `split_file` for every consumer — the CLI,
-the card compiler, both playgrounds — and `read_card` is the same read with
-every report handed back instead of the first one raised, which is what a
-`check` needs.
+the card compiler, both playgrounds, the CSS collector and the benchmarks — and
+`read_card` is the same read with every report handed back instead of the first
+one raised, which is what a `check` needs. `viewfile` is a SHAPE now and no
+longer a reader: the WHATWG tokenizer it ran to find element boundaries is
+gone, and so is the package's dependency on an HTML parser.
+
+Three checks went with the notation they were about, and each is worth knowing
+about because the absence looks like a gap:
+
+- **The HTML linter.** An unclosed element is a thing a tokenizer repairs, and
+  at-notation has no way to write one. What is left is the advice about what a
+  view REACHES — the event-path allowlist — which is about the tree.
+- **`no macro named 'x'`.** There is no macro-call syntax distinct from an
+  element: `@card(…)` is a macro where one is declared and an element where
+  none is, which is what a custom element has always been.
+- **`METHOD_IN_EVENT`.** See above.
 
 ### The card manifest carries the card
 

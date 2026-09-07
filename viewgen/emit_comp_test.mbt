@@ -7,19 +7,20 @@
 
 ///|
 /// Schema + template: the case the wrapper is for.
-let wrapper_html : String =
-  #|<script type="tutuca/spec">
-  #|  state Counter { label: String, count: Int }
-  #|</script>
+let wrapper_src : String =
+  #|spec:
+  #|  Counter:
+  #|    field label :: String
+  #|    field count :: Int
   #|
-  #|<template>
-  #|  <h1><x text=".label"></x>: <x text=".count"></x></h1>
-  #|  <button @on.click="add 1">+1</button>
-  #|</template>
+  #|view:
+  #|  Counter:
+  #|    @h1{@(it.label): @(it.count)}
+  #|    @button(~on_click: add(1)){+1}
 
 ///|
 test "a schema-backed component gets a wrapper over component()" {
-  let f = @viewgen.split_file(wrapper_html)
+  let f = @viewgen.read_file(wrapper_src)
   let ir = @viewgen.emit_ir_module("Counter", "counter.tutu", f)
   // Public, like every other piece of generated vocabulary. It names the
   // state type in its signature, which is why that is `pub(all)` too — and
@@ -82,17 +83,20 @@ test "a schema-backed component gets a wrapper over component()" {
 /// A nested record gets a direct codec like every other shape, and the
 /// wrapper names it.
 test "a nested record still gets a direct codec, named by the wrapper" {
-  let f = @viewgen.split_file(
+  let f = @viewgen.read_file(
     (
-      #|<script type="tutuca/spec">
-      #|  struct Point { x: Int, y: Int }
-      #|  state Card { at: Point }
-      #|</script>
+      #|spec:
+      #|  struct Point(x :: Int, y :: Int)
       #|
-      #|<template><i @text=".at"></i></template>
+      #|  Card:
+      #|    field at :: Point
+      #|
+      #|view:
+      #|  Card:
+      #|    @i{@(it.at)}
     ),
   )
-  let ir = @viewgen.emit_ir_module("Card", "card.html", f)
+  let ir = @viewgen.emit_ir_module("Card", "card.tutu", f)
   assert_true(ir.contains("\npub fn card_component(\n"))
   // Neither the codec nor the schema is passed: the state type states both.
   assert_false(ir.contains("encode="))
@@ -108,48 +112,54 @@ test "a nested record still gets a direct codec, named by the wrapper" {
 /// No schema means no state type, so there are no typed parameters to make a
 /// wrapper out of. Those components keep calling `component()` directly.
 test "a component with views but no schema gets no wrapper" {
-  let f = @viewgen.split_file("<template><b>hi</b></template>")
-  let ir = @viewgen.emit_ir_module("Plain", "plain.html", f)
+  let f = @viewgen.read_file("view:\n  Plain:\n    @b{hi}\n")
+  let ir = @viewgen.emit_ir_module("Plain", "plain.tutu", f)
   assert_true(ir.contains("pub fn plain_views()"))
   assert_false(ir.contains("plain_component("))
 }
 
 ///|
-/// A schema entry with no template declares state for a component whose views
+/// A `spec:` entry with no view declares state for a component whose views
 /// are built in MoonBit. There is nothing to default `views~` to, and the IR
 /// module does not carry the component at all.
 test "a schema-only component gets no wrapper" {
-  let f = @viewgen.split_file(
+  let f = @viewgen.read_file(
     (
-      #|<script type="tutuca/spec">
-      #|  state Headless { n: Int }
-      #|    state Shown { n: Int }
-      #|</script>
+      #|spec:
+      #|  Headless:
+      #|    field n :: Int
       #|
-      #|<template id="Shown"><x text=".n"></x></template>
+      #|  Shown:
+      #|    field n :: Int
+      #|
+      #|view:
+      #|  Shown:
+      #|    @(it.n)
     ),
   )
-  let ir = @viewgen.emit_ir_module("Ignored", "two.html", f)
+  let ir = @viewgen.emit_ir_module("Ignored", "two.tutu", f)
   assert_true(ir.contains("\npub fn shown_component(\n"))
   assert_false(ir.contains("headless_component("))
 }
 
 ///|
-/// The wrapper's `name` default is the name the template id declares, not the
-/// one a component is registered under — `dynamic_selected_edit.tutu` names a
-/// `DseRoot` template that the module registers as `Root`, and overriding it
+/// The wrapper's `name` default is the name the file declares, not the
+/// one a component is registered under — `dynamic_selected_edit.tutu` declares a
+/// `DseRoot` that the module registers as `Root`, and overriding it
 /// has to stay possible.
 test "the wrapper's name default is the declared component name" {
-  let f = @viewgen.split_file(
+  let f = @viewgen.read_file(
     (
-      #|<script type="tutuca/spec">
-      #|  state DseRoot { n: Int }
-      #|</script>
+      #|spec:
+      #|  DseRoot:
+      #|    field n :: Int
       #|
-      #|<template id="DseRoot"><x text=".n"></x></template>
+      #|view:
+      #|  DseRoot:
+      #|    @(it.n)
     ),
   )
-  let ir = @viewgen.emit_ir_module("Ignored", "dse.html", f)
+  let ir = @viewgen.emit_ir_module("Ignored", "dse.tutu", f)
   assert_true(ir.contains("\npub fn dse_root_component(\n"))
   assert_true(ir.contains("  name? : String = \"DseRoot\","))
 }

@@ -339,8 +339,8 @@ pub fn schema_scalar_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant page_exists` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant page_exists` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn schema_scalar_compute_page_exists(
   s : SchemaScalarState,
   _args : Array[@tutuca.Value],
@@ -357,7 +357,7 @@ fn schema_scalar_compute_page_exists(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn schema_scalar_inline_compute() -> Map[
   String,
   (SchemaScalarState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -643,8 +643,8 @@ pub fn schema_object_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant page_exists` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant page_exists` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn schema_object_compute_page_exists(
   s : SchemaObjectState,
   _args : Array[@tutuca.Value],
@@ -661,7 +661,7 @@ fn schema_object_compute_page_exists(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn schema_object_inline_compute() -> Map[
   String,
   (SchemaObjectState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -947,8 +947,8 @@ pub fn schema_array_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant page_exists` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant page_exists` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn schema_array_compute_page_exists(
   s : SchemaArrayState,
   _args : Array[@tutuca.Value],
@@ -965,7 +965,7 @@ fn schema_array_compute_page_exists(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn schema_array_inline_compute() -> Map[
   String,
   (SchemaArrayState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -1246,8 +1246,8 @@ pub fn schema_enum_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant page_exists` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant page_exists` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn schema_enum_compute_page_exists(
   s : SchemaEnumState,
   _args : Array[@tutuca.Value],
@@ -1264,7 +1264,7 @@ fn schema_enum_compute_page_exists(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn schema_enum_inline_compute() -> Map[
   String,
   (SchemaEnumState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -1549,8 +1549,8 @@ pub fn schema_combinator_views() -> Map[String, @anode.View] {
 }
 
 ///|
-/// `invariant page_exists` from the `<script type="tutuca/spec">` block. GENERATED — edit
-/// the block, not this.
+/// `invariant page_exists` from the `spec:` section. GENERATED — edit
+/// the file, not this.
 fn schema_combinator_compute_page_exists(
   s : SchemaCombinatorState,
   _args : Array[@tutuca.Value],
@@ -1567,7 +1567,7 @@ fn schema_combinator_compute_page_exists(
 
 ///|
 /// The `compute` names the file's `logic:` section answers.
-/// GENERATED — edit the block, not this.
+/// GENERATED — edit the `logic:` section, not this.
 fn schema_combinator_inline_compute() -> Map[
   String,
   (SchemaCombinatorState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
