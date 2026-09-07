@@ -12,7 +12,21 @@ spec:
 
 view:
   Tabs:
-    @section{@div(~role: "tablist", ~class: "tabs"){@button(~role: "tab", ~class: if (it.current_view == "overview") | "tab tab-active" | "tab", ~on_click: it.current_view := "overview"){Overview} @button(~role: "tab", ~class: if (it.current_view == "pricing") | "tab tab-active" | "tab", ~on_click: it.current_view := "pricing"){Pricing}} @show((it.current_view == "overview")){@div{…overview…}} @show((it.current_view == "pricing")){@div{…pricing…}}}
+    section():
+      div(role: "tablist", class: "tabs"):
+        button(role: "tab", class: if (it.current_view == "overview") | "tab tab-active" | "tab", ~on_click: it.current_view := "overview"):
+          "Overview"
+        " "
+        button(role: "tab", class: if (it.current_view == "pricing") | "tab tab-active" | "tab", ~on_click: it.current_view := "pricing"):
+          "Pricing"
+      " "
+      show((it.current_view == "overview")):
+        div():
+          "…overview…"
+      " "
+      show((it.current_view == "pricing")):
+        div():
+          "…pricing…"
 
 fixtures:
   "fresh":
@@ -45,4 +59,4 @@ writes `current_view` and so does every read of it. The name is yours to pick
 This toggles **sibling panels** by predicate; to swap a *component's own*
 rendered view instead, see [Switch between views](switch-between-views.md). The
 same shape scales up to tabs over whole sub-apps — each panel a component
-rendered with `@render(it.field)`.
+rendered with `render(it.field)`.

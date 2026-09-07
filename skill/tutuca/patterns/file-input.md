@@ -12,7 +12,27 @@ spec:
 
 view:
   FilePicker:
-    @section{@input(~type: "file", ~on_change: on_pick_file(e.value)) @hide(it.has_file){@p{No file selected yet.}} @show(it.has_file){@dl{@dt{Name}@dd{@(it.name)}@dt{Size}@dd{@(it.size)}@dt{Type}@dd{@(it.type)}}}}
+    section():
+      input(type: "file", ~on_change: on_pick_file(e.value))
+      " "
+      hide(it.has_file):
+        p():
+          "No file selected yet."
+      " "
+      show(it.has_file):
+        dl():
+          dt():
+            "Name"
+          dd():
+            @(it.name)
+          dt():
+            "Size"
+          dd():
+            @(it.size)
+          dt():
+            "Type"
+          dd():
+            @(it.type)
 ```
 
 `%type` is a MoonBit keyword, so the generated struct binds it as `type_`

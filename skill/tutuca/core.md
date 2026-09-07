@@ -103,12 +103,12 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
   then write the handler.
 - **Paths are not allowed in values.** `it.foo` resolves a single property on
   the state — `@(it.foo.bar)`, `~value: it.user.name`,
-  `@show(it.item.is_open)` all fail. To reach into nested data: render the
-  child as a component (`@render(it.foo)` then `@(it.bar)` inside),
+  `show(it.item.is_open)` all fail. To reach into nested data: render the
+  child as a component (`render(it.foo)` then `@(it.bar)` inside),
   add a read-only property (read the nested value off a `@tutuca.Value`
   field with `v.field("name")`), or use `~enrich_with`
   for scope-level derivation. The one exception: a **binding** may read
-  exactly one **binding member** — `@(value.title)` inside `@each`
+  exactly one **binding member** — `@(value.title)` inside `each`
   works (any `@`-binding, one level only; `@value.a.b` fails generation
   as `BINDING_MEMBER_TOO_DEEP`, and render targets still reject it).
 - **Use `~bind=".field"` only for checked scalar form bindings.** It requires a
@@ -155,7 +155,8 @@ spec:
 
 view:
   Counter:
-    @button(~on_click: inc){@(it.count)}
+    button(~on_click: inc):
+      @(it.count)
 ```
 
 `counter.mbt`:
@@ -284,15 +285,15 @@ calls) is set on both.
 
 | pushed by                           | kind  | shape                                |
 | ----------------------------------- | ----- | ------------------------------------ |
-| `@render(it.f)`, or `@render(value)` in a loop | frame | `it` = child, fresh binds |
-| `@each(…){@render(value)}` per iter | frame | `it` = item, binds `{ key }`         |
-| `@each(…){@li{…}}` per iter         | scope | `it` = item, binds `{ key, value }`  |
+| `render(it.f)`, or `render(value)` in a loop | frame | `it` = child, fresh binds |
+| `each(…){render(value)}` per iter | frame | `it` = item, binds `{ key }`         |
+| `each(…): li(): …` per iter         | scope | `it` = item, binds `{ key, value }`  |
 | `@div(~enrich_with: …)` (no loop)   | scope | `it` unchanged, binds = handler result |
 
 For full mechanics see [iteration.md](./iteration.md).
-This is why a handler attached to `<div @each>` runs against the
+This is why a handler attached to `<div each>` runs against the
 *parent* component (the scope is transparent — the surrounding frame
-still owns dispatch), while one inside `@render(value)` in a loop runs against
+still owns dispatch), while one inside `render(value)` in a loop runs against
 the *item* (render-it pushed a fresh frame for the child).
 
 **Paths, not references.** The DOM is the only thing that survives
@@ -323,8 +324,8 @@ keep them separate.
 
 Views are name-based: there is no arithmetic expression syntax in
 values, and no Vue- or Mustache-style `{{ … }}` placeholders. Every
-value slot — conditions (`@show`, a conditional attribute), iteration (`@each`,
-`@each(…){@render(value)}`, `~when`), enrichment (`~enrich_with`, `~loop_with`), template
+value slot — conditions (`@show`, a conditional attribute), iteration (`each`,
+`each(…){render(value)}`, `~when`), enrichment (`~enrich_with`, `~loop_with`), template
 expansion (`{…}`, `:attr`, `@text`) — names a field, handler, or macro
 defined on the component (or registered with the scope). Logic lives in
 `update` / `compute` and the render buckets (`when` /
@@ -349,12 +350,24 @@ spec:
 
 view:
   Conditions:
-    @show(!it.open){@div{…}}
-    @show(!it.kind.is_empty()){@div{…}}
-    @show(it.kind == "a"){@div{…}}
-    @show(it.items.length() == 1){@div{…}}
-    @show(it.open && it.ready){@div{…}}
-    @show((it.n > 0) && it.open){@div{…}}
+    show(!it.open):
+      div():
+        "…"
+    show(!it.kind.is_empty()):
+      div():
+        "…"
+    show(it.kind == "a"):
+      div():
+        "…"
+    show(it.items.length() == 1):
+      div():
+        "…"
+    show(it.open && it.ready):
+      div():
+        "…"
+    show((it.n > 0) && it.open):
+      div():
+        "…"
 ```
 
 Application is **juxtaposition** (`empty? .items`, `it.title.lower().contains("x")`)
@@ -364,8 +377,8 @@ error message names the parentheses to add. There is no precedence table to
 remember and none to get wrong.
 
 A conditional slot also accepts the plain value forms a hole does — a property
-(`@show(it.is_open)`), or a loop/scope binding (`@show(is_selected)`,
-`@hide(has_desc)`) — read as a boolean. String literals are `"detail"`, or
+(`show(it.is_open)`), or a loop/scope binding (`show(is_selected)`,
+`hide(has_desc)`) — read as a boolean. String literals are `"detail"`, or
 `"two words"` for one with spaces.
 
 Two things a *body* can write and a slot cannot, each refused by name: a
@@ -373,7 +386,7 @@ nested read (`it.a.b` — render the child as a component, or name it with a
 `compute`), and arithmetic.
 
 A macro parameter and `host.config` are ordinary operands here:
-`@hide(label.is_empty())`, `@show(!collapsed)`, `@show(host.origin == "x")`.
+`hide(label.is_empty())`, `show(!collapsed)`, `show(host.origin == "x")`.
 They are substituted as the value is read, so a parameter still has to expand
 to a single token. Going the other way, a `logic:` section can write neither —
 it is parsed once for the component, with no macro call site and no host
@@ -410,8 +423,8 @@ spec:
 
 view:
   Slots:
-    @button(~on_click: on_add_item(e.value)){+}
-    //                  ↑ handler  ↑ argument
+    button(~on_click: on_add_item(e.value)):
+      "+"
 ```
 
 Handler args written in the template arrive in the MoonBit handler's
@@ -444,12 +457,12 @@ spec:
 
 view:
   Quoting:
-    // a literal class list
-    @p(~class: "flex gap-3"){x}
-    // a template, with a field read in a hole
-    @p(~class: @str{flex @(it.color)}){x}
-    // a hole is an expression, so it may be a whole call
-    @p(~class: @str{btn btn-@(it.kind.lower())}){x}
+    p(class: "flex gap-3"):
+      "x"
+    p(class: @str{flex @(it.color)}):
+      "x"
+    p(class: @str{btn btn-@(it.kind.lower())}):
+      "x"
 ```
 
 There is no bare-word value: a word with no quotes and no `@` is a NAME, and
@@ -477,7 +490,8 @@ logic:
 
 view:
   Form:
-    @p{@(it.label)}
+    p():
+      @(it.label)
 ```
 
 A computation that takes arguments remains a method and uses `name(args…)`.
@@ -503,11 +517,12 @@ compute={
 ```tutu
 view:
   Card:
-    @show(it.can_submit){
-      @button(~class: it.button_class){Save}
-    }
-    @" "
-    @p(~title: @str{Hello, @(it.full_name)}){@(it.full_name)}
+    show(it.can_submit):
+      button(class: it.button_class):
+        "Save"
+    " "
+    p(title: @str{Hello, @(it.full_name)}):
+      @(it.full_name)
 ```
 
 The shape predicates (`empty?`, `truthy?`, `null?`) and the operators
@@ -520,7 +535,7 @@ Tutuca expressions resolve a **single** name on the state — there is
 no path syntax. `@(it.user.name)` does not navigate; it fails. When
 the value lives behind a field, your options are:
 
-- **Render the child as a component** — `@render(it.user)` then
+- **Render the child as a component** — `render(it.user)` then
   `@(it.name)` inside the child's view. Best when the nested thing is
   already (or could be) a component.
 - **Add a read-only property** — reading through the value coercers when the
@@ -536,7 +551,7 @@ the value lives behind a field, your options are:
   subtree without putting them on the component. See *Scope Enrichment*
   in [iteration.md](./iteration.md).
 
-Exceptions: `@each` / `@each(…){@render(value)}` accept `it.field` or `dyn.<name>` only
+Exceptions: `each` / `each(…){render(value)}` accept `it.field` or `dyn.<name>` only
 (not a `handler()` — a computed result has no addressable path for event
 dispatch, so `m(…)` is rejected there at parse time), and `@render`
 expects a component instance — for a derived list, store it in a field
@@ -547,21 +562,22 @@ or use `~when` with a `when` entry.
 ```tutu
 view:
   Card:
-    @span{@(it.str)}
-    @" "
-    @comment{ prepend text into span }
-    @" "
+    span():
+      @(it.str)
+    " "
+    comment(): " prepend text into span "
+    " "
     @(it.bool)
-    @" "
-    @comment{ text-only, no DOM element }
-    @" "
+    " "
+    comment(): " text-only, no DOM element "
+    " "
     @(it.str_upper)
-    @" "
-    @comment{ derived property }
-    @" "
+    " "
+    comment(): " derived property "
+    " "
     @(value)
-    @" "
-    @comment{ loop binding }
+    " "
+    comment(): " loop binding "
 ```
 
 Use `@text` when you already have a host element to put the text in; use
@@ -575,13 +591,15 @@ other inline content, or a loop binding). Both take the same value forms
 ```tutu
 view:
   Card:
-    @input(~value: it.str, ~on_input: it.str := e.value)
-    @" "
-    @a(~href: it.url, ~title: @str{Hi @(it.name)}){link}
-    @" "
-    @comment{ string template }
-    @" "
-    @button(~class: @str{btn @(it.color)}){x}
+    input(value: it.str, ~on_input: it.str := e.value)
+    " "
+    a(href: it.url, title: @str{Hi @(it.name)}):
+      "link"
+    " "
+    comment(): " string template "
+    " "
+    button(class: @str{btn @(it.color)}):
+      "x"
 ```
 
 Plain attrs are static. `~attr: …` is a dynamic expression. Boolean
@@ -654,20 +672,14 @@ spec:
 
 view:
   Events:
-    // a bare name dispatches a `Receive` arm of `update`
-    @button(~on_click: inc){+}
-
-    // arguments say where they read from: `e.` is the DOM event
-    @input(~on_input: search(e.value))
-    @input(~on_input: resize(e.valueAsInt))
-
-    // a loop binder is a name in scope, so it is passed as itself
-    @each(value, key in it.items){
-      @button(~on_click: pick(key, e.isAlt)){pick}
-    }
-
-    // to WRITE a field, write it: a generated mutator does not answer a message
-    @input(~on_input: it.query := e.value)
+    button(~on_click: inc):
+      "+"
+    input(~on_input: search(e.value))
+    input(~on_input: resize(e.valueAsInt))
+    each(value, key in it.items):
+      button(~on_click: pick(key, e.isAlt)):
+        "pick"
+    input(~on_input: it.query := e.value)
 ```
 
 The handler **name** is written bare — a leading `$` is refused in an event
@@ -696,26 +708,26 @@ in **[events.md](./events.md)**. Two things worth knowing before you get there:
 ## Conditional Display
 
 ```tutu
-@show(it.is_loading){@div{Loading...}}
-@hide(it.is_loading){@div{content}}
+show(it.is_loading): div(): "Loading..."
+hide(it.is_loading): div(): "content"
 
 // an expression; `==` compares against a string literal
-@show(it.view == "detail"){@div{detail view}}
+show(it.view == "detail"): div(): "detail view"
 
-// @show / @hide wrap whatever they are given — a hole, a render, a loop —
+// show / hide wrap whatever they are given — a hole, a render, a loop —
 // with no extra DOM element around it
-@show(it.is_open){@(it.name)}
-@hide(it.is_hidden){@render(value)}
-@show(it.is_open){@each(value, key in it.items, ~when: filter){@render(value)}}
+show(it.is_open): @(it.name)
+hide(it.is_hidden): render(value)
+show(it.is_open): each(value, key in it.items, ~when: filter): render(value)
 
 // a conditional attribute is an `if` expression in the attribute's own value
-@button(~class: if it.is_active | "btn btn-success" | "btn btn-ghost"){...}
+button(class: if it.is_active | "btn btn-success" | "btn btn-ghost"): ...
 
 // two of them is two attributes, each with its own condition
-@button(
-  ~class: if it.is_active | "on" | "off",
-  ~title: if it.is_active | "On" | "Off",
-){...}
+button(
+  class: if it.is_active | "on" | "off",
+  title: if it.is_active | "On" | "Off",
+): ...
 ```
 
 > Each conditional attribute carries its own `if`, so two of them on one
@@ -733,20 +745,22 @@ condition says hide — they do not merely toggle CSS visibility.
 ```tutu
 view:
   Card:
-    @each(value, key in it.items){
-      @li{@span{@(key)}@": "@(value)}
-    }
-    @" "
-    @each(value, key in it.items){
-      @render(value)
-    }
+    each(value, key in it.items):
+      li():
+        span():
+          @(key)
+        ": "
+        @(value)
+    " "
+    each(value, key in it.items):
+      render(value)
 ```
 
 Auto-bound names inside a loop are `@key` and the loop binder. Iteration
-(`@each` / `@each(…){@render(value)}`), filtering (`~when` → the `when` bucket),
+(`each` / `each(…){render(value)}`), filtering (`~when` → the `when` bucket),
 item and scope enrichment (`~enrich_with` → `enrich` / `bind_with`),
 pagination and the `~loop_with` → `loop_with` return shape, and the
-`@each` lifecycle: see [iteration.md](./iteration.md).
+`each` lifecycle: see [iteration.md](./iteration.md).
 
 ## Rendering Components
 
@@ -766,20 +780,16 @@ spec:
 
 view:
   Rendering:
-    @render(it.item)                    // the default ("main") view
-    @render(it.item, ~as: "edit")       // a named view (a literal)
-    @render(it.item, ~as: it.mode)      // a view chosen by a field at runtime
-    @render(it.by_index[it.current_index])  // a list item
-    @render(it.by_key[it.current_key])      // a map entry
-
-    // inside a loop, the binder is what each step renders
-    @each(value, key in it.items){@render(value)}
-
-    // a dynamic binding — see advanced.md
-    @render(dyn.active)
-
-    // a conditional wrap, see "Conditional Display"
-    @show(it.is_open){@render(it.item)}
+    render(it.item)
+    render(it.item, ~as: "edit")
+    render(it.item, ~as: it.mode)
+    render(it.by_index[it.current_index])
+    render(it.by_key[it.current_key])
+    each(value, key in it.items):
+      render(value)
+    render(dyn.active)
+    show(it.is_open):
+      render(it.item)
 ```
 
 A component's views come in through `views=` (a
@@ -794,7 +804,7 @@ rendered component to use, falling back to `main` if absent. It accepts the
 same dynamic values as `~push_view` (a literal name like `edit`, or `it.field`,
 `dyn.<name>`, `~bind`, `handler()`, `@str{…@(x)…}`), evaluated against the **host**
 component at render time. `as` only applies to the **direct** component — for
-whole-subtree control, use `~push_view` (next section). For `@each(…){@render(value)}` the
+whole-subtree control, use `~push_view` (next section). For `each(…){render(value)}` the
 selector is evaluated once against the host, so every item gets the same view.
 
 ## Multiple Views & View Stack
@@ -804,10 +814,11 @@ Named views are `Comp.name:` in `view:` entries in the view file:
 ```tutu
 view:
   Note:
-    @p{@(it.title)}
+    p():
+      @(it.title)
 
   Note.edit:
-    @input(~value: it.title, ~on_input: it.title := e.value)
+    input(value: it.title, ~on_input: it.title := e.value)
 ```
 
 ```moonbit nocheck
@@ -818,13 +829,11 @@ note_component() // the wrapper passes both views
 ```tutu
 view:
   Card:
-    @comment{@" ~push_view pushes a name onto the rendering stack; descendants resolve to first matching view, falling back to \"main\" "}
-    @" "
-    @div(~push_view: it.view){
-      @each(value, key in it.items){
-        @render(value)
-      }
-    }
+    comment(): " ~push_view pushes a name onto the rendering stack; descendants resolve to first matching view, falling back to \"main\" "
+    " "
+    div(~push_view: it.view):
+      each(value, key in it.items):
+        render(value)
 ```
 
 | Directive          | Scope                                                                    |
@@ -959,13 +968,16 @@ field writes it, in the view, as a **property action**:
 ```tutu
 view:
   Card:
-    @button(~on_click: it.title := "x"){rename}
-    @" "
-    @input(~on_input: it.query := e.value)
-    @" "
-    @button(~on_click: it.is_open := !it.is_open){toggle}
-    @" "
-    @button(~on_click: it.count := default){reset}
+    button(~on_click: it.title := "x"):
+      "rename"
+    " "
+    input(~on_input: it.query := e.value)
+    " "
+    button(~on_click: it.is_open := !it.is_open):
+      "toggle"
+    " "
+    button(~on_click: it.count := default):
+      "reset"
 ```
 
 That is a write, and it reads as one. A name in an event position —
@@ -1017,7 +1029,7 @@ Registry keys are lowercased — `@Card(…)` resolves as `@card(…)`.
 ```tutu
 view:
   Card:
-    @div(~dangerously_inner_html: it.trusted_html)
+    div(dangerously_inner_html: it.trusted_html)
 ```
 
 Bypasses all escaping; children of the element are ignored when active.
@@ -1036,7 +1048,7 @@ get it.
 ```tutu
 view:
   Card:
-    @article(~inner_md: it.body)
+    article(inner_md: it.body)
 ```
 
 Takes a markdown SOURCE string and replaces the element's children with the
@@ -1069,9 +1081,9 @@ right, and a second half showing what gets refused — is on the landing site
 ```tutu
 view:
   Card:
-    @article(~inner_html: it.body)
-    @" "
-    @svg(~viewBox: "0 0 100 100", ~inner_svg: it.chart)
+    article(inner_html: it.body)
+    " "
+    svg(viewBox: "0 0 100 100", inner_svg: it.chart)
 ```
 
 `@setinnermd`'s siblings, for a payload that is already markup — a CMS body, a
@@ -1152,7 +1164,7 @@ pub(all) enum Value {
   `Set[String]` or `Set[Enum]` in the schema; ordered maps are plain `Map`s,
   declared `Map[String, V]`. See [schema.md](./schema.md#field-types).
 - Custom collections implement the `@tutuca.Obj` trait (notably
-  `seq_entries` for `@each`) — see [iteration.md](./iteration.md)
+  `seq_entries` for `each`) — see [iteration.md](./iteration.md)
   *Custom collections*.
 
 ## The ModuleDef convention
@@ -1203,7 +1215,7 @@ pub fn request_module(
 Best practice: have `components` list **every** component the module
 defines — child and helper components included — and give each one at
 least one `ExampleDef`. A component left out of `components` cannot be
-resolved by name at render time (`@render(it.child)` finds nothing), and
+resolved by name at render time (`render(it.child)` finds nothing), and
 its examples never reach the storybook or a harness test.
 
 ## See also
@@ -1217,7 +1229,7 @@ its examples never reach the storybook or a harness test.
   a rule to a transition, and the refusal channel that carries a failure.
 - [events.md](./events.md) — handler argument names, generated `<Comp>Msg`
   payload types, event modifiers, and custom-element events.
-- [iteration.md](./iteration.md) — `@each` / `@each(…){@render(value)}`, `~when`,
+- [iteration.md](./iteration.md) — `each` / `each(…){render(value)}`, `~when`,
   `~enrich_with`, `~loop_with` pagination, and the loop lifecycle.
 - [macros.md](./macros.md) — `Macro` definitions, `@name(…)` calls,
   slots, and registration.

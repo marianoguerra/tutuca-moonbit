@@ -10,9 +10,8 @@ everything else, `core.md` is the right place.
 ```tutu
 view:
   Card:
-    @each(value, key in it.items){
-      @div(~draggable: "true", ~data_dragtype: "my-item", ~data_droptarget: "my-item", ~on_drop: on_drop(key, e.dragKey))
-    }
+    each(value, key in it.items):
+      div(draggable: "true", data_dragtype: "my-item", data_droptarget: "my-item", ~on_drop: on_drop(key, e.dragKey))
 ```
 
 ```moonbit nocheck
@@ -35,7 +34,7 @@ update=(s : DndState, msg, _ctx) => match msg {
 `data-dragtype` on the source and `data-droptarget` on the target pair a
 draggable with where it may drop. `dragstart` captures the drag from the
 **source** render — a `Map` of `value`, `type`, and `lookupBind(name)`
-over the source's `@each` binds — and every dispatch while the drag is
+over the source's `each` binds — and every dispatch while the drag is
 active can ask it for something, even though `drop` fires on the target
 row.
 
@@ -114,10 +113,12 @@ spec:
 
 view:
   Theme:
-    @div{@render(it.body)}
+    div():
+      render(it.body)
 
   Child:
-    @p(~style: @str{color: @(dyn.color)}){themed}
+    p(style: @str{color: @(dyn.color)}):
+      "themed"
 ```
 
 `theme.mbt`:
@@ -162,19 +163,19 @@ iteration source:
 ```tutu
 view:
   Card:
-    @render(dyn.selected)
-    @" "
-    @comment{ render the dynamic's component }
-    @" "
-    @render(dyn.selected, ~as: "edit")
-    @" "
-    @comment{ a specific view of it }
-    @" "
-    @each(value, key in dyn.items){
-      @div{@render(value)}
-    }
-    @" "
-    @comment{ iterate a dynamic seq }
+    render(dyn.selected)
+    " "
+    comment(): " render the dynamic's component "
+    " "
+    render(dyn.selected, ~as: "edit")
+    " "
+    comment(): " a specific view of it "
+    " "
+    each(value, key in dyn.items):
+      div():
+        render(value)
+    " "
+    comment(): " iterate a dynamic seq "
 ```
 
 A `provide` value must be **addressable** — a `it.field` or a `it.seq[key]`
@@ -217,7 +218,7 @@ var. The seq-access lives in the producer's `provide` declaration; the
 consumer just reads the resolved value as `dyn.<name>`.
 
 **Resuming at the value's path.** The component rendered via
-`@render(dyn.selected)` uses the concrete app path stored beside the dynamic
+`render(dyn.selected)` uses the concrete app path stored beside the dynamic
 value. Rendering pushes that path as a continuation frame. An event inside the
 subtree therefore mutates the selected value, while bubbling pops back to the
 visual caller at the top of the frame. Editing it here and in the owner's own
@@ -269,7 +270,7 @@ The name goes in the consumer's `lookup` list too, so the checks can see it
 collide, which is why types and values share one binding frame.
 
 A published type is **not** a render target: it has no path, so
-`@render(dyn.Cell)` stays unresolvable by construction.
+`render(dyn.Cell)` stays unresolvable by construction.
 
 ### Routes: which environment answers
 
@@ -315,9 +316,9 @@ spec:
 
 view:
   Picker:
-    @select{
-      @each(value, key in it.items){@render(value, ~as: "option")}
-    }
+    select():
+      each(value, key in it.items):
+        render(value, ~as: "option")
 ```
 
 Everywhere else needs nothing either — `ul`, `ol`, `li`, `dl`, `dt`, `dd`,
@@ -328,7 +329,7 @@ model only permits *specific* child tags borrows one of them.
 ## Custom collections
 
 A custom collection is any struct implementing the `@tutuca.Obj` trait,
-chiefly `seq_entries` (what `@each` iterates, keyed) and `item`
+chiefly `seq_entries` (what `each` iterates, keyed) and `item`
 (seq-access reads). There is nothing to register: the trait implementation IS
 the registration. Full treatment with the worked `KeyedList` example
 in [iteration.md](./iteration.md) *Custom collections — the `Obj`

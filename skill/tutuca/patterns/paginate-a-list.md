@@ -14,11 +14,13 @@ spec:
 
 view:
   Paged:
-    @ul{
-      @each(value, key in it.items, ~loop_with: paginate){
-        @li{@span(~class: "badge"){@(key)} @(value)}
-      }
-    }
+    ul():
+      each(value, key in it.items, ~loop_with: paginate):
+        li():
+          span(class: "badge"):
+            @(key)
+          " "
+          @(value)
 ```
 
 `paged.mbt` — `~loop_with` is the **one render bucket `logic:` has no

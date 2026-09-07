@@ -19,11 +19,15 @@ logic:
 
 view:
   Notes:
-    @ul{
-      @each(value, key in it.items, ~enrich_with: enrich_item){
-        @li{@input(~type: "checkbox", ~checked: picked, ~on_click: it.picked.toggle(value)) @(value)@" ("@(count)@" characters) "}
-      }
-    }
+    ul():
+      each(value, key in it.items, ~enrich_with: enrich_item):
+        li():
+          input(type: "checkbox", checked: picked, ~on_click: it.picked.toggle(value))
+          " "
+          @(value)
+          " ("
+          @(count)
+          " characters) "
 ```
 
 An `enrich` writes `@name` bindings; every name it assigns becomes an
@@ -38,7 +42,7 @@ elsewhere on the state is what `has` answers — the same key the generated
 `:checked` slot reads. Combine freely with `~when` and `~loop_with` on the same
 element.
 
-Without an `@each` on the same element, `~enrich_with` enriches the whole
+Without an `each` on the same element, `~enrich_with` enriches the whole
 scope instead — that is `bindWith`, which sees only the state (see
 [bind-text-and-attributes.md](bind-text-and-attributes.md)).
 

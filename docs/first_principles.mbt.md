@@ -340,7 +340,7 @@ pub(all) enum ANode {
   PushView(WrapData)
   Scope(WrapData)
   Slot(SlotData) // <x:slot> inside a macro
-  Each(EachData) // @each + @when/@enrich-with/@loop-with
+  Each(EachData) // each + @when/@enrich-with/@loop-with
   MacroCall(MacroData) // <x:name>
   RenderOnce(RenderOnceData)
 }
@@ -429,7 +429,7 @@ test "render: template + value → vdom → HTML" {
 
 `RenderStack::lookup_storage` reads `.name` out of the current value —
 exactly what our toy `FieldMap` did, plus frames, bindings and component
-lookups. `@each` renders by entering a child stack frame per item;
+lookups. `each` renders by entering a child stack frame per item;
 `<x render>` swaps `it` to the child value and resolves its view.
 
 The renderer leaves one more thing behind: **`Meta` comment markers**

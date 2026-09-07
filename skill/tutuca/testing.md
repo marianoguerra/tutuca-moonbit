@@ -271,7 +271,7 @@ distinction that does not exist. `$` belongs in a value position
 **Bad — asking for the event object:**
 
 ```tutu
-@input(~on_input: count_to(event))
+input(~on_input: count_to(event))
 ```
 
 `event`, `target` and `ctx` are **not** handler arguments: a DOM object is not
@@ -290,7 +290,7 @@ spec:
 
 view:
   Counting:
-    @input(~on_input: count_to(e.valueAsInt))
+    input(~on_input: count_to(e.valueAsInt))
 ```
 ```moonbit nocheck
 // nocheck: a fragment (a match arm or an expression), not a top-level item
@@ -377,7 +377,15 @@ logic:
 
 view:
   Counter:
-    @div{@button(~class: "inc", ~on_click: inc){+} @output{@(it.count)} @p{@(label())}}
+    div():
+      button(class: "inc", ~on_click: inc):
+        "+"
+      " "
+      output():
+        @(it.count)
+      " "
+      p():
+        @(label())
 
 tests:
   "two clicks add two":
@@ -600,10 +608,10 @@ logic:
 
 view:
   Board:
-    @"… "
+    "… "
 
   Row:
-    @"… "
+    "… "
 ```
 
 - One `state` per component in the **one** `spec:` section.

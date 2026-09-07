@@ -46,7 +46,8 @@ logic:
 
 view:
   Screen:
-    @p{@(it.status)}
+    p():
+      @(it.status)
 ```
 
 Import by id, never by a path:

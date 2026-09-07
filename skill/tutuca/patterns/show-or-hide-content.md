@@ -20,7 +20,39 @@ spec:
 
 view:
   Form:
-    @div{@show(it.is_open){@div{Details}} @hide(it.is_open){@p{(hidden when open)}} @comment{ boolean predicates for one-field checks } @show(it.items.is_empty()){@p{No results}} @show(it.query.is_truthy()){@p{Searching…}} @show((it.query == "detail")){@div{detail view}} @comment{ a pred of your own: `name(…)`, because this is a value position } @show(can_submit()){@button{Publish}} @comment{ around a hole or a render: wraps the produced node, no extra DOM element } @show(it.is_open){@(it.title)}}
+    div():
+      show(it.is_open):
+        div():
+          "Details"
+      " "
+      hide(it.is_open):
+        p():
+          "(hidden when open)"
+      " "
+      comment(): " boolean predicates for one-field checks "
+      " "
+      show(it.items.is_empty()):
+        p():
+          "No results"
+      " "
+      show(it.query.is_truthy()):
+        p():
+          "Searching…"
+      " "
+      show((it.query == "detail")):
+        div():
+          "detail view"
+      " "
+      comment(): " a pred of your own: `name(…)`, because this is a value position "
+      " "
+      show(can_submit()):
+        button():
+          "Publish"
+      " "
+      comment(): " around a hole or a render: wraps the produced node, no extra DOM element "
+      " "
+      show(it.is_open):
+        @(it.title)
 ```
 
 A conditional slot takes the same expression language a `pred` body does:

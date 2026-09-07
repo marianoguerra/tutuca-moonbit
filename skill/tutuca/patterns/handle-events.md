@@ -27,7 +27,28 @@ logic:
 
 view:
   Counter:
-    @div{@button(~on_click: inc){+} @comment{ bare name = a handler } @button(~on_click: dec){-} @comment{ pass args by name } @input(~on_input: it.str := e.value) @input(~on_input: it.n := e.valueAsInt) @comment{ modifiers: keydown +send (Enter) / +cancel (Esc), and +ctrl/+cmd/+alt } @input(~on_keydown: submit(e.value) ~send, ~on_keydown: reset ~cancel) @comment{@" custom elements: any CustomEvent reaches ~on_<name>, detail is `e.value` "} @emoji_picker(~on_emoji_click: it.str := e.value)}
+    div():
+      button(~on_click: inc):
+        "+"
+      " "
+      comment(): " bare name = a handler "
+      " "
+      button(~on_click: dec):
+        "-"
+      " "
+      comment(): " pass args by name "
+      " "
+      input(~on_input: it.str := e.value)
+      " "
+      input(~on_input: it.n := e.valueAsInt)
+      " "
+      comment(): " modifiers: keydown +send (Enter) / +cancel (Esc), and +ctrl/+cmd/+alt "
+      " "
+      input(~on_keydown: submit(e.value) ~send, ~on_keydown: reset ~cancel)
+      " "
+      comment(): " custom elements: any CustomEvent reaches ~on_<name>, detail is `e.value` "
+      " "
+      emoji_picker(~on_emoji_click: it.str := e.value)
 ```
 
 An `@on` value is either a property action beginning with `.` or a semantic

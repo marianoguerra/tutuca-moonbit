@@ -103,11 +103,11 @@ spec:
     field items :: List.of(Instance.of(Item))
 ```
 
-Iterate it with `@each(value, key in it.items){@render(value)}` and append
+Iterate it with `each(value, key in it.items){render(value)}` and append
 instances with `Some({ items: s.items + [item.make(Map([]))] })` (the complete
 pairing is in [patterns/todo-list.md](./patterns/todo-list.md)). `Array[Item]`
 and `Array[Any]` generate the SAME field — `items : Array[@tutuca.Value]` —
-so the element type costs nothing at runtime and buys the check: the `@each`
+so the element type costs nothing at runtime and buys the check: the `each`
 body is read against `Item`'s schema, and `@value.txet` is caught. A component
 from another file is `Array[Instance[Item]]`; a list of components whose
 shapes genuinely differ is `Array[Component]`.
@@ -218,15 +218,18 @@ spec:
 
 view:
   Actions:
-    @input(~value: it.query, ~on_input: it.query := e.value)
-    @button(~on_click: it.open := !it.open){toggle}
-    @button(~on_click: it.selection := default){clear}
-    @each(value, key in it.items){
-      @div{
-        @button(~on_click: it.items.delete_at(key)){remove}
-        @button(~on_click: it.tags.toggle(value)){tag}
-      }
-    }
+    input(value: it.query, ~on_input: it.query := e.value)
+    button(~on_click: it.open := !it.open):
+      "toggle"
+    button(~on_click: it.selection := default):
+      "clear"
+    each(value, key in it.items):
+      div():
+        button(~on_click: it.items.delete_at(key)):
+          "remove"
+        "\n"
+        button(~on_click: it.tags.toggle(value)):
+          "tag"
 ```
 
 The field's **kind** decides which operations are valid:
@@ -257,7 +260,7 @@ place is what the handler language is for.
 
 Emptiness / truthiness / null checks are not generated — use the boolean
 predicates `empty?`, `truthy?`, `null?` in a conditional slot instead (e.g.
-`@hide(it.x.is_empty())`, `@show(it.view == "detail")`).
+`hide(it.x.is_empty())`, `show(it.view == "detail")`).
 
 > **The kind is declared, not chosen at the call site.** There is no way for a
 > `component()` caller to say a field is a set when the schema says it is a map:
@@ -425,13 +428,13 @@ spec:
 ```tutu
 view:
   Slot:
-    @em(~style: @str{color: @(dyn.theme)})
+    em(style: @str{color: @(dyn.theme)})
 ```
 
 A **`provide`** publishes a name to the whole subtree below the component,
 re-evaluated every time it renders. A lowercase name publishes a VALUE, and its
 expression must be **addressable** — `it.field` or `it.seq[key]` and nothing else
-— because a provide doubles as the path a `@render(dyn.name)` resumes
+— because a provide doubles as the path a `render(dyn.name)` resumes
 through. There is no shorthand for "the field of the same name": write
 `theme = it.theme`.
 
@@ -445,7 +448,7 @@ An **uppercase** name publishes a component TYPE rather than a value, and
 `self` is the only thing it can be: `Cell = self` injects this component as
 `Cell` for its whole subtree, so something below that builds a `Cell` gets this
 one rather than whatever is registered under that name. A published type is not
-a render target — it has no path, so `@render(dyn.Cell)` resolves to nothing.
+a render target — it has no path, so `render(dyn.Cell)` resolves to nothing.
 
 **A body reads one too — any body, in either block.** `dyn.<name>` is the same
 question the view asks, answered at the same position, whether the body is a
@@ -600,7 +603,10 @@ logic:
 
 view:
   Playlist:
-    @ul{@each(song in it.songs){@li{@(song)}}}
+    ul():
+      each(song in it.songs):
+        li():
+          @(song)
 ```
 
 These are the same receiver operations available in a view property action.
@@ -661,7 +667,10 @@ logic:
 
 view:
   Playlist:
-    @ul{@each(song in it.songs){@li{@(song.title)}}}
+    ul():
+      each(song in it.songs):
+        li():
+          @(song.title)
 ```
 
 - The type is spelled the way the **`spec:` section** spells it — `Song(…)`,
@@ -726,7 +735,12 @@ spec:
 
 view:
   Gallery:
-    @div{@span{@(it.current_index)} @b{@(it.current_key)}}
+    div():
+      span():
+        @(it.current_index)
+      " "
+      b():
+        @(it.current_key)
 ```
 
 Several clauses may name one field and they **conjoin** (`where n >= 0` beside

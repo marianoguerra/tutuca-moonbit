@@ -18,16 +18,18 @@ spec:
 
 view:
   Workspace:
-    @div{@render(it.bar)}
+    div():
+      render(it.bar)
 
   Sheet:
-    @p{@(it.text)}
+    p():
+      @(it.text)
 
   Sheet.edit:
-    @input(~class: "input", ~value: it.text, ~on_input: it.text := e.value)
+    input(class: "input", value: it.text, ~on_input: it.text := e.value)
 
   Toolbar:
-    @render(dyn.active, ~as: "edit")
+    render(dyn.active, ~as: "edit")
 ```
 
 `workspace.mbt`:

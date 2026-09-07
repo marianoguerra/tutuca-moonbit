@@ -80,7 +80,7 @@ moon run --target native cmd/tutuca -- gen demo/counterlib/counter.tutu --name C
 ```
 
 The `view:` section names each component it draws, and `Note.edit:` is one
-component and one of its views — the unqualified one is `main`. An `@style{…}`
+component and one of its views — the unqualified one is `main`. An `style(): @{…}`
 inside a view is that view's style; one at the section's top level is the
 component's common style, or its global style with `~global`.
 
@@ -117,7 +117,7 @@ rather than one guessed from the seed value, plus the handler names, the view
 names, the element ids and the fixture names. That descriptor is what an
 instance answers `schema()` with, so the inspector and the state editor
 build themselves from it with no component registry in hand. And every
-`.field` a view reads is checked against it, inside an `@each` body as well as
+`.field` a view reads is checked against it, inside an `each` body as well as
 at the root. A misspelt field is a
 generation failure naming the near miss, where before it rendered as null.
 The `handle { message / intent }` surfaces get typed enums too: those

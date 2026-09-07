@@ -88,16 +88,38 @@ logic:
 
 view:
   Status:
-    @span{@(it.message)}
+    span():
+      @(it.message)
 
   Chat:
-    @section{@render(it.status) @comment{ `submit` addresses the SIBLING, which is the one arm below in MoonBit } @input(~value: it.draft, ~on_input: it.draft := e.value, ~on_keydown: submit ~send)}
+    section():
+      render(it.status)
+      " "
+      comment(): " `submit` addresses the SIBLING, which is the one arm below in MoonBit "
+      " "
+      input(value: it.draft, ~on_input: it.draft := e.value, ~on_keydown: submit ~send)
 
   Log:
-    @section{@p(~on_click: on_item_click){@(it.label)} @each(value, key in it.log){@li{@(value)}}}
+    section():
+      p(~on_click: on_item_click):
+        @(it.label)
+      " "
+      each(value, key in it.log):
+        li():
+          @(value)
 
   Feed:
-    @section{@show(it.is_loading){@div{Loading}} @button(~on_click: load_another_way){Load another way} @each(value, key in it.items){@li{@(value)}}}
+    section():
+      show(it.is_loading):
+        div():
+          "Loading"
+      " "
+      button(~on_click: load_another_way):
+        "Load another way"
+      " "
+      each(value, key in it.items):
+        li():
+          @(value)
 ```
 
 Pick by **what you know**: `send` / `receive` when you can name the target,

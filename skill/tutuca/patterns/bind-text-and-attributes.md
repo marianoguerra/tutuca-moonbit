@@ -20,14 +20,42 @@ logic:
     property str_upper :: String:
       get: it.str.upper()
 
-    /// Derived values for a SUBTREE, with no `@each` in sight: a scope
+    /// Derived values for a SUBTREE, with no `each` in sight: a scope
     /// enricher sees the state and writes bindings.
     bind_with bind_with:
       len = it.str.length()
 
 view:
   Label:
-    @div{@comment{ text } @span{@(it.str)} @comment{ into a host element } @(it.str_upper) @comment{ derived property; no wrapping element } @comment{ attributes: plain = static, :attr = dynamic } @input(~value: it.str, ~on_input: it.str := e.value) @a(~href: it.url, ~title: @str{Hi @(it.name)}){link} @comment{ $'…' string template } @button(~class: @str{btn btn-@(it.kind)}){x} @comment{ derive values for a subtree without putting them on the component } @div(~enrich_with: bind_with){@"Len: "@(len)}}
+    div():
+      comment(): " text "
+      " "
+      span():
+        @(it.str)
+      " "
+      comment(): " into a host element "
+      " "
+      @(it.str_upper)
+      " "
+      comment(): " derived property; no wrapping element "
+      " "
+      comment(): " attributes: plain = static, :attr = dynamic "
+      " "
+      input(value: it.str, ~on_input: it.str := e.value)
+      " "
+      a(href: it.url, title: @str{Hi @(it.name)}):
+        "link"
+      " "
+      comment(): " $'…' string template "
+      " "
+      button(class: @str{btn btn-@(it.kind)}):
+        "x"
+      " "
+      comment(): " derive values for a subtree without putting them on the component "
+      " "
+      div(~enrich_with: bind_with):
+        "Len: "
+        @(len)
 ```
 
 A view slot NAMES things; it does not call them. `{(len .str)}` written in an

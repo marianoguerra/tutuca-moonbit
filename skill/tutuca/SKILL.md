@@ -78,7 +78,7 @@ references needed for the task.
   constructor calls, contracts, and handler refusals.
 - [events.md](./events.md) — event payloads, generated message types,
   modifiers, safe event paths, files, and custom events.
-- [iteration.md](./iteration.md) — `@each`, filtering, enrichment,
+- [iteration.md](./iteration.md) — `each`, filtering, enrichment,
   pagination, and custom collections.
 - [messages-and-intents.md](./messages-and-intents.md) — messages, addressed
   sends, intent routes and outcomes, forwarding, replies, and async delivery.

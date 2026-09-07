@@ -16,23 +16,24 @@ spec:
 
 view:
   Card:
-    @render(it.greeting)
-    @" "
-    @comment{ default ("main") view }
-    @" "
-    @render(it.greeting, ~as: "edit")
-    @" "
-    @comment{ a named view }
-    @" "
-    @render(it.greeting, ~as: it.mode)
-    @" "
-    @comment{ view chosen by a field at runtime }
+    render(it.greeting)
+    " "
+    comment(): " default (\"main\") view "
+    " "
+    render(it.greeting, ~as: "edit")
+    " "
+    comment(): " a named view "
+    " "
+    render(it.greeting, ~as: it.mode)
+    " "
+    comment(): " view chosen by a field at runtime "
 
   Greeting:
-    @p{@(it.name)}
+    p():
+      @(it.name)
 
   Greeting.edit:
-    @input(~class: "input", ~value: it.name, ~on_input: it.name := e.value)
+    input(class: "input", value: it.name, ~on_input: it.name := e.value)
 ```
 
 The slot is filled through the **registration scope** at `make()` time — a
@@ -56,7 +57,7 @@ nested structure: make the nested thing a component and render it, rather than
 trying to path into it. Every component needs a `main` view, even one you only
 render `~as: "edit"`.
 
-For a list of children use `@each(…){@render(value)}` ([Iterate a
+For a list of children use `each(…){render(value)}` ([Iterate a
 list](iterate-a-list.md)); to flip which view renders, see [Switch between
 views](switch-between-views.md). Slot spellings — a sibling interface, bare
 `component`, or a `resource` from another module — are in

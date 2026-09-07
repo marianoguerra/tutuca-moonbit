@@ -5,7 +5,7 @@ blocks or debugging CSS that silently doesn't apply.
 
 ## Where styles live
 
-Styles live in the view file: an `@style{…}` inside a view is that view's
+Styles live in the view file: an `style(): @{…}` inside a view is that view's
 style, one at file level is the component's `common_style`, and one marked
 `~global` is its `global_style`.
 
@@ -14,17 +14,19 @@ spec:
   Styled
 
 view:
-  @style{.shared { color: yellow; }}
+  style(): @{.shared { color: yellow; }}
 
-  @style(~global){.app-thing { color: green; }}
+  style(~global): @{.app-thing { color: green; }}
 
   Styled:
-    @style{.mine { color: red; }}
-    @p(~class: "mine"){x}
+    style(): @{.mine { color: red; }}
+    p(class: "mine"):
+      "x"
 
   Styled.two:
-    @style{.mine { color: orange; }}
-    @p(~class: "mine"){two}
+    style(): @{.mine { color: orange; }}
+    p(class: "mine"):
+      "two"
 ```
 
 The generated `<c>_common_style` / `<c>_global_style` are plain strings the

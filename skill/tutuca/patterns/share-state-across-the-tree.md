@@ -23,14 +23,14 @@ spec:
 
 view:
   Editor:
-    @div{@render(it.picker)}
+    div():
+      render(it.picker)
 
   Selector:
-    @select(~class: "select"){
-      @each(value, key in dyn.entries){
-        @option(~value: value.value){@(value.label)}
-      }
-    }
+    select(class: "select"):
+      each(value, key in dyn.entries):
+        option(value: value.value):
+          @(value.label)
 ```
 
 `entries.mbt`:

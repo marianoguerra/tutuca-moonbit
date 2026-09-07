@@ -8,7 +8,31 @@ list more than necessary.
 ```tutu
 view:
   Card:
-    @section(~enrich_with: pager_info){@comment{ COUNT pass: runs once } @input(~value: it.query, ~on_input: search(e.value)) @each(value, key in it.items, ~when: only_matches, ~loop_with: page){@li{@comment{ COLLECT pass } @span{@(key)} @render(value) @button(~on_click: remove_in_items_at(key)){✕}}} @button(~disabled: is_first, ~on_click: prev){‹} @button{@(page_label)} @button(~disabled: is_last, ~on_click: next){›}}
+    section(~enrich_with: pager_info):
+      comment(): " COUNT pass: runs once "
+      " "
+      input(value: it.query, ~on_input: search(e.value))
+      " "
+      each(value, key in it.items, ~when: only_matches, ~loop_with: page):
+        li():
+          comment(): " COLLECT pass "
+          " "
+          span():
+            @(key)
+          " "
+          render(value)
+          " "
+          button(~on_click: remove_in_items_at(key)):
+            "✕"
+      " "
+      button(disabled: is_first, ~on_click: prev):
+        "‹"
+      " "
+      button():
+        @(page_label)
+      " "
+      button(disabled: is_last, ~on_click: next):
+        "›"
 ```
 
 All three handlers are MoonBit, and each for its own reason: `~loop_with` has

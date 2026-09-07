@@ -40,7 +40,7 @@ task.
 
 ## Iteration & lists
 
-- [Iterate a list](iterate-a-list.md) — render one element per item with `@each` / `@each(…){@render(value)}`.
+- [Iterate a list](iterate-a-list.md) — render one element per item with `each` / `each(…){render(value)}`.
 - [Filter a list](filter-a-list.md) — keep only matching items with `~when`, which takes a `pred`.
 - [Enrich each item](enrich-each-item.md) — expose derived per-item values as `@`-bindings with `enrich`.
 - [Paginate a list](paginate-a-list.md) — slice the iteration with `~loop_with` `start`/`end`.
@@ -60,7 +60,7 @@ task.
 
 ## Composition
 
-- [Render a child component](render-a-child-component.md) — `@render(it.field)` and multiple views.
+- [Render a child component](render-a-child-component.md) — `render(it.field)` and multiple views.
 - [Reuse markup with macros](reuse-markup-with-macros.md) — `@anode.Macro` with parameters and slots.
 
 ## Data & events

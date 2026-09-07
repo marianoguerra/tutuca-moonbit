@@ -19,17 +19,27 @@ spec:
 
 view:
   Item:
-    @div(~class: "flex gap-3 items-center"){@input(~type: "checkbox", ~class: "checkbox", ~checked: it.completed, ~on_input: it.completed := e.value) @input(~class: "input", ~value: it.text, ~on_input: it.text := e.value, ~disabled: it.completed)}
+    div(class: "flex gap-3 items-center"):
+      input(type: "checkbox", class: "checkbox", checked: it.completed, ~on_input: it.completed := e.value)
+      " "
+      input(class: "input", value: it.text, ~on_input: it.text := e.value, disabled: it.completed)
 
   Items:
-    @div(~class: "flex flex-col gap-3"){
-      @div(~class: "flex gap-2"){@button(~class: "btn btn-soft btn-success add", ~on_click: on_add_item){Add Task} @button(~class: "btn btn-soft btn-sm toggle-done", ~on_click: it.hide_completed := !it.hide_completed){Hide done}}
-      @div(~class: "flex flex-col gap-3 w-full"){
-        @each(value, key in it.items, ~when: only_visible){
-          @div(~class: "flex gap-3 items-center w-full row"){@render(value) @button(~class: "btn btn-soft btn-sm btn-error btn-circle rm", ~on_click: it.items.delete_at(key)){x}}
-        }
-      }
-    }
+    div(class: "flex flex-col gap-3"):
+      div(class: "flex gap-2"):
+        button(class: "btn btn-soft btn-success add", ~on_click: on_add_item):
+          "Add Task"
+        " "
+        button(class: "btn btn-soft btn-sm toggle-done", ~on_click: it.hide_completed := !it.hide_completed):
+          "Hide done"
+      "\n"
+      div(class: "flex flex-col gap-3 w-full"):
+        each(value, key in it.items, ~when: only_visible):
+          div(class: "flex gap-3 items-center w-full row"):
+            render(value)
+            " "
+            button(class: "btn btn-soft btn-sm btn-error btn-circle rm", ~on_click: it.items.delete_at(key)):
+              "x"
 ```
 
 Generation derives every name from the template/interface ids:
@@ -105,15 +115,15 @@ pub fn todo_module() -> @component.ModuleDef {
 Why each piece is the way it is:
 
 - **`items: Array[Item]`** — a field type may name a SIBLING `state`, and
-  naming it is what lets the checker read `@each`'s body against `Item`'s
+  naming it is what lets the checker read `each`'s body against `Item`'s
   own schema. The struct field is `items : Array[@tutuca.Value]` either way,
   holding `Item` instances built with `item.make(...)` — the element type
   costs nothing at runtime and buys the check. Append immutably:
   `s.items + [ ... ]`. Reach for `Array[Any]` only when the elements really
   are of different shapes.
-- **`@each` + `@render(value)` in a loop** renders each instance as its own `Item`
+- **`each` + `render(value)` in a loop** renders each instance as its own `Item`
   component (fresh frame — the item handles its own events); the remove
-  button sits **beside** `@render(value)` in a loop in the loop, so `it.items.delete_at(key)`
+  button sits **beside** `render(value)` in a loop in the loop, so `it.items.delete_at(key)`
   writes the *list*'s own field, which is where the collection lives.
 - **`~when="onlyVisible"`** filters at render time; the `when` bucket is
   a match over a generated enum (a raw `component()` call would take

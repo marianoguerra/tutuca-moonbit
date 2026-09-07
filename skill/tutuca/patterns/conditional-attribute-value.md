@@ -13,16 +13,10 @@ spec:
 
 view:
   Toggle:
-    @button(
-      ~class: if it.is_active | "btn btn-success" | "btn btn-ghost",
-      ~on_click: toggle_is_active,
-    ){@" toggle "}
-
-    // the condition is any expression, and each attribute carries its own
-    @button(
-      ~class: if it.tab == "x" | "on" | "off",
-      ~title: if it.is_active | "On" | "Off",
-    ){two}
+    button(class: if it.is_active | "btn btn-success" | "btn btn-ghost", ~on_click: toggle_is_active):
+      " toggle "
+    button(class: if it.tab == "x" | "on" | "off", title: if it.is_active | "On" | "Off"):
+      "two"
 ```
 
 An attribute's value is an `if` expression: the condition, then the two

@@ -35,7 +35,7 @@ MoonBit equivalent. Link one lazily when the user picks it:
 ```tutu
 view:
   Card:
-    @link(~rel: "stylesheet", ~href: "https://marianoguerra.github.io/margaui/themes/dracula.css")
+    link(rel: "stylesheet", href: "https://marianoguerra.github.io/margaui/themes/dracula.css")
 ```
 
 (or vendor those `.css` files for a fully offline build). Light + dark need no
@@ -271,9 +271,46 @@ shell, all compiling against the embedded bundle:
 ```tutu
 view:
   Card:
-    @comment{ app shell: a centered column }
-    @" "
-    @div(~class: "max-w-md mx-auto p-4 flex flex-col gap-3"){@comment{ panel } @div(~class: "card bg-base-200"){@div(~class: "card-body"){@h2(~class: "card-title"){Todos} @comment{ toolbar row } @div(~class: "flex gap-2 items-center"){@input(~class: "input w-full", ~placeholder: "What needs doing?") @button(~class: "btn btn-primary btn-sm"){Add}} @comment{ an item row; completed state = 'opacity-60 line-through' } @div(~class: "flex gap-3 items-center w-full"){@input(~type: "checkbox", ~class: "checkbox") @span(~class: "w-full"){Buy milk} @button(~class: "btn btn-soft btn-sm btn-error btn-circle"){✕}} @comment{ grouped controls + a counter } @div(~class: "join"){@button(~class: "btn btn-sm join-item"){All} @button(~class: "btn btn-sm join-item btn-outline"){Active}} @span(~class: "badge badge-neutral"){3 left}}}}
+    comment(): " app shell: a centered column "
+    " "
+    div(class: "max-w-md mx-auto p-4 flex flex-col gap-3"):
+      comment(): " panel "
+      " "
+      div(class: "card bg-base-200"):
+        div(class: "card-body"):
+          h2(class: "card-title"):
+            "Todos"
+          " "
+          comment(): " toolbar row "
+          " "
+          div(class: "flex gap-2 items-center"):
+            input(class: "input w-full", placeholder: "What needs doing?")
+            " "
+            button(class: "btn btn-primary btn-sm"):
+              "Add"
+          " "
+          comment(): " an item row; completed state = 'opacity-60 line-through' "
+          " "
+          div(class: "flex gap-3 items-center w-full"):
+            input(type: "checkbox", class: "checkbox")
+            " "
+            span(class: "w-full"):
+              "Buy milk"
+            " "
+            button(class: "btn btn-soft btn-sm btn-error btn-circle"):
+              "✕"
+          " "
+          comment(): " grouped controls + a counter "
+          " "
+          div(class: "join"):
+            button(class: "btn btn-sm join-item"):
+              "All"
+            " "
+            button(class: "btn btn-sm join-item btn-outline"):
+              "Active"
+          " "
+          span(class: "badge badge-neutral"):
+            "3 left"
 ```
 
 Buttons compose a kind (`btn-primary` / `btn-success` / `btn-error` /

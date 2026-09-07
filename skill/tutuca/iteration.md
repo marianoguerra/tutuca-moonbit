@@ -1,46 +1,50 @@
 # Tutuca — List Iteration & Enrichment
 
-Read this file when a view iterates a sequence (`@each`,
-`@each(…){@render(value)}`), filters (`~when`), enriches items or scopes
+Read this file when a view iterates a sequence (`each`,
+`each(…){render(value)}`), filters (`~when`), enriches items or scopes
 (`~enrich_with`), or paginates (`~loop_with`).
 
 ## List Iteration
 
-`@each` accepts: `it.field`, `dyn.<name>`.
+`each` accepts: `it.field`, `dyn.<name>`.
 
 ```tutu
 // iterate plain values
-@each(value, key in it.items){@li{@span{@(key)}@": "@(value)}}
+each(value, key in it.items):
+  li():
+    span(): @(key)
+    ": "
+    @(value)
 
 // filter
-@each(value, key in it.items, ~when: filter_item){@li{...}}
+each(value, key in it.items, ~when: filter_item): li(): ...
 
 // per-item enrichment via the enrich handler (binds a name the body reads)
-@each(value, key in it.items, ~enrich_with: enrich_item){@li{@(count)}}
+each(value, key in it.items, ~enrich_with: enrich_item): li(): @(count)
 
 // shared per-loop data + slicing (computed once before iteration)
-@each(value, key in it.items, ~loop_with: get_iter_data, ~when: filter_item){@li{...}}
+each(value, key in it.items, ~loop_with: get_iter_data, ~when: filter_item): li(): ...
 
 // render a list of components: the body is just the binder
-@each(value, key in it.items){@render(value)}
-@each(value, key in it.items){@render(value, ~as: "edit")}     // specific view
-@each(value, key in it.items, ~when: filter_item){@render(value)}
-@each(value, key in it.items, ~loop_with: get_iter_data, ~when: filter_item){@render(value)}
-@show(it.is_open){@each(value, key in it.items){@render(value)}}  // wrap in show
+each(value, key in it.items): render(value)
+each(value, key in it.items): render(value, ~as: "edit")     // specific view
+each(value, key in it.items, ~when: filter_item): render(value)
+each(value, key in it.items, ~loop_with: get_iter_data, ~when: filter_item): render(value)
+show(it.is_open): each(value, key in it.items): render(value)  // wrap in show
 ```
 
-Directives carry the `@` prefix everywhere — on `<li @each>` / `<div @each>`
-host-element loops and on `@each(…){@render(value)}` alike. Only `~as:` is bare, because
+Directives carry the `@` prefix everywhere — on `<li each>` / `<div each>`
+host-element loops and on `each(…){render(value)}` alike. Only `~as:` is bare, because
 it is an argument to the op rather than a directive. Both forms share the
 handler-name resolution rules below.
 
-`~enrich_with` is **not** supported on `@each(…){@render(value)}`: the op renders
+`~enrich_with` is **not** supported on `each(…){render(value)}`: the op renders
 each item as a component in its own frame and drops child content, so
 nothing is left to read the `@X` binds an enricher would set. Reach for a
-host-element `@each` loop when you need enrichment.
+host-element `each` loop when you need enrichment.
 
 **A loop's options belong to the loop.** `~when`, `~enrich_with` and
-`~loop_with` are options of `@each`, and a `@render` is one render site with
+`~loop_with` are options of `each`, and a `@render` is one render site with
 no body to iterate — so there is nowhere else to put them and no way to write
 the shape this rule used to exist for. A render inside a loop renders that
 step's value; a render outside one renders the value already rendering.
@@ -49,17 +53,16 @@ Write it one of the two ways:
 ```tutu
 view:
   Card:
-    @each(value, key in it.rows){
-      @render(value)
-    }
-    @" "
-    @comment{ the sugar }
-    @" "
-    @each(value, key in it.rows){
-      @div{@render(value)}
-    }
-    @" "
-    @comment{ the loop on a wrapper }
+    each(value, key in it.rows):
+      render(value)
+    " "
+    comment(): " the sugar "
+    " "
+    each(value, key in it.rows):
+      div():
+        render(value)
+    " "
+    comment(): " the loop on a wrapper "
 ```
 
 Should a self-referential render site reach the renderer another way, it stops
@@ -81,7 +84,7 @@ when=w => match w {
       .to_lower()
       .contains(s.query.to_lower())),
 },
-// ~enrich_with (with @each): (s, binds, key, value, iterData, stack) -> Unit
+// ~enrich_with (with each): (s, binds, key, value, iterData, stack) -> Unit
 // binds is a MUTABLE Map seeded { key, value } — write into it,
 // the return value is Unit
 enrich=e => match e {
@@ -162,9 +165,9 @@ struct-function fields with parens):
   its `keys` slice, rather than re-implementing the match test:
   `(ctx.filter)(Num(i.to_double()), v, Null)`.
 
-### Lifecycle of `@each`
+### Lifecycle of `each`
 
-For each render of an element with `@each(value, key in it.items)`:
+For each render of an element with `each(value, key in it.items)`:
 
 1. **Resolve sequence** — evaluate `it.items`. `List`s, `Map`s, and any
    `Obj` implementing `seq_entries` are recognized (see *Custom
@@ -195,7 +198,7 @@ whatever you wrote into `binds`).
 
 `~when` / `~enrich_with` / `~loop_with` name bare identifiers resolved
 in the matching typed bucket: `~when="filterItem"` → the `when` entry,
-`~enrich_with` → `enrich` (or `bind_with` without `@each`),
+`~enrich_with` → `enrich` (or `bind_with` without `each`),
 `~loop_with` → `loop_with`. When no typed-bucket entry matches, the name
 falls back to a `compute`/generated entry (works, not
 idiomatic — the typed buckets keep iteration helpers grouped and give
@@ -203,7 +206,7 @@ them the right signature).
 
 ## Scope Enrichment
 
-Without an `@each` on the same element, `~enrich_with` resolves in the
+Without an `each` on the same element, `~enrich_with` resolves in the
 **`bind_with`** bucket instead: the handler takes only the state, and
 its **returned** `Map[String, Value]`'s keys become `@`-prefixed
 bindings for descendants. The block-language keyword is `bindWith`.
@@ -221,16 +224,18 @@ bind_with={
 ```tutu
 view:
   Card:
-    @div(~enrich_with: info){@"Length: "@(len)}
+    div(~enrich_with: info):
+      "Length: "
+      @(len)
 ```
 
 ## Custom collections — the `Obj` trait
 
-To make `@each` iterate your own collection type, implement the
+To make `each` iterate your own collection type, implement the
 `@tutuca.Obj` trait — the MoonBit analogue of the JS `SEQ_INFO` walker:
 
 - **`seq_entries(self) -> Array[(PathKey, Value)]?`** — the entries
-  `@each` visits, in order, each keyed (`KStr` / `KInt`) so event paths
+  `each` visits, in order, each keyed (`KStr` / `KInt`) so event paths
   resolve back to entries (`@key` in handlers).
 - **`item(self, key : PathKey) -> Value?`** — resolves the same keys
   for seq-access reads (`it.songs[it.current_key]`).
@@ -323,4 +328,4 @@ checks, or go through the mounted view.)
 - [core.md](./core.md) — the component primer, notation, and the
   frame/scope stack model these directives build on.
 - [advanced.md](./advanced.md) — dynamic bindings as iteration sources
-  (`@each(value, key in dyn.items)`).
+  (`each(value, key in dyn.items)`).

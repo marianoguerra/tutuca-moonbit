@@ -42,9 +42,11 @@ logic:
 
 view:
   Counter:
-    @button(~class: "inc", ~on_click: inc){+}
-    @" "
-    @output{@(label())}
+    button(class: "inc", ~on_click: inc):
+      "+"
+    " "
+    output():
+      @(label())
 
 tests:
   "increments":
@@ -112,7 +114,7 @@ Current language boundaries that matter when authoring are:
   `clear`, `add`, `remove`, and `toggle` — one name per operation, and
   `clear` is a list's alone;
 - a field declared as a bare `Instance` (or by protocol) is a slot the HOST
-  fills: pass an instance in and `@render(…)` draws it, and a list of them
+  fills: pass an instance in and `render(…)` draws it, and a list of them
   draws all of them. A card can `send_at` a literal path into such a slot,
   because a message needs an address and the host resolves the path.
 
@@ -148,10 +150,12 @@ logic:
 
 view:
   Todos:
-    @p{@(it.draft)}
+    p():
+      @(it.draft)
 
   Todo:
-    @p{@(it.text)}
+    p():
+      @(it.text)
 ```
 
 The root is the first declared component unless one is marked `~root`.

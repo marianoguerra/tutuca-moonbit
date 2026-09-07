@@ -84,11 +84,10 @@ logic:
 
 view:
   Counter:
-    @div{
-      @button(~class: "dec", ~on_click: dec){-}
-      @span(~class: "count"){@(it.count)}
-      @button(~class: "inc", ~on_click: inc){+}
-    }
+    div():
+      button(class: "dec", ~on_click: dec): "-"
+      span(class: "count"): @(it.count)
+      button(class: "inc", ~on_click: inc): "+"
 ```
 
 The MoonBit side of the counter then needs no more code:

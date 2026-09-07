@@ -33,9 +33,9 @@ A macro is called the way any other form is — its name, and its arguments
 by keyword:
 
 ```tutu
-@badge()                      // defaults
-@badge(~label: "Sale")        // a literal
-@badge(~label: it.status)     // a field reference
+badge()                      // defaults
+badge(~label: "Sale")        // a literal
+badge(~label: it.status)     // a field reference
 ```
 
 Inside the macro body a parameter is read by its bare name. An argument is a
@@ -48,9 +48,13 @@ slot's expression — this is the `macro:row` idiom:
 ```tutu
 view:
   macro row(~value: "", ~label: ""):
-    @hide(value.is_empty()){
-      @div(~class: "row"){@span(~class: "k"){@(label)} @b(~class: "v"){@(value)}}
-    }
+    hide(value.is_empty()):
+      div(class: "row"):
+        span(class: "k"):
+          @(label)
+        " "
+        b(class: "v"):
+          @(value)
 ```
 
 It has to expand to a single token, which is already the rule everywhere `^` is
@@ -72,7 +76,7 @@ fn btn_rm_macro() -> @anode.Macro {
 ```
 
 ```tutu
-@btn_rm(~handler: remove_in_items_at, ~arg: key)
+btn_rm(~handler: remove_in_items_at, ~arg: key)
 ```
 
 > **Pass the handler name bare.** A macro declared in a view file is expanded
@@ -91,42 +95,57 @@ under `card`.
 
 ## Slots
 
-`@slot` marks where a call's children go. Content written directly in the
+`slot` marks where a call's children go. Content written directly in the
 call's body fills it:
 
 ```tutu
 view:
   macro card(~title: "Card"):
-    @div(~class: "card"){@h2{@(title)} @slot}
+    div(class: "card"):
+      h2():
+        @(title)
+      " "
+      slot()
 
   Page:
-    @card(~title: "Hi"){@p{body}}
+    card(~title: "Hi"):
+      p():
+        "body"
 ```
 
 ## Named slots
 
-`@slot("name")` declares a second place to put children, and `@fill("name")`
+`slot("name")` declares a second place to put children, and `fill("name")`
 at the call site says which content goes there. Everything not inside a
 `@fill` goes to the default slot:
 
 ```tutu
 view:
   macro panel():
-    @div{
-      @header{@slot("actions")}
-      @main{@slot}
-      @footer{@slot("footer")}
-    }
+    div():
+      header():
+        slot("actions")
+      "\n"
+      main():
+        slot()
+      "\n"
+      footer():
+        slot("footer")
 
   Page:
-    @panel(){
-      @fill("actions"){@button(~on_click: inc){+}}
-      @p{default slot content}
-      @fill("footer"){© 2026}
-    }
+    panel():
+      fill("actions"):
+        button(~on_click: inc):
+          "+"
+      "\n"
+      p():
+        "default slot content"
+      "\n"
+      fill("footer"):
+        "© 2026"
 ```
 
-A `@slot` may carry a body, which is what the call gets when it passes
+A `slot` may carry a body, which is what the call gets when it passes
 nothing for that slot. In an `@anode.Macro` value the same two halves are
 written in the markup the runtime parses — `<x:slot name="actions">` in the
 body and `<x slot="actions">` at the call site — and the default slot is

@@ -32,8 +32,8 @@ handler runs against — a **position**, not a captured reference (see
 | `FieldStep`         | a named field                      | `it.field`                 |
 | `SeqStep(field~, key~)` | a sequence entry by **literal** key/index | `.items[2]`      |
 | `SeqAccessStep(seq_field~, key_field~)` | a sequence entry whose key is **read from another field** | `.sheets[.selId]` |
-| `EachRenderItStep(field~, key~)` | an iterated `@render(value)` in a loop item | `@render(value)` in a loop per iter |
-| `BindStep` / `ScopeBindStep` / `EachBindStep` | nothing — frame-only (carry scope binds, no addressing) | `@each`, `~enrich_with` |
+| `EachRenderItStep(field~, key~)` | an iterated `render(value)` in a loop item | `render(value)` in a loop per iter |
+| `BindStep` / `ScopeBindStep` / `EachBindStep` | nothing — frame-only (carry scope binds, no addressing) | `each`, `~enrich_with` |
 
 Dispatch additionally keeps the steps in a `DispatchPath`, a stack of render
 continuations. Each frame is `{ base: Path, items: Array[DispatchStep] }`; a
@@ -133,7 +133,7 @@ refuses with `RefusalCode::IntentDepth` rather than looping.
 
 A provider evaluates both halves of a lowercase binding: its value and the
 absolute path of that value. The pair is pushed into the dynamic render stack
-under the provided name. A descendant `@render(dyn.sel)` retrieves the nearest
+under the provided name. A descendant `render(dyn.sel)` retrieves the nearest
 pair and renders the value after pushing its path as a continuation frame.
 There is no producer search, producer id, interior list, portal, or teleport
 rewrite during event reconstruction.
@@ -152,7 +152,7 @@ a component type and is not a render target because it carries no value path.
 When the located path is a seq-access (`.sheets[.selId]`), the frame base
 contains a `SeqAccessStep` — which is where async key races come from.
 
-A provider inside an `@each` publishes the ITEM's address: the loop re-binds
+A provider inside an `each` publishes the ITEM's address: the loop re-binds
 `it` to the item whether or not the body is a component, so a `.rows` iterated
 at `key` contributes `rows[key]` to the render position, and everything
 published below it is located under that.
@@ -160,7 +160,7 @@ published below it is located under that.
 The path half can be **absent**. A provider whose own render position cannot be
 written down as an address — a constant `lookup` default, or a sequence that is
 not a plain field — publishes the value with no path. `dyn.<name>` still READS it;
-`@render(dyn.name)` renders it in place and enters no continuation frame, so
+`render(dyn.name)` renders it in place and enters no continuation frame, so
 an event inside it belongs to the enclosing component rather than to a guessed
 address. This is deliberate: the empty path names the ROOT, so publishing an
 address that does not resolve back to the value being rendered would silently
@@ -191,7 +191,7 @@ The
 `dyn` leg REBUILDS one from the ctx (`@app.ScopeNames`), because the stack that
 evaluated a handler's arguments is a local in the dispatch pipeline and is gone
 once the body runs, and a `send` or an `intent` transaction never built one.
-The rebuilt path is compacted, so per-item bindings (`@each`,
+The rebuilt path is compacted, so per-item bindings (`each`,
 `~enrich_with`) are not replayed: a `provide` whose expression reads a loop
 binding is the one case this cannot reproduce.
 

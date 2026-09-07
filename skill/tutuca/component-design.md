@@ -77,7 +77,7 @@ own events, `send`/`receive`,
   of reuse and the unit of testing. → [patterns/render-a-child-component.md](./patterns/render-a-child-component.md)
 
 - **Don't add a `kind` / `type` field and branch the view on it. Do make one
-  component per kind and render it with `@render(it.item)`.** Conditional-on-kind
+  component per kind and render it with `render(it.item)`.** Conditional-on-kind
   views grow into tangled a conditional attribute chains; a component per kind keeps each view flat
   and each concern isolated. This is also why pathing into nested data is barred —
   model the nested thing as a component instead. → [core.md](./core.md) "Common
@@ -146,7 +146,7 @@ own events, `send`/`receive`,
   "Computed values & predicates" and "Field Types & Auto-generated API"
 
 - **Do remember a rendered child gets a clean namespace.** Parent `@` bindings
-  (`@each`, `~enrich_with`) don't cross a `@render` boundary — pass a value
+  (`each`, `~enrich_with`) don't cross a `@render` boundary — pass a value
   across it with `dyn.<name>`, not by assuming the binding leaks in. → [advanced.md](./advanced.md)
 
 - **Do add a decoy view when a margaui class is assembled at runtime.** The margaui
@@ -161,8 +161,8 @@ own events, `send`/`receive`,
 ## Smells & refactors
 
 - **Hand-written `isTodoSelected` / `selectTodo` handlers → predicate +
-  property write.** Replace `~on_click="selectTodo"` / `@show(is_todo_selected())`
-  with `~on_click: it.active_section := "todo"` / `@show(it.active_section == "todo")`,
+  property write.** Replace `~on_click="selectTodo"` / `show(is_todo_selected())`
+  with `~on_click: it.active_section := "todo"` / `show(it.active_section == "todo")`,
   derive the current value from one field.
 - **A view that a conditional attribute-branches on a `kind` field → one component per kind**, each
   rendered with `@render`.

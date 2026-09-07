@@ -19,7 +19,15 @@ logic:
 
 view:
   Roster:
-    @ul{@each(value, key in it.items, ~when: filter_item){@li{@span{@(key)}@": "@(value)}} @comment{@" a loop that renders components takes the same ~when: option "}}
+    ul():
+      each(value, key in it.items, ~when: filter_item):
+        li():
+          span():
+            @(key)
+          ": "
+          @(value)
+      " "
+      comment(): " a loop that renders components takes the same ~when: option "
 ```
 
 There is no `when` declaration kind, because there is nothing for one to say:

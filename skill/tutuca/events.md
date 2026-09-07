@@ -20,20 +20,17 @@ spec:
 
 view:
   Wiring:
-    // a bare name dispatches a `Receive` arm of `update`
-    @button(~on_click: inc){+}
-    @button(~on_click: dec){-}
-
-    // pass args: an event read is written `e.<something>`
-    @input(~on_input: it.str := e.value)
-    @input(~on_input: it.n := e.valueAsInt)
-
-    // a loop binder is in scope, so it is passed as itself
-    @each(value, key in it.items){
-      @button(~on_click: pick(key, e.isAlt)){pick}
-    }
-
-    @button(~on_click: load_another_way){load}
+    button(~on_click: inc):
+      "+"
+    button(~on_click: dec):
+      "-"
+    input(~on_input: it.str := e.value)
+    input(~on_input: it.n := e.valueAsInt)
+    each(value, key in it.items):
+      button(~on_click: pick(key, e.isAlt)):
+        "pick"
+    button(~on_click: load_another_way):
+      "load"
 ```
 
 An event value is either a **property action** — a write or a collection
@@ -83,12 +80,14 @@ spec:
 
 view:
   Binding:
-    @input(~bind: it.name)
-    @textarea(~bind: it.notes)
-    @select(~bind: it.category){@option{work}}
-    @input(~type: "checkbox", ~bind: it.completed)
-    @input(~type: "number", ~bind: it.count)
-    @input(~type: "number", ~step: "any", ~bind: it.ratio)
+    input(~bind: it.name)
+    textarea(~bind: it.notes)
+    select(~bind: it.category):
+      option():
+        "work"
+    input(type: "checkbox", ~bind: it.completed)
+    input(type: "number", ~bind: it.count)
+    input(type: "number", step: "any", ~bind: it.ratio)
 ```
 
 The component must declare a `spec:` section. View generation reads that
@@ -109,7 +108,7 @@ malformed, fractional integer, non-finite, or out-of-range numeric edit does
 not dispatch the setter, so it leaves the previous field value intact.
 
 Generation refuses `~bind` when its target is not a direct `it.field`, when it
-sits under `@each`, when the input `:type` is dynamic, when a select is
+sits under `each`, when the input `:type` is dynamic, when a select is
 `multiple`, when the field is not one of the scalar types above, or when the
 element/type combination is wrong. It also refuses an explicit `value` or
 `checked` attribute, or another handler for the synthesized event, on the same
@@ -183,10 +182,10 @@ Anything else is a real path into the event object, and every **traversed** step
 is checked against an allowlist:
 
 ```tutu
-@button(~on_click: pick(e.target.dataset.rowId)){pick}
-@input(~on_input: rename(e.target.value))
-@section(~on_emoji_click: on_emoji_click(e.detail.unicode)){…}
-@div(~on_wheel: zoom(e.deltaY)){…}
+button(~on_click: pick(e.target.dataset.rowId)): "pick"
+input(~on_input: rename(e.target.value))
+section(~on_emoji_click: on_emoji_click(e.detail.unicode)): …
+div(~on_wheel: zoom(e.deltaY)): …
 ```
 
 The object-valued steps a path may go **through** are exactly six:
@@ -288,9 +287,10 @@ event/guard pair passes through as if it were not there (`app/app.mbt`,
 ```tutu
 view:
   Card:
-    @input(~on_keydown: submit(e.value) ~send, ~on_keydown: reset ~cancel)
-    @" "
-    @button(~on_click: solo_only ~ctrl){ctrl-click}
+    input(~on_keydown: submit(e.value) ~send, ~on_keydown: reset ~cancel)
+    " "
+    button(~on_click: solo_only ~ctrl):
+      "ctrl-click"
 ```
 
 An **effect** is an action on the live event, run when its handler runs — after
@@ -314,13 +314,18 @@ spec:
 
 view:
   Modifiers:
-    @form(~on_submit: save(e.value) ~prevent){@input(~value: it.draft) @button{save}}
-    @each(value, key in it.items){
-      @nav(~on_click: pick(key) ~stop){
-        @a(~href: "#a"){a}
-        @a(~href: "#b"){b}
-      }
-    }
+    form(~on_submit: save(e.value) ~prevent):
+      input(value: it.draft)
+      " "
+      button():
+        "save"
+    each(value, key in it.items):
+      nav(~on_click: pick(key) ~stop):
+        a(href: "#a"):
+          "a"
+        "\n"
+        a(href: "#b"):
+          "b"
 ```
 
 > **What `+stop` stops here.** Events dispatch through ONE delegated listener
@@ -343,11 +348,9 @@ whole `detail` mapped to a `Value::Map`, and `e.detail.<field>` walks into it �
 ```tutu
 view:
   Card:
-    @section(~on_emoji_click: on_emoji_click(e.value)){
-      @show(it.is_picker_visible){
-        @emoji_picker
-      }
-    }
+    section(~on_emoji_click: on_emoji_click(e.value)):
+      show(it.is_picker_visible):
+        emoji_picker()
 ```
 
 ```moonbit nocheck
