@@ -70,6 +70,44 @@ fn enum_of_tutu(d : @tutufile.Decl, doc : String?) -> RawDecl raise DefError {
 }
 
 ///|
+/// `import protocol Local = "your.domain/Name@1"`.
+///
+/// It declares no members — the file that DECLARES the protocol holds those —
+/// so all it carries is the id and the local name bound to it. That is the
+/// point of importing by id rather than by a path: one declaration serves
+/// every file that uses the protocol, and a protocol declared twice is what an
+/// id exists to prevent.
+///
+/// `RProtocolImport` and the resolution behind it already existed for the old
+/// notation; only the `.tutu` reader was missing, so a construct
+/// `skill/tutuca/protocols.md` documents could not be written in the format it
+/// documents it for.
+fn import_protocol_of_tutu(
+  d : @tutufile.Decl,
+  doc : String?,
+) -> RawDecl raise DefError {
+  let at = at_of(d.span)
+  guard d.node.it is Group(parts) else {
+    raise Syntax(msg="`import protocol \{d.name}` has no id", span=at)
+  }
+  let mut id = ""
+  for i in 0..<parts.length() {
+    if parts[i].it is Op("=") &&
+      i + 1 < parts.length() &&
+      parts[i + 1].it is Lit(Str(s)) {
+      id = s
+    }
+  }
+  guard id != "" else {
+    raise Syntax(
+      msg="`import protocol \{d.name}` has no id — write `import protocol \{d.name} = \"your.domain/\{d.name}@1\"`, the string the declaring file gave it",
+      span=at,
+    )
+  }
+  empty_raw(RProtocolImport(id), d.name, at, doc)
+}
+
+///|
 /// `protocol Container = "id":` — a wire vocabulary, and nothing here touches
 /// the spelling of a member.
 fn protocol_of_tutu(

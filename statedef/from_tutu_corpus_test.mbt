@@ -295,3 +295,37 @@ test "an empty collection is a lookup default the lowering could not print" {
     ("xs", Some("[]")),
   ])
 }
+
+///|
+/// An imported protocol reaches the definitions as the id it names.
+///
+/// `RProtocolImport` and the resolution behind it were already here — they
+/// were written for the old notation — so the whole of what was missing was
+/// the `.tutu` reader. A component may `implements` a protocol it did not
+/// declare, which is the point of importing one by id: the declaring file
+/// holds the members, and a protocol declared twice is what an id exists to
+/// prevent.
+test "an imported protocol resolves, and a component implements it" {
+  let src =
+    #|spec:
+    #|  import protocol Openable = "x/Openable@1"
+    #|
+    #|  T:
+    #|    implements Openable
+    #|
+    #|    field open :: Bool
+    #|
+    #|    message Openable::toggle
+    #|
+  // The local name resolves to the CANONICAL ID everywhere it is dispatched
+  // by: `implements` carries the id, and the message is
+  // `x/Openable@1::toggle`. That is what makes one declaring file serve every
+  // file that imports it — a second host matches on the id, and the local name
+  // is a convenience this side of the boundary.
+  inspect(
+    read_defs(src),
+    content=(
+      #|[{source_name: "T", component: "T", fields: [{name: "open", binding: "open", ty: TyBool, doc: None, attrs: []}], properties: [], receive: [{source_name: "Openable::toggle", name: "x/Openable@1::toggle", variant: "OpenableToggle", payload: [], variadic: false, doc: None}], intent: [], express_message: [], express_intent: [], implements: ["x/Openable@1"], protocols: [], protocol_imports: [{local_name: "Openable", id: "x/Openable@1",span:_}], property_bindings: [], view_bindings: [], provide_bindings: [], lookup_bindings: [], types: [], provide: [], lookup: [], rules: [], wheres: [], doc: None, category: "", keywords: []}]
+    ),
+  )
+}

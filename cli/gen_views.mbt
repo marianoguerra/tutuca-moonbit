@@ -1,4 +1,4 @@
-// `tutuca gen` — ahead-of-time view compilation. An .html file holding
+// `tutuca gen` — ahead-of-time view compilation. A .tutu file holding
 // one or more views becomes a companion MoonBit module of typed view
 // surfaces, so handler names, argument shapes, view names and element ids
 // stop being strings the compiler cannot see.
@@ -207,8 +207,8 @@ let gen_views_help : String =
   #|  Compiles the views in each path into a MoonBit module of typed view
   #|  surfaces, written next to the component that uses them.
   #|
-  #|  Paths are .html files or directories, following watch's rule: a directory
-  #|  contributes the .html files that ALREADY have a generated sibling, so
+  #|  Paths are .tutu files or directories, following watch's rule: a directory
+  #|  contributes the .tutu files that ALREADY have a generated sibling, so
   #|  pointing this at a project root does not try to compile index.html.
   #|
   #|  Passing more than one path is not just a convenience. The checks that span

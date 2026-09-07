@@ -479,3 +479,46 @@ test "a view may carry the view name as well as the component's" {
     ),
   )
 }
+
+///|
+/// A protocol declared in ANOTHER file, bound to a local name.
+///
+/// It had no reader at all: `keyword_kind` knew `struct`, `enum`, `protocol`,
+/// `macro` and `style`, so `import protocol …` was read as a component named
+/// `import` and refused with `tutu::not_a_type_name`. Nothing in this repo
+/// caught it because nothing in this repo writes one — all 133 `.tutu` files
+/// declare their protocols inline — while `skill/tutuca/protocols.md`
+/// documents the line and `tutufile/totutu` PRINTED it. Reported from a
+/// downstream repo where 24 of 37 component families import one.
+test "an imported protocol is its own declaration" {
+  let sources = @report.Sources::new()
+  let src =
+    #|spec:
+    #|  import protocol Openable = "marianoguerra/tutuca-components/Openable@1"
+    #|
+    #|  Foo:
+    #|    field open :: Bool
+    #|
+  let id = sources.add("t.tutu", src)
+  let file = @tutufile.read(src, id)
+  assert_true(file.ok())
+  let spec = file.section(Spec).unwrap()
+  @debug.assert_eq(spec.decls.length(), 2)
+  // The NAME is the local one, two terms in — `import` and `protocol` are both
+  // keyword, so it is not where every other declaration keeps its name.
+  @debug.assert_eq(spec.decls[0].name, "Openable")
+  assert_true(spec.decls[0].kind is ImportProtocol)
+  // And it has no body: an import declares no members.
+  assert_true(spec.decls[0].body is None)
+  @debug.assert_eq(spec.decls[1].name, "Foo")
+}
+
+///|
+test "`import` names the one thing that is imported" {
+  let sources = @report.Sources::new()
+  let src = "spec:\n  import struct Thing = \"x/Thing@1\"\n"
+  let id = sources.add("t.tutu", src)
+  let file = @tutufile.read(src, id)
+  assert_false(file.ok())
+  inspect(file.reports[0].code.unwrap(), content="tutu::import_wants_protocol")
+}

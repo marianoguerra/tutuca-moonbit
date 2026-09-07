@@ -16,8 +16,8 @@ let gen_tailwind_css_help : String =
   #|
   #|  Compile the classes used by a project's views into CSS, against stock
   #|  Tailwind — theme, preflight and utilities, no component library. Paths are
-  #|  view .html files or directories to search; a directory contributes the
-  #|  .html files that already have a generated sibling, so pointing this at a
+  #|  view .tutu files or directories to search; a directory contributes the
+  #|  .tutu files that already have a generated sibling, so pointing this at a
   #|  project root does not try to compile index.html. Defaults to the current
   #|  directory.
   #|

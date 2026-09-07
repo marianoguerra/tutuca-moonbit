@@ -40,6 +40,7 @@ fn raw_of(d : @tutufile.Decl, prev : @tutufile.Decl?) -> RawDecl raise DefError 
     Struct => struct_of_tutu(d, doc)
     Enum => enum_of_tutu(d, doc)
     Protocol => protocol_of_tutu(d, doc)
+    ImportProtocol => import_protocol_of_tutu(d, doc)
     _ =>
       raise Syntax(
         msg="`\{d.name}` is not a spec declaration — the section declares components, `struct`, `enum` and `protocol`",

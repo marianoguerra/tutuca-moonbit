@@ -71,7 +71,7 @@ let css_positional : PositionalSpec = positional(
   "path",
   required=false,
   description="View files or directories to search (default: the current directory).",
-  note="A directory contributes the .html files that already have a generated sibling.",
+  note="A directory contributes the .tutu files that already have a generated sibling.",
 )
 
 ///|
@@ -194,7 +194,7 @@ let commands : Array[CommandSpec] = [
     ],
   },
   // Ahead-of-time view compilation (gen_views.mbt + the viewgen package).
-  // Needs no module: it reads an .html file and writes a .mbt file, so it
+  // Needs no module: it reads a .tutu file and writes a .mbt file, so it
   // works before the component that will use the generated types exists.
   {
     name: "gen",
@@ -227,7 +227,7 @@ let commands : Array[CommandSpec] = [
         "path",
         required=true,
         description="View files or directories to compile.",
-        note="A directory contributes the .html files that already have a generated sibling. The paths passed are also the set the cross-component checks can see.",
+        note="A directory contributes the .tutu files that already have a generated sibling. The paths passed are also the set the cross-component checks can see.",
       ),
     ],
   },

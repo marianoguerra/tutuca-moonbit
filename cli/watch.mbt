@@ -1,4 +1,4 @@
-// `tutuca watch` — regenerate view modules as the .html files change.
+// `tutuca watch` — regenerate view modules as the .tutu files change.
 //
 // Authoring a view is an edit/compile loop, and `gen` makes it a
 // three-step one: edit the view, remember to regenerate, then build. Watch
@@ -38,8 +38,8 @@ let watch_help : String =
   #|  so the generated types are always current and the compiler is what tells
   #|  you a view and a component have drifted apart.
   #|
-  #|  Each path is either an .html view file, or a directory to scan. A
-  #|  directory contributes the .html files that ALREADY have a generated
+  #|  Each path is either a .tutu view file, or a directory to scan. A
+  #|  directory contributes the .tutu files that ALREADY have a generated
   #|  sibling (<stem>_view_gen.mbt) — that is what distinguishes a view file
   #|  from a page like index.html, so watching a whole project is safe.
   #|  Defaults to the current directory.
@@ -152,7 +152,7 @@ fn run_watch(args : Array[String], opts : GlobalOpts) -> Outcome {
 /// watched tree — .mbt, .json, the generated modules themselves — is noise,
 /// and reacting to the modules we just wrote would loop.
 pub fn is_view_path(path : String) -> Bool {
-  path.has_suffix(".html") || path.has_suffix(".tutu")
+  path.has_suffix(".tutu")
 }
 
 ///|
@@ -186,7 +186,7 @@ pub fn watch_name(path : String, name : String?) -> String {
 }
 
 ///|
-/// Does this .html file look like one gen manages? The rule is the
+/// Does this .tutu file look like one gen manages? The rule is the
 /// presence of its generated sibling, which is what a directory scan uses to
 /// tell a view file from a page.
 pub fn watch_sibling(path : String) -> String {
@@ -220,7 +220,7 @@ pub fn watch_css_line(target : String, classes~ : Int) -> String {
 /// The banner printed once the watcher is up.
 pub fn watch_banner(files : Array[String], roots : Array[String]) -> String {
   if files.is_empty() {
-    return "watching \{roots.join(", ")} — no view files yet (a .html with a generated sibling)\n"
+    return "watching \{roots.join(", ")} — no view files yet (a .tutu with a generated sibling)\n"
   }
   "watching \{files.length()} view file(s) under \{roots.join(", ")}\n"
 }

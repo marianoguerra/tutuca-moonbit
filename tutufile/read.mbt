@@ -264,6 +264,30 @@ fn keyword_decl(
       body: None,
     })
   }
+  // `import protocol Local = "id"` — the keyword is two words, so the name is
+  // one term further along, and there is no body: an import declares no
+  // members, only the id a second host dispatches by.
+  if kind is ImportProtocol {
+    guard parts.length() > 1 && parts[1].it is Id("protocol") else {
+      reports.push(report_import_wants_protocol(source, span_of(head)))
+      return None
+    }
+    guard parts.length() > 2 && parts[2].it is Id(bound) else {
+      reports.push(
+        report_missing_name(source, span_of(head), "import protocol"),
+      )
+      return None
+    }
+    return Some({
+      kind,
+      name: bound,
+      options: options_of(parts),
+      header: span_of(head).merge(span_of(parts[2])),
+      span: span_of(group),
+      node: group,
+      body: None,
+    })
+  }
   guard parts.length() > 1 && parts[1].it is Id(name) else {
     reports.push(report_missing_name(source, span_of(head), kind.keyword()))
     return None
@@ -298,6 +322,7 @@ fn keyword_kind(word : String) -> DeclKind? {
     "struct" => Some(Struct)
     "enum" => Some(Enum)
     "protocol" => Some(Protocol)
+    "import" => Some(ImportProtocol)
     "macro" => Some(Macro)
     "style" => Some(Style)
     _ => None
@@ -308,7 +333,7 @@ fn keyword_kind(word : String) -> DeclKind? {
 /// Where a keyword declaration is allowed to appear.
 fn sections_for(kind : DeclKind) -> Array[Section] {
   match kind {
-    Struct | Enum | Protocol => [Spec]
+    Struct | Enum | Protocol | ImportProtocol => [Spec]
     Macro | Style => [View]
     Component | View | Fixture | Scene => []
   }

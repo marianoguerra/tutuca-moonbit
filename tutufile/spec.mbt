@@ -40,6 +40,15 @@ pub(all) enum DeclKind {
   Struct
   Enum
   Protocol
+  /// `import protocol Local = "your.domain/Name@1"` — a protocol declared in
+  /// ANOTHER file, bound to a local name.
+  ///
+  /// It is its own kind rather than a `Protocol` with no body, because the two
+  /// answer different questions: a `protocol` declares members and an import
+  /// declares none, and the id is the whole of what it carries. A second host
+  /// dispatches by that id, which is why importing by it — rather than by a
+  /// path — is what makes one declaration serve every file that uses it.
+  ImportProtocol
   Macro
   Style
 } derive(Eq, @debug.Debug)
@@ -143,6 +152,7 @@ pub fn DeclKind::keyword(self : DeclKind) -> String {
     Struct => "struct"
     Enum => "enum"
     Protocol => "protocol"
+    ImportProtocol => "import"
     Macro => "macro"
     Style => "style"
     Component | View | Fixture | Scene => ""
@@ -160,6 +170,7 @@ pub fn DeclKind::noun(self : DeclKind) -> String {
     Struct => "struct"
     Enum => "enum"
     Protocol => "protocol"
+    ImportProtocol => "imported protocol"
     Macro => "macro"
     Style => "style block"
   }

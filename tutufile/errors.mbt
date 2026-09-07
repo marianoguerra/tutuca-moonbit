@@ -258,6 +258,25 @@ fn report_struct_has_no_fields(
 }
 
 ///|
+/// `import` followed by something other than `protocol`.
+///
+/// A protocol is the only thing a `.tutu` file imports — everything else it
+/// needs is either declared in it or reached by a canonical id — so the word
+/// after `import` is not a choice, and saying which one it is beats saying
+/// that this one is wrong.
+fn report_import_wants_protocol(
+  src : @report.SourceId,
+  span : @report.Span,
+) -> @report.Report {
+  @report.Report::error("only a protocol is imported")
+  .with_code("tutu::import_wants_protocol")
+  .with_label(@report.Label::primary(src, span, message="`protocol` goes here"))
+  .with_help(
+    "write `import protocol <Local> = \"your.domain/Name@1\"` — the id is what a second host dispatches by",
+  )
+}
+
+///|
 /// A keyword declaration missing the name after the keyword.
 fn report_missing_name(
   src : @report.SourceId,

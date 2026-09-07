@@ -93,7 +93,7 @@ pub(all) enum Outcome {
   ServeStorybook(GlobalOpts, dir~ : String, port~ : Int, out~ : String?)
   /// Compile the views under `roots` into MoonBit modules. The core decides
   /// the flags; the shell expands the roots into view files (an explicit
-  /// .html at its word, a directory contributing the files that already have a
+  /// .tutu at its word, a directory contributing the files that already have a
   /// generated sibling — the same rule `watch` and the CSS commands use), reads
   /// them, calls `gen_views_all`, and writes (or prints, under `dry_run`) the
   /// plan.
@@ -109,7 +109,7 @@ pub(all) enum Outcome {
     dry_run~ : Bool,
     ir~ : Bool
   )
-  /// Regenerate view modules as their .html files change. The core decides
+  /// Regenerate view modules as their .tutu files change. The core decides
   /// what to watch; the shell owns the watcher and the filesystem.
   Watch(GlobalOpts, plan~ : WatchPlan)
   /// Compile the classes a project's views use into CSS (gen_css.mbt). The core
@@ -274,7 +274,7 @@ declare pub fn watch_target(path : String, out : String?) -> String
 declare pub fn watch_name(path : String, name : String?) -> String
 
 ///|
-/// The generated sibling whose presence marks an .html as gen-managed.
+/// The generated sibling whose presence marks a .tutu as gen-managed.
 declare pub fn watch_sibling(path : String) -> String
 
 ///|
