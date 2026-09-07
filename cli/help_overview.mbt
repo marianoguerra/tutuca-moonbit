@@ -23,11 +23,11 @@ let overview_body : String =
   #|
   #|COMMANDS
   #|  gen [path...] [--name <Name>] [--out <dir|file>] [--dry-run] [--no-ir]
-  #|      Compile .html files of views into companion MoonBit modules of typed
+  #|      Compile .tutu files of views into companion MoonBit modules of typed
   #|      view surfaces, plus a compiled-tree module beside each. The generated
   #|      files are checked in; regenerate, never edit them. Paths follow the
   #|      same rule as `watch` and the CSS commands — a directory contributes
-  #|      the .html files that already have a generated sibling.
+  #|      the .tutu files that already have a generated sibling.
   #|
   #|      Pass the whole project when you have one: the checks that span
   #|      components (does the component this view renders exist? does it have
@@ -47,7 +47,7 @@ let overview_body : String =
   #|      Compile the classes a project's views use into CSS: gen-tailwind-css
   #|      against stock Tailwind, gen-margaui-css against Tailwind + margaui's
   #|      component layers. Paths follow the same rule as `watch` — a directory
-  #|      contributes the .html files that already have a generated sibling —
+  #|      contributes the .tutu files that already have a generated sibling —
   #|      and default to the current directory. The stylesheets are compiled
   #|      into the binary; no Node, no CDN, no checkout.
   #|        -o, --out       write the CSS here (default: stdout)
@@ -82,33 +82,11 @@ let overview_body : String =
   #|      and cannot be: it means running the app, and a CLI does not have your
   #|      compiled components.
   #|
-  #|  to-tutu <file.html> [--name <Name>] [-o <file.tutu>] [--dry-run]
-  #|      Convert an .html view file into the .tutu file that replaces it,
-  #|      renaming what the new notation renames — a component's own fields,
-  #|      handlers, computes, rules and message names become snake_case, and a
-  #|      protocol member does not. It refuses rather than guesses: any
-  #|      construct it cannot spell, and any difference `equiv` finds between
-  #|      what it wrote and what it read, stops the write and is listed.
-  #|        --name    the component name a nameless .html file would be given
-  #|        --out     where to write it (default: the .html path, .tutu)
-  #|        --dry-run print the converted file instead of writing it
-  #|
-  #|  equiv <file.html> <file.tutu> [--name <Name>] [--verbose]
-  #|      Check that a .tutu file means what the .html file it replaces meant.
-  #|      What is compared is what the pipeline reads out of each file — the
-  #|      schema, the handlers, the view trees, the fixtures and the scenes —
-  #|      and not the text: the two notations spell the same thing differently
-  #|      on purpose. Positions, node ids and whitespace are ignored; anything
-  #|      else that differs is listed and the command exits 1.
-  #|        --name    the component name a nameless .html file would be given,
-  #|                  the same one `gen --name` supplies
-  #|        --verbose print both sides of every difference, not one line each
-  #|
   #|  watch [path...] [--name <Name>] [--out <dir>] [--no-ir]
   #|        [--tailwind-css <file> | --margaui-css <file>]
   #|        [--css-entry <file>] [--css-classes <file>]
-  #|      Re-run gen on every save. Paths are .html files or directories;
-  #|      a directory contributes the .html files that already have a generated
+  #|      Re-run gen on every save. Paths are .tutu files or directories;
+  #|      a directory contributes the .tutu files that already have a generated
   #|      sibling, so pointing it at a project root does not try to compile
   #|      index.html. Defaults to the current directory.
   #|        --tailwind-css / --margaui-css  also rewrite that stylesheet after
