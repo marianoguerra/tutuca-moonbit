@@ -1,19 +1,19 @@
 ///|
-fn bind_file(state : String, view : String) -> String {
-  "<script type=\"tutuca/spec\">\nstate Form { " +
-  state +
-  " }\n</script>\n<template>" +
+fn bind_file(field : String, view : String) -> String {
+  "spec:\n  Form:\n    field " +
+  field +
+  "\n\nview:\n  Form:\n    " +
   view +
-  "</template>"
+  "\n"
 }
 
 ///|
-fn bind_error(state : String, view : String) -> String {
+fn bind_error(field : String, view : String) -> String {
   try {
-    @viewgen.generate(
-      bind_file(state, view),
-      name="Form",
-      source_file="form.html",
+    @viewgen.emit_module(
+      "Form",
+      "form.tutu",
+      @viewgen.read_file(bind_file(field, view), name="Form"),
     )
     |> ignore
     ""
@@ -26,15 +26,15 @@ fn bind_error(state : String, view : String) -> String {
 test "@bind accepts the scalar field/tag matrix" {
   for
     case in [
-      ("name: String", "<input @bind=\".name\">"),
-      ("notes: String", "<textarea @bind=\".notes\"></textarea>"),
+      ("name :: String", "@input(~bind: it.name)"),
+      ("notes :: String", "@textarea(~bind: it.notes)"),
       (
-        "choice: String", "<select @bind=\".choice\"><option>a</option></select>",
+        "choice :: String", "@select(~bind: it.choice){@option{a}}",
       ),
-      ("done: Bool", "<input type=\"checkbox\" @bind=\".done\">"),
-      ("count: Int", "<input type=\"number\" @bind=\".count\">"),
-      ("small: UInt8", "<input type=\"range\" @bind=\".small\">"),
-      ("ratio: Double", "<input type=\"number\" step=\"any\" @bind=\".ratio\">"),
+      ("done :: Bool", "@input(~type: \"checkbox\", ~bind: it.done)"),
+      ("count :: Int", "@input(~type: \"number\", ~bind: it.count)"),
+      ("small :: UInt8", "@input(~type: \"range\", ~bind: it.small)"),
+      ("ratio :: Double", "@input(~type: \"number\", ~step: \"any\", ~bind: it.ratio)"),
     ] {
     assert_eq(bind_error(case.0, case.1), "")
   }
@@ -42,10 +42,10 @@ test "@bind accepts the scalar field/tag matrix" {
 
 ///|
 test "@bind emits its exact coercion in the compiled event table" {
-  let file = @viewgen.split_file(
-    bind_file("count: Int", "<input type=\"number\" @bind=\".count\">"),
+  let file = @viewgen.read_file(
+    bind_file("count :: Int", "@input(~type: \"number\", ~bind: it.count)"),
   )
-  let ir = @viewgen.emit_ir_module("Form", "form.html", file)
+  let ir = @viewgen.emit_ir_module("Form", "form.tutu", file)
   assert_true(
     ir.contains(
       "action=@anode.set_property_action(\"count\", @tutuca.Expr::event_path([\"value\"]))",
@@ -57,25 +57,25 @@ test "@bind emits its exact coercion in the compiled event table" {
 ///|
 test "@bind rejects unsupported or ambiguous combinations" {
   let cases = [
-    ("name: String", "<div @bind=\".name\"></div>", "cannot bind String"),
-    ("done: Bool", "<input @bind=\".done\">", "Bool only"),
+    ("name :: String", "@div(~bind: it.name)", "cannot bind String"),
+    ("done :: Bool", "@input(~bind: it.done)", "Bool only"),
     (
-      "count: Int", "<input type=\"text\" @bind=\".count\">", "integer fields only",
+      "count :: Int", "@input(~type: \"text\", ~bind: it.count)", "integer fields only",
     ),
     (
-      "ratio: Double", "<input :type=\".kind\" @bind=\".ratio\">", "dynamic `:type`",
+      "ratio :: Double", "@input(~type: it.kind, ~bind: it.ratio)", "dynamic `~type`",
     ),
     (
-      "names: Array[String]", "<input @bind=\".names\">", "does not support Array[String]",
+      "names :: List.of(String)", "@input(~bind: it.names)", "does not support Array[String]",
     ),
     (
-      "name: String", "<select multiple @bind=\".name\"></select>", "multiple `<select>`",
+      "name :: String", "@select(~multiple, ~bind: it.name)", "multiple `<select>`",
     ),
     (
-      "name: String", "<input :value=\".name\" @bind=\".name\">", "conflicts with an explicit `:value`",
+      "name :: String", "@input(~value: it.name, ~bind: it.name)", "conflicts with an explicit `~value` option",
     ),
     (
-      "name: String", "<input @bind=\".name\" @on.input=\"changed\">", "conflicts with an explicit `@on.input`",
+      "name :: String", "@input(~bind: it.name, ~on_input: changed)", "conflicts with an explicit `~on_input`",
     ),
   ]
   for case in cases {
@@ -86,20 +86,21 @@ test "@bind rejects unsupported or ambiguous combinations" {
 ///|
 test "@bind requires a direct root field and a schema" {
   assert_true(
-    bind_error("name: String", "<input @bind=\"$name\">").contains(
+    bind_error("name :: String", "@input(~bind: name())").contains(
       "direct state field",
     ),
   )
   assert_true(
     bind_error(
-      "names: Array[String]", "<div @each=\".names\"><input @bind=\".name\"></div>",
+      "names :: List.of(String)",
+      "@each(value, key in it.names){@input(~bind: it.name)}",
     ).contains("outside `@each`"),
   )
   let no_schema = try {
-    @viewgen.generate(
-      "<template><input @bind=\".name\"></template>",
-      name="Form",
-      source_file="form.html",
+    @viewgen.emit_module(
+      "Form",
+      "form.tutu",
+      @viewgen.read_file("view:\n  Form:\n    @input(~bind: it.name)\n", name="Form"),
     )
     |> ignore
     ""
@@ -113,33 +114,35 @@ test "@bind requires a direct root field and a schema" {
 test "property actions are checked against member access and collection kind" {
   assert_eq(
     bind_error(
-      "items: Array[String]", "<button @on.click=\".items.removeAt 0\">x</button>",
+      "items :: List.of(String)",
+      "@button(~on_click: it.items.delete_at(0)){x}",
     ),
     "",
   )
   assert_true(
     bind_error(
-      "name: String", "<button @on.click=\".name.push 'x'\">x</button>",
+      "name :: String", "@button(~on_click: it.name.push(\"x\")){x}",
     ).contains("does not apply to String"),
   )
   assert_true(
     bind_error(
-      "name: String property { label: String { get .name } }", "<button @on.click=\".label = 'x'\">x</button>",
+      "name :: String\n    property label :: String:\n      get: it.name",
+      "@button(~on_click: it.label := \"x\"){x}",
     ).contains("read-only property `.label`"),
   )
   assert_true(
     bind_error(
-      "name: String", "<button @on.click=\".missing = 'x'\">x</button>",
+      "name :: String", "@button(~on_click: it.missing := \"x\"){x}",
     ).contains("unknown member `.missing`"),
   )
 }
 
 ///|
 test "a property action does not become a generated input message" {
-  let file = @viewgen.split_file(
-    bind_file("name: String", "<input @on.input=\".name = e.value\">"),
+  let file = @viewgen.read_file(
+    bind_file("name :: String", "@input(~on_input: it.name := e.value)"),
   )
-  let ir = @viewgen.emit_ir_module("Form", "form.html", file)
+  let ir = @viewgen.emit_ir_module("Form", "form.tutu", file)
   assert_true(
     ir.contains(
       "action=@anode.set_property_action(\"name\", @tutuca.Expr::event_path([\"value\"]))",

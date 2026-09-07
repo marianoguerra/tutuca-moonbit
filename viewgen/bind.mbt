@@ -1,4 +1,4 @@
-// Schema-aware lowering for `@bind`.
+// Schema-aware lowering for `~bind`.
 
 ///|
 fn lower_binds(
@@ -19,7 +19,7 @@ fn lower_binds(
           if count > 1 {
             raise InvalidBind(
               view=view.raw.name,
-              reason="conflicts with an explicit `@on.\{handler.name}` handler on the same element",
+              reason="conflicts with an explicit `~on_\{handler.name.replace_all(old="-", new="_")}` handler on the same element",
             )
           }
         }
@@ -110,7 +110,7 @@ fn lower_bind(
   guard input_type is StaticBindAttr(typ) else {
     raise InvalidBind(
       view~,
-      reason="cannot use a dynamic `:type`; the input kind must be statically known",
+      reason="cannot use a dynamic `~type`; the input kind must be statically known",
     )
   }
   let kind : @anode.BindCoercion = match member_ty {
@@ -169,7 +169,7 @@ fn lower_bind(
   if attr_count(dom.attrs, bind.property) > 1 {
     raise InvalidBind(
       view~,
-      reason="conflicts with an explicit `:\{bind.property}`/`\{bind.property}` attribute",
+      reason="conflicts with an explicit `~\{bind.property}` option",
     )
   }
   bind.event.binding = Some(kind)

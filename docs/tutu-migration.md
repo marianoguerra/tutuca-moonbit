@@ -16,11 +16,23 @@ construct you remember is called now.
 
 ## Status — read this first
 
-The migration is **done. Nothing in the tree is written in the old notation,
-and nothing reads it: every section is read directly into the shape it means,
-and a compiled card carries its own `.tutu` source for a host to read the same
-way.** What is left below is the record of how it was done, and the conversion
-table you came for.
+The migration is **done for everything that ships. Nothing in the tree is
+written in the old notation, nothing prints it, and nothing on the path from a
+file to a running component reads it: every section is read directly into the
+shape it means, and a compiled card carries its own `.tutu` source for a host
+to read the same way.** What is left below is the record of how it was done,
+and the conversion table you came for.
+
+**What is left is one package's tests.** `@viewgen.split_file` and
+`@viewgen.generate` still wrap `@viewfile.split_file`, and ten test files in
+`viewgen/` still hand them `.html` fixtures — around ninety of them, several
+with whole-module snapshots beside them. Nothing outside those tests calls
+either function: the CLI, the card compiler, both playgrounds and the
+benchmarks all read directly. Converting them is what takes `viewfile`'s
+splitter, and it is mechanical rather than uncertain — the fixtures are the
+same constructs the rest of the corpus already spells, and
+`viewgen/surface_test.mbt` and `viewgen/bind_test.mbt` are the two that have
+been converted, as the shape to follow.
 
 | Stage | What it is | State |
 | --- | --- | --- |
@@ -31,7 +43,7 @@ table you came for.
 | 5 | The MoonBit beside each view: fields, message names, hook keys, binding names | **done** |
 | 5b | The docs: the skill's 90 view blocks and its prose, `README`, `docs/`, and every diagnostic an author reads | **done** |
 | 5c | The card playground: its 26 starter cards, the structured editor's region model, and the gates over both | **done** |
-| 6 | Direct readers, replacing the lowering; then delete the old parsers | **done** — see below |
+| 6 | Direct readers, replacing the lowering; then delete the old parsers | **done for the pipeline** — see below |
 
 ### Stage 6, as it landed
 

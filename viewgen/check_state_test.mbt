@@ -302,7 +302,7 @@ test "a constant id inside a loop is not an id" {
     ),
     "Board",
   )
-  assert_true(msg.contains("`id=\"row\"` sits inside an `@each`"))
+  assert_true(msg.contains("`~id: \"row\"` sits inside an `@each`"), msg~)
   assert_true(msg.contains("use a class"))
   // Nested one level deeper is the same story.
   assert_true(
@@ -311,7 +311,7 @@ test "a constant id inside a loop is not an id" {
         "state Board { items: Array[Any] }", "<ul><li @each=\".items\"><span id=\"cell\">x</span></li></ul>",
       ),
       "Board",
-    ).contains("`id=\"cell\"`"),
+    ).contains("`~id: \"cell\"`"),
   )
 }
 

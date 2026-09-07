@@ -139,6 +139,10 @@ rather than a relaxation: the rule was about a sigil, and `~on_click: f()` and
 `~on_click: f` are one dispatch here — which is what the rule was arguing they
 should be. It still runs over views built as markup through `@anode.View::new`.
 
+Two more author-facing spellings caught up with the notation: `~bind` and
+`~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
+and an `~id:` in a loop is quoted the way a file writes it.
+
 ### Removed
 
 - **`tutufile/lower`**, the printer that turned each `.tutu` section into the
@@ -1453,6 +1457,10 @@ property (`pub count: Int { get .count set .count }`) had no accessor; and
 the bindings. A fifth, found while fixing the fourth: a call to a card's own
 callable passed the caller's arguments.
 
+Two more author-facing spellings caught up with the notation: `~bind` and
+`~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
+and an `~id:` in a loop is quoted the way a file writes it.
+
 ### Removed
 
 - **The Component Model path.** `dyncomp/`, the WIT world, the
@@ -1552,6 +1560,10 @@ compiler names every site.
 | `init~` | `initial~`, on the wrapper and on `component()` |
 | `swap~` bucket | an `update` arm answering `Replace(v)` |
 | a generated mutator (`setX`, `toggleX`, `resetX`, `removeInXAt`) | a property action in the view: `.x = v`, `.x = not .x`, `.x = default`, `.x.removeAt @key` |
+
+Two more author-facing spellings caught up with the notation: `~bind` and
+`~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
+and an `~id:` in a loop is quoted the way a file writes it.
 
 ### Removed in the next release
 
@@ -2971,6 +2983,10 @@ next number rather than the same one.
   because the host's policy is the single source of what a view may reach.
   The refusal now reads "this host does not allow external URLs in views".
 
+Two more author-facing spellings caught up with the notation: `~bind` and
+`~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
+and an `~id:` in a loop is quoted the way a file writes it.
+
 ### Removed
 
 - **Capabilities are gone from dynamic components; host↔guest communication is
@@ -3828,6 +3844,10 @@ loads: the host refuses it by its export namespace with a message saying to
 rebuild. That retires the promise 0.23.0 made deliberately, and it is the whole
 cost of this release.
 
+Two more author-facing spellings caught up with the notation: `~bind` and
+`~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
+and an `~id:` in a loop is quoted the way a file writes it.
+
 ### Removed
 
 - **v1's dispatch surface, everywhere it survived.** `Dispatch::Input` /
@@ -4026,6 +4046,10 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   reason. A warning rather than a refusal: both spellings compile to the same
   message, and the fix is always the name the warning prints.
 
+Two more author-facing spellings caught up with the notation: `~bind` and
+`~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
+and an `~id:` in a loop is quoted the way a file writes it.
+
 ### Removed
 
 - **The v1 dispatch surface is gone.** `HandlerBucket` and `Dispatch` have two
@@ -4080,6 +4104,10 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   answered hashed the same. Every fingerprint moves once with this release.
 
 ## [0.22.0] - 2026-08-15
+
+Two more author-facing spellings caught up with the notation: `~bind` and
+`~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
+and an `~id:` in a loop is quoted the way a file writes it.
 
 ### Removed
 
@@ -5417,6 +5445,10 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
 > 0.13.0 on the boundary is clean: `[Unreleased]` above starts empty, and the
 > next release moves its own entries and nobody else's, per CONTRIBUTING.md.
 
+Two more author-facing spellings caught up with the notation: `~bind` and
+`~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
+and an `~id:` in a loop is quoted the way a file writes it.
+
 ### Removed
 
 - **Five public functions nothing called.** Each was reachable, documented and
@@ -5996,6 +6028,10 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   a reader can no longer look up in an enum — `'equals?' takes 2 arguments`.
   And every `*_view_ir_gen.mbt` regenerates, since the emitted IR names the
   builtin as a string instead of a constructor.
+
+Two more author-facing spellings caught up with the notation: `~bind` and
+`~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
+and an `~id:` in a loop is quoted the way a file writes it.
 
 ### Removed
 
@@ -6589,6 +6625,10 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   unclickable with a real mouse: `.btn:active` sets `translate`, which
   overrode `.indicator-item`'s and moved the button out from under the cursor
   between mousedown and mouseup.
+
+Two more author-facing spellings caught up with the notation: `~bind` and
+`~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
+and an `~id:` in a loop is quoted the way a file writes it.
 
 ### Removed
 
@@ -7454,6 +7494,10 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   `switch view` −13.4%, `page people 1000` −11.9%, `refilter people 100`
   −11.9%.
 
+Two more author-facing spellings caught up with the notation: `~bind` and
+`~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
+and an `~id:` in a loop is quoted the way a file writes it.
+
 ### Removed (BREAKING)
 
 - **All render caching.** Rendering memoized three ways and now memoizes
@@ -7638,6 +7682,10 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   the parse step itself now: only `View::new` names the parser, so a program
   built entirely ahead of time does not link one. `demo/counter_wasm`:
   438,803 → 241,941 bytes. No call site changed.
+
+Two more author-facing spellings caught up with the notation: `~bind` and
+`~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
+and an `~id:` in a loop is quoted the way a file writes it.
 
 ### Removed
 
@@ -7947,6 +7995,10 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   counts without clearing the cache, which `evict` cannot do.
 - `@tutuca.same_node`: physical identity across the `&PathNode` trait-object
   boxing, which a plain `physical_equal` defeats.
+
+Two more author-facing spellings caught up with the notation: `~bind` and
+`~on_input` rather than `@bind` and `@on.input`, `~type` rather than `:type`,
+and an `~id:` in a loop is quoted the way a file writes it.
 
 ### Removed
 

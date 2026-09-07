@@ -17,20 +17,23 @@
 /// types module and the IR module, since the enum and the wrapper it keys are
 /// emitted into different files.
 fn bucket_src(script : String) -> (String, String) raise {
-  let file = @viewgen.split_file(
-    "<script type=\"tutuca/spec\">\n" +
-    "state Mail { items: Array[Int], n: Int }\n" +
-    "</script>\n" +
-    "<script type=\"tutuca/script\">\n" +
+  let file = @viewgen.read_file(
+    "spec:\n" +
+    "  Mail:\n" +
+    "    field items :: List.of(Int)\n" +
+    "    field n :: Int\n" +
+    "\nlogic:\n  Mail:\n" +
     script +
-    "\n</script>\n" +
-    "<template><div>" +
-    "<x text=\"$hasAttachments\"></x><x text=\"$rowLabel\"></x>" +
-    "<ul><li @each=\".items\" @when=\"keepItem\"><x text=\"@value\"></x></li></ul>" +
-    "</div></template>",
+    "\nview:\n" +
+    "  Mail:\n" +
+    "    @div{\n" +
+    "      @(hasAttachments())\n" +
+    "      @(rowLabel())\n" +
+    "      @ul{@each(value, key in it.items, ~when: keepItem){@li{@(value)}}}\n" +
+    "    }\n",
     name="Mail",
   )
-  let mods = @viewgen.emit_modules("Mail", "mail.html", file, include_ir=true)
+  let mods = @viewgen.emit_modules("Mail", "mail.tutu", file, include_ir=true)
   (
     mods.types_source,
     match mods.ir_source {
@@ -42,7 +45,7 @@ fn bucket_src(script : String) -> (String, String) raise {
 
 ///|
 test "a $name the block answers is dropped from the Method enum" {
-  let (types, _) = bucket_src("compute hasAttachments { .n }")
+  let (types, _) = bucket_src("    compute hasAttachments: it.n\n")
   assert_true(types.contains("pub(all) enum MailCompute {\n  RowLabel\n}"))
   assert_true(
     types.contains(
@@ -57,7 +60,7 @@ test "a $name the block answers is dropped from the Method enum" {
 ///|
 test "a bucket the block answers WHOLE loses its enum and its parameter" {
   let (types, ir) = bucket_src(
-    "compute hasAttachments { .n }\npred keepItem { .n > 0 }",
+    "    compute hasAttachments: it.n\n    pred keepItem: it.n > 0\n",
   )
   // `keepItem` was the only `@when` the views named, so there is no enum to
   // key a parameter by and nothing an author could add.
@@ -71,7 +74,7 @@ test "a bucket the block answers WHOLE loses its enum and its parameter" {
 
 ///|
 test "a mixed bucket merges the block's map over the author's" {
-  let (_, ir) = bucket_src("compute hasAttachments { .n }")
+  let (_, ir) = bucket_src("    compute hasAttachments: it.n\n")
   assert_true(
     ir.contains(
       "@component.build_bucket(([RowLabel] : Array[MailCompute]), MailCompute::name, f)",
@@ -87,7 +90,7 @@ test "a mixed bucket merges the block's map over the author's" {
 /// to spell them with. It is a built map rather than a match for the same
 /// reason: with the two halves disjoint there is nothing to fall through to.
 test "the generated router is a map keyed by source name" {
-  let (_, ir) = bucket_src("compute hasAttachments { .n }")
+  let (_, ir) = bucket_src("    compute hasAttachments: it.n\n")
   assert_true(
     ir.contains(
       "fn mail_inline_compute() -> Map[String, (MailState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value] {",
@@ -102,7 +105,7 @@ test "the generated router is a map keyed by source name" {
 /// refused declaration keeps its variant. Trimming it would delete the only
 /// place left to answer the name.
 test "a declaration the backend refuses is NOT trimmed" {
-  let (types, ir) = bucket_src("compute hasAttachments { .items[0] }")
+  let (types, ir) = bucket_src("    compute hasAttachments: it.items[0]\n")
   assert_true(types.contains("  HasAttachments\n"))
   assert_true(types.contains("  RowLabel\n"))
   assert_false(types.contains("Absent, because the script block answers"))
@@ -112,7 +115,7 @@ test "a declaration the backend refuses is NOT trimmed" {
 
 ///|
 test "a block that answers nothing leaves every bucket exactly as it was" {
-  let (types, ir) = bucket_src("receive tick { .n += 1 }")
+  let (types, ir) = bucket_src("    receive tick:\n      it.n += 1\n")
   assert_true(types.contains("  HasAttachments\n"))
   assert_true(types.contains("  RowLabel\n"))
   assert_true(types.contains("pub(all) enum MailWhen {\n  KeepItem\n}"))
