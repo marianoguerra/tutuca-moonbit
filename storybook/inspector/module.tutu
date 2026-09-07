@@ -32,15 +32,25 @@ spec:
 
 view:
   RichSample:
-    @div(~on_click: inc){@span{@(it.title)} @each(value, key in it.tags, ~loop_with: rows){@span{@(value)}}}
+    div(~on_click: inc):
+      span():
+        @(it.title)
+      " "
+      each(value, key in it.tags, ~loop_with: rows):
+        span():
+          @(value)
 
   RichSample.compact:
-    @span(~on_click: reset){
-      @i{@(it.title)}
-      @i{@(label())}
-      @i{@(double())}
-    }
+    span(~on_click: reset):
+      i():
+        @(it.title)
+      "\n"
+      i():
+        @(label())
+      "\n"
+      i():
+        @(double())
 
   SampleCard:
-    @div(~class: "card", ~on_click: bump){@(label())}
-
+    div(class: "card", ~on_click: bump):
+      @(label())

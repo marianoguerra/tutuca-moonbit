@@ -43,5 +43,6 @@ logic:
 
 view:
   Addressing:
-    @div{@button(~on_click: poke_all){poke}}
-
+    div():
+      button(~on_click: poke_all):
+        "poke"

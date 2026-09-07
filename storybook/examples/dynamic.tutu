@@ -25,27 +25,60 @@ spec:
 
 view:
   SelectorEntry:
-    @div(~class: "flex gap-3"){@input(~class: "input val", ~value: it.value, ~on_input: it.value := e.value) @input(~class: "input lbl", ~value: it.label, ~on_input: it.label := e.value)}
+    div(class: "flex gap-3"):
+      input(class: "input val", value: it.value, ~on_input: it.value := e.value)
+      " "
+      input(class: "input lbl", value: it.label, ~on_input: it.label := e.value)
 
   Selector:
-    @select(~class: "select", ~value: it.selected_value, ~on_input: it.selected_value := e.value){
-      @each(value, key in dyn.entries){
-        @option(~value: value.value){@(value.label)}
-      }
-    }
+    select(class: "select", value: it.selected_value, ~on_input: it.selected_value := e.value):
+      each(value, key in dyn.entries):
+        option(value: value.value):
+          @(value.label)
 
   EntryEditorAndSelector:
-    @div(~class: "flex flex-col gap-3"){@div(~class: "flex gap-3 justify-center"){@render(it.selector)} @button(~class: "btn btn-soft btn-success add", ~on_click: on_add_item){Add Entry} @div(~class: "flex flex-col gap-3 w-full"){@each(value, key in it.items){@div(~class: "flex gap-3 justify-center items-center w-full row"){@render(value) @button(~class: "btn btn-soft btn-sm btn-error btn-circle font-mono rm", ~on_click: it.items.delete_at(key)){x}}}}}
+    div(class: "flex flex-col gap-3"):
+      div(class: "flex gap-3 justify-center"):
+        render(it.selector)
+      " "
+      button(class: "btn btn-soft btn-success add", ~on_click: on_add_item):
+        "Add Entry"
+      " "
+      div(class: "flex flex-col gap-3 w-full"):
+        each(value, key in it.items):
+          div(class: "flex gap-3 justify-center items-center w-full row"):
+            render(value)
+            " "
+            button(class: "btn btn-soft btn-sm btn-error btn-circle font-mono rm", ~on_click: it.items.delete_at(key)):
+              "x"
 
   Sheet:
-    @div(~class: "card bg-base-200 p-3 gap-2 sheet"){@span(~class: "text-xs opacity-60 tag"){Sheet (rendered via *active)} @input(~class: "input input-bordered title", ~value: it.title, ~on_input: it.title := e.value)}
+    div(class: "card bg-base-200 p-3 gap-2 sheet"):
+      span(class: "text-xs opacity-60 tag"):
+        "Sheet (rendered via *active)"
+      " "
+      input(class: "input input-bordered title", value: it.title, ~on_input: it.title := e.value)
 
   Toolbar:
-    @div(~class: "border border-dashed border-warning rounded p-3 gap-2 toolbar"){@span(~class: "text-xs opacity-60 tag"){Toolbar (consumer)} @render(dyn.active)}
+    div(class: "border border-dashed border-warning rounded p-3 gap-2 toolbar"):
+      span(class: "text-xs opacity-60 tag"):
+        "Toolbar (consumer)"
+      " "
+      render(dyn.active)
 
   Panel:
-    @div(~class: "border border-dashed border-info rounded p-3 gap-2 panel"){@span(~class: "text-xs opacity-60 tag"){Panel (intermediate)} @render(it.toolbar)}
+    div(class: "border border-dashed border-info rounded p-3 gap-2 panel"):
+      span(class: "text-xs opacity-60 tag"):
+        "Panel (intermediate)"
+      " "
+      render(it.toolbar)
 
   Workspace:
-    @div(~class: "flex flex-col gap-3 p-3"){@div(~class: "alert"){@span{@"Workspace.sheet.title = "@b(~class: "echo"){@(sheet_title())}}} @render(it.panel)}
-
+    div(class: "flex flex-col gap-3 p-3"):
+      div(class: "alert"):
+        span():
+          "Workspace.sheet.title = "
+          b(class: "echo"):
+            @(sheet_title())
+      " "
+      render(it.panel)

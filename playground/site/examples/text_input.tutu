@@ -4,5 +4,11 @@ spec:
 
 view:
   Greeter:
-    @div(~style: "font-family:system-ui;display:flex;flex-direction:column;gap:.5rem"){@input(~value: it.name, ~on_input: it.name := e.value, ~placeholder: "your name") @p{@"Hello, "@b{@(it.name)}!}}
-
+    div(style: "font-family:system-ui;display:flex;flex-direction:column;gap:.5rem"):
+      input(value: it.name, ~on_input: it.name := e.value, placeholder: "your name")
+      " "
+      p():
+        "Hello, "
+        b():
+          @(it.name)
+        "!"

@@ -229,19 +229,107 @@ logic:
 
 view:
   PickerRow:
-    @div(~class: if it.selected | "picker-row row-selected flex flex-col gap-0.5 px-2 py-1 rounded cursor-pointer bg-base-300" | "picker-row flex flex-col gap-0.5 px-2 py-1 rounded cursor-pointer hover:bg-base-200", ~on_click: pick){@span(~class: "flex items-baseline gap-2"){@span(~class: "row-name font-medium"){@(label())} @span(~class: "row-module text-xs opacity-50"){@(it.module)}} @span(~class: "row-summary text-xs opacity-70"){@(it.summary)} @span(~class: "row-why text-xs opacity-40"){@(it.why)}}
+    div(class: if it.selected | "picker-row row-selected flex flex-col gap-0.5 px-2 py-1 rounded cursor-pointer bg-base-300" | "picker-row flex flex-col gap-0.5 px-2 py-1 rounded cursor-pointer hover:bg-base-200", ~on_click: pick):
+      span(class: "flex items-baseline gap-2"):
+        span(class: "row-name font-medium"):
+          @(label())
+        " "
+        span(class: "row-module text-xs opacity-50"):
+          @(it.module)
+      " "
+      span(class: "row-summary text-xs opacity-70"):
+        @(it.summary)
+      " "
+      span(class: "row-why text-xs opacity-40"):
+        @(it.why)
 
   ComponentPicker:
-    @show(it.open){
-      @div(~class: "picker-backdrop fixed inset-0 z-50 flex items-start justify-center bg-black/20 pt-24", ~on_click: dismissed){@div(~class: "picker w-[32rem] max-w-[90vw] rounded-lg border border-base-300 bg-base-100 shadow-xl flex flex-col gap-2 p-3"){@input(~class: "picker-query input input-bordered w-full", ~autofocus: true, ~placeholder: "what goes here?", ~value: it.query, ~on_input: typed(e.value), ~on_keydown: navigate(e.key)) @div(~class: "picker-hits flex flex-col gap-0.5 max-h-80 overflow-y-auto"){@each(value, key in it.hits){@render(value)}} @show(it.hits.is_empty()){@p(~class: "picker-empty text-sm opacity-60 px-2"){@(it.empty_message)}}}}
-    }
+    show(it.open):
+      div(class: "picker-backdrop fixed inset-0 z-50 flex items-start justify-center bg-black/20 pt-24", ~on_click: dismissed):
+        div(class: "picker w-[32rem] max-w-[90vw] rounded-lg border border-base-300 bg-base-100 shadow-xl flex flex-col gap-2 p-3"):
+          input(class: "picker-query input input-bordered w-full", autofocus: true, placeholder: "what goes here?", value: it.query, ~on_input: typed(e.value), ~on_keydown: navigate(e.key))
+          " "
+          div(class: "picker-hits flex flex-col gap-0.5 max-h-80 overflow-y-auto"):
+            each(value, key in it.hits):
+              render(value)
+          " "
+          show(it.hits.is_empty()):
+            p(class: "picker-empty text-sm opacity-60 px-2"):
+              @(it.empty_message)
 
   CardRow:
-    @li(~class: "card-row flex items-center gap-2 text-sm"){@input(~type: "checkbox", ~class: "row-chosen checkbox checkbox-xs", ~checked: it.chosen, ~on_input: choose(e.value)) @span(~class: "row-name grow"){@(it.name)} @show(it.loaded){@span(~class: "row-loaded badge badge-xs badge-success"){loaded}} @hide(it.error.is_empty()){@span(~class: "row-error text-xs text-error"){@(it.error)}} @hide(it.loaded){@button(~class: "row-load btn btn-xs", ~on_click: load){load}}}
+    li(class: "card-row flex items-center gap-2 text-sm"):
+      input(type: "checkbox", class: "row-chosen checkbox checkbox-xs", checked: it.chosen, ~on_input: choose(e.value))
+      " "
+      span(class: "row-name grow"):
+        @(it.name)
+      " "
+      show(it.loaded):
+        span(class: "row-loaded badge badge-xs badge-success"):
+          "loaded"
+      " "
+      hide(it.error.is_empty()):
+        span(class: "row-error text-xs text-error"):
+          @(it.error)
+      " "
+      hide(it.loaded):
+        button(class: "row-load btn btn-xs", ~on_click: load):
+          "load"
 
   Note:
-    @li(~class: if it.tone | "note text-xs px-2 py-1 rounded bg-error/10" | "note text-xs px-2 py-1 rounded bg-base-200"){@(it.text)}
+    li(class: if it.tone | "note text-xs px-2 py-1 rounded bg-error/10" | "note text-xs px-2 py-1 rounded bg-base-200"):
+      @(it.text)
 
   Shell:
-    @div(~class: "universal flex flex-col gap-3 p-4 min-h-screen"){@header(~class: "flex items-center gap-2 flex-wrap"){@h1(~class: "text-lg font-semibold grow"){universal} @span(~class: "shell-status text-xs opacity-60"){@(it.status)} @button(~class: "act-edit btn btn-sm", ~on_click: toggle_edit){@(edit_label())} @button(~class: "act-save btn btn-sm btn-ghost", ~on_click: save){save} @button(~class: "act-restore btn btn-sm btn-ghost", ~on_click: restore){restore} @button(~class: "act-clear btn btn-sm btn-ghost", ~on_click: clear_canvas){clear}} @main(~push_view: it.edit_view, ~class: "canvas grow rounded border border-base-300 p-2"){@render(it.canvas)} @section(~class: "library flex flex-col gap-1"){@div(~class: "flex items-center gap-2"){@h2(~class: "text-sm font-medium grow"){library} @button(~class: "act-load-chosen btn btn-xs", ~on_click: load_chosen){load selected} @button(~class: "act-load-all btn btn-xs btn-ghost", ~on_click: load_all){load all}}@ul(~class: "flex flex-col gap-1"){@each(value, key in it.library){@render(value)}}}@section(~class: "paste flex flex-col gap-1"){@h2(~class: "text-sm font-medium"){write a card} @textarea(~class: "src textarea textarea-bordered w-full font-mono text-xs", ~rows: "6", ~placeholder: "paste a card here", ~value: it.source, ~on_input: type_source(e.value)) @div{@button(~class: "act-compile btn btn-sm", ~on_click: compile_source){compile and add}}} @hide(it.notes.is_empty()){@ul(~class: "notes flex flex-col gap-1"){@each(value, key in it.notes){@render(value)}}} @render(it.picker)}
-
+    div(class: "universal flex flex-col gap-3 p-4 min-h-screen"):
+      header(class: "flex items-center gap-2 flex-wrap"):
+        h1(class: "text-lg font-semibold grow"):
+          "universal"
+        " "
+        span(class: "shell-status text-xs opacity-60"):
+          @(it.status)
+        " "
+        button(class: "act-edit btn btn-sm", ~on_click: toggle_edit):
+          @(edit_label())
+        " "
+        button(class: "act-save btn btn-sm btn-ghost", ~on_click: save):
+          "save"
+        " "
+        button(class: "act-restore btn btn-sm btn-ghost", ~on_click: restore):
+          "restore"
+        " "
+        button(class: "act-clear btn btn-sm btn-ghost", ~on_click: clear_canvas):
+          "clear"
+      " "
+      main(~push_view: it.edit_view, class: "canvas grow rounded border border-base-300 p-2"):
+        render(it.canvas)
+      " "
+      section(class: "library flex flex-col gap-1"):
+        div(class: "flex items-center gap-2"):
+          h2(class: "text-sm font-medium grow"):
+            "library"
+          " "
+          button(class: "act-load-chosen btn btn-xs", ~on_click: load_chosen):
+            "load selected"
+          " "
+          button(class: "act-load-all btn btn-xs btn-ghost", ~on_click: load_all):
+            "load all"
+        ul(class: "flex flex-col gap-1"):
+          each(value, key in it.library):
+            render(value)
+      section(class: "paste flex flex-col gap-1"):
+        h2(class: "text-sm font-medium"):
+          "write a card"
+        " "
+        textarea(class: "src textarea textarea-bordered w-full font-mono text-xs", rows: "6", placeholder: "paste a card here", value: it.source, ~on_input: type_source(e.value))
+        " "
+        div():
+          button(class: "act-compile btn btn-sm", ~on_click: compile_source):
+            "compile and add"
+      " "
+      hide(it.notes.is_empty()):
+        ul(class: "notes flex flex-col gap-1"):
+          each(value, key in it.notes):
+            render(value)
+      " "
+      render(it.picker)

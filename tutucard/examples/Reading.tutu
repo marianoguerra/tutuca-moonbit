@@ -49,5 +49,11 @@ logic:
 
 view:
   Reading:
-    @div{@p{@(it.raw)}@p{@(it.value)} @button(~on_click: parse){parse}}
-
+    div():
+      p():
+        @(it.raw)
+      p():
+        @(it.value)
+      " "
+      button(~on_click: parse):
+        "parse"

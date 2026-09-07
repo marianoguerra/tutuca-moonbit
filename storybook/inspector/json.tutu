@@ -68,35 +68,100 @@ spec:
 
 view:
   JsonNull:
-    @span(~class: "font-mono text-sm leading-tight text-warning italic json-null"){null}
+    span(class: "font-mono text-sm leading-tight text-warning italic json-null"):
+      "null"
 
   JsonBoolean:
-    @span(~class: css_class()){@(text())}
+    span(class: css_class()):
+      @(text())
 
   JsonBoolean._margauiClasses:
-    @p(~class: "text-success text-warning")
+    p(class: "text-success text-warning")
 
   JsonNumber:
-    @span(~class: "font-mono text-sm leading-tight text-info json-number"){@(text())}
+    span(class: "font-mono text-sm leading-tight text-info json-number"):
+      @(text())
 
   JsonString:
-    @span(~class: "font-mono text-sm leading-tight inline-block max-w-xs truncate align-bottom json-string", ~title: it.value){@(text())}
+    span(class: "font-mono text-sm leading-tight inline-block max-w-xs truncate align-bottom json-string", title: it.value):
+      @(text())
 
   ValueFn:
-    @span(~class: "font-mono text-sm leading-tight text-base-content/40 value-fn"){@"function () { … }"}
+    span(class: "font-mono text-sm leading-tight text-base-content/40 value-fn"):
+      "function () { … }"
 
   ValueObj:
-    @span(~class: "font-mono text-sm leading-tight inline-block max-w-xs truncate align-bottom text-info value-obj", ~title: it.text){@(it.text)}
+    span(class: "font-mono text-sm leading-tight inline-block max-w-xs truncate align-bottom text-info value-obj", title: it.text):
+      @(it.text)
 
   JsonArray:
-    @span(~class: "font-mono text-sm leading-tight inline-block"){@span(~class: "inline-flex items-center gap-2"){@button(~type: "button", ~class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", ~disabled: is_items_empty(), ~on_click: it.is_expanded := !it.is_expanded){@span{@(arrow_text())} @span(~class: "json-array"){@(type_text())} @span{@(count_text())}} @show(show_pagination()){@div(~class: "join"){@button(~type: "button", ~class: "join-item btn btn-xs pg-prev", ~disabled: cannot_prev_page(), ~on_click: prev_page){«} @span(~class: "join-item badge font-mono text-xs pg-label"){@(page_indicator_text())} @button(~type: "button", ~class: "join-item btn btn-xs pg-next", ~disabled: cannot_next_page(), ~on_click: next_page){»}}}} @show(it.is_expanded){@div(~class: "ml-1 flex flex-col gap-0.5 border-l border-base-content/10 pl-2 mt-0.5"){@each(value, key in it.items, ~loop_with: get_page_range){@render(value)}}}}
+    span(class: "font-mono text-sm leading-tight inline-block"):
+      span(class: "inline-flex items-center gap-2"):
+        button(type: "button", class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", disabled: is_items_empty(), ~on_click: it.is_expanded := !it.is_expanded):
+          span():
+            @(arrow_text())
+          " "
+          span(class: "json-array"):
+            @(type_text())
+          " "
+          span():
+            @(count_text())
+        " "
+        show(show_pagination()):
+          div(class: "join"):
+            button(type: "button", class: "join-item btn btn-xs pg-prev", disabled: cannot_prev_page(), ~on_click: prev_page):
+              "«"
+            " "
+            span(class: "join-item badge font-mono text-xs pg-label"):
+              @(page_indicator_text())
+            " "
+            button(type: "button", class: "join-item btn btn-xs pg-next", disabled: cannot_next_page(), ~on_click: next_page):
+              "»"
+      " "
+      show(it.is_expanded):
+        div(class: "ml-1 flex flex-col gap-0.5 border-l border-base-content/10 pl-2 mt-0.5"):
+          each(value, key in it.items, ~loop_with: get_page_range):
+            render(value)
 
   JsonObject:
-    @span(~class: "font-mono text-sm leading-tight inline-block"){@span(~class: "inline-flex items-center gap-2"){@button(~type: "button", ~class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", ~disabled: is_items_empty(), ~on_click: it.is_expanded := !it.is_expanded){@span{@(arrow_text())} @span(~class: "json-object"){@(type_text())} @span{@(count_text())}} @show(show_pagination()){@div(~class: "join"){@button(~type: "button", ~class: "join-item btn btn-xs pg-prev", ~disabled: cannot_prev_page(), ~on_click: prev_page){«} @span(~class: "join-item badge font-mono text-xs pg-label"){@(page_indicator_text())} @button(~type: "button", ~class: "join-item btn btn-xs pg-next", ~disabled: cannot_next_page(), ~on_click: next_page){»}}}} @show(it.is_expanded){@div(~class: "ml-1 flex flex-col gap-0.5 border-l border-base-content/10 pl-2 mt-0.5"){@each(value, key in it.items, ~loop_with: get_page_range){@render(value)}}}}
+    span(class: "font-mono text-sm leading-tight inline-block"):
+      span(class: "inline-flex items-center gap-2"):
+        button(type: "button", class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", disabled: is_items_empty(), ~on_click: it.is_expanded := !it.is_expanded):
+          span():
+            @(arrow_text())
+          " "
+          span(class: "json-object"):
+            @(type_text())
+          " "
+          span():
+            @(count_text())
+        " "
+        show(show_pagination()):
+          div(class: "join"):
+            button(type: "button", class: "join-item btn btn-xs pg-prev", disabled: cannot_prev_page(), ~on_click: prev_page):
+              "«"
+            " "
+            span(class: "join-item badge font-mono text-xs pg-label"):
+              @(page_indicator_text())
+            " "
+            button(type: "button", class: "join-item btn btn-xs pg-next", disabled: cannot_next_page(), ~on_click: next_page):
+              "»"
+      " "
+      show(it.is_expanded):
+        div(class: "ml-1 flex flex-col gap-0.5 border-l border-base-content/10 pl-2 mt-0.5"):
+          each(value, key in it.items, ~loop_with: get_page_range):
+            render(value)
 
   JsonProperty:
-    @div(~class: "flex items-center gap-2 leading-tight json-property"){@span(~class: "text-base-content/60 font-mono text-sm"){@(it.key)} @span(~class: "text-base-content/30"){:} @render(it.child)}
+    div(class: "flex items-center gap-2 leading-tight json-property"):
+      span(class: "text-base-content/60 font-mono text-sm"):
+        @(it.key)
+      " "
+      span(class: "text-base-content/30"):
+        ":"
+      " "
+      render(it.child)
 
   DataInspector:
-    @span(~class: "contents"){@render(it.value)}
-
+    span(class: "contents"):
+      render(it.value)

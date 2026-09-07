@@ -35,5 +35,17 @@ logic:
 
 view:
   Crew:
-    @div(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@input(~type: "search", ~class: "input input-sm w-full", ~placeholder: "filter", ~value: it.query, ~on_input: it.query := e.value) @ul(~class: "flex flex-col gap-1"){@each(value, key in it.names, ~when: matches, ~enrich_with: row){@li{@label(~class: if picked | "flex gap-2 items-center font-semibold" | "flex gap-2 items-center"){@input(~type: "checkbox", ~class: "checkbox checkbox-sm", ~checked: picked, ~on_click: it.picked.toggle(value)) @(value)}}}} @span(~class: "badge badge-sm badge-neutral"){@(it.caption)}}}
-
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        input(type: "search", class: "input input-sm w-full", placeholder: "filter", value: it.query, ~on_input: it.query := e.value)
+        " "
+        ul(class: "flex flex-col gap-1"):
+          each(value, key in it.names, ~when: matches, ~enrich_with: row):
+            li():
+              label(class: if picked | "flex gap-2 items-center font-semibold" | "flex gap-2 items-center"):
+                input(type: "checkbox", class: "checkbox checkbox-sm", checked: picked, ~on_click: it.picked.toggle(value))
+                " "
+                @(value)
+        " "
+        span(class: "badge badge-sm badge-neutral"):
+          @(it.caption)

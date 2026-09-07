@@ -20,11 +20,30 @@ spec:
 
 view:
   SchemaProperty:
-    @div(~class: "contents"){@span(~class: "font-mono text-sm flex items-center gap-1 leading-tight"){@span(~class: "text-base-content/60 schema-key"){@(it.key)} @show(it.required){@span(~class: "text-error font-bold", ~title: "required"){*}} @span(~class: "text-base-content/30"){:}} @render(it.child)}
+    div(class: "contents"):
+      span(class: "font-mono text-sm flex items-center gap-1 leading-tight"):
+        span(class: "text-base-content/60 schema-key"):
+          @(it.key)
+        " "
+        show(it.required):
+          span(class: "text-error font-bold", title: "required"):
+            "*"
+        " "
+        span(class: "text-base-content/30"):
+          ":"
+      " "
+      render(it.child)
 
   SchemaBranch:
-    @div(~class: "contents"){@span(~class: "flex items-center gap-1 leading-tight"){@span(~class: label_css_class()){@(it.label)} @span(~class: "text-base-content/30"){:}} @render(it.child)}
+    div(class: "contents"):
+      span(class: "flex items-center gap-1 leading-tight"):
+        span(class: label_css_class()):
+          @(it.label)
+        " "
+        span(class: "text-base-content/30"):
+          ":"
+      " "
+      render(it.child)
 
   SchemaBranch._margauiClasses:
-    @p(~class: "text-accent text-secondary text-info text-error")
-
+    p(class: "text-accent text-secondary text-info text-error")

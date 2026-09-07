@@ -5,5 +5,24 @@ spec:
 
 view:
   Greeter:
-    @div(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@label(~class: "flex gap-2 items-center"){@span(~class: "opacity-70"){your name} @input(~class: "input input-sm w-full", ~value: it.name, ~on_input: it.name := e.value, ~placeholder: "type here")} @label(~class: "flex gap-2 items-center"){@input(~type: "checkbox", ~class: "checkbox checkbox-sm", ~checked: it.loud, ~on_click: it.loud := !it.loud) @span(~class: "opacity-70"){shout it}} @p(~class: if it.loud | "text-xl font-bold uppercase tracking-widest" | "text-xl"){@" hello, "@(it.name)} @show(it.name.is_empty()){@p(~class: "opacity-60 italic"){@" the greeting follows what you type "}}}}
-
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        label(class: "flex gap-2 items-center"):
+          span(class: "opacity-70"):
+            "your name"
+          " "
+          input(class: "input input-sm w-full", value: it.name, ~on_input: it.name := e.value, placeholder: "type here")
+        " "
+        label(class: "flex gap-2 items-center"):
+          input(type: "checkbox", class: "checkbox checkbox-sm", checked: it.loud, ~on_click: it.loud := !it.loud)
+          " "
+          span(class: "opacity-70"):
+            "shout it"
+        " "
+        p(class: if it.loud | "text-xl font-bold uppercase tracking-widest" | "text-xl"):
+          " hello, "
+          @(it.name)
+        " "
+        show(it.name.is_empty()):
+          p(class: "opacity-60 italic"):
+            " the greeting follows what you type "

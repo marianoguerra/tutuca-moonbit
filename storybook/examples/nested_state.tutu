@@ -24,5 +24,15 @@ spec:
 
 view:
   NestedState:
-    @div(~class: "card bg-base-200 p-4"){@h3(~class: "card-title"){@(it.title)}@ul(~class: "menu"){@each(value, key in it.labels){@li{@button(~class: "btn btn-xs", ~on_click: toggle_label(key)){@span{@(value.text)}}}}} @button(~class: "btn btn-sm btn-primary", ~on_click: bump_priority){@" bump priority "}}
-
+    div(class: "card bg-base-200 p-4"):
+      h3(class: "card-title"):
+        @(it.title)
+      ul(class: "menu"):
+        each(value, key in it.labels):
+          li():
+            button(class: "btn btn-xs", ~on_click: toggle_label(key)):
+              span():
+                @(value.text)
+      " "
+      button(class: "btn btn-sm btn-primary", ~on_click: bump_priority):
+        " bump priority "

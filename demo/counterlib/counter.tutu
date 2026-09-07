@@ -38,8 +38,29 @@ logic:
 
 view:
   Counter:
-    @style{font-family: sans-serif}
-    @div(~class: "counter"){@h1{@(it.label)@": "@span(~id: "count"){@(it.count)}} @button(~id: "inc", ~on_click: add(1)){+1} @button(~id: "dec", ~on_click: add(-1)){-1} @button(~id: "reset", ~on_click: it.count := default){reset} @input(~id: "label", ~value: it.label, ~on_input: it.label := e.value, ~on_keydown: it.label := "sent!" ~send) @ul(~id: "history"){@each(value, key in it.history){@li{@(value)}}}}
+    style(): @{font-family: sans-serif}
+    div(class: "counter"):
+      h1():
+        @(it.label)
+        ": "
+        span(id: "count"):
+          @(it.count)
+      " "
+      button(id: "inc", ~on_click: add(1)):
+        "+1"
+      " "
+      button(id: "dec", ~on_click: add(-1)):
+        "-1"
+      " "
+      button(id: "reset", ~on_click: it.count := default):
+        "reset"
+      " "
+      input(id: "label", value: it.label, ~on_input: it.label := e.value, ~on_keydown: it.label := "sent!" ~send)
+      " "
+      ul(id: "history"):
+        each(value, key in it.history):
+          li():
+            @(value)
 
 fixtures:
   "fresh" ~default:

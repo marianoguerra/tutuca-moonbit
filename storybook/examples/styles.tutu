@@ -5,36 +5,58 @@ spec:
     field value :: Instance.of(StylesExample)
 
 view:
-  @style{padding: 0.75rem; border: 1px solid currentColor; border-radius: 0.5rem; .common { color: yellow; }}
+  style(): @{padding: 0.75rem; border: 1px solid currentColor; border-radius: 0.5rem; .common { color: yellow; }}
 
-  @style(~global){.styles-example-global-class { color: green; }}
+  style(~global): @{.styles-example-global-class { color: green; }}
 
   StylesExample:
-    @style{.mine { color: red; }}
-    @section{
-      @p{View: main}
-      @p(~class: "mine"){My Style}
-      @p(~class: "common"){Common Style}
-      @p(~class: "styles-example-global-class"){Global Style}
-    }
+    style(): @{.mine { color: red; }}
+    section():
+      p():
+        "View: main"
+      "\n"
+      p(class: "mine"):
+        "My Style"
+      "\n"
+      p(class: "common"):
+        "Common Style"
+      "\n"
+      p(class: "styles-example-global-class"):
+        "Global Style"
 
   StylesExample.one:
-    @section{
-      @p{View: one}
-      @p(~class: "mine"){My Style}
-      @p(~class: "common"){Common Style}
-      @p(~class: "styles-example-global-class"){Global Style}
-    }
+    section():
+      p():
+        "View: one"
+      "\n"
+      p(class: "mine"):
+        "My Style"
+      "\n"
+      p(class: "common"):
+        "Common Style"
+      "\n"
+      p(class: "styles-example-global-class"):
+        "Global Style"
 
   StylesExample.two:
-    @style{.mine { color: orange; text-decoration: underline; }}
-    @section{
-      @p{View: two}
-      @p(~class: "mine"){My Style}
-      @p(~class: "common"){Common Style}
-      @p(~class: "styles-example-global-class"){Global Style}
-    }
+    style(): @{.mine { color: orange; text-decoration: underline; }}
+    section():
+      p():
+        "View: two"
+      "\n"
+      p(class: "mine"):
+        "My Style"
+      "\n"
+      p(class: "common"):
+        "Common Style"
+      "\n"
+      p(class: "styles-example-global-class"):
+        "Global Style"
 
   StylesExampleRoot:
-    @section(~class: "flex flex-col gap-3"){@render(it.value) @render(it.value, ~as: "one") @render(it.value, ~as: "two")}
-
+    section(class: "flex flex-col gap-3"):
+      render(it.value)
+      " "
+      render(it.value, ~as: "one")
+      " "
+      render(it.value, ~as: "two")

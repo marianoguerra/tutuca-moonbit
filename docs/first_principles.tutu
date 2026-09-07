@@ -12,11 +12,13 @@ spec:
 
 view:
   FpGreeting:
-    @p{@(it.name)}
+    p():
+      @(it.name)
 
   Note:
-    @p(~class: "note"){@(it.text)}
+    p(class: "note"):
+      @(it.text)
 
   Mailbox:
-    @section{@render(it.note)}
-
+    section():
+      render(it.note)

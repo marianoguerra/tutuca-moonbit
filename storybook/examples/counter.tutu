@@ -37,5 +37,18 @@ logic:
 
 view:
   Counter:
-    @div(~class: "join join-vertical"){@button(~class: "btn btn-error", ~on_click: dec){-} @div(~class: "stats"){@div(~class: "stat text-center"){@div(~class: "stat-title"){Count}@div(~class: "stat-value"){@(it.count)}@div(~class: "stat-desc"){Current Count}}} @button(~class: "btn btn-success", ~on_click: inc){+}}
-
+    div(class: "join join-vertical"):
+      button(class: "btn btn-error", ~on_click: dec):
+        "-"
+      " "
+      div(class: "stats"):
+        div(class: "stat text-center"):
+          div(class: "stat-title"):
+            "Count"
+          div(class: "stat-value"):
+            @(it.count)
+          div(class: "stat-desc"):
+            "Current Count"
+      " "
+      button(class: "btn btn-success", ~on_click: inc):
+        "+"

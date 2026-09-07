@@ -267,19 +267,168 @@ logic:
 
 view:
   FuzzRow:
-    @div(~class: it.row_class){@div(~class: "row-head flex items-center gap-2 flex-wrap cursor-pointer", ~on_click: toggle){@span(~class: "badge badge-xs tabular-nums opacity-50 row-at"){@(it.at)} @span(~title: "A message or an intent", ~class: it.verb_class){@(it.verb)} @span(~class: "font-mono font-semibold row-name"){@(it.name)} @show(it.args.is_truthy()){@span(~class: "text-xs opacity-40 font-mono row-args"){@(it.args)}} @show(it.broke){@span(~title: "A rule the block declares does not hold here, and nothing stopped it", ~class: "badge badge-xs badge-error row-broke"){@(it.broke_rule)}} @show(it.refused){@span(~title: "The runtime declined this — a rule doing its job, not a failure", ~class: "badge badge-xs badge-warning badge-outline row-refused"){@(it.refused_rule)}} @show(it.disagreed){@span(~title: "The block's reading of the rule and the compiled one do not agree", ~class: "badge badge-xs badge-secondary row-disagreed"){disagrees}} @span(~title: "Renders this dispatch caused", ~class: "ml-auto text-xs opacity-40 tabular-nums row-renders"){@(it.renders)@(" render")}} @show(it.open){@div(~class: "pl-6 flex flex-col gap-1 font-mono text-xs row-detail"){@show(it.refused){@div(~class: "opacity-70 row-sentence"){@(it.refused_sentence)}} @div(~class: "opacity-50"){after} @render(it.after)}}}
+    div(class: it.row_class):
+      div(class: "row-head flex items-center gap-2 flex-wrap cursor-pointer", ~on_click: toggle):
+        span(class: "badge badge-xs tabular-nums opacity-50 row-at"):
+          @(it.at)
+        " "
+        span(title: "A message or an intent", class: it.verb_class):
+          @(it.verb)
+        " "
+        span(class: "font-mono font-semibold row-name"):
+          @(it.name)
+        " "
+        show(it.args.is_truthy()):
+          span(class: "text-xs opacity-40 font-mono row-args"):
+            @(it.args)
+        " "
+        show(it.broke):
+          span(title: "A rule the block declares does not hold here, and nothing stopped it", class: "badge badge-xs badge-error row-broke"):
+            @(it.broke_rule)
+        " "
+        show(it.refused):
+          span(title: "The runtime declined this — a rule doing its job, not a failure", class: "badge badge-xs badge-warning badge-outline row-refused"):
+            @(it.refused_rule)
+        " "
+        show(it.disagreed):
+          span(title: "The block's reading of the rule and the compiled one do not agree", class: "badge badge-xs badge-secondary row-disagreed"):
+            "disagrees"
+        " "
+        span(title: "Renders this dispatch caused", class: "ml-auto text-xs opacity-40 tabular-nums row-renders"):
+          @(it.renders)
+          @(" render")
+      " "
+      show(it.open):
+        div(class: "pl-6 flex flex-col gap-1 font-mono text-xs row-detail"):
+          show(it.refused):
+            div(class: "opacity-70 row-sentence"):
+              @(it.refused_sentence)
+          " "
+          div(class: "opacity-50"):
+            "after"
+          " "
+          render(it.after)
 
   FuzzLog:
-    @div(~class: "fuzz-log flex flex-col gap-1 max-h-[50vh] overflow-y-auto p-2"){@hide(it.has_rows){@div(~class: "text-xs opacity-40 empty-hint"){@(it.empty_hint)}} @each(value, key in it.rows){@render(value)}}
+    div(class: "fuzz-log flex flex-col gap-1 max-h-[50vh] overflow-y-auto p-2"):
+      hide(it.has_rows):
+        div(class: "text-xs opacity-40 empty-hint"):
+          @(it.empty_hint)
+      " "
+      each(value, key in it.rows):
+        render(value)
 
   FuzzControls:
-    @div(~class: "fuzz-controls flex flex-col gap-2 p-2"){@hide(it.can_run){@div(~class: "text-xs opacity-50 no-plan"){@(it.no_plan_hint)}} @show(it.can_run){@div(~class: "flex items-center gap-2 flex-wrap"){@label(~class: "text-xs opacity-60"){seed} @input(~class: "input input-xs input-bordered w-24 tabular-nums ctl-seed", ~type: "number", ~value: it.seed, ~on_input: set_seed(e.value)) @label(~class: "text-xs opacity-60"){steps} @input(~class: "input input-xs input-bordered w-20 tabular-nums ctl-steps", ~type: "number", ~value: it.steps, ~on_input: set_steps(e.value))}} @show(it.can_run){@div(~class: "flex gap-2 flex-wrap"){@button(~class: it.public_class, ~on_click: set_source("public")){Public API} @button(~class: it.messages_class, ~on_click: set_source("messages")){Messages} @button(~class: it.properties_class, ~on_click: set_source("properties")){Properties} @button(~class: it.fields_class, ~on_click: set_source("fields")){Fields}}} @show(it.can_run){@div(~class: "text-xs opacity-50"){@" Public API is the default: declared messages and writable properties. Writing straight to a field reaches the private ones too, and appears only in the explicit diagnostic mode. The same seed always draws the same script. "}} @show(it.can_run){@div{@hide(it.can_draw){@div(~class: "text-xs opacity-50 no-draw"){@(it.no_draw_hint)}}}} @show(it.can_draw){@div(~class: "flex gap-2 flex-wrap"){@hide(it.playing){@button(~class: "btn btn-sm btn-primary ctl-play", ~on_click: play){Play}} @show(it.playing){@button(~class: "btn btn-sm btn-error ctl-stop", ~on_click: stop){Stop}} @button(~class: "btn btn-sm ctl-step", ~on_click: step){Step} @button(~class: "btn btn-sm ctl-burst", ~on_click: burst){Burst} @button(~class: "btn btn-sm btn-ghost ctl-reset", ~on_click: reset){Reset}}}}
+    div(class: "fuzz-controls flex flex-col gap-2 p-2"):
+      hide(it.can_run):
+        div(class: "text-xs opacity-50 no-plan"):
+          @(it.no_plan_hint)
+      " "
+      show(it.can_run):
+        div(class: "flex items-center gap-2 flex-wrap"):
+          label(class: "text-xs opacity-60"):
+            "seed"
+          " "
+          input(class: "input input-xs input-bordered w-24 tabular-nums ctl-seed", type: "number", value: it.seed, ~on_input: set_seed(e.value))
+          " "
+          label(class: "text-xs opacity-60"):
+            "steps"
+          " "
+          input(class: "input input-xs input-bordered w-20 tabular-nums ctl-steps", type: "number", value: it.steps, ~on_input: set_steps(e.value))
+      " "
+      show(it.can_run):
+        div(class: "flex gap-2 flex-wrap"):
+          button(class: it.public_class, ~on_click: set_source("public")):
+            "Public API"
+          " "
+          button(class: it.messages_class, ~on_click: set_source("messages")):
+            "Messages"
+          " "
+          button(class: it.properties_class, ~on_click: set_source("properties")):
+            "Properties"
+          " "
+          button(class: it.fields_class, ~on_click: set_source("fields")):
+            "Fields"
+      " "
+      show(it.can_run):
+        div(class: "text-xs opacity-50"):
+          " Public API is the default: declared messages and writable properties. Writing straight to a field reaches the private ones too, and appears only in the explicit diagnostic mode. The same seed always draws the same script. "
+      " "
+      show(it.can_run):
+        div():
+          hide(it.can_draw):
+            div(class: "text-xs opacity-50 no-draw"):
+              @(it.no_draw_hint)
+      " "
+      show(it.can_draw):
+        div(class: "flex gap-2 flex-wrap"):
+          hide(it.playing):
+            button(class: "btn btn-sm btn-primary ctl-play", ~on_click: play):
+              "Play"
+          " "
+          show(it.playing):
+            button(class: "btn btn-sm btn-error ctl-stop", ~on_click: stop):
+              "Stop"
+          " "
+          button(class: "btn btn-sm ctl-step", ~on_click: step):
+            "Step"
+          " "
+          button(class: "btn btn-sm ctl-burst", ~on_click: burst):
+            "Burst"
+          " "
+          button(class: "btn btn-sm btn-ghost ctl-reset", ~on_click: reset):
+            "Reset"
 
   FuzzVerdict:
-    @show(!((it.kind == "none"))){
-      @div(~class: "fuzz-verdict flex flex-col gap-1 p-2"){@div(~class: "flex items-center gap-2 flex-wrap"){@span(~class: it.badge_class){@(it.kind)} @span(~class: "text-sm verdict-headline"){@(it.headline)} @show(it.rule.is_truthy()){@span(~class: "text-xs opacity-40 font-mono verdict-rule"){@(it.rule)}}} @show(it.sentence.is_truthy()){@div(~class: "text-sm opacity-80 verdict-sentence"){@(it.sentence)}} @show(it.has_unchecked){@div(~class: "text-xs opacity-60 verdict-unchecked"){@("not checked: ")@(it.unchecked)}} @show(it.has_reproducer){@div(~class: "flex flex-col gap-1"){@div(~class: "text-xs opacity-50"){the shortest script that still does it} @each(value, key in it.reproducer){@render(value)}}} @show(!((it.kind == "held"))){@hide(it.has_reproducer){@button(~class: "btn btn-xs btn-ghost verdict-shrink", ~on_click: shrink){Shrink it}}}}
-    }
+    show(!((it.kind == "none"))):
+      div(class: "fuzz-verdict flex flex-col gap-1 p-2"):
+        div(class: "flex items-center gap-2 flex-wrap"):
+          span(class: it.badge_class):
+            @(it.kind)
+          " "
+          span(class: "text-sm verdict-headline"):
+            @(it.headline)
+          " "
+          show(it.rule.is_truthy()):
+            span(class: "text-xs opacity-40 font-mono verdict-rule"):
+              @(it.rule)
+        " "
+        show(it.sentence.is_truthy()):
+          div(class: "text-sm opacity-80 verdict-sentence"):
+            @(it.sentence)
+        " "
+        show(it.has_unchecked):
+          div(class: "text-xs opacity-60 verdict-unchecked"):
+            @("not checked: ")
+            @(it.unchecked)
+        " "
+        show(it.has_reproducer):
+          div(class: "flex flex-col gap-1"):
+            div(class: "text-xs opacity-50"):
+              "the shortest script that still does it"
+            " "
+            each(value, key in it.reproducer):
+              render(value)
+        " "
+        show(!((it.kind == "held"))):
+          hide(it.has_reproducer):
+            button(class: "btn btn-xs btn-ghost verdict-shrink", ~on_click: shrink):
+              "Shrink it"
 
   FuzzPanel:
-    @div(~class: "fuzz-panel flex flex-col gap-2"){@div(~class: "flex items-center gap-2 border-b border-base-content/10 px-2 pb-1"){@span(~class: "text-xs opacity-60"){Property run} @show(it.has_run){@span(~class: "ml-auto text-xs opacity-40 tabular-nums panel-pos"){@(it.at)@(" / ")@(it.total)}}} @render(it.controls) @render(it.verdict) @render(it.log)}
-
+    div(class: "fuzz-panel flex flex-col gap-2"):
+      div(class: "flex items-center gap-2 border-b border-base-content/10 px-2 pb-1"):
+        span(class: "text-xs opacity-60"):
+          "Property run"
+        " "
+        show(it.has_run):
+          span(class: "ml-auto text-xs opacity-40 tabular-nums panel-pos"):
+            @(it.at)
+            @(" / ")
+            @(it.total)
+      " "
+      render(it.controls)
+      " "
+      render(it.verdict)
+      " "
+      render(it.log)

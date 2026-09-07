@@ -72,10 +72,25 @@ logic:
 
 view:
   Board:
-    @div{@input(~class: "theme", ~value: it.theme, ~on_input: it.theme := e.value) @input(~class: "draft", ~value: it.draft, ~on_input: it.draft := e.value) @button(~class: "add", ~on_click: add){add} @ul{@each(value, key in it.items){@render(value)}}}
+    div():
+      input(class: "theme", value: it.theme, ~on_input: it.theme := e.value)
+      " "
+      input(class: "draft", value: it.draft, ~on_input: it.draft := e.value)
+      " "
+      button(class: "add", ~on_click: add):
+        "add"
+      " "
+      ul():
+        each(value, key in it.items):
+          render(value)
 
   Row:
-    @li(~class: "row", ~on_click: stamp){@span(~class: "label"){@(it.caption)} @span(~class: "theme"){@(dyn.theme)}}
+    li(class: "row", ~on_click: stamp):
+      span(class: "label"):
+        @(it.caption)
+      " "
+      span(class: "theme"):
+        @(dyn.theme)
 
 fixtures:
   "themed" ~default:

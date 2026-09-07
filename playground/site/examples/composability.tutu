@@ -53,21 +53,75 @@ logic:
 
 view:
   Counter:
-    @div(~style: "display:flex;gap:.5rem;align-items:center;font-size:1.5rem"){@button(~on_click: dec){-} @b{@(it.count)} @button(~on_click: inc){+}}
+    div(style: "display:flex;gap:.5rem;align-items:center;font-size:1.5rem"):
+      button(~on_click: dec):
+        "-"
+      " "
+      b():
+        @(it.count)
+      " "
+      button(~on_click: inc):
+        "+"
 
   Item:
-    @div(~class: "flex gap-3 items-center"){@input(~type: "checkbox", ~class: "checkbox", ~checked: it.completed, ~on_input: it.completed := e.value) @input(~class: "input", ~value: it.text, ~on_input: it.text := e.value, ~disabled: it.completed)}
+    div(class: "flex gap-3 items-center"):
+      input(type: "checkbox", class: "checkbox", checked: it.completed, ~on_input: it.completed := e.value)
+      " "
+      input(class: "input", value: it.text, ~on_input: it.text := e.value, disabled: it.completed)
 
   Items:
-    @div(~class: "flex flex-col gap-3"){@button(~class: "btn btn-soft btn-success add", ~on_click: on_add_item){Add Task} @div(~class: "flex flex-col gap-3 w-full"){@each(value, key in it.items){@div(~class: "flex gap-3 justify-center items-center w-full row"){@render(value) @button(~class: "btn btn-soft btn-sm btn-error btn-circle font-mono rm", ~on_click: it.items.delete_at(key)){x}}}}}
+    div(class: "flex flex-col gap-3"):
+      button(class: "btn btn-soft btn-success add", ~on_click: on_add_item):
+        "Add Task"
+      " "
+      div(class: "flex flex-col gap-3 w-full"):
+        each(value, key in it.items):
+          div(class: "flex gap-3 justify-center items-center w-full row"):
+            render(value)
+            " "
+            button(class: "btn btn-soft btn-sm btn-error btn-circle font-mono rm", ~on_click: it.items.delete_at(key)):
+              "x"
 
   TreeItem:
-    @style{user-select: none; .head { cursor: pointer; } .head:before { content: "⏺️"; margin-right: 0.25rem; } .head.type-file:before { content: "📄️"; } .head.open.type-dir:before { content: "📂️"; } .head.closed.type-dir:before { content: "📁️"; }}
-    @section{@p(~class: "head", ~class: if it.is_open | @str{head open type-@(it.type)} | @str{head closed type-@(it.type)}, ~on_click: on_item_click){@(it.label)} @show(are_childs_visible()){@div(~class: "pl-3 pt-1 flex flex-col gap-2 kids"){@each(value, key in it.items){@render(value)}}}}
+    style(): @{user-select: none; .head { cursor: pointer; } .head:before { content: "⏺️"; margin-right: 0.25rem; } .head.type-file:before { content: "📄️"; } .head.open.type-dir:before { content: "📂️"; } .head.closed.type-dir:before { content: "📁️"; }}
+    section():
+      p(class: "head", class: if it.is_open | @str{head open type-@(it.type)} | @str{head closed type-@(it.type)}, ~on_click: on_item_click):
+        @(it.label)
+      " "
+      show(are_childs_visible()):
+        div(class: "pl-3 pt-1 flex flex-col gap-2 kids"):
+          each(value, key in it.items):
+            render(value)
 
   TreeRoot:
-    @div(~class: "flex flex-col gap-3"){@render(it.root) @ul(~class: "flex flex-col gap-2 max-h-[40vh] overflow-y-auto log"){@each(value, key in it.log){@li{@(value)}}}}
+    div(class: "flex flex-col gap-3"):
+      render(it.root)
+      " "
+      ul(class: "flex flex-col gap-2 max-h-[40vh] overflow-y-auto log"):
+        each(value, key in it.log):
+          li():
+            @(value)
 
   Composability:
-    @section(~class: "flex flex-col gap-4"){@div(~role: "tablist", ~class: "tabs tabs-border"){@button(~role: "tab", ~id: "tab-counter", ~class: if (it.active_section == "counter") | "tab tab-active" | "tab", ~on_click: it.active_section := "counter"){Counter} @button(~role: "tab", ~id: "tab-todo", ~class: if (it.active_section == "todo") | "tab tab-active" | "tab", ~on_click: it.active_section := "todo"){To-Do} @button(~role: "tab", ~id: "tab-tree", ~class: if (it.active_section == "tree") | "tab tab-active" | "tab", ~on_click: it.active_section := "tree"){Tree}} @show((it.active_section == "counter")){@div(~class: "pane-counter"){@render(it.counter)}} @show((it.active_section == "todo")){@div(~class: "pane-todo"){@render(it.todo)}} @show((it.active_section == "tree")){@div(~class: "pane-tree"){@render(it.tree)}}}
-
+    section(class: "flex flex-col gap-4"):
+      div(role: "tablist", class: "tabs tabs-border"):
+        button(role: "tab", id: "tab-counter", class: if (it.active_section == "counter") | "tab tab-active" | "tab", ~on_click: it.active_section := "counter"):
+          "Counter"
+        " "
+        button(role: "tab", id: "tab-todo", class: if (it.active_section == "todo") | "tab tab-active" | "tab", ~on_click: it.active_section := "todo"):
+          "To-Do"
+        " "
+        button(role: "tab", id: "tab-tree", class: if (it.active_section == "tree") | "tab tab-active" | "tab", ~on_click: it.active_section := "tree"):
+          "Tree"
+      " "
+      show((it.active_section == "counter")):
+        div(class: "pane-counter"):
+          render(it.counter)
+      " "
+      show((it.active_section == "todo")):
+        div(class: "pane-todo"):
+          render(it.todo)
+      " "
+      show((it.active_section == "tree")):
+        div(class: "pane-tree"):
+          render(it.tree)

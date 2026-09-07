@@ -63,10 +63,25 @@ logic:
 
 view:
   Todos:
-    @div{@input(~class: "draft", ~value: it.draft, ~on_input: it.draft := e.value) @button(~class: "add", ~on_click: add){add} @ul{@each(value, key in it.items){@render(value)}} @button(~class: "drop", ~on_click: drop(0)){drop the first} @output(~class: "count"){@(it.count)}}
+    div():
+      input(class: "draft", value: it.draft, ~on_input: it.draft := e.value)
+      " "
+      button(class: "add", ~on_click: add):
+        "add"
+      " "
+      ul():
+        each(value, key in it.items):
+          render(value)
+      " "
+      button(class: "drop", ~on_click: drop(0)):
+        "drop the first"
+      " "
+      output(class: "count"):
+        @(it.count)
 
   Todo:
-    @li(~class: "todo", ~on_click: toggle){@(it.caption)}
+    li(class: "todo", ~on_click: toggle):
+      @(it.caption)
 
 fixtures:
   "three rows" ~default:

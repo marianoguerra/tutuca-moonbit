@@ -53,10 +53,16 @@ logic:
 
 view:
   Board:
-    @section{@h1(~class: "title"){@(it.caption)} @button(~class: "bump", ~on_click: bump){count}}
+    section():
+      h1(class: "title"):
+        @(it.caption)
+      " "
+      button(class: "bump", ~on_click: bump):
+        "count"
 
   Row:
-    @li(~class: "row", ~class: if it.done | "row done" | "row", ~on_click: toggle){@(it.caption)}
+    li(class: "row", class: if it.done | "row done" | "row", ~on_click: toggle):
+      @(it.caption)
 
 tests:
   "the board counts":

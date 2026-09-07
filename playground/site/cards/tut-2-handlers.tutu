@@ -39,5 +39,30 @@ logic:
 
 view:
   Steps:
-    @div(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@p(~class: "text-4xl tabular-nums"){@(it.count)}@div(~class: "join"){@button(~class: "btn btn-sm join-item", ~on_click: step(1)){+} @button(~class: "btn btn-sm join-item", ~on_click: step(-1)){−} @button(~class: "btn btn-sm join-item btn-ghost", ~on_click: undo){undo}} @label(~class: "flex gap-2 items-center"){@span(~class: "opacity-70"){step} @input(~type: "range", ~class: "range range-sm", ~min: "1", ~max: "10", ~value: it.step, ~on_input: pick_step(e.valueAsInt)) @span(~class: "badge badge-sm badge-neutral"){@(it.step)}} @ul(~class: "flex gap-1 flex-wrap"){@each(value, key in it.trail){@li(~class: "badge badge-sm badge-ghost"){@(value)}}}}}
-
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        p(class: "text-4xl tabular-nums"):
+          @(it.count)
+        div(class: "join"):
+          button(class: "btn btn-sm join-item", ~on_click: step(1)):
+            "+"
+          " "
+          button(class: "btn btn-sm join-item", ~on_click: step(-1)):
+            "−"
+          " "
+          button(class: "btn btn-sm join-item btn-ghost", ~on_click: undo):
+            "undo"
+        " "
+        label(class: "flex gap-2 items-center"):
+          span(class: "opacity-70"):
+            "step"
+          " "
+          input(type: "range", class: "range range-sm", min: "1", max: "10", value: it.step, ~on_input: pick_step(e.valueAsInt))
+          " "
+          span(class: "badge badge-sm badge-neutral"):
+            @(it.step)
+        " "
+        ul(class: "flex gap-1 flex-wrap"):
+          each(value, key in it.trail):
+            li(class: "badge badge-sm badge-ghost"):
+              @(value)

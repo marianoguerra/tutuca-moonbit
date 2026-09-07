@@ -14,5 +14,12 @@ spec:
 
 view:
   SchemaViewer:
-    @div(~class: "inline-flex flex-col items-start gap-1 schema-viewer"){@button(~type: "button", ~class: "btn btn-xs btn-ghost self-end raw-toggle", ~on_click: it.show_raw := !it.show_raw){@(toggle_label())} @hide(it.show_raw){@render(it.value)} @show(it.show_raw){@render(it.raw)}}
-
+    div(class: "inline-flex flex-col items-start gap-1 schema-viewer"):
+      button(type: "button", class: "btn btn-xs btn-ghost self-end raw-toggle", ~on_click: it.show_raw := !it.show_raw):
+        @(toggle_label())
+      " "
+      hide(it.show_raw):
+        render(it.value)
+      " "
+      show(it.show_raw):
+        render(it.raw)

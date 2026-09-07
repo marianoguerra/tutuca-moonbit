@@ -46,5 +46,15 @@ logic:
 
 view:
   Draft:
-    @div(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@input(~class: "input input-sm w-full", ~value: it.text, ~on_input: it.text := e.value, ~placeholder: "write something and watch the numbers move") @div(~class: if over() | "h-2 rounded bg-error" | "h-2 rounded bg-success", ~style: it.bar)@p(~class: if over() | "font-mono text-sm text-error" | "font-mono text-sm opacity-70"){@(it.status)} @show(over()){@div(~class: "alert alert-warning"){@span{trim it — the same predicate hid this line a moment ago}}}}}
-
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        input(class: "input input-sm w-full", value: it.text, ~on_input: it.text := e.value, placeholder: "write something and watch the numbers move")
+        " "
+        div(class: if over() | "h-2 rounded bg-error" | "h-2 rounded bg-success", style: it.bar)
+        p(class: if over() | "font-mono text-sm text-error" | "font-mono text-sm opacity-70"):
+          @(it.status)
+        " "
+        show(over()):
+          div(class: "alert alert-warning"):
+            span():
+              "trim it — the same predicate hid this line a moment ago"

@@ -15,5 +15,12 @@ logic:
 
 view:
   Counter:
-    @div(~style: "display:flex;gap:.5rem;align-items:center;font-size:1.5rem"){@button(~on_click: dec){-} @b{@(it.count)} @button(~on_click: inc){+}}
-
+    div(style: "display:flex;gap:.5rem;align-items:center;font-size:1.5rem"):
+      button(~on_click: dec):
+        "-"
+      " "
+      b():
+        @(it.count)
+      " "
+      button(~on_click: inc):
+        "+"

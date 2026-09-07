@@ -47,13 +47,15 @@ logic:
 
 view:
   Hole:
-    @div(~class: "hole"){
-      @render(it.child)
-      @b(~class: "kept"){@(it.kept)}
-    }
+    div(class: "hole"):
+      render(it.child)
+      "\n"
+      b(class: "kept"):
+        @(it.kept)
 
   Text:
-    @span(~class: "text"){@(it.body)}
+    span(class: "text"):
+      @(it.body)
 
 tests:
   "a hole holds what it was given, and says so":

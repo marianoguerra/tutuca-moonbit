@@ -43,5 +43,33 @@ logic:
 
 view:
   Counter:
-    @div(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@h2(~class: "card-title"){@(it.summary)}@div(~class: "join"){@button(~class: "btn btn-sm join-item", ~on_click: add(1)){+1} @button(~class: "btn btn-sm join-item", ~on_click: add(-1)){-1} @button(~class: "btn btn-sm join-item btn-ghost", ~on_click: start){@" reset "}} @label(~class: "flex gap-2 items-center"){@span{label} @input(~class: "input input-sm w-full", ~value: it.label, ~on_input: it.label := e.value, ~placeholder: "name it")} @show(moved()){@ul(~class: "flex gap-2 flex-wrap"){@each(value, key in it.history){@li{@span(~class: "badge badge-sm badge-neutral font-mono"){@(value)}}}}} @hide(moved()){@p(~class: "opacity-60 italic"){@" press a button — the trail shows where it landed "}}}}
-
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        h2(class: "card-title"):
+          @(it.summary)
+        div(class: "join"):
+          button(class: "btn btn-sm join-item", ~on_click: add(1)):
+            "+1"
+          " "
+          button(class: "btn btn-sm join-item", ~on_click: add(-1)):
+            "-1"
+          " "
+          button(class: "btn btn-sm join-item btn-ghost", ~on_click: start):
+            " reset "
+        " "
+        label(class: "flex gap-2 items-center"):
+          span():
+            "label"
+          " "
+          input(class: "input input-sm w-full", value: it.label, ~on_input: it.label := e.value, placeholder: "name it")
+        " "
+        show(moved()):
+          ul(class: "flex gap-2 flex-wrap"):
+            each(value, key in it.history):
+              li():
+                span(class: "badge badge-sm badge-neutral font-mono"):
+                  @(value)
+        " "
+        hide(moved()):
+          p(class: "opacity-60 italic"):
+            " press a button — the trail shows where it landed "

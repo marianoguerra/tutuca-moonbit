@@ -51,7 +51,22 @@ logic:
 
 view:
   Counter:
-    @div{@button(~on_click: dec){-} @output{@(it.count)} @button(~on_click: inc){+} @p{@(it.label)} @show(positive()){@button(~on_click: reset){reset}}}
+    div():
+      button(~on_click: dec):
+        "-"
+      " "
+      output():
+        @(it.count)
+      " "
+      button(~on_click: inc):
+        "+"
+      " "
+      p():
+        @(it.label)
+      " "
+      show(positive()):
+        button(~on_click: reset):
+          "reset"
 
 tests:
   "two clicks add two":

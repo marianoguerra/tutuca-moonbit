@@ -28,22 +28,40 @@ logic:
 
 view:
   Greeting:
-    @p(~class: "p-2 border rounded"){@" Hello, "@strong{@(it.name)}@"! "}
+    p(class: "p-2 border rounded"):
+      " Hello, "
+      strong():
+        @(it.name)
+      "! "
 
   Page:
-    @section(~class: "flex flex-col gap-2"){@h2(~class: "text-lg"){Page header} @render(it.greeting) @p(~class: "opacity-60"){— end of page —}}
+    section(class: "flex flex-col gap-2"):
+      h2(class: "text-lg"):
+        "Page header"
+      " "
+      render(it.greeting)
+      " "
+      p(class: "opacity-60"):
+        "— end of page —"
 
   Entry:
-    @div(~class: "card bg-base-100 shadow-sm"){
-      @div(~class: "card-body"){
-        @h2(~class: "card-title"){@(it.title)}
-        @p{@(it.description)}
-      }
-    }
+    div(class: "card bg-base-100 shadow-sm"):
+      div(class: "card-body"):
+        h2(class: "card-title"):
+          @(it.title)
+        "\n"
+        p():
+          @(it.description)
 
   Entry.edit:
-    @div(~class: "card bg-base-100 shadow-sm gap-3"){@div(~class: "card-body"){@input(~class: "input title", ~value: it.title, ~on_input: it.title := e.value) @input(~class: "input desc", ~value: it.description, ~on_input: it.description := e.value)}}
+    div(class: "card bg-base-100 shadow-sm gap-3"):
+      div(class: "card-body"):
+        input(class: "input title", value: it.title, ~on_input: it.title := e.value)
+        " "
+        input(class: "input desc", value: it.description, ~on_input: it.description := e.value)
 
   MultipleViews:
-    @section(~class: "flex flex-col gap-3"){@render(it.value) @render(it.value, ~as: "edit")}
-
+    section(class: "flex flex-col gap-3"):
+      render(it.value)
+      " "
+      render(it.value, ~as: "edit")

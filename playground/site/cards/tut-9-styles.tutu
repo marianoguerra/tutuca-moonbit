@@ -22,5 +22,25 @@ logic:
 
 view:
   Ticket:
-    @div(~class: "card bg-base-200 max-w-md"){@div(~class: "card-body gap-3"){@h2(~class: "card-title"){@(it.title) @span(~class: if is_feature() | "badge badge-sm badge-primary" | "badge badge-sm badge-warning"){@(it.kind)}} @input(~class: "input input-sm w-full", ~value: it.title, ~on_input: it.title := e.value, ~placeholder: "what is it") @div(~class: "join"){@button(~class: "btn btn-sm join-item", ~on_click: pick("feature")){@" feature "} @button(~class: "btn btn-sm join-item", ~on_click: pick("bug")){@" bug "}}@div(~class: "card-actions items-center gap-2"){@button(~class: "btn btn-sm btn-primary", ~on_click: vote){@" vote "} @span(~class: "badge badge-neutral"){@(it.votes)}}}}
-
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        h2(class: "card-title"):
+          @(it.title)
+          " "
+          span(class: if is_feature() | "badge badge-sm badge-primary" | "badge badge-sm badge-warning"):
+            @(it.kind)
+        " "
+        input(class: "input input-sm w-full", value: it.title, ~on_input: it.title := e.value, placeholder: "what is it")
+        " "
+        div(class: "join"):
+          button(class: "btn btn-sm join-item", ~on_click: pick("feature")):
+            " feature "
+          " "
+          button(class: "btn btn-sm join-item", ~on_click: pick("bug")):
+            " bug "
+        div(class: "card-actions items-center gap-2"):
+          button(class: "btn btn-sm btn-primary", ~on_click: vote):
+            " vote "
+          " "
+          span(class: "badge badge-neutral"):
+            @(it.votes)

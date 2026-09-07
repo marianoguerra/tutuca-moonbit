@@ -42,11 +42,58 @@ spec:
 
 view:
   InstanceFields:
-    @span(~class: "font-mono text-sm leading-tight inline-block"){@span(~class: "inline-flex items-center gap-2"){@button(~type: "button", ~class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", ~disabled: is_items_empty(), ~on_click: it.is_expanded := !it.is_expanded){@span{@(arrow_text())} @span(~class: "font-semibold instance-fields"){@(type_text())} @span{@(count_text())}} @show(show_pagination()){@div(~class: "join"){@button(~type: "button", ~class: "join-item btn btn-xs pg-prev", ~disabled: cannot_prev_page(), ~on_click: prev_page){«} @span(~class: "join-item badge font-mono text-xs pg-label"){@(page_indicator_text())} @button(~type: "button", ~class: "join-item btn btn-xs pg-next", ~disabled: cannot_next_page(), ~on_click: next_page){»}}}} @show(it.is_expanded){@div(~class: "ml-1 flex flex-col gap-0.5 border-l border-base-content/15 pl-2 mt-0.5"){@each(value, key in it.items, ~loop_with: get_page_range){@render(value)}}}}
+    span(class: "font-mono text-sm leading-tight inline-block"):
+      span(class: "inline-flex items-center gap-2"):
+        button(type: "button", class: "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1", disabled: is_items_empty(), ~on_click: it.is_expanded := !it.is_expanded):
+          span():
+            @(arrow_text())
+          " "
+          span(class: "font-semibold instance-fields"):
+            @(type_text())
+          " "
+          span():
+            @(count_text())
+        " "
+        show(show_pagination()):
+          div(class: "join"):
+            button(type: "button", class: "join-item btn btn-xs pg-prev", disabled: cannot_prev_page(), ~on_click: prev_page):
+              "«"
+            " "
+            span(class: "join-item badge font-mono text-xs pg-label"):
+              @(page_indicator_text())
+            " "
+            button(type: "button", class: "join-item btn btn-xs pg-next", disabled: cannot_next_page(), ~on_click: next_page):
+              "»"
+      " "
+      show(it.is_expanded):
+        div(class: "ml-1 flex flex-col gap-0.5 border-l border-base-content/15 pl-2 mt-0.5"):
+          each(value, key in it.items, ~loop_with: get_page_range):
+            render(value)
 
   InstanceInspector:
-    @span(~class: "contents"){@render(it.value)}
+    span(class: "contents"):
+      render(it.value)
 
   InstanceExplorer:
-    @div(~class: "font-mono text-sm leading-snug flex flex-col gap-3 instance-explorer"){@div(~role: "tablist", ~class: "tabs"){@a(~role: "tab", ~class: if (it.active_tab == "instance") | "tab tab-active tab-instance" | "tab tab-instance", ~on_click: it.active_tab := "instance"){@" Instance "} @show(it.has_component){@a(~role: "tab", ~class: if (it.active_tab == "component") | "tab tab-active tab-component" | "tab tab-component", ~on_click: it.active_tab := "component"){@" Component "}}} @show((it.active_tab == "instance")){@div{@render(it.instance_view)}} @show((it.active_tab == "component")){@div{@show(it.has_component){@div{@render(it.component_view)}} @hide(it.has_component){@div(~class: "text-base-content/50 text-xs"){@" Pass the Component descriptor to inspect its definition. "}}}}}
-
+    div(class: "font-mono text-sm leading-snug flex flex-col gap-3 instance-explorer"):
+      div(role: "tablist", class: "tabs"):
+        a(role: "tab", class: if (it.active_tab == "instance") | "tab tab-active tab-instance" | "tab tab-instance", ~on_click: it.active_tab := "instance"):
+          " Instance "
+        " "
+        show(it.has_component):
+          a(role: "tab", class: if (it.active_tab == "component") | "tab tab-active tab-component" | "tab tab-component", ~on_click: it.active_tab := "component"):
+            " Component "
+      " "
+      show((it.active_tab == "instance")):
+        div():
+          render(it.instance_view)
+      " "
+      show((it.active_tab == "component")):
+        div():
+          show(it.has_component):
+            div():
+              render(it.component_view)
+          " "
+          hide(it.has_component):
+            div(class: "text-base-content/50 text-xs"):
+              " Pass the Component descriptor to inspect its definition. "

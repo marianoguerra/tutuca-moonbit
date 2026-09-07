@@ -21,7 +21,12 @@ logic:
 
 view:
   Guarded:
-    @div{@button(~on_click: bump){+} @output{@(it.n)}}
+    div():
+      button(~on_click: bump):
+        "+"
+      " "
+      output():
+        @(it.n)
 
 fixtures:
   "nearly full":

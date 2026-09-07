@@ -33,14 +33,11 @@ logic:
 
 view:
   Enriched:
-    @ul{
-      @each(value, key in it.rows, ~when: matches, ~enrich_with: row){
-        @li{@(echo)}
-      }
-    }
-    @ul{
-      @each(value, key in it.rows, ~when: second){
-        @li{@(value)}
-      }
-    }
-
+    ul():
+      each(value, key in it.rows, ~when: matches, ~enrich_with: row):
+        li():
+          @(echo)
+    ul():
+      each(value, key in it.rows, ~when: second):
+        li():
+          @(value)

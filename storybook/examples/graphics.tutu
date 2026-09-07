@@ -23,8 +23,75 @@ spec:
 
 view:
   SwatchPicker:
-    @div(~class: "flex flex-col gap-2"){@svg(~viewBox: "0 0 380 130", ~role: "img"){@rect(~class: "preview", ~x: "20", ~y: "12", ~width: "340", ~height: "52", ~rx: "8", ~fill: it.color) @each(value, key in it.palette, ~enrich_with: swatch){@circle(~cx: cx, ~cy: "98", ~r: "18", ~fill: value, ~stroke_width: "3", ~stroke: ring, ~on_click: it.color := value)}} @p(~class: "text-sm label"){@"Selected: "@(it.color)}}
+    div(class: "flex flex-col gap-2"):
+      svg(viewBox: "0 0 380 130", role: "img"):
+        rect(class: "preview", x: "20", y: "12", width: "340", height: "52", rx: "8", fill: it.color)
+        " "
+        each(value, key in it.palette, ~enrich_with: swatch):
+          circle(cx: cx, cy: "98", r: "18", fill: value, stroke_width: "3", stroke: ring, ~on_click: it.color := value)
+      " "
+      p(class: "text-sm label"):
+        "Selected: "
+        @(it.color)
 
   Quadratic:
-    @div(~class: "flex flex-col gap-3"){@div(~class: "flex gap-3 text-sm"){@label(~class: "flex items-center gap-1"){@"a "@input(~type: "number", ~class: "input input-sm w-16 in-a", ~value: it.a, ~on_input: it.a := e.valueAsInt)} @label(~class: "flex items-center gap-1"){@"b "@input(~type: "number", ~class: "input input-sm w-16 in-b", ~value: it.b, ~on_input: it.b := e.valueAsInt)} @label(~class: "flex items-center gap-1"){@"c "@input(~type: "number", ~class: "input input-sm w-16 in-c", ~value: it.c, ~on_input: it.c := e.valueAsInt)}} @math(~display: "block"){@mn(~class: "m-a"){@(it.a)} @mo{⁢} @msup{@mi{x}@mn{2}} @mo{+} @mn(~class: "m-b"){@(it.b)} @mo{⁢} @mi{x} @mo{+} @mn(~class: "m-c"){@(it.c)} @mo{=} @mn{0}} @p(~class: "text-sm"){@"Discriminant: "@span(~class: "disc"){@(discriminant())}}@p(~class: "text-sm"){@"There are "@span(~class: "classify"){@(classify())}.}}
-
+    div(class: "flex flex-col gap-3"):
+      div(class: "flex gap-3 text-sm"):
+        label(class: "flex items-center gap-1"):
+          "a "
+          input(type: "number", class: "input input-sm w-16 in-a", value: it.a, ~on_input: it.a := e.valueAsInt)
+        " "
+        label(class: "flex items-center gap-1"):
+          "b "
+          input(type: "number", class: "input input-sm w-16 in-b", value: it.b, ~on_input: it.b := e.valueAsInt)
+        " "
+        label(class: "flex items-center gap-1"):
+          "c "
+          input(type: "number", class: "input input-sm w-16 in-c", value: it.c, ~on_input: it.c := e.valueAsInt)
+      " "
+      math(display: "block"):
+        mn(class: "m-a"):
+          @(it.a)
+        " "
+        mo():
+          "⁢"
+        " "
+        msup():
+          mi():
+            "x"
+          mn():
+            "2"
+        " "
+        mo():
+          "+"
+        " "
+        mn(class: "m-b"):
+          @(it.b)
+        " "
+        mo():
+          "⁢"
+        " "
+        mi():
+          "x"
+        " "
+        mo():
+          "+"
+        " "
+        mn(class: "m-c"):
+          @(it.c)
+        " "
+        mo():
+          "="
+        " "
+        mn():
+          "0"
+      " "
+      p(class: "text-sm"):
+        "Discriminant: "
+        span(class: "disc"):
+          @(discriminant())
+      p(class: "text-sm"):
+        "There are "
+        span(class: "classify"):
+          @(classify())
+        "."

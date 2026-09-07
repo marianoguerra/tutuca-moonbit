@@ -24,30 +24,103 @@ spec:
 
 view:
   Person:
-    @div(~class: "person flex gap-2 items-center grow"){@input(~class: "input input-sm grow name", ~value: it.name, ~on_input: it.name := e.value, ~placeholder: "name") @input(~class: "input input-sm grow email", ~value: it.email, ~on_input: it.email := e.value, ~placeholder: "email") @label(~class: "label cursor-pointer gap-1 chk-label"){@input(~type: "checkbox", ~class: "checkbox checkbox-sm active", ~checked: it.active, ~on_input: it.active := e.value)@" active "}}
+    div(class: "person flex gap-2 items-center grow"):
+      input(class: "input input-sm grow name", value: it.name, ~on_input: it.name := e.value, placeholder: "name")
+      " "
+      input(class: "input input-sm grow email", value: it.email, ~on_input: it.email := e.value, placeholder: "email")
+      " "
+      label(class: "label cursor-pointer gap-1 chk-label"):
+        input(type: "checkbox", class: "checkbox checkbox-sm active", checked: it.active, ~on_input: it.active := e.value)
+        " active "
 
   Strategies:
-    @div(~class: "flex flex-col gap-6"){
-      @div(~class: "flex flex-col gap-1"){
-        @h3(~class: "font-bold"){1. Naive — two independent scans}
-        @render(it.naive)
-      }
-      @div(~class: "flex flex-col gap-1"){
-        @h3(~class: "font-bold"){2. Shared — one count + one partial collect}
-        @render(it.shared)
-      }
-      @div(~class: "flex flex-col gap-1"){
-        @h3(~class: "font-bold"){3. Coupled — one scan; loop-with forwards the enrich's keys}
-        @render(it.coupled)
-      }
-    }
+    div(class: "flex flex-col gap-6"):
+      div(class: "flex flex-col gap-1"):
+        h3(class: "font-bold"):
+          "1. Naive — two independent scans"
+        "\n"
+        render(it.naive)
+      "\n"
+      div(class: "flex flex-col gap-1"):
+        h3(class: "font-bold"):
+          "2. Shared — one count + one partial collect"
+        "\n"
+        render(it.shared)
+      "\n"
+      div(class: "flex flex-col gap-1"):
+        h3(class: "font-bold"):
+          "3. Coupled — one scan; loop-with forwards the enrich's keys"
+        "\n"
+        render(it.coupled)
 
   NaivePeople:
-    @section(~enrich_with: pager_info, ~class: "flex flex-col gap-3"){@input(~type: "search", ~class: "input q", ~value: it.query, ~on_input: search(e.value), ~placeholder: "Filter by name or email") @ul(~class: "flex flex-col gap-2"){@each(value, key in it.items, ~when: only_matches, ~loop_with: table_page){@li(~class: "flex gap-2 items-center row"){@span(~class: "badge badge-neutral"){@(key)} @render(value) @button(~class: "btn btn-sm btn-error btn-outline rm", ~on_click: it.items.delete_at(key)){x}}}}@div(~class: "join"){@button(~class: "btn join-item prev", ~on_click: prev, ~disabled: is_first){Prev} @button(~class: "btn join-item btn-disabled pglabel"){@(page_label)} @button(~class: "btn join-item next", ~on_click: next, ~disabled: is_last){Next}}}
+    section(~enrich_with: pager_info, class: "flex flex-col gap-3"):
+      input(type: "search", class: "input q", value: it.query, ~on_input: search(e.value), placeholder: "Filter by name or email")
+      " "
+      ul(class: "flex flex-col gap-2"):
+        each(value, key in it.items, ~when: only_matches, ~loop_with: table_page):
+          li(class: "flex gap-2 items-center row"):
+            span(class: "badge badge-neutral"):
+              @(key)
+            " "
+            render(value)
+            " "
+            button(class: "btn btn-sm btn-error btn-outline rm", ~on_click: it.items.delete_at(key)):
+              "x"
+      div(class: "join"):
+        button(class: "btn join-item prev", ~on_click: prev, disabled: is_first):
+          "Prev"
+        " "
+        button(class: "btn join-item btn-disabled pglabel"):
+          @(page_label)
+        " "
+        button(class: "btn join-item next", ~on_click: next, disabled: is_last):
+          "Next"
 
   SharedPeople:
-    @section(~enrich_with: pager_info, ~class: "flex flex-col gap-3"){@input(~type: "search", ~class: "input q", ~value: it.query, ~on_input: search(e.value), ~placeholder: "Filter by name or email") @ul(~class: "flex flex-col gap-2"){@each(value, key in it.items, ~when: only_matches, ~loop_with: page){@li(~class: "flex gap-2 items-center row"){@span(~class: "badge badge-neutral"){@(key)} @render(value) @button(~class: "btn btn-sm btn-error btn-outline rm", ~on_click: it.items.delete_at(key)){x}}}}@div(~class: "join"){@button(~class: "btn join-item prev", ~on_click: prev, ~disabled: is_first){Prev} @button(~class: "btn join-item btn-disabled pglabel"){@(page_label)} @button(~class: "btn join-item next", ~on_click: next, ~disabled: is_last){Next}}}
+    section(~enrich_with: pager_info, class: "flex flex-col gap-3"):
+      input(type: "search", class: "input q", value: it.query, ~on_input: search(e.value), placeholder: "Filter by name or email")
+      " "
+      ul(class: "flex flex-col gap-2"):
+        each(value, key in it.items, ~when: only_matches, ~loop_with: page):
+          li(class: "flex gap-2 items-center row"):
+            span(class: "badge badge-neutral"):
+              @(key)
+            " "
+            render(value)
+            " "
+            button(class: "btn btn-sm btn-error btn-outline rm", ~on_click: it.items.delete_at(key)):
+              "x"
+      div(class: "join"):
+        button(class: "btn join-item prev", ~on_click: prev, disabled: is_first):
+          "Prev"
+        " "
+        button(class: "btn join-item btn-disabled pglabel"):
+          @(page_label)
+        " "
+        button(class: "btn join-item next", ~on_click: next, disabled: is_last):
+          "Next"
 
   CoupledPeople:
-    @section(~enrich_with: pager_info, ~class: "flex flex-col gap-3"){@input(~type: "search", ~class: "input q", ~value: it.query, ~on_input: search(e.value), ~placeholder: "Filter by name or email") @ul(~class: "flex flex-col gap-2"){@each(value, key in it.items, ~loop_with: forward_keys){@li(~class: "flex gap-2 items-center row"){@span(~class: "badge badge-neutral"){@(key)} @render(value) @button(~class: "btn btn-sm btn-error btn-outline rm", ~on_click: it.items.delete_at(key)){x}}}}@div(~class: "join"){@button(~class: "btn join-item prev", ~on_click: prev, ~disabled: is_first){Prev} @button(~class: "btn join-item btn-disabled pglabel"){@(page_label)} @button(~class: "btn join-item next", ~on_click: next, ~disabled: is_last){Next}}}
-
+    section(~enrich_with: pager_info, class: "flex flex-col gap-3"):
+      input(type: "search", class: "input q", value: it.query, ~on_input: search(e.value), placeholder: "Filter by name or email")
+      " "
+      ul(class: "flex flex-col gap-2"):
+        each(value, key in it.items, ~loop_with: forward_keys):
+          li(class: "flex gap-2 items-center row"):
+            span(class: "badge badge-neutral"):
+              @(key)
+            " "
+            render(value)
+            " "
+            button(class: "btn btn-sm btn-error btn-outline rm", ~on_click: it.items.delete_at(key)):
+              "x"
+      div(class: "join"):
+        button(class: "btn join-item prev", ~on_click: prev, disabled: is_first):
+          "Prev"
+        " "
+        button(class: "btn join-item btn-disabled pglabel"):
+          @(page_label)
+        " "
+        button(class: "btn join-item next", ~on_click: next, disabled: is_last):
+          "Next"

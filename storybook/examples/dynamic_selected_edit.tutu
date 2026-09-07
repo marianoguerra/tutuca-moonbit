@@ -18,14 +18,46 @@ spec:
 
 view:
   DseRoot:
-    @div(~class: "flex flex-col gap-3 p-3"){@div(~class: "alert"){@span{@"Selected key = "@b(~class: "selected-key"){@(it.selected_key)}}}@div(~class: "flex flex-col gap-2"){@span(~class: "text-xs opacity-60"){Entries — rendered from the *items dynamic (owner):} @each(value, key in dyn.items){@div(~class: "flex gap-3 items-center owner-row"){@render(value) @button(~class: "btn btn-xs btn-soft select", ~on_click: select_item(key)){select}}}} @render(it.editor)}
+    div(class: "flex flex-col gap-3 p-3"):
+      div(class: "alert"):
+        span():
+          "Selected key = "
+          b(class: "selected-key"):
+            @(it.selected_key)
+      div(class: "flex flex-col gap-2"):
+        span(class: "text-xs opacity-60"):
+          "Entries — rendered from the *items dynamic (owner):"
+        " "
+        each(value, key in dyn.items):
+          div(class: "flex gap-3 items-center owner-row"):
+            render(value)
+            " "
+            button(class: "btn btn-xs btn-soft select", ~on_click: select_item(key)):
+              "select"
+      " "
+      render(it.editor)
 
   DseEditor:
-    @div(~class: "card bg-base-200 p-3 gap-3 editor"){@span(~class: "text-xs opacity-60"){Editor (child component)} @div(~class: "flex flex-col gap-1"){@span(~class: "text-xs opacity-60"){All entries — rendered from the *items lookup:} @each(value, key in dyn.items){@div(~class: "flex gap-3 flex-wrap child-items"){@render(value)}}}@div(~class: "flex flex-col gap-1"){@span(~class: "text-xs opacity-60"){Editing the *selected entry:} @render(dyn.selected, ~as: "edit")}}
+    div(class: "card bg-base-200 p-3 gap-3 editor"):
+      span(class: "text-xs opacity-60"):
+        "Editor (child component)"
+      " "
+      div(class: "flex flex-col gap-1"):
+        span(class: "text-xs opacity-60"):
+          "All entries — rendered from the *items lookup:"
+        " "
+        each(value, key in dyn.items):
+          div(class: "flex gap-3 flex-wrap child-items"):
+            render(value)
+      div(class: "flex flex-col gap-1"):
+        span(class: "text-xs opacity-60"):
+          "Editing the *selected entry:"
+        " "
+        render(dyn.selected, ~as: "edit")
 
   DseEntry:
-    @span(~class: "font-mono entry"){@(it.name)}
+    span(class: "font-mono entry"):
+      @(it.name)
 
   DseEntry.edit:
-    @input(~class: "input input-bordered w-full edit-name", ~value: it.name, ~on_input: it.name := e.value, ~placeholder: "Entry name")
-
+    input(class: "input input-bordered w-full edit-name", value: it.name, ~on_input: it.name := e.value, placeholder: "Entry name")

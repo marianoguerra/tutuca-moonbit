@@ -70,5 +70,23 @@ logic:
 
 view:
   BarChart:
-    @div(~class: "flex flex-col gap-3"){@svg(~viewBox: "0 0 300 120", ~role: "img"){@line(~class: "axis", ~x1: "0", ~y1: "110", ~x2: "300", ~y2: "110", ~stroke: "#cbd5e1", ~stroke_width: "1") @each(value, key in it.values, ~enrich_with: bar, ~loop_with: layout){@rect(~x: x, ~y: y, ~width: w, ~height: h, ~rx: "3", ~fill: "#6366f1")} @each(value, key in it.values, ~enrich_with: bar, ~loop_with: layout){@text(~x: cx, ~y: label_y, ~text_anchor: "middle", ~font_size: "10", ~fill: "#475569"){@(value)}}} @div(~class: "join"){@button(~class: "btn btn-primary join-item randomize", ~on_click: randomize){Randomize} @button(~class: "btn join-item add", ~on_click: add_bar){Add bar} @button(~class: "btn join-item remove", ~on_click: remove_bar){Remove bar}}}
-
+    div(class: "flex flex-col gap-3"):
+      svg(viewBox: "0 0 300 120", role: "img"):
+        line(class: "axis", x1: "0", y1: "110", x2: "300", y2: "110", stroke: "#cbd5e1", stroke_width: "1")
+        " "
+        each(value, key in it.values, ~enrich_with: bar, ~loop_with: layout):
+          rect(x: x, y: y, width: w, height: h, rx: "3", fill: "#6366f1")
+        " "
+        each(value, key in it.values, ~enrich_with: bar, ~loop_with: layout):
+          text(x: cx, y: label_y, text_anchor: "middle", font_size: "10", fill: "#475569"):
+            @(value)
+      " "
+      div(class: "join"):
+        button(class: "btn btn-primary join-item randomize", ~on_click: randomize):
+          "Randomize"
+        " "
+        button(class: "btn join-item add", ~on_click: add_bar):
+          "Add bar"
+        " "
+        button(class: "btn join-item remove", ~on_click: remove_bar):
+          "Remove bar"

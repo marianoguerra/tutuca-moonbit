@@ -218,4 +218,5 @@ logic:
 
 view:
   Corpus:
-    @div{@(it.name)}
+    div():
+      @(it.name)
