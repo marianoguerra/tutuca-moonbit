@@ -604,11 +604,11 @@ fn Checker::node(
     // wrapping the container in a predicate is exactly the fix being asked
     // for.
     Show(d) => {
-      self.boolish(d.val, "@show", sc)
+      self.boolish(d.val, "show", sc)
       self.node(d.node, sc)
     }
     Hide(d) => {
-      self.boolish(d.val, "@hide", sc)
+      self.boolish(d.val, "hide", sc)
       self.node(d.node, sc)
     }
     // Neither changes what `.field` addresses. `@push-view` pushes a VIEW

@@ -132,7 +132,7 @@ pub suberror GenError {
     written~ : String,
     sites~ : String
   )
-  /// `@show` / `@hide` over a container. `Value::is_truthy` answers `true`
+  /// `show` / `hide` over a container. `Value::is_truthy` answers `true`
   /// for List, Map and Obj unconditionally, so the test cannot fail — the
   /// element is always shown (or always hidden).
   AlwaysTruthy(

@@ -374,58 +374,110 @@ pub fn card_source() -> String {
     #|
     #|view:
     #|  Hole:
-    #|    @div(~class: "tut-hole flex items-center justify-center w-full"){@render(it.child)}
+    #|    div(class: "tut-hole flex items-center justify-center w-full"):
+    #|      render(it.child)
     #|
     #|  Hole.chrome:
-    #|    @div(~class: "tut-hole relative w-full min-h-8 pt-5 px-1 pb-1 flex items-center justify-center rounded outline-1 outline-dashed outline-base-300"){@show(!it.filled){@button(~class: "hole-add btn btn-ghost btn-block min-h-16 text-3xl font-thin opacity-30 hover:opacity-100", ~on_click: add(e.isCtrl)){+}} @show(it.editable){@button(~class: "hole-config absolute top-0.5 left-1 z-10 badge badge-xs badge-ghost cursor-pointer", ~on_click: toggle_config){edit}} @show(it.filled){@button(~class: "hole-remove absolute top-0.5 right-1 z-10 btn btn-xs btn-circle btn-ghost opacity-40 hover:opacity-100", ~on_click: ask_empty){x}} @span(~push_view: child_view(), ~class: "contents"){@render(it.child)}}
+    #|    div(class: "tut-hole relative w-full min-h-8 pt-5 px-1 pb-1 flex items-center justify-center rounded outline-1 outline-dashed outline-base-300"):
+    #|      show(!it.filled):
+    #|        button(class: "hole-add btn btn-ghost btn-block min-h-16 text-3xl font-thin opacity-30 hover:opacity-100", ~on_click: add(e.isCtrl)):
+    #|          "+"
+    #|      " "
+    #|      show(it.editable):
+    #|        button(class: "hole-config absolute top-0.5 left-1 z-10 badge badge-xs badge-ghost cursor-pointer", ~on_click: toggle_config):
+    #|          "edit"
+    #|      " "
+    #|      show(it.filled):
+    #|        button(class: "hole-remove absolute top-0.5 right-1 z-10 btn btn-xs btn-circle btn-ghost opacity-40 hover:opacity-100", ~on_click: ask_empty):
+    #|          "x"
+    #|      " "
+    #|      span(~push_view: child_view(), class: "contents"):
+    #|        render(it.child)
     #|
     #|  Box:
-    #|    @div(~class: "tut-box w-full", ~style: style()){
-    #|      @each(value, key in it.children){
-    #|        @render(value)
-    #|      }
-    #|    }
+    #|    div(class: "tut-box w-full", style: style()):
+    #|      each(value, key in it.children):
+    #|        render(value)
     #|
     #|  Box.arrange:
-    #|    @div(~class: "tut-box w-full", ~style: style()){@each(value, key in it.children){@div(~class: "tut-cell relative"){@button(~class: "cell-before absolute z-20 rounded bg-primary opacity-0 hover:opacity-60", ~style: if is_row() | "inset-block:0;inset-inline-start:-4px;inline-size:8px" | "inset-inline:0;inset-block-start:-4px;block-size:8px", ~on_click: ask_insert(key)) @render(value)}} @button(~class: "cell-append rounded bg-primary opacity-20 hover:opacity-60", ~style: if is_row() | "inline-size:8px;align-self:stretch" | "block-size:8px", ~on_click: ask_insert(-1))}
+    #|    div(class: "tut-box w-full", style: style()):
+    #|      each(value, key in it.children):
+    #|        div(class: "tut-cell relative"):
+    #|          button(class: "cell-before absolute z-20 rounded bg-primary opacity-0 hover:opacity-60", style: if is_row() | "inset-block:0;inset-inline-start:-4px;inline-size:8px" | "inset-inline:0;inset-block-start:-4px;block-size:8px", ~on_click: ask_insert(key))
+    #|          " "
+    #|          render(value)
+    #|      " "
+    #|      button(class: "cell-append rounded bg-primary opacity-20 hover:opacity-60", style: if is_row() | "inline-size:8px;align-self:stretch" | "block-size:8px", ~on_click: ask_insert(-1))
     #|
     #|  Grid:
-    #|    @div(~class: "tut-grid w-full", ~style: style()){
-    #|      @each(value, key in it.children){
-    #|        @render(value)
-    #|      }
-    #|    }
+    #|    div(class: "tut-grid w-full", style: style()):
+    #|      each(value, key in it.children):
+    #|        render(value)
     #|
     #|  Grid.arrange:
-    #|    @div(~class: "tut-grid w-full", ~style: style()){
-    #|      @each(value, key in it.children){
-    #|        @div(~class: "tut-cell relative"){@button(~class: "cell-remove absolute top-0 right-0 z-20 btn btn-xs btn-ghost opacity-0 hover:opacity-70", ~on_click: ask_remove(key)){x} @render(value)}
-    #|      }
-    #|    }
+    #|    div(class: "tut-grid w-full", style: style()):
+    #|      each(value, key in it.children):
+    #|        div(class: "tut-cell relative"):
+    #|          button(class: "cell-remove absolute top-0 right-0 z-20 btn btn-xs btn-ghost opacity-0 hover:opacity-70", ~on_click: ask_remove(key)):
+    #|            "x"
+    #|          " "
+    #|          render(value)
     #|
     #|  Tabs:
-    #|    @div(~class: "tut-tabs w-full flex flex-col gap-2"){@div(~role: "tablist", ~class: "tab-strip tabs tabs-box"){@each(value, key in it.labels){@button(~role: "tab", ~class: "tab-label tab", ~on_click: activate(key)){@(value)}}} @each(value, key in it.tabs, ~enrich_with: mark_active){@span(~class: "contents"){@show(active){@render(value)}}}}
+    #|    div(class: "tut-tabs w-full flex flex-col gap-2"):
+    #|      div(role: "tablist", class: "tab-strip tabs tabs-box"):
+    #|        each(value, key in it.labels):
+    #|          button(role: "tab", class: "tab-label tab", ~on_click: activate(key)):
+    #|            @(value)
+    #|      " "
+    #|      each(value, key in it.tabs, ~enrich_with: mark_active):
+    #|        span(class: "contents"):
+    #|          show(active):
+    #|            render(value)
     #|
     #|  Tabs.arrange:
-    #|    @div(~class: "tut-tabs w-full flex flex-col gap-2"){@div(~role: "tablist", ~class: "tab-strip tabs tabs-box"){@each(value, key in it.labels){@button(~role: "tab", ~class: "tab-label tab", ~on_click: activate(key)){@(value)}} @button(~class: "tab-add tab", ~on_click: ask_insert(-1)){+} @hide(it.tabs.is_empty()){@button(~class: "tab-close tab", ~on_click: ask_remove(it.active)){x}}} @each(value, key in it.tabs, ~enrich_with: mark_active){@span(~class: "contents"){@show(active){@render(value)}}}}
+    #|    div(class: "tut-tabs w-full flex flex-col gap-2"):
+    #|      div(role: "tablist", class: "tab-strip tabs tabs-box"):
+    #|        each(value, key in it.labels):
+    #|          button(role: "tab", class: "tab-label tab", ~on_click: activate(key)):
+    #|            @(value)
+    #|        " "
+    #|        button(class: "tab-add tab", ~on_click: ask_insert(-1)):
+    #|          "+"
+    #|        " "
+    #|        hide(it.tabs.is_empty()):
+    #|          button(class: "tab-close tab", ~on_click: ask_remove(it.active)):
+    #|            "x"
+    #|      " "
+    #|      each(value, key in it.tabs, ~enrich_with: mark_active):
+    #|        span(class: "contents"):
+    #|          show(active):
+    #|            render(value)
     #|
     #|  Text:
-    #|    @span(~class: "tut-text", ~style: sized()){@(it.text)}
+    #|    span(class: "tut-text", style: sized()):
+    #|      @(it.text)
     #|
     #|  Text.configure:
-    #|    @label(~class: "tut-config flex flex-col gap-1 w-full"){@input(~class: "cfg-text input input-bordered input-sm w-full", ~value: it.text, ~on_input: it.text := e.value) @input(~class: "cfg-size input input-bordered input-xs w-full", ~value: it.size, ~on_input: it.size := e.value)}
+    #|    label(class: "tut-config flex flex-col gap-1 w-full"):
+    #|      input(class: "cfg-text input input-bordered input-sm w-full", value: it.text, ~on_input: it.text := e.value)
+    #|      " "
+    #|      input(class: "cfg-size input input-bordered input-xs w-full", value: it.size, ~on_input: it.size := e.value)
     #|
     #|  Textarea:
-    #|    @textarea(~class: "tut-textarea textarea textarea-bordered w-full font-mono", ~rows: it.rows, ~placeholder: it.placeholder, ~value: it.text, ~on_input: it.text := e.value)
+    #|    textarea(class: "tut-textarea textarea textarea-bordered w-full font-mono", rows: it.rows, placeholder: it.placeholder, value: it.text, ~on_input: it.text := e.value)
     #|
     #|  Textarea.configure:
-    #|    @label(~class: "tut-config flex flex-col gap-1 w-full"){@input(~class: "cfg-rows input input-bordered input-xs w-full", ~value: it.rows, ~on_input: it.rows := e.value) @input(~class: "cfg-placeholder input input-bordered input-xs w-full", ~value: it.placeholder, ~on_input: it.placeholder := e.value)}
+    #|    label(class: "tut-config flex flex-col gap-1 w-full"):
+    #|      input(class: "cfg-rows input input-bordered input-xs w-full", value: it.rows, ~on_input: it.rows := e.value)
+    #|      " "
+    #|      input(class: "cfg-placeholder input input-bordered input-xs w-full", value: it.placeholder, ~on_input: it.placeholder := e.value)
     #|
     #|  Markdown:
-    #|    @article(~class: "tut-markdown prose w-full", ~inner_md: it.text)
+    #|    article(class: "tut-markdown prose w-full", inner_md: it.text)
     #|
     #|  Markdown.configure:
-    #|    @textarea(~class: "cfg-md textarea textarea-bordered w-full font-mono", ~rows: 6, ~value: it.text, ~on_input: it.text := e.value)
+    #|    textarea(class: "cfg-md textarea textarea-bordered w-full font-mono", rows: 6, value: it.text, ~on_input: it.text := e.value)
     #|
     #|tests:
     #|  "an empty hole renders nothing at all":

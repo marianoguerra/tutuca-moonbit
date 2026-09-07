@@ -118,7 +118,7 @@ test "@each over a set, a list or an ordered map is fine" {
     let (spec, path) = expr
     assert_eq(
       gen_err(
-        board(spec, "    @ul{@each(value, key in \{path}){@li{x}}}"),
+        board(spec, "    ul():\n      each(value, key in \{path}):\n        li(): \"x\""),
         "Board",
       ),
       "",
@@ -145,7 +145,7 @@ test "<x render> on a declared child slot is fine" {
     "  Board:\n    field lead :: Instance.of(Card)\n" +
     "\nview:\n" +
     "  Card:\n    @p{@(it.title)}\n\n" +
-    "  Board:\n    @div{@render(it.lead)}\n"
+    "  Board:\n    div():\n      render(it.lead)\n"
   assert_eq(gen_err(src, "Ignored"), "")
 }
 
@@ -210,7 +210,7 @@ test "`~push_view` keeps the state scope" {
   assert_eq(
     gen_err(
       board(
-        spec, "    @div(~push_view: it.view){@each(value, key in it.items){@render(value)} @p{@(it.q)}}",
+        spec, "    div(~push_view: it.view):\n      each(value, key in it.items):\n        render(value)\n      \" \"\n      p(): @(it.q)",
       ),
       "Board",
     ),
@@ -219,7 +219,7 @@ test "`~push_view` keeps the state scope" {
   // ...and a typo under a push-view is still caught, which it would not be
   // if the scope went opaque.
   let msg = gen_err(
-    board(spec, "    @div(~push_view: it.view){@p{@(it.qq)}}"),
+    board(spec, "    div(~push_view: it.view):\n      p(): @(it.qq)"),
     "Board",
   )
   assert_true(msg.contains("`.qq` is not a field of the Board state"))
@@ -245,7 +245,7 @@ test "a container in `@show` is a test that cannot fail" {
     ),
     "Board",
   )
-  assert_true(rec.contains("@hide"), msg=rec)
+  assert_true(rec.contains("hide"), msg=rec)
   assert_true(rec.contains("always truthy"))
 }
 
