@@ -454,14 +454,7 @@ pub fn tasks() -> Array[Task] {
             "diff", "--exit-code", "--", "demo/universal/std/std_card_gen.mbt",
           ],
         },
-        moon("build · js universal", [
-          "build", "--target", "js", "demo/universal",
-        ]),
-        {
-          label: "assemble dist/universal",
-          prog: "node",
-          args: ["demo/universal/build/assemble.mjs"],
-        },
+        ..universal_dist_commands(),
       ],
     },
     {
@@ -960,6 +953,12 @@ fn dist_steps() -> Array[Step] {
   // card playground itself is a separate task, but its runtime is what makes an
   // embedded card on the landing page work at all.
   steps.push(Run(assemble_tutucard()))
+  // The composition demo. It has a task of its own, which `ci` runs -- so it
+  // was built and checked on every run and then not shipped, and `/universal/`
+  // answered 404 on Pages while the tree said it was fine.
+  for cmd in universal_dist_commands() {
+    steps.push(Run(cmd))
+  }
   steps.push(
     Run({
       label: "assemble landing site (dist root)",
@@ -1109,6 +1108,29 @@ pub fn storybook_template_embed_steps() -> Array[Step] {
       prog: "diff",
       args: [STORYBOOK_EMBED_WAS, STORYBOOK_EMBED],
     }),
+  ]
+}
+
+///|
+/// Build the composition demo and assemble it into `dist/universal/`.
+///
+/// Shared by the `universal` task and by `dist`, and it is the BUILD half
+/// only: the `universal` task also embeds the layout kit, runs `moon fmt` and
+/// drift-checks the generated module against its `.tutu`, and none of those
+/// belong in a deploy -- one writes to the tree and another fails on a
+/// staleness that is `ci`'s question rather than the site's.
+///
+/// It was not in `dist` at all until now, so `/universal/` 404'd on Pages
+/// while `ci` built and checked it every run. A demo the site does not carry
+/// is a demo nobody sees.
+pub fn universal_dist_commands() -> Array[Command] {
+  [
+    moon("build · js universal", ["build", "--target", "js", "demo/universal"]),
+    {
+      label: "assemble dist/universal",
+      prog: "node",
+      args: ["demo/universal/build/assemble.mjs"],
+    },
   ]
 }
 
