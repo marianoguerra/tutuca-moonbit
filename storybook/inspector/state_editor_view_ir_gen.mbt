@@ -115,7 +115,7 @@ fn state_editor_row_main_view_ir() -> @anode.View {
             "input",
             [
               @anode.attr("type", "number"),
-              @anode.attr("class", "input input-xs input-bordered w-40 row-num"),
+              @anode.attr("class", "input input-xs w-40 row-num"),
               @anode.dyn_attr("value", @tutuca.Expr::field("num")),
               @anode.eid(1),
             ],
@@ -134,9 +134,7 @@ fn state_editor_row_main_view_ir() -> @anode.View {
             "input",
             [
               @anode.attr("type", "text"),
-              @anode.attr(
-                "class", "input input-xs input-bordered w-64 row-text",
-              ),
+              @anode.attr("class", "input input-xs w-64 row-text"),
               @anode.dyn_attr("value", @tutuca.Expr::field("text")),
               @anode.eid(2),
             ],

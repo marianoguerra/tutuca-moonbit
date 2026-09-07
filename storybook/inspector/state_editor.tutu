@@ -48,10 +48,10 @@ view:
         input(type: "checkbox", class: "checkbox checkbox-xs row-bool", checked: it.flag, ~on_input: edit(e.value))
       " "
       show((it.kind == "num")):
-        input(type: "number", class: "input input-xs input-bordered w-40 row-num", value: it.num, ~on_input: edit(e.valueAsFloat))
+        input(type: "number", class: "input input-xs w-40 row-num", value: it.num, ~on_input: edit(e.valueAsFloat))
       " "
       show((it.kind == "text")):
-        input(type: "text", class: "input input-xs input-bordered w-64 row-text", value: it.text, ~on_input: edit(e.value))
+        input(type: "text", class: "input input-xs w-64 row-text", value: it.text, ~on_input: edit(e.value))
       " "
       hide(it.editable):
         span(class: "font-mono text-xs opacity-50 row-readonly"):

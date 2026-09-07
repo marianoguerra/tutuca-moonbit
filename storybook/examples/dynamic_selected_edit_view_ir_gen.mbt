@@ -250,7 +250,7 @@ fn dse_entry_edit_view_ir() -> @anode.View {
     @anode.h(
       "input",
       [
-        @anode.attr("class", "input input-bordered w-full edit-name"),
+        @anode.attr("class", "input w-full edit-name"),
         @anode.dyn_attr("value", @tutuca.Expr::field("name")),
         @anode.eid(0),
         @anode.attr("placeholder", "Entry name"),

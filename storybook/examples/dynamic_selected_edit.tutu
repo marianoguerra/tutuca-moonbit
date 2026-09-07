@@ -60,4 +60,4 @@ view:
       @(it.name)
 
   DseEntry.edit:
-    input(class: "input input-bordered w-full edit-name", value: it.name, ~on_input: it.name := e.value, placeholder: "Entry name")
+    input(class: "input w-full edit-name", value: it.name, ~on_input: it.name := e.value, placeholder: "Entry name")

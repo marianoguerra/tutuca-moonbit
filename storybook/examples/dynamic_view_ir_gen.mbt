@@ -360,7 +360,7 @@ fn sheet_main_view_ir() -> @anode.View {
         @anode.h(
           "input",
           [
-            @anode.attr("class", "input input-bordered title"),
+            @anode.attr("class", "input title"),
             @anode.dyn_attr("value", @tutuca.Expr::field("title")),
             @anode.eid(0),
           ],

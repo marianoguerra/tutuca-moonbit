@@ -326,7 +326,7 @@ view:
       span(class: "text-xs opacity-60 tag"):
         "SbDynamicSheet (rendered via *active)"
       " "
-      input(class: "input input-bordered title", value: it.title, ~on_input: it.title := e.value)
+      input(class: "input title", value: it.title, ~on_input: it.title := e.value)
     div(class: "border border-dashed border-warning rounded p-3 gap-2 toolbar"):
       span(class: "text-xs opacity-60 tag"):
         "SbDynamicToolbar (consumer)"
@@ -381,7 +381,7 @@ view:
         render(dyn.selected, ~as: "edit")
     span(class: "font-mono entry"):
       @(it.name)
-    input(class: "input input-bordered w-full edit-name", value: it.name, ~on_input: it.name := e.value, placeholder: "Entry name")
+    input(class: "input w-full edit-name", value: it.name, ~on_input: it.name := e.value, placeholder: "Entry name")
     section(class: "flex flex-col gap-3"):
       label(class: "flex flex-col gap-1"):
         span():

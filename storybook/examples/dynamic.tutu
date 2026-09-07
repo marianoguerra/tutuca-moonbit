@@ -57,7 +57,7 @@ view:
       span(class: "text-xs opacity-60 tag"):
         "Sheet (rendered via *active)"
       " "
-      input(class: "input input-bordered title", value: it.title, ~on_input: it.title := e.value)
+      input(class: "input title", value: it.title, ~on_input: it.title := e.value)
 
   Toolbar:
     div(class: "border border-dashed border-warning rounded p-3 gap-2 toolbar"):

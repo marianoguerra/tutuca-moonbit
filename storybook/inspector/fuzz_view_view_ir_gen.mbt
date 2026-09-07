@@ -611,7 +611,7 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
                 "input",
                 [
                   @anode.attr(
-                    "class", "input input-xs input-bordered w-24 tabular-nums ctl-seed",
+                    "class", "input input-xs w-24 tabular-nums ctl-seed",
                   ),
                   @anode.attr("type", "number"),
                   @anode.dyn_attr("value", @tutuca.Expr::field("seed")),
@@ -628,7 +628,7 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
                 "input",
                 [
                   @anode.attr(
-                    "class", "input input-xs input-bordered w-20 tabular-nums ctl-steps",
+                    "class", "input input-xs w-20 tabular-nums ctl-steps",
                   ),
                   @anode.attr("type", "number"),
                   @anode.dyn_attr("value", @tutuca.Expr::field("steps")),

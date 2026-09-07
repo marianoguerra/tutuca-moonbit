@@ -329,12 +329,12 @@ view:
           label(class: "text-xs opacity-60"):
             "seed"
           " "
-          input(class: "input input-xs input-bordered w-24 tabular-nums ctl-seed", type: "number", value: it.seed, ~on_input: set_seed(e.value))
+          input(class: "input input-xs w-24 tabular-nums ctl-seed", type: "number", value: it.seed, ~on_input: set_seed(e.value))
           " "
           label(class: "text-xs opacity-60"):
             "steps"
           " "
-          input(class: "input input-xs input-bordered w-20 tabular-nums ctl-steps", type: "number", value: it.steps, ~on_input: set_steps(e.value))
+          input(class: "input input-xs w-20 tabular-nums ctl-steps", type: "number", value: it.steps, ~on_input: set_steps(e.value))
       " "
       show(it.can_run):
         div(class: "flex gap-2 flex-wrap"):
