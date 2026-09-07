@@ -14,15 +14,15 @@
 /// A scoped style block's CSS, lowered from notation.
 ///
 /// A view's style is injected INSIDE `[data-cid="N"]{ … }`, so what is written
-/// here is a rule BODY and not a stylesheet. That is why the groups are wrapped
-/// in a synthetic rule before they are lowered and unwrapped after: bare
-/// declarations are then legal -- which is what `styles.md` documents, they
-/// style the component's root element -- and so are nested rules, and the two
-/// may be mixed in one block the way the corpus mixes them.
+/// here is a rule BODY and not a stylesheet: bare declarations are legal --
+/// which is what `styles.md` documents, they style the component's root
+/// element -- and so are nested rules, and the two may be mixed in one block
+/// the way the corpus mixes them.
 ///
-/// Lowering the groups at top level instead would refuse every declaration with
-/// `shrubcss::declaration_at_top_level`, which is the right answer to the
-/// question it is asked and the wrong question to ask.
+/// `lower_block` is the entry for exactly that, added upstream in
+/// `shrubbery-css@0.2.0`. This used to wrap the groups in a synthetic rule and
+/// unwrap the result, because the public entries all started at top level,
+/// where a declaration is refused -- correctly, and for the wrong question.
 fn scoped_css(
   groups : Array[@ast.Node],
   span : @report.Span,
@@ -32,19 +32,13 @@ fn scoped_css(
   // tab-aware column and cannot be built from an offset.
   let at = groups[0].span
   let block = @ast.Node::new(Block(groups), at)
-  let head = @ast.Node::new(Id("scope"), at)
-  let rule = @ast.Node::new(Group([head, block]), at)
-  let root = @ast.Node::new(Multi([rule]), at)
-  let out = @csslower.lower(root) catch { _ => raise css_refused(span) }
+  let out = @csslower.lower_block(block) catch { _ => raise css_refused(span) }
   if out.has_errors() {
-    raise css_diagnostic(out, span)
+    raise css_block_diagnostic(out, span)
   }
   let body = StringBuilder()
-  for item in out.sheet().items {
-    guard item is Rule(Style(r)) else { continue }
-    for b in r.body {
-      write_item(b, body)
-    }
+  for item in out.items() {
+    write_item(item, body)
   }
   body.to_string()
 }
@@ -92,6 +86,20 @@ fn write_item(item : @cssast.BlockItem, out : StringBuilder) -> Unit {
 /// could not be read and `tutu::` about a view that could not be -- and a
 /// consumer should be able to tell them apart without parsing the string.
 fn css_diagnostic(out : @csslower.Lowered, span : @report.Span) -> ExError {
+  let first = out.diagnostics()[0]
+  ExError(
+    message="this style block is not CSS: " + first.kind.code(),
+    help="write the block as `@{ … }` for CSS the notation cannot spell",
+    span~,
+  )
+}
+
+///|
+/// The same, for a rule body.
+fn css_block_diagnostic(
+  out : @csslower.LoweredBlock,
+  span : @report.Span,
+) -> ExError {
   let first = out.diagnostics()[0]
   ExError(
     message="this style block is not CSS: " + first.kind.code(),

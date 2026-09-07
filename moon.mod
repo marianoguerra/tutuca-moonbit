@@ -50,8 +50,8 @@ import {
   // which exists for exactly this composition.
   "marianoguerra/html@0.1.0",
   "marianoguerra/shrubbery-html@0.1.0",
-  "marianoguerra/css@0.1.0",
-  "marianoguerra/shrubbery-css@0.1.0",
+  "marianoguerra/css@0.1.1",
+  "marianoguerra/shrubbery-css@0.2.0",
   "marianoguerra/tailwindcss@0.4.0",
   "moonbitlang/x@0.5.1",
   "marianoguerra/wap@0.2.1",
