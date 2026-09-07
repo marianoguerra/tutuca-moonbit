@@ -195,3 +195,49 @@ test "a bare declaration list is a style too" {
   )
   inspect(s, content="padding: 0.75rem; color: red;")
 }
+
+///|
+/// The same `view:` section, written both ways, read to the same tree.
+///
+/// Separate from `same` because a macro is DECLARED in the section rather than
+/// written inside one view, so the pair has to be whole sections.
+fn same_section(old : String, new : String) -> Unit raise {
+  let head = "spec:\n  Card:\n    field n :: Int\n\nview:\n"
+  let a = direct_view(head + old)
+  let b = direct_view(head + new)
+  assert_true(a is Some(_), msg="old spelling did not read")
+  assert_true(b is Some(_), msg="new spelling did not read")
+  assert_eq(
+    @debug.to_string(b.unwrap()),
+    @debug.to_string(a.unwrap()),
+    msg=new + "\n  is not\n" + old,
+  )
+}
+
+///|
+test "a macro, its default and its call" {
+  same_section(
+    "  macro badge(~label: \"New\"):\n    @span(~class: \"b\"){@(label)}\n\n  Card:\n    @div{@badge()}\n",
+    "  macro badge(~label: \"New\"):\n    span(class: \"b\"): @(label)\n\n  Card:\n    div(): badge()\n",
+  )
+  same_section(
+    "  macro badge(~label: \"New\"):\n    @span(~class: \"b\"){@(label)}\n\n  Card:\n    @div{@badge(~label: it.n)}\n",
+    "  macro badge(~label: \"New\"):\n    span(class: \"b\"): @(label)\n\n  Card:\n    div(): badge(~label: it.n)\n",
+  )
+}
+
+///|
+test "a macro's default slot" {
+  same_section(
+    "  macro box():\n    @div{@slot}\n\n  Card:\n    @box(){@p{x}}\n",
+    "  macro box():\n    div(): slot()\n\n  Card:\n    box(): p(): \"x\"\n",
+  )
+}
+
+///|
+test "a macro's named slots, and the fills for them" {
+  same_section(
+    "  macro box():\n    @div{@header{@slot(\"a\")}@main{@slot}}\n\n  Card:\n    @box(){@fill(\"a\"){@b{A}}@p{x}}\n",
+    "  macro box():\n    div():\n      header(): slot(\"a\")\n      main(): slot()\n\n  Card:\n    box():\n      fill(\"a\"): b(): \"A\"\n      p(): \"x\"\n",
+  )
+}
