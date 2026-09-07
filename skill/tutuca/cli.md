@@ -192,43 +192,33 @@ unknown-handler errors above:
 | ----- | ----- |
 | `NotIterable` | `each` needs a collection, but the expression is a scalar |
 | `NotRenderable` | `render` needs a component, but the field is not a slot |
-| `MethodInEventPosition` | a `name(…)` in an `@on` position; write it bare |
+| `MethodInEventPosition` | a `name(…)` in an `~on_*` position; write it bare |
 
 **Lint findings** are printed one per line, as
 `CODE (level) <Component>/<view>: message` — for example
-`HTML_TAG_NOT_ALLOWED_IN_PARENT (error) Counter/main: <div> is not allowed in <tr>`.
+`EVENT_PATH_UNSAFE_STEP (hint) Counter/main: 'e.target.form.action' traverses 'form'`.
 Levels are `error`, `warning` and `hint`. The linter is real and it runs **inside
 `gen`**; what does not exist is a separate `tutuca lint` command to invoke
 it with.
 
-The codes fall into four families:
+The codes fall into two families:
 
 - **Directive rules** — `UNKNOWN_DIRECTIVE`, `UNKNOWN_X_OP`, `UNKNOWN_X_ATTR`,
   `BAD_VALUE`, `UNSUPPORTED_EXPR_SYNTAX`, `BINDING_MEMBER_TOO_DEEP`,
   `X_OP_IGNORES_CHILDREN`, `LOOP_DIRECTIVE_ON_X_OP`. The last one is the only
   parse issue that DROPS the node it is about (see
   [iteration.md](./iteration.md)).
-- **Nudges** — `MAYBE_ADD_AT_PREFIX`, `MAYBE_DROP_AT_PREFIX`.
 - **Event paths** — `EVENT_PATH_UNSAFE_STEP`: an `e.<path>` handler argument
   traverses a step off the allowlist (`e.target.form.action`). It still
   resolves in your own views; the hint exists because a host compiling
   guest-supplied views refuses that bundle over the same step.
-- **Structural HTML**, from a WHATWG tokenizer pass over the view text:
-  `HTML_TAG_NOT_ALLOWED_IN_PARENT`, `HTML_TEXT_NOT_ALLOWED_IN_PARENT`,
-  `HTML_VOID_ELEMENT_HAS_CLOSE_TAG`, `HTML_UNEXPECTED_END_TAG`,
-  `HTML_UNCLOSED_BEFORE_END`, `HTML_MISNESTED_FORMATTING`,
-  `HTML_NESTED_INTERACTIVE`, `HTML_DUPLICATE_FORM`, `HTML_DUPLICATE_ATTRIBUTE`,
-  `HTML_ATTRIBUTES_ON_END_TAG`, `HTML_SELF_CLOSING_END_TAG`,
-  `HTML_MISSING_ATTRIBUTE_VALUE`, `HTML_BOGUS_COMMENT`,
-  `HTML_CDATA_IN_HTML_NAMESPACE`, `HTML_TAG_NAME_HAS_UPPERCASE`,
-  `HTML_SVG_TAG_WILL_LOWERCASE`, `HTML_SVG_ATTR_WILL_LOWERCASE`,
-  `HTML_MATHML_ATTR_WILL_LOWERCASE`.
 
-A **void element** is one HTML gives no closing tag (`<br>`, `<input>`);
-`HTML_MISNESTED_FORMATTING` is the tokenizer's adoption-agency case
-(`<b><i></b></i>`); a **bogus comment** is a `<!…>` the parser recovers as a
-comment. These are recovery behaviors, so the view still parses — it just does
-not nest the way the source reads.
+**The structural HTML family is gone**, and so are the `MAYBE_*_AT_PREFIX`
+nudges. Both were about a notation that no longer exists: the HTML codes came
+from a WHATWG tokenizer pass over a view's TEXT, and a `.tutu` is read into a
+tree without one — an unclosed tag is not a shape the notation has, and a
+misnested `<b><i></b></i>` cannot be written where children are a block. What
+those checks watched for, the reader now refuses where it is written.
 
 Two diagnostics are not lint codes:
 
@@ -390,7 +380,7 @@ itself was confusing, broken, or surprising — capture it in the
 moment instead of reconstructing it later.
 
 ```sh
-tutuca feedback "HTML_TAG_NOT_ALLOWED_IN_PARENT didn't say which parent it meant"
+tutuca feedback "EVENT_PATH_UNSAFE_STEP didn't say which step it meant"
 echo "gen --out swallowed my file when I passed two paths" | tutuca feedback
 tutuca feedback < notes.txt
 ```

@@ -100,33 +100,16 @@ fn view_diagnostics(
     let cname = comp.component_name(fallback)
     for view in comp.views {
       let where_ = "\{cname}/\{view.name}"
-      // The two TEXT-shaped passes, and they run only on a file that has text.
+      // The two TEXT-shaped passes are gone with the text. `check_html` was
+      // the WHATWG tokenizer over a view's source and `check_collected` read
+      // what a shadow parse of it collected; a `.tutu` is read into a tree
+      // without either, `viewgen/read.mbt` sets `source` to `""` and always
+      // answers a tree, so both were guarded on a condition that is now never
+      // true. What they watched for the reader refuses where it is written.
       //
-      // Both read HTML: `check_html` is the WHATWG tokenizer over the source,
-      // and `check_collected` reads what a shadow PARSE of that source
-      // collected. A `.tutu` is read into a tree without either — an unclosed
-      // tag is not a shape the notation has, and what the shadow parse was
-      // watching for the reader refuses where it is written. Running them on
-      // an empty string would report nothing and read as a pass.
-      let collector = @lint.LintCollector::new()
-      let px = @anode.ParseContext::new(handler=collector)
-      if view.source != "" {
-        for f in @lint.check_html(view.source) {
-          out.push(f.to_line(where_))
-        }
-        let _ = @anode.ANode::parse(view.source, px)
-        for f in @lint.check_collected(collector) {
-          out.push(f.to_line(where_))
-        }
-      }
-      // Event paths: an off-list step resolves under the open profile these
-      // views run under, so it advises rather than refuses — see
-      // `@lint.check_event_paths`. Not text-shaped: the table is what it
-      // reads, and a view that was READ arrives with one.
-      let events = match view.tree {
-        Some({ events, .. }) => events
-        None => px.events
-      }
+      // Event paths remain, and are not text-shaped: the table is what they
+      // read, and a view that was READ arrives with one.
+      let events = view.tree.map(t => t.events).unwrap_or([])
       for f in @lint.check_event_paths(events) {
         out.push(f.to_line(where_))
       }

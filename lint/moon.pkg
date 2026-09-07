@@ -4,10 +4,8 @@ import {
   // arguments themselves arrive as core Expr variants, matched by inference —
   // no core import needed.
   "marianoguerra/tutuca/eventpath",
-  "moonbit-community/html/src" @html5,
 }
 
 import {
-  "moonbitlang/quickcheck" @qc,
   "moonbitlang/core/debug",
 } for "test"

@@ -29,8 +29,6 @@ pub(all) enum LintCode {
   UnsupportedExprSyntax
   BindingMemberTooDeep
   XOpIgnoresChildren
-  MaybeAddAtPrefix
-  MaybeDropAtPrefix
   UndeclaredMethod
   /// The four below are the NAME-WIRING rules: what a component published,
   /// what it asked for, and whether the two can find each other. They are
@@ -57,24 +55,6 @@ pub(all) enum LintCode {
   /// A declared bound the field's type cannot carry — a `max-len` on a number,
   /// a `min`/`max` on text. Raised by the host at load.
   InertConstraint
-  HtmlTagNameHasUppercase
-  HtmlSvgTagWillLowercase
-  HtmlSvgAttrWillLowercase
-  HtmlMathmlAttrWillLowercase
-  HtmlTagNotAllowedInParent
-  HtmlTextNotAllowedInParent
-  HtmlVoidElementHasCloseTag
-  HtmlDuplicateForm
-  HtmlNestedInteractive
-  HtmlMisnestedFormatting
-  HtmlUnexpectedEndTag
-  HtmlDuplicateAttribute
-  HtmlAttributesOnEndTag
-  HtmlSelfClosingEndTag
-  HtmlMissingAttributeValue
-  HtmlCdataInHtmlNamespace
-  HtmlBogusComment
-  HtmlUnclosedBeforeEnd
 } derive(Debug, Eq)
 
 ///|
@@ -111,28 +91,6 @@ pub(all) struct Finding {
 } derive(Debug, Eq)
 
 ///|
-/// One recorded on_attributes callback (an attrs entry).
-pub(all) struct AttrsRecord {
-  result : @anode.AttrParseResult
-  is_macro_call : Bool
-  tag : String
-} derive(Debug)
-
-///|
-/// ParseHandler that records everything the parser reports, for rule checks
-/// after parsing.
-pub(all) struct LintCollector {
-  parse_issues : Array[(@anode.ParseIssue, String?)]
-  attrs : Array[AttrsRecord]
-}
-
-///|
-declare pub fn LintCollector::new() -> LintCollector
-
-///|
-declare pub impl @anode.ParseHandler for LintCollector
-
-///|
 /// Damerau-Levenshtein "did you mean": closest candidate within max_distance
 /// edits; case-insensitive match wins outright; exact match returns None.
 declare pub fn closest_name(
@@ -140,22 +98,3 @@ declare pub fn closest_name(
   candidates : Array[String],
   max_distance? : Int = 2,
 ) -> String?
-
-///|
-/// Map everything a LintCollector captured (parse issues, deprecation nudges,
-/// host bare-directive attrs) to findings.
-declare pub fn check_collected(collector : LintCollector) -> Array[Finding]
-
-///|
-/// Structural HTML linter: tokenizes `html` once
-/// with the WHATWG tokenizer and runs an insertion-mode prediction machine
-/// over the tokens — no DOM is built. Reports HTML_* findings in source
-/// order. `fragment_context` picks the initial insertion mode (§13.2.4.4;
-/// tutuca lints "template"); `transparent_tag_prefixes` marks templating
-/// tags (`<x>`, `<x:macro>`) as phantom: case checks apply, parent rules
-/// don't.
-declare pub fn check_html(
-  html : String,
-  fragment_context? : String = "template",
-  transparent_tag_prefixes? : Array[String] = ["x"],
-) -> Array[Finding]
