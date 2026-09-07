@@ -43,6 +43,7 @@ logic:
 
 view:
   Addressing:
-    div():
-      button(~on_click: poke_all):
-        "poke"
+    div(class: "card bg-base-200 max-w-sm"):
+      div(class: "card-body gap-3"):
+        button(class: "btn btn-sm btn-primary self-start", ~on_click: poke_all):
+          "poke"

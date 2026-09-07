@@ -114,6 +114,12 @@ spec:
 
     message set_library(List.of(Any))
 
+    /// One card, by path, has been asked for. Marks that row loaded.
+    ///
+    /// Sent by the page's load funnel rather than by the row, because the two
+    /// bulk buttons reach the same cards without going near one.
+    message mark_loaded(String)
+
     message set_status(String)
 
     message pumped
@@ -208,11 +214,11 @@ logic:
       it.argument := it.source
 
     receive load_all:
-      it.pending := "loadAll"
+      it.pending := "load_all"
       it.argument := ""
 
     receive load_chosen:
-      it.pending := "loadChosen"
+      it.pending := "load_chosen"
       it.argument := ""
 
     receive save:
@@ -247,7 +253,7 @@ view:
     show(it.open):
       div(class: "picker-backdrop fixed inset-0 z-50 flex items-start justify-center bg-black/20 pt-24", ~on_click: dismissed):
         div(class: "picker w-[32rem] max-w-[90vw] rounded-lg border border-base-300 bg-base-100 shadow-xl flex flex-col gap-2 p-3"):
-          input(class: "picker-query input input-bordered w-full", autofocus: true, placeholder: "what goes here?", value: it.query, ~on_input: typed(e.value), ~on_keydown: navigate(e.key))
+          input(class: "picker-query input w-full", autofocus: true, placeholder: "what goes here?", value: it.query, ~on_input: typed(e.value), ~on_keydown: navigate(e.key))
           " "
           div(class: "picker-hits flex flex-col gap-0.5 max-h-80 overflow-y-auto"):
             each(value, key in it.hits):
@@ -321,11 +327,10 @@ view:
         h2(class: "text-sm font-medium"):
           "write a card"
         " "
-        textarea(class: "src textarea textarea-bordered w-full font-mono text-xs", rows: "6", placeholder: "paste a card here", value: it.source, ~on_input: type_source(e.value))
+        textarea(class: "src textarea w-full font-mono text-xs", rows: "6", placeholder: "paste a card here", value: it.source, ~on_input: type_source(e.value))
         " "
-        div():
-          button(class: "act-compile btn btn-sm", ~on_click: compile_source):
-            "compile and add"
+        button(class: "act-compile btn btn-sm self-start", ~on_click: compile_source):
+          "compile and add"
       " "
       hide(it.notes.is_empty()):
         ul(class: "notes flex flex-col gap-1"):

@@ -242,6 +242,59 @@ test "the library offers rather than loads, and remembers what was ticked" {
 }
 
 ///|
+/// The two bulk buttons, which posted a verb the page does not answer.
+///
+/// `load all` and `load selected` are the only two routes into the library
+/// that do not go through a row, and both spelled their verb in camelCase
+/// while the page's drain has always matched snake_case — so both were
+/// buttons that did nothing at all, silently, because an unknown verb falls
+/// through `drain`'s `_` arm. The spelling is what this pins.
+test "the bulk load buttons post a verb the page answers" {
+  let h = shell()
+  h.send_at_root("set_library", args=[
+    List(
+      @ui.library_rows([
+        ("Counter.tutu", "cards/Counter.tutu"),
+        ("Todos.tutu", "cards/Todos.tutu"),
+      ]),
+    ),
+  ])
+  h.click("button.act-load-all")
+  assert_eq(h.drive_value().field("pending"), Str("load_all"))
+  h.send_at_root("pumped")
+  h.click("button.act-load-chosen")
+  assert_eq(h.drive_value().field("pending"), Str("load_chosen"))
+}
+
+///|
+/// A card asked for by either bulk button still marks its row.
+///
+/// The row's own button marks itself, from its own path. Neither bulk button
+/// goes near a row, so the page tells the shell what it asked for — and a
+/// library that says nothing while eleven cards compile is the same button
+/// that did nothing, one bug later.
+test "a card asked for by path marks its row loaded" {
+  let h = shell()
+  h.send_at_root("set_library", args=[
+    List(
+      @ui.library_rows([
+        ("Counter.tutu", "cards/Counter.tutu"),
+        ("Todos.tutu", "cards/Todos.tutu"),
+      ]),
+    ),
+  ])
+  assert_eq(h.find_all("span.row-loaded").length(), 0)
+  h.send_at_root("mark_loaded", args=[Str("cards/Todos.tutu")])
+  assert_eq(h.find_all("span.row-loaded").length(), 1)
+  // The row it names, and not the first one that happens to be there.
+  let loaded = match h.drive_value().field("library") {
+    List(rows) => rows.map(r => r.field("loaded"))
+    _ => []
+  }
+  assert_eq(loaded, [Bool(false), Bool(true)])
+}
+
+///|
 test "a note is shown, and an error note is shown differently" {
   let h = shell()
   h.send_at_root("add_note", args=[Str("could not compile"), Str("error")])

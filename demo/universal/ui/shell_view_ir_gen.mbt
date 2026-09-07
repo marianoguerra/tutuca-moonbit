@@ -110,6 +110,8 @@ pub let picker_row_spec_source : String =
   #|
   #|    message set_library(List.of(Any))
   #|
+  #|    message mark_loaded(String)
+  #|
   #|    message set_status(String)
   #|
   #|    message pumped
@@ -312,9 +314,7 @@ fn component_picker_main_view_ir() -> @anode.View {
               @anode.h(
                 "input",
                 [
-                  @anode.attr(
-                    "class", "picker-query input input-bordered w-full",
-                  ),
+                  @anode.attr("class", "picker-query input w-full"),
                   @anode.attr_bool("autofocus", true),
                   @anode.attr("placeholder", "what goes here?"),
                   @anode.dyn_attr("value", @tutuca.Expr::field("query")),
@@ -847,9 +847,7 @@ fn shell_main_view_ir() -> @anode.View {
             @anode.h(
               "textarea",
               [
-                @anode.attr(
-                  "class", "src textarea textarea-bordered w-full font-mono text-xs",
-                ),
+                @anode.attr("class", "src textarea w-full font-mono text-xs"),
                 @anode.attr("rows", "6"),
                 @anode.attr("placeholder", "paste a card here"),
                 @anode.dyn_attr("value", @tutuca.Expr::field("source")),
@@ -858,13 +856,14 @@ fn shell_main_view_ir() -> @anode.View {
               [],
             ),
             @anode.text(" "),
-            @anode.h("div", [], [
-              @anode.h(
-                "button",
-                [@anode.attr("class", "act-compile btn btn-sm"), @anode.eid(7)],
-                [@anode.text("compile and add")],
-              ),
-            ]),
+            @anode.h(
+              "button",
+              [
+                @anode.attr("class", "act-compile btn btn-sm self-start"),
+                @anode.eid(7),
+              ],
+              [@anode.text("compile and add")],
+            ),
           ],
         ),
         @anode.text(" "),
@@ -950,12 +949,12 @@ fn shell_inline_update(
       Next(s)
     }
     Receive("load_all", _args) => {
-      let s = { ..s, pending: "loadAll", }
+      let s = { ..s, pending: "load_all", }
       let s = { ..s, argument: "", }
       Next(s)
     }
     Receive("load_chosen", _args) => {
-      let s = { ..s, pending: "loadChosen", }
+      let s = { ..s, pending: "load_chosen", }
       let s = { ..s, argument: "", }
       Next(s)
     }

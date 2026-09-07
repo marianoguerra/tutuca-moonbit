@@ -88,34 +88,37 @@ logic:
 
 view:
   Cart:
-    div():
-      input(~on_input: rename(e.value), value: it.item, placeholder: "what?")
-      " "
-      button(~on_click: fewer):
-        "-"
-      " "
-      span():
-        @(it.qty)
-      " "
-      button(~on_click: more):
-        "+"
-      " "
-      p():
-        @(it.line)
-      " "
-      button(~on_click: remember):
-        "remember"
-      " "
-      button(~on_click: receipt):
-        "to receipt"
-      " "
-      p():
-        @(@str{@(it.remembered) remembered: @(it.history)})
-      " "
-      show(has_item()):
-        button(~on_click: checkout):
-          "checkout"
-      " "
-      show(it.sent):
-        p():
-          @("sent")
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        input(class: "input input-sm w-full", ~on_input: rename(e.value), value: it.item, placeholder: "what?")
+        " "
+        div(class: "flex items-center gap-2"):
+          button(class: "btn btn-sm btn-circle", ~on_click: fewer):
+            "-"
+          " "
+          span(class: "badge badge-neutral tabular-nums"):
+            @(it.qty)
+          " "
+          button(class: "btn btn-sm btn-circle", ~on_click: more):
+            "+"
+          " "
+          p(class: "text-sm opacity-70 grow"):
+            @(it.line)
+        " "
+        div(class: "flex flex-wrap items-center gap-2"):
+          button(class: "btn btn-xs", ~on_click: remember):
+            "remember"
+          " "
+          button(class: "btn btn-xs", ~on_click: receipt):
+            "to receipt"
+          " "
+          show(has_item()):
+            button(class: "btn btn-xs btn-primary", ~on_click: checkout):
+              "checkout"
+          " "
+          show(it.sent):
+            span(class: "badge badge-sm badge-soft"):
+              @("sent")
+        " "
+        p(class: "text-xs opacity-60"):
+          @(@str{@(it.remembered) remembered: @(it.history)})

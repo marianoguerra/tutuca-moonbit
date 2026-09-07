@@ -72,24 +72,26 @@ logic:
 
 view:
   Board:
-    div():
-      input(class: "theme", value: it.theme, ~on_input: it.theme := e.value)
-      " "
-      input(class: "draft", value: it.draft, ~on_input: it.draft := e.value)
-      " "
-      button(class: "add", ~on_click: add):
-        "add"
-      " "
-      ul():
-        each(value, key in it.items):
-          render(value)
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        input(class: "theme input input-sm w-full", value: it.theme, ~on_input: it.theme := e.value, placeholder: "theme")
+        " "
+        div(class: "flex items-center gap-2"):
+          input(class: "draft input input-sm w-full", value: it.draft, ~on_input: it.draft := e.value, placeholder: "a row to add")
+          " "
+          button(class: "add btn btn-sm btn-primary", ~on_click: add):
+            "add"
+        " "
+        ul(class: "flex flex-col gap-1"):
+          each(value, key in it.items):
+            render(value)
 
   Row:
-    li(class: "row", ~on_click: stamp):
+    li(class: "row flex items-baseline justify-between gap-2 cursor-pointer rounded px-2 py-1 hover:bg-base-300", ~on_click: stamp):
       span(class: "label"):
         @(it.caption)
       " "
-      span(class: "theme"):
+      span(class: "theme badge badge-xs badge-neutral"):
         @(dyn.theme)
 
 fixtures:

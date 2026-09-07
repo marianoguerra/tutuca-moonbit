@@ -426,8 +426,8 @@ pub fn card_source() -> String {
     #|  Tabs:
     #|    div(class: "tut-tabs w-full flex flex-col gap-2"):
     #|      div(role: "tablist", class: "tab-strip tabs tabs-box"):
-    #|        each(value, key in it.labels):
-    #|          button(role: "tab", class: "tab-label tab", ~on_click: activate(key)):
+    #|        each(value, key in it.labels, ~enrich_with: mark_active):
+    #|          button(role: "tab", class: if active | "tab-label tab tab-active" | "tab-label tab", ~on_click: activate(key)):
     #|            @(value)
     #|      " "
     #|      each(value, key in it.tabs, ~enrich_with: mark_active):
@@ -438,8 +438,8 @@ pub fn card_source() -> String {
     #|  Tabs.arrange:
     #|    div(class: "tut-tabs w-full flex flex-col gap-2"):
     #|      div(role: "tablist", class: "tab-strip tabs tabs-box"):
-    #|        each(value, key in it.labels):
-    #|          button(role: "tab", class: "tab-label tab", ~on_click: activate(key)):
+    #|        each(value, key in it.labels, ~enrich_with: mark_active):
+    #|          button(role: "tab", class: if active | "tab-label tab tab-active" | "tab-label tab", ~on_click: activate(key)):
     #|            @(value)
     #|        " "
     #|        button(class: "tab-add tab", ~on_click: ask_insert(-1)):
@@ -460,24 +460,24 @@ pub fn card_source() -> String {
     #|
     #|  Text.configure:
     #|    label(class: "tut-config flex flex-col gap-1 w-full"):
-    #|      input(class: "cfg-text input input-bordered input-sm w-full", value: it.text, ~on_input: it.text := e.value)
+    #|      input(class: "cfg-text input input-sm w-full", value: it.text, ~on_input: it.text := e.value)
     #|      " "
-    #|      input(class: "cfg-size input input-bordered input-xs w-full", value: it.size, ~on_input: it.size := e.value)
+    #|      input(class: "cfg-size input input-xs w-full", value: it.size, ~on_input: it.size := e.value)
     #|
     #|  Textarea:
-    #|    textarea(class: "tut-textarea textarea textarea-bordered w-full font-mono", rows: it.rows, placeholder: it.placeholder, value: it.text, ~on_input: it.text := e.value)
+    #|    textarea(class: "tut-textarea textarea w-full font-mono", rows: it.rows, placeholder: it.placeholder, value: it.text, ~on_input: it.text := e.value)
     #|
     #|  Textarea.configure:
     #|    label(class: "tut-config flex flex-col gap-1 w-full"):
-    #|      input(class: "cfg-rows input input-bordered input-xs w-full", value: it.rows, ~on_input: it.rows := e.value)
+    #|      input(class: "cfg-rows input input-xs w-full", value: it.rows, ~on_input: it.rows := e.value)
     #|      " "
-    #|      input(class: "cfg-placeholder input input-bordered input-xs w-full", value: it.placeholder, ~on_input: it.placeholder := e.value)
+    #|      input(class: "cfg-placeholder input input-xs w-full", value: it.placeholder, ~on_input: it.placeholder := e.value)
     #|
     #|  Markdown:
     #|    article(class: "tut-markdown prose w-full", inner_md: it.text)
     #|
     #|  Markdown.configure:
-    #|    textarea(class: "cfg-md textarea textarea-bordered w-full font-mono", rows: 6, value: it.text, ~on_input: it.text := e.value)
+    #|    textarea(class: "cfg-md textarea w-full font-mono", rows: 6, value: it.text, ~on_input: it.text := e.value)
     #|
     #|tests:
     #|  "an empty hole renders nothing at all":

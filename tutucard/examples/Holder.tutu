@@ -47,13 +47,14 @@ logic:
 
 view:
   Hole:
-    div(class: "hole"):
-      render(it.child)
-      b(class: "kept"):
-        @(it.kept)
+    div(class: "hole card bg-base-200 max-w-sm"):
+      div(class: "card-body gap-2"):
+        render(it.child)
+        b(class: "kept text-xs opacity-60"):
+          @(it.kept)
 
   Text:
-    span(class: "text"):
+    span(class: "text text-sm"):
       @(it.body)
 
 tests:

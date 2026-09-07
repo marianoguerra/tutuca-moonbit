@@ -6,6 +6,35 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### The universal demo's two bulk load buttons did nothing, and the cards it loads were unstyled
+
+`load all` and `load selected` posted `loadAll` and `loadChosen` into the
+shell's one-slot pump; `drain` has always matched `load_all` and
+`load_chosen`. An unknown verb falls through its `_` arm, so both buttons were
+dead — silently, and for the same reason nothing caught it: the three verbs
+with tests (`search`, `place`, `load`) were the three that worked. `?loadAll`
+was the same bug through the other door — the flag the README, the CHANGELOG
+and the comment above it all name was read as `load_all`.
+
+A card asked for by either button now marks its row loaded. The row's own
+button marked itself from its own path; neither bulk route goes near a row, so
+the page's one load funnel says what it asked for. A library that says nothing
+while eleven cards compile is the same button that did nothing, one bug later.
+
+The eleven cards in `tutucard/examples/` are written in margaui component
+classes now, like the starter cards in `tutucard/web/examples.js` — the page
+recompiles the class set after every module registers, so a card that arrives
+ten seconds in has always been able to bring its own; it had nothing to bring.
+`Tabs` in the layout kit drew `tab` on every label and marked no active one, so
+a tab strip was a row of identical pills: the `mark_active` enricher its pages
+already used now reaches the labels, switching between whole literals because
+the collector cannot see an assembled name.
+
+`input-bordered` and `textarea-bordered` are gone from the demo. They are
+daisyUI 4 spellings margaui does not have — `.input` and `.textarea` carry the
+border themselves — so they compiled to nothing, which looks exactly like a
+design decision.
+
 ## [0.55.3] - 2026-09-07
 
 ### Removed: the HTML linter, and the notation it was about

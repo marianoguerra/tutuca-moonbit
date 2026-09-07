@@ -289,6 +289,26 @@ pub fn shell_comp() -> @component.Component {
         }
         Next({ ..s, library: rows, })
       }
+      // The row's own button marks itself from its own path, which is the
+      // round trip the test below pins. `load all` and `load selected` reach
+      // the same cards without a row raising anything, so the page tells the
+      // shell what it asked for and the shell finds the row — the same walk
+      // `toggle_chosen` does, for the same reason: a list of instances is not
+      // something a script block can map over.
+      Receive("mark_loaded", args) => {
+        let path = match args.get(0) {
+          Some(Str(p)) => p
+          _ => ""
+        }
+        let library = s.library.map(row => {
+          if row.field("path") is Str(p) && p == path {
+            row.with_field("loaded", Bool(true))
+          } else {
+            row
+          }
+        })
+        Next({ ..s, library, })
+      }
       _ => Unhandled
     }
   })

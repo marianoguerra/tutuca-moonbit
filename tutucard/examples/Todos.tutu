@@ -63,24 +63,27 @@ logic:
 
 view:
   Todos:
-    div():
-      input(class: "draft", value: it.draft, ~on_input: it.draft := e.value)
-      " "
-      button(class: "add", ~on_click: add):
-        "add"
-      " "
-      ul():
-        each(value, key in it.items):
-          render(value)
-      " "
-      button(class: "drop", ~on_click: drop(0)):
-        "drop the first"
-      " "
-      output(class: "count"):
-        @(it.count)
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        div(class: "flex items-center gap-2"):
+          input(class: "draft input input-sm w-full", value: it.draft, ~on_input: it.draft := e.value, placeholder: "what needs doing?")
+          " "
+          button(class: "add btn btn-sm btn-primary", ~on_click: add):
+            "add"
+        " "
+        ul(class: "flex flex-col gap-1"):
+          each(value, key in it.items):
+            render(value)
+        " "
+        div(class: "flex items-center gap-2"):
+          button(class: "drop btn btn-xs btn-ghost", ~on_click: drop(0)):
+            "drop the first"
+          " "
+          output(class: "count badge badge-sm badge-neutral tabular-nums"):
+            @(it.count)
 
   Todo:
-    li(class: "todo", ~on_click: toggle):
+    li(class: "todo cursor-pointer rounded px-2 py-1 hover:bg-base-300", ~on_click: toggle):
       @(it.caption)
 
 fixtures:

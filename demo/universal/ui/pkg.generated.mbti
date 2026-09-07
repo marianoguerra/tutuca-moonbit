@@ -165,6 +165,7 @@ pub(all) enum ShellMsg {
   PlaceBuilt(@core.Value, Bool, Bool)
   AddNote(String, String)
   SetLibrary(Array[@core.Value])
+  MarkLoaded(String)
   SetStatus(String)
   Pumped
   ClearCanvas

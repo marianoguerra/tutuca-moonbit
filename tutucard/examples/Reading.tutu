@@ -49,11 +49,12 @@ logic:
 
 view:
   Reading:
-    div():
-      p():
-        @(it.raw)
-      p():
-        @(it.value)
-      " "
-      button(~on_click: parse):
-        "parse"
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        p(class: "font-mono text-sm opacity-70"):
+          @(it.raw)
+        p(class: "text-xl font-semibold tabular-nums"):
+          @(it.value)
+        " "
+        button(class: "btn btn-sm self-start", ~on_click: parse):
+          "parse"

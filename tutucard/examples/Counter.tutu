@@ -51,22 +51,24 @@ logic:
 
 view:
   Counter:
-    div():
-      button(~on_click: dec):
-        "-"
-      " "
-      output():
-        @(it.count)
-      " "
-      button(~on_click: inc):
-        "+"
-      " "
-      p():
-        @(it.label)
-      " "
-      show(positive()):
-        button(~on_click: reset):
-          "reset"
+    div(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        div(class: "flex items-center gap-3"):
+          button(class: "btn btn-sm btn-circle", ~on_click: dec):
+            "-"
+          " "
+          output(class: "text-xl font-semibold tabular-nums w-12 text-center"):
+            @(it.count)
+          " "
+          button(class: "btn btn-sm btn-circle btn-primary", ~on_click: inc):
+            "+"
+        " "
+        p(class: "text-sm opacity-70"):
+          @(it.label)
+        " "
+        show(positive()):
+          button(class: "btn btn-xs btn-ghost self-start", ~on_click: reset):
+            "reset"
 
 tests:
   "two clicks add two":

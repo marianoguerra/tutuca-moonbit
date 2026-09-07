@@ -816,6 +816,11 @@ pub(all) enum ShellMsg {
   PlaceBuilt(@tutuca.Value, Bool, Bool)
   AddNote(String, String)
   SetLibrary(Array[@tutuca.Value])
+  /// One card, by path, has been asked for. Marks that row loaded.
+  /// 
+  /// Sent by the page's load funnel rather than by the row, because the two
+  /// bulk buttons reach the same cards without going near one.
+  MarkLoaded(String)
   SetStatus(String)
   Pumped
   ClearCanvas
@@ -904,6 +909,7 @@ pub fn ShellMsg::from_dispatch(d : @component.Dispatch) -> ShellMsg? {
             Unknown(name, args)
           }
         }
+      ("mark_loaded", [Str(a0)]) => MarkLoaded(a0)
       ("set_status", [Str(a0)]) => SetStatus(a0)
       ("pumped", []) => Pumped
       ("clear_canvas", []) => ClearCanvas
@@ -921,6 +927,7 @@ pub fn ShellMsg::from_dispatch(d : @component.Dispatch) -> ShellMsg? {
           "place_built" => @tutuca.bad_payload(name, "Any, Bool, Bool", args)
           "add_note" => @tutuca.bad_payload(name, "String, String", args)
           "set_library" => @tutuca.bad_payload(name, "Array[Any]", args)
+          "mark_loaded" => @tutuca.bad_payload(name, "String", args)
           "set_status" => @tutuca.bad_payload(name, "String", args)
           "pumped" => @tutuca.bad_payload(name, "", args)
           "clear_canvas" => @tutuca.bad_payload(name, "", args)
@@ -949,6 +956,7 @@ pub fn ShellMsg::to_dispatch(self : ShellMsg) -> (String, Array[@tutuca.Value]) 
     PlaceBuilt(a0, a1, a2) => ("place_built", [a0, Bool(a1), Bool(a2)])
     AddNote(a0, a1) => ("add_note", [Str(a0), Str(a1)])
     SetLibrary(a0) => ("set_library", [(List(a0.map(x => x)) : @tutuca.Value)])
+    MarkLoaded(a0) => ("mark_loaded", [Str(a0)])
     SetStatus(a0) => ("set_status", [Str(a0)])
     Pumped => ("pumped", [])
     ClearCanvas => ("clear_canvas", [])
@@ -991,7 +999,7 @@ pub let shell_global_style : String = ""
 impl @component.Fields for ShellState with fn schema() {
   @component.SchemaInfo::new(
     name="Shell",
-    fingerprint="4b226020ca88a647",
+    fingerprint="c128d62f1ae0ee63",
     fields=[
       @component.FieldInfo::new("canvas", TyComp(None)),
       @component.FieldInfo::new("picker", TyComp(Some("ComponentPicker"))),
@@ -1008,8 +1016,8 @@ impl @component.Fields for ShellState with fn schema() {
       "toggle_edit", "type_source",
     ],
     receives=[
-      "open_picker", "picker_hits", "place_built", "add_note", "set_library", "set_status",
-      "pumped",
+      "open_picker", "picker_hits", "place_built", "add_note", "set_library", "mark_loaded",
+      "set_status", "pumped",
     ],
     methods=["edit_label", "editing"],
     view_names=["main"],

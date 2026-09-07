@@ -33,7 +33,7 @@ let library : Ref[Array[(String, String)]] = Ref([])
 /// because a demo that loads eleven cards before it draws anything is a demo
 /// about waiting.
 extern "js" fn wants_load_all() -> Bool =
-  #|() => new URLSearchParams(location.search).has("load_all")
+  #|() => new URLSearchParams(location.search).has("loadAll")
 
 ///|
 /// The library index, handed over by the page at boot.
@@ -79,11 +79,22 @@ fn stem_of(path : String) -> String {
 }
 
 ///|
+/// Ask for one card, by the path the library gave.
+///
+/// The ONE funnel: the row's own `load`, `load all` and `load selected` all
+/// end here, so this is where a row is marked. Marked when it is ASKED for
+/// rather than when it arrives, which is the same optimism the row's own
+/// button already shows — a card is fetched, compiled and instantiated, and a
+/// row that says nothing for all of that reads as a button that did nothing.
 fn load_path(path : String) -> Unit {
   if path == "" {
     return
   }
   status("loading \{path}")
+  match live.val {
+    Some(app) => app.send_at_root("mark_loaded", args=[Str(path)]) |> ignore
+    None => ()
+  }
   fetch_text(path, path)
 }
 

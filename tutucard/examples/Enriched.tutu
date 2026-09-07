@@ -33,11 +33,11 @@ logic:
 
 view:
   Enriched:
-    ul():
+    ul(class: "flex flex-wrap items-center gap-1"):
       each(value, key in it.rows, ~when: matches, ~enrich_with: row):
-        li():
+        li(class: "badge badge-sm badge-neutral"):
           @(echo)
-    ul():
+    ul(class: "flex flex-wrap items-center gap-1 mt-1"):
       each(value, key in it.rows, ~when: second):
-        li():
+        li(class: "badge badge-sm badge-ghost"):
           @(value)

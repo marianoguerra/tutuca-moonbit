@@ -21,12 +21,14 @@ logic:
 
 view:
   Guarded:
-    div():
-      button(~on_click: bump):
-        "+"
-      " "
-      output():
-        @(it.n)
+    div(class: "card bg-base-200 max-w-sm"):
+      div(class: "card-body gap-3"):
+        div(class: "flex items-center gap-3"):
+          button(class: "btn btn-sm btn-circle btn-primary", ~on_click: bump):
+            "+"
+          " "
+          output(class: "text-xl font-semibold tabular-nums"):
+            @(it.n)
 
 fixtures:
   "nearly full":

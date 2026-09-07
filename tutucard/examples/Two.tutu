@@ -53,15 +53,16 @@ logic:
 
 view:
   Board:
-    section():
-      h1(class: "title"):
-        @(it.caption)
-      " "
-      button(class: "bump", ~on_click: bump):
-        "count"
+    section(class: "card bg-base-200 max-w-sm"):
+      div(class: "card-body gap-3"):
+        h1(class: "title card-title text-base"):
+          @(it.caption)
+        " "
+        button(class: "bump btn btn-sm btn-primary self-start", ~on_click: bump):
+          "count"
 
   Row:
-    li(class: "row", class: if it.done | "row done" | "row", ~on_click: toggle):
+    li(class: if it.done | "row done line-through opacity-60 cursor-pointer rounded px-2 py-1" | "row cursor-pointer rounded px-2 py-1 hover:bg-base-300", ~on_click: toggle):
       @(it.caption)
 
 tests:
@@ -80,7 +81,7 @@ tests:
     expect text("li.row") == "write it"
     click("li.row")
     expect text("li.row") == "done"
-    expect attr("li", "class") == "row done"
+    expect attr("li", "class") == "row done line-through opacity-60 cursor-pointer rounded px-2 py-1"
     expect state it.done == true
 
   "neither answers the other's message":
