@@ -208,3 +208,45 @@ test "the span is the one it was read with, not an offset into printed text" {
   let out = @sh.to_expr(ex, @sh.ExCtx::value(), @report.Span::of_range(12, 20))
   @debug.assert_eq(out.span(), { start: 12, end_: 20, })
 }
+
+///|
+/// A string template, and the one shape inside it that reads as something else.
+test "a template's holes and its text" {
+  agree("@str{plain}")
+  agree("@str{x @(it.name) y}")
+  agree("@str{a (b) c}")
+  // Parentheses AROUND a hole are text, because nothing precedes them.
+  agree("@str{(@(it.name))}")
+}
+
+///|
+/// A `(` immediately after a hole, which is the one place a template reads a
+/// call where the author meant text.
+///
+/// At-notation reads `@(x)(y)` as a command and its argument list, so the two
+/// arrive as ONE group holding two `Parens` — and a template has no call of
+/// that shape, since a hole is a value and a value is not called.
+///
+/// It used to fall through to the ordinary expression reader, which met the
+/// `Brackets` a template is made of and reported "a list or map literal has no
+/// place in an expression" — a message about a construct that was not in the
+/// file, with no span to contradict it. Reported from a downstream repo, where
+/// it cost real time: `@str{@(it.name)(@(it.params))}` is how a function
+/// signature is spelled, so writing the obvious thing reached it.
+test "a `(` right after a hole is refused by name" {
+  let parsed = @shrub.parse("@str{@(it.name)(x)}\n")
+  guard parsed.root().it is Multi(gs) && gs.length() == 1 else {
+    fail("not one group")
+  }
+  let msg = match
+    (Ok(@sh.read_group(gs[0])) catch {
+      @sh.ExError(message~, ..) => Err(message)
+    }) {
+    Ok(_) => "read"
+    Err(m) => m
+  }
+  inspect(
+    msg,
+    content="a `(` right after a hole is read as a call, not as text",
+  )
+}

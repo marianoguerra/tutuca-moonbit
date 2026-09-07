@@ -256,13 +256,34 @@ fn read_postfix(terms : ArrayView[@ast.Node]) -> Ex raise ExError {
 ///
 /// `@str{a @(b) c}` parses as a call whose one argument is a bracketed list of
 /// text literals and parenthesised holes; anything else is an ordinary call.
-fn template_parts(node : @ast.Node) -> Array[TPart]? {
+fn template_parts(node : @ast.Node) -> Array[TPart]? raise ExError {
   guard node.it is Parens(gs) && gs.length() == 1 else { return None }
   guard gs[0].it is Group(inner) && inner.length() == 1 else { return None }
   guard inner[0].it is Brackets(items) else { return None }
   let out = []
   for item in items {
-    guard item.it is Group(parts) && parts.length() == 1 else { return None }
+    guard item.it is Group(parts) && parts.length() >= 1 else { return None }
+    // A HOLE FOLLOWED BY A `(`. At-notation reads `@(x)(y)` as a command and
+    // its argument list, so the two arrive as one group holding two `Parens`
+    // rather than as a hole and the text after it -- and a template has no
+    // call of that shape, because a hole is a value and a value is not called.
+    //
+    // Diagnosed here rather than left to fall through. Falling through read it
+    // as an ordinary call, which met the `Brackets` and reported "a list or map
+    // literal has no place in an expression" — a message about a construct that
+    // was not in the file, pointing at whichever `[…]` the reader found next.
+    // `@str{@(it.name)(@(it.params))}` is how a function signature is spelled,
+    // so this is reachable by writing the obvious thing.
+    if parts.length() > 1 &&
+      parts[0].it is Parens(_) &&
+      parts[1].it is Parens(_) {
+      raise ExError(
+        message="a `(` right after a hole is read as a call, not as text",
+        help="write the parenthesis as its own hole: `@str{@(it.name)@(\"(\")@(it.params)@(\")\")}`",
+        span=span_of(parts[1]),
+      )
+    }
+    guard parts.length() == 1 else { return None }
     match parts[0].it {
       Lit(Str(t)) => out.push(TText(t))
       Parens(hole) => {
