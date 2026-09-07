@@ -80,15 +80,12 @@ fn build() -> @component.ModuleDef {
 
 view:
   Panel:
-    @style{font-family:system-ui}
-    @section{
-      @button(~on_click: it.open := !it.open){@(label())}
-      @show(it.open){
-        @p(~style: "padding:.5rem;border:1px solid #ccc;margin-top:.5rem"){
-          Now you see me. Toggle again to hide.
-        }
-      }
-    }
+    style(): @{font-family:system-ui}
+    section():
+      button(~on_click: it.open := !it.open): @(label())
+      show(it.open):
+        p(style: "padding:.5rem;border:1px solid #ccc;margin-top:.5rem"):
+          "Now you see me. Toggle again to hide."
 `,
     code: `// The button writes 'it.open' back inverted; label() is a compute. No
 // hand-written handlers, no update — the view drives it all.
@@ -120,10 +117,12 @@ fn build() -> @component.ModuleDef {
 
 view:
   Greeter:
-    @div(~style: "font-family:system-ui;display:flex;flex-direction:column;gap:.5rem"){
-      @input(~value: it.name, ~on_input: it.name := e.value, ~placeholder: "your name")
-      @p{Hello, @b{@(it.name)}!}
-    }
+    div(style: "font-family:system-ui;display:flex;flex-direction:column;gap:.5rem"):
+      input(value: it.name, ~on_input: it.name := e.value, placeholder: "your name")
+      p():
+        "Hello, "
+        b(): @(it.name)
+        "!"
 `,
     code: `// ~value reads the field and ~on_input writes it back, which is the whole
 // two-way bind. A hole mirrors it live. No handlers needed.
