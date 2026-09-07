@@ -38,7 +38,8 @@ logic:
 
 view:
   Counter:
-    style(): @{font-family: sans-serif}
+    style():
+      font_family: sans_serif
     div(class: "counter"):
       h1():
         @(it.label)

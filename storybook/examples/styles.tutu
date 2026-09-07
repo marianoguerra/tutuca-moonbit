@@ -5,12 +5,21 @@ spec:
     field value :: Instance.of(StylesExample)
 
 view:
-  style(): @{padding: 0.75rem; border: 1px solid currentColor; border-radius: 0.5rem; .common { color: yellow; }}
+  style():
+    padding: rem(0.75)
+    border: px(1) solid currentColor
+    border_radius: rem(0.5)
+    class(common):
+      color: yellow
 
-  style(~global): @{.styles-example-global-class { color: green; }}
+  style(~global):
+    class(styles_example_global_class):
+      color: green
 
   StylesExample:
-    style(): @{.mine { color: red; }}
+    style():
+      class(mine):
+        color: red
     section():
       p():
         "View: main"
@@ -39,7 +48,10 @@ view:
         "Global Style"
 
   StylesExample.two:
-    style(): @{.mine { color: orange; text-decoration: underline; }}
+    style():
+      class(mine):
+        color: orange
+        text_decoration: underline
     section():
       p():
         "View: two"

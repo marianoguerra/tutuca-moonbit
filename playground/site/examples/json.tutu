@@ -65,7 +65,10 @@ view:
         "{}"
 
   JsonArray:
-    style(): @{[data-draggingover="json-list-item"] { border-top: 4rem solid transparent; transition: 0.15s border-top ease; }}
+    style():
+      has_attr(data_draggingover = "json-list-item"):
+        border_top: rem(4) solid transparent
+        transition: s(0.15) border_top ease
     section(class: "join join-vertical gap-3 pl-3 border-l-1 border-l-neutral-500 json-array"):
       button(class: "btn btn-sm btn-soft btn-primary add", ~on_click: add_item):
         "+"
@@ -88,7 +91,10 @@ view:
       render(it.value)
 
   JsonObject:
-    style(): @{[data-draggingover="json-kv-item"] { border-top: 4rem solid transparent; transition: 0.15s border-top ease; }}
+    style():
+      has_attr(data_draggingover = "json-kv-item"):
+        border_top: rem(4) solid transparent
+        transition: s(0.15) border_top ease
     section(class: "join join-vertical gap-3 pl-3 border-l-1 border-l-neutral-500 json-object"):
       button(class: "btn btn-sm btn-soft font-mono btn-primary add", ~on_click: add_item):
         "+"

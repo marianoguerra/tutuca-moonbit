@@ -2,7 +2,8 @@
 // Every view body in the repo, concatenated into one view.
 view:
   GiantView:
-    style(): @{font-family: sans-serif}
+    style():
+      font_family: sans_serif
     div(class: "counter"):
       h1():
         @(it.label)
@@ -125,7 +126,19 @@ view:
         " "
         button(class: "btn btn-ghost clear", ~on_click: clear_status):
           "Clear status"
-    style(): @{user-select: none; .head { cursor: pointer; } .head:before { content: "⏺️"; margin-right: 0.25rem; } .head.type-file:before { content: "📄️"; } .head.open.type-dir:before { content: "📂️"; } .head.closed.type-dir:before { content: "📁️"; }}
+    style():
+      user_select: none
+      class(head):
+        cursor: pointer
+      class(head) element(before):
+        content: "⏺️"
+        margin_right: rem(0.25)
+      class(head) class(type_file) element(before):
+        content: "📄️"
+      class(head) class(open) class(type_dir) element(before):
+        content: "📂️"
+      class(head) class(closed) class(type_dir) element(before):
+        content: "📁️"
     section():
       p(class: "head", class: if it.is_open | @str{head open type-@(it.type)} | @str{head closed type-@(it.type)}, ~on_click: on_item_click):
         @(it.label)
@@ -270,7 +283,13 @@ view:
             "remove"
     span(class: "song"):
       @(it.title)
-    style(): @{[data-dragging="1"] { opacity: 0.5; } [data-draggingover="my-list-item"] { border-top: 2rem solid transparent; outline: 1px solid #77777777; transition: 0.15s border-top ease; }}
+    style():
+      has_attr(data_dragging = "1"):
+        opacity: 0.5
+      has_attr(data_draggingover = "my-list-item"):
+        border_top: rem(2) solid transparent
+        outline: px(1) solid hex("77777777")
+        transition: s(0.15) border_top ease
     section(class: "flex flex-col gap-3"):
       input(type: "search", class: "input", value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := default ~cancel, placeholder: "Filter entries")
       " "
@@ -589,7 +608,10 @@ view:
           "false"
     input(class: "input input-sm input-ghost text-green-500 font-mono json-string", value: it.value, ~on_input: it.value := e.value)
     input(type: "number", class: "input input-sm input-ghost text-primary font-mono json-number", title: it.value, value: it.str_value, ~on_input: set_raw_value(e.value))
-    style(): @{[data-draggingover="json-list-item"] { border-top: 4rem solid transparent; transition: 0.15s border-top ease; }}
+    style():
+      has_attr(data_draggingover = "json-list-item"):
+        border_top: rem(4) solid transparent
+        transition: s(0.15) border_top ease
     section(class: "join join-vertical gap-3 pl-3 border-l-1 border-l-neutral-500 json-array"):
       button(class: "btn btn-sm btn-soft btn-primary add", ~on_click: add_item):
         "+"
@@ -608,7 +630,10 @@ view:
         ":"
       " "
       render(it.value)
-    style(): @{[data-draggingover="json-kv-item"] { border-top: 4rem solid transparent; transition: 0.15s border-top ease; }}
+    style():
+      has_attr(data_draggingover = "json-kv-item"):
+        border_top: rem(4) solid transparent
+        transition: s(0.15) border_top ease
     section(class: "join join-vertical gap-3 pl-3 border-l-1 border-l-neutral-500 json-object"):
       button(class: "btn btn-sm btn-soft font-mono btn-primary add", ~on_click: add_item):
         "+"
@@ -930,7 +955,9 @@ view:
         "Count, only when open: "
         show(it.is_open):
           @(it.count)
-    style(): @{.mine { color: red; }}
+    style():
+      class(mine):
+        color: red
     section():
       p():
         "View: main"
@@ -955,7 +982,10 @@ view:
       "\n"
       p(class: "styles-example-global-class"):
         "Global Style"
-    style(): @{.mine { color: orange; text-decoration: underline; }}
+    style():
+      class(mine):
+        color: orange
+        text_decoration: underline
     section():
       p():
         "View: two"
@@ -1034,7 +1064,19 @@ view:
             " "
             button(class: "btn btn-soft btn-sm btn-error btn-circle font-mono rm", ~on_click: it.items.delete_at(key)):
               "x"
-    style(): @{user-select: none; .head { cursor: pointer; } .head:before { content: "⏺️"; margin-right: 0.25rem; } .head.type-file:before { content: "📄️"; } .head.open.type-dir:before { content: "📂️"; } .head.closed.type-dir:before { content: "📁️"; }}
+    style():
+      user_select: none
+      class(head):
+        cursor: pointer
+      class(head) element(before):
+        content: "⏺️"
+        margin_right: rem(0.25)
+      class(head) class(type_file) element(before):
+        content: "📄️"
+      class(head) class(open) class(type_dir) element(before):
+        content: "📂️"
+      class(head) class(closed) class(type_dir) element(before):
+        content: "📁️"
     section():
       p(class: "head", class: if it.is_open | @str{head open type-@(it.type)} | @str{head closed type-@(it.type)}, ~on_click: on_item_click):
         @(it.label)
@@ -1081,7 +1123,13 @@ view:
       " "
       button(~on_click: inc):
         "+"
-    style(): @{[data-dragging="1"] { opacity: 0.5; } [data-draggingover="my-list-item"] { border-top: 2rem solid transparent; outline: 1px solid #77777777; transition: 0.15s border-top ease; }}
+    style():
+      has_attr(data_dragging = "1"):
+        opacity: 0.5
+      has_attr(data_draggingover = "my-list-item"):
+        border_top: rem(2) solid transparent
+        outline: px(1) solid hex("77777777")
+        transition: s(0.15) border_top ease
     section(class: "flex flex-col gap-3"):
       input(type: "search", class: "input", value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := "" ~cancel, placeholder: "Filter entries")
       " "
@@ -1214,7 +1262,10 @@ view:
       " "
       button(class: "btn btn-sm btn-soft btn-info to-object", ~on_click: set_to_object):
         "{}"
-    style(): @{[data-draggingover="json-list-item"] { border-top: 4rem solid transparent; transition: 0.15s border-top ease; }}
+    style():
+      has_attr(data_draggingover = "json-list-item"):
+        border_top: rem(4) solid transparent
+        transition: s(0.15) border_top ease
     section(class: "join join-vertical gap-3 pl-3 border-l-1 border-l-neutral-500 json-array"):
       button(class: "btn btn-sm btn-soft btn-primary add", ~on_click: add_item):
         "+"
@@ -1233,7 +1284,10 @@ view:
         ":"
       " "
       render(it.value)
-    style(): @{[data-draggingover="json-kv-item"] { border-top: 4rem solid transparent; transition: 0.15s border-top ease; }}
+    style():
+      has_attr(data_draggingover = "json-kv-item"):
+        border_top: rem(4) solid transparent
+        transition: s(0.15) border_top ease
     section(class: "join join-vertical gap-3 pl-3 border-l-1 border-l-neutral-500 json-object"):
       button(class: "btn btn-sm btn-soft font-mono btn-primary add", ~on_click: add_item):
         "+"
@@ -1376,7 +1430,19 @@ view:
       show(it.open):
         p(style: "padding:.5rem;border:1px solid #ccc;margin-top:.5rem"):
           " Now you see me. Toggle again to hide. "
-    style(): @{user-select: none; .head { cursor: pointer; } .head:before { content: "⏺️"; margin-right: 0.25rem; } .head.type-file:before { content: "📄️"; } .head.open.type-dir:before { content: "📂️"; } .head.closed.type-dir:before { content: "📁️"; }}
+    style():
+      user_select: none
+      class(head):
+        cursor: pointer
+      class(head) element(before):
+        content: "⏺️"
+        margin_right: rem(0.25)
+      class(head) class(type_file) element(before):
+        content: "📄️"
+      class(head) class(open) class(type_dir) element(before):
+        content: "📂️"
+      class(head) class(closed) class(type_dir) element(before):
+        content: "📁️"
     section():
       p(class: "head", class: if it.is_open | @str{head open type-@(it.type)} | @str{head closed type-@(it.type)}, ~on_click: on_item_click):
         @(it.label)

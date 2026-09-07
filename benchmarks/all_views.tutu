@@ -829,7 +829,8 @@ logic:
 view:
   // demo/counterlib/counter.tutu
   DemoCounterCounter:
-    style(): @{font-family: sans-serif}
+    style():
+      font_family: sans_serif
     div(class: "counter"):
       h1():
         @(it.label)
@@ -974,7 +975,19 @@ view:
           "Clear status"
 
   SbCommunicationTreeItem:
-    style(): @{user-select: none; .head { cursor: pointer; } .head:before { content: "⏺️"; margin-right: 0.25rem; } .head.type-file:before { content: "📄️"; } .head.open.type-dir:before { content: "📂️"; } .head.closed.type-dir:before { content: "📁️"; }}
+    style():
+      user_select: none
+      class(head):
+        cursor: pointer
+      class(head) element(before):
+        content: "⏺️"
+        margin_right: rem(0.25)
+      class(head) class(type_file) element(before):
+        content: "📄️"
+      class(head) class(open) class(type_dir) element(before):
+        content: "📂️"
+      class(head) class(closed) class(type_dir) element(before):
+        content: "📁️"
     section():
       p(class: "head", class: if it.is_open | @str{head open type-@(it.type)} | @str{head closed type-@(it.type)}, ~on_click: on_item_click):
         @(it.label)
@@ -1137,7 +1150,13 @@ view:
       @(it.title)
   // storybook/examples/dnd.tutu
   SbDndDnDExample:
-    style(): @{[data-dragging="1"] { opacity: 0.5; } [data-draggingover="my-list-item"] { border-top: 2rem solid transparent; outline: 1px solid #77777777; transition: 0.15s border-top ease; }}
+    style():
+      has_attr(data_dragging = "1"):
+        opacity: 0.5
+      has_attr(data_draggingover = "my-list-item"):
+        border_top: rem(2) solid transparent
+        outline: px(1) solid hex("77777777")
+        transition: s(0.15) border_top ease
     section(class: "flex flex-col gap-3"):
       input(type: "search", class: "input", value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := default ~cancel, placeholder: "Filter entries")
       " "
@@ -1506,7 +1525,10 @@ view:
     input(type: "number", class: "input input-sm input-ghost text-primary font-mono json-number", title: it.value, value: it.str_value, ~on_input: set_raw_value(e.value))
 
   SbJsonJsonArray:
-    style(): @{[data-draggingover="json-list-item"] { border-top: 4rem solid transparent; transition: 0.15s border-top ease; }}
+    style():
+      has_attr(data_draggingover = "json-list-item"):
+        border_top: rem(4) solid transparent
+        transition: s(0.15) border_top ease
     section(class: "join join-vertical gap-3 pl-3 border-l-1 border-l-neutral-500 json-array"):
       button(class: "btn btn-sm btn-soft btn-primary add", ~on_click: add_item):
         "+"
@@ -1529,7 +1551,10 @@ view:
       render(it.value)
 
   SbJsonJsonObject:
-    style(): @{[data-draggingover="json-kv-item"] { border-top: 4rem solid transparent; transition: 0.15s border-top ease; }}
+    style():
+      has_attr(data_draggingover = "json-kv-item"):
+        border_top: rem(4) solid transparent
+        transition: s(0.15) border_top ease
     section(class: "join join-vertical gap-3 pl-3 border-l-1 border-l-neutral-500 json-object"):
       button(class: "btn btn-sm btn-soft font-mono btn-primary add", ~on_click: add_item):
         "+"
@@ -1898,12 +1923,21 @@ view:
         show(it.is_open):
           @(it.count)
   // storybook/examples/styles.tutu
-  style(): @{padding: 0.75rem; border: 1px solid currentColor; border-radius: 0.5rem; .common { color: yellow; }}
+  style():
+    padding: rem(0.75)
+    border: px(1) solid currentColor
+    border_radius: rem(0.5)
+    class(common):
+      color: yellow
 
-  style(~global): @{.styles-example-global-class { color: green; }}
+  style(~global):
+    class(styles_example_global_class):
+      color: green
 
   SbStylesStylesExample:
-    style(): @{.mine { color: red; }}
+    style():
+      class(mine):
+        color: red
     section():
       p():
         "View: main"
@@ -1932,7 +1966,10 @@ view:
         "Global Style"
 
   SbStylesStylesExample.two:
-    style(): @{.mine { color: orange; text-decoration: underline; }}
+    style():
+      class(mine):
+        color: orange
+        text_decoration: underline
     section():
       p():
         "View: two"
@@ -2027,7 +2064,19 @@ view:
               "x"
 
   SiteComposabilityTreeItem:
-    style(): @{user-select: none; .head { cursor: pointer; } .head:before { content: "⏺️"; margin-right: 0.25rem; } .head.type-file:before { content: "📄️"; } .head.open.type-dir:before { content: "📂️"; } .head.closed.type-dir:before { content: "📁️"; }}
+    style():
+      user_select: none
+      class(head):
+        cursor: pointer
+      class(head) element(before):
+        content: "⏺️"
+        margin_right: rem(0.25)
+      class(head) class(type_file) element(before):
+        content: "📄️"
+      class(head) class(open) class(type_dir) element(before):
+        content: "📂️"
+      class(head) class(closed) class(type_dir) element(before):
+        content: "📁️"
     section():
       p(class: "head", class: if it.is_open | @str{head open type-@(it.type)} | @str{head closed type-@(it.type)}, ~on_click: on_item_click):
         @(it.label)
@@ -2082,7 +2131,13 @@ view:
         "+"
   // playground/site/examples/dnd.tutu
   SiteDndDnDExample:
-    style(): @{[data-dragging="1"] { opacity: 0.5; } [data-draggingover="my-list-item"] { border-top: 2rem solid transparent; outline: 1px solid #77777777; transition: 0.15s border-top ease; }}
+    style():
+      has_attr(data_dragging = "1"):
+        opacity: 0.5
+      has_attr(data_draggingover = "my-list-item"):
+        border_top: rem(2) solid transparent
+        outline: px(1) solid hex("77777777")
+        transition: s(0.15) border_top ease
     section(class: "flex flex-col gap-3"):
       input(type: "search", class: "input", value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := "" ~cancel, placeholder: "Filter entries")
       " "
@@ -2237,7 +2292,10 @@ view:
         "{}"
 
   SiteJsonJsonArray:
-    style(): @{[data-draggingover="json-list-item"] { border-top: 4rem solid transparent; transition: 0.15s border-top ease; }}
+    style():
+      has_attr(data_draggingover = "json-list-item"):
+        border_top: rem(4) solid transparent
+        transition: s(0.15) border_top ease
     section(class: "join join-vertical gap-3 pl-3 border-l-1 border-l-neutral-500 json-array"):
       button(class: "btn btn-sm btn-soft btn-primary add", ~on_click: add_item):
         "+"
@@ -2260,7 +2318,10 @@ view:
       render(it.value)
 
   SiteJsonJsonObject:
-    style(): @{[data-draggingover="json-kv-item"] { border-top: 4rem solid transparent; transition: 0.15s border-top ease; }}
+    style():
+      has_attr(data_draggingover = "json-kv-item"):
+        border_top: rem(4) solid transparent
+        transition: s(0.15) border_top ease
     section(class: "join join-vertical gap-3 pl-3 border-l-1 border-l-neutral-500 json-object"):
       button(class: "btn btn-sm btn-soft font-mono btn-primary add", ~on_click: add_item):
         "+"
@@ -2419,7 +2480,19 @@ view:
           " Now you see me. Toggle again to hide. "
   // playground/site/examples/tree.tutu
   SiteTreeTreeItem:
-    style(): @{user-select: none; .head { cursor: pointer; } .head:before { content: "⏺️"; margin-right: 0.25rem; } .head.type-file:before { content: "📄️"; } .head.open.type-dir:before { content: "📂️"; } .head.closed.type-dir:before { content: "📁️"; }}
+    style():
+      user_select: none
+      class(head):
+        cursor: pointer
+      class(head) element(before):
+        content: "⏺️"
+        margin_right: rem(0.25)
+      class(head) class(type_file) element(before):
+        content: "📄️"
+      class(head) class(open) class(type_dir) element(before):
+        content: "📂️"
+      class(head) class(closed) class(type_dir) element(before):
+        content: "📁️"
     section():
       p(class: "head", class: if it.is_open | @str{head open type-@(it.type)} | @str{head closed type-@(it.type)}, ~on_click: on_item_click):
         @(it.label)

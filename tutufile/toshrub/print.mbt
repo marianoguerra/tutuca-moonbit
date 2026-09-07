@@ -58,10 +58,11 @@ pub fn print_view(
   decl : @tutufile.Decl,
   indent : String,
   macros? : Array[String] = [],
+  css? : Bool = false,
 ) -> String raise @sh.ExError {
   let out = StringBuilder()
   for g in @sh.body_groups(decl) {
-    print_group(g, indent, out, macros~)
+    print_group(g, indent, out, macros~, css~)
   }
   out.to_string()
 }
@@ -81,6 +82,7 @@ fn print_group(
   indent : String,
   out : StringBuilder,
   macros? : Array[String] = [],
+  css? : Bool = false,
 ) -> Unit raise @sh.ExError {
   guard g.it is Group(parts) && parts.length() > 0 else { return }
   // Consecutive text pieces are ONE string. A body holding an escape arrives as
@@ -125,7 +127,7 @@ fn print_group(
               parts[i + take].it is (Kw(_) | Block(_)) {
           take = take + 1
         }
-        print_element(word, parts[i:i + take].to_owned(), indent, out, macros~)
+        print_element(word, parts[i:i + take].to_owned(), indent, out, macros~, css~)
         i = i + take
       }
       _ =>

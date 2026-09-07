@@ -14,6 +14,7 @@
 /// style block has no name at all.
 pub fn print_section(
   block : @tutufile.SectionBlock,
+  css? : Bool = false,
 ) -> String raise @sh.ExError {
   // A macro CALL keeps its `~`, so the printer has to know which names are
   // macros before it prints any of them.
@@ -32,21 +33,21 @@ pub fn print_section(
     }
     first = false
     match d.kind {
-      Style => print_style(d, out)
+      Style => print_style(d, out, css~)
       // A macro's header carries its parameters and their defaults, and it is
       // copied from the source rather than reprinted: a default is any
       // expression, and reprinting one would be a second expression printer to
       // keep correct.
       Macro => {
         out.write_string("  " + macro_header(d) + ":\n")
-        out.write_string(print_view(d, "    ", macros~))
+        out.write_string(print_view(d, "    ", macros~, css~))
       }
       _ => {
         // A view with no body is written as a BARE NAME, with no `:` at all.
         // `MinimumViableComponent` is a real one -- a component that renders
         // nothing -- and giving it a colon writes a block with nothing under
         // it, which is a parse error two lines later.
-        let body = print_view(d, "    ", macros~)
+        let body = print_view(d, "    ", macros~, css~)
         if body == "" {
           out.write_string("  " + d.name + "\n")
         } else {
@@ -64,12 +65,29 @@ pub fn print_section(
 fn print_style(
   d : @tutufile.Decl,
   out : StringBuilder,
+  css? : Bool = false,
 ) -> Unit raise @sh.ExError {
   // `Decl::options` does NOT carry it: `~global` is written inside the style
   // block's parentheses, and `options_of` reads the options on a declaration's
   // HEADER. Asking the reader is what keeps the two answers the same one.
-  let opts = if @toanode.style_is_global(d) { "~global" } else { "" }
-  out.write_string("  style(" + opts + "): @{" + @toanode.style_of(d) + "}\n")
+  let global = @toanode.style_is_global(d)
+  let opts = if global { "~global" } else { "" }
+  let raw = @toanode.style_of(d)
+  // A block that will not convert, or converts to something that does not mean
+  // the same CSS, stays raw text. That spelling is kept on purpose, so nothing
+  // is lost by leaving one behind -- and a converter that guessed here would
+  // rewrite a stylesheet nobody checked.
+  if css && raw != "" {
+    match css_block(raw, "    ", global) {
+      Some(text) =>
+        if css_agrees(raw, text, global) {
+          out.write_string("  style(" + opts + "):\n" + text)
+          return
+        }
+      None => ()
+    }
+  }
+  out.write_string("  style(" + opts + "): @{" + raw + "}\n")
 }
 
 ///|
@@ -100,6 +118,7 @@ fn macro_header(d : @tutufile.Decl) -> String {
 pub fn print_file(
   src : String,
   file : @tutufile.TutuFile,
+  css? : Bool = false,
 ) -> String? raise @sh.ExError {
   guard file.section(View) is Some(block) else { return None }
   guard block.decls.length() > 0 else { return None }
@@ -124,7 +143,7 @@ pub fn print_file(
   }
   let before = src.clamped_view(start=0, end=start).to_owned()
   let after = src.clamped_view(start=stop, end=src.length()).to_owned()
-  let body = print_section(block).trim_end(chars="\n").to_owned()
+  let body = print_section(block, css~).trim_end(chars="\n").to_owned()
   let tail = if after == "" { "\n" } else { "\n\n" + after }
   Some(before + body + tail)
 }

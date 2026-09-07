@@ -5,7 +5,13 @@ spec:
 
 view:
   DnDExample:
-    style(): @{[data-dragging="1"] { opacity: 0.5; } [data-draggingover="my-list-item"] { border-top: 2rem solid transparent; outline: 1px solid #77777777; transition: 0.15s border-top ease; }}
+    style():
+      has_attr(data_dragging = "1"):
+        opacity: 0.5
+      has_attr(data_draggingover = "my-list-item"):
+        border_top: rem(2) solid transparent
+        outline: px(1) solid hex("77777777")
+        transition: s(0.15) border_top ease
     section(class: "flex flex-col gap-3"):
       input(type: "search", class: "input", value: it.query, ~on_input: it.query := e.value, ~on_keydown: it.query := "" ~cancel, placeholder: "Filter entries")
       " "

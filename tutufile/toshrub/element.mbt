@@ -22,6 +22,7 @@ fn print_element(
   indent : String,
   out : StringBuilder,
   macros? : Array[String] = [],
+  css? : Bool = false,
 ) -> Unit raise @sh.ExError {
   let (args, body) = @sh.split_call(parts)
   // A MACRO CALL's arguments keep their sigil. They are neither HTML
@@ -39,7 +40,20 @@ fn print_element(
   // the same elements -- and it is why the CSS in a `style` block needs no
   // escaping: at-notation ends its body at the MATCHING brace.
   if is_raw_text(word) {
-    out.write_string(head + ": @{" + raw_text(body) + "}\n")
+    let raw = raw_text(body)
+    // A style block INSIDE a view is always scoped -- a `~global` one is
+    // written at the top of `view:` and reaches the other printer.
+    if css && word == "style" && raw != "" {
+      match css_block(raw, indent + "  ", false) {
+        Some(text) =>
+          if css_agrees(raw, text, false) {
+            out.write_string(head + ":\n" + text)
+            return
+          }
+        None => ()
+      }
+    }
+    out.write_string(head + ": @{" + raw + "}\n")
     return
   }
   // A comment's body is text, and `comment(" x ")` is how Shrubbery HTML
@@ -51,7 +65,7 @@ fn print_element(
   }
   out.write_string(head + ":\n")
   for g in body {
-    print_group(g, indent + "  ", out, macros~)
+    print_group(g, indent + "  ", out, macros~, css~)
   }
 }
 

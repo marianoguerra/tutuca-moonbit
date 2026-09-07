@@ -18,6 +18,9 @@ import {
   "marianoguerra/tutuca/tutufile/toanode",
   "marianoguerra/shrubbery/ast",
   "marianoguerra/error-report",
+  "marianoguerra/shrubbery-css" @shrubcss,
+  "marianoguerra/css/parse" @cssparse,
+  "marianoguerra/css/write" @csswrite,
 }
 
 import {

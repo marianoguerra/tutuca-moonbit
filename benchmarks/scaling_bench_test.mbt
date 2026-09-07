@@ -21,21 +21,27 @@ test "scaling corpus shape" {
   inspect(
     giant_1x.length(),
     content=(
-      #|54242
+      #|55002
+
+
 
     ),
   )
   inspect(
     giant_2x.length(),
     content=(
-      #|108465
+      #|109985
+
+
 
     ),
   )
   inspect(
     giant_4x.length(),
     content=(
-      #|216911
+      #|219951
+
+
 
     ),
   )

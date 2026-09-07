@@ -84,7 +84,19 @@ view:
           "Clear status"
 
   TreeItem:
-    style(): @{user-select: none; .head { cursor: pointer; } .head:before { content: "⏺️"; margin-right: 0.25rem; } .head.type-file:before { content: "📄️"; } .head.open.type-dir:before { content: "📂️"; } .head.closed.type-dir:before { content: "📁️"; }}
+    style():
+      user_select: none
+      class(head):
+        cursor: pointer
+      class(head) element(before):
+        content: "⏺️"
+        margin_right: rem(0.25)
+      class(head) class(type_file) element(before):
+        content: "📄️"
+      class(head) class(open) class(type_dir) element(before):
+        content: "📂️"
+      class(head) class(closed) class(type_dir) element(before):
+        content: "📁️"
     section():
       p(class: "head", class: if it.is_open | @str{head open type-@(it.type)} | @str{head closed type-@(it.type)}, ~on_click: on_item_click):
         @(it.label)

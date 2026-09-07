@@ -136,7 +136,13 @@ for (const [path, prefix] of VIEWS) {
   // A view body is what sits UNDER a component's name in the view section: two
   // levels of indent, re-indented to sit under one component of its own.
   for (let i = 0; i < view.length; i = i + 1) {
+    // A component's name, and not a `style()` block at the top of `view:`.
+    // Both sit at two spaces and both start with a letter -- the old notation
+    // wrote `@style{...}`, whose `@` kept it out of this test by accident. A
+    // style block's body is CSS, so harvesting it as a view body writes
+    // declarations where markup belongs and the corpus stops parsing.
     if (!/^  [A-Za-z]/.test(view[i])) continue;
+    if (/^  style\s*\(/.test(view[i])) continue;
     const body = [];
     for (let j = i + 1; j < view.length && (view[j] === "" || view[j].startsWith("    ")); j = j + 1) {
       body.push(view[j]);

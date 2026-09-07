@@ -25,13 +25,13 @@ fn section_facts(src : String) -> Array[String] raise {
           "style global=" +
           @toanode.style_is_global(d).to_string() +
           " => " +
-          @toanode.style_of(d),
+          @toshrub.css_key(@toanode.style_of(d)),
         )
       View => {
         let b = @toanode.ViewBuilder::new(macros~)
         let v = b.view(d)
         out.push(d.name + " => " + @debug.to_string(v.anode))
-        out.push(d.name + " style => " + v.style)
+        out.push(d.name + " style => " + @toshrub.css_key(v.style))
       }
       // A macro is compared through the views that CALL it: its body is
       // expanded into them, so a macro that converted wrongly changes a tree.
@@ -43,7 +43,7 @@ fn section_facts(src : String) -> Array[String] raise {
 
 ///|
 /// Convert one file, or say why it was left alone.
-fn convert(path : String) -> String raise {
+fn convert(path : String, css : Bool) -> String raise {
   let src = @fs.read_file_to_string(path)
   let sources = @report.Sources::new()
   let id = sources.add(path, src)
@@ -56,7 +56,7 @@ fn convert(path : String) -> String raise {
     }
     return "SKIP (does not read" + why + ") " + path
   }
-  let out = match (Ok(@toshrub.print_file(src, file)) catch { e => Err(e) }) {
+  let out = match (Ok(@toshrub.print_file(src, file, css~)) catch { e => Err(e) }) {
     Ok(Some(text)) => text
     Ok(None) => return "SKIP (no view section) " + path
     Err(_) => return "REFUSED (cannot print) " + path
@@ -110,13 +110,14 @@ fn convert(path : String) -> String raise {
 ///|
 fn main {
   let args = @env.args()
+  let css = args.contains("--css")
   let mut ok = 0
   let mut left = 0
   for i, path in args {
-    if i == 0 {
+    if i == 0 || path.has_prefix("--") {
       continue
     }
-    let line = convert(path) catch { _ => "REFUSED (raised) " + path }
+    let line = convert(path, css) catch { _ => "REFUSED (raised) " + path }
     if line.has_prefix("ok ") {
       ok = ok + 1
     } else {
