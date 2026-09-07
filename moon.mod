@@ -41,6 +41,17 @@ import {
   // keyword options) plus the diagnostic reports its errors are carried in.
   "marianoguerra/shrubbery@0.1.1",
   "marianoguerra/error-report@0.1.0",
+  // The markup and CSS halves of the notation, and the two bridges to them.
+  // A view IS Shrubbery HTML plus tutuca's extensions, so the name tables --
+  // void elements, raw text, the integration points, SVG's casing, `_` to `-`
+  // -- come from upstream rather than from a second copy here. `shrubbery-css`
+  // is what a `style()` body written as notation rather than as raw text is
+  // lowered by; it reaches the reader through `shrubbery-html`'s raw-text hook,
+  // which exists for exactly this composition.
+  "marianoguerra/html@0.1.0",
+  "marianoguerra/shrubbery-html@0.1.0",
+  "marianoguerra/css@0.1.0",
+  "marianoguerra/shrubbery-css@0.1.0",
   "marianoguerra/tailwindcss@0.4.0",
   "moonbitlang/x@0.5.1",
   "marianoguerra/wap@0.2.1",

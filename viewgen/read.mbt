@@ -99,10 +99,13 @@ fn read_into(
   let global_style = StringBuilder()
   for d in view_decls {
     if d.kind is Style {
+      let css = @toanode.style_of(d) catch {
+        e => raise ReadIssue(ex_message(e))
+      }
       if @toanode.style_is_global(d) {
-        global_style.write_string(@toanode.style_of(d))
+        global_style.write_string(css)
       } else {
-        file_style.write_string(@toanode.style_of(d))
+        file_style.write_string(css)
       }
     }
   }

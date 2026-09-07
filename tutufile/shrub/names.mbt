@@ -203,12 +203,18 @@ pub fn split_call(
           help="an attribute goes in the parentheses: `@tag(~\{name}: <value>){ … }`",
           span=span_of(parts[i]),
         )
-      Block(_) =>
-        raise ExError(
-          message="a block cannot follow an element",
-          help="an element's content goes in braces: `@tag{ … }`",
-          span=span_of(parts[i]),
-        )
+      // The element's CHILDREN. Law 1: an element is a call and its children
+      // are its block, so a `Block` here is the body rather than a mistake.
+      //
+      // The two notations are told apart structurally, with no flag: the old
+      // at-notation body arrives as a `Brackets` INSIDE the parentheses (what
+      // `body_of` answers above), and the new one as a `Block` AFTER them.
+      // Neither shape can be read as the other, so both are accepted while the
+      // corpus is converted and the `Brackets` leg is deleted after.
+      Block(gs) =>
+        for g in gs {
+          body.push(g)
+        }
       _ => ()
     }
     i = i + 1

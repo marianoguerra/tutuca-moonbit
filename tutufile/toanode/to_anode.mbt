@@ -235,7 +235,7 @@ pub fn ViewBuilder::view(
 /// written: at-notation owns `@`, `{` and `}`, and CSS uses all three. Public
 /// because the section-level reader has the same question about a style block
 /// at the top of `view:` that this package has about one inside a view.
-pub fn style_of(decl : @tutufile.Decl) -> String {
+pub fn style_of(decl : @tutufile.Decl) -> String raise ExError {
   style_body(decl.node).unwrap_or("")
 }
 
@@ -263,29 +263,84 @@ pub fn style_is_global(decl : @tutufile.Decl) -> Bool {
 
 ///|
 /// The CSS a `@style{…}` group holds, or `None` when the group is not one.
-fn style_body(group : @ast.Node) -> String? {
+fn style_body(group : @ast.Node) -> String? raise ExError {
   guard group.it is Group(parts) && parts.length() >= 1 else { return None }
   guard parts[0].it is Id("style") else { return None }
   let out = StringBuilder()
   for p in parts[1:] {
-    guard p.it is Parens(gs) else { continue }
-    for g in gs {
-      guard g.it is Group(inner) && inner.length() == 1 else { continue }
-      match inner[0].it {
-        Lit(Str(t)) => out.write_string(t)
-        Brackets(items) =>
-          for item in items {
-            if item.it is Group(one) &&
-              one.length() == 1 &&
-              one[0].it is Lit(Str(t)) {
-              out.write_string(t)
-            }
+    match p.it {
+      Parens(gs) =>
+        for g in gs {
+          guard g.it is Group(inner) && inner.length() == 1 else { continue }
+          match inner[0].it {
+            Lit(Str(t)) => out.write_string(t)
+            Brackets(items) => out.write_string(pieces(items, @sh.span_of(group)))
+            _ => ()
           }
-        _ => ()
-      }
+        }
+      // `style(): @{ … }` — the aligned spelling. The body is a BLOCK, and
+      // what is in it is at-notation: shrubbery's own indentation-stripping
+      // literal text, which is what `script`, `style`, `pre` and `textarea`
+      // need and what `marianoguerra/shrubbery-html` uses for exactly this.
+      //
+      // It is strictly better than counting braces. At-notation ends its body
+      // at the MATCHING brace, so a stylesheet whose braces balance — which is
+      // every stylesheet — passes through untouched, and the `@` in `@media`
+      // needs no escape.
+      Block(gs) =>
+        for g in gs {
+          match at_text_of(g) {
+            Some(t) => out.write_string(t)
+            None => ()
+          }
+        }
+      _ => ()
     }
   }
   Some(out.to_string())
+}
+
+///|
+/// The string pieces of an at-notation body, joined.
+///
+/// A body is broken at newlines and at every escape, so it arrives as several
+/// pieces with an explicit `"\n"` between lines. Concatenating them rebuilds
+/// the text with its shared indentation already removed.
+fn pieces(items : Array[@ast.Node], span : @report.Span) -> String raise ExError {
+  let out = StringBuilder()
+  for item in items {
+    guard item.it is Group(one) && one.length() == 1 && one[0].it is Lit(Str(t)) else {
+      // An `@` inside a raw-text body is still at-notation: `@media` is a FORM
+      // whose command is `media`, not four characters of text. Dropping it is
+      // what this did, and ` (min-width: 40em) { … }` is CSS a browser accepts
+      // and ignores — a stylesheet silently missing its at-rule.
+      //
+      // `styles.md` says a conditional group rule belongs in a scoped style, so
+      // this is reachable by following the documentation. Refuse it and name
+      // both repairs.
+      raise ExError(
+        message="`@` inside a raw-text block starts at-notation, and is not text",
+        help="escape it as `@\"@\"media`, or write the block as notation: `media(…): …` needs no `@` at all",
+        span~,
+      )
+    }
+    out.write_string(t)
+  }
+  out.to_string()
+}
+
+///|
+/// A group that is nothing but an `@{...}` body, as one string.
+///
+/// The shape is `Parens` holding one `Group` holding one `Brackets` of string
+/// pieces — the same one `marianoguerra/shrubbery-html` matches, checked
+/// against the parser rather than assumed.
+fn at_text_of(group : @ast.Node) -> String? raise ExError {
+  guard group.it is Group(parts) && parts.length() == 1 else { return None }
+  guard parts[0].it is Parens(gs) && gs.length() == 1 else { return None }
+  guard gs[0].it is Group(inner) && inner.length() == 1 else { return None }
+  guard inner[0].it is Brackets(items) else { return None }
+  Some(pieces(items, @sh.span_of(group)))
 }
 
 ///|
@@ -506,16 +561,25 @@ fn ViewBuilder::tag(
       // it is: `~disabled` and `disabled` are `LBool(true)`, not the empty
       // string an `=""` spelling would give.
       AFlag(name) => attrs.push(@anode.attr_bool(@sh.attr_name(name), true))
-      AField(name, _) =>
-        raise ExError(
-          message="`\{name}:` is not an attribute",
-          help="write `~\{name}: <value>` — an attribute is an option of the element",
-          span~,
+      // Law 2: an attribute is a declaration. `class: "card"` is byte-identical
+      // to what Shrubbery HTML writes, and law 4 is what keeps it apart from a
+      // directive — a plain declaration is HTML, a `~keyword` is tutuca.
+      //
+      // Law 5 widens it: the value is an EXPRESSION, and a literal is the
+      // constant case. Shrubbery HTML admits a literal or a bare name, so every
+      // attribute it can write still means here what it means there.
+      AField(name, value) =>
+        self.attribute(
+          name, value, [], ctx, span, attrs, events, wrappers, binds,
         )
+      // A bare name is a valueless attribute, exactly as HTML writes it and as
+      // Shrubbery HTML reads it: `input(disabled)`.
+      APos(EName(name)) =>
+        attrs.push(@anode.attr_bool(@sh.attr_name(name), true))
       APos(_) =>
         raise ExError(
           message="an element takes named attributes only",
-          help="write `~class: \"x\"` rather than a bare value",
+          help="write `class: \"x\"` — an attribute is a declaration, and a bare name is a valueless one",
           span~,
         )
     }
