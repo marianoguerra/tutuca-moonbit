@@ -49,7 +49,12 @@ fn convert(path : String) -> String raise {
   let id = sources.add(path, src)
   let file = @tutufile.read(src, id)
   if !file.ok() {
-    return "SKIP (does not read) " + path
+    let why = if file.reports.length() > 0 {
+      ": " + file.reports[0].message
+    } else {
+      ""
+    }
+    return "SKIP (does not read" + why + ") " + path
   }
   let out = match (Ok(@toshrub.print_file(src, file)) catch { e => Err(e) }) {
     Ok(Some(text)) => text
@@ -64,10 +69,26 @@ fn convert(path : String) -> String raise {
   // A refusal leaves the conversion beside the file it could not replace, so
   // the reason can be read rather than guessed at.
   fn refuse(why : String) -> String {
-    @fs.write_string_to_file(path + ".converted", out) catch { _ => () }
+    @fs.write_string_to_file(path + ".converted", out) catch {
+      _ => ()
+    }
     "REFUSED (" + why + ") " + path
   }
 
+  // THE OUTPUT MUST PARSE, and checking only that the trees match does not say
+  // so. A view with no body converted to one with a dangling `:` compared equal
+  // -- both sides read the same empty view -- and left a file the reader
+  // rejects. Tree equality is about what the file MEANS; this is about whether
+  // it is a file at all, and both have to be asked.
+  let reread = @tutufile.read(out, id)
+  if !reread.ok() {
+    let why = if reread.reports.length() > 0 {
+      ": " + reread.reports[0].message
+    } else {
+      ""
+    }
+    return refuse("converted file does not parse" + why)
+  }
   let after = match (Ok(section_facts(out)) catch { e => Err(e) }) {
     Ok(t) => t
     Err(@sh.ExError(message~, ..)) =>

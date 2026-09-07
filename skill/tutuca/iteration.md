@@ -44,7 +44,7 @@ nothing is left to read the `@X` binds an enricher would set. Reach for a
 host-element `each` loop when you need enrichment.
 
 **A loop's options belong to the loop.** `~when`, `~enrich_with` and
-`~loop_with` are options of `each`, and a `@render` is one render site with
+`~loop_with` are options of `each`, and a `render` is one render site with
 no body to iterate — so there is nowhere else to put them and no way to write
 the shape this rule used to exist for. A render inside a loop renders that
 step's value; a render outside one renders the value already rendering.

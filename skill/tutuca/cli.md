@@ -24,7 +24,7 @@ questions a run-time CLI would answer are answered earlier, and more strictly:
 | ---------------- | -------------------- |
 | does this view reference a field that exists? | `gen` — the `spec:` schema declares the fields, and an unknown `it.field` fails generation, inside a loop as well as at the root — including a loop over CHILD components, whose fields are checked against that child's schema |
 | does the component this view renders have the view `~as:` names? | `gen` over the whole project (`tutuca gen src/`) — a miss silently falls back to that component's `main` view at run time, and only a run that can see both components can say so. Reported as a hint, because a slot declared as the bare `component` marker takes its component from `component()`'s `slots~` — MoonBit the generator cannot see |
-| does this `@show` decide anything? | `gen` — a list or a record is always truthy, so `show(it.items)` never hides; it fails generation and names `empty? .items` as the fix |
+| does this `show` decide anything? | `gen` — a list or a record is always truthy, so `show(it.items)` never hides; it fails generation and names `empty? .items` as the fix |
 | is this `id=` unique? | `gen` — an `id` inside an `each` is stamped on every item, which only the compiled tree can see |
 | is every `@on` handler handled? | `gen` + `moon check` — `update` matches a generated `CounterMsg`, so an unhandled handler is a **build error** |
 | does the handler compile against the state? | `moon check` — state is a plain struct; `s.cuont` does not compile |
@@ -191,7 +191,7 @@ unknown-handler errors above:
 | Error | Means |
 | ----- | ----- |
 | `NotIterable` | `each` needs a collection, but the expression is a scalar |
-| `NotRenderable` | `@render` needs a component, but the field is not a slot |
+| `NotRenderable` | `render` needs a component, but the field is not a slot |
 | `MethodInEventPosition` | a `name(…)` in an `@on` position; write it bare |
 
 **Lint findings** are printed one per line, as

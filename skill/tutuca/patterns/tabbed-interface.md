@@ -48,7 +48,7 @@ fn tabs_comp() -> @component.Component {
 ```
 
 One string field is the whole state machine. `it.current_view == "overview"`
-drives both the panel's `@show` and the active-tab class through a conditional
+drives both the panel's `show` and the active-tab class through a conditional
 `~class`. A tab click writes the field with a string literal
 (`~on_click: it.current_view := "pricing"`).
 

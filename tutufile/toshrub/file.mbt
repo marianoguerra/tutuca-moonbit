@@ -42,8 +42,17 @@ pub fn print_section(
         out.write_string(print_view(d, "    ", macros~))
       }
       _ => {
-        out.write_string("  " + d.name + ":\n")
-        out.write_string(print_view(d, "    ", macros~))
+        // A view with no body is written as a BARE NAME, with no `:` at all.
+        // `MinimumViableComponent` is a real one -- a component that renders
+        // nothing -- and giving it a colon writes a block with nothing under
+        // it, which is a parse error two lines later.
+        let body = print_view(d, "    ", macros~)
+        if body == "" {
+          out.write_string("  " + d.name + "\n")
+        } else {
+          out.write_string("  " + d.name + ":\n")
+          out.write_string(body)
+        }
       }
     }
   }
@@ -52,7 +61,10 @@ pub fn print_section(
 
 ///|
 /// A style declaration, which is raw text and keeps its scope option.
-fn print_style(d : @tutufile.Decl, out : StringBuilder) -> Unit raise @sh.ExError {
+fn print_style(
+  d : @tutufile.Decl,
+  out : StringBuilder,
+) -> Unit raise @sh.ExError {
   // `Decl::options` does NOT carry it: `~global` is written inside the style
   // block's parentheses, and `options_of` reads the options on a declaration's
   // HEADER. Asking the reader is what keeps the two answers the same one.

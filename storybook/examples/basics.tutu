@@ -16,7 +16,7 @@ spec:
     field source :: String
 
 view:
-  MinimumViableComponent:
+  MinimumViableComponent
 
   StaticViewComponent:
     p():

@@ -61,12 +61,12 @@ the shape predicates `empty?`, `truthy?`, `null?`, the operators `not`, `and`,
 builtins — semantics in [core.md](../core.md) *Conditional
 Display*. Anything else is a `pred` in `spec:`, read as `name(…)`; the
 `$` sigil is what a value slot spells a callable with, and a bare `canSubmit`
-in a `@show` is a generation error. (Inside a body the same rule inverts: a
+in a `show` is a generation error. (Inside a body the same rule inverts: a
 `pred` is called BARE there, since nothing answers `$` once the render stack is
 gone.)
 
 A hidden element is **omitted from the output** entirely (not just visually
-hidden); the wrapper form (`@show` / `@hide` around a hole or a render) conditionally emits the
+hidden); the wrapper form (`show` / `hide` around a hole or a render) conditionally emits the
 node with no surrounding element.
 
 The same `pred` is also what a contract attaches to — `receive publish requires

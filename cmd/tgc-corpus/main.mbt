@@ -199,9 +199,11 @@ fn card_of(
   // which of its two shapes it has — a slot calls one and a render-time option
   // hands the other its row.
   let view = if row == "" {
-    "    @b{}\n"
+    "    b()\n"
   } else {
-    "    @ul{@each(value, key in it.items, ~when: \{@names.snake_of(row)}){@li{}}}\n"
+    "    ul():\n" +
+    "      each(value, key in it.items, ~when: \{@names.snake_of(row)}):\n" +
+    "        li()\n"
   }
   "spec:\n" +
   spec.to_string() +

@@ -77,7 +77,7 @@ answers the text through a continuation; see
 `ask(~route: lex)` or `app.send_at_root`. Flatten
 what you need into fields so the view can bind each piece (`type` is a
 MoonBit keyword, so the struct field is `type_` with a `rename` in the
-derive); gate the summary on a `has_file` flag with `@show`/`@hide`.
+derive); gate the summary on a `has_file` flag with `show`/`hide`.
 Harness tests fire the pick with
 `h.fire("input", @render.DomEvent::new(name="change", value=Map({...})))`
 — see [testing.md](../testing.md) *Custom events and file inputs*.

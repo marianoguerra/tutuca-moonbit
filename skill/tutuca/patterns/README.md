@@ -48,7 +48,7 @@ task.
 
 ## Conditional content & attributes
 
-- [Show or hide content](show-or-hide-content.md) — `@show` / `@hide`, the built-in predicates, and a `pred` of your own.
+- [Show or hide content](show-or-hide-content.md) — `show` / `hide`, the built-in predicates, and a `pred` of your own.
 - [Switch between views](switch-between-views.md) — pick a component's own view with `~as:` or `~push_view`.
 - [Conditional attribute value](conditional-attribute-value.md) — set a class/title by condition with an `if` in the attribute.
 - [Tabbed interface](tabbed-interface.md) — a `current_view` field + predicates to show the panel and highlight the active tab.

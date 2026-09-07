@@ -324,7 +324,7 @@ keep them separate.
 
 Views are name-based: there is no arithmetic expression syntax in
 values, and no Vue- or Mustache-style `{{ … }}` placeholders. Every
-value slot — conditions (`@show`, a conditional attribute), iteration (`each`,
+value slot — conditions (`show`, a conditional attribute), iteration (`each`,
 `each(…){render(value)}`, `~when`), enrichment (`~enrich_with`, `~loop_with`), template
 expansion (`{…}`, `:attr`, `@text`) — names a field, handler, or macro
 defined on the component (or registered with the scope). Logic lives in
@@ -332,7 +332,7 @@ defined on the component (or registered with the scope). Logic lives in
 `enrich` / `bind_with` / `loop_with`) and is referenced by name; the
 template itself only routes data and events.
 
-The one exception is **conditional slots** (`@show`, `@hide`,
+The one exception is **conditional slots** (`show`, `hide`,
 a conditional attribute), which take a whole **expression** — and it is the *same*
 expression language a `pred` or a `compute` body is written in, with the
 same vocabulary and the same grammar. There is one language, not two that
@@ -553,7 +553,7 @@ the value lives behind a field, your options are:
 
 Exceptions: `each` / `each(…){render(value)}` accept `it.field` or `dyn.<name>` only
 (not a `handler()` — a computed result has no addressable path for event
-dispatch, so `m(…)` is rejected there at parse time), and `@render`
+dispatch, so `m(…)` is rejected there at parse time), and `render`
 expects a component instance — for a derived list, store it in a field
 or use `~when` with a `when` entry.
 
@@ -737,7 +737,7 @@ A branch is an **expression**, so a literal class list needs its quotes:
 `"btn btn-primary"`, never a bare `btn btn-primary` — which is two names, and
 names answer nothing here.
 
-Note: `@show` / `@hide` **omit the node from the output** when the
+Note: `show` / `hide` **omit the node from the output** when the
 condition says hide — they do not merely toggle CSS visibility.
 
 ## List Iteration & Scope Enrichment
@@ -838,7 +838,7 @@ view:
 
 | Directive          | Scope                                                                    |
 |--------------------|--------------------------------------------------------------------------|
-| `~as: "edit"` / `~as: it.mode` | One `@render` element only. Literal or dynamic (like `~push_view`), evaluated against the host. |
+| `~as: "edit"` / `~as: it.mode` | One `render` element only. Literal or dynamic (like `~push_view`), evaluated against the host. |
 | `~push_view=".v"`  | Every component rendered recursively under the host (children + descendants). Each picks the first stack entry it has a matching view for; falls back to `"main"`. Inner `~push_view`s nest, extending the outer ones. |
 
 ## Styles
@@ -888,7 +888,7 @@ The four render-time buckets — `compute`, `when`, `enrich`, `bind_with` —
 take a trailing `&@tutuca.Stack`: the render position the body is being asked
 from. `stack.lookup_dynamic(name)` is what answers a `dyn.<name>` inside one, and it
 is the same lookup the card runtime performs for a `dyn.<name>` in a slot beside it, so a
-`pred` and the `@show` that reads it agree. A body that asks nothing of it
+`pred` and the `show` that reads it agree. A body that asks nothing of it
 names the parameter `_stack`; `gen` writes that for you. `loop_with`
 takes neither.
 

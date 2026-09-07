@@ -100,7 +100,9 @@ test "the forms: show, hide, each, render" {
   survives("  Card:\n    @show(it.n){@p{y}}")
   survives("  Card:\n    @hide(it.n){@p{n}}")
   survives("  Card:\n    @ul{@each(value, key in it.xs){@li{@(value)}}}")
-  survives("  Card:\n    @each(value, key in it.xs, ~when: keep){@li{@(value)}}")
+  survives(
+    "  Card:\n    @each(value, key in it.xs, ~when: keep){@li{@(value)}}",
+  )
   survives("  Card:\n    @render(it.kid, ~as: \"edit\")")
   survives("  Card:\n    @each(v, k in it.xs){@render(v)}")
 }
@@ -192,4 +194,67 @@ test "a file with a macro, a style, and two views" {
       #|
     ),
   )
+}
+
+///|
+test "a view with no body keeps its bare name" {
+  // A REGRESSION. `MinimumViableComponent` is a real view in the corpus -- a
+  // component that renders nothing -- written as a bare name with no `:` at
+  // all. Giving it a colon writes a block with nothing under it, which the
+  // reader rejects two lines later with "nothing follows this `:`".
+  //
+  // The tree check did not catch it: both spellings read to the same empty
+  // view, so they compared equal, and the FILE was what stopped parsing. That
+  // is why `cmd/to-shrub` now re-reads its own output and asks whether it is a
+  // file at all, separately from asking what it means.
+  let src =
+    #|spec:
+    #|  Card:
+    #|    field n :: Int
+    #|
+    #|view:
+    #|  Empty
+    #|
+    #|  Card:
+    #|    p(): "x"
+    #|
+  let out = file_survives(src)
+  inspect(
+    out,
+    content=(
+      #|spec:
+      #|  Card:
+      #|    field n :: Int
+      #|
+      #|view:
+      #|  Empty
+      #|
+      #|  Card:
+      #|    p():
+      #|      "x"
+      #|
+    ),
+  )
+}
+
+///|
+test "converting an already-converted file changes nothing" {
+  // Idempotency, which is not required of a throwaway but is what caught the
+  // printer reading only the OLD spelling of a raw-text body: run twice and
+  // every `style()` came back empty. The round-trip check refused on it, so
+  // nothing was written -- but failing safe is not the same as being right.
+  let src =
+    #|spec:
+    #|  Card:
+    #|    field n :: Int
+    #|
+    #|view:
+    #|  Card:
+    #|    style(): @{.mine { color: red; }}
+    #|    p(): "x"
+    #|
+  let once = file_survives(src)
+  let twice = file_survives(once)
+  assert_eq(twice, once)
+  assert_true(once.contains(".mine { color: red; }"), msg=once)
 }

@@ -164,7 +164,7 @@ pub fn split_binder(
   }
   raise ExError(
     message="`@each` needs `<name> in <sequence>`",
-    help="write `@each(item in it.items){ … }`, or `@each(item, i in it.items)`",
+    help="write `each(item in it.items): …`, or `each(item, i in it.items)`",
     span=if raw.length() > 0 { span_of(raw[0]) } else { @report.Span::at(0) },
   )
 }
@@ -200,7 +200,7 @@ pub fn split_call(
       Kw(name) =>
         raise ExError(
           message="`~\{name}` is outside the element it belongs to",
-          help="an attribute goes in the parentheses: `@tag(~\{name}: <value>){ … }`",
+          help="an attribute goes in the parentheses: `tag(\{name}: <value>): …`",
           span=span_of(parts[i]),
         )
       // The element's CHILDREN. Law 1: an element is a call and its children

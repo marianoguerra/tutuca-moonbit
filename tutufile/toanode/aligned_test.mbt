@@ -46,12 +46,16 @@ test "an element with no children, and a void one" {
 
 ///|
 test "a flag is a valueless attribute" {
-  same("@input(~type: \"checkbox\", ~disabled)", "input(type: \"checkbox\", disabled)")
+  same(
+    "@input(~type: \"checkbox\", ~disabled)", "input(type: \"checkbox\", disabled)",
+  )
 }
 
 ///|
 test "an underscore is a hyphen, in both spellings" {
-  same("@div(~data_id: \"3\", ~aria_label: \"Close\")", "div(data_id: \"3\", aria_label: \"Close\")")
+  same(
+    "@div(~data_id: \"3\", ~aria_label: \"Close\")", "div(data_id: \"3\", aria_label: \"Close\")",
+  )
 }
 
 ///|
@@ -68,16 +72,14 @@ test "a hole keeps its spelling" {
 ///|
 test "nesting, and a text run that carries its own space" {
   same(
-    "@p{@\"Hello, \"@strong{@(it.n)}!}",
-    "p():\n      \"Hello, \"\n      strong(): @(it.n)\n      \"!\"",
+    "@p{@\"Hello, \"@strong{@(it.n)}!}", "p():\n      \"Hello, \"\n      strong(): @(it.n)\n      \"!\"",
   )
 }
 
 ///|
 test "whitespace between two inline elements is a string, not a layout" {
   same(
-    "@div{@span{a} @span{b}}",
-    "div():\n      span(): \"a\"\n      \" \"\n      span(): \"b\"",
+    "@div{@span{a} @span{b}}", "div():\n      span(): \"a\"\n      \" \"\n      span(): \"b\"",
   )
 }
 
@@ -85,16 +87,14 @@ test "whitespace between two inline elements is a string, not a layout" {
 test "an event handler, and its modifiers" {
   same("@button(~on_click: inc){+}", "button(~on_click: inc): \"+\"")
   same(
-    "@input(~on_keydown: it.n := default ~cancel)",
-    "input(~on_keydown: it.n := default ~cancel)",
+    "@input(~on_keydown: it.n := default ~cancel)", "input(~on_keydown: it.n := default ~cancel)",
   )
 }
 
 ///|
 test "an attribute and a directive on one element" {
   same(
-    "@button(~class: \"btn\", ~on_click: inc){+}",
-    "button(class: \"btn\", ~on_click: inc): \"+\"",
+    "@button(~class: \"btn\", ~on_click: inc){+}", "button(class: \"btn\", ~on_click: inc): \"+\"",
   )
 }
 
@@ -112,12 +112,10 @@ test "a comment node" {
 ///|
 test "a loop, and its render-time options" {
   same(
-    "@ul{@each(value, key in it.xs){@li{@(value)}}}",
-    "ul():\n      each(value, key in it.xs):\n        li(): @(value)",
+    "@ul{@each(value, key in it.xs){@li{@(value)}}}", "ul():\n      each(value, key in it.xs):\n        li(): @(value)",
   )
   same(
-    "@each(value, key in it.xs, ~when: keep){@li{@(value)}}",
-    "each(value, key in it.xs, ~when: keep):\n      li(): @(value)",
+    "@each(value, key in it.xs, ~when: keep){@li{@(value)}}", "each(value, key in it.xs, ~when: keep):\n      li(): @(value)",
   )
 }
 
@@ -153,7 +151,9 @@ fn view_style(src : String) -> String {
 
 ///|
 test "a style block is raw text in either spelling" {
-  same_style("@style{.mine { color: red; }}", "style(): @{.mine { color: red; }}")
+  same_style(
+    "@style{.mine { color: red; }}", "style(): @{.mine { color: red; }}",
+  )
 }
 
 ///|
@@ -166,10 +166,11 @@ test "an `@` inside a raw-text block is refused, not silently dropped" {
   // style, so following the documentation reached it.
   //
   // Both spellings are refused now, and the message names both repairs.
-  for src in [
-    "  Card:\n    @style{@media (min-width: 40em) { .a { color: red } }}\n    @p{x}",
-    "  Card:\n    style(): @{@media (min-width: 40em) { .a { color: red } }}\n    p(): \"x\"",
-  ] {
+  for
+    src in [
+      "  Card:\n    @style{@media (min-width: 40em) { .a { color: red } }}\n    @p{x}",
+      "  Card:\n    style(): @{@media (min-width: 40em) { .a { color: red } }}\n    p(): \"x\"",
+    ] {
     inspect(view_style(card(src)), content="!refused")
   }
 }
@@ -180,7 +181,9 @@ test "balanced braces need no escaping at all" {
   // than counted: at-notation ends its body at the matching brace.
   inspect(
     view_style(
-      card("  Card:\n    style(): @{.a { color: red } .b { color: blue }}\n    p(): \"x\""),
+      card(
+        "  Card:\n    style(): @{.a { color: red } .b { color: blue }}\n    p(): \"x\"",
+      ),
     ),
     content=".a { color: red } .b { color: blue }",
   )
@@ -191,7 +194,9 @@ test "a bare declaration list is a style too" {
   // What `styles.md` documents: with no selector these land in the component's
   // scope wrapper and style its root element.
   let s = view_style(
-    card("  Card:\n    style(): @{padding: 0.75rem; color: red;}\n    p(): \"x\""),
+    card(
+      "  Card:\n    style(): @{padding: 0.75rem; color: red;}\n    p(): \"x\"",
+    ),
   )
   inspect(s, content="padding: 0.75rem; color: red;")
 }
@@ -229,8 +234,7 @@ test "a macro, its default and its call" {
 ///|
 test "a macro's default slot" {
   same_section(
-    "  macro box():\n    @div{@slot}\n\n  Card:\n    @box(){@p{x}}\n",
-    "  macro box():\n    div(): slot()\n\n  Card:\n    box(): p(): \"x\"\n",
+    "  macro box():\n    @div{@slot}\n\n  Card:\n    @box(){@p{x}}\n", "  macro box():\n    div(): slot()\n\n  Card:\n    box(): p(): \"x\"\n",
   )
 }
 

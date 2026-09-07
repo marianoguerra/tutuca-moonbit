@@ -117,7 +117,7 @@ view:
 
 `slot("name")` declares a second place to put children, and `fill("name")`
 at the call site says which content goes there. Everything not inside a
-`@fill` goes to the default slot:
+`fill` goes to the default slot:
 
 ```tutu
 view:

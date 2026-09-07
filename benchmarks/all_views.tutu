@@ -59,7 +59,7 @@ spec:
     message clear
 
     /// A running total that `flash` only ever adds to and `clear` leaves
-    /// alone. `setCount` is generated all the same, so the floor is stated
+    /// alone. `set_count` is generated all the same, so the floor is stated
     /// here rather than defended in a handler nobody wrote.
     where it.count >= 0
 
@@ -827,6 +827,7 @@ logic:
       it.count -= 1
 
 view:
+  // demo/counterlib/counter.tutu
   DemoCounterCounter:
     style(): @{font-family: sans-serif}
     div(class: "counter"):
@@ -851,8 +852,8 @@ view:
         each(value, key in it.history):
           li():
             @(value)
-
-  SbBasicsMinimumViableComponent:
+  // storybook/examples/basics.tutu
+  SbBasicsMinimumViableComponent
 
   SbBasicsStaticViewComponent:
     p():
@@ -897,7 +898,7 @@ view:
   SbBasicsSetInnerMd:
     section():
       div(class: "md", inner_md: it.source)
-
+  // storybook/examples/collections.tutu
   SbCollectionsRenderWithScope:
     section(class: "flex flex-col gap-3"):
       input(class: "input", value: it.text, ~on_input: it.text := e.value)
@@ -947,7 +948,7 @@ view:
             " / "
             @(total)
             ") "
-
+  // storybook/examples/communication.tutu
   SbCommunicationStatus:
     show(it.message.is_truthy()):
       div(class: "alert alert-info"):
@@ -991,7 +992,7 @@ view:
         each(value, key in it.log):
           li():
             @(value)
-
+  // storybook/examples/composability.tutu
   SbComposabilityComposability:
     section(class: "flex flex-col gap-4"):
       div(role: "tablist", class: "tabs tabs-border"):
@@ -1036,7 +1037,7 @@ view:
       show((it.active_section == "visualWasm")):
         div(class: "pane-visual-wasm"):
           render(it.visual_wasm)
-
+  // storybook/examples/conditionals.tutu
   SbConditionalsTrafficLight:
     section(class: "flex flex-col gap-2"):
       button(class: "btn btn-primary", ~on_click: next_light):
@@ -1104,7 +1105,7 @@ view:
               @(key)
             ": "
             @(value)
-
+  // storybook/examples/counter.tutu
   SbCounterCounter:
     div(class: "join join-vertical"):
       button(class: "btn btn-error", ~on_click: dec):
@@ -1121,7 +1122,7 @@ view:
       " "
       button(class: "btn btn-success", ~on_click: inc):
         "+"
-
+  // storybook/examples/custom_collection.tutu
   SbCustomCollectionPlaylist:
     ul(class: "flex flex-col gap-1"):
       each(value, key in it.songs):
@@ -1134,7 +1135,7 @@ view:
   SbCustomCollectionSong:
     span(class: "song"):
       @(it.title)
-
+  // storybook/examples/dnd.tutu
   SbDndDnDExample:
     style(): @{[data-dragging="1"] { opacity: 0.5; } [data-draggingover="my-list-item"] { border-top: 2rem solid transparent; outline: 1px solid #77777777; transition: 0.15s border-top ease; }}
     section(class: "flex flex-col gap-3"):
@@ -1147,7 +1148,7 @@ view:
               @(key)
             ": "
             @(value)
-
+  // storybook/examples/dynamic.tutu
   SbDynamicSelectorEntry:
     div(class: "flex gap-3"):
       input(class: "input val", value: it.value, ~on_input: it.value := e.value)
@@ -1206,7 +1207,7 @@ view:
             @(sheet_title())
       " "
       render(it.panel)
-
+  // storybook/examples/dynamic_selected_edit.tutu
   SbDynamicSelectedEditDseRoot:
     div(class: "flex flex-col gap-3 p-3"):
       div(class: "alert"):
@@ -1251,7 +1252,7 @@ view:
 
   SbDynamicSelectedEditDseEntry.edit:
     input(class: "input input-bordered w-full edit-name", value: it.name, ~on_input: it.name := e.value, placeholder: "Entry name")
-
+  // storybook/examples/file_picker.tutu
   SbFilePickerFilePicker:
     section(class: "flex flex-col gap-3"):
       label(class: "flex flex-col gap-1"):
@@ -1287,7 +1288,7 @@ view:
       hide(it.has_file):
         p(class: "empty"):
           "No file selected yet — pick one above."
-
+  // storybook/examples/filter_paginate.tutu
   SbFilterPaginatePerson:
     div(class: "person flex gap-2 items-center grow"):
       input(class: "input input-sm grow name", value: it.name, ~on_input: it.name := e.value, placeholder: "name")
@@ -1389,7 +1390,7 @@ view:
         " "
         button(class: "btn join-item next", ~on_click: next, disabled: is_last):
           "Next"
-
+  // storybook/examples/graphics.tutu
   SbGraphicsSwatchPicker:
     div(class: "flex flex-col gap-2"):
       svg(viewBox: "0 0 380 130", role: "img"):
@@ -1463,7 +1464,7 @@ view:
         span(class: "classify"):
           @(classify())
         "."
-
+  // storybook/examples/json.tutu
   SbJsonJsonSelector:
     div(class: "join gap-3 font-mono json-selector"):
       button(class: "btn btn-sm btn-soft btn-warning to-null", ~on_click: set_to_null):
@@ -1540,7 +1541,7 @@ view:
             " "
             button(class: "btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm", ~on_click: it.items.delete_at(key)):
               "x"
-
+  // storybook/examples/list_iteration.tutu
   SbListIterationListIteration:
     section():
       ul():
@@ -1550,7 +1551,7 @@ view:
               @(key)
             ": "
             @(value)
-
+  // storybook/examples/nested_state.tutu
   SbNestedStateNestedState:
     div(class: "card bg-base-200 p-4"):
       h3(class: "card-title"):
@@ -1564,7 +1565,7 @@ view:
       " "
       button(class: "btn btn-sm btn-primary", ~on_click: bump_priority):
         " bump priority "
-
+  // storybook/examples/personal_site.tutu
   SbPersonalSiteAltUrl:
     a(class: "badge badge-ghost badge-sm cursor-pointer gap-1 no-underline hover:bg-base-200 alt-url", href: it.url, target: "_blank"):
       "🔗 "
@@ -1671,7 +1672,7 @@ view:
         each(value, key in it.all_entries, ~when: filter_entry):
           div(class: "entry-row"):
             render(value)
-
+  // storybook/examples/pseudo_x.tutu
   SbPseudoXTableRow:
     tr():
       td(class: "name"):
@@ -1714,7 +1715,7 @@ view:
       render(it.table)
       " "
       render(it.select)
-
+  // storybook/examples/render_child.tutu
   SbRenderChildGreeting:
     p(class: "p-2 border rounded"):
       " Hello, "
@@ -1753,7 +1754,7 @@ view:
       render(it.value)
       " "
       render(it.value, ~as: "edit")
-
+  // storybook/examples/rendering.tutu
   SbRenderingPushView:
     section(class: "flex flex-col gap-3"):
       div(class: "flex justify-between"):
@@ -1798,7 +1799,7 @@ view:
               @(key)
             " "
             @(value)
-
+  // storybook/examples/request.tutu
   SbRequestRequestExample:
     section(class: "flex flex-col gap-3"):
       show(it.is_loading):
@@ -1823,7 +1824,7 @@ view:
       show(it.error.is_truthy()):
         div(class: "error"):
           @(it.error)
-
+  // storybook/examples/state_and_updates.tutu
   SbStateAndUpdatesAttributeBinding:
     section(class: "flex flex-col gap-3"):
       input(class: "input s", value: it.str, ~on_input: it.str := e.value, title: @str{Content is @(it.str)})
@@ -1896,7 +1897,7 @@ view:
         "Count, only when open: "
         show(it.is_open):
           @(it.count)
-
+  // storybook/examples/styles.tutu
   style(): @{padding: 0.75rem; border: 1px solid currentColor; border-radius: 0.5rem; .common { color: yellow; }}
 
   style(~global): @{.styles-example-global-class { color: green; }}
@@ -1952,7 +1953,7 @@ view:
       render(it.value, ~as: "one")
       " "
       render(it.value, ~as: "two")
-
+  // storybook/examples/todo.tutu
   SbTodoItem:
     div(class: "flex gap-3 items-center"):
       input(type: "checkbox", class: "checkbox", checked: it.completed, ~on_input: it.completed := e.value)
@@ -1971,7 +1972,7 @@ view:
             " "
             button(class: "btn btn-soft btn-sm btn-error btn-circle font-mono rm", ~on_click: it.items.delete_at(key)):
               "x"
-
+  // storybook/examples/web_component.tutu
   SbWebComponentEmojiPicker:
     section(~on_emoji_click: on_emoji_click(e.value), class: "join join-vertical gap-3 items-center"):
       hide(it.current.is_truthy()):
@@ -1994,7 +1995,7 @@ view:
       " "
       show(it.is_picker_visible):
         emoji_picker()
-
+  // playground/site/examples/composability.tutu
   SiteComposabilityCounter:
     div(style: "display:flex;gap:.5rem;align-items:center;font-size:1.5rem"):
       button(~on_click: dec):
@@ -2068,7 +2069,7 @@ view:
       show((it.active_section == "tree")):
         div(class: "pane-tree"):
           render(it.tree)
-
+  // playground/site/examples/counter.tutu
   SiteCounterCounter:
     div(style: "display:flex;gap:.5rem;align-items:center;font-size:1.5rem"):
       button(~on_click: dec):
@@ -2079,7 +2080,7 @@ view:
       " "
       button(~on_click: inc):
         "+"
-
+  // playground/site/examples/dnd.tutu
   SiteDndDnDExample:
     style(): @{[data-dragging="1"] { opacity: 0.5; } [data-draggingover="my-list-item"] { border-top: 2rem solid transparent; outline: 1px solid #77777777; transition: 0.15s border-top ease; }}
     section(class: "flex flex-col gap-3"):
@@ -2092,7 +2093,7 @@ view:
               @(key)
             ": "
             @(value)
-
+  // playground/site/examples/filter_paginate.tutu
   SiteFilterPaginateStrategies:
     div(class: "flex flex-col gap-6"):
       div(class: "flex flex-col gap-1"):
@@ -2194,7 +2195,7 @@ view:
         " "
         button(class: "btn join-item next", ~on_click: next, disabled: is_last):
           "Next"
-
+  // playground/site/examples/json.tutu
   SiteJsonJsonNull:
     span(class: "text-warning text-xs font-mono p-3 json-null"):
       "null"
@@ -2271,7 +2272,7 @@ view:
             " "
             button(class: "btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm", ~on_click: it.items.delete_at(key)):
               "x"
-
+  // playground/site/examples/personal_site.tutu
   SitePersonalSiteAltUrl:
     a(class: "badge badge-ghost badge-sm cursor-pointer gap-1 no-underline hover:bg-base-200 alt-url", href: it.url, target: "_blank"):
       "🔗 "
@@ -2378,7 +2379,7 @@ view:
         each(value, key in it.all_entries, ~when: filter_entry):
           div(class: "entry-row"):
             render(value)
-
+  // playground/site/examples/text_input.tutu
   SiteTextInputGreeter:
     div(style: "font-family:system-ui;display:flex;flex-direction:column;gap:.5rem"):
       input(value: it.name, ~on_input: it.name := e.value, placeholder: "your name")
@@ -2388,7 +2389,7 @@ view:
         b():
           @(it.name)
         "!"
-
+  // playground/site/examples/todo.tutu
   SiteTodoItem:
     div(class: "flex gap-3 items-center"):
       input(type: "checkbox", class: "checkbox", checked: it.completed, ~on_input: it.completed := e.value)
@@ -2407,7 +2408,7 @@ view:
             " "
             button(class: "btn btn-soft btn-sm btn-error btn-circle font-mono rm", ~on_click: it.items.delete_at(key)):
               "x"
-
+  // playground/site/examples/toggle.tutu
   SiteTogglePanel:
     section(style: "font-family:system-ui"):
       button(~on_click: it.open := !it.open):
@@ -2416,7 +2417,7 @@ view:
       show(it.open):
         p(style: "padding:.5rem;border:1px solid #ccc;margin-top:.5rem"):
           " Now you see me. Toggle again to hide. "
-
+  // playground/site/examples/tree.tutu
   SiteTreeTreeItem:
     style(): @{user-select: none; .head { cursor: pointer; } .head:before { content: "⏺️"; margin-right: 0.25rem; } .head.type-file:before { content: "📄️"; } .head.open.type-dir:before { content: "📂️"; } .head.closed.type-dir:before { content: "📁️"; }}
     section():

@@ -145,8 +145,8 @@ own events, `send`/`receive`,
   machine — no handler name, and nothing to answer it. → [core.md](./core.md)
   "Computed values & predicates" and "Field Types & Auto-generated API"
 
-- **Do remember a rendered child gets a clean namespace.** Parent `@` bindings
-  (`each`, `~enrich_with`) don't cross a `@render` boundary — pass a value
+- **Do remember a rendered child gets a clean namespace.** A loop's and a scope's bindings
+  (`each`, `~enrich_with`) don't cross a `render` boundary — pass a value
   across it with `dyn.<name>`, not by assuming the binding leaks in. → [advanced.md](./advanced.md)
 
 - **Do add a decoy view when a margaui class is assembled at runtime.** The margaui
@@ -165,7 +165,7 @@ own events, `send`/`receive`,
   with `~on_click: it.active_section := "todo"` / `show(it.active_section == "todo")`,
   derive the current value from one field.
 - **A view that a conditional attribute-branches on a `kind` field → one component per kind**, each
-  rendered with `@render`.
+  rendered with `render`.
 - **A value passed down through three components that don't use it → move the
   state up to the nearest common owner** and let the leaf render it directly; only
   if nothing in between should know it, use `provide` / `lookup`.

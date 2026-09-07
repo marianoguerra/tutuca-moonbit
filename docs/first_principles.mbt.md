@@ -348,7 +348,7 @@ pub(all) enum ANode {
 
 Attribute values inside it are the `Expr`s of section 2 — this is where the
 two languages meet. Parsing happens once per view (`ANode::parse` +
-`ParseContext`), not per render; directives like `@show` are *hoisted*: the
+`ParseContext`), not per render; directives like `show` are *hoisted*: the
 parser wraps the DOM node in a `Show` node so the renderer never re-inspects
 attributes:
 

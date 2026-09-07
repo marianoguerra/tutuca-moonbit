@@ -107,8 +107,31 @@ fn raw_text(body : Array[@ast.Node]) -> String {
   for g in body {
     guard g.it is Group(parts) else { continue }
     for p in parts {
-      if p.it is Lit(Str(t)) {
-        out.write_string(t)
+      match p.it {
+        Lit(Str(t)) => out.write_string(t)
+        // The ALIGNED spelling of the same body: `@{…}` arrives as a `Parens`
+        // holding one `Group` holding one `Brackets` of string pieces. Reading
+        // only the flat literal answered "" for every style block already
+        // converted, so a second run would have emptied all of them. The
+        // round-trip check refuses on that, so nothing was written -- but a
+        // converter that fails safe is not the same as one that is right.
+        Parens(gs) =>
+          for inner in gs {
+            guard inner.it is Group(one) else { continue }
+            for it in one {
+              guard it.it is Brackets(items) else { continue }
+              for item in items {
+                if item.it is Group(pieces) {
+                  for piece in pieces {
+                    if piece.it is Lit(Str(t)) {
+                      out.write_string(t)
+                    }
+                  }
+                }
+              }
+            }
+          }
+        _ => ()
       }
     }
   }

@@ -263,7 +263,10 @@ pub fn style_is_global(decl : @tutufile.Decl) -> Bool {
 
 ///|
 /// The CSS a `@style{…}` group holds, or `None` when the group is not one.
-fn style_body(group : @ast.Node, global? : Bool = false) -> String? raise ExError {
+fn style_body(
+  group : @ast.Node,
+  global? : Bool = false,
+) -> String? raise ExError {
   guard group.it is Group(parts) && parts.length() >= 1 else { return None }
   guard parts[0].it is Id("style") else { return None }
   let out = StringBuilder()
@@ -274,7 +277,8 @@ fn style_body(group : @ast.Node, global? : Bool = false) -> String? raise ExErro
           guard g.it is Group(inner) && inner.length() == 1 else { continue }
           match inner[0].it {
             Lit(Str(t)) => out.write_string(t)
-            Brackets(items) => out.write_string(pieces(items, @sh.span_of(group)))
+            Brackets(items) =>
+              out.write_string(pieces(items, @sh.span_of(group)))
             _ => ()
           }
         }
@@ -323,7 +327,10 @@ fn style_body(group : @ast.Node, global? : Bool = false) -> String? raise ExErro
 /// A body is broken at newlines and at every escape, so it arrives as several
 /// pieces with an explicit `"\n"` between lines. Concatenating them rebuilds
 /// the text with its shared indentation already removed.
-fn pieces(items : Array[@ast.Node], span : @report.Span) -> String raise ExError {
+fn pieces(
+  items : Array[@ast.Node],
+  span : @report.Span,
+) -> String raise ExError {
   let out = StringBuilder()
   for item in items {
     guard item.it is Group(one) && one.length() == 1 && one[0].it is Lit(Str(t)) else {
@@ -506,7 +513,7 @@ fn ViewBuilder::element(
     "fill" =>
       raise ExError(
         message="`@fill` fills a macro's named slot, and there is no macro call around this one",
-        help="write `@fill(\"<name>\"){ … }` among the children of a macro call whose body writes `@slot(\"<name>\")`",
+        help="write `fill(\"<name>\"): …` among the children of a macro call whose body writes `slot(\"<name>\")`",
         span~,
       )
     // A comment NODE, which reaches the DOM. `//` is a comment in the FILE.
@@ -516,7 +523,7 @@ fn ViewBuilder::element(
     "style" =>
       raise ExError(
         message="a style block is not part of an element",
-        help="write `@style{ … }` at the top of the view, or at the top of `view:` for the whole component",
+        help="write `style(): …` at the top of the view, or at the top of `view:` for the whole component",
         span~,
       )
     _ => [self.tag(word, raw, body, ctx, span)]
@@ -587,7 +594,15 @@ fn ViewBuilder::tag(
       // attribute it can write still means here what it means there.
       AField(name, value) =>
         self.attribute(
-          name, value, [], ctx, span, attrs, events, wrappers, binds,
+          name,
+          value,
+          [],
+          ctx,
+          span,
+          attrs,
+          events,
+          wrappers,
+          binds,
         )
       // A bare name is a valueless attribute, exactly as HTML writes it and as
       // Shrubbery HTML reads it: `input(disabled)`.
@@ -951,7 +966,7 @@ fn ViewBuilder::guard_(
   guard pos.length() == 1 else {
     raise ExError(
       message="`@\{word}` takes one condition",
-      help="write `@\{word}(<condition>){ … }`",
+      help="write `\{word}(<condition>): …`",
       span~,
     )
   }
@@ -1042,7 +1057,7 @@ fn ViewBuilder::wrapped_body(
   guard childs.length() > 0 else {
     raise ExError(
       message="`@\{word}` has nothing to wrap",
-      help="give it the content it governs: `@\{word}(…){ … }`",
+      help="give it the content it governs: `\{word}(…): …`",
       span~,
     )
   }
@@ -1066,7 +1081,7 @@ fn ViewBuilder::render(
   guard pos.length() == 1 else {
     raise ExError(
       message="`@render` takes one value",
-      help="write `@render(it.item)`",
+      help="write `render(it.item)`",
       span~,
     )
   }

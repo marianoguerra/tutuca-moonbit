@@ -33,7 +33,7 @@ view:
 There is no `when` declaration kind, because there is nothing for one to say:
 a `~when` filter and a boolean `compute` are the same construct — a name and
 one expression — so an iteration filter is a **`pred`**, the same declaration
-`@show`, `@hide` and a conditional attribute take. What differs is the SLOT, which is
+`show`, `hide` and a conditional attribute take. What differs is the SLOT, which is
 where the bindings come from: inside a `pred` a loop calls, the loop binder and
 `@key` are the row's, and `it.field` still reads the component's own state.
 

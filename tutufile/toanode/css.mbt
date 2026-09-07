@@ -35,9 +35,7 @@ fn scoped_css(
   let head = @ast.Node::new(Id("scope"), at)
   let rule = @ast.Node::new(Group([head, block]), at)
   let root = @ast.Node::new(Multi([rule]), at)
-  let out = @csslower.lower(root) catch {
-    _ => raise css_refused(span)
-  }
+  let out = @csslower.lower(root) catch { _ => raise css_refused(span) }
   if out.has_errors() {
     raise css_diagnostic(out, span)
   }
@@ -66,9 +64,7 @@ fn global_css(
 ) -> String raise ExError {
   guard groups.length() > 0 else { return "" }
   let root = @ast.Node::new(Multi(groups), groups[0].span)
-  let out = @csslower.lower(root) catch {
-    _ => raise css_refused(span)
-  }
+  let out = @csslower.lower(root) catch { _ => raise css_refused(span) }
   if out.has_errors() {
     raise css_diagnostic(out, span)
   }

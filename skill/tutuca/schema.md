@@ -555,10 +555,10 @@ parse error**, and the message names the parentheses to add. `not` negates,
 and `if c { a } else { b }` is an expression — both arms required, because an
 expression has to have a value.
 
-**This table is the CONDITIONAL SLOT's vocabulary too.** `@show`, `@hide` and
+**This table is the CONDITIONAL SLOT's vocabulary too.** `show`, `hide` and
 a conditional attribute parse through the same grammar and resolve against the same
 table, so `truthy? .items` cannot mean one thing in a `pred` and another in a
-`@show`, and `not (empty? .kind)` is written the same way in both. What a slot
+`show`, and `not (empty? .kind)` is written the same way in both. What a slot
 does not take is the half that needs a body: a nested read, an `if`,
 arithmetic, and a bare parameter — see
 [core.md](./core.md#conditional-display).
