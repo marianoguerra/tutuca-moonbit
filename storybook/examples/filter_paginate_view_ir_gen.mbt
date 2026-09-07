@@ -188,25 +188,20 @@ fn strategies_main_view_ir() -> @anode.View {
         @anode.h("h3", [@anode.attr("class", "font-bold")], [
           @anode.text("1. Naive — two independent scans"),
         ]),
-        @anode.text("\n"),
         @anode.render(0, @tutuca.Expr::field("naive")),
       ]),
-      @anode.text("\n"),
       @anode.h("div", [@anode.attr("class", "flex flex-col gap-1")], [
         @anode.h("h3", [@anode.attr("class", "font-bold")], [
           @anode.text("2. Shared — one count + one partial collect"),
         ]),
-        @anode.text("\n"),
         @anode.render(1, @tutuca.Expr::field("shared")),
       ]),
-      @anode.text("\n"),
       @anode.h("div", [@anode.attr("class", "flex flex-col gap-1")], [
         @anode.h("h3", [@anode.attr("class", "font-bold")], [
           @anode.text(
             "3. Coupled — one scan; loop-with forwards the enrich's keys",
           ),
         ]),
-        @anode.text("\n"),
         @anode.render(2, @tutuca.Expr::field("coupled")),
       ]),
     ]),

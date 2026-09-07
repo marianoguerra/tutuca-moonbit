@@ -39,13 +39,10 @@ fn styles_example_main_view_ir() -> @anode.View {
     "main",
     @anode.h("section", [], [
       @anode.h("p", [], [@anode.text("View: main")]),
-      @anode.text("\n"),
       @anode.h("p", [@anode.attr("class", "mine")], [@anode.text("My Style")]),
-      @anode.text("\n"),
       @anode.h("p", [@anode.attr("class", "common")], [
         @anode.text("Common Style"),
       ]),
-      @anode.text("\n"),
       @anode.h("p", [@anode.attr("class", "styles-example-global-class")], [
         @anode.text("Global Style"),
       ]),
@@ -62,13 +59,10 @@ fn styles_example_one_view_ir() -> @anode.View {
     "one",
     @anode.h("section", [], [
       @anode.h("p", [], [@anode.text("View: one")]),
-      @anode.text("\n"),
       @anode.h("p", [@anode.attr("class", "mine")], [@anode.text("My Style")]),
-      @anode.text("\n"),
       @anode.h("p", [@anode.attr("class", "common")], [
         @anode.text("Common Style"),
       ]),
-      @anode.text("\n"),
       @anode.h("p", [@anode.attr("class", "styles-example-global-class")], [
         @anode.text("Global Style"),
       ]),
@@ -84,13 +78,10 @@ fn styles_example_two_view_ir() -> @anode.View {
     "two",
     @anode.h("section", [], [
       @anode.h("p", [], [@anode.text("View: two")]),
-      @anode.text("\n"),
       @anode.h("p", [@anode.attr("class", "mine")], [@anode.text("My Style")]),
-      @anode.text("\n"),
       @anode.h("p", [@anode.attr("class", "common")], [
         @anode.text("Common Style"),
       ]),
-      @anode.text("\n"),
       @anode.h("p", [@anode.attr("class", "styles-example-global-class")], [
         @anode.text("Global Style"),
       ]),

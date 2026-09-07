@@ -533,7 +533,6 @@ view:
         show(it.compacted):
           span(title: "The derived events were dropped: this trace can no longer be relocated or scripted", class: "badge badge-xs badge-ghost header-compacted"):
             "compacted"
-      "\n"
       div(class: "flex gap-3 text-xs opacity-60 tabular-nums"):
         span(class: "header-events"):
           @(it.events)

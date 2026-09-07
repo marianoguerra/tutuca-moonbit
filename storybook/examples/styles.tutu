@@ -23,13 +23,10 @@ view:
     section():
       p():
         "View: main"
-      "\n"
       p(class: "mine"):
         "My Style"
-      "\n"
       p(class: "common"):
         "Common Style"
-      "\n"
       p(class: "styles-example-global-class"):
         "Global Style"
 
@@ -37,13 +34,10 @@ view:
     section():
       p():
         "View: one"
-      "\n"
       p(class: "mine"):
         "My Style"
-      "\n"
       p(class: "common"):
         "Common Style"
-      "\n"
       p(class: "styles-example-global-class"):
         "Global Style"
 
@@ -55,13 +49,10 @@ view:
     section():
       p():
         "View: two"
-      "\n"
       p(class: "mine"):
         "My Style"
-      "\n"
       p(class: "common"):
         "Common Style"
-      "\n"
       p(class: "styles-example-global-class"):
         "Global Style"
 

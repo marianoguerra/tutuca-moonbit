@@ -32,7 +32,6 @@ view:
         " "
         button(class: "btn btn-soft btn-sm toggle-done", ~on_click: it.hide_completed := !it.hide_completed):
           "Hide done"
-      "\n"
       div(class: "flex flex-col gap-3 w-full"):
         each(value, key in it.items, ~when: only_visible):
           div(class: "flex gap-3 items-center w-full row"):

@@ -99,24 +99,18 @@ view:
           div(class: "stat"):
             div(class: "stat-title"):
               "here"
-            "\n"
             div(class: "stat-value text-2xl"):
               @(it.here)
-          "\n"
           div(class: "stat"):
             div(class: "stat-title"):
               "there"
-            "\n"
             div(class: "stat-value text-2xl"):
               @(it.there)
-          "\n"
           div(class: "stat"):
             div(class: "stat-title"):
               "moves"
-            "\n"
             div(class: "stat-value text-2xl"):
               @(it.moves)
-        "\n"
         div(class: "flex gap-2 items-center flex-wrap"):
           div(class: "join"):
             button(class: "btn btn-sm join-item", ~on_click: push):
@@ -130,13 +124,11 @@ view:
           " "
           button(class: "btn btn-sm btn-soft btn-error", ~on_click: cheat, title: "refused by the invariant, and reported"):
             "cheat"
-        "\n"
         ul(class: "flex flex-col gap-1 font-mono text-xs"):
           li(class: "flex gap-2 items-center"):
             span(class: if conserved() | "badge badge-sm badge-success" | "badge badge-sm badge-error"):
               @(conserved())
             " conserved: here + there is total "
-          "\n"
           li(class: "flex gap-2 items-center"):
             span(class: if empty_means_moved() | "badge badge-sm badge-success" | "badge badge-sm badge-error"):
               @(empty_means_moved())

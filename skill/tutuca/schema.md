@@ -227,7 +227,6 @@ view:
       div():
         button(~on_click: it.items.delete_at(key)):
           "remove"
-        "\n"
         button(~on_click: it.tags.toggle(value)):
           "tag"
 ```

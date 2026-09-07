@@ -340,7 +340,6 @@ fn root_main_view_ir() -> @anode.View {
           ]),
           @anode.text("."),
         ]),
-        @anode.text("\n"),
         @anode.h(
           "div",
           [
@@ -506,7 +505,6 @@ fn root_main_view_ir() -> @anode.View {
             ),
           ],
         ),
-        @anode.text("\n"),
         @anode.h(
           "div",
           [@anode.attr("class", "flex flex-wrap items-center gap-4 mt-4")],
@@ -525,7 +523,6 @@ fn root_main_view_ir() -> @anode.View {
           ],
         ),
       ]),
-      @anode.text("\n"),
       @anode.h("div", [@anode.attr("class", "entries flex flex-col gap-3")], [
         @anode.each(
           5,

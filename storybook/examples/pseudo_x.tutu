@@ -30,10 +30,8 @@ view:
     tr():
       td(class: "name"):
         @(it.name)
-      "\n"
       td(class: "qty"):
         @(it.qty)
-      "\n"
       td(class: "price"):
         @(it.price)
 
@@ -43,13 +41,10 @@ view:
         tr():
           th():
             "Name"
-          "\n"
           th():
             "Qty"
-          "\n"
           th():
             "Price"
-      "\n"
       tbody():
         each(value, key in it.rows):
           render(value)

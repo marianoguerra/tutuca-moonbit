@@ -113,7 +113,7 @@ fn Checker::bare_mutator(self : Checker, handler : @anode.NodeEvent) -> Unit {
   }
   guard self.mutator_repair(name) is Some(repair) else { return }
   self.hints.push(
-    "mutator-as-message (hint) \{self.view}: `@on.\{handler.name}=\"\{name} …\"` — `\{name}` is a generated mutator, and a mutator is not a message: nothing answers it unless `update` does. To reach the mutator, write \{repair}",
+    "mutator-as-message (hint) \{self.view}: `~on_\{handler.name}: \{name}` — `\{name}` is a generated mutator, and a mutator is not a message: nothing answers it unless `update` does. To reach the mutator, write \{repair}",
   )
 }
 

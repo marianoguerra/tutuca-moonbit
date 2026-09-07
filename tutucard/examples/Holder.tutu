@@ -49,7 +49,6 @@ view:
   Hole:
     div(class: "hole"):
       render(it.child)
-      "\n"
       b(class: "kept"):
         @(it.kept)
 

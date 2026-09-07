@@ -44,10 +44,8 @@ view:
     span(~on_click: reset):
       i():
         @(it.title)
-      "\n"
       i():
         @(label())
-      "\n"
       i():
         @(double())
 

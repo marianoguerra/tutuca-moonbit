@@ -106,7 +106,6 @@ view:
           kbd(class: "text-mono"):
             "alt/option + click"
           "."
-        "\n"
         div(class: "grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-y-1 sm:gap-x-3 sm:gap-y-3 items-start"):
           span(class: "font-semibold text-sm pt-1"):
             "Categories"
@@ -151,12 +150,10 @@ view:
               " "
               span(class: "text-sm"):
                 "Featured first"
-        "\n"
         div(class: "flex flex-wrap items-center gap-4 mt-4"):
           show(has_active_filters()):
             button(class: "btn btn-outline btn-sm clear-filters", ~on_click: clear_filters):
               "Clear Filters"
-      "\n"
       div(class: "entries flex flex-col gap-3"):
         each(value, key in it.all_entries, ~when: filter_entry):
           div(class: "entry-row"):

@@ -164,7 +164,6 @@ fn activity_entry_main_view_ir() -> @anode.View {
             ),
           ],
         ),
-        @anode.text("\n"),
         @anode.h(
           "div",
           [@anode.attr("class", "flex gap-3 items-start font-mono text-xs")],

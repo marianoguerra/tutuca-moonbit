@@ -1323,19 +1323,14 @@ view:
       div(class: "flex flex-col gap-1"):
         h3(class: "font-bold"):
           "1. Naive — two independent scans"
-        "\n"
         render(it.naive)
-      "\n"
       div(class: "flex flex-col gap-1"):
         h3(class: "font-bold"):
           "2. Shared — one count + one partial collect"
-        "\n"
         render(it.shared)
-      "\n"
       div(class: "flex flex-col gap-1"):
         h3(class: "font-bold"):
           "3. Coupled — one scan; loop-with forwards the enrich's keys"
-        "\n"
         render(it.coupled)
 
   SbFilterPaginateNaivePeople:
@@ -1642,7 +1637,6 @@ view:
           kbd(class: "text-mono"):
             "alt/option + click"
           "."
-        "\n"
         div(class: "grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-y-1 sm:gap-x-3 sm:gap-y-3 items-start"):
           span(class: "font-semibold text-sm pt-1"):
             "Categories"
@@ -1687,12 +1681,10 @@ view:
               " "
               span(class: "text-sm"):
                 "Featured first"
-        "\n"
         div(class: "flex flex-wrap items-center gap-4 mt-4"):
           show(has_active_filters()):
             button(class: "btn btn-outline btn-sm clear-filters", ~on_click: clear_filters):
               "Clear Filters"
-      "\n"
       div(class: "entries flex flex-col gap-3"):
         each(value, key in it.all_entries, ~when: filter_entry):
           div(class: "entry-row"):
@@ -1702,10 +1694,8 @@ view:
     tr():
       td(class: "name"):
         @(it.name)
-      "\n"
       td(class: "qty"):
         @(it.qty)
-      "\n"
       td(class: "price"):
         @(it.price)
 
@@ -1715,13 +1705,10 @@ view:
         tr():
           th():
             "Name"
-          "\n"
           th():
             "Qty"
-          "\n"
           th():
             "Price"
-      "\n"
       tbody():
         each(value, key in it.rows):
           render(value)
@@ -1763,7 +1750,6 @@ view:
       div(class: "card-body"):
         h2(class: "card-title"):
           @(it.title)
-        "\n"
         p():
           @(it.description)
 
@@ -1816,7 +1802,6 @@ view:
         " "
         button(class: "btn join-item next", ~on_click: next, disabled: is_last_page()):
           "Next ›"
-      "\n"
       ul(class: "flex flex-col gap-1"):
         each(value, key in it.items, ~loop_with: paginate):
           li(class: "flex gap-2 items-center"):
@@ -1941,13 +1926,10 @@ view:
     section():
       p():
         "View: main"
-      "\n"
       p(class: "mine"):
         "My Style"
-      "\n"
       p(class: "common"):
         "Common Style"
-      "\n"
       p(class: "styles-example-global-class"):
         "Global Style"
 
@@ -1955,13 +1937,10 @@ view:
     section():
       p():
         "View: one"
-      "\n"
       p(class: "mine"):
         "My Style"
-      "\n"
       p(class: "common"):
         "Common Style"
-      "\n"
       p(class: "styles-example-global-class"):
         "Global Style"
 
@@ -1973,13 +1952,10 @@ view:
     section():
       p():
         "View: two"
-      "\n"
       p(class: "mine"):
         "My Style"
-      "\n"
       p(class: "common"):
         "Common Style"
-      "\n"
       p(class: "styles-example-global-class"):
         "Global Style"
 
@@ -2154,19 +2130,14 @@ view:
       div(class: "flex flex-col gap-1"):
         h3(class: "font-bold"):
           "1. Naive — two independent scans"
-        "\n"
         render(it.naive)
-      "\n"
       div(class: "flex flex-col gap-1"):
         h3(class: "font-bold"):
           "2. Shared — one count + one partial collect"
-        "\n"
         render(it.shared)
-      "\n"
       div(class: "flex flex-col gap-1"):
         h3(class: "font-bold"):
           "3. Coupled — one scan; loop-with forwards the enrich's keys"
-        "\n"
         render(it.coupled)
 
   SiteFilterPaginatePerson:
@@ -2385,7 +2356,6 @@ view:
           kbd(class: "text-mono"):
             "alt/option + click"
           "."
-        "\n"
         div(class: "grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-y-1 sm:gap-x-3 sm:gap-y-3 items-start"):
           span(class: "font-semibold text-sm pt-1"):
             "Categories"
@@ -2430,12 +2400,10 @@ view:
               " "
               span(class: "text-sm"):
                 "Featured first"
-        "\n"
         div(class: "flex flex-wrap items-center gap-4 mt-4"):
           show(has_active_filters()):
             button(class: "btn btn-outline btn-sm clear-filters", ~on_click: clear_filters):
               "Clear Filters"
-      "\n"
       div(class: "entries flex flex-col gap-3"):
         each(value, key in it.all_entries, ~when: filter_entry):
           div(class: "entry-row"):

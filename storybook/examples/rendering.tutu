@@ -106,7 +106,6 @@ view:
         " "
         button(class: "btn join-item next", ~on_click: next, disabled: is_last_page()):
           "Next ›"
-      "\n"
       ul(class: "flex flex-col gap-1"):
         each(value, key in it.items, ~loop_with: paginate):
           li(class: "flex gap-2 items-center"):

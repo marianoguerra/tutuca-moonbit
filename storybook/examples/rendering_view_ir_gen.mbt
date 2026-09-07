@@ -423,7 +423,6 @@ fn pagination_main_view_ir() -> @anode.View {
           [@anode.text("Next ›")],
         ),
       ]),
-      @anode.text("\n"),
       @anode.h("ul", [@anode.attr("class", "flex flex-col gap-1")], [
         @anode.each(
           3,

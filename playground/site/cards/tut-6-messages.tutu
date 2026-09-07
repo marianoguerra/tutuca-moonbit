@@ -58,7 +58,6 @@ view:
       div(class: "card-body gap-3"):
         p(class: if is_away() | "text-3xl tabular-nums opacity-50" | "text-3xl tabular-nums"):
           @(it.reading)
-        "\n"
         div(class: "flex gap-2 items-center"):
           div(class: "join"):
             button(class: "btn btn-sm join-item", ~on_click: cooler):
@@ -74,7 +73,6 @@ view:
           show(is_away()):
             button(class: "btn btn-sm btn-primary", ~on_click: home):
               "home"
-        "\n"
         ul(class: "max-h-24 overflow-auto font-mono text-xs opacity-70"):
           each(value, key in it.log):
             li():

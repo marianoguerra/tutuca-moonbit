@@ -77,9 +77,7 @@ fn rich_sample_compact_view_ir() -> @anode.View {
     "compact",
     @anode.h("span", [@anode.eid(0)], [
       @anode.h("i", [], [@anode.dyn_text(@tutuca.Expr::field("title"), id=0)]),
-      @anode.text("\n"),
       @anode.h("i", [], [@anode.dyn_text(@tutuca.Expr::method_("label"), id=1)]),
-      @anode.text("\n"),
       @anode.h("i", [], [@anode.dyn_text(@tutuca.Expr::method_("double"), id=2)]),
     ]),
     [[@anode.on("click", @tutuca.Expr::name("reset"))]],

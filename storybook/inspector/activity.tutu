@@ -76,7 +76,6 @@ view:
         " "
         span(title: "When this event ran", class: "ml-auto text-xs opacity-40 font-mono tabular-nums entry-time"):
           @(it.time)
-      "\n"
       div(class: "flex gap-3 items-start font-mono text-xs"):
         div(class: "flex-1 min-w-0"):
           div(class: "opacity-50", title: "Target state before the handler ran"):

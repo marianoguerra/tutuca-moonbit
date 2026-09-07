@@ -844,7 +844,6 @@ fn trace_header_main_view_ir() -> @anode.View {
             ),
           ],
         ),
-        @anode.text("\n"),
         @anode.h(
           "div",
           [@anode.attr("class", "flex gap-3 text-xs opacity-60 tabular-nums")],

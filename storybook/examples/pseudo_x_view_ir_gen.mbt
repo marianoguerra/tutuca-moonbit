@@ -60,11 +60,9 @@ fn table_row_main_view_ir() -> @anode.View {
       @anode.h("td", [@anode.attr("class", "name")], [
         @anode.dyn_text(@tutuca.Expr::field("name"), id=0),
       ]),
-      @anode.text("\n"),
       @anode.h("td", [@anode.attr("class", "qty")], [
         @anode.dyn_text(@tutuca.Expr::field("qty"), id=1),
       ]),
-      @anode.text("\n"),
       @anode.h("td", [@anode.attr("class", "price")], [
         @anode.dyn_text(@tutuca.Expr::field("price"), id=2),
       ]),
@@ -128,13 +126,10 @@ fn item_table_main_view_ir() -> @anode.View {
       @anode.h("thead", [], [
         @anode.h("tr", [], [
           @anode.h("th", [], [@anode.text("Name")]),
-          @anode.text("\n"),
           @anode.h("th", [], [@anode.text("Qty")]),
-          @anode.text("\n"),
           @anode.h("th", [], [@anode.text("Price")]),
         ]),
       ]),
-      @anode.text("\n"),
       @anode.h("tbody", [], [
         @anode.each(
           1,

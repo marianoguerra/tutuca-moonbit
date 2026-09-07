@@ -125,10 +125,8 @@ view:
     div():
       header():
         slot("actions")
-      "\n"
       main():
         slot()
-      "\n"
       footer():
         slot("footer")
 
@@ -137,10 +135,8 @@ view:
       fill("actions"):
         button(~on_click: inc):
           "+"
-      "\n"
       p():
         "default slot content"
-      "\n"
       fill("footer"):
         "© 2026"
 ```

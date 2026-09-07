@@ -323,7 +323,6 @@ view:
       nav(~on_click: pick(key) ~stop):
         a(href: "#a"):
           "a"
-        "\n"
         a(href: "#b"):
           "b"
 ```

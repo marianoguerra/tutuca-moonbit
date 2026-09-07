@@ -178,7 +178,6 @@ fn entry_main_view_ir() -> @anode.View {
         @anode.h("h2", [@anode.attr("class", "card-title")], [
           @anode.dyn_text(@tutuca.Expr::field("title"), id=0),
         ]),
-        @anode.text("\n"),
         @anode.h("p", [], [
           @anode.dyn_text(@tutuca.Expr::field("description"), id=1),
         ]),
