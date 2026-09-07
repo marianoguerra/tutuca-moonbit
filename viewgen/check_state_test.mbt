@@ -144,7 +144,7 @@ test "<x render> on a declared child slot is fine" {
     "  Card:\n    field title :: String\n\n" +
     "  Board:\n    field lead :: Instance.of(Card)\n" +
     "\nview:\n" +
-    "  Card:\n    @p{@(it.title)}\n\n" +
+    "  Card:\n    p(): @(it.title)\n\n" +
     "  Board:\n    div():\n      render(it.lead)\n"
   assert_eq(gen_err(src, "Ignored"), "")
 }
@@ -369,7 +369,7 @@ test "a read inside a loop over CHILD components is checked against that child" 
   // component — a thing one StateDef could never answer.
   let msg = gen_err(
     page_and_row(
-      "    ul():\n      each(value, key in it.rows):\n        li():\n          @(it.titel)", "  Row:\n    @span{@(it.title)}\n",
+      "    ul():\n      each(value, key in it.rows):\n        li():\n          @(it.titel)", "  Row:\n    span(): @(it.title)\n",
     ),
     "Page",
   )
@@ -379,7 +379,7 @@ test "a read inside a loop over CHILD components is checked against that child" 
   assert_true(
     gen_err(
       page_and_row(
-        "    ul():\n      each(value, key in it.rows):\n        li():\n          @(value.titel)", "  Row:\n    @span{@(it.title)}\n",
+        "    ul():\n      each(value, key in it.rows):\n        li():\n          @(value.titel)", "  Row:\n    span(): @(it.title)\n",
       ),
       "Page",
     ).contains("not a field of the loop item (the Row component)"),
@@ -389,7 +389,7 @@ test "a read inside a loop over CHILD components is checked against that child" 
     gen_err(
       page_and_row(
         "    ul():\n      each(value, key in it.rows):\n        li():\n          @(it.title)\n          @(value.title)",
-        "  Row:\n    @span{@(it.title)}\n",
+        "  Row:\n    span(): @(it.title)\n",
       ),
       "Page",
     ),
@@ -403,7 +403,7 @@ test "an `as=` naming a view the child does not have is reported" {
   // renders the wrong one. Only a table spanning both components can see it.
   let hints = gen_hints(
     page_and_row(
-      "    render(it.sel, ~as: \"edit\")", "  Row:\n    @span{@(it.title)}\n\n  Row.edt:\n    @span{}\n",
+      "    render(it.sel, ~as: \"edit\")", "  Row:\n    span(): @(it.title)\n\n  Row.edt:\n    span()\n",
     ),
     "Page",
   )
@@ -414,7 +414,7 @@ test "an `as=` naming a view the child does not have is reported" {
   // `render-each` reaches the same check through the loop's element type.
   let each_hints = gen_hints(
     page_and_row(
-      "    each(value, key in it.rows):\n      render(value, ~as: \"edit\")", "  Row:\n    @span{@(it.title)}\n",
+      "    each(value, key in it.rows):\n      render(value, ~as: \"edit\")", "  Row:\n    span(): @(it.title)\n",
     ),
     "Page",
   )
@@ -428,7 +428,7 @@ test "a view name that does resolve, or cannot be known, is reported by nothing"
   assert_eq(
     gen_hints(
       page_and_row(
-        "    render(it.sel, ~as: \"edit\")", "  Row:\n    @span{@(it.title)}\n\n  Row.edit:\n    @input\n",
+        "    render(it.sel, ~as: \"edit\")", "  Row:\n    span(): @(it.title)\n\n  Row.edit:\n    input()\n",
       ),
       "Page",
     ).length(),
@@ -438,7 +438,7 @@ test "a view name that does resolve, or cannot be known, is reported by nothing"
   assert_eq(
     gen_hints(
       page_and_row(
-        "    render(it.sel, ~as: it.pick)", "  Row:\n    @span{@(it.title)}\n",
+        "    render(it.sel, ~as: it.pick)", "  Row:\n    span(): @(it.title)\n",
       ),
       "Page",
     ).length(),

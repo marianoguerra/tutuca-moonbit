@@ -185,7 +185,7 @@ test "a declared macro is expanded into the compiled tree" {
 ///|
 test "generation failures come back as a coded CLI error" {
   let r = @cli.gen_views(
-    "view:\n  Counter:\n    @div{@each(value in it.rows, ~when: nope()){@p{x}}}\n",
+    "view:\n  Counter:\n    div():\n      each(value in it.rows, ~when: nope()):\n        p(): \"x\"\n",
     name="Counter",
     input="views/counter.tutu",
     target="views/counter_view_gen.mbt",
@@ -574,7 +574,7 @@ test "a batch names every file that failed, and writes none of them" {
         input: "views/a.tutu",
         target: "views/a_view_gen.mbt",
         name: "A",
-        source: "view:\n  A:\n    @div{@each(v in it.rows, ~when: nope()){@p{x}}}\n",
+        source: "view:\n  A:\n    div():\n      each(v in it.rows, ~when: nope()):\n        p(): \"x\"\n",
       },
       {
         input: "views/b.tutu",
@@ -586,7 +586,7 @@ test "a batch names every file that failed, and writes none of them" {
         input: "views/c.tutu",
         target: "views/c_view_gen.mbt",
         name: "C",
-        source: "view:\n  C:\n    @div{@each(v in it.rows, ~when: nor()){@p{x}}}\n",
+        source: "view:\n  C:\n    div():\n      each(v in it.rows, ~when: nor()):\n        p(): \"x\"\n",
       },
     ],
     ir=false,
@@ -623,7 +623,7 @@ test "one failing file in a batch still reads as one file" {
         input: "views/b.tutu",
         target: "views/b_view_gen.mbt",
         name: "B",
-        source: "view:\n  B:\n    @div{@each(v in it.rows, ~when: nope()){@p{x}}}\n",
+        source: "view:\n  B:\n    div():\n      each(v in it.rows, ~when: nope()):\n        p(): \"x\"\n",
       },
     ],
     ir=false,

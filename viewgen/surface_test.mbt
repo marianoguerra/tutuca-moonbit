@@ -174,7 +174,7 @@ test "a view the reader will not read fails generation" {
   // `@nope=".x"` looked like both and was caught by a list. Here an element
   // name IS the vocabulary, and `~nope:` is simply an attribute called `nope`.
   let msg = try {
-    surface_of("    @div{@each(value in it.rows, ~when: visible()){@p{x}}}")
+    surface_of("    div():\n      each(value in it.rows, ~when: visible()):\n        p(): \"x\"")
     |> ignore
     "no error"
   } catch {

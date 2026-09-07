@@ -207,11 +207,11 @@ test "the near misses an author arrives with are named, not listed" {
     content="write `tests:` — a section holds every scene, so it is plural",
   )
   inspect(
-    first_help("views:\n  Todos:\n    @div{x}\n"),
+    first_help("views:\n  Todos:\n    div(): \"x\"\n"),
     content="write `view:` — only `fixtures` and `tests` are plural",
   )
   inspect(
-    first_help("template:\n  Todos:\n    @div{x}\n"),
+    first_help("template:\n  Todos:\n    div(): \"x\"\n"),
     content="write `view:` — a `.tutu` file has no templates, it has views",
   )
 }
@@ -219,7 +219,7 @@ test "the near misses an author arrives with are named, not listed" {
 ///|
 test "a section nobody could guess is answered with the five" {
   inspect(
-    first_help("styles:\n  Todos:\n    @div{x}\n"),
+    first_help("styles:\n  Todos:\n    div(): \"x\"\n"),
     content="the sections are `spec:`, `logic:`, `view:`, `fixtures:`, `tests:`, in that order",
   )
 }
@@ -306,13 +306,13 @@ test "a keyword declaration in the wrong section is sent to the right one" {
   let src =
     #|spec:
     #|  macro badge(~label: "New"):
-    #|    @span{x}
+    #|    span(): "x"
     #|
   inspect(first_message(src), content="a macro cannot be declared in `spec:`")
   inspect(first_help(src), content="move it to `view:`")
   let styled =
     #|logic:
-    #|  @style{ .a { color: red; } }
+    #|  style(): @{ .a { color: red; } }
     #|
   inspect(
     first_message(styled),
@@ -414,7 +414,7 @@ test "one bad section does not hide the next" {
     #|
     #|view:
     #|  Todos:
-    #|    @div{x}
+    #|    div(): "x"
     #|
   let (file, _) = read_one(src)
   assert_false(file.ok())

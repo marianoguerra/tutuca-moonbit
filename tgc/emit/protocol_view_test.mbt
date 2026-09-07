@@ -7,7 +7,7 @@
 ///
 /// Both bodies arrive already indented for the section they go in, because
 /// re-indenting them here would mean a helper that reads shrubbery to write it.
-fn card(spec : String, script : String, view? : String = "@div{}") -> String {
+fn card(spec : String, script : String, view? : String = "div()") -> String {
   "spec:\n\{spec}\nlogic:\n  B:\n\{script}\nview:\n  B:\n    \{view}\n"
 }
 
@@ -68,7 +68,7 @@ test "a bare ask still takes a value in the slot a name would use" {
 /// `check_card` is the loop an author runs before paying for a compile.
 test "check_card reports a view that names a field the spec does not declare" {
   let c = @emit.check_card(
-    card("  B ~root:\n    field n :: Double", "", view="@div{@(it.nope)}"),
+    card("  B ~root:\n    field n :: Double", "", view="div(): @(it.nope)"),
     name="b",
   )
   let codes = c.issues.map(i => i.code)
@@ -85,7 +85,7 @@ test "an unanswered view handler is reported, and does not stop the compile" {
   let src = card(
     "  B ~root:\n    field n :: Double",
     "    receive bump:\n      it.n += 1.0",
-    view="@button(~on_click: noSuchThing){x}",
+    view="button(~on_click: noSuchThing): \"x\"",
   )
   let c = @emit.check_card(src, name="b")
   let warned = c.issues.filter(i => i.code == "NO_VIEW_HANDLER")
@@ -350,7 +350,7 @@ test "check_card and compile agree about what is fatal" {
       card(
         "  B ~root:\n    field n :: Double",
         "    receive bump:\n      it.n += 1.0",
-        view="@button(~on_click: nobody){x}",
+        view="button(~on_click: nobody): \"x\"",
       ),
       true,
     ),

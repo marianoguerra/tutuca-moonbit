@@ -1935,7 +1935,7 @@ test "a module's views are read at load, and an unreadable one refuses it" {
     // nothing every click — so this arrived as a lint at load. It is a REFUSAL
     // now: the reader knows a handler position when it is in one, and a module
     // that cannot be read is not a module that renders wrong.
-    tutu: "view:\n  Sloppy:\n    @div{@span(~on_click: it.nope){hi}}\n",
+    tutu: "view:\n  Sloppy:\n    div():\n      span(~on_click: it.nope): \"hi\"\n",
     components: [
       {
         name: "Sloppy",

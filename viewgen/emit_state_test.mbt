@@ -220,7 +220,7 @@ test "two `spec:` sections in one file are refused" {
     #|
     #|view:
     #|  A:
-    #|    @p{hi}
+    #|    p(): "hi"
   let msg = try {
     @viewgen.read_file(src) |> ignore
     "no error"

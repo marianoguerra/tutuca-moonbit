@@ -241,9 +241,28 @@ fn merged_src(channels : String, view_body : String) -> String raise {
 fn merged_file(channels : String, view_body : String) -> String {
   "spec:\n  Chat:\n    field n :: Int\n    field name :: String\n" +
   channels +
-  "\nview:\n  Chat:\n    @p{" +
-  view_body +
-  "}\n"
+  "\nview:\n  Chat:\n    p():\n" +
+  indent_body(view_body) +
+  "\n"
+}
+
+///|
+/// A view body, indented to sit under the `p()` that wraps it.
+///
+/// The wrapper used to be `@p{…}`, where the body went on one line inside the
+/// braces. Under law 1 the children are a BLOCK, so each line has to carry the
+/// indentation the block expects.
+fn indent_body(body : String) -> String {
+  let out = StringBuilder()
+  let mut first = true
+  for line in body.split("\n") {
+    if !first {
+      out.write_string("\n")
+    }
+    first = false
+    out.write_string("      " + line.to_owned())
+  }
+  out.to_string()
 }
 
 ///|
@@ -261,7 +280,7 @@ test "the receive bucket merges the schema with the view names" {
   // schema — and nothing relates them. v2 has ONE bucket for a message whoever
   // sent it, so one enum holds both.
   let src = merged_src(
-    "    message init\n    message setAll(String)\n", "@button(~on_click: bump(1)){+}@button(~on_click: reset){0}",
+    "    message init\n    message setAll(String)\n", "button(~on_click: bump(1)): \"+\"\nbutton(~on_click: reset): \"0\"",
   )
   let body = enum_body(src, "ChatMsg")
   // From the schema...
@@ -285,7 +304,7 @@ test "a view name the schema also declares is declared once, by the schema" {
   // Not twice. The schema wins, and the payload is the schema's — which is
   // exactly why the disagreement below can be reported at all.
   let src = merged_src(
-    "    message bump(Int)\n", "@button(~on_click: bump(1)){+}",
+    "    message bump(Int)\n", "button(~on_click: bump(1)): \"+\"",
   )
   let body = enum_body(src, "ChatMsg")
   assert_true(body.contains("  Bump(Int)\n"))
@@ -303,21 +322,21 @@ test "a call site that disagrees with the schema is a build error" {
   // writes `Bump(Int)` prints that instead — accurate, and the whole reason
   // `message-case` nudges the declaration into the used spelling.
   assert_eq(
-    merge_err("    message bump(Int)\n", "@button(~on_click: bump(1, 2)){+}"),
+    merge_err("    message bump(Int)\n", "button(~on_click: bump(1, 2)): \"+\""),
     "`bump` is declared in the `spec:` section as `bump(Int)` and called from ~on_click as `bump(a number, a number)` — the schema declares what a message carries, so the call sites have to match it",
   )
   assert_eq(
-    merge_err("    message bump(Int)\n", "@button(~on_click: bump(\"x\")){+}"),
+    merge_err("    message bump(Int)\n", "button(~on_click: bump(\"x\")): \"+\""),
     "`bump` is declared in the `spec:` section as `bump(Int)` and called from ~on_click as `bump(text)` — the schema declares what a message carries, so the call sites have to match it",
   )
   // Agreeing is silent, and so is a call site the inference could not read:
   // unknown is not wrong, which is the rule the whole generator turns on.
   assert_eq(
-    merge_err("    message bump(Int)\n", "@button(~on_click: bump(1)){+}"),
+    merge_err("    message bump(Int)\n", "button(~on_click: bump(1)): \"+\""),
     "",
   )
   assert_eq(
-    merge_err("    message bump(Int)\n", "@button(~on_click: bump(it.n)){+}"),
+    merge_err("    message bump(Int)\n", "button(~on_click: bump(it.n)): \"+\""),
     "",
   )
 }
