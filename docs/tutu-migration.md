@@ -16,22 +16,24 @@ construct you remember is called now.
 
 ## Status — read this first
 
-The migration is **done through stage 5. Nothing in the tree is written in the
-old notation — not a view file, not a card, not a doc block, not a starter in
-the playground. The lowering seam underneath them is what is left.**
+The migration is **done. Nothing in the tree is written in the old notation,
+and nothing reads it: every section is read directly into the shape it means,
+and a compiled card carries its own `.tutu` source for a host to read the same
+way.** What is left below is the record of how it was done, and the conversion
+table you came for.
 
 | Stage | What it is | State |
 | --- | --- | --- |
 | 1 | The file: five sections, their order, the declarations in each | **done** — `tutufile/`, `tutuca outline` |
-| 2 | Every section lowered into the block the front end reads | **done** — `tutufile/lower`, and `tutuca gen` takes a `.tutu` |
+| 2 | Every section lowered into the block the front end reads | **done, then deleted** — the lowering was a bridge and the bridge is gone |
 | 3 | Convert the repo's 85 view files and cards | **done** — no `.html` in the tree declares a component |
 | 4 | The card runtime, both playgrounds, the benchmarks and the generated corpora | **done** |
 | 5 | The MoonBit beside each view: fields, message names, hook keys, binding names | **done** |
 | 5b | The docs: the skill's 90 view blocks and its prose, `README`, `docs/`, and every diagnostic an author reads | **done** |
-| 5c | The card playground: its 26 starter cards, the structured editor's region model, and the gates over both | **done** — nothing in the tree is written in the old notation |
-| 6 | Direct readers, replacing the lowering; then delete `viewfile/` and the old parsers | **in progress** — the view and `logic:` readers are in |
+| 5c | The card playground: its 26 starter cards, the structured editor's region model, and the gates over both | **done** |
+| 6 | Direct readers, replacing the lowering; then delete the old parsers | **done** — see below |
 
-### Stage 6, and what is left of it
+### Stage 6, as it landed
 
 All four sections read directly:
 
@@ -39,75 +41,70 @@ All four sections read directly:
 | --- | --- | --- |
 | `view:` | `tutufile/toanode` | an `@anode.ANode` and its event table, macros expanded |
 | `logic:` | `tutufile/tologic` | `@tscript.Decl`s |
-| `spec:` | `statedef/from_tutu*.mbt` | the same `RawDecl`s the block parser builds, handed to the same `defs_of` |
+| `spec:` | `statedef/from_tutu*.mbt` | the same `RawDecl`s the block parser built, handed to the same `defs_of` |
 | `fixtures:` / `tests:` | `tutufile/todata` | the JSON `parse_init` and `parse_scenes` take |
 
-Each is held to the printer by a differential test — the same source read both
-ways, compared as trees. That is what makes a printer safe to delete.
+`ViewFile` stopped carrying text: `RawView` carries its tree and `ScriptBlock`
+its declarations, so `viewgen/compiled.mbt`'s `compile_view` has nothing to
+parse. `viewgen.read_file` replaced `split_file` for every consumer — the CLI,
+the card compiler, both playgrounds — and `read_card` is the same read with
+every report handed back instead of the first one raised, which is what a
+`check` needs.
 
-Then, in order:
+### The card manifest carries the card
 
-1. **`ViewFile` stops carrying text.** `RawView.source` is HTML and
-   `ScriptBlock.text` is the block language; both become the parsed forms the
-   readers already produce. `viewgen/compiled.mbt`'s `compile_view` is the
-   seam — it turns raw text into `(root, events)`, which is exactly what
-   `toanode` answers.
-2. **Switch the consumers.** `cli/gen_views.mbt` lowers a `.tutu` before
-   splitting it (`f.input.has_suffix(".tutu")`); so does `benchmarks`, and so
-   does `tgc/emit`. All three read the direct path instead.
-3. **Delete.** `tutufile/lower`'s printers, `viewfile`'s HTML splitter,
-   `tutuca to-tutu` and `tutufile/equiv` — the converter and the equivalence
-   check exist only to move the repo across, and the repo is across.
+The thing that stood between the readers and the deletion. A compiled card's
+manifest used to carry each view and each macro as HTML, and the host parsed it
+back. Producing that field from a TREE would have meant an `ANode` → HTML
+printer, byte-exact against the card conformance suite, for a notation nothing
+is written in any more.
 
-### The card manifest is what stands between the readers and the switch
+So the manifest carries the card's own `.tutu` source, once, under `tutu`; each
+component lists its view NAMES and each view's byte count, and the host reads
+the bodies with `tutufile/toanode` — the same reader the generator uses. A host
+carries the shrubbery reader and does not carry the HTML tokenizer.
 
-Three things a reader cannot answer, and all three are the same shape: a
-compiled card's manifest carries TEXT, and the host on the other side parses it.
+Three things followed from it, each worth knowing about:
 
-- **each view, as HTML** — `tgc/emit/compile.mbt` writes `{"name": …, "html":
-  …}` and `tgc/host/manifest.mbt` reads it back through `ANode::parse`. A view
-  arrives at the generator as a TREE now, so producing that field means an
-  `ANode` → HTML printer: the same printer stage 6 exists to delete, for the
-  view section only, and it has to be byte-exact or the card conformance suite
-  moves under it.
-- **`provide` and `lookup`, as source** — the host parses them with the block
-  grammar. The `spec:` reader raises on them by name; one example card uses
-  them.
-- the auto-mutator vocabulary (`set<Field>`, `<field>Len`), which
-  `core/schema.mbt` builds and 272 call sites spell
+- **`host.name` had no `.tutu` spelling.** The skill documented it as an
+  ordinary operand and the reader read it as a binding called `host`, so it
+  rendered Null and `tgc/policy` judged a host-supplied origin as if the
+  component had made it up. `tutufile/shrub` reads it as an `EConfigVar` now,
+  and a `ViewBuilder` given the host's table substitutes it while it reads.
+- **`provide` and `lookup` are read from the `spec:` section.** The value they
+  carry is a wire format with `@component` on the other side, so the reader
+  writes it — over a closed grammar (a path, `self`, a literal) held to the
+  printer, declaration by declaration, while the printer still existed.
+- **`~category` and `~keywords` are `StateDef` fields.** They used to travel in
+  a map beside the definitions because only the lowering could see them.
 
-So the switch is not a port of the consumers — it is a card-format change with
-its own compatibility story, and it wants to be its own piece of work rather
-than the tail of this one. The readers are in and checked; what they feed is
-where the next decision is.
+`METHOD_IN_EVENT` no longer fires for a card: the rule was about a sigil, and
+`~on_click: f()` and `~on_click: f` are one dispatch in this notation, which is
+what the rule was arguing they should be. It still runs over views built as
+markup through `@anode.View::new`.
 
-A rehearsal of the switch got as far as `viewgen`, the CLI and every test
-fixture in both — the corpus converts, `read_file` replaces `split_file`, and
-the two text-shaped lint passes go with the text — before the manifest stopped
-it. That is the shape the work takes when the format question is answered.
+### How it was checked
 
-`InitState.fields` is MoonBit source and stays that way: the generator writes
-it into a `make` call, and the data reader hands over JSON rather than fields.
-
-### How it is checked
-
-By **equivalence against the path it replaces**. Each direct reader is held to
+By **equivalence against the path it replaced**. Each direct reader was held to
 the printer by a differential test: the same source read both ways, compared as
-trees. `tutufile/tologic` has one, and it earns its keep — it found three
+trees. `tutufile/tologic` had one, and it earned its keep — it found three
 disagreements on the first run, each a fact about the printer rather than a gap
 in the reader, and each written down beside the assertions.
 
-That check is what makes a printer safe to delete. A reader that merely parses
+That check is what made a printer safe to delete. A reader that merely parses
 is a reader that could be producing anything; a reader that agrees with the
 thing it replaces, statement shape by statement shape, is one you can take the
-other side away from.
+other side away from. `statedef`'s is the one that outlived the printer, because
+its subject is a wire format rather than a notation: `wire_value` is the one
+place a reader WRITES source, and every shape it writes was compared against
+what the printer wrote for the same line.
 
 While the corpus was being converted the same idea ran the other way:
 `tutufile/equiv` compared what the pipeline READ out of a `.html` and the
-`.tutu` beside it, and `tutuca to-tutu` refused rather than guessed. Both go
-with the seam — they exist to move a repo across, and this one is across.
+`.tutu` beside it, and `tutuca to-tutu` refused rather than guessed. Both went
+with the seam — they existed to move a repo across, and this one is across.
 
-**Naming an anonymous component changes its fingerprint.** A `.html` file may
+**Naming an anonymous component changes its fingerprint.** A `.html` file could
 write `state { … }` with no name; a `.tutu` file always names its components.
 The fields, views, codec and generated MoonBit are identical — the fingerprint
 is not, because the name is in it. A project that persists state across the

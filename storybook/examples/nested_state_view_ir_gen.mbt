@@ -26,18 +26,26 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let nested_state_spec_source : String =
-  #|state NestedState {
-  #|  title: String
-  #|  labels: Array[Label]
-  #|  priority: Priority
-  #|  due: Due
-  #|  note: String?
-  #|  size: (Int, Int)
-  #|  where title is nonempty
-  #|}
-  #|enum Due { Unscheduled, OnDay(Int) }
-  #|struct Label { text: String, done: Bool }
-  #|enum Priority { Low, High }
+  #|spec:
+  #|  NestedState:
+  #|    field title :: String
+  #|    field labels :: List.of(Label)
+  #|    field priority :: Priority
+  #|    field due :: Due
+  #|    field note :: maybe(String)
+  #|    field size :: Tuple.of(Int, Int)
+  #|
+  #|    where it.title non_empty
+  #|
+  #|  enum Due:
+  #|    Unscheduled
+  #|    OnDay(Int)
+  #|
+  #|  struct Label(text :: String, done :: Bool)
+  #|
+  #|  enum Priority:
+  #|    Low
+  #|    High
 
 ///|
 /// The compiled `main` view.

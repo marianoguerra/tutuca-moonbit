@@ -26,19 +26,19 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let greeting_spec_source : String =
-  #|state Greeting {
-  #|  name: String
-  #|}
-  #|state Page {
-  #|  greeting: Instance[Greeting]
-  #|}
-  #|state Entry {
-  #|  title: String
-  #|  description: String
-  #|}
-  #|state MultipleViews {
-  #|  value: Instance[Entry]
-  #|}
+  #|spec:
+  #|  Greeting:
+  #|    field name :: String
+  #|
+  #|  Page:
+  #|    field greeting :: Instance.of(Greeting)
+  #|
+  #|  Entry:
+  #|    field title :: String
+  #|    field description :: String
+  #|
+  #|  MultipleViews:
+  #|    field value :: Instance.of(Entry)
 
 ///|
 /// The compiled `main` view.
@@ -178,6 +178,7 @@ fn entry_main_view_ir() -> @anode.View {
         @anode.h("h2", [@anode.attr("class", "card-title")], [
           @anode.dyn_text(@tutuca.Expr::field("title"), id=0),
         ]),
+        @anode.text("\n"),
         @anode.h("p", [], [
           @anode.dyn_text(@tutuca.Expr::field("description"), id=1),
         ]),

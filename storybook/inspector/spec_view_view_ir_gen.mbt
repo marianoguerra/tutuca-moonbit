@@ -26,55 +26,68 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let spec_field_spec_source : String =
-  #|state SpecField {
-  #|  name: String
-  #|  type_name: String
-  #|  attrs: String
-  #|  doc: String
-  #|}
-  #|state SpecMsg {
-  #|  name: String
-  #|  payload: String
-  #|  doc: String
-  #|}
-  #|state SpecRule {
-  #|  kind: String
-  #|  kind_class: String
-  #|  name: String
-  #|  source: String
-  #|  format: String
-  #|  doc: String
-  #|  where kind is one of ["pred", "invariant"]
-  #|  where name is nonempty
-  #|  where source is nonempty
-  #|}
-  #|state SpecDoc {
-  #|  text: String
-  #|}
-  #|state SpecViewer {
-  #|  comp_name: String
-  #|  sections: Array[Instance]
-  #|  has_spec: Bool
-  #|  hint: String
-  #|  note: String
-  #|  invariant hint_explains_the_empty_view
-  #|    format 'there is no declaration to show, and the view does not say why' { ((not .has_spec) implies ((len .hint) > 0)) }
-  #|}
-  #|handle SpecViewer {
-  #|  intent {
-  #|    toggle_all_sections(Bool)
-  #|  }
-  #|}
-  #|state SpecSource {
-  #|  source: String
-  #|  has_source: Bool
-  #|  hint: String
-  #|  note: String
-  #|  invariant has_source_tracks_source
-  #|    format 'hasSource and the source disagree' { (.has_source is ((len .source) > 0)) }
-  #|  invariant hint_explains_the_empty_source
-  #|    format 'there is no block to show, and the view does not say why' { ((not .has_source) implies ((len .hint) > 0)) }
-  #|}
+  #|spec:
+  #|  SpecField:
+  #|    field name :: String
+  #|
+  #|    field type_name :: String
+  #|
+  #|    field attrs :: String
+  #|    field doc :: String
+  #|
+  #|  SpecMsg:
+  #|    field name :: String
+  #|
+  #|    field payload :: String
+  #|    field doc :: String
+  #|
+  #|  SpecRule:
+  #|    field kind :: String
+  #|    field kind_class :: String
+  #|    field name :: String
+  #|
+  #|    field source :: String
+  #|
+  #|    field format :: String
+  #|    field doc :: String
+  #|
+  #|    where it.kind is_one_of ["pred", "invariant"]
+  #|
+  #|    where it.name non_empty
+  #|
+  #|    where it.source non_empty
+  #|
+  #|  SpecDoc:
+  #|    field text :: String
+  #|
+  #|  SpecViewer:
+  #|    field comp_name :: String
+  #|    field sections :: List.of(Instance)
+  #|    field has_spec :: Bool
+  #|
+  #|    field hint :: String
+  #|
+  #|    field note :: String
+  #|
+  #|    invariant hint_explains_the_empty_view:
+  #|      ~format: "there is no declaration to show, and the view does not say why"
+  #|      (!it.has_spec implies (it.hint.length() > 0))
+  #|
+  #|    intent toggle_all_sections(Bool)
+  #|
+  #|  SpecSource:
+  #|    field source :: String
+  #|    field has_source :: Bool
+  #|    field hint :: String
+  #|    field note :: String
+  #|
+  #|    invariant has_source_tracks_source:
+  #|      ~format: "hasSource and the source disagree"
+  #|      (it.has_source == (it.source.length() > 0))
+  #|
+  #|    invariant hint_explains_the_empty_source:
+  #|      ~format: "there is no block to show, and the view does not say why"
+  #|      (!it.has_source implies (it.hint.length() > 0))
 
 ///|
 /// The compiled `main` view.

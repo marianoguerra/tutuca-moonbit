@@ -26,26 +26,32 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let bar_chart_spec_source : String =
-  #|state BarChart {
-  #|  values: Array[Int]
-  #|  pred has_room
-  #|    format $'nine bars is the cap, and there are already {(len .values)}' { ((len .values) < 9) }
-  #|  pred has_spare
-  #|    format 'one bar has to stay, or there is no chart left to look at' { ((len .values) > 1) }
-  #|  invariant never_empty
-  #|    format 'the chart lost its last bar' { ((len .values) > 0) }
-  #|}
-  #|handle BarChart {
-  #|  message {
-  #|    add_bar,
-  #|    remove_bar,
-  #|    randomize
-  #|  }
-  #|}
-  #|state IconGallery {
-  #|  size: Int
-  #|  where size between 16 and 80
-  #|}
+  #|spec:
+  #|  BarChart:
+  #|    field values :: List.of(Int)
+  #|
+  #|    pred has_room:
+  #|      ~format: @str{nine bars is the cap, and there are already @(it.values.length())}
+  #|      (it.values.length() < 9)
+  #|
+  #|    pred has_spare:
+  #|      ~format: "one bar has to stay, or there is no chart left to look at"
+  #|      (it.values.length() > 1)
+  #|
+  #|    invariant never_empty:
+  #|      ~format: "the chart lost its last bar"
+  #|      (it.values.length() > 0)
+  #|
+  #|    message add_bar
+  #|
+  #|    message remove_bar
+  #|
+  #|    message randomize
+  #|
+  #|  IconGallery:
+  #|    field size :: Int
+  #|
+  #|    where it.size in_range(16, 80)
 
 ///|
 /// The compiled `main` view.

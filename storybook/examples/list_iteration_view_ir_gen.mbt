@@ -26,9 +26,9 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let list_iteration_spec_source : String =
-  #|state ListIteration {
-  #|  items: Array[String]
-  #|}
+  #|spec:
+  #|  ListIteration:
+  #|    field items :: List.of(String)
 
 ///|
 /// The compiled `main` view.

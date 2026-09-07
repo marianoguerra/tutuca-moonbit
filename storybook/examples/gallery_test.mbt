@@ -931,13 +931,11 @@ test "each story pane shows the block it was declared in" {
 
   let raw = shell_input(spec, "onStoryTab", [Num(0), Str("raw")])
   assert_true(raw.field("w0") is Obj(_))
-  // Verbatim — the block as the pipeline read it. That is still the LOWERED
-  // form: a `.tutu` reaches `gen`, is lowered, and the spec source embedded is
-  // what it lowered to. The author's own `spec:` section is what belongs here,
-  // and it arrives when the readers go direct.
+  // Verbatim — the author's own `spec:` section. `emit_spec_source` embeds the
+  // fragment `gen` READ rather than anything printed from it.
   let src = raw.field("w0").field("source").str(default="")
-  assert_true(src.contains("state Counter {"))
-  assert_true(src.contains("count: Int"))
+  assert_true(src.contains("Counter:"), msg=src)
+  assert_true(src.contains("field count :: Int"), msg=src)
 
   // A declaration cannot go stale — the component behind a story is the one
   // thing about it that never changes — so leaving keeps both panels rather
@@ -968,7 +966,7 @@ test "the Spec tab renders the declaration, not a blank pane" {
   assert_true(h.texts(".comp-section").contains("Counter"))
   assert_true(h.texts(".spec-field-name").contains("count"))
   h.click(".raw-tab")
-  assert_true(h.text(".spec-source-text").contains("count: Int"))
+  assert_true(h.text(".spec-source-text").contains("field count :: Int"))
 }
 
 ///|

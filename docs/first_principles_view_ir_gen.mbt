@@ -26,20 +26,17 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let fp_greeting_spec_source : String =
-  #|state FpGreeting {
-  #|  name: String
-  #|}
-  #|state Note {
-  #|  text: String
-  #|}
-  #|handle Note {
-  #|  message {
-  #|    write(String)
-  #|  }
-  #|}
-  #|state Mailbox {
-  #|  note: Instance[Note]
-  #|}
+  #|spec:
+  #|  FpGreeting:
+  #|    field name :: String
+  #|
+  #|  Note:
+  #|    field text :: String
+  #|
+  #|    message write(String)
+  #|
+  #|  Mailbox:
+  #|    field note :: Instance.of(Note)
 
 ///|
 /// The compiled `main` view.

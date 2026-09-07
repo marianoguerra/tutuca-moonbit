@@ -26,23 +26,22 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let traffic_light_spec_source : String =
-  #|state TrafficLight {
-  #|  light_index: Int
-  #|  where light_index between 0 and 2
-  #|}
-  #|handle TrafficLight {
-  #|  message {
-  #|    next_light
-  #|  }
-  #|}
-  #|state TabbedUI {
-  #|  tab: String
-  #|  where tab is one of ["overview", "features", "pricing"]
-  #|}
-  #|state ListAndFilter {
-  #|  items: Array[String]
-  #|  query: String
-  #|}
+  #|spec:
+  #|  TrafficLight:
+  #|    field light_index :: Int
+  #|
+  #|    message next_light
+  #|
+  #|    where it.light_index in_range(0, 2)
+  #|
+  #|  TabbedUI:
+  #|    field tab :: String
+  #|
+  #|    where it.tab is_one_of ["overview", "features", "pricing"]
+  #|
+  #|  ListAndFilter:
+  #|    field items :: List.of(String)
+  #|    field query :: String
 
 ///|
 /// The compiled `main` view.
@@ -65,26 +64,35 @@ fn traffic_light_main_view_ir() -> @anode.View {
       @anode.h("p", [@anode.attr("class", "advice")], [
         @anode.text(" You must "),
         @anode.show(
-          @tutuca.Expr::app("is", [
-            @tutuca.Expr::method_("light"),
-            @anode.const_str("red"),
-          ]),
+          EChain(
+            family=FCompare,
+            ops=["is"],
+            operands=[@tutuca.Expr::method_("light"), @anode.const_str("red")],
+            span=@tutuca.no_span,
+          ),
           @anode.h("span", [], [@anode.text("STOP")]),
         ),
         @anode.text(" "),
         @anode.show(
-          @tutuca.Expr::app("is", [
-            @tutuca.Expr::method_("light"),
-            @anode.const_str("orange"),
-          ]),
+          EChain(
+            family=FCompare,
+            ops=["is"],
+            operands=[
+              @tutuca.Expr::method_("light"),
+              @anode.const_str("orange"),
+            ],
+            span=@tutuca.no_span,
+          ),
           @anode.h("span", [], [@anode.text("SLOW DOWN")]),
         ),
         @anode.text(" "),
         @anode.show(
-          @tutuca.Expr::app("is", [
-            @tutuca.Expr::method_("light"),
-            @anode.const_str("green"),
-          ]),
+          EChain(
+            family=FCompare,
+            ops=["is"],
+            operands=[@tutuca.Expr::method_("light"), @anode.const_str("green")],
+            span=@tutuca.no_span,
+          ),
           @anode.h("span", [], [@anode.text("GO")]),
         ),
       ]),
@@ -223,10 +231,15 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
               @anode.attr("id", "t-overview"),
               @anode.if_attr(
                 "class",
-                @tutuca.Expr::app("is", [
-                  @tutuca.Expr::field("tab"),
-                  @anode.const_str("overview"),
-                ]),
+                EChain(
+                  family=FCompare,
+                  ops=["is"],
+                  operands=[
+                    @tutuca.Expr::field("tab"),
+                    @anode.const_str("overview"),
+                  ],
+                  span=@tutuca.no_span,
+                ),
                 then_val=@anode.const_str("tab tab-active"),
                 else_val=@anode.const_str("tab"),
               ),
@@ -242,10 +255,15 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
               @anode.attr("id", "t-features"),
               @anode.if_attr(
                 "class",
-                @tutuca.Expr::app("is", [
-                  @tutuca.Expr::field("tab"),
-                  @anode.const_str("features"),
-                ]),
+                EChain(
+                  family=FCompare,
+                  ops=["is"],
+                  operands=[
+                    @tutuca.Expr::field("tab"),
+                    @anode.const_str("features"),
+                  ],
+                  span=@tutuca.no_span,
+                ),
                 then_val=@anode.const_str("tab tab-active"),
                 else_val=@anode.const_str("tab"),
               ),
@@ -261,10 +279,15 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
               @anode.attr("id", "t-pricing"),
               @anode.if_attr(
                 "class",
-                @tutuca.Expr::app("is", [
-                  @tutuca.Expr::field("tab"),
-                  @anode.const_str("pricing"),
-                ]),
+                EChain(
+                  family=FCompare,
+                  ops=["is"],
+                  operands=[
+                    @tutuca.Expr::field("tab"),
+                    @anode.const_str("pricing"),
+                  ],
+                  span=@tutuca.no_span,
+                ),
                 then_val=@anode.const_str("tab tab-active"),
                 else_val=@anode.const_str("tab"),
               ),
@@ -276,10 +299,12 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        @tutuca.Expr::app("is", [
-          @tutuca.Expr::field("tab"),
-          @anode.const_str("overview"),
-        ]),
+        EChain(
+          family=FCompare,
+          ops=["is"],
+          operands=[@tutuca.Expr::field("tab"), @anode.const_str("overview")],
+          span=@tutuca.no_span,
+        ),
         @anode.h("div", [@anode.attr("class", "card p-3 border panel")], [
           @anode.h("h4", [], [@anode.text("Overview")]),
           @anode.h("p", [], [
@@ -289,10 +314,12 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        @tutuca.Expr::app("is", [
-          @tutuca.Expr::field("tab"),
-          @anode.const_str("features"),
-        ]),
+        EChain(
+          family=FCompare,
+          ops=["is"],
+          operands=[@tutuca.Expr::field("tab"), @anode.const_str("features")],
+          span=@tutuca.no_span,
+        ),
         @anode.h("div", [@anode.attr("class", "card p-3 border panel")], [
           @anode.h("h4", [], [@anode.text("Features")]),
           @anode.h("p", [], [
@@ -302,10 +329,12 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        @tutuca.Expr::app("is", [
-          @tutuca.Expr::field("tab"),
-          @anode.const_str("pricing"),
-        ]),
+        EChain(
+          family=FCompare,
+          ops=["is"],
+          operands=[@tutuca.Expr::field("tab"), @anode.const_str("pricing")],
+          span=@tutuca.no_span,
+        ),
         @anode.h("div", [@anode.attr("class", "card p-3 border panel")], [
           @anode.h("h4", [], [@anode.text("Pricing")]),
           @anode.h("p", [], [@anode.text("What it costs.")]),

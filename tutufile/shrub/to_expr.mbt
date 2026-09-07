@@ -60,24 +60,34 @@ pub(all) struct ExCtx {
   /// anything becomes an `Expr` — see `subst_ex` — so by the time a conversion
   /// runs this is only what decides whether an unbound name is an error.
   params : Map[String, Ex]
+  /// The HOST's table, when there is a host: what `host.name` resolves to.
+  ///
+  /// `None` and an empty table are different answers, and the difference is
+  /// the whole reason this is an option. `None` is "nobody is loading this
+  /// yet" — the ahead-of-time path, where a `host.name` stays an `EConfigVar`
+  /// for a backend to refuse or a generator to write down. `Some` is a host
+  /// that HAS a table, and a name missing from it is an error rather than a
+  /// symbol to carry: the view would render Null against a variable the host
+  /// never offered.
+  config : Map[String, String]?
 }
 
 ///|
 /// A value-position context with no bindings.
 pub fn ExCtx::value() -> ExCtx {
-  { binds: Map([]), pos: Bound, params: Map([]), }
+  { binds: Map([]), pos: Bound, params: Map([]), config: None, }
 }
 
 ///|
 /// A `logic:` body's scope: bound names are bindings, the rest are free.
 pub fn ExCtx::in_body(binds : Map[String, String]) -> ExCtx {
-  { binds, pos: Local, params: Map([]), }
+  { binds, pos: Local, params: Map([]), config: None, }
 }
 
 ///|
 /// The same scope, reading names as handlers rather than as bindings.
 pub fn ExCtx::as_handler(self : ExCtx) -> ExCtx {
-  { binds: self.binds, pos: Handler, params: self.params, }
+  { binds: self.binds, pos: Handler, params: self.params, config: self.config, }
 }
 
 ///|
@@ -88,7 +98,21 @@ pub fn ExCtx::as_handler(self : ExCtx) -> ExCtx {
 /// parser substitute them while reading `^name`. Here the argument is the `Ex`
 /// the caller wrote, and substitution happens where the parameter is read.
 pub fn ExCtx::with_params(self : ExCtx, params : Map[String, Ex]) -> ExCtx {
-  { binds: self.binds, pos: self.pos, params, }
+  { binds: self.binds, pos: self.pos, params, config: self.config, }
+}
+
+///|
+/// The same scope, resolving `host.name` against a host's table.
+///
+/// A host that loads a card HAS a table; the ahead-of-time path does not, and
+/// leaves the reference symbolic. See `ExCtx.config`.
+pub fn ExCtx::with_config(self : ExCtx, config : Map[String, String]) -> ExCtx {
+  {
+    binds: self.binds,
+    pos: self.pos,
+    params: self.params,
+    config: Some(config),
+  }
 }
 
 ///|
@@ -99,7 +123,7 @@ pub fn ExCtx::with_bind(self : ExCtx, name : String, as_ : String) -> ExCtx {
     binds[k] = v
   }
   binds[name] = as_
-  { binds, pos: self.pos, params: self.params, }
+  { binds, pos: self.pos, params: self.params, config: self.config, }
 }
 
 ///|
@@ -122,7 +146,7 @@ pub fn to_expr(
     EState(f) => @tutuca.Expr::field(f, span=sp)
     EDyn(n) => @tutuca.Expr::dyn_(n, span=sp)
     EName(n) => name_expr(n, ctx, sp)
-    EMember(base, m) => member_expr(base, m, ctx, sp)
+    EMember(base, m) => member_expr(base, m, ctx, sp, span)
     EIndex(base, k) => index_expr(base, k, ctx, sp, span)
     ECall(callee, args) => call_expr(callee, args, ctx, sp, span)
     EBin(op, a, b) => bin_expr(op, a, b, ctx, sp, span)
@@ -168,7 +192,12 @@ fn name_expr(n : String, ctx : ExCtx, sp : @tutuca.Span) -> @tutuca.Expr {
         from_macro(
           to_expr_unchecked(
             arg,
-            { binds: ctx.binds, pos: ctx.pos, params: Map([]), },
+            {
+              binds: ctx.binds,
+              pos: ctx.pos,
+              params: Map([]),
+              config: ctx.config,
+            },
             sp,
           ),
         )
@@ -243,19 +272,98 @@ fn member_expr(
   m : String,
   ctx : ExCtx,
   sp : @tutuca.Span,
+  span : @report.Span,
 ) -> @tutuca.Expr raise ExError {
   match base {
-    EName("e") => @tutuca.Expr::event_path([m], span=sp)
-    EMember(EName("e"), a) => @tutuca.Expr::event_path([a, m], span=sp)
-    EMember(EMember(EName("e"), a), b) =>
-      @tutuca.Expr::event_path([a, b, m], span=sp)
+    // `host.name` is the HOST's, not a binding's. It is matched before
+    // `EName(b)` below because that arm would otherwise read it as a binding
+    // called `host` — which is not a name error anywhere, so it would render
+    // Null and pin nothing, and `tgc/policy` would judge a host-supplied
+    // origin as if the component had made it up.
+    EName("host") => config_expr(m, ctx, sp)
+    // `e.a.b.c…`, to any depth. Three levels were spelled out here and the
+    // fourth fell through to the binding arm, so
+    // `e.target.ownerDocument.defaultView.localStorage.length` — the exact
+    // shape the event-path allowlist exists to advise about — was refused as a
+    // member read instead of reaching the rule. WHICH steps are allowed is
+    // `@eventpath`'s question, and it needs the path to ask it about.
+    _ if event_root(base) is Some(head) => {
+      head.push(m)
+      @tutuca.Expr::event_path(head, span=sp)
+    }
     EName(b) => @tutuca.Expr::bind_member(bound_name(b, ctx), m, span=sp)
+    // `it.a.b` in a `logic:` BODY is a step below a step, and legal: a body is
+    // checked code and the generator knows every type along the path. In a
+    // view it is not — a slot's name lookup stays one level because nothing
+    // checks it — which is why the position decides and not the shape.
+    _ if ctx.pos is Local => {
+      let head = to_expr(base, ctx, span)
+      guard head is ERead(place~, ..) else {
+        raise ExError(
+          message="only a place has members",
+          help="write `it.<field>.<member>`, or name the value with a `compute`",
+          span~,
+        )
+      }
+      let steps = []
+      for s in place.steps {
+        steps.push(s)
+      }
+      steps.push(PField(m))
+      ERead(place={ root: place.root, steps, span: sp, }, span=sp)
+    }
     _ =>
       raise ExError(
         message="a member read needs a binding or the event to read it from",
-        help="`it.a.b` is refused: render the child as a component, or name the value with a `compute`",
-        span=@report.Span::at(0),
+        help="`it.a.b` is refused in a view: render the child as a component, or name the value with a `compute`",
+        span~,
       )
+  }
+}
+
+///|
+/// `host.name`, against the table the loader supplied — or symbolic.
+///
+/// The value is SUBSTITUTED rather than re-read as source: it is text the host
+/// decided, and reading it back as an expression would let a host's table
+/// smuggle in an expression nobody asked for.
+fn config_expr(
+  name : String,
+  ctx : ExCtx,
+  sp : @tutuca.Span,
+) -> @tutuca.Expr raise ExError {
+  match ctx.config {
+    None => EConfigVar(name~, span=sp)
+    Some(table) =>
+      match table.get(name) {
+        Some(v) => @tutuca.Expr::lit(LStr(v), span=sp)
+        None =>
+          raise ExError(
+            message="the host offers no `host.\{name}`",
+            help="a host names what a view may read; write one it configured, or ask for `\{name}` to be added",
+            span=@report.Span::of_range(sp.start, sp.end_),
+          )
+      }
+  }
+}
+
+///|
+/// The segments under `e`, when this expression is rooted at the event.
+///
+/// `None` for anything else, which is what keeps a binding called `e` from
+/// being read as one — the root has to be the bare name.
+fn event_root(base : Ex) -> Array[String]? {
+  match base {
+    EName("e") => Some([])
+    EMember(inner, seg) =>
+      match event_root(inner) {
+        Some(head) => {
+          head.push(seg)
+          Some(head)
+        }
+        None => None
+      }
+    _ => None
   }
 }
 
@@ -329,9 +437,22 @@ fn call_expr(
           )
       }
     // a bare name with no arguments is this component's own `compute`
+    //
+    // …in a VIEW. In a `logic:` body it is a plain name, and the difference is
+    // not cosmetic: an `EMethod` is answered by the RENDER STACK, and a body
+    // runs after one has finished, so `mode()` written in a body read Null.
+    // The two are one call in the notation and the position decides which
+    // form it takes — which is what the checker's own repair says to do.
     EName(f) =>
       if pos.is_empty() {
-        @tutuca.Expr::method_(f, span=sp)
+        // An UPPERCASE name is a component or a record being built — `Hole()`
+        // in `it.children.push(Hole())` — and a body reaches one the same way
+        // a view does, which is why the position does not decide for it.
+        if ctx.pos is Local && !@tutuca.is_type_name(f) {
+          @tutuca.Expr::name(f, span=sp)
+        } else {
+          @tutuca.Expr::method_(f, span=sp)
+        }
       } else {
         @tutuca.Expr::app(f, args_to_exprs(pos, ctx, span), span=sp)
       }
@@ -457,11 +578,11 @@ fn tpl_expr(
   for p in parts {
     match p {
       TText(t) => out.push(TText(text=t, from_macro=false))
-      // A hole is already a call site, so a `compute` in one is NAMED rather
-      // than called — asking the render stack from inside a hole would be
-      // asking it after it answered.
-      THole(ECall(EName(f), args)) if positional_args(args).is_empty() =>
-        out.push(TExpr(@tutuca.Expr::method_(f, span=sp)))
+      // A hole is an ordinary expression slot: `call_expr` decides what
+      // `mode()` becomes, and the POSITION is what decides it — the render
+      // stack's `$name` in a view, a plain call in a `logic:` body. This arm
+      // used to force the first form here, so a `compute` called inside a
+      // template inside another compute's body read Null.
       THole(h) =>
         match to_expr(h, ctx, span) {
           ELit(lit=LStr(t), from_macro~, ..) =>
@@ -471,6 +592,29 @@ fn tpl_expr(
     }
   }
   trim_bookends(out)
+  // A template with no holes left in it IS a string, and folding it here is
+  // what makes every consumer agree about one. `~format: @str{a sentence}`
+  // read back as a one-part template, and the two places that show a rule's
+  // sentence — a broken invariant's report, a declined transition's log —
+  // print a literal and print nothing for a template, so the author's words
+  // came out as the rule's NAME.
+  let mut all_text = true
+  let text = StringBuilder()
+  let mut from_macro = false
+  for p in out {
+    match p {
+      TText(text=t, from_macro=fm) => {
+        text.write_string(t)
+        if fm {
+          from_macro = true
+        }
+      }
+      TExpr(_) => all_text = false
+    }
+  }
+  if all_text {
+    return ELit(lit=LStr(text.to_string()), from_macro~, span=sp)
+  }
   @tutuca.Expr::tpl(out, span=sp)
 }
 

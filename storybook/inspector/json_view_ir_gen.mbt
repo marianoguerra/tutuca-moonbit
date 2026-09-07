@@ -26,49 +26,57 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let json_null_spec_source : String =
-  #|state JsonNull {
-  #|}
-  #|state JsonBoolean {
-  #|  value: Bool
-  #|}
-  #|state JsonNumber {
-  #|  value: Double
-  #|}
-  #|state JsonString {
-  #|  value: String
-  #|}
-  #|state ValueFn {
-  #|}
-  #|state ValueObj {
-  #|  text: String
-  #|}
-  #|state JsonArray {
-  #|  items: Array[Instance]
-  #|  is_expanded: Bool
-  #|  items_per_page: Int
-  #|  current_page: Int
-  #|  invariant page_exists
-  #|    format $'page {.current_page} is past the end of {(len .items)} items' { ((.current_page is 0) or ((.current_page * .items_per_page) < (len .items))) }
-  #|  where items_per_page between 1 and 500
-  #|  where current_page >= 0
-  #|}
-  #|state JsonObject {
-  #|  items: Array[Instance[JsonProperty]]
-  #|  is_expanded: Bool
-  #|  items_per_page: Int
-  #|  current_page: Int
-  #|  invariant page_exists
-  #|    format $'page {.current_page} is past the end of {(len .items)} items' { ((.current_page is 0) or ((.current_page * .items_per_page) < (len .items))) }
-  #|  where items_per_page between 1 and 500
-  #|  where current_page >= 0
-  #|}
-  #|state JsonProperty {
-  #|  key: String
-  #|  child: Instance
-  #|}
-  #|state DataInspector {
-  #|  value: Instance
-  #|}
+  #|spec:
+  #|  JsonNull
+  #|
+  #|  JsonBoolean:
+  #|    field value :: Bool
+  #|
+  #|  JsonNumber:
+  #|    field value :: Double
+  #|
+  #|  JsonString:
+  #|    field value :: String
+  #|
+  #|  ValueFn
+  #|
+  #|  ValueObj:
+  #|    field text :: String
+  #|
+  #|  JsonArray:
+  #|    field items :: List.of(Instance)
+  #|    field is_expanded :: Bool
+  #|    field items_per_page :: Int
+  #|    field current_page :: Int
+  #|
+  #|    invariant page_exists:
+  #|      ~format: @str{page @(it.current_page) is past the end of @(it.items.length()) items}
+  #|      ((it.current_page == 0) || ((it.current_page * it.items_per_page) < it.items.length()))
+  #|
+  #|    where it.items_per_page in_range(1, 500)
+  #|
+  #|    where it.current_page >= 0
+  #|
+  #|  JsonObject:
+  #|    field items :: List.of(Instance.of(JsonProperty))
+  #|    field is_expanded :: Bool
+  #|    field items_per_page :: Int
+  #|    field current_page :: Int
+  #|
+  #|    invariant page_exists:
+  #|      ~format: @str{page @(it.current_page) is past the end of @(it.items.length()) items}
+  #|      ((it.current_page == 0) || ((it.current_page * it.items_per_page) < it.items.length()))
+  #|
+  #|    where it.items_per_page in_range(1, 500)
+  #|
+  #|    where it.current_page >= 0
+  #|
+  #|  JsonProperty:
+  #|    field key :: String
+  #|    field child :: Instance
+  #|
+  #|  DataInspector:
+  #|    field value :: Instance
 
 ///|
 /// The compiled `main` view.
@@ -627,7 +635,11 @@ fn json_array_main_view_ir() -> @anode.View {
           @anode.const_null(),
           action=@anode.set_property_action(
             "is_expanded",
-            @tutuca.Expr::app("not", [@tutuca.Expr::field("is_expanded")]),
+            EUnary(
+              op=UNot,
+              operand=@tutuca.Expr::field("is_expanded"),
+              span=@tutuca.no_span,
+            ),
           ),
         ),
       ],
@@ -874,7 +886,11 @@ fn json_object_main_view_ir() -> @anode.View {
           @anode.const_null(),
           action=@anode.set_property_action(
             "is_expanded",
-            @tutuca.Expr::app("not", [@tutuca.Expr::field("is_expanded")]),
+            EUnary(
+              op=UNot,
+              operand=@tutuca.Expr::field("is_expanded"),
+              span=@tutuca.no_span,
+            ),
           ),
         ),
       ],

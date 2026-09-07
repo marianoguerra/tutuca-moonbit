@@ -49,7 +49,7 @@ pub fn lower(text : String, source : @report.SourceId) -> Lowered {
   // `~when:` names it and a parameterised predicate otherwise, and the
   // declaration cannot say which — see `row_members`.
   let rows = match file.section(View) {
-    Some(section) => row_members(section.decls)
+    Some(section) => @sh.row_members(section.decls)
     None => []
   }
   match file.section(Logic) {

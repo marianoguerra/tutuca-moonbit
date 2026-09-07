@@ -583,6 +583,58 @@ fn counter_manifest() -> DynManifest {
     authors: [],
     config: [],
     macros: [],
+    // THE CARD, as its author wrote it. Every view body below is read out of
+    // this — `<Component>` for a `main` view and `<Component>.<name>` for the
+    // rest — which is what a compiled card's manifest carries and what
+    // `read_views` reads.
+    tutu: (
+      #|view:
+      #|  Counter:
+      #|    @div(~class: "counter"){
+      #|      @button(~class: "dec", ~on_click: dec){-}
+      #|      @span(~class: "count"){@(it.count)}
+      #|      @span(~class: "secret"){@(it.secret)}
+      #|      @button(~class: "inc", ~on_click: inc){+}
+      #|      @button(~class: "double", ~on_click: double){double}
+      #|      @button(~class: "notify", ~on_click: notify){notify}
+      #|      @button(~class: "undeclared", ~on_click: readUndeclared){undeclared}
+      #|      @button(~class: "announce", ~on_click: announce){announce}
+      #|      @button(~class: "triple", ~on_click: triple){triple}
+      #|      @button(~class: "zero", ~on_click: it.count := 0){zero}
+      #|      @span(~class: "label"){@(label())}
+      #|      @span(~class: "theme"){@(dyn.theme)}
+      #|      @ul(~class: "hist"){
+      #|        @each(value, key in it.history, ~when: nonZero){
+      #|          @li(~class: "h"){@(value)}
+      #|        }
+      #|      }
+      #|      @input(~class: "kbd", ~on_keydown: reset ~cancel)
+      #|    }
+      #|
+      #|  Pair:
+      #|    @div(~class: "pair"){
+      #|      @button(~class: "resetleft", ~on_click: reset_left){reset left}
+      #|      @div(~class: "left"){@render(it.left)}
+      #|      @div(~class: "right"){@render(it.right)}
+      #|    }
+      #|
+      #|  Framed:
+      #|    @div(~class: "framed"){
+      #|      @span(~class: "frame-title"){@(it.title)}
+      #|      @button(~class: "retitle", ~on_click: it.title := "renamed"){rename}
+      #|      @div(~class: "frame-body"){@render(it.body)}
+      #|    }
+      #|
+      #|  Shelf:
+      #|    @div(~class: "shelf"){@render(it.holds)}
+      #|
+      #|  Rack:
+      #|    @div(~class: "rack"){
+      #|      @button(~class: "rack-poke", ~on_click: bumpHeld){poke}
+      #|      @div(~class: "rack-one"){@render(it.holds)}
+      #|      @div(~class: "rack-cells"){@each(value, key in it.cells){@render(value)}}
+      #|    }
+    ),
     components: [
       {
         name: "Counter",
@@ -591,29 +643,7 @@ fn counter_manifest() -> DynManifest {
         keywords: ["counter", "number", "tally"],
         category: "input",
         message_docs: { "inc": "Add one.", "counted": "The count changed." },
-        views: [
-          {
-            name: "main",
-            html: (
-              #|<div class="counter">
-              #|  <button class="dec" @on.click="dec">-</button>
-              #|  <span class="count" @text=".count"></span>
-              #|  <span class="secret" @text=".secret"></span>
-              #|  <button class="inc" @on.click="inc">+</button>
-              #|  <button class="double" @on.click="double">double</button>
-              #|  <button class="notify" @on.click="notify">notify</button>
-              #|  <button class="undeclared" @on.click="readUndeclared">undeclared</button>
-              #|  <button class="announce" @on.click="announce">announce</button>
-              #|  <button class="triple" @on.click="triple">triple</button>
-              #|  <button class="zero" @on.click=".count = 0">zero</button>
-              #|  <span class="label" @text="$label"></span>
-              #|  <span class="theme" @text="*theme"></span>
-              #|  <ul class="hist"><li class="h" @each=".history" @when="nonZero" @text="@value"></li></ul>
-              #|  <input class="kbd" @on.keydown+cancel="reset">
-              #|</div>
-            ),
-          },
-        ],
+        views: [{ name: "main", bytes: 640, }],
         fields: [
           plain_field("count", TyFloat),
           plain_field("history", TyList(TyFloat)),
@@ -679,18 +709,7 @@ fn counter_manifest() -> DynManifest {
         keywords: [],
         category: "",
         message_docs: Map([]),
-        views: [
-          {
-            name: "main",
-            html: (
-              #|<div class="pair">
-              #|  <button class="resetleft" @on.click="reset_left">reset left</button>
-              #|  <div class="left"><x render=".left"></div>
-              #|  <div class="right"><x render=".right"></div>
-              #|</div>
-            ),
-          },
-        ],
+        views: [{ name: "main", bytes: 180, }],
         fields: [
           plain_field("left", TyComp(Some("Counter"))),
           plain_field("right", TyComp(Some("Counter"))),
@@ -735,18 +754,7 @@ fn counter_manifest() -> DynManifest {
         keywords: [],
         category: "",
         message_docs: Map([]),
-        views: [
-          {
-            name: "main",
-            html: (
-              #|<div class="framed">
-              #|  <span class="frame-title" @text=".title"></span>
-              #|  <button class="retitle" @on.click=".title = 'renamed'">rename</button>
-              #|  <div class="frame-body"><x render=".body"></div>
-              #|</div>
-            ),
-          },
-        ],
+        views: [{ name: "main", bytes: 200, }],
         fields: [
           plain_field("title", TyText),
           plain_field("body", TyComp(Some("Filler"))),
@@ -788,14 +796,7 @@ fn counter_manifest() -> DynManifest {
         keywords: [],
         category: "",
         message_docs: Map([]),
-        views: [
-          {
-            name: "main",
-            html: (
-              #|<div class="shelf"><x render=".holds"></div>
-            ),
-          },
-        ],
+        views: [{ name: "main", bytes: 44, }],
         fields: [plain_field("holds", TyComp(None))],
         properties: [],
         domains: [],
@@ -826,18 +827,7 @@ fn counter_manifest() -> DynManifest {
         keywords: [],
         category: "",
         message_docs: Map([]),
-        views: [
-          {
-            name: "main",
-            html: (
-              #|<div class="rack">
-              #|  <button class="rack-poke" @on.click="bumpHeld">poke</button>
-              #|  <div class="rack-one"><x render=".holds"></div>
-              #|  <div class="rack-cells"><x render-each=".cells"></div>
-              #|</div>
-            ),
-          },
-        ],
+        views: [{ name: "main", bytes: 220, }],
         fields: [
           plain_field("holds", TyComp(None)),
           plain_field("cells", TyList(TyComp(None))),
@@ -1429,9 +1419,10 @@ test "manifest parses a type written as the type it is" {
   // says what it is a list OF, which the flat table had a field for and the
   // writer never filled.
   let json =
-    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 10, "moduleName": "counterlib", "components": [
+    #|{"manifestVersion": 4, "abiVersion": 2, "apiVersion": 10, "moduleName": "counterlib",
+    #| "tutu": "view:\n  Counter:\n    @div{@(it.count)}\n", "components": [
     #|  {"name": "Counter",
-    #|   "views": [{"name": "main", "html": "<div>{.count}</div>"}],
+    #|   "views": [{"name": "main", "bytes": 30}],
     #|   "fields": [{"name": "count", "ty": {"k": "int", "width": 8, "signed": false}},
     #|              {"name": "history", "ty": {"k": "list", "of": {"k": "text"}}},
     #|              {"name": "pick", "ty": {"k": "option", "of": {"k": "flags", "name": "Vis", "members": ["On", "Off"]}}},
@@ -1457,7 +1448,7 @@ test "manifest parses a type written as the type it is" {
 }
 
 ///|
-/// The OLD wire form, kept for one release.
+/// The bridge's JSON projection, as a host reads it.
 ///
 /// A member's type crosses as the tree it is (`@tutuca.Ty::to_json`), so a
 /// compound says what it holds — which the flat index table it replaced never
@@ -1465,9 +1456,10 @@ test "manifest parses a type written as the type it is" {
 /// anything".
 test "manifest parses from the bridge's JSON projection" {
   let json =
-    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 10, "moduleName": "counterlib", "components": [
+    #|{"manifestVersion": 4, "abiVersion": 2, "apiVersion": 10, "moduleName": "counterlib",
+    #| "tutu": "view:\n  Counter:\n    @div{@(it.count)}\n", "components": [
     #|  {"name": "Counter",
-    #|   "views": [{"name": "main", "html": "<div>{.count}</div>"}],
+    #|   "views": [{"name": "main", "bytes": 30}],
     #|   "fields": [{"name": "count", "ty": {"k": "int"}},
     #|              {"name": "history", "ty": {"k": "list", "of": {"k": "int"}}}],
     #|   "properties": [{"name": "count", "ty": {"k": "int"}, "writable": true, "public": true}],
@@ -1475,7 +1467,16 @@ test "manifest parses from the bridge's JSON projection" {
     #|   "methods": ["label"], "style": ""}]}
   let m = DynManifest::from_json_string(json)
   inspect(m.module_name, content="counterlib")
-  inspect(m.components[0].views[0].html, content="<div>{.count}</div>")
+  inspect(m.components[0].views[0].bytes, content="30")
+  inspect(
+    m.tutu,
+    content=(
+      #|view:
+      #|  Counter:
+      #|    @div{@(it.count)}
+      #|
+    ),
+  )
   let fields = m.components[0].field_infos()
   debug_inspect(
     fields.map(f => "\{f.name}:\{f.ty.show_source()}"),
@@ -1524,14 +1525,19 @@ test "the default policy refuses CSS and a bomb" {
 /// Hold the policy decision at the registration seam too: this is where a
 /// parsed guest view either joins the shared app registry or disappears.
 test "untrusted registration blocks DOM egress but keeps custom elements" {
-  let register_view = (html : String) => {
+  let register_view = (body : String) => {
     let h = @harness.mount(shell_module(), "Shell")
     let base = counter_manifest()
     let manifest : DynManifest = {
       ..base,
       module_name: "view-policy",
+      tutu: "view:\n  Counter:\n    " + body + "\n",
       components: [
-        { ..base.components[0], style: "", views: [{ name: "main", html, }], },
+        {
+          ..base.components[0],
+          style: "",
+          views: [{ name: "main", bytes: body.length(), }],
+        },
       ],
     }
     let mut ok = true
@@ -1547,10 +1553,10 @@ test "untrusted registration blocks DOM egress but keeps custom elements" {
     }
     ok
   }
-  assert_false(register_view("<a :href=\".count\">leave</a>"))
-  assert_false(register_view("<div @setinnermd=\".count\"></div>"))
+  assert_false(register_view("@a(~href: it.count){leave}"))
+  assert_false(register_view("@div(~inner_md: it.count)"))
   assert_true(
-    register_view("<x-picker :items=\".history\" mode=\"compact\"></x-picker>"),
+    register_view("@x_picker(~items: it.history, ~mode: \"compact\")"),
   )
 }
 
@@ -1559,14 +1565,19 @@ test "untrusted registration blocks DOM egress but keeps custom elements" {
 /// it means to allow, and the module's own views are what get held against
 /// them.
 test "allowing external URLs lets a registered guest view name a pinned image" {
-  let register_view = (html : String, policy : @policy.Policy) => {
+  let register_view = (body : String, policy : @policy.Policy) => {
     let h = @harness.mount(shell_module(), "Shell")
     let base = counter_manifest()
     let manifest : DynManifest = {
       ..base,
       module_name: "avatar-policy",
+      tutu: "view:\n  Counter:\n    " + body + "\n",
       components: [
-        { ..base.components[0], style: "", views: [{ name: "main", html, }], },
+        {
+          ..base.components[0],
+          style: "",
+          views: [{ name: "main", bytes: body.length(), }],
+        },
       ],
     }
     let mut ok = true
@@ -1585,14 +1596,14 @@ test "allowing external URLs lets a registered guest view name a pinned image" {
   }
   let strict = @policy.Policy::untrusted()
   let cdn = strict.allowing_external_urls(["https://cdn.example"])
-  let pinned = "<img :src=\"$'https://cdn.example/a/{.count}.png'\" />"
+  let pinned = "@img(~src: @str{https://cdn.example/a/@(it.count).png})"
   // The picture the report asked for: allowed once a page has said which CDN,
   // and refused by the same page for any other origin or a computed one.
   assert_true(register_view(pinned, cdn))
   assert_false(register_view(pinned, strict))
-  assert_false(register_view("<img :src=\".count\" />", cdn))
+  assert_false(register_view("@img(~src: it.count)", cdn))
   assert_false(
-    register_view("<img src=\"https://elsewhere.test/a.png\" />", cdn),
+    register_view("@img(~src: \"https://elsewhere.test/a.png\")", cdn),
   )
 }
 
@@ -1607,17 +1618,13 @@ test "a guest view that sets markup directly is refused" {
   let m : DynManifest = {
     ..base,
     module_name: "sneakylib",
+    tutu: "view:\n  Sneaky:\n    @div(~class: \"sneaky-marker\", ~dangerously_inner_html: it.payload)\n",
     components: [
       {
         ..base.components[0],
         name: "Sneaky",
         module_: "sneakylib",
-        views: [
-          {
-            name: "main",
-            html: "<div class=\"sneaky-marker\" @dangerouslysetinnerhtml=\".payload\"></div>",
-          },
-        ],
+        views: [{ name: "main", bytes: 68, }],
       },
     ],
   }
@@ -1649,12 +1656,8 @@ test "a guest view that sets markup directly is refused" {
   let ok_m : DynManifest = {
     ..m,
     module_name: "tidylib",
-    components: [
-      {
-        ..m.components[0],
-        views: [{ name: "main", html: "<div class=\"tidy-marker\"></div>", }],
-      },
-    ],
+    tutu: "view:\n  Sneaky:\n    @div(~class: \"tidy-marker\")\n",
+    components: [{ ..m.components[0], views: [{ name: "main", bytes: 42, }], }],
   }
   assert_true(register(ok_m))
   assert_true(h.app.scope.comps.collect_classes().contains("tidy-marker"))
@@ -1668,13 +1671,13 @@ test "a guest view that sets markup directly is refused" {
 /// with.
 test "catalog metadata parses: docs and constraints" {
   let json =
-    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 10, "moduleName": "formlib",
+    #|{"manifestVersion": 4, "abiVersion": 2, "apiVersion": 10, "moduleName": "formlib",
     #| "doc": "Form controls.", "version": "1.2.0", "authors": ["ana"],
     #| "components": [
     #|  {"name": "Signup", "doc": "Collects an address.",
     #|   "keywords": ["form", "email"], "category": "input",
     #|   "messageDocs": [{"name": "submit", "doc": "Send it."}, {"doc": "orphan"}],
-    #|   "views": [{"name": "main", "html": "<div></div>"}],
+    #|   "views": [{"name": "main", "bytes": 20}],
     #|   "fields": [{"name": "email", "ty": {"k": "text"}, "doc": "Where to write.",
     #|               "required": true,
     #|               "constraint": {"maxLen": 254, "format": "email",
@@ -1726,8 +1729,8 @@ test "catalog metadata parses: docs and constraints" {
 /// hand-written manifest should not have to spell out blanks.
 test "a manifest with no catalog metadata still parses" {
   let json =
-    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 10, "moduleName": "bare", "components": [
-    #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
+    #|{"manifestVersion": 4, "abiVersion": 2, "apiVersion": 10, "moduleName": "bare", "components": [
+    #|  {"name": "C", "views": [{"name": "main", "bytes": 20}],
     #|   "fields": [], "properties": [],
     #|   "receives": [], "intents": [], "methods": [],
     #|   "style": ""}]}
@@ -1744,8 +1747,8 @@ test "a manifest with no catalog metadata still parses" {
 /// member's type would be the wrong trade.
 test "an unreadable member type reads as `any`" {
   let json =
-    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 10, "moduleName": "m", "components": [
-    #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
+    #|{"manifestVersion": 4, "abiVersion": 2, "apiVersion": 10, "moduleName": "m", "components": [
+    #|  {"name": "C", "views": [{"name": "main", "bytes": 20}],
     #|   "fields": [{"name": "known", "ty": {"k": "text"}}, {"name": "gone"}],
     #|   "properties": [],
     #|   "receives": [], "intents": [], "methods": [],
@@ -1771,7 +1774,7 @@ test "an unreadable member type reads as `any`" {
 /// exactly the population that hits it.
 test "an abiVersion that is not a number says so" {
   for bad in ["\"2\"", "null", "[2]"] {
-    let manifest = "{\"manifestVersion\": 3, \"abiVersion\": " +
+    let manifest = "{\"manifestVersion\": 4, \"abiVersion\": " +
       bad +
       ", \"apiVersion\": 10, \"moduleName\": \"odd\", \"components\": []}"
     let said = try {
@@ -1803,7 +1806,7 @@ test "an abiVersion that is not a number says so" {
 /// the fixture omits the field rather than writing 1 into it.
 test "a tgc/1 module is refused, by version" {
   let manifest =
-    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "old", "components": []}
+    #|{"manifestVersion": 4, "apiVersion": 10, "moduleName": "old", "components": []}
   let said = try {
     @host.DynManifest::from_json_string(manifest) |> ignore
     "the gate did not fire"
@@ -1818,7 +1821,7 @@ test "a tgc/1 module is refused, by version" {
 ///|
 test "manifest with wrong api version is rejected" {
   let bad =
-    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 1, "moduleName": "x", "components": []}
+    #|{"manifestVersion": 4, "abiVersion": 2, "apiVersion": 1, "moduleName": "x", "components": []}
   let mut failed = false
   let _ = DynManifest::from_json_string(bad) catch {
     _ => {
@@ -1832,6 +1835,7 @@ test "manifest with wrong api version is rejected" {
         authors: [],
         config: [],
         macros: [],
+        tutu: "",
         components: [],
       }
     }
@@ -1844,7 +1848,7 @@ test "old manifest shapes and implicit property surfaces are rejected" {
   let old =
     #|{"manifestVersion": 1, "abiVersion": 2, "apiVersion": 10, "moduleName": "x", "components": []}
   let implicit =
-    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 10, "moduleName": "x", "components": [
+    #|{"manifestVersion": 4, "abiVersion": 2, "apiVersion": 10, "moduleName": "x", "components": [
     #| {"name": "C", "views": [], "fields": [], "style": ""}
     #|]}
   let mut refused = 0
@@ -1877,7 +1881,7 @@ impl @component.Fields for TestShellState with fn schema() {
 }
 
 ///|
-test "a module's views are linted at load" {
+test "a module's views are read at load, and an unreadable one refuses it" {
   let bad : DynManifest = {
     api_version: 10,
     module_name: "sloppylib",
@@ -1887,6 +1891,12 @@ test "a module's views are linted at load" {
     authors: [],
     config: [],
     macros: [],
+    // A field read where a handler name belongs. The old notation could not
+    // tell the two apart — `@on.click=".nope"` parsed, registered, and did
+    // nothing every click — so this arrived as a lint at load. It is a REFUSAL
+    // now: the reader knows a handler position when it is in one, and a module
+    // that cannot be read is not a module that renders wrong.
+    tutu: "view:\n  Sloppy:\n    @div{@span(~on_click: it.nope){hi}}\n",
     components: [
       {
         name: "Sloppy",
@@ -1895,12 +1905,7 @@ test "a module's views are linted at load" {
         keywords: [],
         category: "",
         message_docs: Map([]),
-        // an unclosed <div> and a `.field` in a handler position: two things
-        // no build step ever checked for a guest, because its views arrive at
-        // RUNTIME
-        views: [
-          { name: "main", html: "<div><span @on.click=\".nope\">hi</div>", },
-        ],
+        views: [{ name: "main", bytes: 40, }],
         fields: [],
         properties: [],
         domains: [],
@@ -1927,29 +1932,39 @@ test "a module's views are linted at load" {
     ],
   }
   let h = @harness.mount(shell_module(), "Shell")
-  let loaded = register_module(
-    h.app.scope,
-    HandleModule::new(FakeGuest::new()),
-    bad,
-    policy=vouched(),
-  )
-  let lines = loaded.diagnostics()
-  assert_true(lines.length() > 0)
-  // every line names the component and view it is about
-  for line in lines {
-    assert_true(line.contains("Sloppy/main"))
+  let said = try {
+    register_module(
+      h.app.scope,
+      HandleModule::new(FakeGuest::new()),
+      bad,
+      policy=vouched(),
+    )
+    |> ignore
+    "the read did not refuse"
+  } catch {
+    e => e.message()
   }
-  // ...and a clean module says nothing
+  // The message names the view, and says the spelling to write.
+  assert_true(said.contains("Sloppy"), msg=said)
+  // ...and a module that reads says nothing.
   let (_h2, ok) = mount_with_bundle(FakeGuest::new())
   debug_inspect(ok.diagnostics(), content="[]")
 }
 
 ///|
-/// The failure this catches renders as NOTHING: a `$name` the manifest forgot
-/// to declare never reaches a fixed render operation, evaluates to Null, and an attribute
-/// bound to Null is omitted — so the guest author sees an element quietly
+/// The failure this catches renders as NOTHING: a `compute` the manifest forgot
+/// to declare never reaches a fixed render operation, evaluates to Null, and an
+/// option bound to Null is omitted — so the guest author sees an element quietly
 /// missing its class and the guest itself is never told it was asked.
-test "a `$method` the manifest never declared is reported at load" {
+///
+/// METHOD_IN_EVENT is NOT among the findings, and its absence is the notation
+/// rather than a gap. The old rule was about a sigil: `@on.click="$bumpIt"`
+/// claimed a `$name` in an event position was different from a bare handler
+/// name, and it was not. `.tutu` has no sigil — `~on_click: bumpIt()` and
+/// `~on_click: bumpIt` are read as the same dispatch, which is what the rule
+/// was arguing they should be. The rule still runs, over views built as markup
+/// through `@anode.View::new`, where the distinction can still be written.
+test "a `compute` the manifest never declared is reported at load" {
   let sloppy : DynManifest = {
     api_version: 10,
     module_name: "statlib",
@@ -1959,6 +1974,15 @@ test "a `$method` the manifest never declared is reported at load" {
     authors: [],
     config: [],
     macros: [],
+    tutu: (
+      #|view:
+      #|  Stat:
+      #|    @div(~style: boxStyle(), ~class: valueClass()){
+      #|      @button(~on_click: set_count(0)){zero}
+      #|      @button(~on_click: bumpIt()){bump}
+      #|      @span{@str{@(it.count) / @(boxStyl())}}
+      #|    }
+    ),
     components: [
       {
         name: "Stat",
@@ -1967,18 +1991,7 @@ test "a `$method` the manifest never declared is reported at load" {
         keywords: [],
         category: "",
         message_docs: Map([]),
-        views: [
-          {
-            name: "main",
-            html: (
-              #|<div :style="$boxStyle" :class="$valueClass">
-              #|  <button @on.click="$set_count 0">zero</button>
-              #|  <button @on.click="$bumpIt">bump</button>
-              #|  <span @text="$'{.count} / {$boxStyl}'"></span>
-              #|</div>
-            ),
-          },
-        ],
+        views: [{ name: "main", bytes: 180, }],
         fields: [plain_field("count", TyFloat)],
         properties: [],
         domains: [],
@@ -1992,11 +2005,11 @@ test "a `$method` the manifest never declared is reported at load" {
         view_bindings: [],
         provide_bindings: [],
         lookup_bindings: [],
-        // `$set_count` is absent on purpose: it is the mutator the `count` field
+        // `set_count` is absent on purpose: it is the mutator the `count` field
         // implies, so the host answers it and it must NOT be reported as an
-        // undeclared method. Both `@on` sites are separately refused as
-        // METHOD_IN_EVENT — a `$name` there is the same dispatch a bare name
-        // is, so the sigil is turned away wherever a view arrives from.
+        // undeclared method. Both `~on_click` sites are separately refused as
+        // METHOD_IN_EVENT — a CALL there is the same dispatch a bare name is,
+        // so the parentheses are turned away wherever a view arrives from.
         methods: ["boxStyle"],
         whens: [],
         enriches: [],
@@ -2019,11 +2032,8 @@ test "a `$method` the manifest never declared is reported at load" {
   inspect(
     loaded.diagnostics().join("\n"),
     content=(
-      #|UNDECLARED_METHOD (warning) Stat/main: '$bumpIt' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods
-      #|UNDECLARED_METHOD (warning) Stat/main: '$boxStyl' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods — did you mean '$boxStyle'?
-      #|UNDECLARED_METHOD (warning) Stat/main: '$valueClass' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods
-      #|METHOD_IN_EVENT (error) module statlib: 'Stat' writes `@on.click="$set_count"`: a `$name` in an event position is refused. A handler name and a `$name` are the same dispatch, so the sigil claims a distinction that does not exist — write `set_count` bare
-      #|METHOD_IN_EVENT (error) module statlib: 'Stat' writes `@on.click="$bumpIt"`: a `$name` in an event position is refused. A handler name and a `$name` are the same dispatch, so the sigil claims a distinction that does not exist — write `bumpIt` bare
+      #|UNDECLARED_METHOD (warning) Stat/main: `boxStyl()` is not a `compute` this component declares, so it evaluates to nothing and the option reading it is dropped silently; declare it in `logic:` as `compute boxStyl:` — did you mean `boxStyle()`?
+      #|UNDECLARED_METHOD (warning) Stat/main: `valueClass()` is not a `compute` this component declares, so it evaluates to nothing and the option reading it is dropped silently; declare it in `logic:` as `compute valueClass:`
     ),
   )
 }
@@ -2205,6 +2215,7 @@ fn config_manifest(module_name : String) -> DynManifest {
   {
     ..base,
     module_name,
+    tutu: "view:\n  Counter:\n    @img(~src: @str{@(host.mediaOrigin)avatars/@(it.count).png})\n",
     config: [
       {
         name: "mediaOrigin",
@@ -2223,12 +2234,7 @@ fn config_manifest(module_name : String) -> DynManifest {
       {
         ..base.components[0],
         style: "",
-        views: [
-          {
-            name: "main",
-            html: "<img :src=\"$'{host.mediaOrigin}avatars/{.count}.png'\" />",
-          },
-        ],
+        views: [{ name: "main", bytes: 70, }],
       },
     ],
   }
@@ -2870,9 +2876,11 @@ test "a restore leaves a same-module child to the guest" {
 /// members correctly is not a broken manifest.
 test "a protocol's properties parse as objects or as bare names" {
   let json =
-    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 10, "moduleName": "holderlib", "components": [
+    #|{"manifestVersion": 4, "abiVersion": 2, "apiVersion": 10, "moduleName": "holderlib",
+    #| "tutu": "view:\n  Hole:\n    @div{}\n",
+    #| "components": [
     #|  {"name": "Hole",
-    #|   "views": [{"name": "main", "html": "<div></div>"}],
+    #|   "views": [{"name": "main", "bytes": 20}],
     #|   "fields": [], "properties": [],
     #|   "protocols": [
     #|     {"id": "x/Holder@1", "handleMessages": ["hold"], "handleIntents": [],
@@ -3164,12 +3172,12 @@ test "who keeps a slot, for every spelling and every value" {
 /// one component's view over another's fields without failing.
 test "a component says which module declared it" {
   let json =
-    #|{"manifestVersion": 3, "abiVersion": 2, "apiVersion": 10, "moduleName": "kit", "components": [
+    #|{"manifestVersion": 4, "abiVersion": 2, "apiVersion": 10, "moduleName": "kit", "components": [
     #|  {"name": "Hole", "module": "kit",
-    #|   "views": [{"name": "main", "html": "<div></div>"}],
+    #|   "views": [{"name": "main", "bytes": 20}],
     #|   "fields": [], "properties": [], "receives": [], "intents": [], "methods": [], "style": ""},
     #|  {"name": "Older",
-    #|   "views": [{"name": "main", "html": "<div></div>"}],
+    #|   "views": [{"name": "main", "bytes": 20}],
     #|   "fields": [], "properties": [], "receives": [], "intents": [], "methods": [], "style": ""}]}
   let m = DynManifest::from_json_string(json)
   assert_eq(m.components.map(c => "\{c.name}/\{c.module_}"), [

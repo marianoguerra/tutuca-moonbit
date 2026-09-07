@@ -26,16 +26,17 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let composability_spec_source : String =
-  #|state Composability {
-  #|  active_section: String
-  #|  todo: Instance[Items]
-  #|  json: Instance[JsonArray]
-  #|  tree: Instance[TreeRoot]
-  #|  personal_site: Instance[Root]
-  #|  visual_wasm: Instance[Module]
-  #|  dnd: Instance
-  #|  where active_section is one of ["todo", "json", "tree", "personalSite", "dnd", "visualWasm"]
-  #|}
+  #|spec:
+  #|  Composability:
+  #|    field active_section :: String
+  #|    field todo :: Instance.of(Items)
+  #|    field json :: Instance.of(JsonArray)
+  #|    field tree :: Instance.of(TreeRoot)
+  #|    field personal_site :: Instance.of(Root)
+  #|    field visual_wasm :: Instance.of(Module)
+  #|    field dnd :: Instance
+  #|
+  #|    where it.active_section is_one_of ["todo", "json", "tree", "personalSite", "dnd", "visualWasm"]
 
 ///|
 /// The compiled `main` view.
@@ -57,10 +58,15 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-todo"),
               @anode.if_attr(
                 "class",
-                @tutuca.Expr::app("is", [
-                  @tutuca.Expr::field("active_section"),
-                  @anode.const_str("todo"),
-                ]),
+                EChain(
+                  family=FCompare,
+                  ops=["is"],
+                  operands=[
+                    @tutuca.Expr::field("active_section"),
+                    @anode.const_str("todo"),
+                  ],
+                  span=@tutuca.no_span,
+                ),
                 then_val=@anode.const_str("tab tab-active"),
                 else_val=@anode.const_str("tab"),
               ),
@@ -76,10 +82,15 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-json"),
               @anode.if_attr(
                 "class",
-                @tutuca.Expr::app("is", [
-                  @tutuca.Expr::field("active_section"),
-                  @anode.const_str("json"),
-                ]),
+                EChain(
+                  family=FCompare,
+                  ops=["is"],
+                  operands=[
+                    @tutuca.Expr::field("active_section"),
+                    @anode.const_str("json"),
+                  ],
+                  span=@tutuca.no_span,
+                ),
                 then_val=@anode.const_str("tab tab-active"),
                 else_val=@anode.const_str("tab"),
               ),
@@ -95,10 +106,15 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-tree"),
               @anode.if_attr(
                 "class",
-                @tutuca.Expr::app("is", [
-                  @tutuca.Expr::field("active_section"),
-                  @anode.const_str("tree"),
-                ]),
+                EChain(
+                  family=FCompare,
+                  ops=["is"],
+                  operands=[
+                    @tutuca.Expr::field("active_section"),
+                    @anode.const_str("tree"),
+                  ],
+                  span=@tutuca.no_span,
+                ),
                 then_val=@anode.const_str("tab tab-active"),
                 else_val=@anode.const_str("tab"),
               ),
@@ -114,10 +130,15 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-personal-site"),
               @anode.if_attr(
                 "class",
-                @tutuca.Expr::app("is", [
-                  @tutuca.Expr::field("active_section"),
-                  @anode.const_str("personalSite"),
-                ]),
+                EChain(
+                  family=FCompare,
+                  ops=["is"],
+                  operands=[
+                    @tutuca.Expr::field("active_section"),
+                    @anode.const_str("personalSite"),
+                  ],
+                  span=@tutuca.no_span,
+                ),
                 then_val=@anode.const_str("tab tab-active"),
                 else_val=@anode.const_str("tab"),
               ),
@@ -133,10 +154,15 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-dnd"),
               @anode.if_attr(
                 "class",
-                @tutuca.Expr::app("is", [
-                  @tutuca.Expr::field("active_section"),
-                  @anode.const_str("dnd"),
-                ]),
+                EChain(
+                  family=FCompare,
+                  ops=["is"],
+                  operands=[
+                    @tutuca.Expr::field("active_section"),
+                    @anode.const_str("dnd"),
+                  ],
+                  span=@tutuca.no_span,
+                ),
                 then_val=@anode.const_str("tab tab-active"),
                 else_val=@anode.const_str("tab"),
               ),
@@ -152,10 +178,15 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-visual-wasm"),
               @anode.if_attr(
                 "class",
-                @tutuca.Expr::app("is", [
-                  @tutuca.Expr::field("active_section"),
-                  @anode.const_str("visualWasm"),
-                ]),
+                EChain(
+                  family=FCompare,
+                  ops=["is"],
+                  operands=[
+                    @tutuca.Expr::field("active_section"),
+                    @anode.const_str("visualWasm"),
+                  ],
+                  span=@tutuca.no_span,
+                ),
                 then_val=@anode.const_str("tab tab-active"),
                 else_val=@anode.const_str("tab"),
               ),
@@ -167,60 +198,90 @@ fn composability_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        @tutuca.Expr::app("is", [
-          @tutuca.Expr::field("active_section"),
-          @anode.const_str("todo"),
-        ]),
+        EChain(
+          family=FCompare,
+          ops=["is"],
+          operands=[
+            @tutuca.Expr::field("active_section"),
+            @anode.const_str("todo"),
+          ],
+          span=@tutuca.no_span,
+        ),
         @anode.h("div", [@anode.attr("class", "pane-todo")], [
           @anode.render(0, @tutuca.Expr::field("todo")),
         ]),
       ),
       @anode.text(" "),
       @anode.show(
-        @tutuca.Expr::app("is", [
-          @tutuca.Expr::field("active_section"),
-          @anode.const_str("json"),
-        ]),
+        EChain(
+          family=FCompare,
+          ops=["is"],
+          operands=[
+            @tutuca.Expr::field("active_section"),
+            @anode.const_str("json"),
+          ],
+          span=@tutuca.no_span,
+        ),
         @anode.h("div", [@anode.attr("class", "pane-json")], [
           @anode.render(1, @tutuca.Expr::field("json")),
         ]),
       ),
       @anode.text(" "),
       @anode.show(
-        @tutuca.Expr::app("is", [
-          @tutuca.Expr::field("active_section"),
-          @anode.const_str("tree"),
-        ]),
+        EChain(
+          family=FCompare,
+          ops=["is"],
+          operands=[
+            @tutuca.Expr::field("active_section"),
+            @anode.const_str("tree"),
+          ],
+          span=@tutuca.no_span,
+        ),
         @anode.h("div", [@anode.attr("class", "pane-tree")], [
           @anode.render(2, @tutuca.Expr::field("tree")),
         ]),
       ),
       @anode.text(" "),
       @anode.show(
-        @tutuca.Expr::app("is", [
-          @tutuca.Expr::field("active_section"),
-          @anode.const_str("personalSite"),
-        ]),
+        EChain(
+          family=FCompare,
+          ops=["is"],
+          operands=[
+            @tutuca.Expr::field("active_section"),
+            @anode.const_str("personalSite"),
+          ],
+          span=@tutuca.no_span,
+        ),
         @anode.h("div", [@anode.attr("class", "pane-personal-site")], [
           @anode.render(3, @tutuca.Expr::field("personal_site")),
         ]),
       ),
       @anode.text(" "),
       @anode.show(
-        @tutuca.Expr::app("is", [
-          @tutuca.Expr::field("active_section"),
-          @anode.const_str("dnd"),
-        ]),
+        EChain(
+          family=FCompare,
+          ops=["is"],
+          operands=[
+            @tutuca.Expr::field("active_section"),
+            @anode.const_str("dnd"),
+          ],
+          span=@tutuca.no_span,
+        ),
         @anode.h("div", [@anode.attr("class", "pane-dnd")], [
           @anode.render(4, @tutuca.Expr::field("dnd")),
         ]),
       ),
       @anode.text(" "),
       @anode.show(
-        @tutuca.Expr::app("is", [
-          @tutuca.Expr::field("active_section"),
-          @anode.const_str("visualWasm"),
-        ]),
+        EChain(
+          family=FCompare,
+          ops=["is"],
+          operands=[
+            @tutuca.Expr::field("active_section"),
+            @anode.const_str("visualWasm"),
+          ],
+          span=@tutuca.no_span,
+        ),
         @anode.h("div", [@anode.attr("class", "pane-visual-wasm")], [
           @anode.render(5, @tutuca.Expr::field("visual_wasm")),
         ]),

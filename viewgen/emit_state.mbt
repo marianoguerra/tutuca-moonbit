@@ -214,7 +214,7 @@ fn emit_state_struct(
   emit_doc(def.doc, "The state of the \{t} component.", out)
   out.write_string(
     "///\n" +
-    "/// Declared as `state` in the state block. Adding a field there adds it\n" +
+    "/// Declared with `field` in the `spec:` section. Adding one there adds it\n" +
     "/// here, so a view that reads it type-checks and one that reads a name\n" +
     "/// this struct lacks fails generation.\n",
   )
@@ -264,9 +264,9 @@ fn emit_zero(t : String, def : @statedef.StateDef, out : StringBuilder) -> Unit 
     "///|\n" +
     "/// The zero state: every field at its type's empty value.\n" +
     "///\n" +
-    "/// The state block declares no defaults — a default is a value, not a\n" +
-    "/// type — so this\n" +
-    "/// is type-directed, and `init` spreads it to name only what differs:\n" +
+    "/// The `spec:` section states no defaults here — a default is a value,\n" +
+    "/// not a type — so this is type-directed, and `init` spreads it to name\n" +
+    "/// only what differs:\n" +
     "///\n" +
     "///   initial={ ..\{t}State::zero(), label: \"Counter\" }\n" +
     // `pub`, like the `pub(all)` struct it returns.

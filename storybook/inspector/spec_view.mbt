@@ -335,7 +335,7 @@ pub fn Inspector::spec_panel(
     // `name=` for the reason `@fuzz.Plan` passes it: a bare `state { … }`
     // belongs to the file's single unnamed component, and only the caller
     // knows what that component is called.
-    let defs : Array[@statedef.StateDef] = @statedef.parse_state(
+    let defs : Array[@statedef.StateDef] = @statedef.read_spec(
       c.spec,
       name=c.schema.name,
     ) catch {
@@ -400,44 +400,38 @@ pub fn Inspector::spec_source_panel(
 /// runtime WHOLE — a guest module's, the playground's — and it is the only
 /// fixture in which the doc rows and the rule rows have anything to show.
 pub let spec_sample_source : String =
+  #|spec:
   #|  /// One box.
-  #|  struct Parcel {
-  #|    id : String
-  #|    weightKg : Double
-  #|  }
+  #|  struct Parcel(id :: String, weightKg :: Double)
   #|
   #|  /// Where it is in its life.
-  #|  enum Status {
+  #|  enum Status:
   #|    Booked
   #|    InTransit
   #|    Delivered
-  #|  }
   #|
   #|  /// A shipment, and the two things that must stay true of one.
-  #|  state Shipment {
+  #|  Shipment:
   #|    /// Where it is going. Never empty once it has been booked.
-  #|    to : String
-  #|    weightKg : Double
-  #|    parcels : Array[Parcel]
-  #|    status : Status
+  #|    field to :: String
+  #|    field weightKg :: Double
+  #|    field parcels :: List.of(Parcel)
+  #|    field status :: Status
   #|
   #|    /// Nothing weightless ships.
-  #|    pred loadable
-  #|      format 'weight must be above zero' { .weightKg > 0 }
+  #|    pred loadable:
+  #|      ~format: "weight must be above zero"
+  #|      it.weightKg > 0
   #|
   #|    /// A booked shipment names a destination.
-  #|    invariant addressed
-  #|      format 'a booked shipment must name a destination' { not (.to is '') }
-  #|  }
+  #|    invariant addressed:
+  #|      ~format: "a booked shipment must name a destination"
+  #|      !(it.to == "")
   #|
-  #|  handle Shipment {
-  #|    message {
   #|    /// Add a parcel, by id and weight.
-  #|    addParcel(String, Double)
-  #|    reweigh(Double)
+  #|    message addParcel(String, Double)
   #|
-  #|    }
-  #|  }
+  #|    message reweigh(Double)
 
 ///|
 /// A component that is nothing but that declaration: no views, no state codec,

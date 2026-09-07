@@ -63,16 +63,19 @@ test "workload shape" {
       #|108
     ),
   )
+  // 1066834 -> 1068078 with the reader's own whitespace: a view written over
+  // several lines keeps the newlines between them, so the generated builders
+  // carry the text nodes the file wrote.
   inspect(
     @benchmarks.gen(@benchmarks.all_views),
     content=(
-      #|1066834
+      #|1068078
     ),
   )
   inspect(
     @benchmarks.gen(giant_1x),
     content=(
-      #|132243
+      #|132251
     ),
   )
 }

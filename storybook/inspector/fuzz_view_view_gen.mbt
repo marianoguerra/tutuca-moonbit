@@ -14,7 +14,7 @@
 /// decided when the step ran, and a row that recomputed any of it would be a
 /// second opinion about what happened.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct FuzzRowState {
@@ -54,9 +54,9 @@ pub(all) struct FuzzRowState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..FuzzRowState::zero(), label: "Counter" }
 pub fn FuzzRowState::zero() -> FuzzRowState {
@@ -164,8 +164,9 @@ impl @component.Fields for FuzzRowState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -284,9 +285,9 @@ impl @component.Fields for FuzzRowState with fn schema() {
 }
 
 ///|
-/// The state of the FuzzLog component.
+/// The script, as something to scan.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct FuzzLogState {
@@ -298,9 +299,9 @@ pub(all) struct FuzzLogState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..FuzzLogState::zero(), label: "Counter" }
 pub fn FuzzLogState::zero() -> FuzzLogState {
@@ -369,9 +370,13 @@ impl @component.Fields for FuzzLogState with fn schema() {
 }
 
 ///|
-/// The state of the FuzzControls component.
+/// What a run is addressed by, and what came of it.
+/// 
+/// The seed is editable because reproducibility is the whole point: a run
+/// somebody wants to profile has to be the same run twice, and the four
+/// values here are its whole address.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct FuzzControlsState {
@@ -407,9 +412,9 @@ pub(all) struct FuzzControlsState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..FuzzControlsState::zero(), label: "Counter" }
 pub fn FuzzControlsState::zero() -> FuzzControlsState {
@@ -492,8 +497,9 @@ impl @component.Fields for FuzzControlsState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -652,9 +658,9 @@ impl @component.Fields for FuzzControlsState with fn schema() {
 }
 
 ///|
-/// The state of the FuzzVerdict component.
+/// The verdict, in the words the declaration used.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct FuzzVerdictState {
@@ -679,9 +685,9 @@ pub(all) struct FuzzVerdictState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..FuzzVerdictState::zero(), label: "Counter" }
 pub fn FuzzVerdictState::zero() -> FuzzVerdictState {
@@ -763,8 +769,9 @@ impl @component.Fields for FuzzVerdictState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -890,7 +897,7 @@ impl @component.Fields for FuzzVerdictState with fn schema() {
 ///|
 /// The state of the FuzzPanel component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct FuzzPanelState {
@@ -906,9 +913,9 @@ pub(all) struct FuzzPanelState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..FuzzPanelState::zero(), label: "Counter" }
 pub fn FuzzPanelState::zero() -> FuzzPanelState {

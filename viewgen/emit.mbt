@@ -209,12 +209,14 @@ fn with_script(
       }
     }
   }
-  if file.script_for(comp) is Some(block) {
-    let decls = @tscript.parse_script(block.text) catch {
+  if file.script_block_for(comp) is Some(sb) {
+    let decls = sb.declarations() catch {
       e =>
         raise BadScriptBlock(
           comp~,
-          line=block.line + @viewfile.line_of(block.text, e.span().start) - 1,
+          line=sb.block.line +
+            @viewfile.line_of(sb.block.text, e.span().start) -
+            1,
           message=e.message(),
         )
     }
@@ -238,8 +240,8 @@ fn with_script(
 /// swallowed because this is not the place that reports them — `with_script`
 /// runs first and raises `BadScriptBlock` with the line.
 fn script_answers(file : @viewfile.ViewFile, comp : String) -> Array[String] {
-  guard file.script_for(comp) is Some(block) else { return [] }
-  let decls = @tscript.parse_script(block.text) catch { _ => return [] }
+  guard file.script_block_for(comp) is Some(sb) else { return [] }
+  let decls = sb.declarations() catch { _ => return [] }
   let out : Array[String] = []
   for d in decls {
     if d.kind is (DReceive | DAnswer) && !out.contains(d.name) {

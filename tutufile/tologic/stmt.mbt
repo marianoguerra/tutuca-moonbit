@@ -12,8 +12,17 @@ pub fn read_stmts(
 ) -> Array[@tscript.Stmt] raise @sh.ExError {
   let out = []
   for g in groups {
-    if read_stmt(g, binds) is Some(s) {
-      out.push(s)
+    // One LINE may be several statements. A constructor written inside an
+    // expression — `it.children.push(Hole())` — has no aggregate literal to
+    // become, so it is lifted into the `new` / `cur` pair that builds one, and
+    // those go in front of the line that used it. See `hoist`.
+    let pre = []
+    let s = read_stmt(g, binds, pre)
+    for h in pre {
+      out.push(h)
+    }
+    if s is Some(x) {
+      out.push(x)
     }
   }
   out
@@ -23,8 +32,12 @@ pub fn read_stmts(
 /// An enricher's body: every line binds a name to a value.
 pub fn read_binds(
   groups : Array[@ast.Node],
+  seed : Map[String, String],
 ) -> Array[@tscript.Stmt] raise @sh.ExError {
   let binds : Map[String, String] = Map([])
+  for k, v in seed {
+    binds[k] = v
+  }
   let out = []
   for g in groups {
     guard g.it is Group(parts) else { continue }
@@ -66,6 +79,7 @@ fn ctx(binds : Map[String, String]) -> @sh.ExCtx {
 fn read_stmt(
   group : @ast.Node,
   binds : Map[String, String],
+  pre : Array[@tscript.Stmt],
 ) -> @tscript.Stmt? raise @sh.ExError {
   guard group.it is Group(parts) && parts.length() > 0 else { return None }
   let span = @sh.span_of(group)
@@ -103,7 +117,7 @@ fn read_stmt(
         @sh.to_expr(@sh.read_ex(parts[:at]), ctx(binds), span),
         span,
       )
-      let value = @sh.to_expr(@sh.read_ex(parts[at + 1:]), ctx(binds), span)
+      let value = value_of(@sh.read_ex(parts[at + 1:]), binds, span, pre)
       let value = match parts[at].it {
         Op("*=") | Op("/=") =>
           @tutuca.Expr::app(
@@ -119,8 +133,78 @@ fn read_stmt(
       }
       Some(@tscript.SAssign(place~, op~, value~, span=sp(span)))
     }
-    None => Some(call_stmt(@sh.read_ex(parts[:]), binds, span))
+    None => Some(call_stmt(@sh.read_ex(parts[:]), binds, span, pre))
   }
+}
+
+///|
+/// A value, with any constructor inside it lifted out in front of the line.
+fn value_of(
+  ex : @sh.Ex,
+  binds : Map[String, String],
+  span : @report.Span,
+  pre : Array[@tscript.Stmt],
+) -> @tutuca.Expr raise @sh.ExError {
+  match hoist(ex, binds, span, pre) {
+    Some(target) => target
+    None => @sh.to_expr(ex, ctx(binds), span)
+  }
+}
+
+///|
+/// Lift a constructor call out of an expression into the `new` / `cur` pair
+/// that builds an aggregate.
+///
+/// The value language has no aggregate literal — a value is built by naming a
+/// type and then writing its fields — so `Hole()` in an argument becomes a
+/// `new Hole` before the line and `cur` inside it. The old notation asked the
+/// author to write that by hand; the notation writes a call, and this is where
+/// the two meet.
+fn hoist(
+  ex : @sh.Ex,
+  binds : Map[String, String],
+  span : @report.Span,
+  pre : Array[@tscript.Stmt],
+) -> @tutuca.Expr? raise @sh.ExError {
+  guard ex is ECall(EName(name), args) else { return None }
+  guard @sh.is_upper(name) else { return None }
+  pre.push(@tscript.SNew(ty={ name, args: [], span: sp(span), }, span=sp(span)))
+  for a in args {
+    guard a is AField(field, value) else {
+      raise @sh.ExError(
+        message="`\{name}` is built by naming its fields",
+        help="write `\{name}(<field>: <value>, …)`",
+        span~,
+      )
+    }
+    guard !(value is ECall(EName(_), _)) else {
+      raise @sh.ExError(
+        message="a constructor inside a constructor cannot be built here",
+        help="build the inner one first and write it into a field, then build the outer",
+        span~,
+      )
+    }
+    pre.push(
+      @tscript.SAssign(
+        place={
+          root: @tutuca.PTarget,
+          steps: [@tutuca.PField(field)],
+          span: sp(span),
+        },
+        op=@tscript.ASet,
+        value=@sh.to_expr(value, ctx(binds), span),
+        span=sp(span),
+      ),
+    )
+  }
+  // What is left where the call was: a READ of the target, which is what `cur`
+  // means and what the block parser makes of the word.
+  Some(
+    @tutuca.Expr::ERead(
+      place={ root: @tutuca.PTarget, steps: [], span: sp(span), },
+      span=sp(span),
+    ),
+  )
 }
 
 ///|
@@ -138,6 +222,7 @@ fn call_stmt(
   ex : @sh.Ex,
   binds : Map[String, String],
   span : @report.Span,
+  pre : Array[@tscript.Stmt],
 ) -> @tscript.Stmt raise @sh.ExError {
   // `drop` and `stop` take no arguments and are written bare.
   if ex is EName(word) && @tscript.effect_min_arity(word) is Some(_) {
@@ -163,13 +248,20 @@ fn call_stmt(
       }
       let out = []
       for a in pos {
-        out.push(@sh.to_expr(a, ctx(binds), span))
+        out.push(value_of(a, binds, span, pre))
       }
       let (verb, out) = match kw(args, "to") {
         // `send("flash", ~to: it.status)` is the addressed send, whose first
         // argument is the PLACE in the block language.
         Some(place) => {
-          let head = [@sh.to_expr(place, ctx(binds), span)]
+          // A REFERENCE and not a read: the addressed send names a position to
+          // deliver at, and the difference is what the backend refuses on. The
+          // old notation spelled it `&.rows[i]` with a sigil; here the `~to:`
+          // option is what says it, and the place travels as one.
+          let at = @sh.to_expr(place, ctx(binds), span)
+          let head : Array[@tutuca.Expr] = [
+            ERef(place=place_of(at, span), span=sp(span)),
+          ]
           for a in out {
             head.push(a)
           }
@@ -181,12 +273,24 @@ fn call_stmt(
     }
     // A collection operation: `it.items.push(v)`.
     EMember(recv, op) => {
+      // Under the name every layer below the notation knows it by. Passing the
+      // written spelling through instead made `it.values.delete_at(i)` reach
+      // the checker as `delete_at`, which names no operation — so the handler
+      // was refused, dropped from the generated module, and the button it was
+      // wired to did nothing.
+      guard @sh.collection_op(op) is Some(call) else {
+        raise @sh.ExError(
+          message="`\{op}` is not a collection operation",
+          help="the operations are `push`, `insert_at`, `set_at`, `delete_at`, `add`, `remove`, `toggle` and `clear`",
+          span~,
+        )
+      }
       let place = place_of(@sh.to_expr(recv, ctx(binds), span), span)
       let out = []
       for a in pos {
-        out.push(@sh.to_expr(a, ctx(binds), span))
+        out.push(value_of(a, binds, span, pre))
       }
-      @tscript.SMethod(place~, call=op, args=out, span=sp(span))
+      @tscript.SMethod(place~, call~, args=out, span=sp(span))
     }
     _ =>
       raise @sh.ExError(

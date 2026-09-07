@@ -26,10 +26,10 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let dn_d_example_spec_source : String =
-  #|state DnDExample {
-  #|  items: Array[String]
-  #|  query: String
-  #|}
+  #|spec:
+  #|  DnDExample:
+  #|    field items :: List.of(String)
+  #|    field query :: String
 
 ///|
 /// The compiled `main` view.

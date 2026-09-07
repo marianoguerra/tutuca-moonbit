@@ -26,19 +26,19 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let counter_spec_source : String =
-  #|state Counter {
-  #|  label: String
-  #|  count: Int
-  #|  history: Array[Int]
-  #|  pred recorded { ((len .history) > 0) }
-  #|  invariant history_follows_count
-  #|    format 'the counter moved and the history did not' { (recorded or (.count is 0)) }
-  #|}
-  #|handle Counter {
-  #|  message {
-  #|    reset_to(Int)
-  #|  }
-  #|}
+  #|spec:
+  #|  Counter:
+  #|    field label :: String
+  #|    field count :: Int
+  #|    field history :: List.of(Int)
+  #|
+  #|    pred recorded: (it.history.length() > 0)
+  #|
+  #|    invariant history_follows_count:
+  #|      ~format: "the counter moved and the history did not"
+  #|      (recorded || (it.count == 0))
+  #|
+  #|    message reset_to(Int)
 
 ///|
 /// The compiled `main` view.

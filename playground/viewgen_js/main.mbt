@@ -1,6 +1,6 @@
 // Publishes the view generator to the playground page.
 //
-// One JS entry point, `globalThis.__tutucaViewgen(html, name)`, returning a
+// One JS entry point, `globalThis.__tutucaViewgen(source, name)`, returning a
 // JSON string so the boundary carries no MoonBit types:
 //
 //   { "ok": true,  "module": "<the types module>", "ir": "<the tree module>",
@@ -25,25 +25,17 @@ extern "js" fn publish_viewgen(gen : (String, String) -> String) -> Unit =
 /// Generate both modules from one view file's text. Never raises: a bad view
 /// comes back as `ok: false` so the page can show it like a compile error.
 ///
-/// The text is a `.tutu`, and the file is lowered into the blocks the splitter
-/// reads before anything else touches it — the same step `tutuca gen` takes,
-/// and for the same reason: one notation reaches the generator.
-fn generate_json(html : String, name : String) -> String {
+/// The text is a `.tutu`, read by the same reader `tutuca gen` uses — one
+/// notation reaches the generator, and nothing is printed on the way.
+fn generate_json(source : String, name : String) -> String {
   let obj : Map[String, Json] = try {
-    let sources = @report.Sources::new()
-    let id = sources.add("view.tutu", html)
-    let lowered = @lower.lower(html, id)
-    if lowered.reports.length() > 0 {
-      let lines = []
-      for r in lowered.reports {
-        lines.push(r.message)
-      }
-      return Json::object({
-        "ok": Json::boolean(false),
-        "error": Json::string(lines.join("; ")),
-      }).stringify()
+    let views = @viewgen.read_file(source, name~) catch {
+      e =>
+        return Json::object({
+          "ok": Json::boolean(false),
+          "error": Json::string(@viewgen.GenError::message(e)),
+        }).stringify()
     }
-    let views = @viewgen.split_file(lowered.text)
     let hints : Array[String] = []
     let generated = @viewgen.emit_modules(
       name,

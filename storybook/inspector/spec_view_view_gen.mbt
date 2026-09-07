@@ -17,7 +17,7 @@
 /// those two are exactly what a reader of a declaration came for.
 /// One declared field: `name : type`, with the doc its author wrote.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct SpecFieldState {
@@ -33,9 +33,9 @@ pub(all) struct SpecFieldState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..SpecFieldState::zero(), label: "Counter" }
 pub fn SpecFieldState::zero() -> SpecFieldState {
@@ -99,9 +99,9 @@ impl @component.Fields for SpecFieldState with fn schema() {
 }
 
 ///|
-/// The state of the SpecMsg component.
+/// One declared message: `name(Int, String)`.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct SpecMsgState {
@@ -115,9 +115,9 @@ pub(all) struct SpecMsgState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..SpecMsgState::zero(), label: "Counter" }
 pub fn SpecMsgState::zero() -> SpecMsgState {
@@ -174,9 +174,13 @@ impl @component.Fields for SpecMsgState with fn schema() {
 }
 
 ///|
-/// The state of the SpecRule component.
+/// One `pred` or `invariant`, with the expression as written.
+/// 
+/// The expression is carried rather than summarised because it is the whole
+/// oracle: the Fuzz tab holds the component to exactly these words, so a
+/// reader deciding whether a green run means anything has to see them.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct SpecRuleState {
@@ -194,9 +198,9 @@ pub(all) struct SpecRuleState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..SpecRuleState::zero(), label: "Counter" }
 pub fn SpecRuleState::zero() -> SpecRuleState {
@@ -278,9 +282,9 @@ impl @component.Fields for SpecRuleState with fn schema() {
 }
 
 ///|
-/// The state of the SpecDoc component.
+/// A doc comment standing on its own — a component's or a named type's.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct SpecDocState {
@@ -290,9 +294,9 @@ pub(all) struct SpecDocState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..SpecDocState::zero(), label: "Counter" }
 pub fn SpecDocState::zero() -> SpecDocState {
@@ -343,9 +347,12 @@ impl @component.Fields for SpecDocState with fn schema() {
 }
 
 ///|
-/// The state of the SpecViewer component.
+/// The whole declaration, one collapsible section per component the block
+/// declares. A block is FILE-level, so a file declaring three components
+/// carries all three arms in every one of its wrappers; the story's own
+/// component is the section that starts open.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct SpecViewerState {
@@ -362,9 +369,9 @@ pub(all) struct SpecViewerState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..SpecViewerState::zero(), label: "Counter" }
 pub fn SpecViewerState::zero() -> SpecViewerState {
@@ -415,7 +422,7 @@ impl @component.Fields for SpecViewerState with fn decode(f) {
 ///|
 /// The Intent arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant intent` in the state block. These names are
+/// Declared with `intent` in the `spec:` section. These names are
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum SpecViewerIntent {
@@ -517,9 +524,14 @@ impl @component.Fields for SpecViewerState with fn schema() {
 }
 
 ///|
-/// The state of the SpecSource component.
+/// The same block, verbatim.
+/// 
+/// Beside the parsed view rather than instead of it: the parse is what the
+/// runtime reads, and the source is what the author edits. A reader
+/// reconciling a surprising Fuzz verdict with the file open in their editor
+/// wants the second one.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct SpecSourceState {
@@ -532,9 +544,9 @@ pub(all) struct SpecSourceState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..SpecSourceState::zero(), label: "Counter" }
 pub fn SpecSourceState::zero() -> SpecSourceState {

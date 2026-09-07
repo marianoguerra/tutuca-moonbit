@@ -38,8 +38,8 @@ fn inline_emit(
   // runtime asks an invariant after every dispatch whether or not the file
   // writes a single handler. `emit` synthesises those from the schema, so an
   // empty declaration list is a real input rather than a reason to stop.
-  let decls = match file.script_for(comp) {
-    Some(block) => @tscript.parse_script(block.text) catch { _ => return None }
+  let decls = match file.script_block_for(comp) {
+    Some(sb) => sb.declarations() catch { _ => return None }
     None => if def.rules.is_empty() { return None } else { [] }
   }
   Some(

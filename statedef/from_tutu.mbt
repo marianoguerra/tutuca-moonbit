@@ -15,6 +15,12 @@ pub fn state_of_tutu(
   decls : Array[@tutufile.Decl],
   name? : String = "",
 ) -> Array[StateDef] raise DefError {
+  // A file with no `spec:` section declares no component, which is a legal
+  // thing to write: a `view:` on its own is most of the skill's examples and a
+  // fragment a page hands the generator. `defs_of` refuses an EMPTY block for a
+  // different reason — a block of types with no state — and answering that
+  // here made every view-only file a syntax error.
+  guard decls.length() > 0 else { return [] }
   let raw : Array[RawDecl] = []
   for at, d in decls {
     let prev = if at > 0 { Some(decls[at - 1]) } else { None }
@@ -58,10 +64,27 @@ fn component_of_tutu(
   let handle_intent : Array[RawCase] = []
   let express_message : Array[RawCase] = []
   let express_intent : Array[RawCase] = []
+  let provide : Array[ProvideDecl] = []
+  let lookup : Array[LookupDecl] = []
+  let mut category = ""
+  let keywords : Array[String] = []
   let members = @sh.body_groups(d)
   for at, g in members {
     let prev = if at > 0 { Some(members[at - 1]) } else { None }
     guard g.it is Group(parts) && parts.length() > 0 else { continue }
+    // What the component says ABOUT itself rather than declares, and the only
+    // members written as options. They lead the block, the way every option
+    // that carries a value does.
+    if parts[0].it is Kw(opt) {
+      catalog_option(
+        opt,
+        parts,
+        at_of(@sh.span_of(g)),
+        v => category = v,
+        keywords,
+      )
+      continue
+    }
     guard parts[0].it is Id(word) else { continue }
     let at_ = at_of(@sh.span_of(g))
     match word {
@@ -105,14 +128,12 @@ fn component_of_tutu(
           express_message.push(c)
         }
       }
-      // A wire section carries its value verbatim into a compiled card's
-      // manifest, where a host parses it — a format with another side to it,
-      // and not this reader's to change.
       "provide" | "lookup" =>
-        raise Syntax(
-          msg="`\{word}` is not read from a `.tutu` file yet: a compiled card carries its value as SOURCE in the manifest, and the host parses that with the block grammar",
-          span=at_,
-        )
+        match wiring_of(parts, word, at_) {
+          Binding(b) => bindings.push(b)
+          Provided(p) => provide.push(p)
+          Wanted(l) => lookup.push(l)
+        }
       _ =>
         raise Syntax(
           msg="`\{word}` is not a spec member — a component declares `field`, `property`, `pred`, `invariant`, `where`, `message`, `intent`, `express` and `implements`",
@@ -135,10 +156,223 @@ fn component_of_tutu(
     views: [],
     implements,
     bindings,
-    provide: [],
-    lookup: [],
+    provide,
+    lookup,
     rules,
     wheres,
+    category,
+    keywords,
+  }
+}
+
+///|
+/// `~category: "layout"` and `~keywords: ["layout", "box"]`.
+///
+/// Both are SEARCH TEXT and neither is an identifier — a person types them
+/// into a palette and they are matched against what is written here — so they
+/// are read as strings and nothing normalizes them.
+fn catalog_option(
+  opt : String,
+  parts : Array[@ast.Node],
+  at : Span,
+  set_category : (String) -> Unit,
+  keywords : Array[String],
+) -> Unit raise DefError {
+  guard parts.length() >= 2 && parts[1].it is Block(bgs) && bgs.length() == 1 else {
+    raise Syntax(
+      msg="`~\{opt}` needs a value — write `~\{opt}: <value>` on its own line inside the component",
+      span=at,
+    )
+  }
+  let value = @sh.read_group(bgs[0]) catch {
+    e => {
+      let @sh.ExError(message~, help~, ..) = e
+      raise Syntax(msg=message + " — " + help, span=at)
+    }
+  }
+  match opt {
+    "category" =>
+      match value {
+        @sh.EStr(text) => set_category(text)
+        _ =>
+          raise Syntax(
+            msg="a category is a string — write `~category: \"layout\"`, since it is matched against what a person types",
+            span=at,
+          )
+      }
+    "keywords" =>
+      match value {
+        @sh.EList(items) =>
+          for item in items {
+            match item {
+              @sh.EStr(text) => keywords.push(text)
+              _ =>
+                raise Syntax(
+                  msg="a keyword is a string — write `~keywords: [\"layout\", \"box\"]`",
+                  span=at,
+                )
+            }
+          }
+        _ =>
+          raise Syntax(
+            msg="`~keywords` takes a list — write `~keywords: [\"layout\", \"box\"]`, since a comma only separates inside brackets",
+            span=at,
+          )
+      }
+    _ =>
+      raise Syntax(
+        msg="`~\{opt}` is not something a component declares about itself — a component's options are `~category` and `~keywords`",
+        span=at,
+      )
+  }
+}
+
+///|
+/// Which of the three tables a `provide` / `lookup` line lands in.
+///
+/// A qualified name fills a PROTOCOL's channel and shares one table with
+/// `property Clock::now = …` and `view Sheet::row = …`; a bare one is this
+/// component's own wiring. One reader answers both because one line spells
+/// both, and the qualification is the only thing that tells them apart.
+priv enum Wiring {
+  Binding(RawBinding)
+  Provided(ProvideDecl)
+  Wanted(LookupDecl)
+}
+
+///|
+/// `provide theme = it.theme`, `lookup theme = "plain"`, `lookup theme`,
+/// `provide Clock::now = it.now`.
+fn wiring_of(
+  parts : Array[@ast.Node],
+  word : String,
+  at : Span,
+) -> Wiring raise DefError {
+  guard @sh.member_name(parts, 1) is Some((name, next)) else {
+    raise Syntax(
+      msg="a `\{word}` names one binding — write `\{word} <name>` or `\{word} <Protocol>::<member> = <value>`",
+      span=at,
+    )
+  }
+  let value = if next >= parts.length() {
+    None
+  } else {
+    guard parts[next].it is Op("=") else {
+      raise Syntax(
+        msg="a `\{word}` is a name, or a name and a value — write `\{word} \{name} = <value>`",
+        span=at,
+      )
+    }
+    guard next + 1 < parts.length() else {
+      raise Syntax(
+        msg="`\{word} \{name} =` says nothing is on the right — write the value it \{if word == "provide" { "publishes" } else { "falls back to" }}",
+        span=at,
+      )
+    }
+    Some(wire_value(parts[next + 1:], word, name, at))
+  }
+  let halves = name.split("::").map(x => x.to_owned()).collect()
+  if halves.length() == 2 {
+    guard value is Some(v) else {
+      raise Syntax(
+        msg="a protocol's `\{word}` states what fills it — write `\{word} \{name} = <value>`",
+        span=at,
+      )
+    }
+    return Binding({
+      section: word,
+      protocol_name: halves[0],
+      member_name: halves[1],
+      source: v,
+      span: at,
+    })
+  }
+  if word == "provide" {
+    guard value is Some(v) else {
+      raise Syntax(
+        msg="every `provide` states what produces it — write `provide \{name} = it.<field>`",
+        span=at,
+      )
+    }
+    Provided({ name, source: v, span: at, })
+  } else {
+    Wanted({ name, default: value, span: at, })
+  }
+}
+
+///|
+/// A wiring value, as the text a manifest carries and `component/` reads.
+///
+/// The one place this file writes source rather than reading it, and it is
+/// deliberate: `provide` and `lookup` are the seam between a card and whatever
+/// host loads it, so their value is a WIRE FORMAT with another side to it
+/// (`@tscript.parse_provide`, `@component.lookup_or`) and a MoonBit caller
+/// spells the same thing by hand as `provide={ "items": ".items" }`.
+///
+/// The grammar is closed on purpose. A provide must be ADDRESSABLE — it is
+/// read as a value and used as a render target and a resume path — and a
+/// lookup default is a fallback value, so between them a path, `self` and a
+/// literal is the whole vocabulary. Anything else is refused here with the
+/// shape to write, rather than printed into text whose other side would judge
+/// it later.
+fn wire_value(
+  terms : ArrayView[@ast.Node],
+  word : String,
+  name : String,
+  at : Span,
+) -> String raise DefError {
+  // `self` is a WORD in this position and not a name: it publishes the
+  // declaring component's own type, which no expression can spell.
+  if terms.length() == 1 && terms[0].it is Id("self") {
+    return "self"
+  }
+  let ex = @sh.read_ex(terms) catch {
+    e => {
+      let @sh.ExError(message~, help~, ..) = e
+      raise Syntax(msg=message + " — " + help, span=at)
+    }
+  }
+  wire_ex(ex, word, name, at)
+}
+
+///|
+/// The closed grammar itself: a path, or a literal.
+fn wire_ex(
+  ex : @sh.Ex,
+  word : String,
+  name : String,
+  at : Span,
+) -> String raise DefError {
+  match ex {
+    @sh.EIt(f) => "." + f
+    @sh.EIndex(base, k) =>
+      wire_ex(base, word, name, at) + "[" + wire_ex(k, word, name, at) + "]"
+    @sh.EStr(s) => "'" + s.replace_all(old="'", new="\\'") + "'"
+    @sh.ENum(n) =>
+      if n == n.trunc() && n.abs() < 1.0e15 {
+        n.to_int64().to_string()
+      } else {
+        n.to_string()
+      }
+    @sh.EBool(b) => if b { "true" } else { "false" }
+    // `null` and `none` are WORDS to the reader and literals to everything
+    // downstream — `to_expr` folds them the same way, and this is the same
+    // fold at the one place that writes text instead of a tree.
+    @sh.ENone | @sh.EName("null") | @sh.EName("none") => "null"
+    @sh.EList(items) =>
+      if items.is_empty() {
+        "[]"
+      } else {
+        raise Syntax(
+          msg="a `\{word}`'s value is a path or a constant, and `\{name}` is given a list with entries in it",
+          span=at,
+        )
+      }
+    _ =>
+      raise Syntax(
+        msg="a `\{word}`'s value is addressable or constant — write `\{word} \{name} = it.<field>`, `it.<seq>[<key>]`\{if word == "provide" { " or `self`" } else { ", or a literal" }}",
+        span=at,
+      )
   }
 }
 

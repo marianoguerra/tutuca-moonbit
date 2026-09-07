@@ -26,26 +26,31 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let state_editor_row_spec_source : String =
-  #|state StateEditorRow {
-  #|  name: String
-  #|  type: String
-  #|  kind: String
-  #|  text: String
-  #|  num: Double
-  #|  flag: Bool
-  #|  readonly: String
-  #|  editable: Bool
-  #|  invariant editable_tracks_kind
-  #|    format $'a {.kind} row says editable is {.editable}' { (.editable is (.kind is not 'readonly')) }
-  #|  where kind is one of ["text", "num", "bool", "readonly"]
-  #|  where name is nonempty
-  #|  where type is nonempty
-  #|}
-  #|state StateEditor {
-  #|  target: Instance
-  #|  rows: Array[Instance[StateEditorRow]]
-  #|  name: String
-  #|}
+  #|spec:
+  #|  StateEditorRow:
+  #|    field name :: String
+  #|    field type :: String
+  #|    field kind :: String
+  #|    field text :: String
+  #|    field num :: Double
+  #|    field flag :: Bool
+  #|    field readonly :: String
+  #|    field editable :: Bool
+  #|
+  #|    invariant editable_tracks_kind:
+  #|      ~format: @str{a @(it.kind) row says editable is @(it.editable)}
+  #|      (it.editable == (it.kind != "readonly"))
+  #|
+  #|    where it.kind is_one_of ["text", "num", "bool", "readonly"]
+  #|
+  #|    where it.name non_empty
+  #|
+  #|    where it.type non_empty
+  #|
+  #|  StateEditor:
+  #|    field target :: Instance
+  #|    field rows :: List.of(Instance.of(StateEditorRow))
+  #|    field name :: String
 
 ///|
 /// The compiled `main` view.
@@ -81,10 +86,12 @@ fn state_editor_row_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          @tutuca.Expr::app("is", [
-            @tutuca.Expr::field("kind"),
-            @anode.const_str("bool"),
-          ]),
+          EChain(
+            family=FCompare,
+            ops=["is"],
+            operands=[@tutuca.Expr::field("kind"), @anode.const_str("bool")],
+            span=@tutuca.no_span,
+          ),
           @anode.h(
             "input",
             [
@@ -98,10 +105,12 @@ fn state_editor_row_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          @tutuca.Expr::app("is", [
-            @tutuca.Expr::field("kind"),
-            @anode.const_str("num"),
-          ]),
+          EChain(
+            family=FCompare,
+            ops=["is"],
+            operands=[@tutuca.Expr::field("kind"), @anode.const_str("num")],
+            span=@tutuca.no_span,
+          ),
           @anode.h(
             "input",
             [
@@ -115,10 +124,12 @@ fn state_editor_row_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          @tutuca.Expr::app("is", [
-            @tutuca.Expr::field("kind"),
-            @anode.const_str("text"),
-          ]),
+          EChain(
+            family=FCompare,
+            ops=["is"],
+            operands=[@tutuca.Expr::field("kind"), @anode.const_str("text")],
+            span=@tutuca.no_span,
+          ),
           @anode.h(
             "input",
             [

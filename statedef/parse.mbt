@@ -183,6 +183,10 @@ priv struct RawDecl {
   rules : Array[RuleDecl]
   /// The domain layer, for `state`.
   wheres : Array[WhereDecl]
+  /// What the component says about itself for a catalog. Always empty from
+  /// this parser: the block notation had no syntax for either.
+  category : String
+  keywords : Array[String]
 }
 
 ///|
@@ -386,6 +390,8 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
         lookup,
         rules,
         wheres,
+        category: "",
+        keywords: [],
       })
       continue
     }
@@ -657,6 +663,8 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
       lookup,
       rules,
       wheres,
+      category: "",
+      keywords: [],
     })
   }
   out
@@ -688,6 +696,8 @@ fn empty_raw(
     lookup: [],
     rules: [],
     wheres: [],
+    category: "",
+    keywords: [],
   }
 }
 
@@ -1589,6 +1599,8 @@ fn build(
     rules: d.rules,
     wheres: resolve_wheres(d.wheres, fields, types, d.name_span),
     doc: d.doc,
+    category: d.category,
+    keywords: d.keywords,
   }
 }
 

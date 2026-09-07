@@ -26,18 +26,20 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let schema_property_spec_source : String =
-  #|state SchemaProperty {
-  #|  key: String
-  #|  child: Any
-  #|  required: Bool
-  #|  where key is nonempty
-  #|}
-  #|state SchemaBranch {
-  #|  label: String
-  #|  child: Any
-  #|  label_class: String
-  #|  where label is nonempty
-  #|}
+  #|spec:
+  #|  SchemaProperty:
+  #|    field key :: String
+  #|    field child :: Any
+  #|    field required :: Bool
+  #|
+  #|    where it.key non_empty
+  #|
+  #|  SchemaBranch:
+  #|    field label :: String
+  #|    field child :: Any
+  #|    field label_class :: String
+  #|
+  #|    where it.label non_empty
 
 ///|
 /// The compiled `main` view.

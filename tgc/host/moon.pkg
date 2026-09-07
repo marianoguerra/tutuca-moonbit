@@ -22,6 +22,13 @@ import {
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/lint",
+  // The card's own notation, read here exactly as the ahead-of-time generator
+  // reads it. A module's views arrive as `.tutu` source in the manifest, so
+  // this host carries the shrubbery reader and does NOT carry the HTML one.
+  "marianoguerra/tutuca/tutufile",
+  "marianoguerra/tutuca/tutufile/toanode",
+  "marianoguerra/tutuca/tutufile/shrub" @sh,
+  "marianoguerra/error-report" @report,
   "moonbitlang/core/json",
 }
 

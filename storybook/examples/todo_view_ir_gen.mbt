@@ -26,13 +26,13 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let item_spec_source : String =
-  #|state Item {
-  #|  completed: Bool
-  #|  text: String
-  #|}
-  #|state Items {
-  #|  items: Array[Instance[Item]]
-  #|}
+  #|spec:
+  #|  Item:
+  #|    field completed :: Bool
+  #|    field text :: String
+  #|
+  #|  Items:
+  #|    field items :: List.of(Instance.of(Item))
 
 ///|
 /// The compiled `main` view.

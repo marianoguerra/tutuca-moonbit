@@ -124,15 +124,20 @@ fn protocol_of_tutu(
           express_message.push(c)
         }
       }
-      "property" => {
+      // A protocol's `provide` and `lookup` name a DYNAMIC channel and its
+      // type — the same shape as a property, and without `~writable`, which
+      // says nothing about a value that travels the tree. They share the
+      // `properties` list and are told apart by `section`, the way a
+      // component's own bindings are.
+      "property" | "provide" | "lookup" => {
         guard m.ty is Some(ty) else {
           raise Syntax(
-            msg="a protocol property names a type — write `property <name> :: <Type>`, and add `~writable` if it can be set",
+            msg="a protocol \{word} names a type — write `\{word} <name> :: <Type>`\{if word == "property" { ", and add `~writable` if it can be set" } else { "" }}",
             span=at,
           )
         }
         properties.push({
-          section: "property",
+          section: word,
           name: m.name,
           span: at,
           doc: m.doc,
@@ -156,7 +161,7 @@ fn protocol_of_tutu(
       }
       other =>
         raise Syntax(
-          msg="`\{other}` is not a protocol member — a protocol declares `message`, `intent`, `express`, `property` and `view`",
+          msg="`\{other}` is not a protocol member — a protocol declares `message`, `intent`, `express`, `property`, `view`, `provide` and `lookup`",
           span=at,
         )
     }
@@ -199,5 +204,7 @@ fn empty_decl(
     lookup: [],
     rules: [],
     wheres: [],
+    category: "",
+    keywords: [],
   }
 }

@@ -72,13 +72,21 @@ pub struct ViewBuilder {
   /// Macro names currently being expanded. A macro that reaches itself is
   /// refused rather than followed, which is `RecursiveMacro` on the old path.
   expanding : Array[String]
+  /// What `host.name` resolves to, when a HOST is reading this.
+  ///
+  /// `None` ahead of time: the generator has no host, so a `host.name` stays
+  /// an `EConfigVar` for a backend to refuse or a module to write down. A host
+  /// loading a card HAS a table, and a name missing from it is refused rather
+  /// than rendered Null. See `@sh.ExCtx.config`.
+  config : Map[String, String]?
 }
 
 ///|
 pub fn ViewBuilder::new(
   macros? : Map[String, MacroDef] = Map([]),
+  config? : Map[String, String],
 ) -> ViewBuilder {
-  { next_id: 0, ns: None, handlers: [], macros, expanding: [], }
+  { next_id: 0, ns: None, handlers: [], macros, expanding: [], config, }
 }
 
 ///|
@@ -176,7 +184,11 @@ pub fn ViewBuilder::view(
       css.write_string(text)
       continue
     }
-    for n in self.content(g, ExCtx::value()) {
+    let ctx = match self.config {
+      Some(t) => ExCtx::value().with_config(t)
+      None => ExCtx::value()
+    }
+    for n in self.content(g, ctx) {
       childs.push(n)
     }
   }
@@ -194,10 +206,40 @@ pub fn ViewBuilder::view(
 }
 
 ///|
-/// The CSS a `@style{…}` group holds, or `None` when the group is not one.
+/// The CSS a `@style{…}` declaration holds.
 ///
 /// The body is one string literal, which is how a style block has to be
-/// written: at-notation owns `@`, `{` and `}`, and CSS uses all three.
+/// written: at-notation owns `@`, `{` and `}`, and CSS uses all three. Public
+/// because the section-level reader has the same question about a style block
+/// at the top of `view:` that this package has about one inside a view.
+pub fn style_of(decl : @tutufile.Decl) -> String {
+  style_body(decl.node).unwrap_or("")
+}
+
+///|
+/// Whether a style block is the PAGE's rather than the component's.
+///
+/// `@style(~global){…}` is emitted verbatim with no scoping wrapper, which is
+/// the whole difference — so the option travels with the block rather than
+/// being a fact about where it was written.
+pub fn style_is_global(decl : @tutufile.Decl) -> Bool {
+  guard decl.node.it is Group(parts) else { return false }
+  for p in parts {
+    guard p.it is Parens(gs) else { continue }
+    for g in gs {
+      guard g.it is Group(inner) else { continue }
+      for t in inner {
+        if t.it is Kw("global") {
+          return true
+        }
+      }
+    }
+  }
+  false
+}
+
+///|
+/// The CSS a `@style{…}` group holds, or `None` when the group is not one.
 fn style_body(group : @ast.Node) -> String? {
   guard group.it is Group(parts) && parts.length() >= 1 else { return None }
   guard parts[0].it is Id("style") else { return None }
@@ -543,7 +585,20 @@ fn ViewBuilder::attribute(
     )
   }
   if name.has_prefix("on_") {
-    events.push(self.event(name[3:].to_owned(), value, mods, ctx, span))
+    // An underscore is a hyphen here for the same reason it is one in an
+    // attribute name: `~on_emoji_click:` names the DOM CustomEvent
+    // `emoji-click`, and the listener is registered under the string the event
+    // is dispatched with. Passing the written spelling through registered
+    // `emoji_click`, which nothing ever fires.
+    events.push(
+      self.event(
+        name[3:].to_owned().replace_all(old="_", new="-"),
+        value,
+        mods,
+        ctx,
+        span,
+      ),
+    )
     return
   }
   match name {
@@ -628,7 +683,12 @@ fn ViewBuilder::event(
   span : @report.Span,
 ) -> @anode.NodeEvent raise ExError {
   ignore(self)
-  let hctx = ctx.as_handler()
+  // The HANDLER's own name is read as a name — `~on_click: inc` dispatches
+  // `inc` rather than reading a binding called `inc`. Its ARGUMENTS are values
+  // and are read as values: `~on_click: remove_song(key)` inside a loop passes
+  // the key the loop bound, and reading that in handler position made it a
+  // bare name nothing had bound.
+
   // `~on_keydown: add ~key: "Enter" ~prevent` — the options after the handler
   // are the modifiers the old notation spelled `@on.keydown.enter+prevent`.
   let modifiers = read_modifiers(mods)
@@ -637,7 +697,7 @@ fn ViewBuilder::event(
     ECall(EName(handler), args) => {
       let out = []
       for a in @sh.positional_args(args) {
-        out.push(@sh.to_expr(a, hctx, span))
+        out.push(@sh.to_expr(a, ctx, span))
       }
       @anode.on(spec, @tutuca.Expr::name(handler), args=out, modifiers~)
     }
@@ -648,10 +708,10 @@ fn ViewBuilder::event(
         spec,
         @tutuca.Expr::lit(LNull),
         modifiers~,
-        action=self.property_write(op, place, v, hctx, span),
+        action=self.property_write(op, place, v, ctx, span),
       )
     ECall(EMember(recv, op), args) => {
-      guard @lower.collection_op(op) is Some(word) else {
+      guard @sh.collection_op(op) is Some(word) else {
         raise ExError(
           message="`\{op}` is not a property action",
           help="the actions are `push`, `insert_at`, `set_at`, `delete_at`, `add`, `remove` and `toggle`",
@@ -667,7 +727,7 @@ fn ViewBuilder::event(
       }
       let out = []
       for a in @sh.positional_args(args) {
-        out.push(@sh.to_expr(a, hctx, span))
+        out.push(@sh.to_expr(a, ctx, span))
       }
       @anode.on(
         spec,

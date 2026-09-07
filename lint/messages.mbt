@@ -217,8 +217,8 @@ pub fn finding_message(f : Finding) -> String {
     }
     MethodInEventPosition => {
       let comp = info_or(info, "comp", "?")
-      let site = info_or(info, "site", "@on")
-      "'\{comp}' writes `\{site}=\"$\{name}\"`: a `$name` in an event position is refused. A handler name and a `$name` are the same dispatch, so the sigil claims a distinction that does not exist — write `\{name}` bare"
+      let site = info_or(info, "site", "~on")
+      "'\{comp}' writes `\{site}: \{name}()`: a call in an event position is refused. Calling a `compute` and naming a handler are the same dispatch, so the parentheses claim a distinction that does not exist — write `\{site}: \{name}`"
     }
     UnknownComponentName => {
       let comp = info_or(info, "comp", "?")
@@ -236,9 +236,9 @@ pub fn finding_message(f : Finding) -> String {
       let hint = if closest == "" {
         ""
       } else {
-        " — did you mean '$\{closest}'?"
+        " — did you mean `\{closest}()`?"
       }
-      "'$\{name}' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods" +
+      "`\{name}()` is not a `compute` this component declares, so it evaluates to nothing and the option reading it is dropped silently; declare it in `logic:` as `compute \{name}:`" +
       hint
     }
     // The manifest's constraint record spells "unstated" two ways — `null` for

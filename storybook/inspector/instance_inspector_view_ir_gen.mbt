@@ -26,29 +26,36 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let instance_fields_spec_source : String =
-  #|state InstanceFields {
-  #|  items: Array[Instance]
-  #|  is_expanded: Bool
-  #|  items_per_page: Int
-  #|  current_page: Int
-  #|  type_name: String
-  #|  invariant page_exists
-  #|    format $'page {.current_page} is past the end of {(len .items)} items' { ((.current_page is 0) or ((.current_page * .items_per_page) < (len .items))) }
-  #|  where items_per_page between 1 and 500
-  #|  where current_page >= 0
-  #|}
-  #|state InstanceInspector {
-  #|  value: Instance
-  #|}
-  #|state InstanceExplorer {
-  #|  active_tab: String
-  #|  instance_view: Instance
-  #|  component_view: Instance
-  #|  has_component: Bool
-  #|  invariant component_tab_needs_a_component
-  #|    format 'the component tab is selected and there is no component' { ((.active_tab is 'component') implies .has_component) }
-  #|  where active_tab is one of ["instance", "component"]
-  #|}
+  #|spec:
+  #|  InstanceFields:
+  #|    field items :: List.of(Instance)
+  #|    field is_expanded :: Bool
+  #|    field items_per_page :: Int
+  #|    field current_page :: Int
+  #|    field type_name :: String
+  #|
+  #|    invariant page_exists:
+  #|      ~format: @str{page @(it.current_page) is past the end of @(it.items.length()) items}
+  #|      ((it.current_page == 0) || ((it.current_page * it.items_per_page) < it.items.length()))
+  #|
+  #|    where it.items_per_page in_range(1, 500)
+  #|
+  #|    where it.current_page >= 0
+  #|
+  #|  InstanceInspector:
+  #|    field value :: Instance
+  #|
+  #|  InstanceExplorer:
+  #|    field active_tab :: String
+  #|    field instance_view :: Instance
+  #|    field component_view :: Instance
+  #|    field has_component :: Bool
+  #|
+  #|    invariant component_tab_needs_a_component:
+  #|      ~format: "the component tab is selected and there is no component"
+  #|      ((it.active_tab == "component") implies it.has_component)
+  #|
+  #|    where it.active_tab is_one_of ["instance", "component"]
 
 ///|
 /// The compiled `main` view.
@@ -172,7 +179,11 @@ fn instance_fields_main_view_ir() -> @anode.View {
           @anode.const_null(),
           action=@anode.set_property_action(
             "is_expanded",
-            @tutuca.Expr::app("not", [@tutuca.Expr::field("is_expanded")]),
+            EUnary(
+              op=UNot,
+              operand=@tutuca.Expr::field("is_expanded"),
+              span=@tutuca.no_span,
+            ),
           ),
         ),
       ],
@@ -380,10 +391,15 @@ fn instance_explorer_main_view_ir() -> @anode.View {
                 @anode.attr("role", "tab"),
                 @anode.if_attr(
                   "class",
-                  @tutuca.Expr::app("is", [
-                    @tutuca.Expr::field("active_tab"),
-                    @anode.const_str("instance"),
-                  ]),
+                  EChain(
+                    family=FCompare,
+                    ops=["is"],
+                    operands=[
+                      @tutuca.Expr::field("active_tab"),
+                      @anode.const_str("instance"),
+                    ],
+                    span=@tutuca.no_span,
+                  ),
                   then_val=@anode.const_str("tab tab-active tab-instance"),
                   else_val=@anode.const_str("tab tab-instance"),
                 ),
@@ -400,10 +416,15 @@ fn instance_explorer_main_view_ir() -> @anode.View {
                   @anode.attr("role", "tab"),
                   @anode.if_attr(
                     "class",
-                    @tutuca.Expr::app("is", [
-                      @tutuca.Expr::field("active_tab"),
-                      @anode.const_str("component"),
-                    ]),
+                    EChain(
+                      family=FCompare,
+                      ops=["is"],
+                      operands=[
+                        @tutuca.Expr::field("active_tab"),
+                        @anode.const_str("component"),
+                      ],
+                      span=@tutuca.no_span,
+                    ),
                     then_val=@anode.const_str("tab tab-active tab-component"),
                     else_val=@anode.const_str("tab tab-component"),
                   ),
@@ -416,20 +437,30 @@ fn instance_explorer_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          @tutuca.Expr::app("is", [
-            @tutuca.Expr::field("active_tab"),
-            @anode.const_str("instance"),
-          ]),
+          EChain(
+            family=FCompare,
+            ops=["is"],
+            operands=[
+              @tutuca.Expr::field("active_tab"),
+              @anode.const_str("instance"),
+            ],
+            span=@tutuca.no_span,
+          ),
           @anode.h("div", [], [
             @anode.render(0, @tutuca.Expr::field("instance_view")),
           ]),
         ),
         @anode.text(" "),
         @anode.show(
-          @tutuca.Expr::app("is", [
-            @tutuca.Expr::field("active_tab"),
-            @anode.const_str("component"),
-          ]),
+          EChain(
+            family=FCompare,
+            ops=["is"],
+            operands=[
+              @tutuca.Expr::field("active_tab"),
+              @anode.const_str("component"),
+            ],
+            span=@tutuca.no_span,
+          ),
           @anode.h("div", [], [
             @anode.show(
               @tutuca.Expr::field("has_component"),

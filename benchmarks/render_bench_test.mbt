@@ -137,10 +137,16 @@ test "render workload shape" {
   // element: the inspector's `@show(a){@hide(b){…}}` had been `<hide>`, a tag
   // that renders its children whatever `b` says, so thirteen nodes were being
   // drawn that the file says to leave out.
+  //
+  // 80436 -> 80485 when a file-level `@style{…}` stopped being dropped and the
+  // views a `.tutu` writes over several lines kept the newlines between them.
+  // Both are the direct reader's rule rather than a regression: a text node
+  // exists where the file writes one, and an HTML tokenizer's block/inline
+  // table is not part of it (`tutufile/toanode/whitespace_test.mbt`).
   inspect(
     @benchmarks.render_all_examples(),
     content=(
-      #|80436
+      #|80485
     ),
   )
 }

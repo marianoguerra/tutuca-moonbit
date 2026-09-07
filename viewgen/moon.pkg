@@ -17,6 +17,15 @@ import {
   "marianoguerra/tutuca/tscript/check",
   "marianoguerra/tutuca/tscript/emit_mbt",
   "marianoguerra/tutuca/viewfile",
+  // The direct readers: a `.tutu` reaches the generator through these rather
+  // than through a printer and the splitter.
+  "marianoguerra/tutuca/tutufile",
+  "marianoguerra/tutuca/tutufile/shrub" @sh,
+  "marianoguerra/tutuca/tutufile/toanode",
+  "marianoguerra/tutuca/tutufile/tologic",
+  "marianoguerra/tutuca/tutufile/todata",
+  "marianoguerra/tutuca/scenedef",
+  "marianoguerra/error-report" @report,
   "moonbitlang/core/debug",
   "moonbitlang/core/set",
 }

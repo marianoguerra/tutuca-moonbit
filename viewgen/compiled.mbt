@@ -26,6 +26,14 @@ fn compile_view(
   view : @viewfile.RawView,
   scope : FileMacros,
 ) -> CompiledView raise GenError {
+  // A view READ from a `.tutu` arrives as a tree: there is no source to parse,
+  // nothing to expand — `ViewBuilder` grafts a macro call where it stands —
+  // and no second reading of the file to disagree with the first.
+  if view.tree is Some({ root, events, }) {
+    let tree = strip_macro_calls(root)
+    strip_data_vid(tree)
+    return { raw: view, root: tree, events, }
+  }
   let collector = IssueCollector::{ issues: [], }
   let px = @anode.ParseContext::new(handler=collector)
   let v = @anode.View::new(view.name, raw_view=view.source)

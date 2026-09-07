@@ -26,29 +26,36 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let push_view_spec_source : String =
-  #|state PushView {
-  #|  items: Array[Instance[Entry]]
-  #|  query: String
-  #|  view: String
-  #|  where view is one of ["main", "edit"]
-  #|}
-  #|state SeqItemAccess {
-  #|  by_key: Map[String, Instance[Entry]]
-  #|  by_index: Array[Instance[Entry]]
-  #|  current_key: Any
-  #|  current_index: Int
-  #|  where current_index is index of .by_index or none
-  #|  where current_key is key of .by_key
-  #|}
-  #|state Pagination {
-  #|  items: Array[String]
-  #|  page: Int
-  #|  page_size: Int
-  #|  invariant page_exists
-  #|    format $'page {.page} is past the last one' { ((.page is 0) or ((.page * .page_size) < (len .items))) }
-  #|  where page_size between 1 and 100
-  #|  where page >= 0
-  #|}
+  #|spec:
+  #|  PushView:
+  #|    field items :: List.of(Instance.of(Entry))
+  #|    field query :: String
+  #|    field view :: String
+  #|
+  #|    where it.view is_one_of ["main", "edit"]
+  #|
+  #|  SeqItemAccess:
+  #|    field by_key :: Map.of(String, Instance.of(Entry))
+  #|    field by_index :: List.of(Instance.of(Entry))
+  #|    field current_key :: Any
+  #|    field current_index :: Int
+  #|
+  #|    where it.current_index is_index_of it.by_index ~or_none
+  #|
+  #|    where it.current_key is_key_of it.by_key
+  #|
+  #|  Pagination:
+  #|    field items :: List.of(String)
+  #|    field page :: Int
+  #|    field page_size :: Int
+  #|
+  #|    invariant page_exists:
+  #|      ~format: @str{page @(it.page) is past the last one}
+  #|      ((it.page == 0) || ((it.page * it.page_size) < it.items.length()))
+  #|
+  #|    where it.page_size in_range(1, 100)
+  #|
+  #|    where it.page >= 0
 
 ///|
 /// The compiled `main` view.
@@ -416,6 +423,7 @@ fn pagination_main_view_ir() -> @anode.View {
           [@anode.text("Next ›")],
         ),
       ]),
+      @anode.text("\n"),
       @anode.h("ul", [@anode.attr("class", "flex flex-col gap-1")], [
         @anode.each(
           3,

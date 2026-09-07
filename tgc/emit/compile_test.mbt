@@ -3,17 +3,25 @@
 /// wap the emitter wrote compiles.
 test "a counter card compiles" {
   let card =
-    #|<script type="tutuca/spec">
-    #|  state Counter { count: Int, label: String }
-    #|</script>
-    #|<script type="tutuca/script">
-    #|  receive inc { .count += 1 }
-    #|  receive setTo(n) { .count = n }
-    #|  compute shown { $'count: {.count}' }
-    #|</script>
-    #|<template id="Counter:main" data-root>
-    #|  <output @text="$shown"></output>
-    #|</template>
+    #|spec:
+    #|  Counter ~root:
+    #|    field count :: Int
+    #|    field label :: String
+    #|
+    #|logic:
+    #|  Counter:
+    #|    receive inc:
+    #|      it.count += 1
+    #|
+    #|    receive setTo(n):
+    #|      it.count := n
+    #|
+    #|    compute shown:
+    #|      @str{count: @(it.count)}
+    #|
+    #|view:
+    #|  Counter:
+    #|    @output{@(shown())}
   let out = @emit.compile(card, name="counter")
   assert_eq(out.component, "Counter")
   assert_eq(out.fields, ["count", "label"])
@@ -27,13 +35,18 @@ test "a counter card compiles" {
 /// with a hole where the handler should be would turn a mistake into behaviour.
 test "a card that does not check is rejected whole" {
   let card =
-    #|<script type="tutuca/spec">
-    #|  state Counter { count: Int }
-    #|</script>
-    #|<script type="tutuca/script">
-    #|  receive inc { .count = nope }
-    #|</script>
-    #|<template id="Counter:main" data-root><b></b></template>
+    #|spec:
+    #|  Counter ~root:
+    #|    field count :: Int
+    #|
+    #|logic:
+    #|  Counter:
+    #|    receive inc:
+    #|      it.count := nope
+    #|
+    #|view:
+    #|  Counter:
+    #|    @b{}
   let got = try {
     let _ = @emit.compile(card, name="counter")
     "compiled"
@@ -48,20 +61,33 @@ test "a card that does not check is rejected whole" {
 /// A declaration this backend cannot lower is REFUSED — the rest of the card
 /// still compiles, and the manifest leaves the refused name out so a host is
 /// never told the component answers it.
+///
+/// `clear` is the one construct that reaches this from a `.tutu` card, and it
+/// is not a contrived one: it is the only spelling for emptying a list — there
+/// is no list literal to assign instead — so a card that empties a list loses
+/// that handler and keeps the others.
 test "one declaration is refused and the rest still compiles" {
   let card =
-    #|<script type="tutuca/spec">
-    #|  state Counter { count: Int, rows: Array[String] }
-    #|</script>
-    #|<script type="tutuca/script">
-    #|  receive inc { .count += 1 }
-    #|  receive ping { .count = @value }
-    #|</script>
-    #|<template id="Counter:main" data-root><b></b></template>
+    #|spec:
+    #|  Counter ~root:
+    #|    field count :: Int
+    #|    field rows :: List.of(String)
+    #|
+    #|logic:
+    #|  Counter:
+    #|    receive inc:
+    #|      it.count += 1
+    #|
+    #|    receive wipe:
+    #|      it.rows.clear()
+    #|
+    #|view:
+    #|  Counter:
+    #|    @b{}
   let out = @emit.compile(card, name="counter")
-  assert_eq(out.refusals.map(r => r.name), ["ping"])
+  assert_eq(out.refusals.map(r => r.name), ["wipe"])
   assert_true(
-    out.refusals[0].reason.contains("handed no row"),
+    out.refusals[0].reason.contains("no backend has ever"),
     msg=out.refusals[0].reason,
   )
   assert_true(
@@ -69,7 +95,7 @@ test "one declaration is refused and the rest still compiles" {
     msg="the rest did not compile",
   )
   assert_true(
-    !out.wap.contains("Counter_receive_ping"),
+    !out.wap.contains("Counter_receive_wipe"),
     msg="a refused handler was emitted",
   )
 }
@@ -84,13 +110,18 @@ test "one declaration is refused and the rest still compiles" {
 /// machinery for one.
 test "a card that performs no effect imports no effect" {
   let pure =
-    #|<script type="tutuca/spec">
-    #|  state Pure { n: Int }
-    #|</script>
-    #|<script type="tutuca/script">
-    #|  compute doubled { .n * 2 }
-    #|</script>
-    #|<template id="Pure" data-root><b @text="$doubled"></b></template>
+    #|spec:
+    #|  Pure ~root:
+    #|    field n :: Int
+    #|
+    #|logic:
+    #|  Pure:
+    #|    compute doubled:
+    #|      it.n * 2
+    #|
+    #|view:
+    #|  Pure:
+    #|    @b{@(doubled())}
   let out = @emit.compile(pure, name="pure")
   assert_true(out.wap.contains("op_mul"), msg="the arithmetic it does use")
   // The wap spelling: one `import "tut":` block, one `fn` line per name. An
@@ -101,13 +132,18 @@ test "a card that performs no effect imports no effect" {
   }
   // …and a card that DOES send says so.
   let sender =
-    #|<script type="tutuca/spec">
-    #|  state Loud { n: Int }
-    #|</script>
-    #|<script type="tutuca/script">
-    #|  receive shout { send 'heard' .n }
-    #|</script>
-    #|<template id="Loud" data-root><b></b></template>
+    #|spec:
+    #|  Loud ~root:
+    #|    field n :: Int
+    #|
+    #|logic:
+    #|  Loud:
+    #|    receive shout:
+    #|      send("heard", it.n)
+    #|
+    #|view:
+    #|  Loud:
+    #|    @b{}
   let loud = @emit.compile(sender, name="loud")
   assert_true(loud.wap.contains("fn eff_send("), msg="a sender")
   assert_false(loud.wap.contains("fn eff_ask("), msg="but not an asker")
@@ -121,16 +157,27 @@ test "a card that performs no effect imports no effect" {
 /// same syntax and a list indexes where a map keys.
 test "sendAt reifies its place" {
   let card =
-    #|<script type="tutuca/spec">
-    #|  struct Pane { inner: String }
-    #|  state Board { rows: Array[String], panes: Map[String, Pane] }
-    #|</script>
-    #|<script type="tutuca/script">
-    #|  receive poke(i) { sendAt &.rows[i] 'ping' }
-    #|  receive named(k) { sendAt &.panes[k].inner 'ping' 1 }
-    #|  receive whole { sendAt &.rows 'ping' }
-    #|</script>
-    #|<template id="Board" data-root><b></b></template>
+    #|spec:
+    #|  struct Pane(inner :: String)
+    #|
+    #|  Board ~root:
+    #|    field rows :: List.of(String)
+    #|    field panes :: Map.of(String, Pane)
+    #|
+    #|logic:
+    #|  Board:
+    #|    receive poke(i):
+    #|      send("ping", ~to: it.rows[i])
+    #|
+    #|    receive named(k):
+    #|      send("ping", 1, ~to: it.panes[k].inner)
+    #|
+    #|    receive whole:
+    #|      send("ping", ~to: it.rows)
+    #|
+    #|view:
+    #|  Board:
+    #|    @b{}
   let out = @emit.compile(card, name="board")
   assert_eq(out.refusals.map(r => r.name), [])
   assert_true(out.wap.contains("eff_send_at"), msg="the effect")
@@ -149,13 +196,19 @@ test "sendAt reifies its place" {
 /// one.
 test "a sendAt key read from live state is refused" {
   let card =
-    #|<script type="tutuca/spec">
-    #|  state Board { panes: Map[String, String], sel: String }
-    #|</script>
-    #|<script type="tutuca/script">
-    #|  receive poke { sendAt &.panes[.sel] 'ping' }
-    #|</script>
-    #|<template id="Board" data-root><b></b></template>
+    #|spec:
+    #|  Board ~root:
+    #|    field panes :: Map.of(String, String)
+    #|    field sel :: String
+    #|
+    #|logic:
+    #|  Board:
+    #|    receive poke:
+    #|      send("ping", ~to: it.panes[it.sel])
+    #|
+    #|view:
+    #|  Board:
+    #|    @b{}
   let out = @emit.compile(card, name="board")
   assert_eq(out.refusals.map(r => r.name), ["poke"])
   assert_true(
@@ -176,12 +229,19 @@ test "a sendAt key read from live state is refused" {
 /// over another's fields, silently and in both directions.
 test "a component's descriptor names the module that made it" {
   let card =
-    #|<script type="tutuca/spec">
-    #|  state Hole { child: Instance }
-    #|  state Text { body: String }
-    #|</script>
-    #|<template id="Hole:main" data-root><x render=".child"></x></template>
-    #|<template id="Text:main"><b @text=".body"></b></template>
+    #|spec:
+    #|  Hole ~root:
+    #|    field child :: Instance
+    #|
+    #|  Text:
+    #|    field body :: String
+    #|
+    #|view:
+    #|  Hole:
+    #|    @render(it.child)
+    #|
+    #|  Text:
+    #|    @b{@(it.body)}
   let out = @emit.compile(card, name="kit")
   let str_at = (j : Json, key : String) => {
     match j {

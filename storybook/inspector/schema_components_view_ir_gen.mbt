@@ -26,102 +26,123 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let schema_scalar_spec_source : String =
-  #|state SchemaScalar {
-  #|  items: Array[Instance]
-  #|  is_expanded: Bool
-  #|  items_per_page: Int
-  #|  current_page: Int
-  #|  type_label: String
-  #|  badges: Array[String]
-  #|  title: String
-  #|  description: String
-  #|  deprecated: Bool
-  #|  invariant page_exists
-  #|    format $'page {.current_page} is past the end of {(len .items)} items' { ((.current_page is 0) or ((.current_page * .items_per_page) < (len .items))) }
-  #|  where items_per_page between 1 and 500
-  #|  where current_page >= 0
-  #|}
-  #|state SchemaObject {
-  #|  items: Array[Instance]
-  #|  is_expanded: Bool
-  #|  items_per_page: Int
-  #|  current_page: Int
-  #|  type_label: String
-  #|  badges: Array[String]
-  #|  title: String
-  #|  description: String
-  #|  deprecated: Bool
-  #|  invariant page_exists
-  #|    format $'page {.current_page} is past the end of {(len .items)} items' { ((.current_page is 0) or ((.current_page * .items_per_page) < (len .items))) }
-  #|  where items_per_page between 1 and 500
-  #|  where current_page >= 0
-  #|}
-  #|state SchemaArray {
-  #|  items: Array[Instance]
-  #|  is_expanded: Bool
-  #|  items_per_page: Int
-  #|  current_page: Int
-  #|  type_label: String
-  #|  badges: Array[String]
-  #|  title: String
-  #|  description: String
-  #|  deprecated: Bool
-  #|  invariant page_exists
-  #|    format $'page {.current_page} is past the end of {(len .items)} items' { ((.current_page is 0) or ((.current_page * .items_per_page) < (len .items))) }
-  #|  where items_per_page between 1 and 500
-  #|  where current_page >= 0
-  #|}
-  #|state SchemaEnum {
-  #|  items: Array[Instance]
-  #|  is_expanded: Bool
-  #|  items_per_page: Int
-  #|  current_page: Int
-  #|  type_label: String
-  #|  badges: Array[String]
-  #|  title: String
-  #|  description: String
-  #|  deprecated: Bool
-  #|  invariant page_exists
-  #|    format $'page {.current_page} is past the end of {(len .items)} items' { ((.current_page is 0) or ((.current_page * .items_per_page) < (len .items))) }
-  #|  where items_per_page between 1 and 500
-  #|  where current_page >= 0
-  #|}
-  #|state SchemaCombinator {
-  #|  items: Array[Instance]
-  #|  is_expanded: Bool
-  #|  items_per_page: Int
-  #|  current_page: Int
-  #|  type_label: String
-  #|  badges: Array[String]
-  #|  title: String
-  #|  description: String
-  #|  deprecated: Bool
-  #|  invariant page_exists
-  #|    format $'page {.current_page} is past the end of {(len .items)} items' { ((.current_page is 0) or ((.current_page * .items_per_page) < (len .items))) }
-  #|  where items_per_page between 1 and 500
-  #|  where current_page >= 0
-  #|}
-  #|state SchemaConst {
-  #|  value: Any
-  #|}
-  #|state SchemaConditional {
-  #|  if_node: Any
-  #|  then_node: Any
-  #|  else_node: Any
-  #|  title: String
-  #|  description: String
-  #|  deprecated: Bool
-  #|}
-  #|state SchemaNot {
-  #|  child: Any
-  #|}
-  #|state SchemaBoolean {
-  #|  value: Bool
-  #|}
-  #|state SchemaRef {
-  #|  target: String
-  #|  where target is nonempty
-  #|}
+  #|spec:
+  #|  SchemaScalar:
+  #|    field items :: List.of(Instance)
+  #|    field is_expanded :: Bool
+  #|    field items_per_page :: Int
+  #|    field current_page :: Int
+  #|    field type_label :: String
+  #|    field badges :: List.of(String)
+  #|    field title :: String
+  #|    field description :: String
+  #|    field deprecated :: Bool
+  #|
+  #|    invariant page_exists:
+  #|      ~format: @str{page @(it.current_page) is past the end of @(it.items.length()) items}
+  #|      ((it.current_page == 0) || ((it.current_page * it.items_per_page) < it.items.length()))
+  #|
+  #|    where it.items_per_page in_range(1, 500)
+  #|
+  #|    where it.current_page >= 0
+  #|
+  #|  SchemaObject:
+  #|    field items :: List.of(Instance)
+  #|    field is_expanded :: Bool
+  #|    field items_per_page :: Int
+  #|    field current_page :: Int
+  #|    field type_label :: String
+  #|    field badges :: List.of(String)
+  #|    field title :: String
+  #|    field description :: String
+  #|    field deprecated :: Bool
+  #|
+  #|    invariant page_exists:
+  #|      ~format: @str{page @(it.current_page) is past the end of @(it.items.length()) items}
+  #|      ((it.current_page == 0) || ((it.current_page * it.items_per_page) < it.items.length()))
+  #|
+  #|    where it.items_per_page in_range(1, 500)
+  #|
+  #|    where it.current_page >= 0
+  #|
+  #|  SchemaArray:
+  #|    field items :: List.of(Instance)
+  #|    field is_expanded :: Bool
+  #|    field items_per_page :: Int
+  #|    field current_page :: Int
+  #|    field type_label :: String
+  #|    field badges :: List.of(String)
+  #|    field title :: String
+  #|    field description :: String
+  #|    field deprecated :: Bool
+  #|
+  #|    invariant page_exists:
+  #|      ~format: @str{page @(it.current_page) is past the end of @(it.items.length()) items}
+  #|      ((it.current_page == 0) || ((it.current_page * it.items_per_page) < it.items.length()))
+  #|
+  #|    where it.items_per_page in_range(1, 500)
+  #|
+  #|    where it.current_page >= 0
+  #|
+  #|  SchemaEnum:
+  #|    field items :: List.of(Instance)
+  #|    field is_expanded :: Bool
+  #|    field items_per_page :: Int
+  #|    field current_page :: Int
+  #|    field type_label :: String
+  #|    field badges :: List.of(String)
+  #|    field title :: String
+  #|    field description :: String
+  #|    field deprecated :: Bool
+  #|
+  #|    invariant page_exists:
+  #|      ~format: @str{page @(it.current_page) is past the end of @(it.items.length()) items}
+  #|      ((it.current_page == 0) || ((it.current_page * it.items_per_page) < it.items.length()))
+  #|
+  #|    where it.items_per_page in_range(1, 500)
+  #|
+  #|    where it.current_page >= 0
+  #|
+  #|  SchemaCombinator:
+  #|    field items :: List.of(Instance)
+  #|    field is_expanded :: Bool
+  #|    field items_per_page :: Int
+  #|    field current_page :: Int
+  #|    field type_label :: String
+  #|    field badges :: List.of(String)
+  #|    field title :: String
+  #|    field description :: String
+  #|    field deprecated :: Bool
+  #|
+  #|    invariant page_exists:
+  #|      ~format: @str{page @(it.current_page) is past the end of @(it.items.length()) items}
+  #|      ((it.current_page == 0) || ((it.current_page * it.items_per_page) < it.items.length()))
+  #|
+  #|    where it.items_per_page in_range(1, 500)
+  #|
+  #|    where it.current_page >= 0
+  #|
+  #|  SchemaConst:
+  #|    field value :: Any
+  #|
+  #|  SchemaConditional:
+  #|    field if_node :: Any
+  #|    field then_node :: Any
+  #|    field else_node :: Any
+  #|    field title :: String
+  #|    field description :: String
+  #|    field deprecated :: Bool
+  #|
+  #|  SchemaNot:
+  #|    field child :: Any
+  #|
+  #|  SchemaBoolean:
+  #|    field value :: Bool
+  #|
+  #|  SchemaRef:
+  #|    field target :: String
+  #|
+  #|    where it.target non_empty
 
 ///|
 /// The compiled `main` view.
@@ -296,7 +317,11 @@ fn schema_scalar_main_view_ir() -> @anode.View {
           @anode.const_null(),
           action=@anode.set_property_action(
             "is_expanded",
-            @tutuca.Expr::app("not", [@tutuca.Expr::field("is_expanded")]),
+            EUnary(
+              op=UNot,
+              operand=@tutuca.Expr::field("is_expanded"),
+              span=@tutuca.no_span,
+            ),
           ),
         ),
       ],
@@ -596,7 +621,11 @@ fn schema_object_main_view_ir() -> @anode.View {
           @anode.const_null(),
           action=@anode.set_property_action(
             "is_expanded",
-            @tutuca.Expr::app("not", [@tutuca.Expr::field("is_expanded")]),
+            EUnary(
+              op=UNot,
+              operand=@tutuca.Expr::field("is_expanded"),
+              span=@tutuca.no_span,
+            ),
           ),
         ),
       ],
@@ -896,7 +925,11 @@ fn schema_array_main_view_ir() -> @anode.View {
           @anode.const_null(),
           action=@anode.set_property_action(
             "is_expanded",
-            @tutuca.Expr::app("not", [@tutuca.Expr::field("is_expanded")]),
+            EUnary(
+              op=UNot,
+              operand=@tutuca.Expr::field("is_expanded"),
+              span=@tutuca.no_span,
+            ),
           ),
         ),
       ],
@@ -1191,7 +1224,11 @@ fn schema_enum_main_view_ir() -> @anode.View {
           @anode.const_null(),
           action=@anode.set_property_action(
             "is_expanded",
-            @tutuca.Expr::app("not", [@tutuca.Expr::field("is_expanded")]),
+            EUnary(
+              op=UNot,
+              operand=@tutuca.Expr::field("is_expanded"),
+              span=@tutuca.no_span,
+            ),
           ),
         ),
       ],
@@ -1490,7 +1527,11 @@ fn schema_combinator_main_view_ir() -> @anode.View {
           @anode.const_null(),
           action=@anode.set_property_action(
             "is_expanded",
-            @tutuca.Expr::app("not", [@tutuca.Expr::field("is_expanded")]),
+            EUnary(
+              op=UNot,
+              operand=@tutuca.Expr::field("is_expanded"),
+              span=@tutuca.no_span,
+            ),
           ),
         ),
       ],

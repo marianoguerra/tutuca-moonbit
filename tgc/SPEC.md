@@ -180,6 +180,24 @@ The manifest is an ordinary value, so **a module is the whole distribution**.
 No tar, no `tutuca.json` beside it, no packer — which is what lets a toolchain
 that has never heard of this repository produce one.
 
+**A module's views cross as the card's own source.** `tgc.describe` carries a
+`tutu` key holding the whole `.tutu` the card was compiled from; each component
+lists its view NAMES and each view's byte count, and a host reads the bodies out
+of `tutu` under `<Component>` and `<Component>.<name>`. Macros are the same: the
+manifest names them and their defaults, and their bodies are in that source.
+
+That is one notation on both sides, read by the same reader
+(`tutufile/toanode`) that the ahead-of-time generator uses — so the two can be
+held to each other by a differential test, and a host carries the shrubbery
+reader instead of an HTML tokenizer. The alternative was a printer: the card
+arrives at the compiler as a tree, so per-view markup would have meant an
+`ANode` -> HTML writer kept byte-exact against this suite, for a notation
+nothing is written in any more.
+
+The byte count is a number rather than the text it measures because a quota is
+checked BEFORE anything is read — a refusal is meant to cost no parsing — and
+the compiler is the side that knows the length.
+
 Everything a module may reach comes from the namespace **`tut`**. A module
 declares no memory and no table, so its import section is its *complete*
 authority list — the property `tgc/SECURITY.md` relies on today, made

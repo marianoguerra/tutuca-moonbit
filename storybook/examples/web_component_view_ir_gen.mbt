@@ -26,10 +26,10 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let emoji_picker_spec_source : String =
-  #|state EmojiPicker {
-  #|  current: Any
-  #|  is_picker_visible: Bool
-  #|}
+  #|spec:
+  #|  EmojiPicker:
+  #|    field current :: Any
+  #|    field is_picker_visible :: Bool
 
 ///|
 /// The compiled `main` view.
@@ -87,7 +87,11 @@ fn emoji_picker_main_view_ir() -> @anode.View {
           @anode.const_null(),
           action=@anode.set_property_action(
             "is_picker_visible",
-            @tutuca.Expr::app("not", [@tutuca.Expr::field("is_picker_visible")]),
+            EUnary(
+              op=UNot,
+              operand=@tutuca.Expr::field("is_picker_visible"),
+              span=@tutuca.no_span,
+            ),
           ),
         ),
       ],

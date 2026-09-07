@@ -26,30 +26,30 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let json_selector_spec_source : String =
-  #|state JsonNull {
-  #|}
-  #|state JsonBool {
-  #|  value: Bool
-  #|}
-  #|state JsonString {
-  #|  value: String
-  #|}
-  #|state JsonNumber {
-  #|  str_value: String
-  #|  value: Double
-  #|}
-  #|state JsonSelector {
-  #|}
-  #|state JsonArray {
-  #|  items: Array[Instance]
-  #|}
-  #|state JsonObjectKeyVal {
-  #|  key: String
-  #|  value: Any
-  #|}
-  #|state JsonObject {
-  #|  items: Array[Instance[JsonObjectKeyVal]]
-  #|}
+  #|spec:
+  #|  JsonNull
+  #|
+  #|  JsonBool:
+  #|    field value :: Bool
+  #|
+  #|  JsonString:
+  #|    field value :: String
+  #|
+  #|  JsonNumber:
+  #|    field str_value :: String
+  #|    field value :: Double
+  #|
+  #|  JsonSelector
+  #|
+  #|  JsonArray:
+  #|    field items :: List.of(Instance)
+  #|
+  #|  JsonObjectKeyVal:
+  #|    field key :: String
+  #|    field value :: Any
+  #|
+  #|  JsonObject:
+  #|    field items :: List.of(Instance.of(JsonObjectKeyVal))
 
 ///|
 /// The compiled `main` view.
@@ -276,7 +276,11 @@ fn json_bool_main_view_ir() -> @anode.View {
           @anode.const_null(),
           action=@anode.set_property_action(
             "value",
-            @tutuca.Expr::app("not", [@tutuca.Expr::field("value")]),
+            EUnary(
+              op=UNot,
+              operand=@tutuca.Expr::field("value"),
+              span=@tutuca.no_span,
+            ),
           ),
         ),
       ],

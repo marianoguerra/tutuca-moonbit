@@ -178,27 +178,32 @@ pub fn register_module(
   // guest to create one, which is exactly `Module::make_instance`, and not the
   // host building something behind its back.
   let self_ref : Ref[Module?] = { val: None, }
+  // Every view the module declares, read ONCE out of the card's own source —
+  // macros in hand, so a view arrives with its calls already expanded, and the
+  // host's config table in hand, so a `host.name` resolves to what this host
+  // offers rather than to nothing.
+  let styles : Map[String, String] = Map([])
+  for def in manifest.components {
+    if def.style != "" {
+      styles[def.name] = def.style
+    }
+  }
+  let declared = read_views(manifest.tutu, config.view, styles)
   for def in manifest.components {
     refuse_if_any(policy.check_style(def.name, def.style))
-    // Guest view HTML arrives at runtime from the manifest, so it is parsed
-    // (View::new), not compiled ahead of time — the manifest's `main` view
-    // carries the component's scoped style.
+    // A guest's views are READ at runtime from the card source the manifest
+    // carries — not compiled ahead of time, and not parsed out of HTML. The
+    // manifest's `main` view carries the component's scoped style.
     let cviews : Map[String, @anode.View] = Map([])
     for v in def.views {
-      let style = if v.name == "main" { def.style } else { "" }
-      cviews[v.name] = @anode.View::new(
-        v.name,
-        raw_view=v.html,
-        style~,
-        config_vars=config.view,
-      )
-      screen_view(
-        policy,
-        diagnostics,
-        "\{def.name}/\{v.name}",
-        v.html,
-        config.view,
-      )
+      let id = if v.name == "main" { def.name } else { "\{def.name}.\{v.name}" }
+      guard declared.get(id) is Some(view) else {
+        raise ManifestError(
+          "manifest: \{def.name} declares view '\{v.name}' and the card source has no `\{id}:`",
+        )
+      }
+      cviews[v.name] = view
+      screen_view(policy, diagnostics, "\{def.name}/\{v.name}", view)
     }
     // The schema the guest DECLARED, which is the whole difference between a
     // guest component that is a name with handlers hanging off it and one the
@@ -342,21 +347,12 @@ pub fn register_module(
   if !served.is_empty() {
     child.register_intent_handlers(served)
   }
-  // Macros BEFORE the components compile, because a view expands one at parse
-  // time: `register_macros` is deliberately separate from `register_components`
-  // for exactly this order, and `comp.compile()` below is where a `<x:badge>`
-  // would otherwise be an unknown element that renders as itself.
-  //
-  // Into the module's own child scope, like everything else it declares — a
-  // module's macros are its own, and a host component two levels up has no
-  // business seeing them.
-  if !manifest.macros.is_empty() {
-    let macros : Map[String, @anode.Macro] = Map([])
-    for m in manifest.macros {
-      macros[m.name] = { defaults: m.defaults, raw_view: m.html, }
-    }
-    child.register_macros(macros)
-  }
+  // NOTHING registers the module's macros, and that is the change rather than
+  // an omission. A macro used to be markup a view expanded when the host
+  // PARSED it, so the table had to be in the scope before `comp.compile()`;
+  // `read_views` expands each call where it stands, so a view arrives with no
+  // macro node left in it. `manifest.macros` is what the module DECLARES — a
+  // catalog reads it — and there is nothing for the scope to answer.
   child.register_components(synthesized)
   for comp in synthesized {
     // A view that will not compile is a module that will not render, and the
@@ -536,47 +532,37 @@ fn screen_method_names(
 ///|
 /// Everything the host checks about one guest view before it will render it.
 ///
-/// Two lint passes, which `gen` also runs and which only ADVISE (they
-/// land in `into` as printable lines): the structural HTML linter, and the
-/// parse-issue / deprecation / bare-directive rules. Then one rule that
-/// REFUSES, over the same shadow tree.
+/// Two refusals, over the view's own tree and the events reading it registered:
+/// what the host will RENDER, and what an `@on` argument may READ. An off-list
+/// event path refuses here, at registration, rather than answering Null every
+/// dispatch.
 ///
-/// The shadow parse is what makes the refusal cheap and correct here: it is a
-/// throwaway tree in a throwaway ParseContext, so this runs before anything is
-/// registered. Deciding after `compile()` would mean the components were
-/// already in the shared registry — contributing event names and CSS classes —
-/// by the time the host said no.
+/// It runs before anything is registered — `read_views` builds the trees and
+/// `register_components` comes after this loop — so a refusal leaves nothing
+/// behind. Deciding after `compile()` would mean the components were already in
+/// the shared registry, contributing event names and CSS classes, by the time
+/// the host said no.
+///
+/// THE TWO LINT PASSES ARE GONE, and their absence is the format change rather
+/// than a relaxation. Both were about HTML: `check_html` reads markup as text,
+/// and `check_collected` reports what an attribute PARSE stumbled over —
+/// a deprecated spelling, a bare directive, an unreadable value. A view arrives
+/// as `.tutu` now and its reader does not stumble: each of those shapes is a
+/// refusal with a message and a span, raised out of `read_views` before this is
+/// reached. `into` is still filled by `resolve_config`, which is the other
+/// thing a host has advice about.
 fn screen_view(
   policy : @policy.Policy,
   into : Array[String],
   where_ : String,
-  html : String,
-  config_vars : Map[String, String],
+  view : @anode.View,
 ) -> Unit raise ManifestError {
-  let line = (f : @lint.Finding) => into.push(f.to_line(where_))
-  for f in @lint.check_html(html) {
-    line(f)
-  }
-  let collector = @lint.LintCollector::new()
-  // The SAME table `View::new` got, and passing it is the whole point of this
-  // parameter. This is a second, throwaway parse of the same source; if it
-  // resolved `host.name` differently from the tree that will actually render, the
-  // check would be about a document nobody displays. Screening the unresolved
-  // tree refuses every config-origin sink; screening a resolved one while
-  // rendering an unresolved one checks nothing.
-  let px = @anode.ParseContext::new(handler=collector, config_vars~)
-  let tree = @anode.ANode::parse(html, px)
-  for f in @lint.check_collected(collector) {
-    line(f)
-  }
-  // What the host will RENDER is the policy's decision, taken over this same
-  // throwaway tree — and what its `@on` arguments may READ is the same
-  // decision, over the events that parse registered. An off-list event path
-  // refuses here, at registration, rather than answering Null every dispatch.
-  if tree is Some(t) {
+  ignore(into)
+  if view.anode is Some(t) {
     refuse_if_any(policy.check_view(where_, t))
   }
-  refuse_if_any(policy.check_event_paths(where_, px.events))
+  let events = view.ctx.map(c => c.events).unwrap_or([])
+  refuse_if_any(policy.check_event_paths(where_, events))
 }
 
 ///|
@@ -616,8 +602,8 @@ fn facts_of(manifest : DynManifest) -> @policy.ModuleFacts {
       max_style_bytes = def.style.length()
     }
     for v in def.views {
-      if v.html.length() > max_view_bytes {
-        max_view_bytes = v.html.length()
+      if v.bytes > max_view_bytes {
+        max_view_bytes = v.bytes
       }
     }
   }

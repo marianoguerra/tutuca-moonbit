@@ -202,61 +202,6 @@ fn row_renames(m : @sh.Member, rows : Array[String]) -> Map[String, String] {
 }
 
 ///|
-/// The names a view uses as `~when:`, `~enrich_with:` or `~loop_with:`.
-///
-/// A `pred` has two shapes and the old notation told them apart by what it did
-/// not write: a `@when` filter took no parameters and read `@value` / `@key`
-/// out of the air, while `pred containsText(q)` declared one and was CALLED
-/// with it. The new notation names the row on both, so the declaration cannot
-/// say which it is — but the view can, because a row member is exactly one a
-/// render-time option names.
-///
-/// Collected from the view section and handed to the logic printer, which is
-/// the only reason `print_logic` takes it. Without it every parameterised
-/// predicate had its first argument renamed to `@value` and its parameter list
-/// dropped, so it read a row it was never given and lost the argument it was.
-pub fn row_members(decls : Array[@tutufile.Decl]) -> Array[String] {
-  let out = []
-  fn walk(node : @ast.Node) -> Unit {
-    match node.it {
-      Group(parts) => {
-        let mut i = 0
-        while i < parts.length() {
-          if parts[i].it is Kw(name) &&
-            name is ("when" | "enrich_with" | "loop_with") &&
-            i + 1 < parts.length() &&
-            parts[i + 1].it is Block(bgs) &&
-            bgs.length() == 1 &&
-            bgs[0].it is Group(one) &&
-            one.length() == 1 &&
-            one[0].it is Id(who) {
-            if !out.contains(who) {
-              out.push(who)
-            }
-          }
-          walk(parts[i])
-          i = i + 1
-        }
-      }
-      Parens(gs) | Brackets(gs) | Braces(gs) | Block(gs) | Multi(gs) =>
-        for g in gs {
-          walk(g)
-        }
-      Alts(gs) =>
-        for g in gs {
-          walk(g)
-        }
-      _ => ()
-    }
-  }
-
-  for d in decls {
-    walk(d.node)
-  }
-  out
-}
-
-///|
 /// A property's accessors, and what they add up to for the spec block.
 fn print_accessors(
   m : @sh.Member,
@@ -437,7 +382,7 @@ fn print_call_stmt(
   match callee {
     @sh.EName(verb) => print_effect(verb, args, out, indent)
     @sh.EMember(recv, op) => {
-      guard collection_op(op) is Some(word) else {
+      guard @sh.collection_op(op) is Some(word) else {
         raise @sh.ExError(
           message="`\{op}` is not a collection operation",
           help="the operations are `push`, `insert_at`, `set_at`, `delete_at`, `clear`, `add`, `remove` and `toggle`",
@@ -458,25 +403,6 @@ fn print_call_stmt(
         help="write `send(…)`, `ask(…)`, or `it.<field>.<operation>(…)`",
         span=@report.Span::at(0),
       )
-  }
-}
-
-///|
-/// The old spelling of a collection operation.
-pub fn collection_op(name : String) -> String? {
-  match name {
-    "push" => Some("push")
-    "insert_at" => Some("insertAt")
-    "set_at" => Some("setAt")
-    "delete_at" => Some("deleteAt")
-    "add" => Some("add")
-    "remove" => Some("remove")
-    "toggle" => Some("toggle")
-    // Emptying a list. It is the ONLY spelling for the operation — there is no
-    // list literal to assign — so it is a method like the rest rather than an
-    // alias of anything.
-    "clear" => Some("clear")
-    _ => None
   }
 }
 

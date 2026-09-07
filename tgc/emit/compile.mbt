@@ -10,7 +10,7 @@
 ///|
 pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
   let got = split(source, name)
-  let (comps, checked) = prepare(got.file, name, got.meta)
+  let (comps, checked) = prepare(got.file, name)
   let issues = got.issues + checked
   {
     component: if comps.length() > 0 {
@@ -26,7 +26,7 @@ pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
 ///|
 pub fn compile(source : String, name~ : String) -> Compiled raise GenError {
   let got = split(source, name)
-  let (comps, checked) = prepare(got.file, name, got.meta)
+  let (comps, checked) = prepare(got.file, name)
   let issues = got.issues + checked
   let file = got.file
   // ERRORS only. A warning is a thing worth telling an author about a card that
@@ -37,7 +37,7 @@ pub fn compile(source : String, name~ : String) -> Compiled raise GenError {
     raise BadScript(fatal.map(i => "line \{i.line} [\{i.code}]: \{i.message}"))
   }
   guard comps.length() > 0 else { raise BadCard("no component is declared") }
-  build(comps, name, macros=file.macros)
+  build(comps, name, macros=file.macros, source~)
 }
 
 ///|
@@ -68,11 +68,11 @@ pub fn compile_decls(
 /// fixing one report should see the next. `compile` refuses on an error the
 /// same way it refuses on a checker error, and `check_card` prints them.
 fn split(source : String, name : String) -> Split raise GenError {
-  let (text, issues, meta) = tutu_or_html(source)
-  let file = @viewfile.split_file(text, name~) catch {
-    e => raise BadCard(e.message())
+  let (file, reports) = @viewgen.read_card(source, name~) catch {
+    e => raise BadCard(@viewgen.GenError::message(e))
   }
-  { file, issues, meta, }
+  let src = @report.Source::new("card.tutu", source)
+  { file, issues: reports.map(r => issue_of(r, src)), }
 }
 
 ///|
@@ -84,38 +84,6 @@ fn split(source : String, name : String) -> Split raise GenError {
 priv struct Split {
   file : @viewfile.ViewFile
   issues : Array[Issue]
-  /// What the `.tutu` notation can say and the blocks cannot, by component
-  /// name. Empty for an `.html` card, which has no syntax for it.
-  meta : Map[String, @lower.ComponentMeta]
-}
-
-///|
-/// A `.tutu` source, lowered into the blocks the splitter reads.
-///
-/// The card compiler takes SOURCE TEXT and splits it internally, so this is
-/// the one seam a `.tutu` card has to reach: a page handing the runtime a
-/// card written in the new notation gets it compiled the same way, with no
-/// second entry point and nothing for a host to choose between.
-///
-/// EVERY REPORT COMES BACK. Dropping them was measured rather than argued
-/// about: a card whose whole `logic:` section was garbage compiled to 5158
-/// bytes and `tgc check` answered "0 issues", because the lowering emitted the
-/// blocks it could and the splitter had no reason to complain about the
-/// handler that was never in them. The card rendered and did nothing, which is
-/// the shape of a dispatch bug rather than a compile error and is read as one.
-/// The reports know the section, the line and the span; only this function was
-/// in a position to lose them.
-fn tutu_or_html(
-  source : String,
-) -> (String, Array[Issue], Map[String, @lower.ComponentMeta]) {
-  guard @lower.is_tutu_source(source) else { return (source, [], Map([])) }
-  let sources = @report.Sources::new()
-  let id = sources.add("card.tutu", source)
-  let out = @lower.lower(source, id)
-  // For the line and column. `Sources` owns the copy the reports point into;
-  // this is the same text, read for its line breaks.
-  let src = @report.Source::new("card.tutu", source)
-  (out.text, out.reports.map(r => issue_of(r, src)), out.meta)
 }
 
 ///|
@@ -151,7 +119,6 @@ fn comp_of(
   common_style? : String = "",
   inits? : Array[@statedef.InitState] = [],
   siblings? : Array[String] = [],
-  meta? : @lower.ComponentMeta = { category: "", keywords: [], },
 ) -> Comp {
   {
     def,
@@ -168,7 +135,6 @@ fn comp_of(
     common_style,
     inits,
     siblings,
-    meta,
     refusals: [],
   }
 }
@@ -178,19 +144,24 @@ fn comp_of(
 fn prepare(
   file : @viewfile.ViewFile,
   name : String,
-  meta : Map[String, @lower.ComponentMeta],
 ) -> (Array[Comp], Array[Issue]) raise GenError {
   let comps = []
   let issues = []
   let siblings = file.state.map(d => d.component)
   for def in file.state {
-    let block = file.script_for(def.component)
+    // `declarations()` and not `parse_script(block.text)`: a `logic:` section
+    // read from a `.tutu` arrives as DECLARATIONS and its text is empty, so
+    // parsing the text again answered nothing — every handler in the card,
+    // silently absent, which compiles and renders and does nothing.
+    let block = file.script_block_for(def.component)
     let decls = match block {
       None => []
       Some(b) =>
-        @tscript.parse_script(b.text) catch {
+        b.declarations() catch {
           e =>
-            raise BadScript(["\{def.component}: line \{b.line}: \{e.message()}"])
+            raise BadScript([
+              "\{def.component}: line \{b.block.line}: \{e.message()}",
+            ])
         }
     }
     // The SPEC block's rules, as declarations, ahead of the block's own.
@@ -240,10 +211,6 @@ fn prepare(
         common_style=style,
         inits~,
         siblings~,
-        // Empty for an `.html` card, and for every component a `.tutu` one did
-        // not annotate. Both read as "said nothing", which is the one state
-        // the catalog's merge asks about.
-        meta=meta.get(def.component).unwrap_or({ category: "", keywords: [], }),
       ),
     )
   }
@@ -500,6 +467,7 @@ fn build(
   comps : Array[Comp],
   name : String,
   macros? : Array[@viewfile.MacroDef] = [],
+  source? : String = "",
 ) -> Compiled raise GenError {
   let b = B::new(@report.Sources::new().add("card", ""))
   // The BODY first, then the imports it turned out to need. A module's import
@@ -526,7 +494,7 @@ fn build(
       refusals.push(r)
     }
   }
-  let manifest = manifest_value(comps, name, refusals, macros)
+  let manifest = manifest_value(comps, name, refusals, macros, source)
   for d in emit_shell(b, comps, manifest) {
     decls.push(d)
   }
@@ -673,9 +641,10 @@ fn manifest_value(
   name : String,
   refusals : Array[@check.Refusal],
   macros : Array[@viewfile.MacroDef],
+  source : String,
 ) -> @tutuca.Value {
   let out : Map[String, @tutuca.Value] = Map([])
-  out["manifestVersion"] = Num(3)
+  out["manifestVersion"] = Num(4)
   // The FORMAT's version, beside the manifest's own. `tgc.abi` exports it too
   // and that export is the ABI's own declaration — but reading it needs the
   // instantiated module, and a host wants to refuse a `tgc/1` module before it
@@ -690,19 +659,32 @@ fn manifest_value(
   out["authors"] = List([])
   out["stringEncoding"] = Str("utf8")
   out["config"] = List([])
+  // THE CARD ITSELF, once, and the views and macros below name what to read
+  // out of it.
+  //
+  // The manifest used to carry each view and each macro as HTML — the notation
+  // the front end read before `.tutu`, printed back out for the host to parse
+  // again. Which meant a printer: the card arrives at the compiler as a TREE
+  // now, so producing that field would have meant an `ANode` -> HTML writer,
+  // byte-exact against a conformance suite, for a notation nothing else in the
+  // tree is written in any more.
+  //
+  // Carrying the source instead costs a host the shrubbery reader and saves it
+  // the HTML one, and the two sides read the SAME text with the SAME reader —
+  // which is what a differential test can be written about. A host reads it
+  // with `tutufile/toanode`, macros in hand, exactly as `viewgen` does.
+  out["tutu"] = Str(source)
   // A macro is markup the HOST expands when it parses a view, so a manifest
-  // that dropped them is a view reaching for a name nothing declares.
+  // that dropped them is a view reaching for a name nothing declares. Its
+  // defaults are named here because a caller may override them and the reader
+  // needs the fallbacks; the body comes out of `tutu` above.
   out["macros"] = List(
     macros.map(m => {
       let defaults : Map[String, @tutuca.Value] = Map([])
       for k, v in m.defaults {
         defaults[k] = Str(v)
       }
-      Map({
-        "name": Str(m.name),
-        "defaults": Map(defaults),
-        "html": Str(m.source),
-      })
+      Map({ "name": Str(m.name), "defaults": Map(defaults) })
     }),
   )
   out["components"] = List(comps.map(c => component_value(c, name, refusals)))
@@ -816,12 +798,13 @@ fn component_value(
   // lowercases the category and matches it against what a person typed into a
   // palette. So they survive spelled as they were written, spaces and capitals
   // included, the way a protocol id does.
-  out["keywords"] = List(c.meta.keywords.map(k => Str(k)))
-  out["category"] = Str(c.meta.category)
+  out["keywords"] = List(c.def.keywords.map(k => Str(k)))
+  out["category"] = Str(c.def.category)
   out["messageDocs"] = List([])
-  out["views"] = List(
-    c.views.map(v => Map({ "name": Str(v.name), "html": Str(v.source) })),
-  )
+  // NAMES, in the order the file declares them, `main` first. The bodies are
+  // in the manifest's `tutu`, under `<Component>.<name>` — a host reads them
+  // there rather than being handed each one twice.
+  out["views"] = List(c.views.map(v => Map({ "name": Str(v.name) })))
   out["fields"] = List(
     c.fields.map(f => {
       Map({

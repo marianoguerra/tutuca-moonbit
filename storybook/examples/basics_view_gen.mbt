@@ -10,7 +10,7 @@
 ///|
 /// The state of the MinimumViableComponent component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct MinimumViableComponentState {} derive(Default)
@@ -18,9 +18,9 @@ pub(all) struct MinimumViableComponentState {} derive(Default)
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..MinimumViableComponentState::zero(), label: "Counter" }
 pub fn MinimumViableComponentState::zero() -> MinimumViableComponentState {
@@ -71,7 +71,7 @@ impl @component.Fields for MinimumViableComponentState with fn schema() {
 ///|
 /// The state of the StaticViewComponent component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct StaticViewComponentState {} derive(Default)
@@ -79,9 +79,9 @@ pub(all) struct StaticViewComponentState {} derive(Default)
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..StaticViewComponentState::zero(), label: "Counter" }
 pub fn StaticViewComponentState::zero() -> StaticViewComponentState {
@@ -132,7 +132,7 @@ impl @component.Fields for StaticViewComponentState with fn schema() {
 ///|
 /// The state of the TextDirective component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct TextDirectiveState {
@@ -145,9 +145,9 @@ pub(all) struct TextDirectiveState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..TextDirectiveState::zero(), label: "Counter" }
 pub fn TextDirectiveState::zero() -> TextDirectiveState {
@@ -228,7 +228,7 @@ impl @component.Fields for TextDirectiveState with fn schema() {
 ///|
 /// The state of the DangerSetInnerHtml component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct DangerSetInnerHtmlState {
@@ -238,9 +238,9 @@ pub(all) struct DangerSetInnerHtmlState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..DangerSetInnerHtmlState::zero(), label: "Counter" }
 pub fn DangerSetInnerHtmlState::zero() -> DangerSetInnerHtmlState {
@@ -293,7 +293,7 @@ impl @component.Fields for DangerSetInnerHtmlState with fn schema() {
 ///|
 /// The state of the SetInnerMd component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct SetInnerMdState {
@@ -303,9 +303,9 @@ pub(all) struct SetInnerMdState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..SetInnerMdState::zero(), label: "Counter" }
 pub fn SetInnerMdState::zero() -> SetInnerMdState {

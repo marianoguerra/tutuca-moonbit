@@ -426,14 +426,13 @@ test "spec source: the block as written" {
     "Spec source: Rich Sample",
   )
   let src = h.text(".spec-source-text")
-  // What the panel shows is the block the PIPELINE read, which is still the
-  // lowered form: `gen` reads a `.tutu`, lowers it, and `emit_spec_source`
-  // embeds what it lowered to. The author's own `spec:` section is what belongs
-  // here, and it arrives when the readers go direct and the lowering seam goes
-  // — the last place in the repo that shows the old notation to a reader.
-  assert_true(src.contains("state RichSample {"))
-  assert_true(src.contains("count: Int"))
-  assert_true(src.contains("state SampleCard {"))
+  // The author's own `spec:` section, verbatim. `emit_spec_source` embeds the
+  // fragment `gen` READ rather than anything printed from it, so what a reader
+  // sees here is the file — this used to show the lowered blocks, which was the
+  // last place in the repo that showed the old notation to a reader.
+  assert_true(src.contains("RichSample:"), msg=src)
+  assert_true(src.contains("field count :: Int"), msg=src)
+  assert_true(src.contains("SampleCard:"), msg=src)
   assert_eq(h.find_all(".spec-source-hint").length(), 0)
 }
 

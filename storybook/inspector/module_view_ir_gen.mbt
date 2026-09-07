@@ -26,29 +26,28 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let rich_sample_spec_source : String =
-  #|state RichSample {
-  #|  title: String
-  #|  count: Int
-  #|  tags: Array[String]
-  #|  open: Bool
-  #|  where count >= 0
-  #|}
-  #|handle RichSample {
-  #|  message {
-  #|    ping,
-  #|    on_data
-  #|  }
-  #|  intent {
-  #|    on_child
-  #|  }
-  #|}
-  #|state SampleCard {
-  #|  title: String
-  #|  count: Int
-  #|  tags: Array[String]
-  #|  open: Bool
-  #|  where count >= 0
-  #|}
+  #|spec:
+  #|  RichSample:
+  #|    field title :: String
+  #|    field count :: Int
+  #|    field tags :: List.of(String)
+  #|    field open :: Bool
+  #|
+  #|    message ping
+  #|
+  #|    message on_data
+  #|
+  #|    intent on_child
+  #|
+  #|    where it.count >= 0
+  #|
+  #|  SampleCard:
+  #|    field title :: String
+  #|    field count :: Int
+  #|    field tags :: List.of(String)
+  #|    field open :: Bool
+  #|
+  #|    where it.count >= 0
 
 ///|
 /// The compiled `main` view.
@@ -78,7 +77,9 @@ fn rich_sample_compact_view_ir() -> @anode.View {
     "compact",
     @anode.h("span", [@anode.eid(0)], [
       @anode.h("i", [], [@anode.dyn_text(@tutuca.Expr::field("title"), id=0)]),
+      @anode.text("\n"),
       @anode.h("i", [], [@anode.dyn_text(@tutuca.Expr::method_("label"), id=1)]),
+      @anode.text("\n"),
       @anode.h("i", [], [@anode.dyn_text(@tutuca.Expr::method_("double"), id=2)]),
     ]),
     [[@anode.on("click", @tutuca.Expr::name("reset"))]],

@@ -487,6 +487,7 @@ pub fn split_file(
               name: "main",
               source: dedent(src.trim(chars="\n").to_owned()),
               style: "",
+              tree: None,
             },
           ],
           common_style,
@@ -589,7 +590,7 @@ pub fn split_file(
         raise DuplicateView(if comp == "" { vname } else { comp + ":" + vname })
       }
     }
-    views.push({ name: vname, source: body, style, })
+    views.push({ name: vname, source: body, style, tree: None, })
   }
   let components : Array[ViewSet] = []
   for i, comp in order {
@@ -729,6 +730,7 @@ fn script_blocks(
   srcs.map(t => {
     comp: t.0,
     block: { text: t.1, offset: t.2, line: line_at(chars, t.2), },
+    decls: None,
   })
 }
 
@@ -785,15 +787,44 @@ fn collect_style(styles : Array[StyleRegion], kind : StyleKind) -> String {
 /// component has nothing to disambiguate, so making it write the name would be
 /// ceremony for a fact the file already states once.
 pub fn ViewFile::script_for(self : ViewFile, comp : String) -> Block? {
+  self.script_block_for(comp).map(s => s.block)
+}
+
+///|
+/// The whole block, which is what a consumer that wants its DECLARATIONS
+/// needs: a file that was READ carries them and a file that was SPLIT carries
+/// the text they come from.
+///
+/// The pairing rule is `script_for`'s, in one place: an unqualified block
+/// answers for the file's single component.
+pub fn ViewFile::script_block_for(
+  self : ViewFile,
+  comp : String,
+) -> ScriptBlock? {
   for s in self.scripts {
     if s.comp == comp {
-      return Some(s.block)
+      return Some(s)
     }
   }
   if self.scripts.length() == 1 && self.scripts[0].comp == "" {
-    return Some(self.scripts[0].block)
+    return Some(self.scripts[0])
   }
   None
+}
+
+///|
+/// The declarations a block holds, parsing its text when it carries none.
+///
+/// A `.tutu` is READ into declarations and an `.html` block is parsed from
+/// text; every consumer wants the declarations, so the difference lives here
+/// rather than at each of them.
+pub fn ScriptBlock::declarations(
+  self : ScriptBlock,
+) -> Array[@tscript.Decl] raise @tscript.ScriptError {
+  match self.decls {
+    Some(d) => d
+    None => @tscript.parse_script(self.block.text)
+  }
 }
 
 ///|

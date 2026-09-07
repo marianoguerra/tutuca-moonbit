@@ -220,6 +220,21 @@ fn walk_val(val : @tutuca.Expr, c : Collect, root_scope : Bool) -> Unit {
       for a in args {
         walk_val(a, c, root_scope)
       }
+    // The three shapes the `.tutu` reader builds where the old notation
+    // lowered everything to `App`. Without these arms a field read under a
+    // `!`, a `&&` or an `if` is invisible to `UnknownStateField` and a
+    // `compute` under one never reaches `methods` — so the generated component
+    // omits it and the attribute reading it renders as nothing.
+    EUnary(operand~, ..) => walk_val(operand, c, root_scope)
+    EChain(operands~, ..) =>
+      for o in operands {
+        walk_val(o, c, root_scope)
+      }
+    EIf(cond~, then_~, else_~, ..) => {
+      walk_val(cond, c, root_scope)
+      walk_val(then_, c, root_scope)
+      walk_val(else_, c, root_scope)
+    }
     _ => ()
   }
 }
@@ -620,7 +635,9 @@ fn walk_view(
   }
   for ev in events {
     for h in ev.handlers {
-      let site = "@on." + h.name
+      // Back into the option that wrote it: the event is registered under its
+      // DOM name (`emoji-click`) and an author writes `~on_emoji_click:`.
+      let site = "~on_" + h.name.replace_all(old="-", new="_")
       match h.handler.action {
         Some(PropertySet(value~, ..)) => {
           walk_val(value, c, false)

@@ -26,43 +26,46 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let alt_url_spec_source : String =
-  #|state AltUrl {
-  #|  label: String
-  #|  url: String
-  #|  where label is nonempty
-  #|  where url is nonempty
-  #|}
-  #|state PsEntry {
-  #|  title: String
-  #|  description: String
-  #|  lang: String
-  #|  start_year: Int?
-  #|  end_year: Int?
-  #|  role: String?
-  #|  featured: Bool
-  #|  url: String
-  #|  alt_urls: Array[Instance[AltUrl]]
-  #|  categories: Array[String]
-  #|  where lang is one of ["en", "es"]
-  #|  where title is nonempty
-  #|  where url is nonempty
-  #|}
-  #|state Root {
-  #|  all_entries: Array[Instance[PsEntry]]
-  #|  all_categories: Array[String]
-  #|  all_roles: Array[String]
-  #|  selected_categories: Set[String]
-  #|  selected_roles: Set[String]
-  #|  featured_first: Bool
-  #|  sort_by_end: Bool
-  #|  sort_asc: Bool
-  #|}
-  #|handle Root {
-  #|  message {
-  #|    init,
-  #|    load_data_ok(Array[Any])
-  #|  }
-  #|}
+  #|spec:
+  #|  AltUrl:
+  #|    field label :: String
+  #|    field url :: String
+  #|
+  #|    where it.label non_empty
+  #|
+  #|    where it.url non_empty
+  #|
+  #|  PsEntry:
+  #|    field title :: String
+  #|    field description :: String
+  #|    field lang :: String
+  #|    field start_year :: maybe(Int)
+  #|    field end_year :: maybe(Int)
+  #|    field role :: maybe(String)
+  #|    field featured :: Bool
+  #|    field url :: String
+  #|    field alt_urls :: List.of(Instance.of(AltUrl))
+  #|    field categories :: List.of(String)
+  #|
+  #|    where it.lang is_one_of ["en", "es"]
+  #|
+  #|    where it.title non_empty
+  #|
+  #|    where it.url non_empty
+  #|
+  #|  Root:
+  #|    field all_entries :: List.of(Instance.of(PsEntry))
+  #|    field all_categories :: List.of(String)
+  #|    field all_roles :: List.of(String)
+  #|    field selected_categories :: Set.of(String)
+  #|    field selected_roles :: Set.of(String)
+  #|    field featured_first :: Bool
+  #|    field sort_by_end :: Bool
+  #|    field sort_asc :: Bool
+  #|
+  #|    message init
+  #|
+  #|    message load_data_ok(List.of(Any))
 
 ///|
 /// The compiled `main` view.
@@ -337,6 +340,7 @@ fn root_main_view_ir() -> @anode.View {
           ]),
           @anode.text("."),
         ]),
+        @anode.text("\n"),
         @anode.h(
           "div",
           [
@@ -502,6 +506,7 @@ fn root_main_view_ir() -> @anode.View {
             ),
           ],
         ),
+        @anode.text("\n"),
         @anode.h(
           "div",
           [@anode.attr("class", "flex flex-wrap items-center gap-4 mt-4")],
@@ -520,6 +525,7 @@ fn root_main_view_ir() -> @anode.View {
           ],
         ),
       ]),
+      @anode.text("\n"),
       @anode.h("div", [@anode.attr("class", "entries flex flex-col gap-3")], [
         @anode.each(
           5,

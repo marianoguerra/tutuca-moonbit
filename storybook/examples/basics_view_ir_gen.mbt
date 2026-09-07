@@ -26,22 +26,22 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let minimum_viable_component_spec_source : String =
-  #|state MinimumViableComponent {
-  #|}
-  #|state StaticViewComponent {
-  #|}
-  #|state TextDirective {
-  #|  str: String
-  #|  num: Int
-  #|  bool: Bool
-  #|  not_set: Any
-  #|}
-  #|state DangerSetInnerHtml {
-  #|  content: String
-  #|}
-  #|state SetInnerMd {
-  #|  source: String
-  #|}
+  #|spec:
+  #|  MinimumViableComponent
+  #|
+  #|  StaticViewComponent
+  #|
+  #|  TextDirective:
+  #|    field str :: String
+  #|    field num :: Int
+  #|    field bool :: Bool
+  #|    field not_set :: Any
+  #|
+  #|  DangerSetInnerHtml:
+  #|    field content :: String
+  #|
+  #|  SetInnerMd:
+  #|    field source :: String
 
 ///|
 /// The compiled `main` view.

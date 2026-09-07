@@ -112,7 +112,16 @@ test "every statement shape reads the same both ways" {
     "    receive tell:\n      notify(\"changed\", it.n)\n", "    receive stop_it:\n      drop()\n",
     "    receive guard_it:\n      if it.n > 0 | it.n := 0\n", "    receive two_ways:\n      if it.n > 0 | it.n := 0 | it.n := 1\n",
     "    compute caption(): it.s.length()\n", "    pred room: it.n < 10\n", "    receive bump:\n      ~requires: room\n      it.n += 1\n",
-    "    bind_with info:\n      heading = it.s\n",
+    "    bind_with info:\n      heading = it.s\n", "    receive drop_at(i):\n      it.xs.delete_at(i)\n",
+    // A constructor inside an expression. There is no aggregate literal in the
+    // value language, so both paths lift it into the `new` / `cur` pair that
+    // builds one — and the reader had to grow that, because a `.tutu` writes a
+    // CALL where the old notation asked for the pair by hand.
+     "    receive add_row:\n      it.rows.push(Row())\n", "    receive add_named(t):\n      it.rows.push(Row(label: t))\n",
+    // A property with a body, both accessors. `set:` is the one declaration
+    // whose parameter nothing writes down — the notation has no place for it
+    // and the reader supplies it — so it is the one most worth comparing.
+     "    property shown :: Int:\n      get: it.n\n      set: it.n := value\n", "    property signed :: Int:\n      get: if it.n < 0 | -it.n | it.n\n      set:\n        if it.n < 0\n        | it.n := -value\n        | it.n := value\n",
   ]
   let broken = []
   for b in bodies {
@@ -144,24 +153,29 @@ test "a transition reads the same both ways" {
 }
 
 ///|
-/// The three the two paths do NOT agree on, and what each one is.
+/// The one thing the two paths do NOT agree on, and what it is.
 ///
 /// Named rather than left out: a differential test that quietly skips what it
 /// cannot reconcile is a test that passes for the wrong reason, and each of
 /// these is a fact about the printer that the reader is not obliged to repeat.
+///
+/// There were three, and two of them were bugs rather than differences of
+/// opinion — both found by switching the card compiler onto this reader:
+///
+///   - The collection method. This reader kept the spelling the NOTATION uses
+///     and the printer mapped it back to `deleteAt`; the backends match on the
+///     mapped name, so a `logic:` section reaching them with `delete_at` had
+///     its handler refused and dropped. Both readers share one table now
+///     (`@sh.collection_op`).
+///   - A ROW member's parameters. The old notation gave a `~when` filter and an
+///     in-loop enricher none — they read the row out of the air — and this
+///     reader kept the names the file writes, so the body read a parameter
+///     nothing bound. The renderer's names for a row are fixed, so the
+///     author's are two spellings of one thing and the body reads a BINDING.
+///
+/// Both moved up into the agreements.
 test "what the two paths disagree about, and why" {
-  // 1. A collection method keeps the spelling the NOTATION uses. The printer
-  //    maps it back to the block language's — `delete_at` to `deleteAt` — and
-  //    the backends still match on that one, so the AST's vocabulary is a
-  //    rename of its own and not this reader's business.
-  guard agree("    receive drop_at(i):\n      it.xs.delete_at(i)\n")
-    is Some((direct, printed)) else {
-    fail("neither path read the method call")
-  }
-  assert_true(direct.contains("call=\"delete_at\""))
-  assert_true(printed.contains("call=\"deleteAt\""))
-
-  // 2. `forward(~route: [dyn, lex])` — the printer drops the route. A bug in
+  // 1. `forward(~route: [dyn, lex])` — the printer drops the route. A bug in
   //    a printer that is going, and the reader is the one that is right.
   guard agree("    receive pass:\n      forward(~route: [dyn, lex])\n")
     is Some((direct, printed)) else {
@@ -170,14 +184,4 @@ test "what the two paths disagree about, and why" {
   assert_true(direct.contains("route=[Dyn, Lex]"))
   assert_true(printed.contains("route=[]"))
 
-  // 3. A ROW member's parameters. The old notation gave a `@when` filter and
-  //    an in-loop enricher none — they read the row out of the air — so the
-  //    printer drops them again on the way back. The new notation names the
-  //    row, and the reader keeps what the file says.
-  guard agree("    enrich row(value, key):\n      tag = value.to_string()\n")
-    is Some((direct, printed)) else {
-    fail("neither path read the enricher")
-  }
-  assert_true(direct.contains("params: [{name: \"value\""))
-  assert_true(printed.contains("params: []"))
 }

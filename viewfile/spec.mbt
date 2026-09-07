@@ -14,7 +14,26 @@ pub(all) struct RawView {
   name : String
   source : String
   style : String
-} derive(Eq, @debug.Debug)
+  /// The tree, when the file was READ rather than split.
+  ///
+  /// A `.tutu` is read straight into `@anode.ANode` by `tutufile/toanode`;
+  /// there is no HTML in between and nothing to parse a second time. A file
+  /// that came through the splitter has None here and its `source` is what
+  /// every consumer parses, which is what this field exists to stop being the
+  /// only way.
+  tree : CompiledTree?
+}
+
+///|
+/// A view already compiled: its tree and the event table its elements point
+/// into by `data-eid`.
+///
+/// The pair travels together because neither is usable alone — an element
+/// carries an index and the table is what it indexes.
+pub(all) struct CompiledTree {
+  root : @anode.ANode
+  events : Array[@anode.NodeEvents]
+}
 
 ///|
 /// A macro declared in the view file as `<template id="macro:name">`. Its
@@ -40,7 +59,7 @@ pub(all) struct ViewSet {
   views : Array[RawView]
   common_style : String
   global_style : String
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 /// A raw block lifted out of the file, with where it came from.
@@ -68,7 +87,13 @@ pub(all) struct Block {
 pub(all) struct ScriptBlock {
   comp : String
   block : Block
-} derive(Eq, @debug.Debug)
+  /// The declarations, when the file was READ rather than split.
+  ///
+  /// The `logic:` section reads straight into `@tscript.Decl`s, and their
+  /// spans point into the `.tutu` — which is the file the author has open,
+  /// where the block's own offsets pointed into a block nobody wrote.
+  decls : Array[@tscript.Decl]?
+}
 
 ///|
 /// A whole view file: the components it declares plus the macros they share.
@@ -127,7 +152,7 @@ pub(all) struct ViewFile {
   /// at index 0, so moving the root to the front would move a stylesheet as a
   /// side effect of saying which component is the interesting one.
   root : String
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 /// The script block for one component, or None when the file writes none.

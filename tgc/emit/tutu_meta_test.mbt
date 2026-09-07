@@ -42,23 +42,6 @@ test "a component that says nothing says nothing, rather than guessing" {
 }
 
 ///|
-/// An `.html` card cannot set either and is not made to look as though it did.
-/// For the whole migration window a host's annotation table is its only
-/// channel, which is what makes the catalog's merge rule do real work from the
-/// first converted card rather than being a formality.
-test "an .html card carries the keys, empty" {
-  let card =
-    #|<script type="tutuca/spec">
-    #|  state Old { n: Int }
-    #|</script>
-    #|<template id="Old:main" data-root><output @text=".n"></output></template>
-  let out = @emit.compile(card, name="old")
-  let comp = component_in(out.manifest, "Old")
-  assert_eq(str_key(comp, "category"), "")
-  assert_eq(strs_key(comp, "keywords"), [])
-}
-
-///|
 fn component_in(manifest : Json, name : String) -> Json {
   let missing : Json = Json::object(Map([]))
   guard manifest is Object(root) else { return missing }

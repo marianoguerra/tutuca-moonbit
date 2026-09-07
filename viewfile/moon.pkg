@@ -15,6 +15,11 @@
 // and that asymmetry is deliberate rather than unfinished — see `ViewFile`.
 import {
   "marianoguerra/tutuca/statedef",
+  // A view READ from a `.tutu` arrives as a tree, and a `logic:` section as
+  // declarations. Neither goes through text, so the shapes they arrive in are
+  // part of what a file is.
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/scenedef",
   "moonbit-community/html/src" @html5,
   "moonbitlang/core/debug",

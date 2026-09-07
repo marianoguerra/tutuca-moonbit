@@ -16,7 +16,7 @@
 /// happened TO the app and what the app did about it, and `depth` is the
 /// causal nesting the `parent` links already describe.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct TraceRowState {
@@ -54,9 +54,9 @@ pub(all) struct TraceRowState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..TraceRowState::zero(), label: "Counter" }
 pub fn TraceRowState::zero() -> TraceRowState {
@@ -164,8 +164,9 @@ impl @component.Fields for TraceRowState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -288,9 +289,10 @@ impl @component.Fields for TraceRowState with fn schema() {
 }
 
 ///|
-/// The state of the TraceLog component.
+/// The rows, and the two questions a reader asks of them: show me only what
+/// a rerun would feed, and show me one turn at a time.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct TraceLogState {
@@ -305,9 +307,9 @@ pub(all) struct TraceLogState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..TraceLogState::zero(), label: "Counter" }
 pub fn TraceLogState::zero() -> TraceLogState {
@@ -359,8 +361,9 @@ impl @component.Fields for TraceLogState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -462,9 +465,9 @@ impl @component.Fields for TraceLogState with fn schema() {
 }
 
 ///|
-/// The state of the TraceHeader component.
+/// What a recording says about itself, before any of its events.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct TraceHeaderState {
@@ -483,9 +486,9 @@ pub(all) struct TraceHeaderState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..TraceHeaderState::zero(), label: "Counter" }
 pub fn TraceHeaderState::zero() -> TraceHeaderState {
@@ -605,9 +608,10 @@ impl @component.Fields for TraceHeaderState with fn schema() {
 }
 
 ///|
-/// The state of the TracePlace component.
+/// One candidate for relocation: a place the recording touched, with how
+/// much of the recording is about it.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct TracePlaceState {
@@ -627,9 +631,9 @@ pub(all) struct TracePlaceState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..TracePlaceState::zero(), label: "Counter" }
 pub fn TracePlaceState::zero() -> TracePlaceState {
@@ -694,8 +698,9 @@ impl @component.Fields for TracePlaceState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -796,9 +801,9 @@ impl @component.Fields for TracePlaceState with fn schema() {
 }
 
 ///|
-/// The state of the TracePlaces component.
+/// The places a recording is ABOUT, offered as relocation targets.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct TracePlacesState {
@@ -816,9 +821,9 @@ pub(all) struct TracePlacesState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..TracePlacesState::zero(), label: "Counter" }
 pub fn TracePlacesState::zero() -> TracePlacesState {
@@ -899,9 +904,10 @@ impl @component.Fields for TracePlacesState with fn schema() {
 }
 
 ///|
-/// The state of the RecorderBar component.
+/// The recorder, as a control. Off is the default and the whole point:
+/// nothing is recorded until somebody asks.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct RecorderBarState {
@@ -927,9 +933,9 @@ pub(all) struct RecorderBarState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..RecorderBarState::zero(), label: "Counter" }
 pub fn RecorderBarState::zero() -> RecorderBarState {
@@ -1006,8 +1012,9 @@ impl @component.Fields for RecorderBarState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -1144,9 +1151,13 @@ impl @component.Fields for RecorderBarState with fn schema() {
 }
 
 ///|
-/// The state of the TracePanel component.
+/// Recording, in one control and one place.
+/// 
+/// A viewer, a picker and a recorder bar are three components and one
+/// screen; this is the screen. Nothing here holds a trace — the host does,
+/// and it hands down the three instances already built.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct TracePanelState {
@@ -1202,9 +1213,9 @@ pub(all) struct TracePanelState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..TracePanelState::zero(), label: "Counter" }
 pub fn TracePanelState::zero() -> TracePanelState {
@@ -1333,8 +1344,9 @@ impl @component.Fields for TracePanelState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.

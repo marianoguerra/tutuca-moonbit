@@ -1,4 +1,23 @@
 ///|
+/// The counter view, in the notation `split_file` reads.
+///
+/// The last fixture in this package still written that way. `viewgen` reads
+/// `.tutu` — `surface_test.mbt` is the converted shape — and this file's
+/// snapshots move under the conversion, so it goes with them.
+let counter_html : String =
+  #|<template>
+  #|  <div class="counter">
+  #|    <h1><x text=".label"></x>: <span id="count"><x text=".count"></x></span></h1>
+  #|    <button id="inc" @on.click="add 1">+1</button>
+  #|    <button id="dec" @on.click="add -1">-1</button>
+  #|    <button id="reset" @on.click="resetCount">reset</button>
+  #|    <input id="label" :value=".label" @on.input="setLabel e.value"
+  #|           @on.keydown+send="setLabel 'sent!'">
+  #|    <ul id="history"><li @each=".history"><x text="@value"></x></li></ul>
+  #|  </div>
+  #|</template>
+
+///|
 /// The generated module for the counter view, in full. This snapshot IS the
 /// contract: read it, do not just refresh it.
 test "the generated counter module" {
@@ -25,8 +44,9 @@ test "the generated counter module" {
       #|///|
       #|/// The Receive arm of @component.Dispatch, decoded.
       #|///
-      #|/// Every addressed name: the `message` variant the state block declares,
-      #|/// plus every bare `@on` handler the views write. One bucket holds them
+      #|/// Every addressed name: the `message` the `spec:` section declares,
+      #|/// plus every bare `~on_<event>` handler the views write. One bucket holds
+      #|/// them
       #|/// however they were sent, so one type covers it — where the two overlap
       #|/// the schema's declared payload wins, and a view whose call sites
       #|/// disagree with it is a build error.
@@ -226,8 +246,9 @@ test "a view with a $method, several views and styles" {
       #|///|
       #|/// The Receive arm of @component.Dispatch, decoded.
       #|///
-      #|/// Every addressed name: the `message` variant the state block declares,
-      #|/// plus every bare `@on` handler the views write. One bucket holds them
+      #|/// Every addressed name: the `message` the `spec:` section declares,
+      #|/// plus every bare `~on_<event>` handler the views write. One bucket holds
+      #|/// them
       #|/// however they were sent, so one type covers it — where the two overlap
       #|/// the schema's declared payload wins, and a view whose call sites
       #|/// disagree with it is a build error.

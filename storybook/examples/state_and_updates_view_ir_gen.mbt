@@ -26,24 +26,25 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let attribute_binding_spec_source : String =
-  #|state AttributeBinding {
-  #|  str: String
-  #|  num: Int
-  #|  bool: Bool
-  #|  not_set: Any
-  #|}
-  #|state ConditionalAttributes {
-  #|  is_active: Bool
-  #|}
-  #|state EventModifiers {
-  #|  query: String
-  #|  last_sent_search: Any
-  #|}
-  #|state ShowHide {
-  #|  is_open: Bool
-  #|  count: Int
-  #|  where count >= 0
-  #|}
+  #|spec:
+  #|  AttributeBinding:
+  #|    field str :: String
+  #|    field num :: Int
+  #|    field bool :: Bool
+  #|    field not_set :: Any
+  #|
+  #|  ConditionalAttributes:
+  #|    field is_active :: Bool
+  #|
+  #|  EventModifiers:
+  #|    field query :: String
+  #|    field last_sent_search :: Any
+  #|
+  #|  ShowHide:
+  #|    field is_open :: Bool
+  #|    field count :: Int
+  #|
+  #|    where it.count >= 0
 
 ///|
 /// The compiled `main` view.
@@ -232,7 +233,11 @@ fn conditional_attributes_main_view_ir() -> @anode.View {
           @anode.const_null(),
           action=@anode.set_property_action(
             "is_active",
-            @tutuca.Expr::app("not", [@tutuca.Expr::field("is_active")]),
+            EUnary(
+              op=UNot,
+              operand=@tutuca.Expr::field("is_active"),
+              span=@tutuca.no_span,
+            ),
           ),
         ),
       ],
@@ -435,7 +440,6 @@ fn show_hide_main_view_ir() -> @anode.View {
         @anode.show(
           @tutuca.Expr::field("is_open"),
           @anode.dyn_text(@tutuca.Expr::field("count"), id=2),
-          id=3,
         ),
       ]),
     ]),
@@ -446,7 +450,11 @@ fn show_hide_main_view_ir() -> @anode.View {
           @anode.const_null(),
           action=@anode.set_property_action(
             "is_open",
-            @tutuca.Expr::app("not", [@tutuca.Expr::field("is_open")]),
+            EUnary(
+              op=UNot,
+              operand=@tutuca.Expr::field("is_open"),
+              span=@tutuca.no_span,
+            ),
           ),
         ),
       ],

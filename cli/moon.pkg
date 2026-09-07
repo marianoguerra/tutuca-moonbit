@@ -20,7 +20,6 @@ import {
   // `outline` is the only command that reads one, and it is the only reason
   // this binary carries a shrubbery parser.
   "marianoguerra/tutuca/tutufile",
-  "marianoguerra/tutuca/tutufile/lower",
   "marianoguerra/tutuca/tutufile/equiv",
   "marianoguerra/tutuca/tutufile/totutu",
   "marianoguerra/error-report" @report,

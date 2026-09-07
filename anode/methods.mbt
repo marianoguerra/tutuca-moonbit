@@ -151,7 +151,7 @@ pub fn methods_in_events(events : Array[NodeEvents]) -> Array[(String, String)] 
   for ev in events {
     for h in ev.handlers {
       if h.method_in_event() is Some(name) {
-        out.push((name, "@on." + h.name))
+        out.push((name, "~on_" + h.name.replace_all(old="-", new="_")))
       }
     }
   }

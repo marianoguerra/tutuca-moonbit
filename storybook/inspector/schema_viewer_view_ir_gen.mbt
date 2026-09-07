@@ -26,14 +26,16 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let schema_viewer_spec_source : String =
-  #|state SchemaViewer {
-  #|  value: Any
-  #|  raw: Any
-  #|  raw_schema: Any
-  #|  show_raw: Bool
-  #|  invariant raw_pane_has_something_in_it
-  #|    format 'the raw pane is showing and there is nothing behind it' { (.show_raw implies (not (null? .raw))) }
-  #|}
+  #|spec:
+  #|  SchemaViewer:
+  #|    field value :: Any
+  #|    field raw :: Any
+  #|    field raw_schema :: Any
+  #|    field show_raw :: Bool
+  #|
+  #|    invariant raw_pane_has_something_in_it:
+  #|      ~format: "the raw pane is showing and there is nothing behind it"
+  #|      (it.show_raw implies !((it.raw == none)))
 
 ///|
 /// The compiled `main` view.
@@ -61,13 +63,11 @@ fn schema_viewer_main_view_ir() -> @anode.View {
         @anode.hide(
           @tutuca.Expr::field("show_raw"),
           @anode.render(1, @tutuca.Expr::field("value")),
-          id=2,
         ),
         @anode.text(" "),
         @anode.show(
           @tutuca.Expr::field("show_raw"),
-          @anode.render(3, @tutuca.Expr::field("raw")),
-          id=4,
+          @anode.render(2, @tutuca.Expr::field("raw")),
         ),
       ],
     ),
@@ -78,7 +78,11 @@ fn schema_viewer_main_view_ir() -> @anode.View {
           @anode.const_null(),
           action=@anode.set_property_action(
             "show_raw",
-            @tutuca.Expr::app("not", [@tutuca.Expr::field("show_raw")]),
+            EUnary(
+              op=UNot,
+              operand=@tutuca.Expr::field("show_raw"),
+              span=@tutuca.no_span,
+            ),
           ),
         ),
       ],

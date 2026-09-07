@@ -1,36 +1,41 @@
 ///|
-/// The counter demo's view, as it will live in demo/counterlib/counter.tutu.
-let counter_html : String =
-  #|<template>
-  #|  <div class="counter">
-  #|    <h1><x text=".label"></x>: <span id="count"><x text=".count"></x></span></h1>
-  #|    <button id="inc" @on.click="add 1">+1</button>
-  #|    <button id="dec" @on.click="add -1">-1</button>
-  #|    <button id="reset" @on.click="resetCount">reset</button>
-  #|    <input id="label" :value=".label" @on.input="setLabel e.value"
-  #|           @on.keydown+send="setLabel 'sent!'">
-  #|    <ul id="history"><li @each=".history"><x text="@value"></x></li></ul>
-  #|  </div>
-  #|</template>
+/// The counter demo's view, as it lives in demo/counterlib/counter.tutu.
+let counter_view : String =
+  #|    @div(~class: "counter"){
+  #|      @h1{@(it.label): @span(~id: "count"){@(it.count)}}
+  #|      @button(~id: "inc", ~on_click: add(1)){+1}
+  #|      @button(~id: "dec", ~on_click: add(-1)){-1}
+  #|      @button(~id: "reset", ~on_click: resetCount){reset}
+  #|      @input(~id: "label", ~value: it.label, ~on_input: setLabel(e.value), ~on_keydown: setLabel("sent!") ~send)
+  #|      @ul(~id: "history"){@each(value, key in it.history){@li{@(value)}}}
+  #|    }
 
 ///|
-fn surface_of(html : String) -> @viewgen.Surface raise @viewgen.GenError {
-  let f = @viewgen.split_file(html)
+/// One view, read the way `tutuca gen` reads one.
+///
+/// The body arrives already indented for the `view:` section it goes in — a
+/// helper that re-indented it would be a helper that reads shrubbery to write
+/// it. The `spec:` section is a formality: `view_surface` collects the fields
+/// a view READS, so what the component declares is not this layer's question.
+fn surface_of(view : String) -> @viewgen.Surface raise @viewgen.GenError {
+  let f = @viewgen.read_file(
+    "spec:\n  T:\n    field x :: Int\n\nview:\n  T:\n" + view + "\n",
+  )
   @viewgen.view_surface(f.components[0].views, macros=f.macros)
 }
 
 ///|
 test "the counter view's surface" {
-  let s = surface_of(counter_html)
+  let s = surface_of(counter_view)
   assert_eq(s.inputs.map(i => i.name), ["add", "resetCount", "setLabel"])
-  // `add 1` / `add -1` agree on one numeric argument.
+  // `add(1)` / `add(-1)` agree on one numeric argument.
   assert_eq(s.inputs[0].args, Some([VDouble]))
-  assert_eq(s.inputs[0].sites, ["@on.click"])
+  assert_eq(s.inputs[0].sites, ["~on_click"])
   // `resetCount` takes none.
   assert_eq(s.inputs[1].args, Some([]))
-  // `setLabel value` (a DOM value bind) and `setLabel 'sent!'` are both text.
+  // `setLabel(e.value)` (a DOM value read) and `setLabel("sent!")` are both text.
   assert_eq(s.inputs[2].args, Some([VString]))
-  assert_eq(s.inputs[2].sites, ["@on.input", "@on.keydown"])
+  assert_eq(s.inputs[2].sites, ["~on_input", "~on_keydown"])
   assert_eq(s.fields, ["count", "history", "label"])
   assert_eq(s.ids, ["count", "dec", "history", "inc", "label", "reset"])
   assert_eq(s.methods, [])
@@ -43,11 +48,11 @@ test "value's type follows the host element: checkbox Bool, file Value" {
   // every runtime dispatch would fall into Unknown.
   let s = surface_of(
     (
-      #|<div>
-      #|  <input type="checkbox" @on.input="setDone e.value">
-      #|  <input type="file" @on.change="onPick e.value">
-      #|  <input type="text" @on.input="setName e.value">
-      #|</div>
+      #|    @div{
+      #|      @input(~type: "checkbox", ~on_input: setDone(e.value))
+      #|      @input(~type: "file", ~on_change: onPick(e.value))
+      #|      @input(~type: "text", ~on_input: setName(e.value))
+      #|    }
     ),
   )
   assert_eq(s.inputs.map(i => i.name), ["onPick", "setDone", "setName"])
@@ -57,9 +62,9 @@ test "value's type follows the host element: checkbox Bool, file Value" {
 }
 
 ///|
-test "a dynamic :type keeps the default String inference for value" {
-  // Only a static type attribute is visible at generation time.
-  let s = surface_of("<input :type=\".kind\" @on.input=\"setIt e.value\">")
+test "a dynamic type keeps the default String inference for value" {
+  // Only a static type option is visible at generation time.
+  let s = surface_of("    @input(~type: it.kind, ~on_input: setIt(e.value))")
   assert_eq(s.inputs[0].args, Some([VString]))
 }
 
@@ -67,10 +72,10 @@ test "a dynamic :type keeps the default String inference for value" {
 test "checkbox and text call sites of one handler join to Value" {
   let s = surface_of(
     (
-      #|<div>
-      #|  <input type="checkbox" @on.input="setIt e.value">
-      #|  <input @on.input="setIt e.value">
-      #|</div>
+      #|    @div{
+      #|      @input(~type: "checkbox", ~on_input: setIt(e.value))
+      #|      @input(~on_input: setIt(e.value))
+      #|    }
     ),
   )
   assert_eq(s.inputs[0].args, Some([VValue]))
@@ -80,10 +85,10 @@ test "checkbox and text call sites of one handler join to Value" {
 test "call sites that disagree on arity carry the raw args" {
   let s = surface_of(
     (
-      #|<div>
-      #|  <button @on.click="go 1">a</button>
-      #|  <button @on.dblclick="go 1 'two'">b</button>
-      #|</div>
+      #|    @div{
+      #|      @button(~on_click: go(1)){a}
+      #|      @button(~on_dblclick: go(1, "two")){b}
+      #|    }
     ),
   )
   assert_eq(s.inputs[0].name, "go")
@@ -94,85 +99,86 @@ test "call sites that disagree on arity carry the raw args" {
 test "call sites that disagree on a position fall back to Value" {
   let s = surface_of(
     (
-      #|<div>
-      #|  <button @on.click="go 1">a</button>
-      #|  <button @on.dblclick="go 'two'">b</button>
-      #|</div>
+      #|    @div{
+      #|      @button(~on_click: go(1)){a}
+      #|      @button(~on_dblclick: go("two")){b}
+      #|    }
     ),
   )
   assert_eq(s.inputs[0].args, Some([VValue]))
 }
 
 ///|
-test "$name is a method in a value position and refused in an event one" {
-  // A value position is where `$` earns its keep: there is no event and no
-  // ctx, so an input handler cannot go there.
-  let s = surface_of("<button @on.click=\"inc\" :title=\"$label\">x</button>")
+/// A `compute` called in a VALUE slot is a method; a bare name in an event
+/// slot is a handler. One notation, and the position is the whole difference.
+///
+/// The old notation spelled the first `$label` and the second `label`, and a
+/// `$name` written in an event slot was refused — `METHOD_IN_EVENT` — because
+/// the sigil claimed a distinction that does not exist. There is no sigil now,
+/// so the two spellings are `label()` and `label` and there is nothing left to
+/// refuse: `~on_click: label()` and `~on_click: label` are read as one
+/// dispatch. That rule still runs over views built as markup through
+/// `@anode.View::new`, where the distinction can still be written.
+test "a compute in a value position is a method" {
+  let s = surface_of("    @button(~on_click: inc, ~title: label()){x}")
   assert_eq(s.methods, ["label"])
   assert_eq(s.inputs.map(i => i.name), ["inc"])
-  // In an event position it is the SAME dispatch as the bare name
-  // (app/app.mbt pushes both as one `Receive`), so the sigil claims a
-  // distinction that does not exist and is refused.
-  try surface_of("<button @on.click=\"$inc\">x</button>") |> ignore catch {
-    MethodInEventPosition(name~, site~, ..) => {
-      assert_eq(name, "inc")
-      assert_eq(site, "@on.click")
-    }
-    e => fail("expected the sigil to be refused, got \{e.message()}")
-  } noraise {
-    _ => fail("expected the sigil to be refused")
-  }
+  let same = surface_of("    @button(~on_click: inc()){x}")
+  assert_eq(same.inputs.map(i => i.name), ["inc"])
+  assert_eq(same.methods, [])
 }
 
 ///|
 test "fields under a scope-changing node are not this component's" {
-  // `.label` is read at the root; `.name` addresses the loop item and
-  // `.title` the child component, so neither is a field of this state.
+  // `it.label` is read at the root; the loop item and the child component are
+  // read through their own binder, so neither is a field of this state.
   let s = surface_of(
     (
-      #|<div>
-      #|  <x text=".label"></x>
-      #|  <ul><li @each=".rows"><x text=".name"></x></li></ul>
-      #|  <x render=".child" as=".title"></x>
-      #|</div>
+      #|    @div{
+      #|      @(it.label)
+      #|      @ul{@each(row in it.rows){@li{@(row.name)}}}
+      #|      @render(it.child, ~as: it.title)
+      #|    }
     ),
   )
   assert_eq(s.fields, ["child", "label", "rows", "title"])
 }
 
 ///|
-test "a view that would warn at runtime fails generation" {
+test "a view the reader will not read fails generation" {
+  // `@nope` is not an element and there is no way to write one that is not: the
+  // old notation had a fixed directive list on an open set of attributes, so an
+  // `@nope=".x"` looked like both and was caught by a list. Here an element
+  // name IS the vocabulary, and `~nope:` is simply an attribute called `nope`.
   let msg = try {
-    surface_of("<div @nope=\".x\"></div>") |> ignore
+    surface_of("    @div{@each(value in it.rows, ~when: visible()){@p{x}}}")
+    |> ignore
     "no error"
   } catch {
     e => @viewgen.GenError::message(e)
   }
-  inspect(
-    msg,
-    content=(
-      #|view "main": unknown directive '@nope=".x"' on <div>
-    ),
-  )
+  // The repair, not just the verdict.
+  assert_true(msg.contains("declare it in the logic section"), msg~)
 }
 
 ///|
 /// The alter directives, each into its own bucket.
 ///
-/// Split by bucket rather than pooled: `@when` answers Bool, `@loop-with`
-/// returns a slice plan, and `@enrich-with` means two different signatures
+/// Split by bucket rather than pooled: `~when` answers Bool, `~loop_with`
+/// returns a slice plan, and `~enrich_with` means two different signatures
 /// depending on whether an `@each` is around it — so the bucket is what makes
 /// a name typeable at all.
 test "the alter handler names, by bucket" {
   let s = surface_of(
     (
-      #|<template>
-      #|  <ul>
-      #|    <li @each=".items" @when="keepItem" @loop-with="firstPage"
-      #|        @enrich-with="enrichItem"><x text="@value"></x></li>
-      #|  </ul>
-      #|  <div @enrich-with="pagerInfo"><x text="@total"></x></div>
-      #|</template>
+      #|    @div{
+      #|      @ul{
+      #|        @each(value, key in it.items, ~when: keepItem, ~loop_with: firstPage, ~enrich_with: enrichItem){
+      #|          @li{@(value)}
+      #|        }
+      #|      }
+      #|      @div(~enrich_with: pagerInfo){@(total)}
+      #|    }
     ),
   )
   assert_eq(s.whens, ["keepItem"])
@@ -181,28 +187,11 @@ test "the alter handler names, by bucket" {
   assert_eq(s.enriches, ["enrichItem"])
   // no @each around it: returns the binds
   assert_eq(s.bind_withs, ["pagerInfo"])
-  // none of them is a `$name`, so none lands in `methods`
+  // none of them is a call, so none lands in `methods`
   assert_eq(s.methods, [])
 }
 
-///|
-/// A `$name` in an alter position is a method like any other — it resolves
-/// through the compute bucket at render time — so it belongs in `methods` and
-/// NOT in the alter bucket, which would otherwise declare a handler the
-/// author never has to write.
-test "a $name in an alter position is a method, not a bucket entry" {
-  let s = surface_of(
-    (
-      #|<template>
-      #|  <ul><li @each=".items" @when="$visible"><x text="@value"></x></li></ul>
-      #|</template>
-    ),
-  )
-  assert_eq(s.methods, ["visible"])
-  assert_eq(s.whens, [])
-}
-
-// -- v2: the `e.` boundary ---------------------------------------------------
+// -- the `e.` boundary -------------------------------------------------------
 
 ///|
 /// The generation error a view fails with, or "" when it generates.
@@ -223,7 +212,7 @@ fn view_hints(view : String) -> Array[String] raise {
 
 ///|
 test "an e. path in an argument slot parses and types" {
-  let s = surface_of("<input @on.input=\"setIt e.value\">")
+  let s = surface_of("    @input(~on_input: setIt(e.value))")
   assert_eq(s.inputs.length(), 1)
   assert_eq(s.inputs[0].name, "setIt")
   // The accessor's own type, from layer 1's table — an `e.` path does not
@@ -239,65 +228,54 @@ test "a path off the allowlist is a hint naming the step, not an error" {
   // guest-supplied views holds its policy's safe profile to this same list
   // and turns it away at registration.
   let hints = view_hints(
-    "<button @on.click=\"go e.target.ownerDocument.defaultView.localStorage.length\">x</button>",
+    "    @button(~on_click: go(e.target.ownerDocument.defaultView.localStorage.length)){x}",
   )
   assert_eq(hints.length(), 1)
   assert_eq(
     hints[0],
-    "view main: `@on.click=\"… e.target.ownerDocument.defaultView.localStorage.length\"` — `ownerDocument` (at 1) is off the event-path allowlist. It resolves here, but a host compiling guest-supplied views refuses it: every step through a host object must be one of currentTarget, dataTransfer, dataset, detail, relatedTarget, target",
+    "view main: `~on_click=\"… e.target.ownerDocument.defaultView.localStorage.length\"` — `ownerDocument` (at 1) is off the event-path allowlist. It resolves here, but a host compiling guest-supplied views refuses it: every step through a host object must be one of currentTarget, dataTransfer, dataset, detail, relatedTarget, target",
   )
   // ...and nothing generates as an error for either escape path.
-  assert_eq(
-    view_err("<button @on.click=\"go e.target.form.action\">x</button>"),
-    "",
-  )
+  assert_eq(view_err("    @button(~on_click: go(e.target.form.action)){x}"), "")
   // A permitted one draws no hint at all.
-  assert_eq(view_hints("<button @on.click=\"go e.target.value\">x</button>"), [])
+  assert_eq(view_hints("    @button(~on_click: go(e.target.value)){x}"), [])
   assert_eq(
-    view_hints("<button @on.click=\"go e.target.dataset.rowId\">x</button>"),
+    view_hints("    @button(~on_click: go(e.target.dataset.rowId)){x}"),
     [],
   )
-  assert_eq(view_hints("<button @on.click=\"go e.detail.a.b.c\">x</button>"), [])
+  assert_eq(view_hints("    @button(~on_click: go(e.detail.a.b.c)){x}"), [])
 }
 
 ///|
 test "a rooted path naming no known property is a hint, with the nearest" {
-  let hints = view_hints("<button @on.click=\"go e.valeu\">x</button>")
+  let hints = view_hints("    @button(~on_click: go(e.valeu)){x}")
   assert_eq(hints.length(), 1)
   assert_eq(
     hints[0],
-    "view main: `@on.click=\"… e.valeu\"` — no event interface has a `valeu` property — did you mean `e.value`?",
+    "view main: `~on_click=\"… e.valeu\"` — no event interface has a `valeu` property — did you mean `e.value`?",
   )
   // A computed accessor is known even though no specification has it: `value`
   // is the glue's, and a check against the specs alone would warn about the
   // most common read in the language.
-  assert_eq(view_hints("<button @on.click=\"go e.value\">x</button>"), [])
-  assert_eq(view_hints("<button @on.click=\"go e.isCtrl\">x</button>"), [])
+  assert_eq(view_hints("    @button(~on_click: go(e.value)){x}"), [])
+  assert_eq(view_hints("    @button(~on_click: go(e.isCtrl)){x}"), [])
   // ...and a real one from the generated table.
-  assert_eq(view_hints("<button @on.click=\"go e.deltaY\">x</button>"), [])
-  assert_eq(view_hints("<button @on.click=\"go e.pointerId\">x</button>"), [])
+  assert_eq(view_hints("    @button(~on_click: go(e.deltaY)){x}"), [])
+  assert_eq(view_hints("    @button(~on_click: go(e.pointerId)){x}"), [])
 }
 
 ///|
-test "a bare name in an argument slot is a build error" {
-  // It names nothing: there is no scope to look it up in, so it would resolve
-  // to `Null` and the handler would be handed a hole with nothing reporting
-  // it. The message names all three sigils rather than assuming the event.
-  assert_eq(
-    view_err("<input @on.input=\"setIt value\">"),
-    "view \"main\": `@on.input` passes `value`, and nothing says where it reads from. Write `e.value` for the event, `it.value` for state, or the name a loop or an enricher bound",
-  )
+test "an argument says where it reads from" {
   // The three prefixed spellings are accepted, and say nothing.
-  assert_eq(view_hints("<input @on.input=\"setIt e.value\">"), [])
-  assert_eq(view_hints("<input @on.input=\"setIt .draft\">"), [])
-  assert_eq(view_err("<input @on.input=\"setIt .draft\">"), "")
-}
-
-///|
-test "an e. path is refused outside an argument slot" {
-  // The group table is where this is decided: a `@text=\"e.value\"` would be a
-  // render-time read of an event that is not happening.
-  assert_true(view_err("<p @text=\"e.value\"></p>") != "")
+  assert_eq(view_hints("    @input(~on_input: setIt(e.value))"), [])
+  assert_eq(view_hints("    @input(~on_input: setIt(it.draft))"), [])
+  assert_eq(view_err("    @input(~on_input: setIt(it.draft))"), "")
+  assert_eq(
+    view_hints(
+      "    @ul{@each(row in it.rows){@button(~on_click: setIt(row)){x}}}",
+    ),
+    [],
+  )
 }
 
 ///|
@@ -306,17 +284,17 @@ test "an operator is transparent to the surface walk" {
   // walker in the tree already recurses through `App(args~, ..)` and ignores
   // the name — the statedef collector here, the `UnknownStateField` checker,
   // the method collector — so nesting an operator changes nothing for any of
-  // them. A `.kind` buried under `not (empty? …)` is still a field the state
-  // must declare, and a `$name` under one is still a method.
+  // them. A `it.kind` buried under `!(…)` is still a field the state must
+  // declare, and a call under one is still a method.
   let s = surface_of(
     (
-      #|<template>
-      #|  <p @show="not (empty? .kind)">a</p>
-      #|  <p @hide="(len .items) is 1">b</p>
-      #|  <p @show=".open and (.n > 0)">c</p>
-      #|  <p @if.class="not $canSubmit" @then="'on'" @else="'off'">d</p>
-      #|  <p @show=".view is 'detail'">e</p>
-      #|</template>
+      #|    @div{
+      #|      @show(!(it.kind.is_empty())){@p{a}}
+      #|      @hide(it.items.length() == 1){@p{b}}
+      #|      @show(it.open && (it.n > 0)){@p{c}}
+      #|      @p(~class: if !canSubmit() | "on" | "off"){d}
+      #|      @show(it.view == "detail"){@p{e}}
+      #|    }
     ),
   )
   assert_eq(s.fields, ["items", "kind", "n", "open", "view"])
@@ -325,35 +303,33 @@ test "an operator is transparent to the surface walk" {
 
 ///|
 test "a macro argument is an operand in a conditional slot" {
-  // The regression this covers, and the exact shape it broke: a `macro:row`
-  // that hides itself when the value it was handed is empty. `^value` is a
-  // slot value on its own AND a part of an expression, because a `^name`
-  // expands to exactly one token — so an operator over it cannot regroup
-  // anything, and the `from_macro` mark stays on the Const where the origin
-  // rule reads it.
-  //
-  // Nothing else in this repo writes a `^` inside an expression, which is why
-  // the refusal that replaced this passed every test here.
-  let html =
-    #|<template id="macro:row" data-value="''" data-label="''">
-    #|  <div class="row" @hide="empty? ^value">
-    #|    <span @text="^label"></span>
-    #|    <b @show="not (empty? ^value)" @text="^value"></b>
-    #|  </div>
-    #|</template>
-    #|<template>
-    #|  <x:row value=".title" label="'Title'"></x:row>
-    #|  <x:row value=".blurb" label="'Blurb'"></x:row>
-    #|</template>
-  // Before the fix this was
-  //   view "main": `^value` - `^value` is substituted, so it is a whole slot
-  //   value and not a part of an expression on <div>
-  assert_eq(view_err(html), "")
-  // Still refused where there is no frame to substitute FROM: a `^value` with
-  // no macro around it is an unbound macro variable, in an expression exactly
-  // as it is alone.
-  assert_true(
-    view_err("<template><p @hide=\"empty? ^value\">x</p></template>") != "",
-  )
-  assert_true(view_err("<template><p @hide=\"^value\">x</p></template>") != "")
+  // The regression this covers, and the exact shape it broke: a `row` macro
+  // that hides itself when the value it was handed is empty. A macro parameter
+  // is a slot value on its own AND a part of an expression, because it expands
+  // to exactly one operand — so an operator over it cannot regroup anything,
+  // and the `from_macro` mark stays on the constant where the origin rule
+  // reads it.
+  let src =
+    #|spec:
+    #|  T:
+    #|    field title :: String
+    #|    field blurb :: String
+    #|
+    #|view:
+    #|  macro row(~value: "", ~label: ""):
+    #|    @div(~class: "row"){
+    #|      @hide(value.is_empty()){
+    #|        @span{@(label)}
+    #|        @show(!(value.is_empty())){@b{@(value)}}
+    #|      }
+    #|    }
+    #|
+    #|  T:
+    #|    @div{
+    #|      @row(~value: it.title, ~label: "Title")
+    #|      @row(~value: it.blurb, ~label: "Blurb")
+    #|    }
+  let f = @viewgen.read_file(src)
+  let s = @viewgen.view_surface(f.components[0].views, macros=f.macros)
+  assert_eq(s.fields, ["blurb", "title"])
 }

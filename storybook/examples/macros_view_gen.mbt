@@ -10,7 +10,7 @@
 ///|
 /// The state of the MacrosNo component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct MacrosNoState {} derive(Default)
@@ -18,9 +18,9 @@ pub(all) struct MacrosNoState {} derive(Default)
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..MacrosNoState::zero(), label: "Counter" }
 pub fn MacrosNoState::zero() -> MacrosNoState {
@@ -59,7 +59,7 @@ impl @component.Fields for MacrosNoState with fn schema() {
 ///|
 /// The state of the MacroParams component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct MacroParamsState {
@@ -69,9 +69,9 @@ pub(all) struct MacroParamsState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..MacroParamsState::zero(), label: "Counter" }
 pub fn MacroParamsState::zero() -> MacroParamsState {
@@ -117,7 +117,7 @@ impl @component.Fields for MacroParamsState with fn schema() {
 ///|
 /// The state of the MacroSlots component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct MacroSlotsState {
@@ -127,9 +127,9 @@ pub(all) struct MacroSlotsState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..MacroSlotsState::zero(), label: "Counter" }
 pub fn MacroSlotsState::zero() -> MacroSlotsState {
@@ -172,7 +172,7 @@ impl @component.Fields for MacroSlotsState with fn schema() {
 ///|
 /// The state of the MacroNamedSlots component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct MacroNamedSlotsState {
@@ -182,9 +182,9 @@ pub(all) struct MacroNamedSlotsState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..MacroNamedSlotsState::zero(), label: "Counter" }
 pub fn MacroNamedSlotsState::zero() -> MacroNamedSlotsState {

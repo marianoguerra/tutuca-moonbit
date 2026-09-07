@@ -26,17 +26,21 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let file_picker_spec_source : String =
-  #|state FilePicker {
-  #|  name: String
-  #|  size: Double
-  #|  type: String
-  #|  last_modified: Double
-  #|  has_file: Bool
-  #|  invariant picked_file_is_described
-  #|    format 'the file table is showing, but no file name came with it' { (.has_file implies ((len .name) > 0)) }
-  #|  where size >= 0
-  #|  where last_modified >= 0
-  #|}
+  #|spec:
+  #|  FilePicker:
+  #|    field name :: String
+  #|    field size :: Double
+  #|    field type :: String
+  #|    field last_modified :: Double
+  #|    field has_file :: Bool
+  #|
+  #|    invariant picked_file_is_described:
+  #|      ~format: "the file table is showing, but no file name came with it"
+  #|      (it.has_file implies (it.name.length() > 0))
+  #|
+  #|    where it.size >= 0
+  #|
+  #|    where it.last_modified >= 0
 
 ///|
 /// The compiled `main` view.

@@ -1,13 +1,26 @@
 ///| The module's static `manifest.json`, after the bridge hydrates its view
-/// files and serializes it to the host. Views are tutuca template strings
-/// compiled host-side; the declared schema — fields over a flat type table,
+/// files and serializes it to the host. Views are read host-side out of the
+/// card's own `.tutu` source, which the manifest carries whole; the declared
+/// schema — fields over a flat type table,
 /// plus the message buckets — becomes the `SchemaInfo` every generic-access
 /// seam reads (see `register_module`).
 
 ///|
+/// One view: its name, and nothing else.
+///
+/// The body used to be here as HTML. It is read out of `DynManifest.tutu`
+/// now, under `<Component>.<name>` — the card's own source, once, rather than
+/// a printed copy per view that a printer had to keep byte-exact.
 pub(all) struct DynViewDef {
   name : String
-  html : String
+  /// How much source this view is, in bytes.
+  ///
+  /// A number rather than the text it measures, because a quota is checked
+  /// BEFORE anything is read — a refusal is meant to cost no parsing — and the
+  /// body it counts is in `DynManifest.tutu` with every other view's. The
+  /// compiler knows the length and says it; a host that read the source to
+  /// measure it would have done the work the quota exists to refuse.
+  bytes : Int
 } derive(Debug, Eq)
 
 ///|
@@ -215,7 +228,14 @@ pub(all) struct DynManifest {
   /// module that is the same everywhere it runs, which is most of them.
   config : Array[DynConfigDef]
   components : Array[DynComponentDef]
-  /// The `<template id="macro:name">` declarations this module carries.
+  /// The card's `.tutu` source, whole.
+  ///
+  /// Every view body and every macro body is in here, and the host reads them
+  /// with the same readers the ahead-of-time generator uses — one notation,
+  /// one reader, no printer in between. A module that declares no view carries
+  /// an empty string.
+  tutu : String
+  /// The macro declarations this module carries.
   ///
   /// Module-level rather than per component, because that is what a macro IS: a
   /// piece of markup a view expands, registered in the scope every component of
@@ -226,16 +246,14 @@ pub(all) struct DynManifest {
 } derive(Debug, Eq)
 
 ///|
-/// One macro: its name, its `data-` defaults, and the markup it expands to.
+/// One macro: its name and its `data-` defaults.
 ///
-/// The same two fields `@anode.Macro` holds, because that is what this becomes
-/// — `register_module` hands them straight to `register_macros`. Nothing here
-/// is compiled ahead of time: a module's views arrive as markup and so does
-/// this.
+/// The defaults are here because a CALLER may override them and the reader
+/// needs the fallbacks; the body is in `DynManifest.tutu` beside the views,
+/// and a view expands its call while it is read rather than afterwards.
 pub(all) struct DynMacroDef {
   name : String
   defaults : Map[String, String]
-  html : String
 } derive(Debug, Eq)
 
 ///|
@@ -246,7 +264,7 @@ pub let supported_api_version : Int = 10
 
 ///|
 /// The archive JSON shape paired with `supported_api_version`.
-pub let supported_manifest_version : Int = 3
+pub let supported_manifest_version : Int = 4
 
 ///|
 suberror ManifestError {
@@ -520,7 +538,7 @@ fn parse_macros(
         }
       _ => ()
     }
-    out.push({ name, defaults, html: opt_str(r, "html"), })
+    out.push({ name, defaults, })
   }
   out
 }
@@ -775,7 +793,7 @@ pub fn DynManifest::from_json_string(
     let views = []
     for vj in views_json {
       guard vj is Object(v) else { raise ManifestError("manifest: bad view") }
-      views.push({ name: str_field(v, "name"), html: str_field(v, "html"), })
+      views.push({ name: str_field(v, "name"), bytes: int_field(v, "bytes"), })
     }
     let fields : Array[DynFieldDef] = []
     match c.get("fields") {
@@ -839,6 +857,7 @@ pub fn DynManifest::from_json_string(
     authors: str_array(root, "authors"),
     config: parse_config(root),
     components,
+    tutu: opt_str(root, "tutu"),
     macros: parse_macros(root),
   }
 }

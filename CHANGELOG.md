@@ -6,6 +6,139 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### The lowering is gone, and a card carries its own source
+
+The last stage of the `.tutu` migration: every section is read directly into the
+shape it means, nothing prints the old notation, and the parsers for it are
+deleted. `docs/tutu-migration.md` is now a conversion table and a record rather
+than a plan.
+
+**The card manifest carries the card.** It used to carry each view and each
+macro as HTML, and the host parsed it back with `ANode::parse`. A view arrives
+at the compiler as a TREE now, so producing that field would have meant an
+`ANode` → HTML printer held byte-exact against the card conformance suite, for a
+notation nothing is written in any more. So `tgc.describe` carries the card's
+own `.tutu` under `tutu`, each component lists its view NAMES and each view's
+byte count, and the host reads the bodies with `tutufile/toanode` — the same
+reader `tutuca gen` uses. `manifestVersion` is 4. A host now carries the
+shrubbery reader and does NOT carry the HTML tokenizer, which is 195 KB of a
+439 KB bundle by `benchmarks/OPTIMIZATIONS.md`'s own measurement.
+
+The byte count is a number rather than the text it measures because a quota is
+checked BEFORE anything is read — a refusal is meant to cost no parsing — and
+the compiler is the side that knows the length.
+
+Switching the card compiler to the direct reader found eight things, and every
+one of them was silent:
+
+- **The card compiler dropped every `logic:` section.** `prepare` asked the
+  file for a script BLOCK and parsed its text; a `.tutu` arrives with
+  declarations and an empty text, so `parse_script("")` answered no handlers.
+  The card compiled, the manifest advertised nothing, and the component rendered
+  and did nothing — which is the shape of a dispatch bug and gets chased as one.
+- **`host.name` had no `.tutu` spelling.** `skill/tutuca/core.md` documents it as
+  an ordinary operand; the reader read it as a member of a binding called
+  `host`, so it rendered Null — and `tgc/policy/external_url.mbt` decides
+  whether a URL may be pinned by an expression's PROVENANCE, so a host-supplied
+  origin was judged as if the component had made it up. It reads as an
+  `EConfigVar` now, and a `ViewBuilder` given the host's table substitutes it
+  while it reads; a name the table does not carry is refused at load rather than
+  rendered Null every frame.
+- **`viewgen`'s surface walk did not recurse through `!`, `&&` or `if`.** The
+  old notation lowered all three to `App`, which the walk already handled; the
+  `.tutu` reader builds `EUnary`, `EChain` and `EIf`. So a field read under a
+  `!` was invisible to `UnknownStateField` and a `compute` under an `if` never
+  reached `methods` — the generated component omitted it and the option reading
+  it rendered as nothing. `surface_test.mbt` had a test named for exactly this
+  ("an operator is transparent to the surface walk") and it passed, because its
+  fixture was written in the notation that lowered to `App`.
+- **A `compute` called inside another one's body read Null.** `mode()` in a
+  `logic:` body became the render stack's `$name`, and a body runs after the
+  render stack has answered. The position decides the form now: a call in a view
+  is the render stack's, a call in a body is a call.
+- **`@str{one sentence}` was a template, not a string.** So `~format:` came back
+  as a one-part `ETpl` and the two places that show a rule's sentence — a broken
+  invariant's report, a declined transition's log — printed the rule's NAME
+  instead of the author's words. A template with no holes left in it folds to a
+  literal.
+- **`send(…, ~to: place)` addressed a read, not a place.** The tgc backend
+  refused every addressed send with "`sendAt` takes a place and then a message
+  name".
+- **`it.a.b` was refused in a `logic:` body.** The restriction belongs to a view
+  slot — a slot's name lookup stays one level because nothing checks it — and a
+  body is checked code. So `send("ping", ~to: it.panes[k].inner)` could not be
+  written.
+- **A property setter had no `value` parameter.** The block parser injected it
+  — nothing in either notation writes it down, because it is fixed by the
+  property's type — and the `logic:` reader did not, so every `set:` body
+  refused with "`value` is not a parameter of this handler" and was DROPPED.
+  The counter's `magnitude` setter vanished from its generated module and the
+  property stopped writing.
+- **A collection operation reached the checker under the name the author
+  wrote.** Every layer below the notation knows `deleteAt`, and only the readers
+  translate; the `view:` reader did and the `logic:` reader did not, so
+  `it.values.delete_at(i)` was refused and its handler dropped. The table lives
+  in `tutufile/shrub` now, so the two readers cannot disagree.
+- **`~on_emoji_click:` registered `emoji_click`.** An underscore is a hyphen in
+  an event name for the same reason it is one in an attribute name — the
+  listener goes on under the string the DOM dispatches — and nothing ever fires
+  `emoji_click`.
+- **A file-level `@style{…}` was dropped and `@style(~global){…}` with it.**
+  The section reader looked for the wrong node shape, so a component's common
+  style came out empty and a page's global style was never emitted.
+- **A property the `logic:` section sets read as read-only.** `spec:` declares
+  the property and `logic:` implements its accessors, so only the file reader
+  can see both halves; the lowering merged them before printing, which is why
+  the block it printed said `{ get set }` for a property whose `spec:` line
+  says neither.
+- **A constructor written inside an expression was not lifted.** The value
+  language has no aggregate literal — `new X` names a type and `cur.f = …`
+  fills it — so `it.children.push(Hole())` has to become that pair. The printer
+  did it and the reader did not, so the universal layout kit failed to check
+  with six `NO_NAME` findings about a component it declares.
+- **A row member read its row as a parameter nothing bound.** `enrich
+  enrich_item(value, key)` names the row the renderer hands it, and the
+  renderer's names for a row are fixed — so the author's parameter names are
+  two spellings of one thing and the body reads a BINDING. The printer knew
+  (it renamed them to `@value` / `@key` and dropped the parameter list); the
+  reader kept them as parameters, so every enricher and every row filter in the
+  skill refused with "`value` is not a parameter of this handler". Which of the
+  two shapes a `pred` has is a fact about the VIEW — a row member is exactly
+  one a render-time option names — so `row_members` moved into `tutufile/shrub`
+  and the file reader asks it.
+- **A file with no `spec:` section was a syntax error.** A `view:` on its own is
+  most of the skill's examples and a fragment a page hands the generator; the
+  spec reader answered "nothing declares `state`", which is what `defs_of` says
+  about a block of types with no state and not about an absent section. Eight
+  skill sections stopped compiling.
+- **A protocol could not declare `provide` or `lookup`.** Both name a dynamic
+  channel and its type, the same shape as a property; the lowering read them
+  and the spec reader did not.
+- **An `e.` path stopped at three segments.** The fourth fell through to the
+  binding arm, so `e.target.ownerDocument.defaultView.localStorage.length` — the
+  exact shape the event-path allowlist exists to advise about — was refused as a
+  member read instead of reaching the rule.
+
+**`provide` and `lookup` are read from `spec:`.** The value they carry is a wire
+format with `@component` on the other side, so the reader writes it, over a
+closed grammar: a path, a seq-access, `self`, or a literal. Every shape was held
+to the printer line by line while the printer still existed. One default the
+printer could NOT carry now works: `lookup xs = []`, which is what
+`@component.lookup_or("entries", "[]")` has always meant in MoonBit.
+
+**`~category` and `~keywords` are `StateDef` fields.** They travelled in a map
+beside the definitions because only the lowering could see them; the spec reader
+reads them, so the side table and its join-by-name are gone.
+
+**Diagnostics name the new spelling.** An event site reads `~on_click`, not
+`@on.click`; a message is "declared in the `spec:` section", not "in the state
+block"; and `UNDECLARED_METHOD` says `boxStyl()` and points at `compute`.
+
+`METHOD_IN_EVENT` no longer fires for a card, and its absence is the notation
+rather than a relaxation: the rule was about a sigil, and `~on_click: f()` and
+`~on_click: f` are one dispatch here — which is what the rule was arguing they
+should be. It still runs over views built as markup through `@anode.View::new`.
+
 ### The card playground is written in `.tutu`, and six more holes
 
 `tutucard/web/examples.js` held 26 starter cards in the old notation, and

@@ -26,18 +26,21 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let swatch_picker_spec_source : String =
-  #|state SwatchPicker {
-  #|  color: String
-  #|  palette: Array[String]
-  #|  invariant color_is_on_the_palette
-  #|    format $'{.color} is not one of the swatches' { (has .palette .color) }
-  #|  where palette is nonempty
-  #|}
-  #|state Quadratic {
-  #|  a: Int
-  #|  b: Int
-  #|  c: Int
-  #|}
+  #|spec:
+  #|  SwatchPicker:
+  #|    field color :: String
+  #|    field palette :: List.of(String)
+  #|
+  #|    invariant color_is_on_the_palette:
+  #|      ~format: @str{@(it.color) is not one of the swatches}
+  #|      it.palette.has(it.color)
+  #|
+  #|    where it.palette non_empty
+  #|
+  #|  Quadratic:
+  #|    field a :: Int
+  #|    field b :: Int
+  #|    field c :: Int
 
 ///|
 /// The compiled `main` view.

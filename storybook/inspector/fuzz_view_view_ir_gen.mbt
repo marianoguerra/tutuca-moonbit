@@ -26,93 +26,142 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let fuzz_row_spec_source : String =
-  #|state FuzzRow {
-  #|  at: Int
-  #|  name: String
-  #|  args: String
-  #|  verb: String
-  #|  verb_class: String
-  #|  renders: Int
-  #|  refused: Bool
-  #|  refused_rule: String
-  #|  refused_sentence: String
-  #|  broke: Bool
-  #|  broke_rule: String
-  #|  disagreed: Bool
-  #|  row_class: String
-  #|  current: Bool
-  #|  after: Instance?
-  #|  open: Bool
-  #|  invariant refusal_names_something
-  #|    format 'the row says it was refused and has nothing to show for it' { (.refused implies ((len .refused_rule) > 0)) }
-  #|  invariant break_names_a_rule
-  #|    format 'the row says a rule broke and does not say which' { (.broke implies ((len .broke_rule) > 0)) }
-  #|  where verb is one of ["send", "intent", "set", "write"]
-  #|  where at >= 0
-  #|  where renders >= 0
-  #|}
-  #|state FuzzLog {
-  #|  rows: Array[Instance[FuzzRow]]
-  #|  has_rows: Bool
-  #|  empty_hint: String
-  #|  invariant has_rows_tracks_rows
-  #|    format $'hasRows says {.has_rows} for {(len .rows)} rows' { (.has_rows is ((len .rows) > 0)) }
-  #|}
-  #|state FuzzControls {
-  #|  seed: String
-  #|  steps: String
-  #|  source: String
-  #|  public_class: String
-  #|  messages_class: String
-  #|  properties_class: String
-  #|  fields_class: String
-  #|  playing: Bool
-  #|  can_run: Bool
-  #|  no_plan_hint: String
-  #|  can_draw: Bool
-  #|  no_draw_hint: String
-  #|  invariant hint_explains_the_disabled_button
-  #|    format 'nothing can be generated, and the panel does not say why' { ((not .can_run) implies ((len .no_plan_hint) > 0)) }
-  #|  invariant playing_needs_a_plan
-  #|    format 'a run is in flight with no plan behind it' { (.playing implies .can_run) }
-  #|  invariant draw_hint_explains_the_hidden_buttons
-  #|    format 'this source generates nothing, and the panel does not say why' { ((not .can_draw) implies ((len .no_draw_hint) > 0)) }
-  #|  invariant playing_needs_something_to_draw
-  #|    format 'a run is in flight with nothing to draw from' { (.playing implies .can_draw) }
-  #|  where source is one of ["public", "messages", "properties", "fields"]
-  #|}
-  #|state FuzzVerdict {
-  #|  kind: String
-  #|  badge_class: String
-  #|  headline: String
-  #|  sentence: String
-  #|  rule: String
-  #|  at: Int
-  #|  unchecked: String
-  #|  has_unchecked: Bool
-  #|  reproducer: Array[Instance[FuzzRow]]
-  #|  has_reproducer: Bool
-  #|  invariant findings_name_their_rule
-  #|    format $'a {.kind} verdict with no rule on it' { (((.kind is 'broke') or (.kind is 'disagreed')) implies ((len .rule) > 0)) }
-  #|  invariant has_reproducer_tracks_reproducer
-  #|    format 'hasReproducer and the reproducer disagree' { (.has_reproducer is ((len .reproducer) > 0)) }
-  #|  invariant has_unchecked_tracks_unchecked
-  #|    format 'hasUnchecked and the unchecked list disagree' { (.has_unchecked is ((len .unchecked) > 0)) }
-  #|  where kind is one of ["none", "held", "broke", "disagreed", "stuck"]
-  #|  where at >= -1
-  #|}
-  #|state FuzzPanel {
-  #|  controls: Instance[FuzzControls]
-  #|  verdict: Instance[FuzzVerdict]
-  #|  log: Instance[FuzzLog]
-  #|  has_run: Bool
-  #|  at: Int
-  #|  total: Int
-  #|  invariant at_within_total
-  #|    format $'parked at step {.at} of {.total}' { (.at <= .total) }
-  #|  where at >= 0
-  #|  where total >= 0
-  #|}
+  #|spec:
+  #|  FuzzRow:
+  #|    field at :: Int
+  #|
+  #|    field name :: String
+  #|    field args :: String
+  #|
+  #|    field verb :: String
+  #|    field verb_class :: String
+  #|
+  #|    field renders :: Int
+  #|
+  #|    field refused :: Bool
+  #|    field refused_rule :: String
+  #|    field refused_sentence :: String
+  #|
+  #|    field broke :: Bool
+  #|    field broke_rule :: String
+  #|
+  #|    field disagreed :: Bool
+  #|
+  #|    field row_class :: String
+  #|
+  #|    field current :: Bool
+  #|
+  #|    field after :: maybe(Instance)
+  #|    field open :: Bool
+  #|
+  #|    invariant refusal_names_something:
+  #|      ~format: "the row says it was refused and has nothing to show for it"
+  #|      (it.refused implies (it.refused_rule.length() > 0))
+  #|
+  #|    invariant break_names_a_rule:
+  #|      ~format: "the row says a rule broke and does not say which"
+  #|      (it.broke implies (it.broke_rule.length() > 0))
+  #|
+  #|    where it.verb is_one_of ["send", "intent", "set", "write"]
+  #|
+  #|    where it.at >= 0
+  #|
+  #|    where it.renders >= 0
+  #|
+  #|  FuzzLog:
+  #|    field rows :: List.of(Instance.of(FuzzRow))
+  #|    field has_rows :: Bool
+  #|    field empty_hint :: String
+  #|
+  #|    invariant has_rows_tracks_rows:
+  #|      ~format: @str{hasRows says @(it.has_rows) for @(it.rows.length()) rows}
+  #|      (it.has_rows == (it.rows.length() > 0))
+  #|
+  #|  FuzzControls:
+  #|    field seed :: String
+  #|    field steps :: String
+  #|
+  #|    field source :: String
+  #|    field public_class :: String
+  #|    field messages_class :: String
+  #|    field properties_class :: String
+  #|    field fields_class :: String
+  #|
+  #|    field playing :: Bool
+  #|
+  #|    field can_run :: Bool
+  #|
+  #|    field no_plan_hint :: String
+  #|
+  #|    field can_draw :: Bool
+  #|
+  #|    field no_draw_hint :: String
+  #|
+  #|    invariant hint_explains_the_disabled_button:
+  #|      ~format: "nothing can be generated, and the panel does not say why"
+  #|      (!it.can_run implies (it.no_plan_hint.length() > 0))
+  #|
+  #|    invariant playing_needs_a_plan:
+  #|      ~format: "a run is in flight with no plan behind it"
+  #|      (it.playing implies it.can_run)
+  #|
+  #|    invariant draw_hint_explains_the_hidden_buttons:
+  #|      ~format: "this source generates nothing, and the panel does not say why"
+  #|      (!it.can_draw implies (it.no_draw_hint.length() > 0))
+  #|
+  #|    invariant playing_needs_something_to_draw:
+  #|      ~format: "a run is in flight with nothing to draw from"
+  #|      (it.playing implies it.can_draw)
+  #|
+  #|    where it.source is_one_of ["public", "messages", "properties", "fields"]
+  #|
+  #|  FuzzVerdict:
+  #|    field kind :: String
+  #|    field badge_class :: String
+  #|    field headline :: String
+  #|
+  #|    field sentence :: String
+  #|    field rule :: String
+  #|    field at :: Int
+  #|
+  #|    field unchecked :: String
+  #|    field has_unchecked :: Bool
+  #|
+  #|    field reproducer :: List.of(Instance.of(FuzzRow))
+  #|    field has_reproducer :: Bool
+  #|
+  #|    invariant findings_name_their_rule:
+  #|      ~format: @str{a @(it.kind) verdict with no rule on it}
+  #|      (((it.kind == "broke") || (it.kind == "disagreed")) implies (it.rule.length() > 0))
+  #|
+  #|    invariant has_reproducer_tracks_reproducer:
+  #|      ~format: "hasReproducer and the reproducer disagree"
+  #|      (it.has_reproducer == (it.reproducer.length() > 0))
+  #|
+  #|    invariant has_unchecked_tracks_unchecked:
+  #|      ~format: "hasUnchecked and the unchecked list disagree"
+  #|      (it.has_unchecked == (it.unchecked.length() > 0))
+  #|
+  #|    where it.kind is_one_of ["none", "held", "broke", "disagreed", "stuck"]
+  #|
+  #|    where it.at >= -1
+  #|
+  #|  FuzzPanel:
+  #|    field controls :: Instance.of(FuzzControls)
+  #|    field verdict :: Instance.of(FuzzVerdict)
+  #|    field log :: Instance.of(FuzzLog)
+  #|    field has_run :: Bool
+  #|
+  #|    field at :: Int
+  #|    field total :: Int
+  #|
+  #|    invariant at_within_total:
+  #|      ~format: @str{parked at step @(it.at) of @(it.total)}
+  #|      (it.at <= it.total)
+  #|
+  #|    where it.at >= 0
+  #|
+  #|    where it.total >= 0
 
 ///|
 /// The compiled `main` view.
@@ -1524,12 +1573,16 @@ fn fuzz_verdict_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.show(
-      @tutuca.Expr::app("not", [
-        @tutuca.Expr::app("is", [
-          @tutuca.Expr::field("kind"),
-          @anode.const_str("none"),
-        ]),
-      ]),
+      EUnary(
+        op=UNot,
+        operand=EChain(
+          family=FCompare,
+          ops=["is"],
+          operands=[@tutuca.Expr::field("kind"), @anode.const_str("none")],
+          span=@tutuca.no_span,
+        ),
+        span=@tutuca.no_span,
+      ),
       @anode.h(
         "div",
         [@anode.attr("class", "fuzz-verdict flex flex-col gap-1 p-2")],
@@ -1603,12 +1656,16 @@ fn fuzz_verdict_main_view_ir() -> @anode.View {
           ),
           @anode.text(" "),
           @anode.show(
-            @tutuca.Expr::app("not", [
-              @tutuca.Expr::app("is", [
-                @tutuca.Expr::field("kind"),
-                @anode.const_str("held"),
-              ]),
-            ]),
+            EUnary(
+              op=UNot,
+              operand=EChain(
+                family=FCompare,
+                ops=["is"],
+                operands=[@tutuca.Expr::field("kind"), @anode.const_str("held")],
+                span=@tutuca.no_span,
+              ),
+              span=@tutuca.no_span,
+            ),
             @anode.hide(
               @tutuca.Expr::field("has_reproducer"),
               @anode.h(

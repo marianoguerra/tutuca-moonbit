@@ -26,17 +26,17 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let render_with_scope_spec_source : String =
-  #|state RenderWithScope {
-  #|  text: String
-  #|}
-  #|state ListFilterEnrich {
-  #|  items: Array[String]
-  #|  query: String
-  #|}
-  #|state ListFilterEnrichWith {
-  #|  items: Array[String]
-  #|  query: String
-  #|}
+  #|spec:
+  #|  RenderWithScope:
+  #|    field text :: String
+  #|
+  #|  ListFilterEnrich:
+  #|    field items :: List.of(String)
+  #|    field query :: String
+  #|
+  #|  ListFilterEnrichWith:
+  #|    field items :: List.of(String)
+  #|    field query :: String
 
 ///|
 /// The compiled `main` view.
@@ -55,25 +55,25 @@ fn render_with_scope_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.scope(
-        3,
+        0,
         @tutuca.Expr::name("enrich_scope"),
-        @anode.h("div", [@anode.attr_num("data-nid", 3.0)], [
+        @anode.h("div", [@anode.attr_num("data-nid", 0.0)], [
           @anode.h("p", [], [
             @anode.text("Text: "),
             @anode.h("span", [@anode.attr("class", "v-text")], [
-              @anode.dyn_text(@tutuca.Expr::field("text"), id=0),
+              @anode.dyn_text(@tutuca.Expr::field("text"), id=1),
             ]),
           ]),
           @anode.h("p", [], [
             @anode.text("Len: "),
             @anode.h("span", [@anode.attr("class", "v-len")], [
-              @anode.dyn_text(@tutuca.Expr::bind("len"), id=1),
+              @anode.dyn_text(@tutuca.Expr::bind("len"), id=2),
             ]),
           ]),
           @anode.h("p", [], [
             @anode.text("Upper: "),
             @anode.h("span", [@anode.attr("class", "v-upper")], [
-              @anode.dyn_text(@tutuca.Expr::bind("upper"), id=2),
+              @anode.dyn_text(@tutuca.Expr::bind("upper"), id=3),
             ]),
           ]),
         ]),

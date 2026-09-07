@@ -100,23 +100,34 @@ fn view_diagnostics(
     let cname = comp.component_name(fallback)
     for view in comp.views {
       let where_ = "\{cname}/\{view.name}"
-      // Structural HTML (mismatched tags, bad nesting): the WHATWG-tokenizer
-      // linter, which needs only the source text.
-      for f in @lint.check_html(view.source) {
-        out.push(f.to_line(where_))
-      }
-      // Parse-issue rules, deprecation nudges and host bare directives. A
-      // fresh shadow parse, never the live tree.
+      // The two TEXT-shaped passes, and they run only on a file that has text.
+      //
+      // Both read HTML: `check_html` is the WHATWG tokenizer over the source,
+      // and `check_collected` reads what a shadow PARSE of that source
+      // collected. A `.tutu` is read into a tree without either — an unclosed
+      // tag is not a shape the notation has, and what the shadow parse was
+      // watching for the reader refuses where it is written. Running them on
+      // an empty string would report nothing and read as a pass.
       let collector = @lint.LintCollector::new()
       let px = @anode.ParseContext::new(handler=collector)
-      let _ = @anode.ANode::parse(view.source, px)
-      for f in @lint.check_collected(collector) {
-        out.push(f.to_line(where_))
+      if view.source != "" {
+        for f in @lint.check_html(view.source) {
+          out.push(f.to_line(where_))
+        }
+        let _ = @anode.ANode::parse(view.source, px)
+        for f in @lint.check_collected(collector) {
+          out.push(f.to_line(where_))
+        }
       }
       // Event paths: an off-list step resolves under the open profile these
       // views run under, so it advises rather than refuses — see
-      // `@lint.check_event_paths`.
-      for f in @lint.check_event_paths(px.events) {
+      // `@lint.check_event_paths`. Not text-shaped: the table is what it
+      // reads, and a view that was READ arrives with one.
+      let events = match view.tree {
+        Some({ events, .. }) => events
+        None => px.events
+      }
+      for f in @lint.check_event_paths(events) {
         out.push(f.to_line(where_))
       }
     }
@@ -400,30 +411,21 @@ pub fn gen_views_all(
   // makes fixing three problems take three builds to even SEE the three.
   let failures : Array[(String, String)] = []
   for f in files {
-    // A `.tutu` file is lowered into the blocks the splitter reads. The
-    // lowering is a printer, so what fails here fails with the message the
-    // section language gave it rather than as a splitter error about a block
-    // nobody wrote.
-    let source = if f.input.has_suffix(".tutu") {
-      let sources = @report.Sources::new()
-      let id = sources.add(f.input, f.source)
-      let lowered = @lower.lower(f.source, id)
-      if lowered.reports.length() > 0 {
-        let lines = []
-        for r in lowered.reports {
-          lines.push(r.message)
+    // A `.tutu` is READ — each section into the shape it means, with no
+    // notation in between. The splitter is for the `.html` a file used to be.
+    let views = if f.input.has_suffix(".tutu") {
+      @viewgen.read_file(f.source, name=f.name) catch {
+        e => {
+          failures.push((f.input, @viewgen.GenError::message(e)))
+          continue
         }
-        failures.push((f.input, lines.join("; ")))
-        continue
       }
-      lowered.text
     } else {
-      f.source
-    }
-    let views = @viewgen.split_file(source, name=f.name) catch {
-      e => {
-        failures.push((f.input, @viewgen.GenError::message(e)))
-        continue
+      @viewgen.split_file(f.source, name=f.name) catch {
+        e => {
+          failures.push((f.input, @viewgen.GenError::message(e)))
+          continue
+        }
       }
     }
     index.add(views, f.name)

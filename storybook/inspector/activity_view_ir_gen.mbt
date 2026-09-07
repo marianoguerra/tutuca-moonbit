@@ -26,36 +26,42 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let activity_entry_spec_source : String =
-  #|state ActivityEntry {
-  #|  kind: String
-  #|  origin: String
-  #|  name: String
-  #|  handler_name: String
-  #|  matched: String
-  #|  path_label: String
-  #|  time: String
-  #|  before: Instance?
-  #|  after: Instance?
-  #|  has_after: Bool
-  #|  invariant has_after_tracks_after
-  #|    format 'hasAfter is set and there is no successor state on the row' { (.has_after implies (not (null? .after))) }
-  #|  where matched is one of ["exact", "none"]
-  #|  where kind is one of ["receive", "intent", "answer"]
-  #|  where origin is one of ["host", "view", "handler"]
-  #|  where name is nonempty
-  #|}
-  #|state ActivityLog {
-  #|  events: Array[Instance[ActivityEntry]]
-  #|  has_events: Bool
-  #|  invariant has_events_tracks_events
-  #|    format $'hasEvents says {.has_events} for {(len .events)} events' { (.has_events is ((len .events) > 0)) }
-  #|  where events len <= 50
-  #|}
-  #|handle ActivityLog {
-  #|  message {
-  #|    append_entry(Any)
-  #|  }
-  #|}
+  #|spec:
+  #|  ActivityEntry:
+  #|    field kind :: String
+  #|    field origin :: String
+  #|    field name :: String
+  #|    field handler_name :: String
+  #|    field matched :: String
+  #|    field path_label :: String
+  #|    field time :: String
+  #|    field before :: maybe(Instance)
+  #|    field after :: maybe(Instance)
+  #|    field has_after :: Bool
+  #|
+  #|    invariant has_after_tracks_after:
+  #|      ~format: "hasAfter is set and there is no successor state on the row"
+  #|      (it.has_after implies !((it.after == none)))
+  #|
+  #|    where it.matched is_one_of ["exact", "none"]
+  #|
+  #|    where it.kind is_one_of ["receive", "intent", "answer"]
+  #|
+  #|    where it.origin is_one_of ["host", "view", "handler"]
+  #|
+  #|    where it.name non_empty
+  #|
+  #|  ActivityLog:
+  #|    field events :: List.of(Instance.of(ActivityEntry))
+  #|    field has_events :: Bool
+  #|
+  #|    invariant has_events_tracks_events:
+  #|      ~format: @str{hasEvents says @(it.has_events) for @(it.events.length()) events}
+  #|      (it.has_events == (it.events.length() > 0))
+  #|
+  #|    message append_entry(Any)
+  #|
+  #|    where it.events len <= 50
 
 ///|
 /// The compiled `main` view.
@@ -158,6 +164,7 @@ fn activity_entry_main_view_ir() -> @anode.View {
             ),
           ],
         ),
+        @anode.text("\n"),
         @anode.h(
           "div",
           [@anode.attr("class", "flex gap-3 items-start font-mono text-xs")],

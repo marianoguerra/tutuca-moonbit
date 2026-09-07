@@ -640,7 +640,7 @@ fn print_action(
         )
       }
     @sh.ECall(@sh.EMember(recv, op), args) => {
-      guard collection_op(op) is Some(word) else {
+      guard @sh.collection_op(op) is Some(word) else {
         raise @sh.ExError(
           message="`\{op}` is not a property action",
           help="the actions are `push`, `insert_at`, `set_at`, `delete_at`, `clear`, `add`, `remove` and `toggle`",

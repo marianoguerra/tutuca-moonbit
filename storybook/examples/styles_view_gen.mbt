@@ -10,7 +10,7 @@
 ///|
 /// The state of the StylesExample component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct StylesExampleState {} derive(Default)
@@ -18,9 +18,9 @@ pub(all) struct StylesExampleState {} derive(Default)
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..StylesExampleState::zero(), label: "Counter" }
 pub fn StylesExampleState::zero() -> StylesExampleState {
@@ -71,7 +71,7 @@ impl @component.Fields for StylesExampleState with fn schema() {
 ///|
 /// The state of the StylesExampleRoot component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct StylesExampleRootState {
@@ -81,9 +81,9 @@ pub(all) struct StylesExampleRootState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..StylesExampleRootState::zero(), label: "Counter" }
 pub fn StylesExampleRootState::zero() -> StylesExampleRootState {

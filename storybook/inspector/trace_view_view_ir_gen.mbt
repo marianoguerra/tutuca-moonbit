@@ -26,178 +26,240 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let trace_row_spec_source : String =
-  #|state TraceRow {
-  #|  seq: Int
-  #|  turn: Int
-  #|  walk: Int
-  #|  has_walk: Bool
-  #|  verb: String
-  #|  verb_class: String
-  #|  name: String
-  #|  place: String
-  #|  args: String
-  #|  input: Bool
-  #|  row_class: String
-  #|  depth: Int
-  #|  current: Bool
-  #|  after: Instance?
-  #|  has_after: Bool
-  #|  open: Bool
-  #|  invariant has_walk_tracks_walk
-  #|    format $'hasWalk says {.has_walk} for walk {.walk}' { (.has_walk is (.walk is not 0)) }
-  #|  where verb is one of ["send", "intent", "offered", "answer", "refused"]
-  #|  where seq >= 0
-  #|  where turn >= 0
-  #|  where walk >= 0
-  #|  where depth >= 0
-  #|}
-  #|handle TraceRow {
-  #|  message {
-  #|    toggle
-  #|  }
-  #|}
-  #|state TraceLog {
-  #|  rows: Array[Instance[TraceRow]]
-  #|  has_rows: Bool
-  #|  inputs_only: Bool
-  #|  turn: Int
-  #|  empty_hint: String
-  #|  invariant has_rows_tracks_rows
-  #|    format $'hasRows says {.has_rows} for {(len .rows)} rows' { (.has_rows is ((len .rows) > 0)) }
-  #|  where turn >= 0
-  #|}
-  #|handle TraceLog {
-  #|  message {
-  #|    set_turn(Int),
-  #|    show_all_turns
-  #|  }
-  #|}
-  #|state TraceHeader {
-  #|  component: String
-  #|  module: String
-  #|  example: String
-  #|  fingerprint: String
-  #|  events: Int
-  #|  inputs: Int
-  #|  turns: Int
-  #|  relocated_from: String
-  #|  is_relocated: Bool
-  #|  compacted: Bool
-  #|  invariant inputs_are_events
-  #|    format $'{.inputs} inputs out of {.events} events' { (.inputs <= .events) }
-  #|  invariant turns_are_events
-  #|    format $'{.turns} turns out of {.events} events' { (.turns <= .events) }
-  #|  invariant is_relocated_tracks_from
-  #|    format 'isRelocated and relocatedFrom disagree' { (.is_relocated is ((len .relocated_from) > 0)) }
-  #|  where events >= 0
-  #|  where inputs >= 0
-  #|  where turns >= 0
-  #|}
-  #|state TracePlace {
-  #|  label: String
-  #|  display: String
-  #|  component: String
-  #|  events: Int
-  #|  depth: Int
-  #|  selected: Bool
-  #|  row_class: String
-  #|  mountable: Bool
-  #|  where events >= 0
-  #|  where depth >= 0
-  #|}
-  #|handle TracePlace {
-  #|  message {
-  #|    pick_place(String)
-  #|  }
-  #|}
-  #|state TracePlaces {
-  #|  places: Array[Instance[TracePlace]]
-  #|  has_places: Bool
-  #|  selected: String
-  #|  heading: String
-  #|  empty_hint: String
-  #|  invariant has_places_tracks_places
-  #|    format $'hasPlaces says {.has_places} for {(len .places)} places' { (.has_places is ((len .places) > 0)) }
-  #|}
-  #|state RecorderBar {
-  #|  recording: Bool
-  #|  scope: String
-  #|  scope_label: String
-  #|  all_class: String
-  #|  section_class: String
-  #|  example_class: String
-  #|  events: Int
-  #|  turns: Int
-  #|  has_trace: Bool
-  #|  picking: Bool
-  #|  invariant turns_are_events
-  #|    format $'{.turns} turns out of {.events} events' { (.turns <= .events) }
-  #|  where scope is one of ["all", "section", "example"]
-  #|  where events >= 0
-  #|  where turns >= 0
-  #|}
-  #|handle RecorderBar {
-  #|  message {
-  #|    set_scope(String),
-  #|    open_picker,
-  #|    close_picker,
-  #|    start_recording,
-  #|    stop_recording,
-  #|    clear_recording
-  #|  }
-  #|}
-  #|state TracePanel {
-  #|  bar: Instance[RecorderBar]
-  #|  header: Instance[TraceHeader]
-  #|  places: Instance[TracePlaces]
-  #|  log: Instance[TraceLog]
-  #|  record_tab_class: String
-  #|  trace_tab_class: String
-  #|  select_tab_class: String
-  #|  select_label: String
-  #|  tab: String
-  #|  has_trace: Bool
-  #|  selecting: Bool
-  #|  show_trace: Bool
-  #|  show_replay: Bool
-  #|  show_import: Bool
-  #|  at: Int
-  #|  total: Int
-  #|  notice: String
-  #|  has_notice: Bool
-  #|  draft: String
-  #|  can_replay: Bool
-  #|  replaying: Bool
-  #|  replay_tab_class: String
-  #|  invariant has_notice_tracks_notice
-  #|    format $'hasNotice says {.has_notice} for a notice of {(len .notice)}' { (.has_notice is ((len .notice) > 0)) }
-  #|  invariant can_replay_needs_a_trace
-  #|    format 'the replay controls are live without a trace behind them' { (.can_replay implies .has_trace) }
-  #|  invariant replaying_needs_a_replay
-  #|    format 'a rerun is playing that was never mounted' { (.replaying implies .can_replay) }
-  #|  invariant at_within_total
-  #|    format $'parked at {.at} of {.total}' { (.at <= .total) }
-  #|  invariant show_trace_needs_a_trace
-  #|    format 'the trace pane is showing without a trace behind it' { (.show_trace implies .has_trace) }
-  #|  invariant show_replay_needs_a_trace
-  #|    format 'the replay pane is showing without a trace behind it' { (.show_replay implies .has_trace) }
-  #|  where tab is one of ["record", "trace", "pick", "replay"]
-  #|  where at >= 0
-  #|  where total >= 0
-  #|}
-  #|handle TracePanel {
-  #|  message {
-  #|    set_tab(String),
-  #|    set_at(Int),
-  #|    toggle_selecting,
-  #|    export_trace,
-  #|    import_draft,
-  #|    cut_to_place,
-  #|    replay_step,
-  #|    replay_run,
-  #|    replay_reset
-  #|  }
-  #|}
+  #|spec:
+  #|  TraceRow:
+  #|    field seq :: Int
+  #|    field turn :: Int
+  #|    field walk :: Int
+  #|    field has_walk :: Bool
+  #|    field verb :: String
+  #|
+  #|    field verb_class :: String
+  #|    field name :: String
+  #|    field place :: String
+  #|    field args :: String
+  #|    field input :: Bool
+  #|
+  #|    field row_class :: String
+  #|    field depth :: Int
+  #|
+  #|    field current :: Bool
+  #|
+  #|    field after :: maybe(Instance)
+  #|    field has_after :: Bool
+  #|    field open :: Bool
+  #|
+  #|    invariant has_walk_tracks_walk:
+  #|      ~format: @str{hasWalk says @(it.has_walk) for walk @(it.walk)}
+  #|      (it.has_walk == (it.walk != 0))
+  #|
+  #|    message toggle
+  #|
+  #|    where it.verb is_one_of ["send", "intent", "offered", "answer", "refused"]
+  #|
+  #|    where it.seq >= 0
+  #|
+  #|    where it.turn >= 0
+  #|
+  #|    where it.walk >= 0
+  #|
+  #|    where it.depth >= 0
+  #|
+  #|  TraceLog:
+  #|    field rows :: List.of(Instance.of(TraceRow))
+  #|    field has_rows :: Bool
+  #|    field inputs_only :: Bool
+  #|
+  #|    field turn :: Int
+  #|    field empty_hint :: String
+  #|
+  #|    invariant has_rows_tracks_rows:
+  #|      ~format: @str{hasRows says @(it.has_rows) for @(it.rows.length()) rows}
+  #|      (it.has_rows == (it.rows.length() > 0))
+  #|
+  #|    message set_turn(Int)
+  #|
+  #|    message show_all_turns
+  #|
+  #|    where it.turn >= 0
+  #|
+  #|  TraceHeader:
+  #|    field component :: String
+  #|    field module :: String
+  #|    field example :: String
+  #|    field fingerprint :: String
+  #|    field events :: Int
+  #|    field inputs :: Int
+  #|    field turns :: Int
+  #|    field relocated_from :: String
+  #|    field is_relocated :: Bool
+  #|    field compacted :: Bool
+  #|
+  #|    invariant inputs_are_events:
+  #|      ~format: @str{@(it.inputs) inputs out of @(it.events) events}
+  #|      (it.inputs <= it.events)
+  #|
+  #|    invariant turns_are_events:
+  #|      ~format: @str{@(it.turns) turns out of @(it.events) events}
+  #|      (it.turns <= it.events)
+  #|
+  #|    invariant is_relocated_tracks_from:
+  #|      ~format: "isRelocated and relocatedFrom disagree"
+  #|      (it.is_relocated == (it.relocated_from.length() > 0))
+  #|
+  #|    where it.events >= 0
+  #|
+  #|    where it.inputs >= 0
+  #|
+  #|    where it.turns >= 0
+  #|
+  #|  TracePlace:
+  #|    field label :: String
+  #|    field display :: String
+  #|    field component :: String
+  #|    field events :: Int
+  #|    field depth :: Int
+  #|    field selected :: Bool
+  #|    field row_class :: String
+  #|
+  #|    field mountable :: Bool
+  #|
+  #|    message pick_place(String)
+  #|
+  #|    where it.events >= 0
+  #|
+  #|    where it.depth >= 0
+  #|
+  #|  TracePlaces:
+  #|    field places :: List.of(Instance.of(TracePlace))
+  #|    field has_places :: Bool
+  #|    field selected :: String
+  #|
+  #|    field heading :: String
+  #|    field empty_hint :: String
+  #|
+  #|    invariant has_places_tracks_places:
+  #|      ~format: @str{hasPlaces says @(it.has_places) for @(it.places.length()) places}
+  #|      (it.has_places == (it.places.length() > 0))
+  #|
+  #|  RecorderBar:
+  #|    field recording :: Bool
+  #|
+  #|    field scope :: String
+  #|    field scope_label :: String
+  #|
+  #|    field all_class :: String
+  #|    field section_class :: String
+  #|    field example_class :: String
+  #|    field events :: Int
+  #|    field turns :: Int
+  #|
+  #|    field has_trace :: Bool
+  #|
+  #|    field picking :: Bool
+  #|
+  #|    invariant turns_are_events:
+  #|      ~format: @str{@(it.turns) turns out of @(it.events) events}
+  #|      (it.turns <= it.events)
+  #|
+  #|    message set_scope(String)
+  #|
+  #|    message open_picker
+  #|
+  #|    message close_picker
+  #|
+  #|    message start_recording
+  #|
+  #|    message stop_recording
+  #|
+  #|    message clear_recording
+  #|
+  #|    where it.scope is_one_of ["all", "section", "example"]
+  #|
+  #|    where it.events >= 0
+  #|
+  #|    where it.turns >= 0
+  #|
+  #|  TracePanel:
+  #|    field bar :: Instance.of(RecorderBar)
+  #|    field header :: Instance.of(TraceHeader)
+  #|    field places :: Instance.of(TracePlaces)
+  #|    field log :: Instance.of(TraceLog)
+  #|    field record_tab_class :: String
+  #|    field trace_tab_class :: String
+  #|    field select_tab_class :: String
+  #|
+  #|    field select_label :: String
+  #|
+  #|    field tab :: String
+  #|    field has_trace :: Bool
+  #|
+  #|    field selecting :: Bool
+  #|
+  #|    field show_trace :: Bool
+  #|    field show_replay :: Bool
+  #|    field show_import :: Bool
+  #|
+  #|    field at :: Int
+  #|    field total :: Int
+  #|
+  #|    field notice :: String
+  #|    field has_notice :: Bool
+  #|
+  #|    field draft :: String
+  #|
+  #|    field can_replay :: Bool
+  #|
+  #|    field replaying :: Bool
+  #|    field replay_tab_class :: String
+  #|
+  #|    invariant has_notice_tracks_notice:
+  #|      ~format: @str{hasNotice says @(it.has_notice) for a notice of @(it.notice.length())}
+  #|      (it.has_notice == (it.notice.length() > 0))
+  #|
+  #|    invariant can_replay_needs_a_trace:
+  #|      ~format: "the replay controls are live without a trace behind them"
+  #|      (it.can_replay implies it.has_trace)
+  #|
+  #|    invariant replaying_needs_a_replay:
+  #|      ~format: "a rerun is playing that was never mounted"
+  #|      (it.replaying implies it.can_replay)
+  #|
+  #|    invariant at_within_total:
+  #|      ~format: @str{parked at @(it.at) of @(it.total)}
+  #|      (it.at <= it.total)
+  #|
+  #|    invariant show_trace_needs_a_trace:
+  #|      ~format: "the trace pane is showing without a trace behind it"
+  #|      (it.show_trace implies it.has_trace)
+  #|
+  #|    invariant show_replay_needs_a_trace:
+  #|      ~format: "the replay pane is showing without a trace behind it"
+  #|      (it.show_replay implies it.has_trace)
+  #|
+  #|    message set_tab(String)
+  #|
+  #|    message set_at(Int)
+  #|
+  #|    message toggle_selecting
+  #|
+  #|    message export_trace
+  #|
+  #|    message import_draft
+  #|
+  #|    message cut_to_place
+  #|
+  #|    message replay_step
+  #|
+  #|    message replay_run
+  #|
+  #|    message replay_reset
+  #|
+  #|    where it.tab is_one_of ["record", "trace", "pick", "replay"]
+  #|
+  #|    where it.at >= 0
+  #|
+  #|    where it.total >= 0
 
 ///|
 /// The compiled `main` view.
@@ -782,6 +844,7 @@ fn trace_header_main_view_ir() -> @anode.View {
             ),
           ],
         ),
+        @anode.text("\n"),
         @anode.h(
           "div",
           [@anode.attr("class", "flex gap-3 text-xs opacity-60 tabular-nums")],

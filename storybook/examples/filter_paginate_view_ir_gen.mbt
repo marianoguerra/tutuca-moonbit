@@ -26,24 +26,26 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let person_spec_source : String =
-  #|state Person {
-  #|  name: String
-  #|  email: String
-  #|  active: Bool
-  #|}
-  #|state NaivePeople {
-  #|  items: Array[Instance[Person]]
-  #|  query: String
-  #|  page: Int
-  #|  page_size: Int
-  #|  where page_size between 1 and 100
-  #|  where page >= 0
-  #|}
-  #|state Strategies {
-  #|  naive: Instance[NaivePeople]
-  #|  shared: Instance[SharedPeople]
-  #|  coupled: Instance[CoupledPeople]
-  #|}
+  #|spec:
+  #|  Person:
+  #|    field name :: String
+  #|    field email :: String
+  #|    field active :: Bool
+  #|
+  #|  NaivePeople:
+  #|    field items :: List.of(Instance.of(Person))
+  #|    field query :: String
+  #|    field page :: Int
+  #|    field page_size :: Int
+  #|
+  #|    where it.page_size in_range(1, 100)
+  #|
+  #|    where it.page >= 0
+  #|
+  #|  Strategies:
+  #|    field naive :: Instance.of(NaivePeople)
+  #|    field shared :: Instance.of(SharedPeople)
+  #|    field coupled :: Instance.of(CoupledPeople)
 
 ///|
 /// The compiled `main` view.
@@ -186,20 +188,25 @@ fn strategies_main_view_ir() -> @anode.View {
         @anode.h("h3", [@anode.attr("class", "font-bold")], [
           @anode.text("1. Naive — two independent scans"),
         ]),
+        @anode.text("\n"),
         @anode.render(0, @tutuca.Expr::field("naive")),
       ]),
+      @anode.text("\n"),
       @anode.h("div", [@anode.attr("class", "flex flex-col gap-1")], [
         @anode.h("h3", [@anode.attr("class", "font-bold")], [
           @anode.text("2. Shared — one count + one partial collect"),
         ]),
+        @anode.text("\n"),
         @anode.render(1, @tutuca.Expr::field("shared")),
       ]),
+      @anode.text("\n"),
       @anode.h("div", [@anode.attr("class", "flex flex-col gap-1")], [
         @anode.h("h3", [@anode.attr("class", "font-bold")], [
           @anode.text(
             "3. Coupled — one scan; loop-with forwards the enrich's keys",
           ),
         ]),
+        @anode.text("\n"),
         @anode.render(2, @tutuca.Expr::field("coupled")),
       ]),
     ]),
@@ -259,13 +266,13 @@ fn naive_people_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.scope(
-      4,
+      0,
       @tutuca.Expr::name("pager_info"),
       @anode.h(
         "section",
         [
           @anode.attr("class", "flex flex-col gap-3"),
-          @anode.attr_num("data-nid", 4.0),
+          @anode.attr_num("data-nid", 0.0),
         ],
         [
           @anode.h(
@@ -282,7 +289,7 @@ fn naive_people_main_view_ir() -> @anode.View {
           @anode.text(" "),
           @anode.h("ul", [@anode.attr("class", "flex flex-col gap-2")], [
             @anode.each(
-              2,
+              3,
               @tutuca.Expr::field("items"),
               @anode.h(
                 "li",
@@ -291,10 +298,10 @@ fn naive_people_main_view_ir() -> @anode.View {
                   @anode.h(
                     "span",
                     [@anode.attr("class", "badge badge-neutral")],
-                    [@anode.dyn_text(@tutuca.Expr::bind("key"), id=0)],
+                    [@anode.dyn_text(@tutuca.Expr::bind("key"), id=1)],
                   ),
                   @anode.text(" "),
-                  @anode.render_it(1),
+                  @anode.render_it(2),
                   @anode.text(" "),
                   @anode.h(
                     "button",
@@ -326,7 +333,7 @@ fn naive_people_main_view_ir() -> @anode.View {
             @anode.h(
               "button",
               [@anode.attr("class", "btn join-item btn-disabled pglabel")],
-              [@anode.dyn_text(@tutuca.Expr::bind("page_label"), id=3)],
+              [@anode.dyn_text(@tutuca.Expr::bind("page_label"), id=4)],
             ),
             @anode.text(" "),
             @anode.h(
@@ -458,13 +465,13 @@ fn shared_people_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.scope(
-      4,
+      0,
       @tutuca.Expr::name("pager_info"),
       @anode.h(
         "section",
         [
           @anode.attr("class", "flex flex-col gap-3"),
-          @anode.attr_num("data-nid", 4.0),
+          @anode.attr_num("data-nid", 0.0),
         ],
         [
           @anode.h(
@@ -481,7 +488,7 @@ fn shared_people_main_view_ir() -> @anode.View {
           @anode.text(" "),
           @anode.h("ul", [@anode.attr("class", "flex flex-col gap-2")], [
             @anode.each(
-              2,
+              3,
               @tutuca.Expr::field("items"),
               @anode.h(
                 "li",
@@ -490,10 +497,10 @@ fn shared_people_main_view_ir() -> @anode.View {
                   @anode.h(
                     "span",
                     [@anode.attr("class", "badge badge-neutral")],
-                    [@anode.dyn_text(@tutuca.Expr::bind("key"), id=0)],
+                    [@anode.dyn_text(@tutuca.Expr::bind("key"), id=1)],
                   ),
                   @anode.text(" "),
-                  @anode.render_it(1),
+                  @anode.render_it(2),
                   @anode.text(" "),
                   @anode.h(
                     "button",
@@ -525,7 +532,7 @@ fn shared_people_main_view_ir() -> @anode.View {
             @anode.h(
               "button",
               [@anode.attr("class", "btn join-item btn-disabled pglabel")],
-              [@anode.dyn_text(@tutuca.Expr::bind("page_label"), id=3)],
+              [@anode.dyn_text(@tutuca.Expr::bind("page_label"), id=4)],
             ),
             @anode.text(" "),
             @anode.h(
@@ -575,13 +582,13 @@ fn coupled_people_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.scope(
-      4,
+      0,
       @tutuca.Expr::name("pager_info"),
       @anode.h(
         "section",
         [
           @anode.attr("class", "flex flex-col gap-3"),
-          @anode.attr_num("data-nid", 4.0),
+          @anode.attr_num("data-nid", 0.0),
         ],
         [
           @anode.h(
@@ -598,7 +605,7 @@ fn coupled_people_main_view_ir() -> @anode.View {
           @anode.text(" "),
           @anode.h("ul", [@anode.attr("class", "flex flex-col gap-2")], [
             @anode.each(
-              2,
+              3,
               @tutuca.Expr::field("items"),
               @anode.h(
                 "li",
@@ -607,10 +614,10 @@ fn coupled_people_main_view_ir() -> @anode.View {
                   @anode.h(
                     "span",
                     [@anode.attr("class", "badge badge-neutral")],
-                    [@anode.dyn_text(@tutuca.Expr::bind("key"), id=0)],
+                    [@anode.dyn_text(@tutuca.Expr::bind("key"), id=1)],
                   ),
                   @anode.text(" "),
-                  @anode.render_it(1),
+                  @anode.render_it(2),
                   @anode.text(" "),
                   @anode.h(
                     "button",
@@ -641,7 +648,7 @@ fn coupled_people_main_view_ir() -> @anode.View {
             @anode.h(
               "button",
               [@anode.attr("class", "btn join-item btn-disabled pglabel")],
-              [@anode.dyn_text(@tutuca.Expr::bind("page_label"), id=3)],
+              [@anode.dyn_text(@tutuca.Expr::bind("page_label"), id=4)],
             ),
             @anode.text(" "),
             @anode.h(

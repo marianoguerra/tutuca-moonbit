@@ -308,13 +308,13 @@ test "a call site that disagrees with the schema is a build error" {
     merge_err(
       "handle Chat { message { bump(Int) } }", "<button @on.click=\"bump 1 2\">+</button>",
     ),
-    "`bump` is declared in the state block as `bump(Int)` and called from @on.click as `bump(a number, a number)` — the schema declares what a message carries, so the call sites have to match it",
+    "`bump` is declared in the `spec:` section as `bump(Int)` and called from ~on_click as `bump(a number, a number)` — the schema declares what a message carries, so the call sites have to match it",
   )
   assert_eq(
     merge_err(
       "handle Chat { message { bump(Int) } }", "<button @on.click=\"bump 'x'\">+</button>",
     ),
-    "`bump` is declared in the state block as `bump(Int)` and called from @on.click as `bump(text)` — the schema declares what a message carries, so the call sites have to match it",
+    "`bump` is declared in the `spec:` section as `bump(Int)` and called from ~on_click as `bump(text)` — the schema declares what a message carries, so the call sites have to match it",
   )
   // Agreeing is silent, and so is a call site the inference could not read:
   // unknown is not wrong, which is the rule the whole generator turns on.

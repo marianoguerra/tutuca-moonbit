@@ -21,26 +21,24 @@ priv struct TillState {
 /// The block this component was DECLARED in, as `gen` would carry it.
 ///
 /// A hand-written component passes `spec~` itself; a generated one gets it
-/// from the const `emit_spec_source` writes. Either way it is the same string
-/// and the same `parse_state` reads it, which is what makes this fixture a
-/// fair stand-in for a real component.
+/// from the const `emit_spec_source` writes. Either way it is the same `.tutu`
+/// fragment and the same `read_spec` reads it, which is what makes this fixture
+/// a fair stand-in for a real component.
 const TILL_SPEC : String =
-  #|state Till {
-  #|  till  : Int
-  #|  float_ : Int
+  #|spec:
+  #|  Till:
+  #|    field till :: Int
+  #|    field float_ :: Int
   #|
-  #|  pred canDraw
-  #|    format 'the drawer has nothing left to draw on' { .till > 0 }
+  #|    pred canDraw:
+  #|      ~format: @str{the drawer has nothing left to draw on}
+  #|      it.till > 0
   #|
-  #|  invariant floatCovered
-  #|    format 'the float is larger than the drawer holding it' { .float_ <= .till }
-  #|}
+  #|    invariant floatCovered:
+  #|      ~format: @str{the float is larger than the drawer holding it}
+  #|      it.float_ <= it.till
   #|
-  #|handle Till {
-  #|  message {
-  #|    draw(Int)
-  #|  }
-  #|}
+  #|    message draw(Int)
 
 ///|
 /// The till, with its rules compiled in or left as names only.
@@ -193,15 +191,15 @@ test "a plan comes from the block, and a component without one has none" {
 /// possible at all here — without it the arm parses as `""`, matches nothing,
 /// and the whole corpus of bare-state components (counter, dnd, file-picker,
 /// …) reports "declares no spec block" while declaring one.
-test "a bare state block belongs to the component that carries it" {
+test "a spec fragment's component is the one that carries it" {
   let comp = @component.Component::for_type(
     name="Tally",
     views=Map([]),
     schema=@component.SchemaInfo::new(name="Tally", fingerprint="tally"),
     spec=(
-      #|state {
-      #|  count : Int
-      #|}
+      #|spec:
+      #|  Tally:
+      #|    field count :: Int
     ),
   )
   guard @fuzz.Plan::of_component(comp) is Some(p) else {
@@ -478,12 +476,12 @@ priv struct AlbumState {
 
 ///|
 const ALBUM_SPEC : String =
-  #|state Album {
-  #|  photos : Array[String]
-  #|  cursor : Int
+  #|spec:
+  #|  Album:
+  #|    field photos :: List.of(String)
+  #|    field cursor :: Int
   #|
-  #|  where cursor is index of .photos
-  #|}
+  #|    where it.cursor is_index_of it.photos
 
 ///|
 impl @component.Fields for AlbumState with fn encode(s) {
@@ -647,7 +645,7 @@ test "every state a domain-carrying schema generates satisfies its domains" {
   // The generator's own claim, over `state_of` rather than over a run: a whole
   // state is drawn field by field in dependency order, so `cursor` is drawn
   // after `photos` and against the length it actually got.
-  let defs = @statedef.parse_state(ALBUM_SPEC, name="Album")
+  let defs = @statedef.read_spec(ALBUM_SPEC, name="Album")
   let def = defs[0]
   let domains = @info.domains_of(def)
   for seed in 0UL..<40UL {

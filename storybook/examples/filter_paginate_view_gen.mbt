@@ -10,7 +10,7 @@
 ///|
 /// The state of the Person component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct PersonState {
@@ -22,9 +22,9 @@ pub(all) struct PersonState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..PersonState::zero(), label: "Counter" }
 pub fn PersonState::zero() -> PersonState {
@@ -83,7 +83,7 @@ impl @component.Fields for PersonState with fn schema() {
 ///|
 /// The state of the Strategies component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct StrategiesState {
@@ -95,9 +95,9 @@ pub(all) struct StrategiesState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..StrategiesState::zero(), label: "Counter" }
 pub fn StrategiesState::zero() -> StrategiesState {
@@ -156,7 +156,7 @@ impl @component.Fields for StrategiesState with fn schema() {
 ///|
 /// The state of the NaivePeople component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct NaivePeopleState {
@@ -169,9 +169,9 @@ pub(all) struct NaivePeopleState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..NaivePeopleState::zero(), label: "Counter" }
 pub fn NaivePeopleState::zero() -> NaivePeopleState {
@@ -216,8 +216,9 @@ impl @component.Fields for NaivePeopleState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -372,8 +373,9 @@ pub let shared_people_global_style : String = ""
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -497,8 +499,9 @@ pub let coupled_people_global_style : String = ""
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.

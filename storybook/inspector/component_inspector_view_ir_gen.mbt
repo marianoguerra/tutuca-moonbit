@@ -26,47 +26,55 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let comp_name_spec_source : String =
-  #|state CompName {
-  #|  name: String
-  #|  where name is nonempty
-  #|}
-  #|state CompField {
-  #|  name: String
-  #|  type_name: String
-  #|  child: Instance
-  #|  where name is nonempty
-  #|  where type_name is nonempty
-  #|}
-  #|state CompView {
-  #|  name: String
-  #|  raw_view: String
-  #|  is_expanded: Bool
-  #|  where name is nonempty
-  #|}
-  #|state CompSection {
-  #|  items: Array[Instance]
-  #|  is_expanded: Bool
-  #|  items_per_page: Int
-  #|  current_page: Int
-  #|  label: String
-  #|  invariant page_exists
-  #|    format $'page {.current_page} is past the end of {(len .items)} items' { ((.current_page is 0) or ((.current_page * .items_per_page) < (len .items))) }
-  #|  where items_per_page between 1 and 500
-  #|  where current_page >= 0
-  #|}
-  #|state ComponentInspector {
-  #|  comp_name: String
-  #|  comp_id: Int
-  #|  sections: Array[Instance[CompSection]]
-  #|  where comp_id >= 0
-  #|  where comp_name is nonempty
-  #|}
-  #|handle ComponentInspector {
-  #|  intent {
-  #|    toggle_all_sections(Bool),
-  #|    toggle_all_views(Bool)
-  #|  }
-  #|}
+  #|spec:
+  #|  CompName:
+  #|    field name :: String
+  #|
+  #|    where it.name non_empty
+  #|
+  #|  CompField:
+  #|    field name :: String
+  #|    field type_name :: String
+  #|    field child :: Instance
+  #|
+  #|    where it.name non_empty
+  #|
+  #|    where it.type_name non_empty
+  #|
+  #|  CompView:
+  #|    field name :: String
+  #|    field raw_view :: String
+  #|    field is_expanded :: Bool
+  #|
+  #|    where it.name non_empty
+  #|
+  #|  CompSection:
+  #|    field items :: List.of(Instance)
+  #|    field is_expanded :: Bool
+  #|    field items_per_page :: Int
+  #|    field current_page :: Int
+  #|    field label :: String
+  #|
+  #|    invariant page_exists:
+  #|      ~format: @str{page @(it.current_page) is past the end of @(it.items.length()) items}
+  #|      ((it.current_page == 0) || ((it.current_page * it.items_per_page) < it.items.length()))
+  #|
+  #|    where it.items_per_page in_range(1, 500)
+  #|
+  #|    where it.current_page >= 0
+  #|
+  #|  ComponentInspector:
+  #|    field comp_name :: String
+  #|    field comp_id :: Int
+  #|    field sections :: List.of(Instance.of(CompSection))
+  #|
+  #|    intent toggle_all_sections(Bool)
+  #|
+  #|    intent toggle_all_views(Bool)
+  #|
+  #|    where it.comp_id >= 0
+  #|
+  #|    where it.comp_name non_empty
 
 ///|
 /// The compiled `main` view.

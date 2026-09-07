@@ -26,18 +26,19 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let dse_root_spec_source : String =
-  #|state DseEntry {
-  #|  name: String
-  #|}
-  #|state DseEditor {
-  #|  missing: Any
-  #|}
-  #|state DseRoot {
-  #|  items: Map[String, Instance[DseEntry]]
-  #|  selected_key: String
-  #|  editor: Instance[Editor]
-  #|  where selected_key is key of .items
-  #|}
+  #|spec:
+  #|  DseEntry:
+  #|    field name :: String
+  #|
+  #|  DseEditor:
+  #|    field missing :: Any
+  #|
+  #|  DseRoot:
+  #|    field items :: Map.of(String, Instance.of(DseEntry))
+  #|    field selected_key :: String
+  #|    field editor :: Instance.of(Editor)
+  #|
+  #|    where it.selected_key is_key_of it.items
 
 ///|
 /// The compiled `main` view.

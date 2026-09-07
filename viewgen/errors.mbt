@@ -9,6 +9,7 @@ pub fn GenError::message(self : GenError) -> String {
     File(e) => e.message()
     ViewParseIssue(view~, issue~) => "view \"\{view}\": \{issue}"
     EmptyView(name) => "view \"\{name}\" is empty"
+    ReadIssue(msg) => msg
     NameCollision(variant~, first~, second~) =>
       "\"\{first}\" and \"\{second}\" both become the variant \{variant} — rename one"
     BadComponentName(name) =>
@@ -29,7 +30,7 @@ pub fn GenError::message(self : GenError) -> String {
     InvalidPropertyAction(view~, reason~) =>
       "view \"\{view}\": property action \{reason}"
     PayloadDisagrees(name~, declared~, written~, sites~) =>
-      "`\{name}` is declared in the state block as `\{declared}` and called from \{sites} as `\{written}` — the schema declares what a message carries, so the call sites have to match it"
+      "`\{name}` is declared in the `spec:` section as `\{declared}` and called from \{sites} as `\{written}` — the schema declares what a message carries, so the call sites have to match it"
     IdInLoop(view~, id~) =>
       "view \"\{view}\": `id=\"\{id}\"` sits inside an `@each`, so the loop stamps it on every item — use a class, or build the id per item with `:id=\"$'\{id}-{@key}'\"`"
     AlwaysTruthy(view~, directive~, expr~, ty~) =>
@@ -59,6 +60,7 @@ pub fn GenError::code(self : GenError) -> String {
     File(_) => "FILE"
     ViewParseIssue(..) => "VIEW_PARSE"
     EmptyView(_) => "EMPTY_VIEW"
+    ReadIssue(_) => "READ"
     NameCollision(..) => "NAME_COLLISION"
     BadComponentName(_) => "BAD_COMPONENT_NAME"
     NoViewsToCompile => "NO_VIEWS"

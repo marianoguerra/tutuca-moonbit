@@ -26,24 +26,27 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let request_example_spec_source : String =
-  #|state RequestExample {
-  #|  items: Array[Instance[Entry]]
-  #|  query: String
-  #|  view: String
-  #|  is_loading: Bool
-  #|  error: String?
-  #|  invariant not_failed_while_loading
-  #|    format 'the spinner is up and an error is already showing' { (.is_loading implies (null? .error)) }
-  #|  where view is one of ["main", "edit"]
-  #|}
-  #|handle RequestExample {
-  #|  message {
-  #|    init,
-  #|    load_data_ok(Any),
-  #|    load_data_failed(String),
-  #|    load_data_unhandled
-  #|  }
-  #|}
+  #|spec:
+  #|  RequestExample:
+  #|    field items :: List.of(Instance.of(Entry))
+  #|    field query :: String
+  #|    field view :: String
+  #|    field is_loading :: Bool
+  #|    field error :: maybe(String)
+  #|
+  #|    invariant not_failed_while_loading:
+  #|      ~format: "the spinner is up and an error is already showing"
+  #|      (it.is_loading implies (it.error == none))
+  #|
+  #|    message init
+  #|
+  #|    message load_data_ok(Any)
+  #|
+  #|    message load_data_failed(String)
+  #|
+  #|    message load_data_unhandled
+  #|
+  #|    where it.view is_one_of ["main", "edit"]
 
 ///|
 /// The compiled `main` view.

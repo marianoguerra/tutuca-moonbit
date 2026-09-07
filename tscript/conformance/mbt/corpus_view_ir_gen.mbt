@@ -26,53 +26,77 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let corpus_spec_source : String =
-  #|state Corpus {
-  #|  name: String
-  #|  count: Int
-  #|  ratio: Double
-  #|  ok: Bool
-  #|  items: Array[String]
-  #|  labels: Array[Label]
-  #|  tags: Set[String]
-  #|  page: Int
-  #|  note: String?
-  #|}
-  #|handle Corpus {
-  #|  message {
-  #|    case0,
-  #|    case1,
-  #|    case2(Int),
-  #|    case3(String),
-  #|    case4(Int),
-  #|    case5(String),
-  #|    case6(String),
-  #|    case7(String),
-  #|    case8(String),
-  #|    case9(String),
-  #|    case10,
-  #|    case11,
-  #|    case12(Int),
-  #|    case13,
-  #|    case14,
-  #|    case15,
-  #|    case16,
-  #|    case17,
-  #|    case26(Int),
-  #|    case27(String),
-  #|    case28(String)
-  #|  }
-  #|  intent {
-  #|    case18(String),
-  #|    case19(String),
-  #|    case20(Int),
-  #|    case21(Int),
-  #|    case22(String),
-  #|    case23(String),
-  #|    case24(String),
-  #|    case25(String)
-  #|  }
-  #|}
-  #|struct Label { text: String, done: Bool }
+  #|spec:
+  #|  Corpus:
+  #|    field name :: String
+  #|    field count :: Int
+  #|    field ratio :: Double
+  #|    field ok :: Bool
+  #|    field items :: List.of(String)
+  #|    field labels :: List.of(Label)
+  #|    field tags :: Set.of(String)
+  #|    field page :: Int
+  #|    field note :: maybe(String)
+  #|
+  #|    message case0
+  #|
+  #|    message case1
+  #|
+  #|    message case2(Int)
+  #|
+  #|    message case3(String)
+  #|
+  #|    message case4(Int)
+  #|
+  #|    message case5(String)
+  #|
+  #|    message case6(String)
+  #|
+  #|    message case7(String)
+  #|
+  #|    message case8(String)
+  #|
+  #|    message case9(String)
+  #|
+  #|    message case10
+  #|
+  #|    message case11
+  #|
+  #|    message case12(Int)
+  #|
+  #|    message case13
+  #|
+  #|    message case14
+  #|
+  #|    message case15
+  #|
+  #|    message case16
+  #|
+  #|    message case17
+  #|
+  #|    message case26(Int)
+  #|
+  #|    message case27(String)
+  #|
+  #|    message case28(String)
+  #|
+  #|    intent case18(String)
+  #|
+  #|    intent case19(String)
+  #|
+  #|    intent case20(Int)
+  #|
+  #|    intent case21(Int)
+  #|
+  #|    intent case22(String)
+  #|
+  #|    intent case23(String)
+  #|
+  #|    intent case24(String)
+  #|
+  #|    intent case25(String)
+  #|
+  #|  struct Label(text :: String, done :: Bool)
 
 ///|
 /// The compiled `main` view.

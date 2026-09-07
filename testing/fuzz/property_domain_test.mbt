@@ -20,11 +20,13 @@ fn plan_of(spec : String, source : @fuzz.Source) -> @fuzz.Plan {
 test "a property backed by a domained field draws inside the domain" {
   let plan = plan_of(
     (
-      #|state Widget {
-      #|  view : String
-      #|  where view is one of ["main", "format"]
-      #|  property { pub reading : String { get .view set .view } }
-      #|}
+      #|spec:
+      #|  Widget:
+      #|    field view :: String
+      #|    where it.view is_one_of ["main", "format"]
+      #|    property reading :: String ~public:
+      #|      get: it.view
+      #|      set: it.view
     ),
     Properties,
   )
@@ -52,11 +54,11 @@ test "a property with a script body still draws its type" {
   // the honest answer.
   let plan = plan_of(
     (
-      #|state Widget {
-      #|  view : String
-      #|  where view is one of ["main", "format"]
-      #|  property { pub reading : String { get set } }
-      #|}
+      #|spec:
+      #|  Widget:
+      #|    field view :: String
+      #|    where it.view is_one_of ["main", "format"]
+      #|    property reading :: String ~public ~writable
     ),
     Properties,
   )

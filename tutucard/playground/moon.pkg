@@ -36,17 +36,13 @@ import {
   // steps run on the REAL DOM through the same harness a scene uses on the
   // in-memory one, which is what keeps "click the third row" one thing.
   "marianoguerra/tutuca/testing/harness",
-  "marianoguerra/tutuca/viewfile",
-  // A `.tutu` card is lowered before the splitter reads it, the same seam
-  // `@tgc.compile` reaches.
-  "marianoguerra/tutuca/tutufile/lower",
-  "marianoguerra/error-report" @report,
   // What the compiled card is mounted AS: an ordinary loaded module. The
   // `&Guest` over the instantiated module is `tutucard/guest`, which the
   // composition demo loads several cards through at once, and `policy` is what
   // this page will accept from one.
   "marianoguerra/tutuca/tutucard/guest",
   "marianoguerra/tutuca/tgc/host",
+  "marianoguerra/tutuca/viewgen",
   "marianoguerra/tutuca/tgc/policy",
   "moonbitlang/core/encoding/base64",
   "marianoguerra/tutuca/app/browser" @glue,

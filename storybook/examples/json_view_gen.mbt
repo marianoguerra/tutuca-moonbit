@@ -10,7 +10,7 @@
 ///|
 /// The state of the JsonSelector component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct JsonSelectorState {} derive(Default)
@@ -18,9 +18,9 @@ pub(all) struct JsonSelectorState {} derive(Default)
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..JsonSelectorState::zero(), label: "Counter" }
 pub fn JsonSelectorState::zero() -> JsonSelectorState {
@@ -48,8 +48,9 @@ impl @component.Fields for JsonSelectorState with fn decode(_f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -165,7 +166,7 @@ impl @component.Fields for JsonSelectorState with fn schema() {
 ///|
 /// The state of the JsonNull component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct JsonNullState {} derive(Default)
@@ -173,9 +174,9 @@ pub(all) struct JsonNullState {} derive(Default)
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..JsonNullState::zero(), label: "Counter" }
 pub fn JsonNullState::zero() -> JsonNullState {
@@ -224,7 +225,7 @@ impl @component.Fields for JsonNullState with fn schema() {
 ///|
 /// The state of the JsonBool component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct JsonBoolState {
@@ -234,9 +235,9 @@ pub(all) struct JsonBoolState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..JsonBoolState::zero(), label: "Counter" }
 pub fn JsonBoolState::zero() -> JsonBoolState {
@@ -289,7 +290,7 @@ impl @component.Fields for JsonBoolState with fn schema() {
 ///|
 /// The state of the JsonString component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct JsonStringState {
@@ -299,9 +300,9 @@ pub(all) struct JsonStringState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..JsonStringState::zero(), label: "Counter" }
 pub fn JsonStringState::zero() -> JsonStringState {
@@ -354,7 +355,7 @@ impl @component.Fields for JsonStringState with fn schema() {
 ///|
 /// The state of the JsonNumber component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct JsonNumberState {
@@ -365,9 +366,9 @@ pub(all) struct JsonNumberState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..JsonNumberState::zero(), label: "Counter" }
 pub fn JsonNumberState::zero() -> JsonNumberState {
@@ -397,8 +398,9 @@ impl @component.Fields for JsonNumberState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -490,7 +492,7 @@ impl @component.Fields for JsonNumberState with fn schema() {
 ///|
 /// The state of the JsonArray component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct JsonArrayState {
@@ -500,9 +502,9 @@ pub(all) struct JsonArrayState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..JsonArrayState::zero(), label: "Counter" }
 pub fn JsonArrayState::zero() -> JsonArrayState {
@@ -537,8 +539,9 @@ impl @component.Fields for JsonArrayState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -631,7 +634,7 @@ impl @component.Fields for JsonArrayState with fn schema() {
 ///|
 /// The state of the JsonObjectKeyVal component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct JsonObjectKeyValState {
@@ -642,9 +645,9 @@ pub(all) struct JsonObjectKeyValState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..JsonObjectKeyValState::zero(), label: "Counter" }
 pub fn JsonObjectKeyValState::zero() -> JsonObjectKeyValState {
@@ -701,7 +704,7 @@ impl @component.Fields for JsonObjectKeyValState with fn schema() {
 ///|
 /// The state of the JsonObject component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct JsonObjectState {
@@ -711,9 +714,9 @@ pub(all) struct JsonObjectState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..JsonObjectState::zero(), label: "Counter" }
 pub fn JsonObjectState::zero() -> JsonObjectState {
@@ -748,8 +751,9 @@ impl @component.Fields for JsonObjectState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.

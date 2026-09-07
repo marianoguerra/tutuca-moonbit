@@ -17,7 +17,7 @@ pub(all) struct CorpusLabel {
 ///|
 /// The state of the Corpus component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct CorpusState {
@@ -35,9 +35,9 @@ pub(all) struct CorpusState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..CorpusState::zero(), label: "Counter" }
 pub fn CorpusState::zero() -> CorpusState {
@@ -156,8 +156,9 @@ impl @component.Fields for CorpusState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -309,7 +310,7 @@ pub fn CorpusMsg::send(self : CorpusMsg, ctx : &@tutuca.Ctx) -> Unit {
 ///|
 /// The Intent arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant intent` in the state block. These names are
+/// Declared with `intent` in the `spec:` section. These names are
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum CorpusIntent {

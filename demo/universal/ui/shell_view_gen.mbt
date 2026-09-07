@@ -10,7 +10,7 @@
 ///|
 /// One row of the palette.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct PickerRowState {
@@ -31,9 +31,9 @@ pub(all) struct PickerRowState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..PickerRowState::zero(), label: "Counter" }
 pub fn PickerRowState::zero() -> PickerRowState {
@@ -88,8 +88,9 @@ impl @component.Fields for PickerRowState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -195,9 +196,13 @@ impl @component.Fields for PickerRowState with fn schema() {
 }
 
 ///|
-/// The state of the ComponentPicker component.
+/// The list a `+` opens: search as you type, over everything registered.
+/// 
+/// It knows nothing about the catalog. It reports what was typed and gets
+/// rows back, which is what lets the same list rank the kit's own components
+/// and a card compiled ten seconds ago without knowing there is a difference.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct ComponentPickerState {
@@ -211,9 +216,9 @@ pub(all) struct ComponentPickerState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..ComponentPickerState::zero(), label: "Counter" }
 pub fn ComponentPickerState::zero() -> ComponentPickerState {
@@ -267,8 +272,9 @@ impl @component.Fields for ComponentPickerState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -428,9 +434,9 @@ impl @component.Fields for ComponentPickerState with fn schema() {
 }
 
 ///|
-/// The state of the CardRow component.
+/// One card in the library, offered rather than loaded.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct CardRowState {
@@ -445,9 +451,9 @@ pub(all) struct CardRowState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..CardRowState::zero(), label: "Counter" }
 pub fn CardRowState::zero() -> CardRowState {
@@ -492,8 +498,9 @@ impl @component.Fields for CardRowState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -605,9 +612,10 @@ impl @component.Fields for CardRowState with fn schema() {
 }
 
 ///|
-/// The state of the Note component.
+/// Something the page has to say. Diagnostics, refusals, and the notices the
+/// renderer raises when a component has no view for a role it was asked for.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct NoteState {
@@ -618,9 +626,9 @@ pub(all) struct NoteState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..NoteState::zero(), label: "Counter" }
 pub fn NoteState::zero() -> NoteState {
@@ -675,9 +683,9 @@ impl @component.Fields for NoteState with fn schema() {
 }
 
 ///|
-/// The state of the Shell component.
+/// The page.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct ShellState {
@@ -710,9 +718,9 @@ pub(all) struct ShellState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..ShellState::zero(), label: "Counter" }
 pub fn ShellState::zero() -> ShellState {
@@ -791,8 +799,9 @@ impl @component.Fields for ShellState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.

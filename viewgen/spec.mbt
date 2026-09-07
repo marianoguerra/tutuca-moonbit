@@ -29,7 +29,7 @@ pub(all) enum ArgType {
 pub(all) struct InputSig {
   name : String
   args : Array[ArgType]?
-  /// "@on.click" call sites, in document order — used for the doc comment.
+  /// `~on_click` call sites, in document order — used for the doc comment.
   sites : Array[String]
 } derive(Eq, @debug.Debug)
 
@@ -88,6 +88,11 @@ pub suberror GenError {
   ViewParseIssue(view~ : String, issue~ : String)
   /// A view is empty, so it has no root node to compile.
   EmptyView(String)
+  /// A `.tutu` does not read: the notation is wrong, or a section says
+  /// something the shape it means cannot hold. The reader's own message,
+  /// because it names the construct and the repair and this layer would only
+  /// be restating it.
+  ReadIssue(String)
   /// Two source names capitalize to the same MoonBit variant.
   NameCollision(variant~ : String, first~ : String, second~ : String)
   /// `--name` is not usable as a MoonBit type prefix.

@@ -2,14 +2,13 @@
 // backend this one replaced, each pinned here so it stays fixed.
 
 ///|
-fn card(
-  spec : String,
-  script : String,
-  template? : String = "<div></div>",
-) -> String {
-  "<script type=\"tutuca/spec\">\{spec}</script>" +
-  "<script type=\"tutuca/script\" for=\"B\">\{script}</script>" +
-  "<template id=\"B:main\" data-root>\{template}</template>"
+/// A one-component card: `spec` is the section's body, `script` is `B`'s
+/// `logic:` body, and `view` is `B`'s only view.
+///
+/// Both bodies arrive already indented for the section they go in, because
+/// re-indenting them here would mean a helper that reads shrubbery to write it.
+fn card(spec : String, script : String, view? : String = "@div{}") -> String {
+  "spec:\n\{spec}\nlogic:\n  B:\n\{script}\nview:\n  B:\n    \{view}\n"
 }
 
 ///|
@@ -22,20 +21,25 @@ fn card(
 /// is exactly what the `as Bus` alias exists to avoid.
 test "a named message slot takes a bare or qualified protocol name" {
   let spec =
-    #|state B { n: Double }
-    #|import protocol "example/Bus@1" as Bus
-    #|express B {
-    #|  message { flash, Bus::notify }
-    #|  intent { persist }
-    #|}
+    #|  protocol Bus = "example/Bus@1":
+    #|    message notify(Any)
+    #|
+    #|  B ~root:
+    #|    field n :: Double
+    #|    express message flash
+    #|    express message Bus::notify
+    #|    express intent persist
   let probes = [
-    ("send Bus::notify 'x'", "example/Bus@1::notify"),
-    ("send flash", "flash"),
-    ("ask persist", "persist"),
+    ("send(Bus::notify, \"x\")", "example/Bus@1::notify"),
+    ("send(flash)", "flash"),
+    ("ask(persist)", "persist"),
   ]
   for probe in probes {
     let (body, wire) = probe
-    let out = @emit.compile(card(spec, "receive x { \{body} }"), name="b")
+    let out = @emit.compile(
+      card(spec, "    receive x:\n      \{body}"),
+      name="b",
+    )
     assert_eq(out.refusals, [])
     // The WIRE name, resolved as `tscript/check` resolves it — not the local
     // spelling, which the host has never heard of.
@@ -48,7 +52,7 @@ test "a named message slot takes a bare or qualified protocol name" {
 /// first argument is a value and must keep being read as one.
 test "a bare ask still takes a value in the slot a name would use" {
   let out = @emit.compile(
-    card("state B { n: Double }", "receive x { ask .n }"),
+    card("  B ~root:\n    field n :: Double", "    receive x:\n      ask(it.n)"),
     name="b",
   )
   assert_eq(out.refusals, [])
@@ -64,7 +68,7 @@ test "a bare ask still takes a value in the slot a name would use" {
 /// `check_card` is the loop an author runs before paying for a compile.
 test "check_card reports a view that names a field the spec does not declare" {
   let c = @emit.check_card(
-    card("state B { n: Double }", "", template="<div @text=\".nope\"></div>"),
+    card("  B ~root:\n    field n :: Double", "", view="@div{@(it.nope)}"),
     name="b",
   )
   let codes = c.issues.map(i => i.code)
@@ -79,9 +83,9 @@ test "check_card reports a view that names a field the spec does not declare" {
 /// it is said and the card still compiles.
 test "an unanswered view handler is reported, and does not stop the compile" {
   let src = card(
-    "state B { n: Double }",
-    "receive bump { .n += 1.0 }",
-    template="<button @on.click=\"noSuchThing\">x</button>",
+    "  B ~root:\n    field n :: Double",
+    "    receive bump:\n      it.n += 1.0",
+    view="@button(~on_click: noSuchThing){x}",
   )
   let c = @emit.check_card(src, name="b")
   let warned = c.issues.filter(i => i.code == "NO_VIEW_HANDLER")
@@ -99,24 +103,23 @@ test "an unanswered view handler is reported, and does not stop the compile" {
 /// that only had the id would match and then find nothing to match against.
 test "a card's manifest carries its protocol definitions and bindings" {
   let spec =
-    #|protocol Lifecycle = "tutuca.dev/std/Lifecycle@1" {
-    #|  handle { message { init } }
-    #|  express { message { didInit } }
-    #|  property { active: Bool }
-    #|  view { display }
-    #|}
-    #|state B implements Lifecycle {
-    #|  active: Bool
-    #|  property {
-    #|    active: Bool { get .active }
-    #|    Lifecycle::active = active
-    #|  }
-    #|  view { Lifecycle::display = main }
-    #|}
-    #|handle B { message { Lifecycle::init } }
-    #|express B { message { Lifecycle::didInit } }
+    #|  protocol Lifecycle = "tutuca.dev/std/Lifecycle@1":
+    #|    message init
+    #|    express message didInit
+    #|    property active :: Bool
+    #|    view display
+    #|
+    #|  B ~root:
+    #|    field active :: Bool
+    #|    implements Lifecycle
+    #|    property active :: Bool ~public:
+    #|      get: it.active
+    #|    property Lifecycle::active = active
+    #|    view Lifecycle::display = main
+    #|    message Lifecycle::init
+    #|    express message Lifecycle::didInit
   let out = @emit.compile(
-    card(spec, "receive Lifecycle::init { .active = true }"),
+    card(spec, "    receive Lifecycle::init:\n      it.active := true"),
     name="b",
   )
   guard out.manifest is Object(m) else { fail("no manifest") }
@@ -169,11 +172,15 @@ test "a card's manifest carries its protocol definitions and bindings" {
 /// for one operation and none of them `gen`'s.
 test "a protocol receive answers its wire name, not the file's alias" {
   let spec =
-    #|protocol Holder = "x/Holder@1" { handle { message { hold(Any) } } }
-    #|state B implements Holder { n: Double }
-    #|handle B { message { Holder::hold(Any) } }
+    #|  protocol Holder = "x/Holder@1":
+    #|    message hold(Any)
+    #|
+    #|  B ~root:
+    #|    field n :: Double
+    #|    implements Holder
+    #|    message Holder::hold(Any)
   let out = @emit.compile(
-    card(spec, "receive Holder::hold(x) { .n += 1.0 }"),
+    card(spec, "    receive Holder::hold(x):\n      it.n += 1.0"),
     name="b",
   )
   // The module matches on it…
@@ -200,15 +207,19 @@ test "a protocol receive answers its wire name, not the file's alias" {
 /// going. Pinned together, because the bug was only visible by comparing them.
 test "a card's inbound and outbound protocol names are both resolved" {
   let spec =
-    #|protocol Holder = "x/Holder@1" {
-    #|  handle { message { hold(Any) } }
-    #|  express { intent { addRequested(Bool) } }
-    #|}
-    #|state B implements Holder { n: Double }
-    #|handle B { message { Holder::hold(Any) } }
-    #|express B { intent { Holder::addRequested(Bool) } }
+    #|  protocol Holder = "x/Holder@1":
+    #|    message hold(Any)
+    #|    express intent addRequested(Bool)
+    #|
+    #|  B ~root:
+    #|    field n :: Double
+    #|    implements Holder
+    #|    message Holder::hold(Any)
+    #|    express intent Holder::addRequested(Bool)
   let out = @emit.compile(
-    card(spec, "receive Holder::hold(x) { ask Holder::addRequested true }"),
+    card(
+      spec, "    receive Holder::hold(x):\n      ask(Holder::addRequested, true)",
+    ),
     name="b",
   )
   guard out.manifest is Object(m) else { fail("no manifest") }
@@ -234,7 +245,9 @@ test "a card's inbound and outbound protocol names are both resolved" {
 /// that never heard of a protocol pays for the ones that did.
 test "an ordinary receive keeps its own name" {
   let out = @emit.compile(
-    card("state B { n: Double }", "receive bump { .n += 1.0 }"),
+    card(
+      "  B ~root:\n    field n :: Double", "    receive bump:\n      it.n += 1.0",
+    ),
     name="b",
   )
   assert_true(out.wap.contains("str_eq(name, \"bump\")"))
@@ -256,7 +269,7 @@ test "an ordinary receive keeps its own name" {
 /// The compiler sees both lists; the checker sees only what the author wrote.
 test "a spec-block rule is not reported as declared twice" {
   let src = card(
-    "state B { n: Double\n  pred positive { .n > 0.0 } }", "receive bump { .n += 1.0 }",
+    "  B ~root:\n    field n :: Double\n    pred positive: it.n > 0.0", "    receive bump:\n      it.n += 1.0",
   )
   let c = @emit.check_card(src, name="b")
   assert_false(c.issues.map(i => i.code).contains("RULE_IN_BOTH"))
@@ -271,7 +284,7 @@ test "a spec-block rule is not reported as declared twice" {
 test "a rule written twice is still reported" {
   let c = @emit.check_card(
     card(
-      "state B { n: Double\n  pred positive { .n > 0.0 } }", "pred positive { .n > 1.0 }\nreceive bump { .n += 1.0 }",
+      "  B ~root:\n    field n :: Double\n    pred positive: it.n > 0.0", "    pred positive:\n      it.n > 1.0\n    receive bump:\n      it.n += 1.0",
     ),
     name="b",
   )
@@ -285,13 +298,29 @@ test "a rule written twice is still reported" {
 /// every component answer for every other's view names, and the first attempt
 /// at this reported six `NO_VIEW_HANDLER` findings in a card that has none.
 test "one component's views are not another component's problem" {
-  let src = "<script type=\"tutuca/spec\">" +
-    "state Board { rows: Array[Row] }\nstate Row { label: String }" +
-    "</script>" +
-    "<script type=\"tutuca/script\" for=\"Board\">receive addRow { .rows.push 1 }</script>" +
-    "<script type=\"tutuca/script\" for=\"Row\">receive strike { .label = '' }</script>" +
-    "<template id=\"Board:main\" data-root><button @on.click=\"addRow\">+</button></template>" +
-    "<template id=\"Row:main\"><button @on.click=\"strike\">x</button></template>"
+  let src =
+    #|spec:
+    #|  Board ~root:
+    #|    field rows :: List.of(Row)
+    #|
+    #|  Row:
+    #|    field label :: String
+    #|
+    #|logic:
+    #|  Board:
+    #|    receive addRow:
+    #|      it.rows.push(1)
+    #|
+    #|  Row:
+    #|    receive strike:
+    #|      it.label := ""
+    #|
+    #|view:
+    #|  Board:
+    #|    @button(~on_click: addRow){+}
+    #|
+    #|  Row:
+    #|    @button(~on_click: strike){x}
   let c = @emit.check_card(src, name="b")
   // `Board` does not answer `strike` and must not be asked to.
   let unanswered = c.issues.filter(i => i.code == "NO_VIEW_HANDLER")
@@ -308,23 +337,33 @@ test "one component's views are not another component's problem" {
 test "check_card and compile agree about what is fatal" {
   let probes = [
     // clean
-    (card("state B { n: Double }", "receive bump { .n += 1.0 }"), true),
+    (
+      card(
+        "  B ~root:\n    field n :: Double", "    receive bump:\n      it.n += 1.0",
+      ),
+      true,
+    ),
     // warning only: a view name nothing answers
     (
       card(
-        "state B { n: Double }",
-        "receive bump { .n += 1.0 }",
-        template="<button @on.click=\"nobody\">x</button>",
+        "  B ~root:\n    field n :: Double",
+        "    receive bump:\n      it.n += 1.0",
+        view="@button(~on_click: nobody){x}",
       ),
       true,
     ),
     // error: a view naming a field that does not exist
     (
-      card("state B { n: Double }", "", template="<i @text=\".nope\"></i>"),
+      card("  B ~root:\n    field n :: Double", "", view="@i{@(it.nope)}"),
       false,
     ),
     // error: a handler writing a field that does not exist
-    (card("state B { n: Double }", "receive bump { .missing = 1.0 }"), false),
+    (
+      card(
+        "  B ~root:\n    field n :: Double", "    receive bump:\n      it.missing := 1.0",
+      ),
+      false,
+    ),
   ]
   for probe in probes {
     let (src, should_compile) = probe
@@ -353,12 +392,16 @@ test "check_card and compile agree about what is fatal" {
 /// only thing that ever noticed was a release changing what `receives` said.
 test "a card claiming a protocol it does not answer is reported" {
   let spec =
-    #|protocol Holder = "x/Holder@1" { handle { message { hold(Any) } } }
-    #|state B implements Holder { n: Double }
-    #|handle B { message { Holder::hold(Any) } }
-  // The spec declares the operation; the script answers a name of its own.
+    #|  protocol Holder = "x/Holder@1":
+    #|    message hold(Any)
+    #|
+    #|  B ~root:
+    #|    field n :: Double
+    #|    implements Holder
+    #|    message Holder::hold(Any)
+  // The spec declares the operation; the logic answers a name of its own.
   let c = @emit.check_card(
-    card(spec, "receive hold(x) { .n += 1.0 }"),
+    card(spec, "    receive hold(x):\n      it.n += 1.0"),
     name="b",
   )
   let found = c.issues.filter(i => i.code == "PROTOCOL_MEMBER_UNANSWERED")
@@ -370,7 +413,10 @@ test "a card claiming a protocol it does not answer is reported" {
   // …and it is fatal, so the card does not quietly compile into a component
   // the host will refuse.
   let compiled = try {
-    @emit.compile(card(spec, "receive hold(x) { .n += 1.0 }"), name="b")
+    @emit.compile(
+      card(spec, "    receive hold(x):\n      it.n += 1.0"),
+      name="b",
+    )
     |> ignore
     true
   } catch {
@@ -383,13 +429,17 @@ test "a card claiming a protocol it does not answer is reported" {
 /// …and the same card answering under the protocol's name is clean.
 test "a card that answers its protocol's operations checks clean" {
   let spec =
-    #|protocol Holder = "x/Holder@1" {
-    #|  handle { message { hold(Any) } intent { emptied } }
-    #|}
-    #|state B implements Holder { n: Double }
-    #|handle B { message { Holder::hold(Any) } intent { Holder::emptied } }
-  let script = "receive Holder::hold(x) { .n += 1.0 }\n" +
-    "answer Holder::emptied { reply 1 }"
+    #|  protocol Holder = "x/Holder@1":
+    #|    message hold(Any)
+    #|    intent emptied
+    #|
+    #|  B ~root:
+    #|    field n :: Double
+    #|    implements Holder
+    #|    message Holder::hold(Any)
+    #|    intent Holder::emptied
+  let script = "    receive Holder::hold(x):\n      it.n += 1.0\n" +
+    "    answer Holder::emptied:\n      reply(1)"
   let c = @emit.check_card(card(spec, script), name="b")
   assert_eq(c.issues.filter(i => i.severity == "error"), [])
   let out = @emit.compile(card(spec, script), name="b")
@@ -403,10 +453,17 @@ test "a card that answers its protocol's operations checks clean" {
 /// author to write `receive` for something only `answer` can declare.
 test "an unanswered protocol intent names `answer`, not `receive`" {
   let spec =
-    #|protocol Holder = "x/Holder@1" { handle { intent { emptied } } }
-    #|state B implements Holder { n: Double }
-    #|handle B { intent { Holder::emptied } }
-  let c = @emit.check_card(card(spec, "receive bump { .n += 1.0 }"), name="b")
+    #|  protocol Holder = "x/Holder@1":
+    #|    intent emptied
+    #|
+    #|  B ~root:
+    #|    field n :: Double
+    #|    implements Holder
+    #|    intent Holder::emptied
+  let c = @emit.check_card(
+    card(spec, "    receive bump:\n      it.n += 1.0"),
+    name="b",
+  )
   let found = c.issues.filter(i => i.code == "PROTOCOL_MEMBER_UNANSWERED")
   assert_eq(found.length(), 1)
   assert_true(found[0].message.contains("answer Holder::emptied"))
@@ -421,15 +478,21 @@ test "an unanswered protocol intent names `answer`, not `receive`" {
 /// every component in a card to every protocol any of them uses.
 test "a component that implements nothing is held to nothing" {
   let spec =
-    #|protocol Holder = "x/Holder@1" { handle { message { hold(Any) } } }
-    #|state A implements Holder { n: Double }
-    #|handle A { message { Holder::hold(Any) } }
-    #|state B { m: Double }
-  let src = "<script type=\"tutuca/spec\">\{spec}</script>" +
-    "<script type=\"tutuca/script\" for=\"A\">receive Holder::hold(x) { .n += 1.0 }</script>" +
-    "<script type=\"tutuca/script\" for=\"B\">receive bump { .m += 1.0 }</script>" +
-    "<template id=\"A:main\" data-root><div></div></template>" +
-    "<template id=\"B:main\"><div></div></template>"
+    #|  protocol Holder = "x/Holder@1":
+    #|    message hold(Any)
+    #|
+    #|  A ~root:
+    #|    field n :: Double
+    #|    implements Holder
+    #|    message Holder::hold(Any)
+    #|
+    #|  B:
+    #|    field m :: Double
+  let src = "spec:\n\{spec}\n" +
+    "logic:\n" +
+    "  A:\n    receive Holder::hold(x):\n      it.n += 1.0\n" +
+    "  B:\n    receive bump:\n      it.m += 1.0\n" +
+    "view:\n  A:\n    @div{}\n\n  B:\n    @div{}\n"
   let c = @emit.check_card(src, name="b")
   assert_eq(c.issues.filter(i => i.severity == "error"), [])
 }
@@ -448,10 +511,14 @@ test "a component that implements nothing is held to nothing" {
 /// was three test failures whose assertions were about something else entirely.
 test "a message named for a removed generated mutator is reported" {
   let spec =
-    #|state B { view: String, done: Bool }
-    #|handle B { message { set_view(String), toggle_done, realOne } }
+    #|  B ~root:
+    #|    field view :: String
+    #|    field done :: Bool
+    #|    message set_view(String)
+    #|    message toggle_done
+    #|    message realOne
   let c = @emit.check_card(
-    card(spec, "receive realOne { .done = true }"),
+    card(spec, "    receive realOne:\n      it.done := true"),
     name="b",
   )
   let stale = c.issues.filter(i => i.code == "STALE_MUTATOR_MESSAGE")
@@ -476,7 +543,7 @@ test "a message named for a removed generated mutator is reported" {
   // …and it compiles, because a warning is a thing to say and not a build to
   // stop.
   let out = @emit.compile(
-    card(spec, "receive realOne { .done = true }"),
+    card(spec, "    receive realOne:\n      it.done := true"),
     name="b",
   )
   assert_eq(out.component, "B")
@@ -490,10 +557,12 @@ test "a message named for a removed generated mutator is reported" {
 /// particular must not trip it.
 test "an ordinary declared message is not reported as a stale mutator" {
   let spec =
-    #|state B { view: String }
-    #|handle B { message { refresh, set_somethingElse(String) } }
+    #|  B ~root:
+    #|    field view :: String
+    #|    message refresh
+    #|    message set_somethingElse(String)
   let c = @emit.check_card(
-    card(spec, "receive refresh { .view = 'x' }"),
+    card(spec, "    receive refresh:\n      it.view := \"x\""),
     name="b",
   )
   assert_eq(c.issues.filter(i => i.code == "STALE_MUTATOR_MESSAGE"), [])
@@ -509,10 +578,14 @@ test "an ordinary declared message is not reported as a stale mutator" {
 /// that fires on correct code is a warning nobody reads.
 test "a mutator-named message the script answers is left alone" {
   let spec =
-    #|state B { mode: String, log: Array[String] }
-    #|handle B { message { set_mode(String) } }
+    #|  B ~root:
+    #|    field mode :: String
+    #|    field log :: List.of(String)
+    #|    message set_mode(String)
   let c = @emit.check_card(
-    card(spec, "receive set_mode(m) { .mode = m\n  .log.push m }"),
+    card(
+      spec, "    receive set_mode(m):\n      it.mode := m\n      it.log.push(m)",
+    ),
     name="b",
   )
   assert_eq(c.issues.filter(i => i.code == "STALE_MUTATOR_MESSAGE"), [])

@@ -10,7 +10,7 @@
 ///|
 /// The state of the CompName component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct CompNameState {
@@ -20,9 +20,9 @@ pub(all) struct CompNameState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..CompNameState::zero(), label: "Counter" }
 pub fn CompNameState::zero() -> CompNameState {
@@ -76,7 +76,7 @@ impl @component.Fields for CompNameState with fn schema() {
 ///|
 /// The state of the CompField component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct CompFieldState {
@@ -88,9 +88,9 @@ pub(all) struct CompFieldState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..CompFieldState::zero(), label: "Counter" }
 pub fn CompFieldState::zero() -> CompFieldState {
@@ -153,7 +153,7 @@ impl @component.Fields for CompFieldState with fn schema() {
 ///|
 /// The state of the CompView component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct CompViewState {
@@ -165,9 +165,9 @@ pub(all) struct CompViewState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..CompViewState::zero(), label: "Counter" }
 pub fn CompViewState::zero() -> CompViewState {
@@ -202,8 +202,9 @@ impl @component.Fields for CompViewState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -311,7 +312,7 @@ impl @component.Fields for CompViewState with fn schema() {
 ///|
 /// The state of the CompSection component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct CompSectionState {
@@ -325,9 +326,9 @@ pub(all) struct CompSectionState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..CompSectionState::zero(), label: "Counter" }
 pub fn CompSectionState::zero() -> CompSectionState {
@@ -388,8 +389,9 @@ impl @component.Fields for CompSectionState with fn decode(f) {
 ///|
 /// The Receive arm of @component.Dispatch, decoded.
 ///
-/// Every addressed name: the `message` variant the state block declares,
-/// plus every bare `@on` handler the views write. One bucket holds them
+/// Every addressed name: the `message` the `spec:` section declares,
+/// plus every bare `~on_<event>` handler the views write. One bucket holds
+/// them
 /// however they were sent, so one type covers it — where the two overlap
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
@@ -547,7 +549,7 @@ impl @component.Fields for CompSectionState with fn schema() {
 ///|
 /// The state of the ComponentInspector component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct ComponentInspectorState {
@@ -559,9 +561,9 @@ pub(all) struct ComponentInspectorState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..ComponentInspectorState::zero(), label: "Counter" }
 pub fn ComponentInspectorState::zero() -> ComponentInspectorState {
@@ -603,7 +605,7 @@ impl @component.Fields for ComponentInspectorState with fn decode(f) {
 ///|
 /// The Intent arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant intent` in the state block. These names are
+/// Declared with `intent` in the `spec:` section. These names are
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum ComponentInspectorIntent {

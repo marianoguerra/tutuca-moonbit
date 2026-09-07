@@ -26,56 +26,52 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let counter_spec_source : String =
-  #|state Counter {
-  #|  count: Int
-  #|}
-  #|state Profile {
-  #|  name: String
-  #|  waving: Bool
-  #|}
-  #|state Search {
-  #|  draft: String
-  #|  sent: String
-  #|}
-  #|state Toggle {
-  #|  on: Bool
-  #|  message: Any
-  #|}
-  #|state Fruits {
-  #|  items: Array[String]
-  #|}
-  #|state Greeting {
-  #|  name: String
-  #|}
-  #|state Page {
-  #|  greeting: Instance[Greeting]
-  #|}
-  #|state Status {
-  #|  message: String
-  #|}
-  #|handle Status {
-  #|  message {
-  #|    flash(String)
-  #|  }
-  #|}
-  #|state Chat {
-  #|  draft: String
-  #|  status: Instance[Status]
-  #|}
-  #|state Quotes {
-  #|  items: Array[String]
-  #|  is_loading: Bool
-  #|}
-  #|handle Quotes {
-  #|  message {
-  #|    init,
-  #|    load_quotes_ok(Array[Any]),
-  #|    load_quotes_error(String)
-  #|  }
-  #|}
-  #|state Features {
-  #|  status: String
-  #|}
+  #|spec:
+  #|  Counter:
+  #|    field count :: Int
+  #|
+  #|  Profile:
+  #|    field name :: String
+  #|    field waving :: Bool
+  #|
+  #|  Search:
+  #|    field draft :: String
+  #|    field sent :: String
+  #|
+  #|  Toggle:
+  #|    field on :: Bool
+  #|    field message :: Any
+  #|
+  #|  Fruits:
+  #|    field items :: List.of(String)
+  #|
+  #|  Greeting:
+  #|    field name :: String
+  #|
+  #|  Page:
+  #|    field greeting :: Instance.of(Greeting)
+  #|
+  #|  Status:
+  #|    field message :: String
+  #|
+  #|    message flash(String)
+  #|
+  #|  Chat:
+  #|    field draft :: String
+  #|    field status :: Instance.of(Status)
+  #|
+  #|  Quotes:
+  #|    field items :: List.of(String)
+  #|    field is_loading :: Bool
+  #|
+  #|    message init
+  #|
+  #|    message load_quotes_ok(List.of(Any))
+  #|
+  #|    message load_quotes_error(String)
+  #|
+  #|  Features:
+  #|    field status :: String
 
 ///|
 /// The compiled `main` view.
@@ -236,7 +232,11 @@ fn profile_main_view_ir() -> @anode.View {
           @anode.const_null(),
           action=@anode.set_property_action(
             "waving",
-            @tutuca.Expr::app("not", [@tutuca.Expr::field("waving")]),
+            EUnary(
+              op=UNot,
+              operand=@tutuca.Expr::field("waving"),
+              span=@tutuca.no_span,
+            ),
           ),
         ),
       ],
@@ -431,7 +431,11 @@ fn toggle_main_view_ir() -> @anode.View {
           @anode.const_null(),
           action=@anode.set_property_action(
             "on",
-            @tutuca.Expr::app("not", [@tutuca.Expr::field("on")]),
+            EUnary(
+              op=UNot,
+              operand=@tutuca.Expr::field("on"),
+              span=@tutuca.no_span,
+            ),
           ),
         ),
       ],

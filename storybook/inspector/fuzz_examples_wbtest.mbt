@@ -18,13 +18,14 @@ priv struct DrawerState {
 
 ///|
 const DRAWER_SPEC : String =
-  #|state Drawer {
-  #|  held : Int
-  #|  owed : Int
+  #|spec:
+  #|  Drawer:
+  #|    field held :: Int
+  #|    field owed :: Int
   #|
-  #|  invariant covered
-  #|    format 'more is owed than the drawer holds' { .owed <= .held }
-  #|}
+  #|    invariant covered:
+  #|      ~format: "more is owed than the drawer holds"
+  #|      it.owed <= it.held
 
 ///|
 impl @component.Fields for DrawerState with fn encode(s) {

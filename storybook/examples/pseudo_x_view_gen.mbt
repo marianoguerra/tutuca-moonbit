@@ -10,7 +10,7 @@
 ///|
 /// The state of the TableRow component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct TableRowState {
@@ -22,9 +22,9 @@ pub(all) struct TableRowState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..TableRowState::zero(), label: "Counter" }
 pub fn TableRowState::zero() -> TableRowState {
@@ -88,7 +88,7 @@ impl @component.Fields for TableRowState with fn schema() {
 ///|
 /// The state of the ItemTable component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct ItemTableState {
@@ -98,9 +98,9 @@ pub(all) struct ItemTableState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..ItemTableState::zero(), label: "Counter" }
 pub fn ItemTableState::zero() -> ItemTableState {
@@ -159,7 +159,7 @@ impl @component.Fields for ItemTableState with fn schema() {
 ///|
 /// The state of the SelectOption component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct SelectOptionState {
@@ -170,9 +170,9 @@ pub(all) struct SelectOptionState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..SelectOptionState::zero(), label: "Counter" }
 pub fn SelectOptionState::zero() -> SelectOptionState {
@@ -229,7 +229,7 @@ impl @component.Fields for SelectOptionState with fn schema() {
 ///|
 /// The state of the ItemSelect component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct ItemSelectState {
@@ -240,9 +240,9 @@ pub(all) struct ItemSelectState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..ItemSelectState::zero(), label: "Counter" }
 pub fn ItemSelectState::zero() -> ItemSelectState {
@@ -308,7 +308,7 @@ impl @component.Fields for ItemSelectState with fn schema() {
 ///|
 /// The state of the PseudoXDemo component.
 ///
-/// Declared as `state` in the state block. Adding a field there adds it
+/// Declared with `field` in the `spec:` section. Adding one there adds it
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct PseudoXDemoState {
@@ -319,9 +319,9 @@ pub(all) struct PseudoXDemoState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// The state block declares no defaults — a default is a value, not a
-/// type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
+/// The `spec:` section states no defaults here — a default is a value,
+/// not a type — so this is type-directed, and `init` spreads it to name
+/// only what differs:
 ///
 ///   initial={ ..PseudoXDemoState::zero(), label: "Counter" }
 pub fn PseudoXDemoState::zero() -> PseudoXDemoState {

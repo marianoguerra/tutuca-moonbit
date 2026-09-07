@@ -107,6 +107,13 @@ test "a field, a property and a rule read the same both ways" {
     "    field s :: String\n    where it.s is_one_of [\"a\", \"b\"]\n", "    field s :: String\n    where it.s non_empty\n",
     "    field n :: Int\n    message bump\n    message add(Int)\n", "    field n :: Int\n    intent picked(String)\n",
     "    field n :: Int\n    express intent asked(Bool)\n",
+    // The wiring sections. `wire_value` is the one place the reader WRITES
+    // source, so it is the one place worth holding to the printer line by
+    // line — a path, a seq-access, `self`, and each shape a default takes.
+     "    field theme :: String\n    provide theme = it.theme\n", "    field items :: List.of(Any)\n    field at :: String\n    provide sel = it.items[it.at]\n",
+    "    field n :: Int\n    provide Cell = self\n", "    field n :: Int\n    lookup theme\n",
+    "    field n :: Int\n    lookup theme = \"plain\"\n", "    field n :: Int\n    lookup n = 0\n",
+    "    field n :: Int\n    lookup on = true\n", "    field n :: Int\n    lookup v = null\n",
   ]
   let broken = []
   for b in bodies {
@@ -145,4 +152,24 @@ test "types, protocols and the bindings to them read the same both ways" {
     }
   }
   @debug.assert_eq(broken, [])
+}
+
+///|
+/// A default the printer could not carry.
+///
+/// `@component.lookup_or("entries", "[]")` is the documented MoonBit spelling
+/// of an empty-collection fallback, and the lowering refused the `.tutu` line
+/// that means it — "a list or map literal has no place in an expression",
+/// which is true of an expression and not of this. So there is no other side
+/// to agree with here, and the assertion is that the direct reader reads it.
+test "an empty collection is a lookup default the lowering could not print" {
+  let src = "spec:\n  T:\n    field n :: Int\n    lookup xs = []\n"
+  let sources = @report.Sources::new()
+  let id = sources.add("t.tutu", src)
+  let file = @tutufile.read(src, id)
+  guard file.section(Spec) is Some(section) else { fail("no spec section") }
+  let defs = @statedef.state_of_tutu(section.decls, name="T")
+  @debug.assert_eq(defs[0].lookup.map(l => (l.name, l.default)), [
+    ("xs", Some("[]")),
+  ])
 }

@@ -26,28 +26,30 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let table_row_spec_source : String =
-  #|state TableRow {
-  #|  name: String
-  #|  qty: Int
-  #|  price: Double
-  #|  where qty >= 0
-  #|  where price >= 0
-  #|}
-  #|state ItemTable {
-  #|  rows: Array[Instance[TableRow]]
-  #|}
-  #|state SelectOption {
-  #|  value: String
-  #|  label: String
-  #|}
-  #|state ItemSelect {
-  #|  options: Array[Instance[SelectOption]]
-  #|  current: String
-  #|}
-  #|state PseudoXDemo {
-  #|  table: Instance[ItemTable]
-  #|  select: Instance[ItemSelect]
-  #|}
+  #|spec:
+  #|  TableRow:
+  #|    field name :: String
+  #|    field qty :: Int
+  #|    field price :: Double
+  #|
+  #|    where it.qty >= 0
+  #|
+  #|    where it.price >= 0
+  #|
+  #|  ItemTable:
+  #|    field rows :: List.of(Instance.of(TableRow))
+  #|
+  #|  SelectOption:
+  #|    field value :: String
+  #|    field label :: String
+  #|
+  #|  ItemSelect:
+  #|    field options :: List.of(Instance.of(SelectOption))
+  #|    field current :: String
+  #|
+  #|  PseudoXDemo:
+  #|    field table :: Instance.of(ItemTable)
+  #|    field select :: Instance.of(ItemSelect)
 
 ///|
 /// The compiled `main` view.
@@ -58,9 +60,11 @@ fn table_row_main_view_ir() -> @anode.View {
       @anode.h("td", [@anode.attr("class", "name")], [
         @anode.dyn_text(@tutuca.Expr::field("name"), id=0),
       ]),
+      @anode.text("\n"),
       @anode.h("td", [@anode.attr("class", "qty")], [
         @anode.dyn_text(@tutuca.Expr::field("qty"), id=1),
       ]),
+      @anode.text("\n"),
       @anode.h("td", [@anode.attr("class", "price")], [
         @anode.dyn_text(@tutuca.Expr::field("price"), id=2),
       ]),
@@ -124,10 +128,13 @@ fn item_table_main_view_ir() -> @anode.View {
       @anode.h("thead", [], [
         @anode.h("tr", [], [
           @anode.h("th", [], [@anode.text("Name")]),
+          @anode.text("\n"),
           @anode.h("th", [], [@anode.text("Qty")]),
+          @anode.text("\n"),
           @anode.h("th", [], [@anode.text("Price")]),
         ]),
       ]),
+      @anode.text("\n"),
       @anode.h("tbody", [], [
         @anode.each(
           1,

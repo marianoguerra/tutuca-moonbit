@@ -26,30 +26,30 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let selector_entry_spec_source : String =
-  #|state SelectorEntry {
-  #|  value: String
-  #|  label: String
-  #|}
-  #|state Selector {
-  #|  items: Array[Instance[SelectorEntry]]
-  #|  selected_value: Any
-  #|}
-  #|state EntryEditorAndSelector {
-  #|  items: Array[Instance[SelectorEntry]]
-  #|  selector: Instance[Selector]
-  #|}
-  #|state Sheet {
-  #|  title: String
-  #|}
-  #|state Toolbar {
-  #|}
-  #|state Panel {
-  #|  toolbar: Instance[Toolbar]
-  #|}
-  #|state Workspace {
-  #|  sheet: Instance[Sheet]
-  #|  panel: Instance[Panel]
-  #|}
+  #|spec:
+  #|  SelectorEntry:
+  #|    field value :: String
+  #|    field label :: String
+  #|
+  #|  Selector:
+  #|    field items :: List.of(Instance.of(SelectorEntry))
+  #|    field selected_value :: Any
+  #|
+  #|  EntryEditorAndSelector:
+  #|    field items :: List.of(Instance.of(SelectorEntry))
+  #|    field selector :: Instance.of(Selector)
+  #|
+  #|  Sheet:
+  #|    field title :: String
+  #|
+  #|  Toolbar
+  #|
+  #|  Panel:
+  #|    field toolbar :: Instance.of(Toolbar)
+  #|
+  #|  Workspace:
+  #|    field sheet :: Instance.of(Sheet)
+  #|    field panel :: Instance.of(Panel)
 
 ///|
 /// The compiled `main` view.

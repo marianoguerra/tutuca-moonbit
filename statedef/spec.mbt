@@ -200,6 +200,20 @@ pub(all) struct StateDef {
   /// may apply to one field, and they conjoin.
   wheres : Array[WhereDecl]
   doc : String?
+  /// What a catalog files this component under, and what a person may find it
+  /// by typing. Both empty when the component said nothing.
+  ///
+  /// SEARCH TEXT and not identifiers: `compose/catalog` lowercases the
+  /// category and matches it against what someone typed into a palette, so
+  /// neither is touched by any naming convention and both survive spelled the
+  /// way they were written, spaces and capitals included.
+  ///
+  /// Here rather than in a map beside the definitions because this is what the
+  /// component SAID about itself, in the same block it declares its fields in.
+  /// A side table meant every consumer had to be handed two things and join
+  /// them by name.
+  category : String
+  keywords : Array[String]
 } derive(Eq, @debug.Debug)
 
 ///|

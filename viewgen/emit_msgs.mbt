@@ -226,6 +226,8 @@ fn empty_def() -> @statedef.StateDef {
     rules: [],
     wheres: [],
     doc: None,
+    category: "",
+    keywords: [],
   }
 }
 
@@ -261,13 +263,14 @@ fn emit_view_only_msgs(
 /// is the union with the schema winning where they overlap.
 fn origin_note(suffix : String) -> String {
   if suffix == "Msg" {
-    "/// Every addressed name: the `message` variant the state block declares,\n" +
-    "/// plus every bare `@on` handler the views write. One bucket holds them\n" +
+    "/// Every addressed name: the `message` the `spec:` section declares,\n" +
+    "/// plus every bare `~on_<event>` handler the views write. One bucket holds\n" +
+    "/// them\n" +
     "/// however they were sent, so one type covers it — where the two overlap\n" +
     "/// the schema's declared payload wins, and a view whose call sites\n" +
     "/// disagree with it is a build error.\n"
   } else {
-    "/// Declared as `variant intent` in the state block. These names are\n" +
+    "/// Declared with `intent` in the `spec:` section. These names are\n" +
     "/// raised by component code rather than written in a view, so the views\n" +
     "/// cannot type them — the schema is the only place they can be declared.\n"
   }

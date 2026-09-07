@@ -9,6 +9,7 @@
 /// predecessor. Same rule as everywhere else a member is read.
 pub fn read_logic(
   decl : @tutufile.Decl,
+  rows? : Array[String] = [],
 ) -> Array[@tscript.Decl] raise @sh.ExError {
   let out = []
   let members = @sh.body_groups(decl)
@@ -22,10 +23,16 @@ pub fn read_logic(
       match word {
         "receive" => out.push(transition(m, DReceive, span))
         "answer" => out.push(transition(m, DAnswer, span))
-        "compute" => out.push(value_decl(m, DCompute, span))
-        "pred" => out.push(value_decl(m, DPred, span))
-        "enrich" => out.push(binding_decl(m, DEnrich, span))
-        "bind_with" => out.push(binding_decl(m, DBindWith, span))
+        "compute" => out.push(value_decl(m, DCompute, span, row_binds(m, rows)))
+        "pred" => out.push(value_decl(m, DPred, span, row_binds(m, rows)))
+        "enrich" =>
+          out.push(
+            binding_decl(m, DEnrich, span, row_binds(m, rows, always=true)),
+          )
+        "bind_with" =>
+          out.push(
+            binding_decl(m, DBindWith, span, row_binds(m, rows, always=true)),
+          )
         "property" =>
           for a in accessors(m, span) {
             out.push(a)
@@ -85,18 +92,26 @@ fn value_decl(
   m : @sh.Member,
   kind : @tscript.DeclKind,
   span : @report.Span,
+  binds : Map[String, String],
 ) -> @tscript.Decl raise @sh.ExError {
   {
     kind,
     name: m.name,
-    params: params_of(m),
+    // A ROW member is handed its row, and the renderer's names for it are
+    // fixed — so its own parameter names are the binding and there is nothing
+    // left to declare. See `row_binds`.
+    params: if binds.is_empty() {
+      params_of(m)
+    } else {
+      []
+    },
     requires_: None,
     ensures_: None,
     format: match m.option("format") {
-      Some(f) => Some(@sh.to_expr(f, @sh.ExCtx::in_body(Map([])), span))
+      Some(f) => Some(@sh.to_expr(f, @sh.ExCtx::in_body(binds), span))
       None => None
     },
-    body: Value(value_body(m, span)),
+    body: Value(value_body(m, span, binds)),
     doc: m.doc.unwrap_or(""),
     span: sp(span),
     name_span: sp(m.span),
@@ -110,15 +125,20 @@ fn binding_decl(
   m : @sh.Member,
   kind : @tscript.DeclKind,
   span : @report.Span,
+  binds : Map[String, String],
 ) -> @tscript.Decl raise @sh.ExError {
   {
     kind,
     name: m.name,
-    params: params_of(m),
+    params: if binds.is_empty() {
+      params_of(m)
+    } else {
+      []
+    },
     requires_: None,
     ensures_: None,
     format: None,
-    body: Stmts(read_binds(m.block())),
+    body: Stmts(read_binds(m.block(), binds)),
     doc: m.doc.unwrap_or(""),
     span: sp(span),
     name_span: sp(m.span),
@@ -151,14 +171,24 @@ fn accessors(
     }
     let acc = @sh.read_member(g, prev=None)
     let body : @tscript.Body = if kind is DGet {
-      Value(value_body(acc, span))
+      Value(value_body(acc, span, Map([])))
     } else {
       Stmts(read_stmts(acc.block(), Map([])))
     }
     let d : @tscript.Decl = {
       kind,
       name: m.name,
-      params: [],
+      // A SETTER sees exactly `value`, fixed by the property's type, and an
+      // author never restates or renames it — so nothing in the notation
+      // declares it and the reader has to. Leaving it out made every `set:`
+      // body refuse with "`value` is not a parameter of this handler", and a
+      // refused declaration is DROPPED: the counter's `magnitude` setter
+      // vanished from the generated module and the property stopped writing.
+      params: if kind is DSet {
+        [({ name: "value", span: sp(m.span), } : @tscript.Param)]
+      } else {
+        []
+      },
       requires_: None,
       ensures_: None,
       format: None,
@@ -177,6 +207,7 @@ fn accessors(
 fn value_body(
   m : @sh.Member,
   span : @report.Span,
+  binds : Map[String, String],
 ) -> @tutuca.Expr raise @sh.ExError {
   let groups = m.block()
   guard groups.length() == 1 else {
@@ -188,9 +219,37 @@ fn value_body(
   }
   @sh.to_expr(
     @sh.read_group(groups[0]),
-    @sh.ExCtx::in_body(Map([])),
+    @sh.ExCtx::in_body(binds),
     @sh.span_of(groups[0]),
   )
+}
+
+///|
+/// A row member's parameters, as the bindings the renderer hands it.
+///
+/// `enrich_item(value, key)` is given ITS row, and the renderer's names for a
+/// row are fixed — `value`, `key`, `iter` — so the author's parameter names
+/// are two spellings of one thing and the body reads a BINDING. The old
+/// notation wrote none: a filter and an in-loop enricher read `@value` out of
+/// the air, which is what this replaces.
+///
+/// `always` for `enrich` and `bind_with`, whose KIND says they take a row. A
+/// `pred` has two shapes and the declaration cannot say which — `pred room:
+/// it.n < 10` is called from a slot and `pred matches(row)` filters one — so
+/// for those the VIEW decides, and `rows` is what it said.
+fn row_binds(
+  m : @sh.Member,
+  rows : Array[String],
+  always? : Bool = false,
+) -> Map[String, String] {
+  let out : Map[String, String] = Map([])
+  guard always || rows.contains(m.name) else { return out }
+  for i, name in ["value", "key", "iter"] {
+    if i < m.params.length() {
+      out[m.params[i].name] = name
+    }
+  }
+  out
 }
 
 ///|

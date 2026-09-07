@@ -26,83 +26,93 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let picker_row_spec_source : String =
-  #|state PickerRow {
-  #|  component: String
-  #|  module: String
-  #|  preset: String
-  #|  summary: String
-  #|  why: String
-  #|  selected: Bool
-  #|}
-  #|handle PickerRow {
-  #|  message {
-  #|    set_selected(Bool)
-  #|  }
-  #|}
-  #|express PickerRow {
-  #|  intent { component_picked(String, String, String) }
-  #|}
-  #|state ComponentPicker {
-  #|  query: String
-  #|  hits: Array[Instance[PickerRow]]
-  #|  cursor: Int
-  #|  open: Bool
-  #|  empty_message: String
-  #|}
-  #|handle ComponentPicker {
-  #|  message {
-  #|    set_cursor(Int),
-  #|    dismissed,
-  #|    set_hits(Array[Any], String),
-  #|    opened,
-  #|    closed
-  #|  }
-  #|}
-  #|express ComponentPicker {
-  #|  intent { query_changed(String), component_picked(String, String, String), picker_closed }
-  #|}
-  #|state CardRow {
-  #|  name: String
-  #|  path: String
-  #|  loaded: Bool
-  #|  chosen: Bool
-  #|  error: String
-  #|}
-  #|handle CardRow {
-  #|  message {
-  #|    set_loaded(Bool),
-  #|    set_error(String)
-  #|  }
-  #|}
-  #|express CardRow {
-  #|  intent { load_one(String), toggle_chosen(String, Bool) }
-  #|}
-  #|state Note {
-  #|  text: String
-  #|  tone: String
-  #|}
-  #|state Shell {
-  #|  canvas: Instance
-  #|  picker: Instance[ComponentPicker]
-  #|  edit_view: String
-  #|  library: Array[Instance[CardRow]]
-  #|  source: String
-  #|  notes: Array[Instance[Note]]
-  #|  pending: String
-  #|  argument: String
-  #|  status: String
-  #|}
-  #|handle Shell {
-  #|  message {
-  #|    open_picker,
-  #|    picker_hits(Array[Any], String),
-  #|    place_built(Any, Bool, Bool),
-  #|    add_note(String, String),
-  #|    set_library(Array[Any]),
-  #|    set_status(String),
-  #|    pumped
-  #|  }
-  #|}
+  #|spec:
+  #|  PickerRow:
+  #|    field component :: String
+  #|    field module :: String
+  #|
+  #|    field preset :: String
+  #|    field summary :: String
+  #|
+  #|    field why :: String
+  #|
+  #|    field selected :: Bool
+  #|
+  #|    message set_selected(Bool)
+  #|
+  #|    express intent component_picked(String, String, String)
+  #|
+  #|  ComponentPicker:
+  #|    field query :: String
+  #|    field hits :: List.of(Instance.of(PickerRow))
+  #|    field cursor :: Int
+  #|    field open :: Bool
+  #|    field empty_message :: String
+  #|
+  #|    message set_cursor(Int)
+  #|
+  #|    message dismissed
+  #|
+  #|    message set_hits(List.of(Any), String)
+  #|
+  #|    message opened
+  #|
+  #|    message closed
+  #|
+  #|    express intent query_changed(String)
+  #|
+  #|    express intent component_picked(String, String, String)
+  #|
+  #|    express intent picker_closed
+  #|
+  #|  CardRow:
+  #|    field name :: String
+  #|    field path :: String
+  #|    field loaded :: Bool
+  #|    field chosen :: Bool
+  #|
+  #|    field error :: String
+  #|
+  #|    message set_loaded(Bool)
+  #|
+  #|    message set_error(String)
+  #|
+  #|    express intent load_one(String)
+  #|
+  #|    express intent toggle_chosen(String, Bool)
+  #|
+  #|  Note:
+  #|    field text :: String
+  #|    field tone :: String
+  #|
+  #|  Shell:
+  #|    field canvas :: Instance
+  #|
+  #|    field picker :: Instance.of(ComponentPicker)
+  #|
+  #|    field edit_view :: String
+  #|    field library :: List.of(Instance.of(CardRow))
+  #|
+  #|    field source :: String
+  #|    field notes :: List.of(Instance.of(Note))
+  #|
+  #|    field pending :: String
+  #|    field argument :: String
+  #|    field status :: String
+  #|
+  #|    message open_picker
+  #|
+  #|    message picker_hits(List.of(Any), String)
+  #|
+  #|    message place_built(Any, Bool, Bool)
+  #|
+  #|    message add_note(String, String)
+  #|
+  #|    message set_library(List.of(Any))
+  #|
+  #|    message set_status(String)
+  #|
+  #|    message pumped
 
 ///|
 /// The compiled `main` view.
@@ -305,7 +315,7 @@ fn component_picker_main_view_ir() -> @anode.View {
                   @anode.attr(
                     "class", "picker-query input input-bordered w-full",
                   ),
-                  @anode.dyn_attr("autofocus", @anode.const_bool(true)),
+                  @anode.attr_bool("autofocus", true),
                   @anode.attr("placeholder", "what goes here?"),
                   @anode.dyn_attr("value", @tutuca.Expr::field("query")),
                   @anode.eid(0),

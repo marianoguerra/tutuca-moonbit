@@ -26,12 +26,12 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let playlist_spec_source : String =
-  #|state Song {
-  #|  title: String
-  #|}
-  #|state Playlist {
-  #|  songs: Any
-  #|}
+  #|spec:
+  #|  Song:
+  #|    field title :: String
+  #|
+  #|  Playlist:
+  #|    field songs :: Any
 
 ///|
 /// The compiled `main` view.

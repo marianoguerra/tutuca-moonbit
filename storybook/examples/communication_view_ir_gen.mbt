@@ -26,39 +26,38 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let status_spec_source : String =
-  #|state Status {
-  #|  message: String
-  #|  count: Int
-  #|  where count >= 0
-  #|}
-  #|handle Status {
-  #|  message {
-  #|    flash(String),
-  #|    clear
-  #|  }
-  #|}
-  #|state SendReceive {
-  #|  draft: String
-  #|  status: Instance[Status]
-  #|}
-  #|handle SendReceive {
-  #|  message {
-  #|    clear_draft
-  #|  }
-  #|}
-  #|state TreeItem {
-  #|  type: String
-  #|  label: String
-  #|  is_open: Bool
-  #|  items: Array[Instance[TreeItem]]
-  #|  invariant files_are_leaves
-  #|    format $'a file cannot hold {(len .items)} children' { ((.type is 'file') implies ((len .items) is 0)) }
-  #|  where type is one of ["file", "dir"]
-  #|}
-  #|state TreeRoot {
-  #|  log: Array[String]
-  #|  root: Instance[TreeItem]
-  #|}
+  #|spec:
+  #|  Status:
+  #|    field message :: String
+  #|    field count :: Int
+  #|
+  #|    message flash(String)
+  #|
+  #|    message clear
+  #|
+  #|    where it.count >= 0
+  #|
+  #|  SendReceive:
+  #|    field draft :: String
+  #|    field status :: Instance.of(Status)
+  #|
+  #|    message clear_draft
+  #|
+  #|  TreeItem:
+  #|    field type :: String
+  #|    field label :: String
+  #|    field is_open :: Bool
+  #|    field items :: List.of(Instance.of(TreeItem))
+  #|
+  #|    invariant files_are_leaves:
+  #|      ~format: @str{a file cannot hold @(it.items.length()) children}
+  #|      ((it.type == "file") implies (it.items.length() == 0))
+  #|
+  #|    where it.type is_one_of ["file", "dir"]
+  #|
+  #|  TreeRoot:
+  #|    field log :: List.of(String)
+  #|    field root :: Instance.of(TreeItem)
 
 ///|
 /// The compiled `main` view.

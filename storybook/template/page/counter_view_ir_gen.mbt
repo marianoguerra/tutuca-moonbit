@@ -26,15 +26,13 @@
 /// `SchemaInfo` as a name with no body, and a message as a name with no
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let counter_spec_source : String =
-  #|state Counter {
-  #|  count: Int
-  #|}
-  #|handle Counter {
-  #|  message {
-  #|    inc,
-  #|    dec
-  #|  }
-  #|}
+  #|spec:
+  #|  Counter:
+  #|    field count :: Int
+  #|
+  #|    message inc
+  #|
+  #|    message dec
 
 ///|
 /// The compiled `main` view.

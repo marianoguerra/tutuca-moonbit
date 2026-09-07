@@ -98,7 +98,7 @@ pub fn Plan::of_component(
   // bare-state component in the corpus (counter, dnd, file-picker, …) parsed
   // to a `StateDef` named "" and matched nothing below, so the Fuzz tab
   // reported "declares no spec block" for a component that declares one.
-  let defs = @statedef.parse_state(comp.spec, name=comp.schema.name) catch {
+  let defs = @statedef.read_spec(comp.spec, name=comp.schema.name) catch {
     // A block that no longer parses is not a plan and not an error a fuzz run
     // can act on. It is a `gen` failure that has already been reported
     // somewhere the author will see it.
