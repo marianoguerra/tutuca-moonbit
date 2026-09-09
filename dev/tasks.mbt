@@ -493,8 +493,9 @@ pub fn tasks() -> Array[Task] {
         // These build hand-written modules from `_build` and instantiate them
         // together against one import object, which no `moon test` can do — and
         // they ran in no task at all, so the only check that `rt_src_gen.mbt`
-        // matches `rt.wap` was a harness nobody invoked. compose.test.mjs needs
-        // `wasm-tools` on PATH; the other two need only moon and node.
+        // matches `rt.wap` was a harness nobody invoked. compose.test.mjs and
+        // conformance.test.mjs assemble `.wat` through `tgc/test/build.mjs` and
+        // so need `wasm-tools` on PATH; the other three need only moon and node.
         //
         // compose.test.mjs and twomod.test.mjs are one claim at two levels, and
         // both are needed. The first drives the RUNTIME, where composition

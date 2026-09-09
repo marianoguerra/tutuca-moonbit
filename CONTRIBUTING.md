@@ -112,8 +112,9 @@ Two rules that are yours to keep when you add a package:
 
 `tgc/proto` and `tgc/test` are excluded and their harnesses build from `_build`,
 which no tarball has — run them from the repo with
-the `check-tgc` task, which `ci` runs (`compose.test.mjs` needs `wasm-tools` on
-PATH).
+the `check-tgc` task, which `ci` runs (`compose.test.mjs` and
+`conformance.test.mjs` assemble `.wat` with `wasm-tools`, so it must be on
+PATH — `ci.yml` installs it).
 
 ## Releasing the playground to npm
 
