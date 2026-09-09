@@ -307,9 +307,15 @@ fn lit_of(
     (TySet, Array(items)) | (TyFlags(_, _), Array(items)) => {
       // A set arrives as its member list and is stored Map-backed, which is
       // how the runtime holds every set.
+      //
+      // `Map([...])` takes an array of PAIRS. The tempting `["k": v]` is not a
+      // MoonBit map literal at all -- it does not parse -- and nothing here
+      // notices, because these tests compare the emitted string and no
+      // committed fixture reached this arm until a card did. The same goes for
+      // the ordered-map arm below.
       let entries = items.map(x => {
         match x {
-          String(s) => json_quote(s) + ": true"
+          String(s) => "(" + json_quote(s) + ", true)"
           _ => ""
         }
       })
@@ -318,7 +324,9 @@ fn lit_of(
     (TyOMap(inner), Object(o)) => {
       let entries : Array[String] = []
       for k, x in o {
-        entries.push(json_quote(k) + ": " + lit_of(def, inner, x, state, field))
+        entries.push(
+          "(" + json_quote(k) + ", " + lit_of(def, inner, x, state, field) + ")",
+        )
       }
       "Map([" + entries.join(", ") + "])"
     }

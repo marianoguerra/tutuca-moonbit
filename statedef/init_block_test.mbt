@@ -221,11 +221,11 @@ test "a set arrives as a member list and is stored map-backed" {
   let c = collections()
   assert_eq(
     lit(c, "{ \"f\": { \"tags\": [\"a\", \"b\"] } }", "tags"),
-    "Map([\"a\": true, \"b\": true])",
+    "Map([(\"a\", true), (\"b\", true)])",
   )
   assert_eq(
     lit(c, "{ \"f\": { \"vis\": [\"Done\"] } }", "vis"),
-    "Map([\"Done\": true])",
+    "Map([(\"Done\", true)])",
   )
   assert_eq(lit(c, "{ \"f\": { \"tags\": [] } }", "tags"), "Map([])")
 }
@@ -234,7 +234,7 @@ test "a set arrives as a member list and is stored map-backed" {
 test "an ordered map keeps its keys and types its values" {
   assert_eq(
     lit(collections(), "{ \"f\": { \"counts\": { \"a\": \"1\" } } }", "counts"),
-    "Map([\"a\": \"1\"])",
+    "Map([(\"a\", \"1\")])",
   )
 }
 
