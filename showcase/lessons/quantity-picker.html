@@ -1,0 +1,13 @@
+<div class="lesson-copy">
+  <p>A shopping cart needs a quantity that stays within its allowed range. This component stores <code>quantity</code> and <code>unit_cents</code>; the total comes from those fields whenever the view reads it.</p>
+  <h3>Follow a click through the code</h3>
+  <p>Find the Increase button in <code>view:</code>. Its <code>~on_click: increase</code> binding sends a message to <code>receive increase</code> in <code>logic:</code>. That handler updates <code>it.quantity</code>. The output reads the new quantity, and <code>total()</code> derives the new price.</p>
+  <p>The <code>minimum</code> and <code>maximum</code> predicates disable the buttons at the limits. The handlers also clamp the value, so a message sent without clicking a button still respects the range. The invariant in <code>spec:</code> declares the same rule as a contract.</p>
+  <h3>Try it</h3>
+  <ol><li>Click Increase once. The quantity becomes 2 and the total becomes €10.</li><li>Increase to 10. The Increase button becomes disabled and the total is €50.</li><li>Decrease to 1. The Decrease button becomes disabled.</li></ol>
+</div>
+<!-- example -->
+<div class="lesson-copy">
+  <p class="exercise"><strong>Your turn:</strong> change the maximum from 10 to 6 in the invariant, the Increase handler and the maximum predicate. Update the <code>maximum</code> fixture and the upper-bound test to match. The button should stop at 6, and the total should be €30. This exercise shows why a UI limit, a state rule and its tests need to agree.</p>
+  <p>Next, use the same event-to-state path in a form whose edits are applied only when the user chooses.</p>
+</div>

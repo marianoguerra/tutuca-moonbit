@@ -1,0 +1,13 @@
+<div class="lesson-copy">
+  <p>A task list introduces composition. <code>TaskList</code> owns the draft and a map of child instances; each <code>TaskItem</code> owns its text and completion state. The map key identifies a task even when filtering changes its position on screen.</p>
+  <h3>Give the parent and child distinct jobs</h3>
+  <p>The Add handler trims the draft, ignores empty input, creates a child with a new ID, and clears the draft. In the view, <code>each</code> walks the map and <code>render(value)</code> renders each visible child.</p>
+  <p>When a child is toggled, it updates its own <code>done</code> field and notifies <code>task_done</code> with its ID and new value. The dynamic route, <code>~route: dyn</code>, lets the containing component answer. The parent keeps a completion index for filtering and counting. Removing a child similarly asks its parent to remove the map entry.</p>
+  <h3>Try it</h3>
+  <ol><li>Use Add task with a blank draft. No task is created.</li><li>Add “Return library books” and “Book a dentist appointment”. The count is 2 remaining.</li><li>Complete the first task. Active shows only the second; Completed shows only the first.</li><li>Remove the completed task, then choose All. The second task remains, with its original text and state.</li></ol>
+</div>
+<!-- example -->
+<div class="lesson-copy">
+  <p class="exercise"><strong>Your turn:</strong> add a displayed total using <code>it.items.length()</code>. With two tasks and one completed, it should show 2 total and 1 remaining. Switching filters should change the visible rows without changing either count.</p>
+  <p>The next lesson uses stable identity again, this time to keep an editor attached to a contact while search results change.</p>
+</div>

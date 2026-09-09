@@ -1,0 +1,14 @@
+<div class="lesson-copy">
+  <p>A workspace combines child components with asynchronous services. <code>DocumentWorkspace</code> owns editors keyed by document ID. Changing <code>selected</code> changes which editor is rendered; each editor keeps its own draft.</p>
+  <h3>Keep a draft safe while a request is running</h3>
+  <p>An editor stores both <code>source</code> and <code>saved_source</code>. Their difference determines whether to show “Unsaved changes”. Preview renders the same source as Markdown; it does not create another copy of the document.</p>
+  <p>Save sets <code>busy</code> and asks the host to store the document ID and current source. When the answer arrives, <code>save_document_ok</code> updates the saved copy from that answer. If the user typed more while waiting, the newer draft still differs from the saved copy and stays marked as unsaved.</p>
+  <p>Reload also records the editing revision when it starts. Its success handler only replaces an unchanged, clean draft. Failure handlers clear the busy state and show how to retry. An <code>_unhandled</code> handler explains which host service is missing when nobody answers the request.</p>
+  <h3>Try it</h3>
+  <ol><li>Write a Markdown heading in Welcome. Switch to Meeting notes and back. Your Welcome draft is still there.</li><li>Choose Preview to see the heading rendered, then return to Edit.</li><li>Check “Simulate the next request failing” and save. The draft remains and the message invites you to retry.</li><li>Save again. After the response, the confirmation appears and the unsaved indicator disappears.</li><li>Edit the text without saving, then reload. The component keeps your unsaved draft.</li></ol>
+</div>
+<!-- example -->
+<div class="lesson-copy">
+  <p class="exercise"><strong>Your turn:</strong> save Welcome and immediately switch to Meeting notes. Return to Welcome after the response. Its confirmation belongs to Welcome; the other document's draft should be unchanged. The keyed child path keeps the response connected to the editor that made the request.</p>
+  <p>The demo host delays responses and stores documents in memory. Restarting the example resets that storage. To make a durable editor, connect the same intent names to your application's storage service.</p>
+</div>

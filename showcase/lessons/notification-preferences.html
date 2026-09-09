@@ -1,0 +1,13 @@
+<div class="lesson-copy">
+  <p>A settings form needs to distinguish what the user is editing from what they have accepted. Here <code>enabled</code>, <code>email</code> and <code>frequency</code> are draft fields. The corresponding <code>saved_</code> fields hold the applied values.</p>
+  <h3>Separate editing from applying</h3>
+  <p>The email input binds <code>value: it.email</code> and assigns <code>e.value</code> on input. Typing changes the draft immediately. The Apply handler checks the address before copying the draft into the saved fields; Reset copies the saved fields back. The address check is deliberately small: enabled email updates require an address containing <code>@</code>.</p>
+  <p><code>show(it.enabled)</code> includes the email and frequency controls only while updates are enabled. Removing those elements from the view does not clear their state fields.</p>
+  <h3>Try it</h3>
+  <ol><li>Enable email updates and click Apply with an empty address. Read the validation message.</li><li>Enter <code>alex@example.test</code>, choose Daily digest, and apply.</li><li>Type a different address, then click Reset draft. The applied address and frequency return.</li><li>Disable updates and enable them again. The draft address is still there.</li></ol>
+</div>
+<!-- example -->
+<div class="lesson-copy">
+  <p class="exercise"><strong>Your turn:</strong> add a Monthly digest option with the value <code>monthly</code>. Apply it, choose a different frequency, and reset. Monthly should return without changing either handler: both already copy the frequency field.</p>
+  <p>These saved fields belong to this component's session. The final lesson adds a host service for saving outside the form.</p>
+</div>

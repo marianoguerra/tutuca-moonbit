@@ -33,9 +33,9 @@ module lives in, and how to verify a change to any of it.
 | imports the user must name | `@component`, `@tutuca`, `@host` | `@component`, `@tutuca`, `@host_wasm`, **and `@core`** (to name `@core.Any` in the `on_event` signature) |
 | string ABI | n/a | JS-String-Builtins, chosen at link time and matched at instantiate |
 
-The reference for a working wasm-gc mount is the shipped demo
-`demo/quantity_picker_wasm/` (`loader.mjs` + `main.mbt`); `mountWasm()` in
-`playground/web/runtime.js` mirrors it.
+The playground mount lives in `playground/host_wasm/host.mbt`.
+`mountWasm()` in `playground/web/runtime.js` instantiates its compiled module
+using the browser imports supplied by `app/wasm/loader.mjs`.
 
 ## The string ABI must be chosen at link time
 

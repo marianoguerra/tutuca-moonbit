@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tutuca tutorial — build interactive components step by step</title>
+  <meta name="description" content="Learn Tutuca through guided lessons on state, events, forms, child components, search, and asynchronous host services. Edit and test five working components in your browser.">
+  <link rel="stylesheet" href="./styles/site.css">
+  <style>
+    mb-card { max-width: 64rem; margin: 1.5rem auto; }
+    .lesson-copy { max-width: 48rem; margin-inline: auto; }
+    .lesson-copy h3 { font-size: 1.5rem; text-align: left; margin-top: 2rem; }
+    .lesson-copy li { margin-block: .6rem; }
+    .lesson-copy code { overflow-wrap: anywhere; }
+    section[id] { scroll-margin-top: 5rem; }
+    .exercise { padding: 1rem 1.25rem; border-left: 3px solid var(--accent); background: var(--accent-bg); }
+  </style>
+  <script src="./site/tutucard.js"></script>
+  <script type="module" src="./site/card-embed.js"></script>
+</head>
+<body>
+  <nav><a href="./">Home</a><a href="./tutucard/">Card playground</a><a href="./playground/">MoonBit playground</a><a href="./storybook/">Storybook</a></nav>
+  <header><h1>Learn Tutuca</h1><h2>From a small control to a document workspace</h2><p class="lesson-copy">Build up your understanding of state, events, composition and host services through five guided lessons. Each has a working component you can use, read and change.</p></header>
+  <main>
+    <section id="start"><h2>Before you begin</h2><div class="lesson-copy">
+      <p>You need a browser and a little familiarity with variables and functions. There is nothing to install: the cards below run here. Follow the lessons in order; each adds one idea to the previous lesson.</p>
+      <p>Use the preview first, then find the code responsible for what happened. Editing the source rebuilds the card and resets its state, so make one change at a time. To explore fixtures and run the included tests, follow the card-playground link under each lesson. Copy your edits somewhere safe before leaving the page.</p>
+      <ol><li><a href="#quantity-picker">Quantity picker</a> — Fields, events, derived values and invariants.</li>
+<li><a href="#notification-preferences">Notification preferences</a> — Bindings, conditional fields and draft state.</li>
+<li><a href="#task-list">Task list</a> — Child components, messages and keyed collections.</li>
+<li><a href="#contact-directory">Contact directory</a> — Search, pagination, selection and owner-held state.</li>
+<li><a href="#document-workspace">Document workspace</a> — Composition, alternate views and asynchronous intents.</li></ol>
+      <h3>How to read a <code>.tutu</code> file</h3>
+      <p>A component has state and a view of that state. An event sends a message to a handler; the handler changes state, and the view updates. Follow that path through these sections:</p>
+      <dl>
+        <dt><code>spec:</code></dt><dd>Names the components, declares their fields and types, and can state contracts such as a valid quantity range.</dd>
+        <dt><code>logic:</code></dt><dd>Contains <code>receive</code> handlers that change state, <code>compute</code> functions that derive values, and <code>pred</code> predicates that answer true or false.</dd>
+        <dt><code>view:</code></dt><dd>Describes elements, displayed values and event bindings. <code>it.quantity</code> reads a field; <code>@(it.quantity)</code> inserts its value into the view.</dd>
+        <dt><code>fixtures:</code> and <code>tests:</code></dt><dd>Provide useful starting states and repeatable interactions with expected results.</dd>
+      </dl>
+      <p>You will also see <code>:=</code> for assigning a field, <code>~on_click:</code> for handling a click, and <code>e.value</code> for an input's value. Indentation groups declarations and nested elements.</p>
+    </div></section>
+    <section id="quantity-picker"><h2>Step 1: Quantity picker</h2>
+<div class="lesson-copy">
+  <p>A shopping cart needs a quantity that stays within its allowed range. This component stores <code>quantity</code> and <code>unit_cents</code>; the total comes from those fields whenever the view reads it.</p>
+  <h3>Follow a click through the code</h3>
+  <p>Find the Increase button in <code>view:</code>. Its <code>~on_click: increase</code> binding sends a message to <code>receive increase</code> in <code>logic:</code>. That handler updates <code>it.quantity</code>. The output reads the new quantity, and <code>total()</code> derives the new price.</p>
+  <p>The <code>minimum</code> and <code>maximum</code> predicates disable the buttons at the limits. The handlers also clamp the value, so a message sent without clicking a button still respects the range. The invariant in <code>spec:</code> declares the same rule as a contract.</p>
+  <h3>Try it</h3>
+  <ol><li>Click Increase once. The quantity becomes 2 and the total becomes €10.</li><li>Increase to 10. The Increase button becomes disabled and the total is €50.</li><li>Decrease to 1. The Decrease button becomes disabled.</li></ol>
+</div>
+<mb-card src="./site/cards/quantity-picker.tutu" margaui codemirror></mb-card>
+<div class="lesson-copy">
+  <p class="exercise"><strong>Your turn:</strong> change the maximum from 10 to 6 in the invariant, the Increase handler and the maximum predicate. Update the <code>maximum</code> fixture and the upper-bound test to match. The button should stop at 6, and the total should be €30. This exercise shows why a UI limit, a state rule and its tests need to agree.</p>
+  <p>Next, use the same event-to-state path in a form whose edits are applied only when the user chooses.</p>
+</div>
+
+<p class="lesson-copy"><a href="./tutucard/?example=quantity-picker">Open this lesson in the card playground</a></p></section>
+<section id="notification-preferences"><h2>Step 2: Notification preferences</h2>
+<div class="lesson-copy">
+  <p>A settings form needs to distinguish what the user is editing from what they have accepted. Here <code>enabled</code>, <code>email</code> and <code>frequency</code> are draft fields. The corresponding <code>saved_</code> fields hold the applied values.</p>
+  <h3>Separate editing from applying</h3>
+  <p>The email input binds <code>value: it.email</code> and assigns <code>e.value</code> on input. Typing changes the draft immediately. The Apply handler checks the address before copying the draft into the saved fields; Reset copies the saved fields back. The address check is deliberately small: enabled email updates require an address containing <code>@</code>.</p>
+  <p><code>show(it.enabled)</code> includes the email and frequency controls only while updates are enabled. Removing those elements from the view does not clear their state fields.</p>
+  <h3>Try it</h3>
+  <ol><li>Enable email updates and click Apply with an empty address. Read the validation message.</li><li>Enter <code>alex@example.test</code>, choose Daily digest, and apply.</li><li>Type a different address, then click Reset draft. The applied address and frequency return.</li><li>Disable updates and enable them again. The draft address is still there.</li></ol>
+</div>
+<mb-card src="./site/cards/notification-preferences.tutu" margaui codemirror></mb-card>
+<div class="lesson-copy">
+  <p class="exercise"><strong>Your turn:</strong> add a Monthly digest option with the value <code>monthly</code>. Apply it, choose a different frequency, and reset. Monthly should return without changing either handler: both already copy the frequency field.</p>
+  <p>These saved fields belong to this component's session. The final lesson adds a host service for saving outside the form.</p>
+</div>
+
+<p class="lesson-copy"><a href="./tutucard/?example=notification-preferences">Open this lesson in the card playground</a></p></section>
+<section id="task-list"><h2>Step 3: Task list</h2>
+<div class="lesson-copy">
+  <p>A task list introduces composition. <code>TaskList</code> owns the draft and a map of child instances; each <code>TaskItem</code> owns its text and completion state. The map key identifies a task even when filtering changes its position on screen.</p>
+  <h3>Give the parent and child distinct jobs</h3>
+  <p>The Add handler trims the draft, ignores empty input, creates a child with a new ID, and clears the draft. In the view, <code>each</code> walks the map and <code>render(value)</code> renders each visible child.</p>
+  <p>When a child is toggled, it updates its own <code>done</code> field and notifies <code>task_done</code> with its ID and new value. The dynamic route, <code>~route: dyn</code>, lets the containing component answer. The parent keeps a completion index for filtering and counting. Removing a child similarly asks its parent to remove the map entry.</p>
+  <h3>Try it</h3>
+  <ol><li>Use Add task with a blank draft. No task is created.</li><li>Add “Return library books” and “Book a dentist appointment”. The count is 2 remaining.</li><li>Complete the first task. Active shows only the second; Completed shows only the first.</li><li>Remove the completed task, then choose All. The second task remains, with its original text and state.</li></ol>
+</div>
+<mb-card src="./site/cards/task-list.tutu" margaui codemirror></mb-card>
+<div class="lesson-copy">
+  <p class="exercise"><strong>Your turn:</strong> add a displayed total using <code>it.items.length()</code>. With two tasks and one completed, it should show 2 total and 1 remaining. Switching filters should change the visible rows without changing either count.</p>
+  <p>The next lesson uses stable identity again, this time to keep an editor attached to a contact while search results change.</p>
+</div>
+
+<p class="lesson-copy"><a href="./tutucard/?example=task-list">Open this lesson in the card playground</a></p></section>
+<section id="contact-directory"><h2>Step 4: Contact directory</h2>
+<div class="lesson-copy">
+  <p>A directory separates the full collection from the current results. <code>contacts</code> owns the data, <code>order</code> defines its order, and <code>keys</code> holds the current page of matching contact IDs. The selected ID and child editor are separate fields.</p>
+  <h3>Search first, then choose a page</h3>
+  <p>The Search handler stores the query, resets the page to zero, and sends <code>init</code>. That handler asks the host for <code>contact_page</code>. The demo service matches names or email addresses across the collection before taking a page of three results. Filtering only the visible page would miss contacts on other pages.</p>
+  <p>Selecting a contact creates an editor with that contact's ID and details. Save validates the fields and notifies <code>update_contact</code>; the directory writes the result into the entry with that ID and refreshes the search.</p>
+  <h3>Try it</h3>
+  <ol><li>Go to page 2, then search for <code>Alex Chen</code>. Alex appears on page 1 of 1, even though the search started on another page.</li><li>Select Alex, change the name to <code>Avery Chen</code>, and save. The row disappears from the current results because the full-name query no longer matches.</li><li>The editor stays attached to the same contact. Search for <code>Avery</code> to see the updated row.</li><li>Search for <code>nobody</code>. The empty-results message replaces the rows.</li></ol>
+</div>
+<mb-card src="./site/cards/contact-directory.tutu" margaui codemirror></mb-card>
+<div class="lesson-copy">
+  <p class="exercise"><strong>Your turn:</strong> repeat the rename while searching for <code>alex@example.test</code>. The row should remain visible, because changing a name does not change the email address. Explain the difference before checking the result.</p>
+  <p>The host here answers immediately. The workspace introduces requests whose answers arrive later, after the user may have continued editing.</p>
+</div>
+
+<p class="lesson-copy"><a href="./tutucard/?example=contact-directory">Open this lesson in the card playground</a></p></section>
+<section id="document-workspace"><h2>Step 5: Document workspace</h2>
+<div class="lesson-copy">
+  <p>A workspace combines child components with asynchronous services. <code>DocumentWorkspace</code> owns editors keyed by document ID. Changing <code>selected</code> changes which editor is rendered; each editor keeps its own draft.</p>
+  <h3>Keep a draft safe while a request is running</h3>
+  <p>An editor stores both <code>source</code> and <code>saved_source</code>. Their difference determines whether to show “Unsaved changes”. Preview renders the same source as Markdown; it does not create another copy of the document.</p>
+  <p>Save sets <code>busy</code> and asks the host to store the document ID and current source. When the answer arrives, <code>save_document_ok</code> updates the saved copy from that answer. If the user typed more while waiting, the newer draft still differs from the saved copy and stays marked as unsaved.</p>
+  <p>Reload also records the editing revision when it starts. Its success handler only replaces an unchanged, clean draft. Failure handlers clear the busy state and show how to retry. An <code>_unhandled</code> handler explains which host service is missing when nobody answers the request.</p>
+  <h3>Try it</h3>
+  <ol><li>Write a Markdown heading in Welcome. Switch to Meeting notes and back. Your Welcome draft is still there.</li><li>Choose Preview to see the heading rendered, then return to Edit.</li><li>Check “Simulate the next request failing” and save. The draft remains and the message invites you to retry.</li><li>Save again. After the response, the confirmation appears and the unsaved indicator disappears.</li><li>Edit the text without saving, then reload. The component keeps your unsaved draft.</li></ol>
+</div>
+<mb-card src="./site/cards/document-workspace.tutu" margaui codemirror></mb-card>
+<div class="lesson-copy">
+  <p class="exercise"><strong>Your turn:</strong> save Welcome and immediately switch to Meeting notes. Return to Welcome after the response. Its confirmation belongs to Welcome; the other document's draft should be unchanged. The keyed child path keeps the response connected to the editor that made the request.</p>
+  <p>The demo host delays responses and stores documents in memory. Restarting the example resets that storage. To make a durable editor, connect the same intent names to your application's storage service.</p>
+</div>
+
+<p class="lesson-copy"><a href="./tutucard/?example=document-workspace">Open this lesson in the card playground</a></p></section>
+    <section id="test"><h2>Turn an interaction into a test</h2><div class="lesson-copy">
+      <p>Open the quantity picker in the card playground and run its Tests pane. Find <code>quantity changes the total</code> in the source: it selects the <code>fresh</code> fixture, clicks Increase, and checks both the quantity and the total. The selector <code>button.increase</code> identifies the button by its element and class.</p>
+      <ol><li>Read the expected total, then use the preview to produce that result yourself.</li><li>Temporarily change the expected total to a different amount and run the tests. The scenario should report the mismatch.</li><li>Restore the expected value and run again. It should pass.</li></ol>
+      <p>When you extend a component, add a scenario for its user-visible result. Test the edge cases too: an empty task, a quantity at its limit, a search with no matches, and a save that fails. Intent fixtures let a test supply a successful or failed service response without a network request.</p>
+    </div></section>
+    <section id="integrate"><h2>Use these ideas in an application</h2><div class="lesson-copy">
+      <p>Start with the smallest component that covers your task. Keep draft fields close to the form that edits them, let a parent own collection membership, and use stable keys when rendering children. Derive totals and counts from the fields that determine them.</p>
+      <p>The directory's <code>contact_page</code> handler and the workspace's <code>load_document</code> and <code>save_document</code> handlers are demo services supplied by this page's host. Their data lasts for the demo session. A standalone host must register its own implementations; saving to a server belongs there. Handle success, failure and an unanswered request in the component.</p>
+      <p>For a MoonBit application, the same <code>.tutu</code> format generates compiled components. The MoonBit playground shows the module assembly and any adapters needed by that backend. Continue with the <a href="https://github.com/marianoguerra/tutuca-moonbit/blob/main/docs/tutorial.mbt.md">source walkthrough and integration guide</a>, inspect the same components in <a href="./storybook/">Storybook</a>, or use the playgrounds' Reference groups for a specific feature.</p>
+    </div></section>
+  </main>
+</body>
+</html>

@@ -105,15 +105,9 @@ fn wasm_opt(path : String) -> Command {
 // --- build-output and dist layout paths (moon's default debug build) ---
 
 ///|
-const QUANTITY_JS = "_build/js/debug/build/demo/quantity_picker/quantity_picker.js"
-
-///|
 // dist ships the RELEASE wasm (the debug build is ~4x larger: 18 MB vs ~4.8 MB
 // for storybook), then shrinks it further with wasm-opt (see wasm_opt / the
 // `moon build … --release` steps in dist_steps).
-const QUANTITY_WASM = "_build/wasm-gc/release/build/demo/quantity_picker_wasm/quantity_picker_wasm.wasm"
-
-///|
 const STORYBOOK_WASM = "_build/wasm-gc/release/build/demo/storybook_wasm/storybook_wasm.wasm"
 
 ///|
@@ -800,56 +794,20 @@ fn dist_steps() -> Array[Step] {
   for cmd in build_commands() {
     steps.push(Run(cmd))
   }
-  // ship the RELEASE wasm demos (build_commands builds debug for the smoke).
+  // Ship the release gallery (build_commands also builds debug artifacts).
   steps.push(
     Run(
-      moon("build · wasm-gc demos (release)", [
-        "build", "--target", "wasm-gc", "--release", "demo/quantity_picker_wasm",
-        "demo/storybook_wasm",
+      moon("build · wasm-gc gallery (release)", [
+        "build", "--target", "wasm-gc", "--release", "demo/storybook_wasm",
       ]),
     ),
   )
   steps.push(Mkdir(DIST))
-  steps.push(Mkdir("\{DIST}/quantity-picker"))
-  steps.push(Mkdir("\{DIST}/quantity-picker-wasm"))
   steps.push(Mkdir("\{DIST}/storybook"))
   steps.push(Mkdir("\{DIST}/cli"))
-  steps.push(
-    Copy(from=QUANTITY_JS, to="\{DIST}/quantity-picker/quantity_picker.js"),
-  )
   steps.push(Copy(from=NATIVE_BIN, to="\{DIST}/cli/tutuca"))
-  // wasm counter: the .wasm plus its loader + host page. index.html already
-  // loads ./loader.mjs and ./quantity_picker_wasm.wasm relative to its folder, so the
-  // page and loader copy verbatim (no rewrite).
-  steps.push(
-    Copy(
-      from=QUANTITY_WASM,
-      to="\{DIST}/quantity-picker-wasm/quantity_picker_wasm.wasm",
-    ),
-  )
-  steps.push(
-    Run(wasm_opt("\{DIST}/quantity-picker-wasm/quantity_picker_wasm.wasm")),
-  )
-  steps.push(
-    Copy(
-      from="demo/quantity_picker_wasm/loader.mjs",
-      to="\{DIST}/quantity-picker-wasm/loader.mjs",
-    ),
-  )
-  steps.push(
-    Copy(
-      from="app/wasm/loader.mjs",
-      to="\{DIST}/quantity-picker-wasm/app-loader.mjs",
-    ),
-  )
-  steps.push(
-    Copy(
-      from="demo/quantity_picker_wasm/index.html",
-      to="\{DIST}/quantity-picker-wasm/index.html",
-    ),
-  )
   // storybook: the gallery host page loads ./loader.mjs and ./storybook_wasm.wasm
-  // relative to its folder (like quantity-picker-wasm), so page + loader copy verbatim.
+  // relative to its folder, so page + loader copy verbatim.
   // The gallery bundle is served as static content from dist/storybook.
   steps.push(
     Copy(from=STORYBOOK_WASM, to="\{DIST}/storybook/storybook_wasm.wasm"),
@@ -882,14 +840,6 @@ fn dist_steps() -> Array[Step] {
     Copy(
       from="demo/storybook_wasm/index.html",
       to="\{DIST}/storybook/index.html",
-    ),
-  )
-  steps.push(
-    WriteRewritten(
-      from="demo/quantity_picker/index.html",
-      to="\{DIST}/quantity-picker/index.html",
-      old_src="../../" + QUANTITY_JS,
-      new_src="./quantity_picker.js",
     ),
   )
   // The in-browser playground compiler payload (assemble.mjs), reused by the

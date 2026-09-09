@@ -11,7 +11,7 @@
 //
 // Layout produced:
 //   dist/index.html           ← the landing page (site becomes the dist root)
-//   dist/cards.html           ← the card tutorial, which is <mb-card> all the way down
+//   dist/tutorial.html        ← guided lessons with editable <mb-card> examples
 //   dist/styles/site.css      ← page styling (self-contained light/dark palette)
 //   dist/site/embed.js        ← the <mb-playground> custom element
 //   dist/site/examples/*.mbt  ← the editable example sources
@@ -36,7 +36,7 @@ const DIST = join(REPO, "dist");
 
 // The landing page is the dist root; every other page sits beside it, so the
 // `./site/…` and `./styles/…` links in all of them mean the same thing.
-const PAGES = ["index.html", "cards.html"];
+const PAGES = ["index.html", "tutorial.html"];
 for (const page of PAGES) {
   cpSync(join(SITE, page), join(DIST, page));
 }

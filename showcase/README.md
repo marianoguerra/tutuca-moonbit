@@ -14,7 +14,9 @@ module or mount and lasts only for that demo session.
 Run `moon run --target native cmd/dev -- gen-showcase` after changing sources,
 catalog metadata, or page templates. It copies sources into the playgrounds
 and bundled skill and generates the landing page, tutorials, and Storybook
-metadata. Run `gen` after editing `.tutu`, then `gen-showcase` after formatting
+metadata. `tutorial.html` supplies the tutorial structure; `lessons/*.html`
+contains the guided explanation and exercises around each shared card.
+Run `gen` after editing `.tutu`, then `gen-showcase` after formatting
 the compiled assembly. `check-showcase` checks all copies without rewriting.
 
 Keep explanations outside the editor. Editable source starts with code. The

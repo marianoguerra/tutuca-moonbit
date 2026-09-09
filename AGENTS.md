@@ -125,8 +125,8 @@ snippets and checks every identifier in them against the checked-in `.mbti`
 files. The last one matters most: the skill ships inside the CLI binary, so a
 wrong snippet is what an agent reads before writing any tutuca code.
 
-`dist` assembles a self-contained, runnable tree: the landing page and card
-tutorial, the js and wasm-gc counter demos, this repo's storybook gallery, both
+`dist` assembles a self-contained, runnable tree: the landing page and
+tutorial, this repo's storybook gallery, both
 playgrounds, and the native CLI binary. `dist_steps` in `dev/tasks.mbt` is the
 inventory and says why each piece is copied where it is; `tutucard/README.md`
 covers the card half.
@@ -139,12 +139,10 @@ The wasm demos are driven by the `vdom/wasm` + `app/wasm` packages (the wasm-gc
 twins of `vdom/browser` + `app/browser`): the DOM is reached from wasm-gc
 through mizchi/js's `@core.Any` plus a small `tdom` FFI, and — since MoonBit
 closures can't cross into JS on wasm-gc — JS calls the exported `on_event` on
-each DOM event instead of receiving a closure. `demo/quantity_picker_wasm` and
-`demo/storybook_wasm` are the wasm-gc hosts (`demo/quantity_picker_wasm` is the twin of
-the js `demo/counter`; `storybook_wasm` is the same shape over the
-published `storybook/ui/wasm` — an export list and this repo's story set,
-nothing else, an export list being per-package `link` config that cannot come
-from a dependency).
+each DOM event instead of receiving a closure. `demo/storybook_wasm` is the
+gallery host over the published `storybook/ui/wasm`: an export list and this
+repo's story set. The export list is per-package `link` configuration and
+cannot come from a dependency.
 
 margaui styling is compiled in MoonBit rather than fetched: a host's `mount()`
 hands `collect_classes()` to `css`, injects the resulting `<style

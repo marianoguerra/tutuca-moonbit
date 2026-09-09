@@ -3,19 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Learn Tutuca — five practical components</title>
+  <title>Tutuca tutorial — build interactive components step by step</title>
+  <meta name="description" content="Learn Tutuca through guided lessons on state, events, forms, child components, search, and asynchronous host services. Edit and test five working components in your browser.">
   <link rel="stylesheet" href="./styles/site.css">
-  <style>mb-card { max-width: 64rem; margin: 1.5rem auto; } main > section > p { max-width: 48rem; margin-inline: auto; }</style>
+  <style>
+    mb-card { max-width: 64rem; margin: 1.5rem auto; }
+    .lesson-copy { max-width: 48rem; margin-inline: auto; }
+    .lesson-copy h3 { font-size: 1.5rem; text-align: left; margin-top: 2rem; }
+    .lesson-copy li { margin-block: .6rem; }
+    .lesson-copy code { overflow-wrap: anywhere; }
+    section[id] { scroll-margin-top: 5rem; }
+    .exercise { padding: 1rem 1.25rem; border-left: 3px solid var(--accent); background: var(--accent-bg); }
+  </style>
   <script src="./site/tutucard.js"></script>
   <script type="module" src="./site/card-embed.js"></script>
 </head>
 <body>
   <nav><a href="./">Home</a><a href="./tutucard/">Card playground</a><a href="./playground/">MoonBit playground</a><a href="./storybook/">Storybook</a></nav>
-  <header><h1>Learn Tutuca</h1><h2>From a small control to a document workspace</h2><p>Five practical components, using the same sources you can inspect in Storybook and reuse in a MoonBit application.</p></header>
+  <header><h1>Learn Tutuca</h1><h2>From a small control to a document workspace</h2><p class="lesson-copy">Build up your understanding of state, events, composition and host services through five guided lessons. Each has a working component you can use, read and change.</p></header>
   <main>
-    <section><h2>Read a component</h2><p><code>spec:</code> declares fields and contracts. <code>logic:</code> defines updates and derived values. <code>view:</code> describes the interface. Named <code>fixtures:</code> show useful states; <code>tests:</code> checks interactions. Start by using each component, then change its source.</p></section>
+    <section id="start"><h2>Before you begin</h2><div class="lesson-copy">
+      <p>You need a browser and a little familiarity with variables and functions. There is nothing to install: the cards below run here. Follow the lessons in order; each adds one idea to the previous lesson.</p>
+      <p>Use the preview first, then find the code responsible for what happened. Editing the source rebuilds the card and resets its state, so make one change at a time. To explore fixtures and run the included tests, follow the card-playground link under each lesson. Copy your edits somewhere safe before leaving the page.</p>
+      <ol><!-- contents --></ol>
+      <h3>How to read a <code>.tutu</code> file</h3>
+      <p>A component has state and a view of that state. An event sends a message to a handler; the handler changes state, and the view updates. Follow that path through these sections:</p>
+      <dl>
+        <dt><code>spec:</code></dt><dd>Names the components, declares their fields and types, and can state contracts such as a valid quantity range.</dd>
+        <dt><code>logic:</code></dt><dd>Contains <code>receive</code> handlers that change state, <code>compute</code> functions that derive values, and <code>pred</code> predicates that answer true or false.</dd>
+        <dt><code>view:</code></dt><dd>Describes elements, displayed values and event bindings. <code>it.quantity</code> reads a field; <code>@(it.quantity)</code> inserts its value into the view.</dd>
+        <dt><code>fixtures:</code> and <code>tests:</code></dt><dd>Provide useful starting states and repeatable interactions with expected results.</dd>
+      </dl>
+      <p>You will also see <code>:=</code> for assigning a field, <code>~on_click:</code> for handling a click, and <code>e.value</code> for an input's value. Indentation groups declarations and nested elements.</p>
+    </div></section>
     <!-- examples -->
-    <section><h2>Connect a real application</h2><p>The directory uses a host handler to filter contacts before pagination. The workspace uses delayed load/save handlers backed by session-local memory. Your application registers those handlers against its own services. A component states the job; the host supplies the implementation.</p><p><a href="https://github.com/marianoguerra/tutuca-moonbit/blob/main/docs/tutorial.mbt.md">Read the MoonBit integration guide</a> or explore focused language and integration examples in the playgrounds' Reference groups.</p></section>
+    <section id="test"><h2>Turn an interaction into a test</h2><div class="lesson-copy">
+      <p>Open the quantity picker in the card playground and run its Tests pane. Find <code>quantity changes the total</code> in the source: it selects the <code>fresh</code> fixture, clicks Increase, and checks both the quantity and the total. The selector <code>button.increase</code> identifies the button by its element and class.</p>
+      <ol><li>Read the expected total, then use the preview to produce that result yourself.</li><li>Temporarily change the expected total to a different amount and run the tests. The scenario should report the mismatch.</li><li>Restore the expected value and run again. It should pass.</li></ol>
+      <p>When you extend a component, add a scenario for its user-visible result. Test the edge cases too: an empty task, a quantity at its limit, a search with no matches, and a save that fails. Intent fixtures let a test supply a successful or failed service response without a network request.</p>
+    </div></section>
+    <section id="integrate"><h2>Use these ideas in an application</h2><div class="lesson-copy">
+      <p>Start with the smallest component that covers your task. Keep draft fields close to the form that edits them, let a parent own collection membership, and use stable keys when rendering children. Derive totals and counts from the fields that determine them.</p>
+      <p>The directory's <code>contact_page</code> handler and the workspace's <code>load_document</code> and <code>save_document</code> handlers are demo services supplied by this page's host. Their data lasts for the demo session. A standalone host must register its own implementations; saving to a server belongs there. Handle success, failure and an unanswered request in the component.</p>
+      <p>For a MoonBit application, the same <code>.tutu</code> format generates compiled components. The MoonBit playground shows the module assembly and any adapters needed by that backend. Continue with the <a href="https://github.com/marianoguerra/tutuca-moonbit/blob/main/docs/tutorial.mbt.md">source walkthrough and integration guide</a>, inspect the same components in <a href="./storybook/">Storybook</a>, or use the playgrounds' Reference groups for a specific feature.</p>
+    </div></section>
   </main>
 </body>
 </html>

@@ -1,0 +1,13 @@
+<div class="lesson-copy">
+  <p>A directory separates the full collection from the current results. <code>contacts</code> owns the data, <code>order</code> defines its order, and <code>keys</code> holds the current page of matching contact IDs. The selected ID and child editor are separate fields.</p>
+  <h3>Search first, then choose a page</h3>
+  <p>The Search handler stores the query, resets the page to zero, and sends <code>init</code>. That handler asks the host for <code>contact_page</code>. The demo service matches names or email addresses across the collection before taking a page of three results. Filtering only the visible page would miss contacts on other pages.</p>
+  <p>Selecting a contact creates an editor with that contact's ID and details. Save validates the fields and notifies <code>update_contact</code>; the directory writes the result into the entry with that ID and refreshes the search.</p>
+  <h3>Try it</h3>
+  <ol><li>Go to page 2, then search for <code>Alex Chen</code>. Alex appears on page 1 of 1, even though the search started on another page.</li><li>Select Alex, change the name to <code>Avery Chen</code>, and save. The row disappears from the current results because the full-name query no longer matches.</li><li>The editor stays attached to the same contact. Search for <code>Avery</code> to see the updated row.</li><li>Search for <code>nobody</code>. The empty-results message replaces the rows.</li></ol>
+</div>
+<!-- example -->
+<div class="lesson-copy">
+  <p class="exercise"><strong>Your turn:</strong> repeat the rename while searching for <code>alex@example.test</code>. The row should remain visible, because changing a name does not change the email address. Explain the difference before checking the result.</p>
+  <p>The host here answers immediately. The workspace introduces requests whose answers arrive later, after the user may have continued editing.</p>
+</div>
