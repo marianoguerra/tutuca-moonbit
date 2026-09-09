@@ -6,6 +6,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.56.0] - 2026-09-09
+
+### What an app opts into, and what a check actually reads
+
+Two removals take the minor. Markdown is no longer installed for you: an app
+that renders it now enables the extension, the same way every other optional
+filter is reached, so a consumer who never renders Markdown no longer links it.
+And the `storybook` static serve/copy command is gone — the gallery and the
+scaffolder, which are what the command existed to reach, both stay.
+
+The rest is tooling that had drifted from what it claimed to check. Regeneration
+and checking were one step, so a check could only run by writing to the tree;
+the publish graph was a hand-kept list rather than the `.moonignore` inventory
+consumers actually receive; `gen` and `watch` each had their own batch walk, and
+neither noticed two sources claiming one output.
+
+- Make Markdown an explicitly enabled app extension. Remove the `storybook`
+  static serve/copy command; retain the gallery and scaffolder.
+- Separate regeneration from checks performed in a temporary tree, and derive
+  the publish graph from the actual `.moonignore` package inventory.
+- Share batch generation between `gen` and `watch`, reject output collisions,
+  and stop directory discovery at nested module boundaries.
+- Emit a set, flags or ordered-map fixture as `Map([("k", v)])`. The `"k": v`
+  spelling is not a MoonBit map literal and never parsed; the tests over those
+  arms compare the emitted string, and no committed `.tutu` had reached them.
 - Restore compilation with the current MoonBit numeric parsing APIs and remove
   unused imports, annotations, and the unused CLI file-reading helper.
 - Update the playground compiler pin to the verified `1634b282e` toolchain and
@@ -14,14 +39,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   do not depend on what the counter demo happens to use.
 - Make browser event-path reads tolerate absent values and throwing getters;
   expire dropped-file identifiers on every drop.
-- Share batch generation between `gen` and `watch`, reject output collisions,
-  and stop directory discovery at nested module boundaries.
-- Separate regeneration from checks performed in a temporary tree, and derive
-  the publish graph from the actual `.moonignore` package inventory.
-- Make Markdown an explicitly enabled app extension. Remove the `storybook`
-  static serve/copy command; retain the gallery and scaffolder.
 - Share edit distance between diagnostic callers. Replace the completed `.tutu`
   migration guide with the current format and generation reference.
+- Keep `showcase/` out of the published inventory: it is a package, so without
+  a `.moonignore` line it would have travelled in the tarball.
 
 ## [0.55.4] - 2026-09-07
 
@@ -8906,7 +8927,13 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.54.0...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.56.0...HEAD
+[0.56.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.55.4...v0.56.0
+[0.55.4]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.55.3...v0.55.4
+[0.55.3]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.55.2...v0.55.3
+[0.55.2]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.55.1...v0.55.2
+[0.55.1]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.55.0...v0.55.1
+[0.55.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.54.0...v0.55.0
 [0.54.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.53.1...v0.54.0
 [0.53.1]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.53.0...v0.53.1
 [0.53.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.52.0...v0.53.0
