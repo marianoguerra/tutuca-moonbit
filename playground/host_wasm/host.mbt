@@ -37,7 +37,14 @@ pub fn mount(
         [] => (m.name, args.unwrap_or(Map([])))
       }
   }
-  let app = @app.App::from_module(m, root_name, root_node, opts, args=root_args) catch {
+  let app = @app.App::from_module(
+    m,
+    root_name,
+    root_node,
+    opts,
+    args=root_args,
+    markdown_filter=@mdfilter.make_filter,
+  ) catch {
     e => {
       println("playground(wasm): mount failed: \{e}")
       return

@@ -26,7 +26,7 @@ fn read_one(src : String) -> String {
     None => []
   }
   let direct = read_logic(decl, rows~) catch {
-    @sh.ExError(message~, ..) => return "ERR " + message
+    ExError(message~, ..) => return "ERR " + message
   }
   flat(scrub(direct))
 }

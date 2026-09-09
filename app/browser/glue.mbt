@@ -59,13 +59,14 @@ extern "js" fn event_target_ffi(e : @core.Any) -> @core.Any =
 extern "js" fn event_value_ffi(e : @core.Any) -> @core.Any =
   #|(e) => {
   #|  if (e.type === "drop") {
+  #|    globalThis.__tutucaDroppedFile = () => undefined;
   #|    const files = e.dataTransfer && e.dataTransfer.files;
   #|    if (files && files.length) {
   #|      const table = new Map();
-  #|      let next = 1;
   #|      const out = [];
   #|      for (const f of files) {
-  #|        const id = next++;
+  #|        const id = (globalThis.__tutucaNextDroppedId ?? 0) + 1;
+  #|        globalThis.__tutucaNextDroppedId = id;
   #|        table.set(id, f);
   #|        out.push({ id, name: f.name, size: f.size, type: f.type, lastModified: f.lastModified });
   #|      }
@@ -190,7 +191,7 @@ extern "js" fn stop_propagation_ffi(e : @core.Any) -> Unit =
 
 ///|
 extern "js" fn has_prop_ffi(o : @core.Any, name : String) -> Bool =
-  #|(o, n) => n in o
+  #|(o, n) => { try { return o !== null && (typeof o === "object" || typeof o === "function") && n in o; } catch { return false; } }
 
 ///|
 /// One property read, for the allowlisted path walk.
@@ -199,7 +200,7 @@ extern "js" fn has_prop_ffi(o : @core.Any, name : String) -> Bool =
 /// way down would otherwise throw here, and the answer to "this path does not
 /// resolve" is `Null` rather than an exception in a click handler.
 extern "js" fn get_prop_ffi(o : @core.Any, name : String) -> @core.Any =
-  #|(o, n) => o?.[n]
+  #|(o, n) => { try { return o?.[n] ?? null; } catch { return null; } }
 
 ///|
 /// The LEAF of an allowlisted path, as JSON text, or `""` for anything that
@@ -216,14 +217,16 @@ extern "js" fn get_prop_ffi(o : @core.Any, name : String) -> @core.Any =
 /// `e.target.dataset.rowId` is text and `e.dataTransfer.types` is a list.
 extern "js" fn leaf_json_ffi(o : @core.Any, name : String) -> String =
   #|(o, n) => {
-  #|  const v = o?.[n];
-  #|  if (v === null || v === undefined) return "";
-  #|  const t = typeof v;
-  #|  if (t === "string" || t === "number" || t === "boolean") return JSON.stringify(v);
-  #|  if (t !== "object") return "";
-  #|  const p = Object.getPrototypeOf(v);
-  #|  if (!Array.isArray(v) && p !== Object.prototype && p !== null) return "";
-  #|  try { return JSON.stringify(v) ?? ""; } catch { return ""; }
+  #|  try {
+  #|    const v = o?.[n];
+  #|    if (v === null || v === undefined) return "";
+  #|    const t = typeof v;
+  #|    if (t === "string" || t === "number" || t === "boolean") return JSON.stringify(v);
+  #|    if (t !== "object") return "";
+  #|    const p = Object.getPrototypeOf(v);
+  #|    if (!Array.isArray(v) && p !== Object.prototype && p !== null) return "";
+  #|    return JSON.stringify(v) ?? "";
+  #|  } catch { return ""; }
   #|}
 
 ///|

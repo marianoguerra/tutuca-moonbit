@@ -1,0 +1,12 @@
+// Link root for the playground host's complete dependency closure.
+import {
+  "marianoguerra/tutuca/playground/host_wasm",
+}
+
+supported_targets = "wasm-gc"
+
+pkgtype(kind: "executable")
+
+options(
+  link: { "wasm-gc": { "use-js-builtin-string": true } },
+)

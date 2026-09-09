@@ -17,7 +17,6 @@ import {
   "marianoguerra/tutuca/storybook" @sb,
   "moonbitlang/core/cmp",
   "moonbitlang/core/string",
-  "moonbitlang/core/json",
   "moonbitlang/core/debug",
 }
 
@@ -29,6 +28,7 @@ import {
 // excluded from the published archive.
 import {
   "marianoguerra/tutuca/testing/harness",
+  "marianoguerra/tutuca/vdom/filter/markdown" @mdfilter,
   // the gallery itself: gallery_test.mbt mounts this corpus through it. The
   // dependency points this way because `storybook/ui` ships and this package
   // does not — a `for "test"` block survives `moon publish`, so the shipping

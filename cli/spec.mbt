@@ -87,10 +87,6 @@ pub(all) enum Outcome {
   /// byte, every placeholder already substituted — and the shell creates
   /// directories, refuses to clobber without `--force`, and writes.
   NewStorybook(GlobalOpts, plan~ : StorybookScaffoldPlan)
-  /// Serve the pre-built storybook gallery bundle (storybook.mbt). The core
-  /// decides the flags; the shell (cmd/tutuca) resolves the bundle directory,
-  /// starts the static HTTP server, or copies the bundle for `--out`.
-  ServeStorybook(GlobalOpts, dir~ : String, port~ : Int, out~ : String?)
   /// Compile the views under `roots` into MoonBit modules. The core decides
   /// the flags; the shell expands the roots into view files (an explicit
   /// .tutu at its word, a directory contributing the files that already have a

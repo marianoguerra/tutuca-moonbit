@@ -20,5 +20,4 @@
 import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/compose/catalog",
-  "moonbitlang/core/json",
 }

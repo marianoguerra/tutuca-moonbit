@@ -13,7 +13,7 @@ Live demos, playground and storybook:
 <https://github.com/marianoguerra/tutuca-moonbit>. The published mooncakes
 package carries the library packages, the component format (`tgc/`) and the
 CLI; the storybook's own stories, the demo and playground hosts live in the repo
-only (see `exclude` in `moon.mod`).
+only (see `.moonignore`).
 
 ## What's in it
 
@@ -23,20 +23,20 @@ and formal `spec.mbt`. From the bottom up:
 | Layer | Package(s) | What it does |
 |---|---|---|
 | **Value language** | `core/` — `marianoguerra/tutuca/core` (`value_*.mbt`, `path_*.mbt`) | The value model and its evaluation, plus the reactive path/dispatch system (COW spine rebuild, handler dispatch, change sets). `core` never PARSES anything — one package by necessity, since `value_*` and `path_*` form a dependency cycle. |
-| **Expression language** | `tscript/` (+ `check/`, `emit_mbt/`, `conformance/`) | Reading the surface tutuca writes: the slot expressions in a view (`it.field`, `method()`, a loop binding) and the statement language of the `logic:` section. Tokenizer, parser, checker, and a MoonBit emitter for the ahead-of-time path. There was an interpreter here too, for the card runtime; `tgc/emit` compiles a card now, so a card is mounted by instantiating a module rather than by running one where it stands. Above `core` rather than inside it, for the reason in the cell above. |
+| **Expression language** | `tscript/` (+ `check/`, `emit_mbt/`, `conformance/`) | Reading the surface tutuca writes: the slot expressions in a view (`it.field`, `method()`, a loop binding) and the statement language of the `logic:` section. Tokenizer, parser, checker, and a MoonBit emitter for the ahead-of-time path. `tgc/emit` compiles dynamic cards to WebAssembly modules. Above `core` rather than inside it, for the reason in the cell above. |
 | **Templates** | `anode/` (+ `anode/sanitize`) | Parses the HTML-ish view syntax into an AST: attributes, directives, `x-` ops, macros, whitespace handling, optimization. `sanitize` is the WHATWG Sanitizer API config model, applied statically to a view's literal names. |
 | **Virtual DOM** | `vdom/` (+ `vdom/memdom`, `vdom/browser`, `vdom/wasm`) | Builds and incrementally morphs a VDOM against any DOM implementing the `DomNode` trait. |
 | **Render-time filters** | `vdom/filter/` (+ `url/`, `handler/`, `markup/`, `markdown/`), `markdown/`, `sinks/` | The half a static pass cannot decide: an attribute VALUE is only known once state has produced it. URL schemes, `on*` handlers, sanitized raw markup, and Markdown rendered straight into vdom nodes. `markdown/` is a CommonMark+GFM parser vendored from mizchi/markdown.mbt — see `markdown/UPSTREAM.md`. `sinks/` holds one four-bit type and imports nothing: which of these rules an element's attribute NAMES could concern, which `render` decides off the tree so the rules can skip what cannot concern them. |
 | **Render** | `render/` | Turns a parsed view + a value stack into a `@vdom.Vdom` tree (loops, scopes, event-path metas, resumed paths). |
 | **Components / App** | `component/`, `app/` (+ `app/browser`, `app/wasm`), `transactor/` | Typed-state component definitions (a plain struct + one `Dispatch` update match), the app runtime, and the transactor that routes events at the root and settles state. |
 | **Styling** | `css/` | The one place stylesheets live: a Tailwind port plus embedded Tailwind and margaui bundles, so a host compiles its collected class names to CSS with no Node, no CDN and no checkout. |
-| **Tooling** | `lint/`, `storybook/inspector/`, `statedef/`, `viewfile/`, `viewgen/`, `cli/` | The linter (parse-issue rules + a WHATWG-tokenizer structural HTML linter), a schema inspector, the state schema language, the view-file splitter, the ahead-of-time view compiler, and the native `tutuca` CLI. |
+| **Tooling** | `lint/`, `storybook/inspector/`, `statedef/`, `viewfile/`, `viewgen/`, `cli/` | Event-path lint rules, a schema inspector, the state schema language, the component-file model, the ahead-of-time view compiler, and the native `tutuca` CLI. |
 | **Testing** | `testing/harness` | A reusable harness to mount and drive a `ModuleDef` on the in-memory DOM. |
 | **Component format** | `tgc/` — `abi/` (the frozen preamble), `rt/` (the runtime module), `emit/` (the card compiler), `host/`, `policy/`, `persist/` | Loading a WebAssembly module from anywhere into a *running* app. Core wasm plus the GC proposal and nothing else: one file that carries its own manifest, and an instance a component can hold in its own state. See [`tgc/SPEC.md`](tgc/SPEC.md) and [`tgc/SECURITY.md`](tgc/SECURITY.md). |
 | **Demos & docs** | `demo/`, `playground/`, `storybook/`, `tutucard/` | The ported examples (`storybook/examples/`), browser/wasm demo hosts, an in-browser playground, the compiler-free card playground, and a compiled storybook gallery. |
 
 The `tutuca` CLI does the work that happens outside the compiler — generating
-view modules and stylesheets, watching them, scaffolding and serving a gallery,
+view modules and stylesheets, watching them, scaffolding a gallery,
 reading a trace; `tutuca help` lists it. It does not inspect, document, lint or
 render components — this is an ahead-of-time port, so those questions belong to
 `gen` (which makes a bad field reference or an unhandled `@on` handler a
@@ -372,8 +372,7 @@ example becomes a MoonBit one.
 
 `dist` produces `dist/index.html` (a landing page), the js and wasm-gc demos,
 the storybook gallery, and the native `tutuca` binary — serve it with any
-static file server (`cd dist && python3 -m http.server`) or
-`dist/cli/tutuca storybook`. The wasm pages need a browser with the JS String
+static file server (`cd dist && python3 -m http.server`). The wasm pages need a browser with the JS String
 Builtins proposal (e.g. Chrome).
 
 ## Targets

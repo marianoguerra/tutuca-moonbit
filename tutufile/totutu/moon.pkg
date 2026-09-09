@@ -21,11 +21,9 @@ import {
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/tutufile/names",
-  "moonbitlang/core/json",
 }
 
 import {
-  // The two properties the reader promises, asserted over what this package
-  // PRODUCES rather than over sources written by hand beside the assertion.
-  "moonbitlang/core/debug",
+// The two properties the reader promises, asserted over what this package
+// PRODUCES rather than over sources written by hand beside the assertion.
 } for "test"

@@ -2,20 +2,22 @@
 package "marianoguerra/tutuca/testing/harness"
 
 import {
+  "marianoguerra/tutuca/anode/sanitize",
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/render",
   "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/filter",
   "marianoguerra/tutuca/vdom/memdom",
 }
 
 // Values
 pub fn clean_html(@memdom.MemNode) -> String
 
-pub fn mount(@component.ModuleDef, String, args? : Map[String, @core.Value], view? : String) -> Harness[@memdom.MemNode] raise
+pub fn mount(@component.ModuleDef, String, args? : Map[String, @core.Value], view? : String, markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter) -> Harness[@memdom.MemNode] raise
 
-pub fn mount_example(@component.ModuleDef, String) -> Harness[@memdom.MemNode] raise
+pub fn mount_example(@component.ModuleDef, String, markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter) -> Harness[@memdom.MemNode] raise
 
 pub fn new_mount() -> (@memdom.MemNode, @memdom.MemNode)
 

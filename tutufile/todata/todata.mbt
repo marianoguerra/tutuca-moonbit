@@ -8,34 +8,34 @@
 /// A value expression as JSON.
 pub fn json_of(ex : @sh.Ex) -> Json raise @sh.ExError {
   match ex {
-    @sh.ENum(n) => Json::number(n)
-    @sh.EStr(s) => Json::string(s)
-    @sh.EBool(b) => Json::boolean(b)
-    @sh.ENone => Json::null()
-    @sh.EName("true") => Json::boolean(true)
-    @sh.EName("false") => Json::boolean(false)
-    @sh.EList(xs) => {
+    ENum(n) => Json::number(n)
+    EStr(s) => Json::string(s)
+    EBool(b) => Json::boolean(b)
+    ENone => Json::null()
+    EName("true") => Json::boolean(true)
+    EName("false") => Json::boolean(false)
+    EList(xs) => {
       let out = []
       for x in xs {
         out.push(json_of(x))
       }
       Json::array(out)
     }
-    @sh.EMap(entries) => {
+    EMap(entries) => {
       let out = Map([])
       for e in entries {
         out[e.0] = json_of(e.1)
       }
       Json::object(out)
     }
-    @sh.ECall(@sh.EName(name), args) => {
+    ECall(EName(name), args) => {
       // `ok [...]`, `failed "…"` and `pass` are an intent's three answers
       let pos = @sh.positional(args)
       match (name, pos.length()) {
         ("ok", 1) => Json::object({ "ok": json_of(pos[0]) })
         ("failed", 1) => Json::object({ "failed": json_of(pos[0]) })
         _ =>
-          raise @sh.ExError(
+          raise ExError(
             message="`\{name}` is not a value",
             help="a value is a number, a string, `true`, `false`, a list or a map",
             span=@report.Span::at(0),
@@ -43,7 +43,7 @@ pub fn json_of(ex : @sh.Ex) -> Json raise @sh.ExError {
       }
     }
     _ =>
-      raise @sh.ExError(
+      raise ExError(
         message="this is not a value a fixture or a scene can carry",
         help="a value is a number, a string, `true`, `false`, a list or a map",
         span=@report.Span::at(0),
@@ -172,14 +172,14 @@ fn steps_json(groups : Array[@ast.Node]) -> Json raise @sh.ExError {
 /// One step: a driving verb, or a reading `expect`.
 fn step_json(group : @ast.Node) -> Json raise @sh.ExError {
   guard group.it is Group(parts) && parts.length() > 0 else {
-    raise @sh.ExError(
+    raise ExError(
       message="a step is a verb",
       help="write `click(\"button\")`, or `expect text(\"o\") == \"3\"`",
       span=@sh.span_of(group),
     )
   }
   guard parts[0].it is Id(verb) else {
-    raise @sh.ExError(
+    raise ExError(
       message="a step is a verb",
       help="write `click(\"button\")`, or `expect text(\"o\") == \"3\"`",
       span=@sh.span_of(parts[0]),
@@ -189,7 +189,7 @@ fn step_json(group : @ast.Node) -> Json raise @sh.ExError {
     return expect_json(parts, group)
   }
   guard parts.length() >= 2 && parts[1].it is Parens(gs) else {
-    raise @sh.ExError(
+    raise ExError(
       message="`\{verb}` is called with what it acts on",
       help="write `\{verb}(\"<selector>\")`",
       span=@sh.span_of(parts[0]),
@@ -241,7 +241,7 @@ fn step_json(group : @ast.Node) -> Json raise @sh.ExError {
       }
     }
     other =>
-      raise @sh.ExError(
+      raise ExError(
         message="`\{other}` is not a step",
         help="the verbs are `click`, `type`, `key`, `check`, `fire`, `drag` and `send`",
         span=@sh.span_of(parts[0]),
@@ -261,7 +261,7 @@ fn expect_json(
   group : @ast.Node,
 ) -> Json raise @sh.ExError {
   guard parts.length() >= 2 && parts[1].it is Id(reader) else {
-    raise @sh.ExError(
+    raise ExError(
       message="`expect` names what to read",
       help="write `expect text(\"o\") == \"3\"`",
       span=@sh.span_of(group),
@@ -307,7 +307,7 @@ fn expect_json(
       Id("contains") =>
         obj["contains"] = json_of(@sh.read_ex(parts[i + 1:stop]))
       _ =>
-        raise @sh.ExError(
+        raise ExError(
           message="an expectation compares with `==` or `contains`",
           help="leave the comparison out to record what it reads instead",
           span=@sh.span_of(parts[i]),
@@ -427,8 +427,8 @@ fn intents_json(groups : Array[@ast.Node]) -> Json raise @sh.ExError {
         }
       None => []
     }
-    guard args.length() >= 1 && args[0] is @sh.EStr(name) else {
-      raise @sh.ExError(
+    guard args.length() >= 1 && args[0] is EStr(name) else {
+      raise ExError(
         message="an intent answer names the intent it answers",
         help="write `ok(\"<name>\", <value>)`, `failed(\"<name>\", <value>)` or `pass(\"<name>\")`",
         span=@sh.span_of(parts[0]),
@@ -438,7 +438,7 @@ fn intents_json(groups : Array[@ast.Node]) -> Json raise @sh.ExError {
       "pass" => out[name] = Json::string("pass")
       "ok" | "failed" => {
         guard args.length() == 2 else {
-          raise @sh.ExError(
+          raise ExError(
             message="`\{verb}` answers with one value",
             help="write `\{verb}(\"\{name}\", <value>)`",
             span=@sh.span_of(parts[0]),
@@ -449,7 +449,7 @@ fn intents_json(groups : Array[@ast.Node]) -> Json raise @sh.ExError {
         out[name] = Json::object(one)
       }
       other =>
-        raise @sh.ExError(
+        raise ExError(
           message="`\{other}` is not an intent answer",
           help="an intent is answered `ok`, `failed` or `pass`, and nothing else",
           span=@sh.span_of(parts[0]),

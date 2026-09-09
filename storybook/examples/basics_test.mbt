@@ -63,7 +63,11 @@ test "danger-set-inner-html: custom markup" {
 /// `@setinnermd` through the real mount path, which is what the storybook and
 /// the landing-site editor both drive.
 test "set-inner-md: markdown lands as real elements" {
-  let h = @harness.mount(set_inner_md_module(), "SetInnerMd")
+  let h = @harness.mount(
+    set_inner_md_module(),
+    "SetInnerMd",
+    markdown_filter=@mdfilter.make_filter,
+  )
   inspect(
     h.find(".md").to_html(),
     content=(
@@ -75,11 +79,16 @@ test "set-inner-md: markdown lands as real elements" {
 ///|
 /// GFM, with nothing switched on to get it.
 test "set-inner-md: tables, task lists and footnotes" {
-  let h = @harness.mount(set_inner_md_module(), "SetInnerMd", args={
-    "source": Str(
-      "| a | b |\n|:--|--:|\n| 1 | 2 |\n\n- [x] task lists\n- [ ] and footnotes[^1]\n\n[^1]: like this\n",
-    ),
-  })
+  let h = @harness.mount(
+    set_inner_md_module(),
+    "SetInnerMd",
+    markdown_filter=@mdfilter.make_filter,
+    args={
+      "source": Str(
+        "| a | b |\n|:--|--:|\n| 1 | 2 |\n\n- [x] task lists\n- [ ] and footnotes[^1]\n\n[^1]: like this\n",
+      ),
+    },
+  )
   inspect(
     h.find(".md").to_html(),
     content=(
@@ -111,11 +120,16 @@ test "set-inner-md: tables, task lists and footnotes" {
 /// name, and a `javascript:` URL that takes the ATTRIBUTE with it and leaves
 /// the link's words behind.
 test "set-inner-md: the dangerous half renders nothing dangerous" {
-  let h = @harness.mount(set_inner_md_module(), "SetInnerMd", args={
-    "source": Str(
-      "<script>alert(1)</script>\n\n<svg><script>alert(2)</script></svg>\n\n<iframe src=\"https://example.com\"></iframe>\n\n<div onclick=\"alert(3)\">handler dropped</div>\n\n[keeps its words, loses its href](javascript:alert(4))\n",
-    ),
-  })
+  let h = @harness.mount(
+    set_inner_md_module(),
+    "SetInnerMd",
+    markdown_filter=@mdfilter.make_filter,
+    args={
+      "source": Str(
+        "<script>alert(1)</script>\n\n<svg><script>alert(2)</script></svg>\n\n<iframe src=\"https://example.com\"></iframe>\n\n<div onclick=\"alert(3)\">handler dropped</div>\n\n[keeps its words, loses its href](javascript:alert(4))\n",
+      ),
+    },
+  )
   let html = h.find(".md").to_html()
   // Not one of them survived as an element.
   for tag in ["SCRIPT", "IFRAME"] {

@@ -57,9 +57,9 @@ pub fn read_logic(
 /// An expression carries no span of its own, so the enclosing member is the
 /// narrowest thing that can point anywhere.
 pub fn at_span(e : @sh.ExError, at : @report.Span) -> @sh.ExError {
-  let @sh.ExError(message~, help~, span~) = e
+  let ExError(message~, help~, span~) = e
   if span.start == 0 && span.len == 0 {
-    @sh.ExError(message~, help~, span=at)
+    ExError(message~, help~, span=at)
   } else {
     e
   }
@@ -163,7 +163,7 @@ fn accessors(
       "get" => DGet
       "set" => DSet
       _ =>
-        raise @sh.ExError(
+        raise ExError(
           message="`\{word}` is not a property accessor",
           help="a property with a body writes `get:` and `set:`",
           span=@sh.span_of(parts[0]),
@@ -211,7 +211,7 @@ fn value_body(
 ) -> @tutuca.Expr raise @sh.ExError {
   let groups = m.block()
   guard groups.length() == 1 else {
-    raise @sh.ExError(
+    raise ExError(
       message="a value body is one expression",
       help="write the expression after the `:`, or one line under it",
       span~,

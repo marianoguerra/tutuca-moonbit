@@ -166,33 +166,6 @@ let commands : Array[CommandSpec] = [
       ),
     ],
   },
-  // A pre-built static bundle, served or copied. The gallery itself is a wasm
-  // page built from the project's own modules; this command is a static file
-  // server and nothing else, so it needs no knowledge of any story registry.
-  {
-    name: "storybook",
-    describe: "Serve (or copy) a pre-built storybook gallery bundle.",
-    flags: [
-      flag(
-        "port",
-        type_="string",
-        description="Preferred port (default 4321; falls back to a free port).",
-      ),
-      flag(
-        "out",
-        type_="string",
-        description="Copy the static bundle to <dir> instead of serving.",
-      ),
-      help_flag,
-    ],
-    positionals: [
-      positional(
-        "dir",
-        required=false,
-        description="A pre-built bundle directory to serve — an index.html with a .wasm beside it (default: ./storybook, then ./dist/storybook).",
-      ),
-    ],
-  },
   // Ahead-of-time view compilation (gen_views.mbt + the viewgen package).
   // Needs no module: it reads a .tutu file and writes a .mbt file, so it
   // works before the component that will use the generated types exists.

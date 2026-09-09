@@ -1,4 +1,5 @@
 import {
+  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/anode",
   // The event-path profile the rule above advises about. The `e.<path>`
   // arguments themselves arrive as core Expr variants, matched by inference —

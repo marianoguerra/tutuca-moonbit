@@ -11,7 +11,11 @@ import {
 // Values
 pub fn args_to_exprs(Array[Ex], ExCtx, @error-report.Span) -> Array[@core.Expr] raise ExError
 
+pub fn attr_name(String) -> String
+
 pub fn body_groups(@tutufile.Decl) -> Array[@ast.Node]
+
+pub fn collection_op(String) -> String?
 
 pub fn decl_doc(@tutufile.Decl) -> String?
 
@@ -47,7 +51,15 @@ pub fn read_member(@ast.Node, prev? : @ast.Node?) -> Member raise ExError
 
 pub fn read_param(@ast.Node) -> Param raise ExError
 
+pub fn row_members(Array[@tutufile.Decl]) -> Array[String]
+
 pub fn span_of(@ast.Node) -> @error-report.Span
+
+pub fn split_binder(Array[@ast.Node]) -> (Array[String], Ex, Int) raise ExError
+
+pub fn split_call(Array[@ast.Node]) -> (Array[@ast.Node], Array[@ast.Node]) raise ExError
+
+pub fn tag_name(String) -> String
 
 pub fn to_expr(Ex, ExCtx, @error-report.Span) -> @core.Expr raise ExError
 
@@ -88,11 +100,13 @@ pub(all) struct ExCtx {
   binds : Map[String, String]
   pos : NamePos
   params : Map[String, Ex]
+  config : Map[String, String]?
 }
 pub fn ExCtx::as_handler(Self) -> Self
 pub fn ExCtx::in_body(Map[String, String]) -> Self
 pub fn ExCtx::value() -> Self
 pub fn ExCtx::with_bind(Self, String, String) -> Self
+pub fn ExCtx::with_config(Self, Map[String, String]) -> Self
 pub fn ExCtx::with_params(Self, Map[String, Ex]) -> Self
 
 pub(all) struct Member {

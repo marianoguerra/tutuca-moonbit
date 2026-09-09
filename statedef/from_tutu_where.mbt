@@ -121,7 +121,7 @@ fn one_of(
   for g in gs {
     let ex = @sh.read_group(g) catch {
       e => {
-        let @sh.ExError(message~, help~, ..) = e
+        let ExError(message~, help~, ..) = e
         raise Syntax(msg=message + " — " + help, span=at)
       }
     }
@@ -200,7 +200,7 @@ fn operand_of(
 ) -> @tutuca.DomainOperand raise DefError {
   let ex = @sh.read_group(g) catch {
     e => {
-      let @sh.ExError(message~, help~, ..) = e
+      let ExError(message~, help~, ..) = e
       raise Syntax(msg=message + " — " + help, span=at)
     }
   }

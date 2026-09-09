@@ -65,48 +65,6 @@ test "unknown command under --json is a one-line envelope" {
 }
 
 ///|
-test "global -h routes a command to the help one-liner" {
-  let emit = done(["storybook", "-h"])
-  assert_eq(emit.exit_code, 0)
-  assert_true(emit.out.has_prefix("tutuca storybook"))
-}
-
-///|
-test "storybook --help prints its own usage" {
-  let emit = done(["storybook", "--help"])
-  assert_eq(emit.exit_code, 0)
-  assert_true(emit.out.has_prefix("tutuca storybook"))
-}
-
-///|
-test "storybook serve returns a ServeStorybook outcome" {
-  match @cli.plan(["storybook", "some/dir", "--port", "9999"]) {
-    ServeStorybook(_, dir~, port~, out~) => {
-      assert_eq(dir, "some/dir")
-      assert_eq(port, 9999)
-      assert_true(out is None)
-    }
-    _ => fail("expected ServeStorybook outcome")
-  }
-}
-
-///|
-test "storybook rejects the flags it used to accept and ignore" {
-  for f in ["--no-margaui", "--no-check", "--no-tests", "--dry-run"] {
-    let emit = done(["storybook", f])
-    assert_eq(emit.exit_code, 1)
-    assert_true(emit.err.contains("unknown flag '\{f}' for storybook"))
-  }
-}
-
-///|
-test "storybook rejects a bad --port with a coded error" {
-  let emit = done(["storybook", "--port", "zero"])
-  assert_eq(emit.exit_code, 1)
-  assert_true(emit.err.contains("invalid --port value 'zero'"))
-}
-
-///|
 test "help routing" {
   assert_true(done(["help"]).out == @cli.overview())
   assert_eq(

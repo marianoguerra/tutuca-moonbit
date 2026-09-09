@@ -98,9 +98,8 @@ commit that migrates its source.
 
 ### What ships
 
-`options(exclude: ...)` in `moon.mod` decides it, and **its comment is the
-argument** — each exclusion says why, package by package, and that is the one
-place to read or change it. `moon package --list` shows the result.
+`.moonignore` defines the published inventory, including build and dependency
+exclusions. `moon package --list` shows the files that consumers receive.
 
 Two rules that are yours to keep when you add a package:
 

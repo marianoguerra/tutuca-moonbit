@@ -11,5 +11,4 @@
 // both halves. `rt.wap` stays authoritative — `cmd/tgc` compiles it directly,
 // and the drift between the two is what the embed check catches.
 import {
-  "moonbitlang/core/debug",
 }

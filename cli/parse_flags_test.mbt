@@ -34,7 +34,6 @@ test "an unknown flag suggests a real one, for every command that has flags" {
   for
     probe in [
       (["gen", "a.html", "--nam"], "--name"),
-      (["storybook", "--prot", "80"], "--port"),
       (["install-skill", "--forc"], "--force"),
       (["new-storybook", "app", "--dr"], "--dir"),
     ] {

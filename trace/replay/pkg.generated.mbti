@@ -2,18 +2,20 @@
 package "marianoguerra/tutuca/trace/replay"
 
 import {
+  "marianoguerra/tutuca/anode/sanitize",
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/testing/harness",
   "marianoguerra/tutuca/trace",
   "marianoguerra/tutuca/transactor",
+  "marianoguerra/tutuca/vdom/filter",
   "marianoguerra/tutuca/vdom/memdom",
   "moonbitlang/core/debug",
 }
 
 // Values
-pub fn mount(@trace.Trace, @component.ComponentStack, fidelity? : Fidelity, verify? : Bool) -> Player raise ReplayError
+pub fn mount(@trace.Trace, @component.ComponentStack, fidelity? : Fidelity, verify? : Bool, markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter) -> Player raise ReplayError
 
 pub fn replay(@trace.Trace, @component.ComponentStack, fidelity? : Fidelity, verify? : Bool) -> Json raise ReplayError
 

@@ -230,7 +230,7 @@ let gen_views_help : String =
   #|
   #|  --name  the component name, for a file whose templates do not name one
   #|          (default: the file's basename, capitalized). A file that names
-  #|          its components with `id="Comp:view"` ignores it. Names ONE
+  #|          its components with `view: sections` ignores it. Names ONE
   #|          component, so it is refused with more than one path.
   #|  --out   directory (default: each input's) or an explicit .mbt file path.
   #|          The .mbt form names one file, so it too is refused for a batch.
@@ -383,6 +383,27 @@ pub fn gen_views_all(
   files : Array[GenInput],
   ir~ : Bool,
 ) -> Result[GenPlan, ErrShape] {
+  let owners : Map[String, String] = Map([])
+  for f in files {
+    let targets = if ir {
+      [f.target, gen_views_ir_target(f.target)]
+    } else {
+      [f.target]
+    }
+    for target in targets {
+      let key = normalize_gen_path(target)
+      if owners.get(key) is Some(previous) {
+        return Err(
+          err(
+            CODE_USAGE_MUTUALLY_EXCLUSIVE,
+            "output '\{target}' is shared by '\{previous}' and '\{f.input}'",
+            hint="use distinct basenames or generate beside each input without --out",
+          ),
+        )
+      }
+      owners[key] = f.input
+    }
+  }
   let out : Array[(String, String)] = []
   let diagnostics : Array[String] = []
   // Split everything BEFORE emitting anything: the component table has to be
@@ -537,4 +558,48 @@ fn basename(path : String) -> String {
 /// The line the shell prints after writing.
 pub fn gen_views_success(target : String, input : String) -> String {
   "generated \{target} from \{input}\n"
+}
+
+///|
+/// Validate options against discovered files before reading or writing a batch.
+pub fn validate_gen_paths(
+  paths : Array[String],
+  out : String?,
+  name : String?,
+) -> ErrShape? {
+  if paths.length() > 1 && name is Some(_) {
+    return Some(
+      err(
+        CODE_USAGE_MUTUALLY_EXCLUSIVE,
+        "--name applies to one file, but \{paths.length()} view files resolved",
+        hint="name each component in its view: section and omit --name",
+      ),
+    )
+  }
+  if paths.length() > 1 && out is Some(o) && o.has_suffix(".mbt") {
+    return Some(
+      err(
+        CODE_USAGE_MUTUALLY_EXCLUSIVE,
+        "--out '\{o}' is one file, but \{paths.length()} view files resolved",
+        hint="pass an output directory or omit --out",
+      ),
+    )
+  }
+  None
+}
+
+///|
+fn normalize_gen_path(path : String) -> String {
+  let parts : Array[String] = []
+  for part in path.split("/") {
+    if part == "" || part == "." {
+      continue
+    }
+    if part == ".." && !parts.is_empty() && parts[parts.length() - 1] != ".." {
+      let _ = parts.pop()
+    } else {
+      parts.push(part.to_owned())
+    }
+  }
+  (if path.has_prefix("/") { "/" } else { "" }) + parts.join("/")
 }

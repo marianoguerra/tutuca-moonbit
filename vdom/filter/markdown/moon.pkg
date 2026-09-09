@@ -16,7 +16,7 @@
 // so a `<script>` cannot be refused by one path and allowed by the other.
 //
 // The dependency runs markdown -> markup and never back, which is why the
-// combined `filter_for` lives here rather than there.
+// optional Markdown factory lives here; app depends only on markup.
 import {
   "marianoguerra/tutuca/markdown" @md,
   "marianoguerra/tutuca/vdom",
@@ -36,5 +36,4 @@ import {
 
 import {
   "moonbitlang/core/debug",
-  "moonbitlang/core/test",
 } for "test"

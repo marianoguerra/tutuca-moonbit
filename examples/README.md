@@ -26,7 +26,7 @@ Each has a `build.mjs` and a README:
 ```sh
 cd examples/storybook-gallery
 node build.mjs
-tutuca storybook dist
+python3 -m http.server --directory dist
 ```
 
 Run them after a release, before announcing one. They are not part of `cmd/dev

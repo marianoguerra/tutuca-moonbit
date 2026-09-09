@@ -56,7 +56,7 @@ pub fn mount() -> Unit {
 ## 4. Build and look
 
 ```sh
-node build.mjs && tutuca storybook dist
+node build.mjs && python3 -m http.server --directory dist
 ```
 
 ## Adding the next story

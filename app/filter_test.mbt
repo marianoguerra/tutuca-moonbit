@@ -90,6 +90,7 @@ fn mk_filtered_app(
     c.make(Map([])),
     container,
     @vdom.RenderOpts::new(doc),
+    markdown_filter=@mdfilter.make_filter,
   )
   match mode {
     Default => ()
@@ -321,6 +322,7 @@ fn mk_counted() -> (@app.App[@memdom.MemNode], @memdom.MemNode, CountingFilter) 
     p.make({ "title": Str("t") }),
     container,
     @vdom.RenderOpts::new(doc),
+    markdown_filter=@mdfilter.make_filter,
   )
   a.add_filter(f)
   a.start()
@@ -419,7 +421,9 @@ fn md_component() -> @component.Component {
 }
 
 ///|
-fn mk_md_app() -> (@app.App[@memdom.MemNode], @memdom.MemNode) raise {
+fn mk_md_app(
+  enabled? : Bool = true,
+) -> (@app.App[@memdom.MemNode], @memdom.MemNode) raise {
   let scope = @component.ComponentStack::new()
   scope.register_components([md_component()])
   guard scope.lookup_component("Bodied") is Some(c) else {
@@ -432,13 +436,42 @@ fn mk_md_app() -> (@app.App[@memdom.MemNode], @memdom.MemNode) raise {
     c.make(Map([])),
     container,
     @vdom.RenderOpts::new(doc),
+    markdown_filter?=if enabled { Some(@mdfilter.make_filter) } else { None },
   )
   a.start()
   (a, container)
 }
 
 ///|
-/// The headline: an app nobody configured renders markdown, and the payload's
+test "Markdown without an extension is empty and names the repair" {
+  let (a, container) = mk_md_app(enabled=false)
+  assert_true(!container.to_html().contains("<h1>"))
+  assert_true(
+    a
+    .take_filter_reports()
+    .any(d => d.reason.contains("configure markdown_filter=")),
+  )
+  a.destroy()
+  container.destroy_tree()
+}
+
+///|
+test "changing sanitizer rebuilds the optional Markdown filter" {
+  let (a, container) = mk_md_app()
+  assert_true(container.to_html().contains("<h1>"))
+  let sanitizer = @sanitize.Sanitizer::new({
+    ..@sanitize.SanitizerConfig::default(),
+    remove_elements: Some([@sanitize.html("h1")]),
+  })
+  a.set_sanitizer(sanitizer)
+  a.start()
+  assert_true(!container.to_html().contains("<h1>"))
+  a.destroy()
+  container.destroy_tree()
+}
+
+///|
+/// An app with the Markdown factory renders Markdown, and the payload's
 /// `<script>` never becomes an element — through the SAME sanitizer that judges
 /// every other node, with no permission granted anywhere.
 ///
@@ -452,7 +485,7 @@ fn mk_md_app() -> (@app.App[@memdom.MemNode], @memdom.MemNode) raise {
 /// the serialized string would have read that as a hole and been wrong; one
 /// that asserted the string is clean would pass only because of how a test aid
 /// prints. Asking the tree what elements exist is the question with an answer.
-test "an app renders setinnermd by default, and a script never becomes an element" {
+test "an app with Markdown enabled never creates a script element" {
   let (_a, container) = mk_md_app()
   guard find_el(container, "ARTICLE") is Some(article) else {
     fail("no article")
@@ -557,6 +590,7 @@ fn mk_links_app() -> (@app.App[@memdom.MemNode], @memdom.MemNode) raise {
     c.make(Map([])),
     container,
     @vdom.RenderOpts::new(doc),
+    markdown_filter=@mdfilter.make_filter,
   )
   a.start()
   (a, container)
@@ -633,6 +667,7 @@ fn mk_safe_app() -> (@app.App[@memdom.MemNode], @memdom.MemNode) raise {
     c.make(Map([])),
     container,
     @vdom.RenderOpts::new(doc),
+    markdown_filter=@mdfilter.make_filter,
   )
   a.start()
   (a, container)

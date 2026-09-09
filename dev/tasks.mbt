@@ -129,6 +129,27 @@ const DIST = "dist"
 pub fn tasks() -> Array[Task] {
   [
     {
+      name: "check-generated",
+      about: "regenerate in a temporary checkout and compare generated files without changing sources",
+      commands: [
+        moon("check generated artifacts", [
+          "run", "scripts/check-generated.mbtx",
+        ]),
+      ],
+    },
+    {
+      name: "universal-embed",
+      about: "embed the universal demo layout kit",
+      commands: [
+        {
+          label: "embed layout kit",
+          prog: "node",
+          args: ["demo/universal/std/embed.mjs"],
+        },
+        moon("fmt", ["fmt"]),
+      ],
+    },
+    {
       name: "check",
       about: "type-check every backend (default, js, native)",
       commands: [
@@ -154,6 +175,11 @@ pub fn tasks() -> Array[Task] {
       name: "test",
       about: "run tests across default, native, and js browser adapters",
       commands: [
+        {
+          label: "test · browser import adapters",
+          prog: "node",
+          args: ["--test", "app/wasm/loader.test.mjs"],
+        },
         moon("test · default", ["test"]),
         moon("test · native", [
           "test",
@@ -439,23 +465,8 @@ pub fn tasks() -> Array[Task] {
     },
     {
       name: "universal",
-      about: "build and assemble dist/universal/ — the composition demo",
-      commands: [
-        {
-          label: "embed the layout kit",
-          prog: "node",
-          args: ["demo/universal/std/embed.mjs"],
-        },
-        moon("fmt", ["fmt"]),
-        {
-          label: "drift check · demo/universal/std/std_card_gen.mbt matches std.card.tutu",
-          prog: "git",
-          args: [
-            "diff", "--exit-code", "--", "demo/universal/std/std_card_gen.mbt",
-          ],
-        },
-        ..universal_dist_commands(),
-      ],
+      about: "build and assemble dist/universal/",
+      commands: universal_dist_commands(),
     },
     {
       name: "check-tgc",
@@ -530,14 +541,8 @@ fn gen_conformance_commands() -> Array[Command] {
 }
 
 ///|
-/// One entry per repo-owned view file. Run after editing a .tutu view; it ends
-/// in its own `git diff --exit-code`, which is what lets `ci` include it to
-/// catch a generated module that has drifted from its source. A file whose
-/// components carry template ids needs no `--name`; a bare single-component
-/// `<template>` names its component with one.
-///
-/// The CLI emits unformatted source, so the run ends with `moon fmt` — that is
-/// what makes the checked-in pair reproducible and the drift check meaningful.
+/// Generate the repository-owned views and format the resulting modules.
+/// `check-generated` runs the same task in isolation to detect drift.
 fn gen_views_commands() -> Array[Command] {
   // (relative .tutu path, --name override or None)
   let files : Array[(String, String?)] = [
@@ -593,10 +598,7 @@ fn gen_views_commands() -> Array[Command] {
     // module the template hands a stranger is the one this generator produces.
     ("storybook/template/page/counter.tutu", None),
   ]
-  // Snapshot the generated modules BEFORE regenerating, so the check at the end
-  // can ask whether regenerating changed anything rather than whether the tree
-  // matches a commit. See that check for why the two are not the same question.
-  let commands = [view_drift_snapshot(VIEW_DRIFT_BEFORE)]
+  let commands : Array[Command] = []
   for entry in files {
     let (path, name) = entry
     let args = ["run", "--target", "native", "cmd/tutuca", "--", "gen", path]
@@ -610,74 +612,7 @@ fn gen_views_commands() -> Array[Command] {
     commands.push(moon("gen · " + path, args))
   }
   commands.push(moon("fmt", ["fmt"]))
-  // The drift check: regenerating is only a guarantee if the checked-in modules
-  // are what regenerating produces. This is what makes `gen` safe to put
-  // in CI — a stale generated module type-checks and tests green, so nothing
-  // else catches it.
-  //
-  // It compares the generated modules BEFORE this run against the same modules
-  // after, which is the question the check means to ask: did regenerating change
-  // anything? This used to ask git whether they matched `HEAD`, which is a
-  // different question and only the same one on a clean tree. Edit a `.tutu`,
-  // regenerate its module, and the pair is perfectly consistent while neither
-  // half is committed — the git form failed the whole of `ci` on correct work,
-  // which made `ci` unrunnable during exactly the kind of change it guards.
-  // (`skill-embed` had the same defect and is fixed the same way; the
-  // fetched-upstream checks still have it.)
-  //
-  // Scoped to the generated modules by pathspec rather than run over the whole
-  // tree, because the `moon fmt` above formats every source: an unrelated file
-  // that was committed unformatted would otherwise be reported as view drift.
-  // `*_view_gen.mbt` matches at any depth, so a new view file is covered the
-  // moment it is added to `files` above.
-  //
-  // Nothing is lost by leaving git's own comparison behind. The `HEAD --` form
-  // was chosen so a `git add` of a stale module could not walk past a bare
-  // `git diff`; a before/after comparison never consults the index or the
-  // commit for its VERDICT at all, so there is no state a stale module can
-  // hide in.
-  commands.push(view_drift_snapshot(VIEW_DRIFT_AFTER))
-  commands.push({
-    label: "drift check · generated view modules match their .tutu",
-    prog: "diff",
-    args: [VIEW_DRIFT_BEFORE, VIEW_DRIFT_AFTER],
-  })
   commands
-}
-
-///|
-/// Where the two views of the generated modules are parked.
-///
-/// In `_build` because it is already gitignored — a drift check that littered
-/// the tree with files the next drift check then had to ignore would be its own
-/// small joke.
-const VIEW_DRIFT_BEFORE : String = "_build/view_drift.before"
-
-///|
-const VIEW_DRIFT_AFTER : String = "_build/view_drift.after"
-
-///|
-/// Record what the generated view modules look like right now.
-///
-/// `git diff` is used as a CONTENT READER here and not as the verdict: it
-/// prints the modules as they currently stand against a fixed reference, so two
-/// such readings taken either side of a regeneration differ exactly when
-/// regenerating changed a file. Which commit it diffs against does not matter,
-/// as long as both readings use the same one.
-///
-/// A shell, because a `Command` spawns a program with arguments and has nowhere
-/// to put a redirect. The `mkdir -p` is part of it since `_build` is absent in a
-/// fresh clone, which is precisely the case CI runs in.
-fn view_drift_snapshot(to : String) -> Command {
-  {
-    label: "snapshot · generated view modules",
-    prog: "sh",
-    args: [
-      "-c",
-      "mkdir -p _build && git diff HEAD -- '*_view_gen.mbt' '*_view_ir_gen.mbt' > " +
-      to,
-    ],
-  }
 }
 
 ///|
@@ -797,25 +732,24 @@ fn composites() -> Array[(String, String, Array[String])] {
   // this build-smoke is their regression guard. It also codegens the js/native
   // demo hosts, none of which have their own tests.
   [
-    // `gen` runs FIRST, and for its drift check rather than its output:
-    // every `*_view_gen.mbt` is checked in and compiled as an ordinary source,
-    // so a stale one type-checks and tests green while no longer describing the
-    // .tutu beside it. Catching that before `check` also means the rest of CI
-    // runs against modules that provably match their sources.
-    //
-    // `skill-embed` is here for exactly the same reason:
-    // `cli/skill_assets_gen.mbt` is checked in, compiles whatever it
-    // holds, and ships inside the binary — so a skill doc edited without
-    // re-embedding is invisible until somebody runs `tutuca install-skill` and
-    // reads the wrong thing. It runs AFTER `gen`, because that task ends
-    // in `moon fmt` over everything.
+    (
+      "regenerate",
+      "regenerate and format every offline-generated artifact",
+      [
+        "gen-conformance", "skill-embed", "storybook-template-embed", "rt-embed",
+        "universal-embed",
+      ],
+    ),
+    // Check generated views and embedded assets before compiling: stale files
+    // can type-check and test successfully while disagreeing with their sources.
+    // The check regenerates in isolation so CI preserves the working tree.
     (
       "ci",
-      "every drift check (gen, the three embeds), then check, the example/skill/template/tgc/card checks, test and build",
+      "generated-artifact checks, then check, the example/skill/template/tgc/card checks, test and build",
       [
-        "gen", "skill-embed", "storybook-template-embed", "rt-embed", "check", "check-examples",
-        "check-skill", "check-storybook-template", "check-publish-graph", "check-diagnostics",
-        "check-tgc", "check-cards", "universal", "test", "build",
+        "check-generated", "check", "check-examples", "check-skill", "check-storybook-template",
+        "check-publish-graph", "check-diagnostics", "check-tgc", "check-cards", "universal",
+        "test", "build",
       ],
     ),
   ]
@@ -881,7 +815,7 @@ fn dist_steps() -> Array[Step] {
   )
   // storybook: the gallery host page loads ./loader.mjs and ./storybook_wasm.wasm
   // relative to its folder (like counter-wasm), so page + loader copy verbatim.
-  // This is also the bundle `tutuca storybook` serves (dist/storybook).
+  // The gallery bundle is served as static content from dist/storybook.
   steps.push(
     Copy(from=STORYBOOK_WASM, to="\{DIST}/storybook/storybook_wasm.wasm"),
   )
@@ -990,7 +924,10 @@ pub fn plan(name : String) -> Array[Step]? {
       let out : Array[Step] = []
       for base in members {
         // members always name real base tasks, so plan(base) is Some.
-        for step in plan(base).unwrap_or([]) {
+        let resolved_steps = plan(base).unwrap_or_else(() => {
+          abort("unknown composite member: " + base)
+        })
+        for step in resolved_steps {
           out.push(step)
         }
       }
@@ -1010,77 +947,18 @@ pub fn plan(name : String) -> Array[Step]? {
 /// Regenerate the CLI's embedded skill assets from skill/tutuca/. Run after
 /// editing the skill docs, before building the native CLI.
 pub fn skill_embed_steps() -> Array[Step] {
-  // The generator emits one tuple per file on one line and `moon fmt` reflows
-  // them, so without this the checked-in module is whatever `skill-embed` left
-  // and the next `gen` (which formats everything) rewrites it — a 140-line
-  // diff nobody asked for, on a file nobody edited. Same reason gen ends
-  // this way.
   [
-    // Snapshot FIRST, so the check below can compare the file against what
-    // regenerating produces rather than against a commit. See the comment on
-    // the diff step for why that difference matters.
-    //
-    // The mkdir is not optional: `copy_file` writes the file and does not make
-    // its parent, and `_build` is absent in a fresh clone — which is precisely
-    // the case CI runs in.
-    Mkdir("_build"),
-    Copy(from=SKILL_EMBED, to=SKILL_EMBED_WAS),
     GenSkillAssets(src_dir="skill/tutuca", to=SKILL_EMBED),
     Run(moon("fmt", ["fmt"])),
-    // The drift check: is the checked-in module what regenerating from
-    // `skill/tutuca/` produces? What it exists to catch is real and has
-    // happened — `skill/tutuca/cli.md` lost two sections and every paragraph
-    // blank line, and the broken text was embedded and shipped inside the CLI
-    // binary, which is what `tutuca install-skill` writes out and the first
-    // thing an agent reads before writing any tutuca code.
-    //
-    // It compares CONTENT — the file as it was against the file as regenerated
-    // — where this used to ask git whether the file matched `HEAD`. The git
-    // form answers a different question than the one the check means to ask,
-    // and the two only agree when the working tree is clean. Edit a skill file
-    // and re-embed it, and the pair on disk is perfectly consistent while
-    // neither half is committed yet: the content check passes, and the git form
-    // failed the whole of `ci` on work that was correct. Which made `ci`
-    // unrunnable during exactly the change it was meant to guard.
-    //
-    // Nothing is lost by moving off git. The `HEAD --` form was chosen so that
-    // a `git add` of a stale module could not walk past a bare `git diff`, and
-    // a content comparison is stronger still: it never consults the index or
-    // the commit at all, so there is no state a stale file can hide in.
-    Run({
-      label: "drift check · cli/skill_assets_gen.mbt matches skill/tutuca/",
-      prog: "diff",
-      args: [SKILL_EMBED_WAS, SKILL_EMBED],
-    }),
   ]
 }
 
 ///|
-/// The embedded-skill module, and where its pre-regeneration copy is parked.
-///
-/// The snapshot sits in `_build` because that is already gitignored: a drift
-/// check that littered the tree with a file the next drift check then had to
-/// ignore would be its own small joke.
+/// The CLI's embedded authoring reference.
 const SKILL_EMBED : String = "cli/skill_assets_gen.mbt"
 
 ///|
-const SKILL_EMBED_WAS : String = "_build/skill_assets_gen.mbt.was"
-
-///|
 const STORYBOOK_EMBED : String = "cli/storybook_template_gen.mbt"
-
-///|
-const STORYBOOK_EMBED_WAS : String = "_build/storybook_template_gen.mbt.was"
-
-///|
-/// The embedded runtime module source, and where its pre-regeneration copy
-/// parks. `tgc/rt/rt.wap` is the source; `tgc/emit`'s `compile_runtime` builds
-/// the module from what is embedded here, so a page that hosts a component gets
-/// the runtime without fetching this repository's `_build`.
-const RT_EMBED : String = "tgc/rt/rt_src_gen.mbt"
-
-///|
-const RT_EMBED_WAS : String = "_build/rt_src_gen.mbt.was"
 
 ///|
 /// Regenerate the CLI's embedded storybook template — the gallery project
@@ -1092,37 +970,14 @@ const RT_EMBED_WAS : String = "_build/rt_src_gen.mbt.was"
 /// writes one tuple per file on one line, and the next task that formats
 /// everything would otherwise rewrite a file nobody edited.
 pub fn storybook_template_embed_steps() -> Array[Step] {
-  [
-    // Snapshot, regenerate, compare — the shape `skill-embed` uses, and for the
-    // reason it was given one: this embed IS what a stranger reads. It shipped
-    // once carrying a scaffold README that showed an API the same release had
-    // renamed, because editing `storybook/template/` and forgetting to re-embed
-    // leaves a file that compiles, passes `check-storybook-template` (which
-    // reads the SCAFFOLD, not this) and is wrong.
-    Mkdir("_build"),
-    Copy(from=STORYBOOK_EMBED, to=STORYBOOK_EMBED_WAS),
-    GenStorybookTemplate(to=STORYBOOK_EMBED),
-    Run(moon("fmt", ["fmt"])),
-    Run({
-      label: "drift check · cli/storybook_template_gen.mbt matches storybook/template/",
-      prog: "diff",
-      args: [STORYBOOK_EMBED_WAS, STORYBOOK_EMBED],
-    }),
-  ]
+  [GenStorybookTemplate(to=STORYBOOK_EMBED), Run(moon("fmt", ["fmt"]))]
 }
 
 ///|
 /// Build the composition demo and assemble it into `dist/universal/`.
 ///
-/// Shared by the `universal` task and by `dist`, and it is the BUILD half
-/// only: the `universal` task also embeds the layout kit, runs `moon fmt` and
-/// drift-checks the generated module against its `.tutu`, and none of those
-/// belong in a deploy -- one writes to the tree and another fails on a
-/// staleness that is `ci`'s question rather than the site's.
-///
-/// It was not in `dist` at all until now, so `/universal/` 404'd on Pages
-/// while `ci` built and checked it every run. A demo the site does not carry
-/// is a demo nobody sees.
+/// Shared by `universal` and `dist`. `universal-embed` updates its layout kit;
+/// `check-generated` verifies that source and embed agree.
 pub fn universal_dist_commands() -> Array[Command] {
   [
     moon("build · js universal", ["build", "--target", "js", "demo/universal"]),
@@ -1150,19 +1005,12 @@ pub fn universal_dist_commands() -> Array[Command] {
 /// produces no diff here.
 pub fn rt_embed_steps() -> Array[Step] {
   [
-    Mkdir("_build"),
-    Copy(from=RT_EMBED, to=RT_EMBED_WAS),
     Run({
       label: "embed tgc/rt/rt.wap",
       prog: "node",
       args: ["tgc/rt/embed.mjs"],
     }),
     Run(moon("fmt", ["fmt"])),
-    Run({
-      label: "drift check · tgc/rt/rt_src_gen.mbt matches rt.wap",
-      prog: "diff",
-      args: [RT_EMBED_WAS, RT_EMBED],
-    }),
   ]
 }
 

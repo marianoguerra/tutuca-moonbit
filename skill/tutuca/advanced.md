@@ -340,7 +340,7 @@ trait*.
 A module is a `ModuleDef` **value** the project links, not something a CLI
 discovers on disk; see [cli.md](./cli.md). The storybook ships as a library and
 a gallery is compiled from those values — `tutuca new-storybook` scaffolds the
-page, `tutuca storybook` serves what it builds, and the stories are a projection
+page, a static HTTP server serves what it builds, and the stories are a projection
 of your modules' own `examples`. See [storybook.md](./storybook.md).
 
 ## Tailwind / MargaUI Class Compilation

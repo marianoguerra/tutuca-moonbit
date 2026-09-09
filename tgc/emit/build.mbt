@@ -34,7 +34,7 @@ priv struct B {
 
 ///|
 fn B::new(src : @report.SourceId) -> B {
-  { src, used: @set.Set([]), }
+  { src, used: Set([]), }
 }
 
 ///|

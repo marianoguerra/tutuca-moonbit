@@ -380,7 +380,7 @@ fn line_start(source : String, at : Int) -> Int {
 ///|
 /// One reader failure, as its message.
 fn ex_message(e : @sh.ExError) -> String {
-  let @sh.ExError(message~, help~, ..) = e
+  let ExError(message~, help~, ..) = e
   if help == "" {
     message
   } else {

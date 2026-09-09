@@ -2,8 +2,10 @@
 package "marianoguerra/tutuca/app/wasm"
 
 import {
+  "marianoguerra/tutuca/anode/sanitize",
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/vdom/filter",
 }
 
 // Values
@@ -17,7 +19,7 @@ pub fn install(@app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode]) -> Unit
 
 pub fn install_styles(@app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode], @marianoguerra/tutuca/vdom/wasm.WasmNode) -> Unit
 
-pub fn mount_in(@component.ModuleDef, String, id? : String, args? : Map[String, @marianoguerra/tutuca/core.Value]) -> @app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode]?
+pub fn mount_in(@component.ModuleDef, String, id? : String, args? : Map[String, @marianoguerra/tutuca/core.Value], markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter) -> @app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode]?
 
 pub fn on_event(@mizchi/js/core.Any, before? : (@marianoguerra/tutuca/vdom/wasm.WasmNode, String) -> Bool) -> Unit
 

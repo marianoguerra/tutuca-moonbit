@@ -26,7 +26,6 @@ import {
 }
 
 import {
-  "moonbitlang/core/test",
 } for "test"
 
 // The vendored files are upstream's, not ours, and `-unnecessary_annotation`

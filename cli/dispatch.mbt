@@ -26,7 +26,6 @@ pub fn plan(argv : Array[String]) -> Outcome {
       return Done({ out: agent_context_text(), err: "", exit_code: 0, })
     "install-skill" => return run_install_skill(command_args, opts)
     "new-storybook" => return run_new_storybook(command_args, opts)
-    "storybook" => return run_storybook(command_args, opts)
     // Named `gen` rather than for any one of its outputs: it writes the state
     // struct, the codec, the `SchemaInfo`, the message enums AND the views, and
     // a command named for one of the five is a command whose name has to be

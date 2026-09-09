@@ -20,8 +20,8 @@
     <!--
       The storybook gallery running as WebAssembly (wasm-gc). Build + assemble:
         moon run --target native cmd/dev -- dist
-      then serve dist/ and open storybook/. Or serve it with the CLI:
-        dist/cli/tutuca storybook --port 4321
+      then serve dist/ and open storybook/:
+        python3 -m http.server 4321 --directory dist
       For a raw build:
         moon build --target wasm-gc demo/storybook_wasm
       (needs a browser with the JS String Builtins proposal, e.g. Chrome).

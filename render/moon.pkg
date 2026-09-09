@@ -10,7 +10,7 @@ import {
   // names using the filter's own predicates, and memoizes on the element.
   "marianoguerra/tutuca/sinks",
   "moonbitlang/core/json",
-  "moonbitlang/core/strconv",
+  "moonbitlang/core/string",
   // The two event-path tables. They live in their own leaf package because
   // `viewgen` needs them too and must not import a DOM abstraction to get
   // them — see `eventpath/moon.pkg`.

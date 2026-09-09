@@ -6,6 +6,8 @@
 // Backend-agnostic (memdom runs on every target), so `moon test` covers it with
 // no browser and no server.
 import {
+  "marianoguerra/tutuca/anode/sanitize",
+  "marianoguerra/tutuca/vdom/filter",
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/app",
@@ -20,5 +22,4 @@ import {
 // archive (see moon.mod).
 import {
   "marianoguerra/tutuca/anode",
-  "moonbitlang/core/json",
 } for "test"

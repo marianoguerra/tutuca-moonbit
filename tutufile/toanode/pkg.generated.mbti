@@ -22,6 +22,10 @@ pub fn strip_macro_calls(@anode.ANode) -> @anode.ANode
 
 pub fn strip_ws(@anode.ANode) -> @anode.ANode
 
+pub fn style_is_global(@tutufile.Decl) -> Bool
+
+pub fn style_of(@tutufile.Decl) -> String raise @shrub.ExError
+
 // Errors
 
 // Types and methods
@@ -32,15 +36,22 @@ pub(all) struct MacroDef {
   body : Array[@ast.Node]
 }
 
+pub(all) struct Slots {
+  default_ : Array[@anode.ANode]
+  named : Map[String, Array[@anode.ANode]]
+}
+
 pub struct ViewBuilder {
   mut next_id : Int
   mut ns : @anode.Ns?
   handlers : Array[Array[@anode.NodeEvent]]
   macros : Map[String, MacroDef]
   expanding : Array[String]
+  slots : Array[Slots]
+  config : Map[String, String]?
 }
 pub fn ViewBuilder::events(Self) -> Array[@anode.NodeEvents]
-pub fn ViewBuilder::new(macros? : Map[String, MacroDef]) -> Self
+pub fn ViewBuilder::new(macros? : Map[String, MacroDef], config? : Map[String, String]) -> Self
 pub fn ViewBuilder::view(Self, @tutufile.Decl, style? : String) -> @anode.View raise @shrub.ExError
 
 // Type aliases

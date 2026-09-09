@@ -15,7 +15,7 @@ example where the component lives, and the same example is what
 tutuca new-storybook my-gallery
 cd my-gallery
 node build.mjs           # moon build --target wasm-gc --release page → dist/
-tutuca storybook dist    # or any static server over dist/
+python3 -m http.server --directory dist    # or any static server over dist/
 ```
 
 That writes the only part a library cannot supply: a page package with the

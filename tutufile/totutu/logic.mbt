@@ -493,7 +493,7 @@ fn print_arm(
 fn print_stmt_place(place : @tutuca.Place) -> String raise NoSpelling {
   match (place.root, place.steps) {
     (PBind(b), []) => @names.snake_of(b)
-    _ => print_expr(@tutuca.Expr::ERead(place~, span=place.span))
+    _ => print_expr(ERead(place~, span=place.span))
   }
 }
 

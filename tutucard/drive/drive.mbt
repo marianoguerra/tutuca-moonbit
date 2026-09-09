@@ -109,6 +109,7 @@ fn run_one(
     inst.to_value(),
     container,
     @vdom.RenderOpts::new(doc),
+    markdown_filter=@mdfilter.make_filter,
   ) catch {
     _ => return failed("the module's views did not compile into an app")
   }

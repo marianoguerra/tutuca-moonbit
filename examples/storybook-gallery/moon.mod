@@ -16,7 +16,7 @@
 // module its own module declares. Pin it to the version tutuca resolves, so
 // there is one copy of it in the graph.
 //
-// Build: node build.mjs   Serve: tutuca storybook dist
+// Build: node build.mjs   Serve: python3 -m http.server --directory dist
 
 name = "marianoguerra/tutuca-example-storybook-gallery"
 

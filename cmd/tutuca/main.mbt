@@ -241,7 +241,7 @@ async fn run_new_storybook(
 }
 
 ///|
-/// The shell half of `gen`: read the input .html, hand it to the pure
+/// The shell half of `gen`: read the input .tutu, hand it to the pure
 /// generator, write (or under --dry-run print) what it plans. Unlike
 /// install-skill this DOES overwrite without asking — regenerating a
 /// generated file in place is the whole workflow.
@@ -253,7 +253,7 @@ async fn run_gen_views(
   dry_run : Bool,
   ir : Bool,
 ) -> Unit noraise {
-  // The same expansion `watch` and the CSS commands use: an explicit .html at
+  // The same expansion `watch` and the CSS commands use: an explicit .tutu at
   // its word, a directory contributing the files that already have a generated
   // sibling. That is what tells a view file from a page.
   let paths = collect_view_files(roots)
@@ -264,31 +264,18 @@ async fn run_gen_views(
         @cli.err(
           @cli.CODE_USAGE_MISSING_ARGUMENT,
           "no view files under \{roots.join(", ")}",
-          hint="a directory contributes the .html files that already have a generated sibling; pass the .html path directly the first time",
+          hint="a directory contributes the .tutu files that already have a generated sibling; pass the .tutu path directly the first time",
         ),
       ),
     )
     return
   }
-  let inputs : Array[@cli.GenInput] = []
-  for input in paths {
-    let source = @fs.read_file(input).text() catch {
-      e => {
-        emit_and_exit(
-          @cli.error_emit(
-            opts,
-            @cli.err(
-              @cli.CODE_INTERNAL,
-              "cannot read \{input}: \{e}",
-              hint="pass the path to the .html file holding the component's views",
-            ),
-          ),
-        )
-        return
-      }
+  let inputs = match read_gen_inputs(paths, out, name) {
+    Ok(inputs) => inputs
+    Err(shape) => {
+      emit_and_exit(@cli.error_emit(opts, shape))
+      return
     }
-    let (target, comp) = @cli.gen_views_target(input, out?, name?)
-    inputs.push({ input, target, name: comp, source, })
   }
   let plan = match @cli.gen_views_all(inputs, ir~) {
     Ok(plan) => plan
@@ -308,23 +295,11 @@ async fn run_gen_views(
       exit_code: 0,
     })
   }
-  try {
-    for pair in plan.files {
-      let (path, contents) = pair
-      let dir = parent_dir(path)
-      if dir != "" && !@fs.exists(dir) {
-        @fs.mkdir(dir, recursive=true)
-      }
-      @fs.write_file(path, contents, create_mode=CreateOrTruncate)
+  for (path, contents) in plan.files {
+    if write_text_file(path, contents) is Err(shape) {
+      emit_and_exit(@cli.error_emit(opts, shape))
+      return
     }
-  } catch {
-    e =>
-      emit_and_exit(
-        @cli.error_emit(
-          opts,
-          @cli.err(@cli.CODE_INTERNAL, "failed to write generated views: \{e}"),
-        ),
-      )
   }
   emit_and_exit({
     out: plan.files
@@ -353,8 +328,8 @@ fn from_input(inputs : Array[@cli.GenInput], written : String) -> String {
 /// view files, read them, collect their classes through the pure core, compile
 /// those into CSS, and write the result.
 ///
-/// The discovery rule is `watch`'s, deliberately — an explicit .html is taken at
-/// its word, a directory contributes the .html files that already have a
+/// The discovery rule is `watch`'s, deliberately — an explicit .tutu is taken at
+/// its word, a directory contributes the .tutu files that already have a
 /// generated sibling. A project's views are exactly the gen-managed ones,
 /// and the rule is what keeps `index.html` from being parsed as a view.
 async fn run_gen_css(
@@ -369,7 +344,7 @@ async fn run_gen_css(
         @cli.err(
           @cli.CODE_USAGE_MISSING_ARGUMENT,
           "no view files found under \{plan.paths.join(", ")}",
-          hint="a directory contributes the .html files that already have a <stem>_view_gen.mbt sibling; run `tutuca gen` first, or pass the .html paths directly",
+          hint="a directory contributes the .tutu files that already have a <stem>_view_gen.mbt sibling; run `tutuca gen` first, or pass the .tutu paths directly",
         ),
       ),
     )
@@ -554,25 +529,12 @@ async fn write_text_file(
 async fn refresh_watch_css(
   plan : @cli.CssPlan,
   files : Array[String],
-  reported~ : Map[String, Bool],
 ) -> Unit noraise {
   guard plan.out is Some(target) else { return }
   let classes = match css_candidates(plan, files) {
     Ok(classes) => classes
     Err(shape) => {
-      // A view that will not parse has already been reported, file by file, by
-      // the regenerate pass — and it is the same message. Only say something
-      // the run of ✗ lines above does not already say.
-      //
-      // Which file it was, not just which code: the two passes agreeing on
-      // every file is a PROPERTY, and a bug in it is exactly what this line
-      // hides. One did — the CSS pass built views without their schema, so it
-      // refused an `@bind` file the regenerate pass had just written a ✓ for,
-      // and the stylesheet stopped rebuilding without a word on screen.
-      let seen = shape.where_ is Some(path) && reported.contains(path)
-      if !(shape.code == @cli.CODE_VIEW_GEN_FAILED && seen) {
-        write_out(@cli.watch_error_line(shape.message))
-      }
+      write_out(@cli.watch_error_line(shape.message))
       return
     }
   }
@@ -592,8 +554,8 @@ async fn refresh_watch_css(
 ///|
 /// Every view file a watched path contributes.
 ///
-/// An explicit .html path is taken at its word; a directory contributes the
-/// .html files that already have a generated sibling. That rule is what
+/// An explicit .tutu path is taken at its word; a directory contributes the
+/// .tutu files that already have a generated sibling. That rule is what
 /// tells a view file from a page — watching a project root should not try to
 /// compile index.html — and it means adding a view to a watched tree takes
 /// one `tutuca gen` before watch picks it up.
@@ -602,6 +564,9 @@ async fn collect_view_files(paths : Array[String]) -> Array[String] noraise {
   let seen : Map[String, Bool] = Map([])
   for p in paths {
     if @cli.is_view_path(p) {
+      if !(@fs.exists(p) catch { _ => false }) {
+        continue
+      }
       if !seen.contains(p) {
         seen[p] = true
         found.push(p)
@@ -615,7 +580,7 @@ async fn collect_view_files(paths : Array[String]) -> Array[String] noraise {
 
 ///|
 /// Directory names never worth descending into: build output and vendored
-/// trees hold .html files that are pages, not views.
+/// trees contain dependencies and generated artifacts.
 fn skip_dir(name : String) -> Bool {
   name
   is ("_build" | "target" | "dist" | ".git" | "node_modules" | ".mooncakes")
@@ -637,6 +602,13 @@ async fn scan_dir(
     let full = if dir.has_suffix("/") { dir + n } else { dir + "/" + n }
     let kind = @fs.kind(full) catch { _ => continue }
     if kind is Directory {
+      let nested = (@fs.exists(full + "/moon.mod") ||
+      @fs.exists(full + "/moon.mod.json")) catch {
+        _ => true
+      }
+      if nested {
+        continue
+      }
       scan_dir(full, found, seen)
     } else if @cli.is_view_path(full) && !seen.contains(full) {
       let managed = @fs.exists(@cli.watch_sibling(full)) catch { _ => false }
@@ -675,52 +647,67 @@ fn watch_roots(files : Array[String], paths : Array[String]) -> Array[String] {
 }
 
 ///|
-/// Regenerate one view file, reporting either outcome. A failed view is a
-/// message, not the end of the watch — the next save is expected to fix it.
-///
-/// Answers whether it PRINTED a failure for this path, which is what lets
-/// `refresh_watch_css` tell "the CSS pass is about to repeat a message already
-/// on screen" from "the CSS pass found something this one did not".
-async fn regenerate(path : String, plan : @cli.WatchPlan) -> Bool noraise {
-  let source = @fs.read_file(path).text() catch {
-    e => {
-      write_out(@cli.watch_error_line("\{path}: cannot read: \{e}"))
-      return true
-    }
+/// Read and validate the same batch for one-shot generation and watch.
+async fn read_gen_inputs(
+  paths : Array[String],
+  out : String?,
+  name : String?,
+) -> Result[Array[@cli.GenInput], @cli.ErrShape] noraise {
+  if @cli.validate_gen_paths(paths, out, name) is Some(shape) {
+    return Err(shape)
   }
-  let target = @cli.watch_target(path, plan.out)
-  match
-    @cli.gen_views(
-      source,
-      name=@cli.watch_name(path, plan.name),
-      input=path,
-      target~,
-      ir=plan.ir,
-    ) {
+  let inputs : Array[@cli.GenInput] = []
+  for input in paths {
+    let source = @fs.read_file(input).text() catch {
+      e =>
+        return Err(
+          @cli.err(
+            @cli.CODE_INTERNAL,
+            "cannot read \{input}: \{e}",
+            where_=input,
+          ),
+        )
+    }
+    let (target, comp) = @cli.gen_views_target(input, out?, name?)
+    inputs.push({ input, target, name: comp, source, })
+  }
+  Ok(inputs)
+}
+
+///|
+/// Compile the complete component index once and write only a valid plan.
+async fn regenerate_batch(
+  paths : Array[String],
+  plan : @cli.WatchPlan,
+  report? : async (String) -> Unit noraise = write_out,
+) -> Bool noraise {
+  let inputs = match read_gen_inputs(paths, plan.out, plan.name) {
+    Ok(inputs) => inputs
     Err(shape) => {
-      write_out(@cli.watch_error_line(shape.message))
-      return true
+      report(@cli.watch_error_line(shape.message))
+      return false
     }
-    Ok(gen) => {
-      for d in gen.diagnostics {
-        write_out(@cli.watch_error_line(d))
-      }
-      for pair in gen.files {
-        let (p, contents) = pair
-        try {
-          let dir = parent_dir(p)
-          if dir != "" && !@fs.exists(dir) {
-            @fs.mkdir(dir, recursive=true)
-          }
-          @fs.write_file(p, contents, create_mode=CreateOrTruncate)
-          write_out(@cli.watch_generated_line(p))
-        } catch {
-          e => write_out(@cli.watch_error_line("\{p}: cannot write: \{e}"))
-        }
+  }
+  let generated = match @cli.gen_views_all(inputs, ir=plan.ir) {
+    Ok(generated) => generated
+    Err(shape) => {
+      report(@cli.watch_error_line(shape.message))
+      return false
+    }
+  }
+  for d in generated.diagnostics {
+    report(@cli.watch_error_line(d))
+  }
+  for (path, contents) in generated.files {
+    match write_text_file(path, contents) {
+      Ok(_) => report(@cli.watch_generated_line(path))
+      Err(shape) => {
+        report(@cli.watch_error_line(shape.message))
+        return false
       }
     }
   }
-  false
+  true
 }
 
 ///|
@@ -737,23 +724,12 @@ async fn run_watch(
   opts : @cli.GlobalOpts,
   plan : @cli.WatchPlan,
 ) -> Unit noraise {
-  let files = collect_view_files(plan.paths)
+  let mut files = collect_view_files(plan.paths)
   let roots = watch_roots(files, plan.paths)
   write_out(@cli.watch_banner(files, roots))
-  // Generate once up front so the tree is correct before the first edit,
-  // not just after it.
-  // The paths the regenerate pass has already printed a failure for, so the
-  // CSS pass below can stay quiet about those and only those.
-  let reported : Map[String, Bool] = Map([])
-  for f in files {
-    if regenerate(f, plan) {
-      reported[f] = true
-    } else {
-      reported.remove(f)
-    }
-  }
+  let _ = regenerate_batch(files, plan)
   if plan.css is Some(css_plan) {
-    refresh_watch_css(css_plan, files, reported~)
+    refresh_watch_css(css_plan, files)
   }
   let watcher = @fswatch.start(roots) catch {
     e => {
@@ -779,42 +755,15 @@ async fn run_watch(
     }
     // One save can surface several events for the same file (write, then
     // metadata); regenerate each path once per drain.
-    let done : Map[String, Bool] = Map([])
-    let mut regenerated = false
-    for e in events {
-      if !@cli.is_view_path(e.path) || done.contains(e.path) {
-        continue
-      }
-      done[e.path] = true
-      if e.kind is Removed {
-        continue
-      }
-      // A file created in a watched tree only counts once it is one we
-      // manage — the same sibling rule the initial scan used.
-      let known = files.contains(e.path)
-      let managed = known ||
-        (@fs.exists(@cli.watch_sibling(e.path)) catch { _ => false })
-      if !managed {
-        continue
-      }
-      if !known {
-        files.push(e.path)
-      }
-      write_out("\{e.path}\n")
-      // A file that regenerates cleanly this time drops out of `reported`:
-      // the ✗ it printed on the last save is scrolled off and is no longer a
-      // reason for the CSS pass to keep quiet about it.
-      if regenerate(e.path, plan) {
-        reported[e.path] = true
-      } else {
-        reported.remove(e.path)
-      }
-      regenerated = true
-    }
+    let regenerated = events.any(e => @cli.is_view_path(e.path))
     // Once per settled batch, not once per file: the stylesheet covers the
     // whole project, and compiling it is the expensive half of the loop.
-    if regenerated && plan.css is Some(css_plan) {
-      refresh_watch_css(css_plan, files, reported~)
+    if regenerated {
+      files = collect_view_files(plan.paths)
+      let _ = regenerate_batch(files, plan)
+      if plan.css is Some(css_plan) {
+        refresh_watch_css(css_plan, files)
+      }
     }
   }
 }
@@ -828,8 +777,6 @@ async fn main {
     Feedback(opts, message~) => run_feedback(opts, message)
     InstallSkill(opts, plan~) => run_install_skill(opts, plan)
     NewStorybook(opts, plan~) => run_new_storybook(opts, plan)
-    ServeStorybook(opts, dir~, port~, out~) =>
-      run_serve_storybook(opts, dir, port, out)
     GenViews(opts, roots~, out~, name~, dry_run~, ir~) =>
       run_gen_views(opts, roots, out, name, dry_run, ir)
     Watch(opts, plan~) => run_watch(opts, plan)
@@ -864,31 +811,6 @@ async fn run_outline(
     }
   }
   emit_and_exit(@cli.outline_apply(plan, source))
-}
-
-///|
-/// One file, or the error that says which one could not be read.
-async fn read_or_exit(
-  opts : @cli.GlobalOpts,
-  path : String,
-  what : String,
-) -> String? noraise {
-  let text = @fs.read_file(path).text() catch {
-    e => {
-      emit_and_exit(
-        @cli.error_emit(
-          opts,
-          @cli.err(
-            @cli.CODE_INTERNAL,
-            "cannot read \{path}: \{e}",
-            hint="pass \{what}",
-          ),
-        ),
-      )
-      return None
-    }
-  }
-  Some(text)
 }
 
 ///|

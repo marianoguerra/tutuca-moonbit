@@ -227,7 +227,7 @@ fn map_attrs(
       DynAttrs(
         items.map(item => {
           match item {
-            ConstA(name~, val~) => @anode.AttrItem::ConstA(name~, val=f(val))
+            ConstA(name~, val~) => ConstA(name~, val=f(val))
             Plain(name~, val~) => Plain(name~, val=f(val))
             RawHtml(val~) => RawHtml(val=val.map(f))
             RawMarkdown(val~) => RawMarkdown(val=val.map(f))

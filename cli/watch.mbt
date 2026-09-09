@@ -46,7 +46,7 @@ let watch_help : String =
   #|
   #|  Every file is generated once at startup, then again on each change.
   #|  --name applies only when watching a single file; a file that names its
-  #|  own components with `id="Comp:view"` never needs it.
+  #|  own components with a `view:` section never needs it.
   #|
   #|  --out, --name and --no-ir mean what they do for `gen`.
   #|
@@ -87,7 +87,7 @@ fn run_watch(args : Array[String], opts : GlobalOpts) -> Outcome {
         err(
           CODE_USAGE_MUTUALLY_EXCLUSIVE,
           "--name applies to a single view file, but \{paths.length()} paths were given",
-          hint="name the components inside the file with `id=\"Comp:view\"` instead",
+          hint="name the components inside the file with a `view:` section instead",
         ),
       ),
     )
@@ -160,29 +160,14 @@ pub fn is_view_path(path : String) -> Bool {
 /// `gen` so watch and one-shot generation cannot disagree about where
 /// a file lands.
 pub fn watch_target(path : String, out : String?) -> String {
-  let (dir, stem) = split_path(path)
-  match out {
-    Some(o) =>
-      if o.has_suffix(".mbt") {
-        o
-      } else {
-        join_path(o, "\{stem}_view_gen.mbt")
-      }
-    None => join_path(dir, "\{stem}_view_gen.mbt")
-  }
+  gen_views_target(path, out?).0
 }
 
 ///|
 /// The component name for a watched file: `--name`, else the basename
 /// capitalized, matching `gen`.
 pub fn watch_name(path : String, name : String?) -> String {
-  match name {
-    Some(n) => n
-    None => {
-      let (_, stem) = split_path(path)
-      @statedef.upper_name(stem)
-    }
-  }
+  gen_views_target(path, name?).1
 }
 
 ///|

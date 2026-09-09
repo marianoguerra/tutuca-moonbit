@@ -31,7 +31,7 @@ pub const CODE_USAGE_UNKNOWN_FLAG : String = "ERR_USAGE_UNKNOWN_FLAG"
 
 pub const CODE_VIEW_GEN_FAILED : String = "ERR_VIEW_GEN_FAILED"
 
-pub const MODULE_VERSION : String = "0.53.1"
+pub const MODULE_VERSION : String = "0.55.4"
 
 pub const VERSION : String = "0.13.0"
 
@@ -44,8 +44,6 @@ pub fn collect_view_classes(Array[(String, String)]) -> Result[Array[String], Er
 pub fn command_names() -> Array[String]
 
 pub fn command_spec(String) -> CommandSpec
-
-pub fn equiv_apply(EquivPlan, String, String) -> Emit
 
 pub fn err(String, String, suggestion? : @lint.Suggestion, hint? : String, where_? : String, exit_code? : Int) -> ErrShape
 
@@ -109,9 +107,9 @@ pub let storybook_template_files : Array[(String, String)]
 
 pub fn substitute_storybook_name(String, String) -> String
 
-pub fn to_tutu_apply(ToTutuPlan, String) -> Emit
-
 pub fn trace_apply(TracePlan, String) -> Result[TraceResult, ErrShape]
+
+pub fn validate_gen_paths(Array[String], String?, String?) -> ErrShape?
 
 pub fn watch_banner(Array[String], Array[String]) -> String
 
@@ -151,13 +149,6 @@ pub(all) struct Emit {
   out : String
   err : String
   exit_code : Int
-} derive(Eq, @debug.Debug)
-
-pub(all) struct EquivPlan {
-  html : String
-  tutu : String
-  name : String
-  verbose : Bool
 } derive(Eq, @debug.Debug)
 
 pub(all) struct ErrShape {
@@ -204,14 +195,11 @@ pub(all) enum Outcome {
   Feedback(GlobalOpts, message~ : String?)
   InstallSkill(GlobalOpts, plan~ : SkillInstallPlan)
   NewStorybook(GlobalOpts, plan~ : StorybookScaffoldPlan)
-  ServeStorybook(GlobalOpts, dir~ : String, port~ : Int, out~ : String?)
   GenViews(GlobalOpts, roots~ : Array[String], out~ : String?, name~ : String?, dry_run~ : Bool, ir~ : Bool)
   Watch(GlobalOpts, plan~ : WatchPlan)
   GenCss(GlobalOpts, plan~ : CssPlan)
   Trace(GlobalOpts, plan~ : TracePlan)
   Outline(GlobalOpts, plan~ : OutlinePlan)
-  Equiv(GlobalOpts, plan~ : EquivPlan)
-  ToTutu(GlobalOpts, plan~ : ToTutuPlan)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct OutlinePlan {
@@ -246,14 +234,6 @@ pub(all) struct StorybookScaffoldPlan {
   force : Bool
   files : Array[(String, String)]
 } derive(Eq, @debug.Debug)
-
-pub(all) struct ToTutuPlan {
-  path : String
-  out : String?
-  name : String
-  dry_run : Bool
-} derive(Eq, @debug.Debug)
-pub fn ToTutuPlan::target(Self) -> String
 
 pub(all) enum TraceOp {
   Info

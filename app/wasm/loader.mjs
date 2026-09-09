@@ -93,9 +93,9 @@ export function takeDroppedFile(id) {
 // The `value` of a drop event: [{id, name, size, type, lastModified}, ...],
 // or "" when the drop carried no files (an in-app drag).
 export function registerDroppedFiles(ev) {
+  droppedFiles.clear();
   const files = ev?.dataTransfer?.files;
   if (!files || !files.length) return "";
-  droppedFiles.clear();
   const out = [];
   for (const f of files) {
     const id = nextDroppedId++;
@@ -109,7 +109,8 @@ export function createTdomImports(getExports) {
   const installed = new WeakMap(); // node -> Set<event name>
   return {
     node_type: (n) => n.nodeType | 0,
-    has_prop: (o, k) => k in o,
+    has_prop: (o, k) => { try { return o !== null && (typeof o === "object" || typeof o === "function") && k in o; } catch { return false; } },
+    read_prop: (o, k) => { try { return o?.[k] ?? null; } catch { return null; } },
     try_set_prop: (o, k, v) => { try { o[k] = v; return true; } catch { return false; } },
     json_parse: (s) => JSON.parse(s),
     json_stringify: (v) => { try { return JSON.stringify(v) ?? ""; } catch { return ""; } },
@@ -119,14 +120,16 @@ export function createTdomImports(getExports) {
     // has none — so trusting JSON.stringify would answer an empty map for
     // `e.target` where the design says Null. The test is on the SHAPE.
     leaf_json: (o, k) => {
-      const v = o?.[k];
-      if (v === null || v === undefined) return "";
-      const t = typeof v;
-      if (t === "string" || t === "number" || t === "boolean") return JSON.stringify(v);
-      if (t !== "object") return "";
-      const p = Object.getPrototypeOf(v);
-      if (!Array.isArray(v) && p !== Object.prototype && p !== null) return "";
-      try { return JSON.stringify(v) ?? ""; } catch { return ""; }
+      try {
+        const v = o?.[k];
+        if (v === null || v === undefined) return "";
+        const t = typeof v;
+        if (t === "string" || t === "number" || t === "boolean") return JSON.stringify(v);
+        if (t !== "object") return "";
+        const p = Object.getPrototypeOf(v);
+        if (!Array.isArray(v) && p !== Object.prototype && p !== null) return "";
+        return JSON.stringify(v) ?? "";
+      } catch { return ""; }
     },
     dropped_files: (ev) => registerDroppedFiles(ev),
     file_meta: (t) => {
@@ -184,4 +187,3 @@ export async function instantiate(wasmUrl, makeExtra) {
 // collected class set to CSS (marianoguerra/tailwindcss) and injects
 // <style id="margaui-css">, and refresh_margaui() recompiles after a bundle
 // loads. No page-side compile / CDN import remains.
-

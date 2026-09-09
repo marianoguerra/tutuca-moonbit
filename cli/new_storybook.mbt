@@ -36,7 +36,7 @@ let new_storybook_help : String =
   #|  --dry-run prints the files that would be written without touching disk.
   #|  --force overwrites existing files.
   #|
-  #|  Then: node build.mjs && tutuca storybook dist
+  #|  Then: node build.mjs && python3 -m http.server --directory dist
   #|  Needs moon and node — nothing else. The first build fetches
   #|  marianoguerra/tutuca from mooncakes.
   #|
@@ -201,7 +201,7 @@ pub fn new_storybook_success(name : String, dir : String) -> String {
   "\n" +
   "  cd \{dir}\n" +
   "  node build.mjs           # moon build --target wasm-gc --release page → dist/\n" +
-  "  tutuca storybook dist    # or any static server over dist/\n" +
+  "  python3 -m http.server --directory dist\n" +
   "\n" +
   "A story is an example on a ModuleDef: add one to `examples=[...]` and it\n" +
   "shows up in the gallery — and in `@harness.mount_example` — with no list to\n" +

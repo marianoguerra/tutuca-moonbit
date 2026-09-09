@@ -37,17 +37,14 @@ pub fn DomEvent::new(
 /// NaN parses to null. Full-string parses only (the
 /// prefix-parse of "12px" → 12 is not mirrored).
 fn value_as_num(v : @tutuca.Value, as_int : Bool) -> @tutuca.Value {
-  match v {
-    Num(n) => if as_int { Num(n.to_int().to_double()) } else { Num(n) }
-    Str(s) => {
-      let n : Double = @strconv.from_str(s) catch { _ => return Null }
-      if as_int {
-        Num(n.to_int().to_double())
-      } else {
-        Num(n)
-      }
+  guard bind_number(v) is Some(n) else { return Null }
+  if as_int {
+    if n < -2147483648.0 || n > 2147483647.0 {
+      return Null
     }
-    _ => Null
+    Num(n.to_int().to_double())
+  } else {
+    Num(n)
   }
 }
 
@@ -111,7 +108,7 @@ pub fn DomEvent::bind_value(
 fn bind_number(value : @tutuca.Value) -> Double? {
   let n : Double = match value {
     Num(n) => n
-    Str(s) => @strconv.from_str(s) catch { _ => return None }
+    Str(s) => @string.parse_double(s) catch { _ => return None }
     _ => return None
   }
   if n.is_nan() || n.is_inf() {

@@ -239,9 +239,7 @@ test "a `(` right after a hole is refused by name" {
     fail("not one group")
   }
   let msg = match
-    (Ok(@sh.read_group(gs[0])) catch {
-      @sh.ExError(message~, ..) => Err(message)
-    }) {
+    (Ok(@sh.read_group(gs[0])) catch { ExError(message~, ..) => Err(message) }) {
     Ok(_) => "read"
     Err(m) => m
   }

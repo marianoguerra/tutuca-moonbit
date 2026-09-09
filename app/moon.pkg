@@ -7,15 +7,7 @@ import {
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/filter",
-  // `App::new` installs the markdown filter, which is what makes `@setinnermd`
-  // work with no host configuration. It brings the vendored parser in with it —
-  // see the note on `App::new`. There is no way out any more: `set_sanitizer`
-  // says what the chain enforces, not whether there is one.
-  "marianoguerra/tutuca/vdom/filter/markdown" @mdfilter,
-  // The policy `set_sanitizer` takes and `filter_for` turns into a chain. An
-  // App holds one now, which it deliberately did not before — the seam used to
-  // be "here is my filter", and a filter is opaque enough that the API could
-  // only offer replacement. See `App::set_sanitizer`.
+  "marianoguerra/tutuca/vdom/filter/markup",
   "marianoguerra/tutuca/anode/sanitize",
   // The event-path profiles `set_event_paths` takes and every dispatch hands
   // to its rebuilt stacks. A leaf package, so the app reaches it without a
@@ -25,7 +17,7 @@ import {
 
 import {
   "marianoguerra/tutuca/vdom/memdom",
-  "moonbitlang/core/json",
+  "marianoguerra/tutuca/vdom/filter/markdown" @mdfilter,
 } for "test"
 
 // Warning 73 (`unnecessary_annotation`) is off HERE and nowhere else, for one

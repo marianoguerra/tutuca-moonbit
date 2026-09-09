@@ -20,13 +20,13 @@ fn section_json(src : String) -> String {
   let out = match file.section(Fixtures) {
     Some(s) =>
       fixtures_json(s.decls) catch {
-        @sh.ExError(message~, ..) => return "ERR " + message
+        ExError(message~, ..) => return "ERR " + message
       }
     None =>
       match file.section(Tests) {
         Some(s) =>
           scenes_json(s.decls) catch {
-            @sh.ExError(message~, ..) => return "ERR " + message
+            ExError(message~, ..) => return "ERR " + message
           }
         None => return "no section"
       }

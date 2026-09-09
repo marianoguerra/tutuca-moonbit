@@ -172,6 +172,7 @@ pub fn mount_compiled(
     root_node,
     @bdom.opts_for(doc),
     view~,
+    markdown_filter=@mdfilter.make_filter,
   ) catch {
     _ => return mount_failed("the module's views did not compile into an app")
   }

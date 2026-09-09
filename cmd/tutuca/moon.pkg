@@ -8,8 +8,6 @@ import {
   "marianoguerra/tailwindcss/loader/fs" @twfs,
   "moonbitlang/async",
   "moonbitlang/async/fs",
-  "moonbitlang/async/http",
-  "moonbitlang/async/socket",
   "moonbitlang/async/stdio",
   "moonbitlang/core/env",
   "mizchi/fswatch",

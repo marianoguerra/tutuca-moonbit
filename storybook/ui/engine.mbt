@@ -1053,7 +1053,13 @@ pub fn[N : @vdom.DomWalk] mount(
     }
   }
   let root_value = ShellInst::make(spec, fields).to_value()
-  let app = @app.App::new(root_scope, root_value, root_node, opts)
+  let app = @app.App::new(
+    root_scope,
+    root_value,
+    root_node,
+    opts,
+    markdown_filter=@mdfilter.make_filter,
+  )
   // The panel layer gets the app it has been holding a slot for. Before
   // `start()`, so a panel that wants to know about the first render can.
   (panels.attach)(app)

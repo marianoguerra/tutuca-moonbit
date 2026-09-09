@@ -90,13 +90,18 @@ binary inside the `_build` they delete.
 | `dist` | build all targets and assemble a self-contained runnable `dist/` |
 | `check` / `test` / `build` | across wasm-gc, js and native |
 | `fmt` | `moon fmt` then `moon info` — format and regenerate every `.mbti` |
-| `gen` | regenerate the checked-in `*_view_gen.mbt` from their `.tutu` sources, then drift-check them. A stale one type-checks and tests green, which is why the check exists |
+| `gen` | regenerate the checked-in `*_view_gen.mbt` from their `.tutu` sources, then format them |
 | `setup` | `npm install` (happy-dom for js tests) + enable the git hooks |
 
 **That is the whole table, deliberately.** `cmd/dev` with no task prints every
 task with what it does, generated from the same list that runs them, so a task
 added without touching this file is still discoverable. A table here is a second
 list, and the second list is the one that goes stale.
+
+CI starts with `check-generated`, which regenerates views and embedded assets
+in a temporary directory and compares them without changing the working tree.
+Stale generated files can type-check and test successfully; use `regenerate`
+to refresh all offline-generated artifacts.
 
 Two tasks worth knowing about before you need them: `test` caps its native leg
 with `-j` (it links a whole-program binary per test package and the biggest
@@ -128,7 +133,7 @@ covers the card half.
 
 The wasm pages need a browser with the JS String Builtins proposal, e.g. Chrome.
 Serve it with any static file server (`cd dist && python3 -m http.server`), or
-`dist/cli/tutuca storybook` serves the gallery over HTTP. `dist/` is gitignored.
+`python3 -m http.server --directory dist/storybook` serves the gallery over HTTP. `dist/` is gitignored.
 
 The wasm demos are driven by the `vdom/wasm` + `app/wasm` packages (the wasm-gc
 twins of `vdom/browser` + `app/browser`): the DOM is reached from wasm-gc

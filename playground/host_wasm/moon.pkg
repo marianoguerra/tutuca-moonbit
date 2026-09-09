@@ -5,6 +5,7 @@
 // and MoonBit closures can't cross into JS, so the inspector state is read back
 // through the exported `state_json`/`classes_json` rather than a JS callback.
 import {
+  "marianoguerra/tutuca/vdom/filter/markdown" @mdfilter,
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/component",

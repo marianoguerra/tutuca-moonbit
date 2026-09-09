@@ -42,7 +42,7 @@ test "--name is only meaningful for a single file" {
   }
   inspect(
     emit,
-    content="tutuca: --name applies to a single view file, but 2 paths were given\n  hint: name the components inside the file with `id=\"Comp:view\"` instead\n",
+    content="tutuca: --name applies to a single view file, but 2 paths were given\n  hint: name the components inside the file with a `view:` section instead\n",
   )
 }
 

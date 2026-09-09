@@ -1,0 +1,54 @@
+import {
+  "moonbitlang/async",
+  "moonbitlang/async/fs",
+  "moonbitlang/async/shell",
+  "moonbitlang/core/env",
+}
+
+///|
+async fn ensure_parent(path : String) -> Unit {
+  let parts = path.split("/").to_array()
+  let parent = parts[:parts.length() - 1].map(p => p.to_owned()).join("/")
+  if parent != "" && !@fs.exists(parent) { @fs.mkdir(parent, recursive=true) }
+}
+
+///|
+async fn compare_generated(root : String, stage : String, rel : String, stale : Array[String]) -> Unit {
+  for name in @fs.readdir(stage + "/" + rel) {
+    if name.has_prefix(".") || name is ("_build" | "node_modules" | "examples") { continue }
+    let path = if rel == "" { name } else { rel + "/" + name }
+    if @fs.kind(stage + "/" + path) is Directory {
+      compare_generated(root, stage, path, stale)
+    } else if name.has_suffix("_gen.mbt") || path == "tscript/conformance/mbt/corpus.tutu" {
+      if !@fs.exists(root + "/" + path) ||
+        @fs.read_file(stage + "/" + path).text() != @fs.read_file(root + "/" + path).text() {
+        stale.push(path)
+      }
+    }
+  }
+}
+
+///|
+async fn main {
+  let root = @env.current_dir().unwrap()
+  let stage = @fs.tmpdir(prefix="tutuca-generated-")
+  defer @fs.rmdir(stage, recursive=true)
+  let listed = @shell.Cmd("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], cwd=root).output()
+  listed.check()
+  for view in listed.stdout().split("\u0000") {
+    let path = view.to_owned()
+    if path is ("" | ".mooncakes" | "node_modules") || !@fs.exists(root + "/" + path) { continue }
+    if @fs.kind(root + "/" + path) is Directory { continue }
+    let target = stage + "/" + path
+    ensure_parent(target)
+    @fs.write_file(target, @fs.read_file(root + "/" + path), create_mode=CreateOrTruncate)
+  }
+  for dep in [".mooncakes", "node_modules"] {
+    if @fs.exists(root + "/" + dep) { @fs.symlink(target=root + "/" + dep, stage + "/" + dep) }
+  }
+  @shell.Cmd("moon", ["run", "--target", "native", "cmd/dev", "--", "regenerate"], cwd=stage).run()
+  let stale : Array[String] = []
+  compare_generated(root, stage, "", stale)
+  if !stale.is_empty() { fail("regenerate these artifacts with their owning cmd/dev tasks:\n" + stale.join("\n")) }
+  println("check-generated: generated artifacts match their sources")
+}

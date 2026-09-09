@@ -7,11 +7,7 @@ import {
 }
 
 // Values
-pub fn check_collected(LintCollector) -> Array[Finding]
-
 pub fn check_event_paths(Array[@anode.NodeEvents]) -> Array[Finding]
-
-pub fn check_html(String, fragment_context? : String, transparent_tag_prefixes? : Array[String]) -> Array[Finding]
 
 pub fn closest_name(String, Array[String], max_distance? : Int) -> String?
 
@@ -22,12 +18,6 @@ pub fn finding_message(Finding) -> String
 // Errors
 
 // Types and methods
-pub(all) struct AttrsRecord {
-  result : @anode.AttrParseResult
-  is_macro_call : Bool
-  tag : String
-} derive(@debug.Debug)
-
 pub(all) struct Finding {
   code : LintCode
   level : LintLevel
@@ -46,8 +36,6 @@ pub(all) enum LintCode {
   UnsupportedExprSyntax
   BindingMemberTooDeep
   XOpIgnoresChildren
-  MaybeAddAtPrefix
-  MaybeDropAtPrefix
   UndeclaredMethod
   ProvideNotAddressable
   ProvideTypeBadShape
@@ -56,32 +44,7 @@ pub(all) enum LintCode {
   MethodInEventPosition
   EventPathUnsafeStep
   InertConstraint
-  HtmlTagNameHasUppercase
-  HtmlSvgTagWillLowercase
-  HtmlSvgAttrWillLowercase
-  HtmlMathmlAttrWillLowercase
-  HtmlTagNotAllowedInParent
-  HtmlTextNotAllowedInParent
-  HtmlVoidElementHasCloseTag
-  HtmlDuplicateForm
-  HtmlNestedInteractive
-  HtmlMisnestedFormatting
-  HtmlUnexpectedEndTag
-  HtmlDuplicateAttribute
-  HtmlAttributesOnEndTag
-  HtmlSelfClosingEndTag
-  HtmlMissingAttributeValue
-  HtmlCdataInHtmlNamespace
-  HtmlBogusComment
-  HtmlUnclosedBeforeEnd
 } derive(Eq, @debug.Debug)
-
-pub(all) struct LintCollector {
-  parse_issues : Array[(@anode.ParseIssue, String?)]
-  attrs : Array[AttrsRecord]
-}
-pub fn LintCollector::new() -> Self
-pub impl @anode.ParseHandler for LintCollector
 
 pub(all) enum LintLevel {
   Error

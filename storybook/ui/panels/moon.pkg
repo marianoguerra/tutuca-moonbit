@@ -44,5 +44,4 @@ import {
 import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/vdom/memdom",
-  "moonbitlang/core/test",
 } for "test"

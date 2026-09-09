@@ -29,7 +29,6 @@ import {
 import {
   "marianoguerra/tutuca/testing/harness",
   "marianoguerra/tutuca/render",
-  "moonbitlang/core/test",
 } for "test"
 
 // The whitebox suite drives the Fuzz pane's own fixture through the real

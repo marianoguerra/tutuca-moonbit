@@ -26,7 +26,7 @@ are the same artifact:
 moon test storybook/examples           # the headless suite
 # the whole gallery, compiled to wasm and served:
 moon run --target native cmd/dev -- dist
-./dist/cli/tutuca storybook            # or serve dist/ and open /storybook/
+python3 -m http.server --directory dist # open /storybook/
 ```
 
 ## Porting rules (how a JS example becomes a MoonBit one)
@@ -72,8 +72,8 @@ gap — `insertInItemsAt` — into the runtime.
 ## Ported with divergences
 
 - **`storybook.js`** — the JS gallery is ported, but lives in its own
-  `storybook/` package (a compiled gallery of this registry) and is served by
-  `tutuca storybook`, not as an example here.
+  `storybook/` package (a compiled gallery of this registry), served from
+  `dist/storybook/`.
 - **`lint-errors.js`** — ported as `lint_errors.mbt`, minus the JS sections
   whose rules are statically impossible in MoonBit (`ASYNC_HANDLER`,
   `UNKNOWN_COMPONENT_SPEC_KEY`, …) and the input-handler rules that typed

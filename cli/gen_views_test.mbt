@@ -2,13 +2,51 @@
 let no_opts : @cli.GlobalOpts = { json: false, help: false, }
 
 ///|
+test "resolved generation batches reject single-file options" {
+  let paths = ["a.tutu", "b.tutu"]
+  guard @cli.validate_gen_paths(paths, None, Some("A")) is Some(shape) else {
+    fail("expected a repair")
+  }
+  assert_true(shape.message.contains("2 view files resolved"))
+  guard @cli.validate_gen_paths(paths, Some("out.mbt"), None) is Some(shape) else {
+    fail("expected a repair")
+  }
+  assert_true(shape.message.contains("one file"))
+  assert_true(@cli.validate_gen_paths(paths, Some("out/"), None) is None)
+}
+
+///|
+test "output collisions fail before parsing or generating a batch" {
+  let files : Array[@cli.GenInput] = [
+    {
+      input: "a/view.tutu",
+      name: "A",
+      target: "out/view_view_gen.mbt",
+      source: "invalid source",
+    },
+    {
+      input: "b/view.tutu",
+      name: "B",
+      target: "out/./view_view_gen.mbt",
+      source: "invalid source",
+    },
+  ]
+  guard @cli.gen_views_all(files, ir=true) is Err(shape) else {
+    fail("expected a collision")
+  }
+  assert_true(
+    shape.message.contains("shared by 'a/view.tutu' and 'b/view.tutu'"),
+  )
+}
+
+///|
 fn plan_gen(args : Array[String]) -> @cli.Outcome {
   @cli.plan(["gen", ..args])
 }
 
 ///|
 test "the roots reach the shell as written; it expands them" {
-  // A directory is a legal root — the shell contributes the .html files under
+  // A directory is a legal root — the shell contributes the .tutu files under
   // it that already have a generated sibling, the same rule watch uses. The
   // pure half cannot expand it, so it does not try.
   assert_true(
@@ -23,8 +61,8 @@ test "the roots reach the shell as written; it expands them" {
     ),
   )
   assert_true(
-    plan_gen(["src/", "other/x.html"])
-    is GenViews(_, roots=["src/", "other/x.html"], ..),
+    plan_gen(["src/", "other/x.tutu"])
+    is GenViews(_, roots=["src/", "other/x.tutu"], ..),
   )
 }
 
@@ -36,7 +74,7 @@ test "the input path decides the component name and the output file" {
   )
   // Without --name the basename is capitalized: "todo-list" -> "TodoList".
   assert_eq(
-    @cli.gen_views_target("views/todo-list.html"),
+    @cli.gen_views_target("views/todo-list.tutu"),
     ("views/todo-list_view_gen.mbt", "TodoList"),
   )
 }
@@ -44,20 +82,20 @@ test "the input path decides the component name and the output file" {
 ///|
 test "--name and --out override, in both spellings" {
   assert_true(
-    plan_gen(["views/todo-list.html", "--name", "Todos", "--out", "src/"])
+    plan_gen(["views/todo-list.tutu", "--name", "Todos", "--out", "src/"])
     is GenViews(_, out=Some("src/"), name=Some("Todos"), ..),
   )
   assert_true(
-    plan_gen(["views/todo-list.html", "--name=Todos", "--out=src/gen.mbt"])
+    plan_gen(["views/todo-list.tutu", "--name=Todos", "--out=src/gen.mbt"])
     is GenViews(_, out=Some("src/gen.mbt"), name=Some("Todos"), ..),
   )
   assert_eq(
-    @cli.gen_views_target("views/todo-list.html", out="src/", name="Todos"),
+    @cli.gen_views_target("views/todo-list.tutu", out="src/", name="Todos"),
     ("src/todo-list_view_gen.mbt", "Todos"),
   )
   assert_eq(
     @cli.gen_views_target(
-      "views/todo-list.html",
+      "views/todo-list.tutu",
       out="src/gen.mbt",
       name="Todos",
     ),
@@ -74,18 +112,18 @@ test "the flags that name ONE thing are refused for a batch" {
     }
   }
   assert_true(
-    emit_of(plan_gen(["a.html", "b.html", "--name", "X"])).contains(
+    emit_of(plan_gen(["a.tutu", "b.tutu", "--name", "X"])).contains(
       "--name names one component",
     ),
   )
   assert_true(
-    emit_of(plan_gen(["a.html", "b.html", "--out", "gen.mbt"])).contains(
+    emit_of(plan_gen(["a.tutu", "b.tutu", "--out", "gen.mbt"])).contains(
       "is one file, so it cannot take 2 paths",
     ),
   )
   // A directory --out is fine for a batch: each file keeps its own stem.
   assert_true(
-    plan_gen(["a.html", "b.html", "--out", "src/"])
+    plan_gen(["a.tutu", "b.tutu", "--out", "src/"])
     is GenViews(_, out=Some("src/"), ..),
   )
 }
@@ -93,7 +131,7 @@ test "the flags that name ONE thing are refused for a batch" {
 ///|
 test "--dry-run stays an outcome: the shell still reads the input file" {
   assert_true(
-    plan_gen(["a.html", "--dry-run"]) is GenViews(_, dry_run=true, ..),
+    plan_gen(["a.tutu", "--dry-run"]) is GenViews(_, dry_run=true, ..),
   )
 }
 
@@ -113,7 +151,7 @@ test "usage errors" {
   // spelling the command declares as a candidate, so this is the behaviour
   // `help_overview` has always promised for unknown flags.
   inspect(
-    emit_of(plan_gen(["a.html", "--nope"])),
+    emit_of(plan_gen(["a.tutu", "--nope"])),
     content="tutuca: unknown flag '--nope' for gen\n  did you mean '--name'?\n  hint: see `tutuca gen -h` for the accepted flags\n",
   )
   // A flag that EXTENDS a real one is UNKNOWN, not a malformed version of it.
@@ -121,20 +159,20 @@ test "usage errors" {
   // budget is two; reporting the right error without a guess beats reporting
   // the wrong error confidently.
   inspect(
-    emit_of(plan_gen(["a.html", "--output", "x"])),
+    emit_of(plan_gen(["a.tutu", "--output", "x"])),
     content="tutuca: unknown flag '--output' for gen\n  hint: see `tutuca gen -h` for the accepted flags\n",
   )
   // Two paths is no longer an error: it is the whole point of a batch, and
   // what lets a view reference a component another file declares.
   assert_true(
-    plan_gen(["a.html", "b.html"])
-    is GenViews(_, roots=["a.html", "b.html"], ..),
+    plan_gen(["a.tutu", "b.tutu"])
+    is GenViews(_, roots=["a.tutu", "b.tutu"], ..),
   )
 }
 
 ///|
 test "the compiled tree is a second file, unless --no-ir" {
-  assert_true(plan_gen(["a.html", "--no-ir"]) is GenViews(_, ir=false, ..))
+  assert_true(plan_gen(["a.tutu", "--no-ir"]) is GenViews(_, ir=false, ..))
   let r = @cli.gen_views(
     "view:\n  Counter:\n    button(id: \"go\", ~on_click: go(1)):\n      \"x\"\n",
     name="Counter",
@@ -673,7 +711,7 @@ test "a file that does not read stops the batch before the emit pass" {
 /// block that answers SOME of its names, with the rest answered in MoonBit
 /// because they must also do something a script arm cannot express. The block's
 /// presence was read as "every handler is here", which is true of a card and
-/// false of a compiled component — `gen` reads .html and the missing arm is in
+/// false of a compiled component — `gen` reads .tutu and the missing arm is in
 /// .mbt. Warning here named `.name = v` as the repair, which is the bug the
 /// author avoided by declaring `name` a message rather than a writable
 /// property.

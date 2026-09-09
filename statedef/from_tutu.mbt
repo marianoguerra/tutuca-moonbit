@@ -187,14 +187,14 @@ fn catalog_option(
   }
   let value = @sh.read_group(bgs[0]) catch {
     e => {
-      let @sh.ExError(message~, help~, ..) = e
+      let ExError(message~, help~, ..) = e
       raise Syntax(msg=message + " — " + help, span=at)
     }
   }
   match opt {
     "category" =>
       match value {
-        @sh.EStr(text) => set_category(text)
+        EStr(text) => set_category(text)
         _ =>
           raise Syntax(
             msg="a category is a string — write `~category: \"layout\"`, since it is matched against what a person types",
@@ -203,10 +203,10 @@ fn catalog_option(
       }
     "keywords" =>
       match value {
-        @sh.EList(items) =>
+        EList(items) =>
           for item in items {
             match item {
-              @sh.EStr(text) => keywords.push(text)
+              EStr(text) => keywords.push(text)
               _ =>
                 raise Syntax(
                   msg="a keyword is a string — write `~keywords: [\"layout\", \"box\"]`",
@@ -329,7 +329,7 @@ fn wire_value(
   }
   let ex = @sh.read_ex(terms) catch {
     e => {
-      let @sh.ExError(message~, help~, ..) = e
+      let ExError(message~, help~, ..) = e
       raise Syntax(msg=message + " — " + help, span=at)
     }
   }
@@ -345,22 +345,22 @@ fn wire_ex(
   at : Span,
 ) -> String raise DefError {
   match ex {
-    @sh.EIt(f) => "." + f
-    @sh.EIndex(base, k) =>
+    EIt(f) => "." + f
+    EIndex(base, k) =>
       wire_ex(base, word, name, at) + "[" + wire_ex(k, word, name, at) + "]"
-    @sh.EStr(s) => "'" + s.replace_all(old="'", new="\\'") + "'"
-    @sh.ENum(n) =>
+    EStr(s) => "'" + s.replace_all(old="'", new="\\'") + "'"
+    ENum(n) =>
       if n == n.trunc() && n.abs() < 1.0e15 {
         n.to_int64().to_string()
       } else {
         n.to_string()
       }
-    @sh.EBool(b) => if b { "true" } else { "false" }
+    EBool(b) => if b { "true" } else { "false" }
     // `null` and `none` are WORDS to the reader and literals to everything
     // downstream — `to_expr` folds them the same way, and this is the same
     // fold at the one place that writes text instead of a tree.
-    @sh.ENone | @sh.EName("null") | @sh.EName("none") => "null"
-    @sh.EList(items) =>
+    ENone | EName("null") | EName("none") => "null"
+    EList(items) =>
       if items.is_empty() {
         "[]"
       } else {
@@ -381,7 +381,7 @@ fn wire_ex(
 fn read_one(g : @ast.Node, prev : @ast.Node?) -> @sh.Member raise DefError {
   @sh.read_member(g, prev~) catch {
     e => {
-      let @sh.ExError(message~, help~, span~) = e
+      let ExError(message~, help~, span~) = e
       raise Syntax(msg=message + " — " + help, span=at_of(span))
     }
   }
@@ -449,7 +449,7 @@ fn compact_field(acc : @sh.Member, at : Span) -> String raise DefError {
   }
   let ex = @sh.read_group(gs[0]) catch {
     e => {
-      let @sh.ExError(message~, help~, ..) = e
+      let ExError(message~, help~, ..) = e
       raise Syntax(msg=message + " — " + help, span=at)
     }
   }
@@ -529,7 +529,7 @@ fn case_of(
     for g in gs {
       let ex = @sh.read_group(g) catch {
         e => {
-          let @sh.ExError(message~, help~, ..) = e
+          let ExError(message~, help~, ..) = e
           raise Syntax(msg=message + " — " + help, span=at)
         }
       }
@@ -543,7 +543,7 @@ fn case_of(
 fn expr_of_group(g : @ast.Node, at : Span) -> @tutuca.Expr raise DefError {
   let ex = @sh.read_group(g) catch {
     e => {
-      let @sh.ExError(message~, help~, ..) = e
+      let ExError(message~, help~, ..) = e
       raise Syntax(msg=message + " — " + help, span=at)
     }
   }
@@ -554,7 +554,7 @@ fn expr_of_group(g : @ast.Node, at : Span) -> @tutuca.Expr raise DefError {
 fn expr_of_ex(ex : @sh.Ex, at : Span) -> @tutuca.Expr raise DefError {
   @sh.to_expr(ex, @sh.ExCtx::in_body(Map([])), @report.Span::at(at.start)) catch {
     e => {
-      let @sh.ExError(message~, help~, ..) = e
+      let ExError(message~, help~, ..) = e
       raise Syntax(msg=message + " — " + help, span=at)
     }
   }

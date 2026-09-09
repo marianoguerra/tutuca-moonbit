@@ -9,6 +9,7 @@
 // `storybook/ui/panels` is what supplies the standard set. A gallery that
 // wants none of them links none of that.
 import {
+  "marianoguerra/tutuca/vdom/filter/markdown" @mdfilter,
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/anode",
@@ -21,5 +22,4 @@ import {
 
 import {
   "marianoguerra/tutuca/vdom/memdom",
-  "moonbitlang/core/test",
 } for "test"

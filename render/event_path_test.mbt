@@ -173,3 +173,15 @@ test "DomEvent bind coercions reject invalid edits" {
   let decimal = @render.DomEvent::new(name="input", value=Str("1.25"))
   assert_true(decimal.bind_value(BindDouble) is Some(Num(1.25)))
 }
+
+///|
+test "numeric event accessors reject non-finite and partial numbers" {
+  for s in ["NaN", "Infinity", "12px", ""] {
+    let event = @render.DomEvent::new(name="input", value=Str(s))
+    assert_eq(@render.event_path(event, ["valueAsFloat"]), Null)
+    assert_eq(@render.event_path(event, ["valueAsInt"]), Null)
+  }
+  let event = @render.DomEvent::new(name="input", value=Str("12.75"))
+  assert_eq(@render.event_path(event, ["valueAsFloat"]), Num(12.75))
+  assert_eq(@render.event_path(event, ["valueAsInt"]), Num(12))
+}

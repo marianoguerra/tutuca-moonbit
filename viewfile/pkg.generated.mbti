@@ -2,34 +2,17 @@
 package "marianoguerra/tutuca/viewfile"
 
 import {
+  "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/scenedef",
   "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/tscript",
   "moonbitlang/core/debug",
 }
 
 // Values
 pub fn line_of(String, Int) -> Int
 
-pub fn split_file(String, name? : String) -> ViewFile raise FileError
-
 // Errors
-pub suberror FileError {
-  StrayText(String)
-  DuplicateView(String)
-  DuplicateMacro(String)
-  BadMacroName(String)
-  MixedViewIds
-  NoMainViewFor(String)
-  UnclosedTemplate(String)
-  DuplicateStateBlock
-  DuplicateScriptBlock(String)
-  BadStateBlock(line~ : Int, message~ : String)
-  BadInitBlock(line~ : Int, message~ : String)
-  TwoRoots(String, String)
-  DuplicateTestBlock
-  BadTestBlock(line~ : Int, message~ : String)
-}
-pub fn FileError::message(Self) -> String
 
 // Types and methods
 pub(all) struct Block {
@@ -37,6 +20,12 @@ pub(all) struct Block {
   offset : Int
   line : Int
 } derive(Eq, @debug.Debug)
+
+pub(all) struct CompiledTree {
+  root : @anode.ANode
+  events : Array[@anode.NodeEvents]
+  bytes : Int
+}
 
 pub(all) struct MacroDef {
   name : String
@@ -48,12 +37,15 @@ pub(all) struct RawView {
   name : String
   source : String
   style : String
-} derive(Eq, @debug.Debug)
+  tree : CompiledTree?
+}
 
 pub(all) struct ScriptBlock {
   comp : String
   block : Block
-} derive(Eq, @debug.Debug)
+  decls : Array[@tscript.Decl]?
+}
+pub fn ScriptBlock::declarations(Self) -> Array[@tscript.Decl] raise @tscript.ScriptError
 
 pub(all) struct ViewFile {
   components : Array[ViewSet]
@@ -64,8 +56,8 @@ pub(all) struct ViewFile {
   scripts : Array[ScriptBlock]
   tests : Array[@scenedef.Scene]
   root : String
-} derive(Eq, @debug.Debug)
-pub fn ViewFile::script_for(Self, String) -> Block?
+}
+pub fn ViewFile::script_block_for(Self, String) -> ScriptBlock?
 pub fn ViewFile::state_of(Self, String, fallback~ : String) -> @statedef.StateDef?
 
 pub(all) struct ViewSet {
@@ -73,7 +65,7 @@ pub(all) struct ViewSet {
   views : Array[RawView]
   common_style : String
   global_style : String
-} derive(Eq, @debug.Debug)
+}
 pub fn ViewSet::component_name(Self, String) -> String
 
 // Type aliases

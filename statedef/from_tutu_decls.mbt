@@ -16,7 +16,7 @@ fn struct_of_tutu(d : @tutufile.Decl, doc : String?) -> RawDecl raise DefError {
   for g in gs {
     let p = @sh.read_param(g) catch {
       e => {
-        let @sh.ExError(message~, help~, ..) = e
+        let ExError(message~, help~, ..) = e
         raise Syntax(msg=message + " — " + help, span=at)
       }
     }
@@ -57,7 +57,7 @@ fn enum_of_tutu(d : @tutufile.Decl, doc : String?) -> RawDecl raise DefError {
       for a in gs {
         let ex = @sh.read_group(a) catch {
           e => {
-            let @sh.ExError(message~, help~, ..) = e
+            let ExError(message~, help~, ..) = e
             raise Syntax(msg=message + " — " + help, span=at)
           }
         }

@@ -212,13 +212,8 @@ pub fn StateDef::field_of(
 /// worth suggesting. Distance within a third of the length: near enough
 /// to be a typo, far enough that unrelated names stay quiet.
 ///
-/// The TWIN of `lint/closest_name.mbt`, and the two must answer the same way
-/// for the same pair — a suggestion that depends on whether the typo reached
-/// `gen` or the linter is a suggestion nobody can trust. They are two
-/// implementations rather than one because `statedef` imports nothing but the
-/// stdlib on purpose (see the note on `ty_info_source`), so there is no
-/// package both can reach without either inventing a leaf for twenty lines or
-/// giving this one a dependency it was built to avoid.
+/// Uses core's shared edit distance. The threshold grows with field names;
+/// lint applies its own fixed threshold and case-correction policy.
 ///
 /// What legitimately differs is the THRESHOLD, because the domains do: `lint`
 /// suggests over command and flag names, a fixed handful where 2 edits is

@@ -28,6 +28,8 @@ pub fn storybook_template_source(Array[(String, String)]) -> String
 
 pub fn tasks() -> Array[Task]
 
+pub fn universal_dist_commands() -> Array[Command]
+
 // Errors
 
 // Types and methods

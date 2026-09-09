@@ -483,27 +483,20 @@ refuses it**. `raw_markup` is a permission because a raw-HTML payload arrives as
 markup the config gets no say over — refusing the construct is the only lever
 there is. Markdown has no such route, so there is nothing to permit; a host that
 wants less says which elements it will have, the same way it does for every
-other node in the tree. `filter_for` therefore installs `MdFilter`
-unconditionally and reads no field for it.
+other node in the tree. The optional Markdown factory receives the same sanitizer and narrows its CSS policy for payloads.
 
-Three things this cost that were not obvious:
+The filter chain has three relevant properties:
 
-- **Markdown filtering lives in `vdom/filter/markdown`.** The chain is
-  `[MarkupFilter?] → MdFilter → Baseline`, and `markup` cannot express that —
-  the dependency runs `markdown` → `markup` and a cycle is not available. A
-  host wanting the raw-markup rule and nothing else builds the pair itself:
-  `@filter.Chain::new([@markup.MarkupFilter::new(sanitizer~), @filter.Baseline::new()])`.
+- **Markdown filtering lives in `vdom/filter/markdown`.** `markup.filter_for`
+  builds `[MarkupFilter?] → SafeMarkupFilter → [Markdown factory or missing-configuration filter] → Baseline`.
+  Injecting the optional factory keeps the parser dependency out of `markup`.
 - **`set_prop` fails closed on `setInnerMd`** (`vdom/to_dom.mbt`). Reaching it
   means no filter consumed the attribute, and the element is CLEARED. Rendering
   the markdown as text would be wrong output; passing it to `set_inner_html`
   would turn the one directive whose name promises safety into the most
   dangerous in the framework. `render_wbtest.mbt` pins both halves — nothing
   without a filter, real nodes with one.
-- **`App::new` installs it**, so `@setinnermd` works with no configuration. The
-  price is that every app links the ~4.7k-line parser, since the call is
-  unconditional and nothing about it is dead.
-  There is no way to trade it away: the seam takes a policy, and the parser is
-  behind a rule the policy does not reach.
+- **Markdown is optional.** Pass `markdown_filter=@markdown.make_filter` to app construction. Apps without this factory do not link the parser; they clear Markdown payloads and report the missing configuration. Changing the sanitizer rebuilds the factory's filter.
 
 ### HTML and SVG come back the same way, and need no permission either
 
@@ -512,14 +505,10 @@ Three things this cost that were not obvious:
 the same `html_nodes` builder `@dangerouslysetinnerhtml` uses and a new
 `svg_nodes` beside it.
 
-The argument that made these two obvious is one this document had already
-written down without noticing. `@setinnermd` routes `HtmlBlock` and
-`HtmlInline` straight through `html_nodes`, `MdFilter` is installed by
-`App::new`, and neither reads a permission. So **"an arbitrary runtime string
-becomes sanitized HTML nodes, unpermissioned" is what a default app has always
-done** — an author who wanted it just had to wrap the payload in a markdown
-document to reach it. Naming it directly adds no capability; it removes a
-detour.
+`@setinnermd` routes `HtmlBlock` and `HtmlInline` through `html_nodes` when
+the host installs the Markdown factory. The HTML and SVG directives use the
+same sanitizer directly, without requiring the Markdown parser or a raw-markup
+permission.
 
 What makes the safe name honest is not the filter, which a host could fail to
 install. It is that `set_prop` **fails closed** on both names, the way it
@@ -791,7 +780,7 @@ link, and it turned off the `on*` rule and the markup sanitizer to get it.
 A filter that REPLACES a subtree must run before the ones that inspect
 attributes, or the subtree it built is never inspected; `CssFilter` must run
 before `Baseline`, because it rewrites values the URL rule reads. That is why
-`@mdfilter.filter_for` exists — one function where the policy and the chain it
+`@markup.filter_for` exists — one function where the policy and the chain it
 implies are named together — and a `set_filter` that let a host assemble its own
 put that invariant back in the host's call sequence.
 
@@ -859,4 +848,3 @@ the paragraph above had wrong:
 to that set forces the attribute path on plain HTML elements too, which is
 strictly worse. Its existing members are names whose attribute form is the
 correct one, which an event handler's is not.
-

@@ -1063,9 +1063,14 @@ the app's own `@sanitize.Sanitizer` on the way out. `<script>`, `<iframe>`,
 *attribute*, not the element, so a bad link keeps its words and loses its
 destination. Raw HTML inside the markdown goes through the same sanitizer.
 
-`App::new` installs the filter that does this, so it works with no setup, and
-there is no way to turn it off: `App::set_sanitizer` changes WHICH policy the
-chain enforces, and `App::add_filter` adds a rule of your own behind it.
+Import `marianoguerra/tutuca/vdom/filter/markdown` as `@markdown` and pass
+`markdown_filter=@markdown.make_filter` to `App::new`, `App::from_module`,
+`app/wasm.mount_in`, or `testing/harness.mount`. The gallery and playground
+hosts enable it. Apps that omit it do not link the parser; a Markdown directive
+renders empty content and reports the missing configuration.
+
+`App::set_sanitizer` rebuilds the Markdown filter with the new policy.
+The mandatory markup and baseline filters remain installed in either case.
 
 Two behaviours worth knowing before you use it: inline HTML tags (`<span>x</span>`
 inside a paragraph) render as literal text rather than as markup, and an

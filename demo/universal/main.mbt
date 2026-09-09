@@ -55,6 +55,7 @@ fn boot() -> Unit {
     @ui.root_value(),
     root_node,
     @bdom.opts_for(doc),
+    markdown_filter=@mdfilter.make_filter,
   ) catch {
     e => {
       println("could not mount: \{e}")

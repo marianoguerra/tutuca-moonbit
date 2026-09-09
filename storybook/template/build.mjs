@@ -5,7 +5,7 @@
 //   moon-wasm-opt -Oz                            shrink it
 //   copy the loader out of .mooncakes            the JS a wasm-gc page needs
 //
-// Then: tutuca storybook dist    (or any static server over dist/)
+// Then: python3 -m http.server --directory dist    (or any static server over dist/)
 //
 // A plain Node script on purpose: `moon` and `node` are all it needs, and it
 // reaches nothing outside this directory.
@@ -143,5 +143,5 @@ if (missing.length > 0) {
 
 console.log(
   "\n\x1b[1m✓ dist/ is ready\x1b[0m\n\n" +
-    "  tutuca storybook dist            # or any static server over dist/\n",
+    "  python3 -m http.server --directory dist            # or any static server over dist/\n",
 );

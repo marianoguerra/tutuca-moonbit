@@ -8,90 +8,34 @@ test "every task has a name and one-line help and at least one command" {
 }
 
 ///|
-test "plan resolves a base task to Run steps" {
-  debug_inspect(
-    @dev.plan("test"),
-    content=(
-      #|Some(
-      #|  [
-      #|    Run({ label: "test · default", prog: "moon", args: ["test"] }),
-      #|    Run(
-      #|      {
-      #|        label: "test · native",
-      #|        prog: "moon",
-      #|        args: ["test", "--target", "native", "-j", "4"],
-      #|      },
-      #|    ),
-      #|    Run(
-      #|      {
-      #|        label: "test · js browser adapters",
-      #|        prog: "moon",
-      #|        args: ["test", "--target", "js", "vdom/browser", "app/browser"],
-      #|      },
-      #|    ),
-      #|  ],
-      #|)
-    ),
-  )
-}
-
-///|
-test "plan expands the ci composite into its member tasks' steps" {
-  let ci = @dev.plan("ci").unwrap_or([])
-  let expected = @dev.plan("gen").unwrap_or([]) +
-    @dev.plan("skill-embed").unwrap_or([]) +
-    @dev.plan("storybook-template-embed").unwrap_or([]) +
-    @dev.plan("rt-embed").unwrap_or([]) +
-    @dev.plan("check").unwrap_or([]) +
-    @dev.plan("check-examples").unwrap_or([]) +
-    @dev.plan("check-skill").unwrap_or([]) +
-    @dev.plan("check-storybook-template").unwrap_or([]) +
-    @dev.plan("check-publish-graph").unwrap_or([]) +
-    @dev.plan("check-diagnostics").unwrap_or([]) +
-    @dev.plan("check-tgc").unwrap_or([]) +
-    @dev.plan("check-cards").unwrap_or([]) +
-    @dev.plan("universal").unwrap_or([]) +
-    @dev.plan("test").unwrap_or([]) +
-    @dev.plan("build").unwrap_or([])
-  assert_true(ci == expected)
-}
-
-///|
-/// `gen` regenerating is only a guarantee if CI also checks that what it
-/// regenerated is what is checked in — the step that makes the whole ahead-of-
-/// time story enforceable rather than conventional. Pinned here because it is
-/// the last command, and appending anything after it would silently disarm it.
-test "gen ends in a drift check over the generated modules" {
-  let steps = @dev.plan("gen").unwrap_or([])
-  guard steps[steps.length() - 1] is Run(cmd) else {
-    fail("last gen step is not a command")
-  }
-  // A CONTENT comparison — the modules as they stood before this run against
-  // the same modules after — rather than a `git diff` against `HEAD`. The two
-  // answer different questions and agree only on a clean tree: a `.html` edited
-  // and regenerated is a consistent pair with neither half committed, which the
-  // git form failed and which is exactly when `gen` gets run.
-  assert_eq(cmd.prog, "diff")
-  assert_eq(cmd.args, ["_build/view_drift.before", "_build/view_drift.after"])
-  // …and the "after" reading is taken immediately before it, or the comparison
-  // is against a stale file and always passes.
-  guard steps[steps.length() - 2] is Run(snap) else {
-    fail("the step before the drift check is not a command")
-  }
-  assert_true(
-    snap.args.length() == 2 && snap.args[1].has_suffix("view_drift.after"),
-  )
-  // The "before" reading is the FIRST step: taken after any generator ran, it
-  // would read the regenerated modules and the check could never fail.
-  guard steps[0] is Run(first) else { fail("first gen step is not a command") }
-  assert_true(
-    first.args.length() == 2 && first.args[1].has_suffix("view_drift.before"),
-  )
-}
-
-///|
 test "plan returns None for an unknown task" {
   assert_true(@dev.plan("bogus") is None)
+}
+
+///|
+test "CI checks generated artifacts before checking sources" {
+  let steps = @dev.plan("ci").unwrap()
+  guard steps[0] is Run(command) else { fail("expected generated check first") }
+  assert_true(command.args.contains("scripts/check-generated.mbtx"))
+  for name in ["check", "test", "build", "check-publish-graph", "check-skill"] {
+    for required in @dev.plan(name).unwrap() {
+      assert_true(steps.contains(required))
+    }
+  }
+  for task in @dev.tasks() {
+    assert_true(@dev.plan(task.name) is Some(_))
+  }
+}
+
+///|
+test "generation updates artifacts without comparing against git" {
+  for name in ["gen", "skill-embed", "storybook-template-embed", "rt-embed"] {
+    for step in @dev.plan(name).unwrap() {
+      if step is Run(command) {
+        assert_true(command.prog != "git" && command.prog != "diff")
+      }
+    }
+  }
 }
 
 ///|
@@ -100,11 +44,7 @@ test "dist plan builds all targets then assembles dist/" {
   // Both asset-embed codegens precede the target builds: each writes a module
   // that the native binary compiles in, and each ends in its own `moon fmt`.
   //
-  // Asserted by ORDER rather than by index. The embed steps carry their own
-  // scaffolding — a snapshot taken before regenerating, so the drift check can
-  // compare content instead of asking git about a commit — and an assertion on
-  // `steps[0]` was really an assertion about how many of those there are, which
-  // is not the claim this test means to make.
+  // Assert relative order so additional preparation steps can be inserted.
   let first_of = (pred : (@dev.Step) -> Bool) => {
     let mut at = -1
     for i, st in steps {

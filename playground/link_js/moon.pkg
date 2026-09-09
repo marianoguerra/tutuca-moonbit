@@ -1,0 +1,8 @@
+// Link root for the playground host's complete dependency closure.
+import {
+  "marianoguerra/tutuca/playground/host",
+}
+
+supported_targets = "js"
+
+pkgtype(kind: "executable")

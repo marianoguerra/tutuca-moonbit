@@ -172,7 +172,7 @@ fn event_path_reader(ev : @core.Any) -> @render.EventPathReader {
       if !tdom_has_prop(cur, seg) {
         return Null
       }
-      cur = cur._get(seg)
+      cur = tdom_read_prop(cur, seg)
       if @core.is_nullish(cur) {
         return Null
       }
@@ -329,6 +329,7 @@ pub fn mount_in(
   root_name : String,
   id? : String = "app",
   args? : Map[String, @tutuca.Value],
+  markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter,
 ) -> @app.App[@wdom.WasmNode]? {
   let doc = document()
   guard element_by_id(doc, id) is Some(root) else {
@@ -336,7 +337,14 @@ pub fn mount_in(
     return None
   }
   let opts = @vdom.RenderOpts::new(doc)
-  let app = @app.App::from_module(m, root_name, root, opts, args?) catch {
+  let app = @app.App::from_module(
+    m,
+    root_name,
+    root,
+    opts,
+    args?,
+    markdown_filter?,
+  ) catch {
     e => {
       @tutuca.warn("tutuca(wasm): mount failed: \{e}")
       return None
@@ -364,3 +372,6 @@ pub fn install_styles(
 pub fn inject_style(doc : @wdom.WasmNode, id : String, css : String) -> Unit {
   tdom_inject_css(doc.as_any(), id, css)
 }
+
+///|
+extern "wasm" fn tdom_read_prop(obj : @core.Any, name : String) -> @core.Any = "tdom" "read_prop"

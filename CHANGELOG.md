@@ -6,6 +6,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Restore compilation with the current MoonBit numeric parsing APIs and remove
+  unused imports, annotations, and the unused CLI file-reading helper.
+- Update the playground compiler pin to the verified `1634b282e` toolchain and
+  matching `@moonbit/moonc-worker@0.1.202609081` release.
+- Derive playground linker inputs from its own hosts so optional dependencies
+  do not depend on what the counter demo happens to use.
+- Make browser event-path reads tolerate absent values and throwing getters;
+  expire dropped-file identifiers on every drop.
+- Share batch generation between `gen` and `watch`, reject output collisions,
+  and stop directory discovery at nested module boundaries.
+- Separate regeneration from checks performed in a temporary tree, and derive
+  the publish graph from the actual `.moonignore` package inventory.
+- Make Markdown an explicitly enabled app extension. Remove the `storybook`
+  static serve/copy command; retain the gallery and scaffolder.
+- Share edit distance between diagnostic callers. Replace the completed `.tutu`
+  migration guide with the current format and generation reference.
+
 ## [0.55.4] - 2026-09-07
 
 ### Three things the old spec language could say and `.tutu` could not

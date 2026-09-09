@@ -16,7 +16,7 @@ inspectors.
 
 ```sh
 node build.mjs        # moon build --target wasm-gc --release page, then dist/
-tutuca storybook dist # or any static server over dist/
+python3 -m http.server --directory dist # or any static server over dist/
 ```
 
 Needs `moon` and Node >= 20, and a browser with the JS String Builtins proposal

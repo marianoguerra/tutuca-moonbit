@@ -2,6 +2,7 @@
 package "marianoguerra/tutuca/viewgen"
 
 import {
+  "marianoguerra/error-report",
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/tscript/check",
@@ -24,17 +25,17 @@ pub fn emit_module(String, String, @viewfile.ViewFile, debug_derive? : Bool, hin
 
 pub fn emit_modules(String, String, @viewfile.ViewFile, include_ir? : Bool, debug_derive? : Bool, hints? : Array[String], program? : ProgramIndex) -> GeneratedModules raise GenError
 
-pub fn generate(String, name~ : String, source_file~ : String) -> String raise GenError
+pub fn read_card(String, name? : String) -> (@viewfile.ViewFile, Array[@error-report.Report]) raise GenError
 
-pub fn split_file(String, name? : String) -> @viewfile.ViewFile raise GenError
+pub fn read_file(String, name? : String) -> @viewfile.ViewFile raise GenError
 
 pub fn view_surface(Array[@viewfile.RawView], macros? : Array[@viewfile.MacroDef], state? : @statedef.StateDef?) -> Surface raise GenError
 
 // Errors
 pub suberror GenError {
-  File(@viewfile.FileError)
   ViewParseIssue(view~ : String, issue~ : String)
   EmptyView(String)
+  ReadIssue(String)
   NameCollision(variant~ : String, first~ : String, second~ : String)
   BadComponentName(String)
   NoViewsToCompile

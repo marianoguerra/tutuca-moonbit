@@ -63,6 +63,6 @@ fn read_views(
 /// author reading "`~onclick` is not an option" still has to guess, and one
 /// reading it beside "write `~on_click:`" does not.
 fn ex_line(e : @sh.ExError) -> String {
-  let @sh.ExError(message~, help~, ..) = e
+  let ExError(message~, help~, ..) = e
   message + " — " + help
 }

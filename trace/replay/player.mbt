@@ -46,6 +46,7 @@ pub fn mount(
   scope : @component.ComponentStack,
   fidelity? : Fidelity = Live,
   verify? : Bool = true,
+  markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter,
 ) -> Player raise ReplayError {
   let root = root_for(t, scope)
   let (doc, container) = @harness.new_mount()
@@ -65,6 +66,7 @@ pub fn mount(
       @vdom.RenderOpts::new(doc),
       view=t.origin.view,
       intents=live,
+      markdown_filter?,
     )
     // Inside the same `try` as the construction, and not only for brevity:
     // whether the first render raises depends on the backend, and a separate

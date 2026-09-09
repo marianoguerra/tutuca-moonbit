@@ -12,9 +12,9 @@ import {
 // Values
 pub fn at_span(@shrub.ExError, @error-report.Span) -> @shrub.ExError
 
-pub fn read_binds(Array[@ast.Node]) -> Array[@tscript.Stmt] raise @shrub.ExError
+pub fn read_binds(Array[@ast.Node], Map[String, String]) -> Array[@tscript.Stmt] raise @shrub.ExError
 
-pub fn read_logic(@tutufile.Decl) -> Array[@tscript.Decl] raise @shrub.ExError
+pub fn read_logic(@tutufile.Decl, rows? : Array[String]) -> Array[@tscript.Decl] raise @shrub.ExError
 
 pub fn read_stmts(Array[@ast.Node], Map[String, String]) -> Array[@tscript.Stmt] raise @shrub.ExError
 

@@ -90,11 +90,11 @@ scaffolded:
 
 ```sh
 tutuca new-storybook my-gallery
-cd my-gallery && node build.mjs && tutuca storybook dist
+cd my-gallery && node build.mjs && python3 -m http.server --directory dist
 ```
 
-`tutuca storybook` is a static file server and knows nothing about any of this:
-a bundle is a directory with an `index.html` and a `.wasm` beside it.
+A gallery bundle is static content: serve its `dist` directory with any HTTP
+server that supplies the JavaScript and WebAssembly content types.
 
 ## Options
 

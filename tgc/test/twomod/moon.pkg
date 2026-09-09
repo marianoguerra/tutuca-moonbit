@@ -19,7 +19,6 @@ import {
   "marianoguerra/tutuca/tgc/policy",
   "marianoguerra/tutuca/tutucard/guest",
   "marianoguerra/tutuca/testing/harness",
-  "moonbitlang/core/json",
 }
 
 supported_targets = "js"

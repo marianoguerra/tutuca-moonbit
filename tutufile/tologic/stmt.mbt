@@ -43,7 +43,7 @@ pub fn read_binds(
     guard g.it is Group(parts) else { continue }
     let at = @sh.find_op(parts, ["="])
     guard at is Some(i) && parts[0].it is Id(name) else {
-      raise @sh.ExError(
+      raise ExError(
         message="an enricher binds names to values",
         help="write `<name> = <value>`",
         span=@sh.span_of(g),
@@ -53,8 +53,8 @@ pub fn read_binds(
     let value = @sh.to_expr(@sh.read_ex(parts[i + 1:]), ctx(binds), span)
     out.push(
       @tscript.SAssign(
-        place={ root: @tutuca.PBind(name), steps: [], span: sp(span), },
-        op=@tscript.ASet,
+        place={ root: PBind(name), steps: [], span: sp(span), },
+        op=ASet,
         value~,
         span=sp(span),
       ),
@@ -88,7 +88,7 @@ fn read_stmt(
   // otherwise.
   if parts[0].it is Id("if") && parts[parts.length() - 1].it is Alts(arms) {
     guard arms.length() is (1 | 2) else {
-      raise @sh.ExError(
+      raise ExError(
         message="an `if` takes one arm or two, and this has \{arms.length()}",
         help="write `if <cond> | <then>`, or `if <cond> | <then> | <else>`",
         span~,
@@ -101,14 +101,14 @@ fn read_stmt(
     )
     let then_ = arm(arms[0], binds)
     let else_ = if arms.length() == 2 { arm(arms[1], binds) } else { [] }
-    return Some(@tscript.SIf(cond~, then_~, else_~, span=sp(span)))
+    return Some(SIf(cond~, then_~, else_~, span=sp(span)))
   }
   match @sh.find_op(parts, [":=", "+=", "-=", "*=", "/="]) {
     Some(at) => {
       let op : @tscript.AssignOp = match parts[at].it {
-        Op("+=") => @tscript.AAdd
-        Op("-=") => @tscript.ASub
-        _ => @tscript.ASet
+        Op("+=") => AAdd
+        Op("-=") => ASub
+        _ => ASet
       }
       // `*=` and `/=` have no operator of their own in the script language:
       // they are the write with the arithmetic done first, which is what the
@@ -126,12 +126,12 @@ fn read_stmt(
             } else {
               "/"
             },
-            [@tutuca.Expr::ERead(place~, span=sp(span)), value],
+            [ERead(place~, span=sp(span)), value],
             span=sp(span),
           )
         _ => value
       }
-      Some(@tscript.SAssign(place~, op~, value~, span=sp(span)))
+      Some(SAssign(place~, op~, value~, span=sp(span)))
     }
     None => Some(call_stmt(@sh.read_ex(parts[:]), binds, span, pre))
   }
@@ -168,30 +168,26 @@ fn hoist(
 ) -> @tutuca.Expr? raise @sh.ExError {
   guard ex is ECall(EName(name), args) else { return None }
   guard @sh.is_upper(name) else { return None }
-  pre.push(@tscript.SNew(ty={ name, args: [], span: sp(span), }, span=sp(span)))
+  pre.push(SNew(ty={ name, args: [], span: sp(span), }, span=sp(span)))
   for a in args {
     guard a is AField(field, value) else {
-      raise @sh.ExError(
+      raise ExError(
         message="`\{name}` is built by naming its fields",
         help="write `\{name}(<field>: <value>, …)`",
         span~,
       )
     }
     guard !(value is ECall(EName(_), _)) else {
-      raise @sh.ExError(
+      raise ExError(
         message="a constructor inside a constructor cannot be built here",
         help="build the inner one first and write it into a field, then build the outer",
         span~,
       )
     }
     pre.push(
-      @tscript.SAssign(
-        place={
-          root: @tutuca.PTarget,
-          steps: [@tutuca.PField(field)],
-          span: sp(span),
-        },
-        op=@tscript.ASet,
+      SAssign(
+        place={ root: PTarget, steps: [PField(field)], span: sp(span), },
+        op=ASet,
         value=@sh.to_expr(value, ctx(binds), span),
         span=sp(span),
       ),
@@ -200,10 +196,7 @@ fn hoist(
   // What is left where the call was: a READ of the target, which is what `cur`
   // means and what the block parser makes of the word.
   Some(
-    @tutuca.Expr::ERead(
-      place={ root: @tutuca.PTarget, steps: [], span: sp(span), },
-      span=sp(span),
-    ),
+    ERead(place={ root: PTarget, steps: [], span: sp(span), }, span=sp(span)),
   )
 }
 
@@ -226,10 +219,10 @@ fn call_stmt(
 ) -> @tscript.Stmt raise @sh.ExError {
   // `drop` and `stop` take no arguments and are written bare.
   if ex is EName(word) && @tscript.effect_min_arity(word) is Some(_) {
-    return @tscript.SEffect(name=word, args=[], route=[], span=sp(span))
+    return SEffect(name=word, args=[], route=[], span=sp(span))
   }
   guard ex is ECall(callee, args) else {
-    raise @sh.ExError(
+    raise ExError(
       message="a statement is a write, a collection operation or an effect",
       help="a bare value does nothing — write `it.x := <value>` to keep it",
       span~,
@@ -240,7 +233,7 @@ fn call_stmt(
     // An effect: `send("flash", it.msg)`, `ask("save", ~route: lex)`.
     EName(verb) => {
       guard @tscript.effect_min_arity(verb) is Some(_) else {
-        raise @sh.ExError(
+        raise ExError(
           message="`\{verb}` is not an effect",
           help="the effects are `send`, `ask`, `notify`, `reply`, `fail`, `forward` and `drop`",
           span~,
@@ -269,7 +262,7 @@ fn call_stmt(
         }
         None => (verb, out)
       }
-      @tscript.SEffect(name=verb, args=out, route=route_of(args), span=sp(span))
+      SEffect(name=verb, args=out, route=route_of(args), span=sp(span))
     }
     // A collection operation: `it.items.push(v)`.
     EMember(recv, op) => {
@@ -279,7 +272,7 @@ fn call_stmt(
       // was refused, dropped from the generated module, and the button it was
       // wired to did nothing.
       guard @sh.collection_op(op) is Some(call) else {
-        raise @sh.ExError(
+        raise ExError(
           message="`\{op}` is not a collection operation",
           help="the operations are `push`, `insert_at`, `set_at`, `delete_at`, `add`, `remove`, `toggle` and `clear`",
           span~,
@@ -290,10 +283,10 @@ fn call_stmt(
       for a in pos {
         out.push(value_of(a, binds, span, pre))
       }
-      @tscript.SMethod(place~, call~, args=out, span=sp(span))
+      SMethod(place~, call~, args=out, span=sp(span))
     }
     _ =>
-      raise @sh.ExError(
+      raise ExError(
         message="only a name or a place can be called as a statement",
         help="write `send(…)`, `ask(…)`, or `it.<field>.<operation>(…)`",
         span~,
@@ -321,7 +314,7 @@ fn route_of(args : Array[@sh.Arg]) -> Array[@tutuca.Leg] raise @sh.ExError {
     Some(EList(many)) =>
       for e in many {
         guard e is EName(n) else {
-          raise @sh.ExError(
+          raise ExError(
             message="a route is a list of legs",
             help="write `~route: [lex, dyn]`",
             span=@report.Span::at(0),
@@ -330,7 +323,7 @@ fn route_of(args : Array[@sh.Arg]) -> Array[@tutuca.Leg] raise @sh.ExError {
         out.push(leg(n))
       }
     Some(_) =>
-      raise @sh.ExError(
+      raise ExError(
         message="a route is a leg or a list of legs",
         help="the legs are `dyn` and `lex`",
         span=@report.Span::at(0),
@@ -346,7 +339,7 @@ fn leg(word : String) -> @tutuca.Leg raise @sh.ExError {
     "dyn" => Dyn
     "lex" => Lex
     _ =>
-      raise @sh.ExError(
+      raise ExError(
         message="`\{word}` is not a route leg",
         help="the legs are `dyn` and `lex`",
         span=@report.Span::at(0),
@@ -361,7 +354,7 @@ fn place_of(
   span : @report.Span,
 ) -> @tutuca.Place raise @sh.ExError {
   guard e is ERead(place~, ..) else {
-    raise @sh.ExError(
+    raise ExError(
       message="this is not a place",
       help="a write names `it.<field>`, or a binding an enricher put in scope",
       span~,

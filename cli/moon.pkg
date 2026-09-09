@@ -25,10 +25,8 @@ import {
   "moonbitlang/core/string",
 }
 
-// No storybook import, at runtime or in tests: `tutuca storybook` serves a
-// pre-built bundle and needs no knowledge of the story registry. The
-// view-corpus test that used to live here runs from storybook/examples, which
-// is where the corpus is.
+// The CLI scaffolds a gallery without importing its runtime. View-corpus tests
+// live with the repository's stories in storybook/examples.
 // Test-only: gen_views_ir_test proves the generated compiled-tree module
 // renders identically to the runtime-parsed view, which means mounting one.
 // That is an equivalence check on the GENERATOR, not the CLI reaching into a

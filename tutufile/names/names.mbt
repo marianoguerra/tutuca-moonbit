@@ -66,13 +66,8 @@ pub fn is_type_name(name : String) -> Bool {
 }
 
 ///|
-/// The collection mutator a name means, in the one spelling the new notation
-/// keeps.
-///
-/// The old block language had aliases: `removeAt` and `deleteAt` are one
-/// operation, and only one backend ever implemented the other spelling. The
-/// migration keeps `delete_at` (`docs/tutu-migration.md`, "Collection
-/// statements become method calls"), so both spellings answer it here.
+/// Normalize an internal collection operation to its `.tutu` method spelling.
+/// Deletion operations print as `delete_at`.
 ///
 /// Total and idempotent like `snake_of`, and for the same reason: the converter
 /// applies it when printing, and the checker applies it when comparing, without

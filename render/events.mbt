@@ -26,7 +26,7 @@ fn event_bubbles(event_name : String) -> Bool {
 
 ///|
 fn parse_int_attr(s : String) -> Int? {
-  let n : Int = @strconv.from_str(s) catch { _ => return None }
+  let n : Int = @string.parse_int(s) catch { _ => return None }
   Some(n)
 }
 

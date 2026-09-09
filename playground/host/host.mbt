@@ -62,6 +62,7 @@ pub fn mount(
     root_node,
     @bdom.opts_for(doc),
     args=root_args,
+    markdown_filter=@mdfilter.make_filter,
   ) catch {
     e => {
       println("playground: mount failed: \{e}")

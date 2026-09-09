@@ -38,6 +38,7 @@ pub fn mount(
   root : String,
   args? : Map[String, @tutuca.Value] = Map([]),
   view? : String = "",
+  markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter,
 ) -> Harness[@memdom.MemNode] raise {
   let (doc, container) = new_mount()
   let app = @app.App::from_module(
@@ -47,6 +48,7 @@ pub fn mount(
     @vdom.RenderOpts::new(doc),
     args~,
     view~,
+    markdown_filter?,
   )
   Harness::over(app, container)
 }
@@ -95,10 +97,17 @@ pub fn new_mount() -> (@memdom.MemNode, @memdom.MemNode) {
 pub fn mount_example(
   m : @component.ModuleDef,
   title : String,
+  markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter,
 ) -> Harness[@memdom.MemNode] raise {
   for ex in m.examples {
     if ex.title == title {
-      return mount(m, ex.component, args=ex.args, view=ex.view.unwrap_or(""))
+      return mount(
+        m,
+        ex.component,
+        args=ex.args,
+        view=ex.view.unwrap_or(""),
+        markdown_filter?,
+      )
     }
   }
   fail("mount_example: no example titled '\{title}' in module '\{m.name}'")

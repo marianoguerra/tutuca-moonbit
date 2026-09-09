@@ -24,6 +24,8 @@ pub fn parse_state(String, name? : String) -> Array[StateDef] raise DefError
 
 pub fn quote(String) -> String
 
+pub fn read_spec(String, name? : String) -> Array[StateDef] raise DefError
+
 pub fn state_of_tutu(Array[@tutufile.Decl], name? : String) -> Array[StateDef] raise DefError
 
 pub fn str_cmp(String, String) -> Int
@@ -218,6 +220,8 @@ pub(all) struct StateDef {
   rules : Array[RuleDecl]
   wheres : Array[WhereDecl]
   doc : String?
+  category : String
+  keywords : Array[String]
 } derive(Eq, @debug.Debug)
 pub fn StateDef::component_name(Self, String) -> String
 pub fn StateDef::field(Self, String) -> FieldDef?

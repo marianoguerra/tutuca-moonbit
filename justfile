@@ -45,11 +45,11 @@ ci:
 
 # ── use ────────────────────────────────────────────────────────────────────
 
-# run the tutuca CLI: just cli help | just cli gen <file.html> | just cli gen-margaui-css
+# run the tutuca CLI: just cli help | just cli gen <file.tutu> | just cli gen-margaui-css
 cli *ARGS:
     {{cli}} {{ARGS}}
 
-# regenerate every checked-in *_view_gen.mbt (whole repo), then drift-check them
+# regenerate every checked-in *_view_gen.mbt (whole repo), then format them
 gen:
     {{dev}} gen
 

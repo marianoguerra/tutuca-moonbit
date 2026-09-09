@@ -426,7 +426,7 @@ impl Obj with fn debug(self) {
     sb.write_string(": ")
     sb.write_string(
       match self.field(f.name) {
-        Some(v) => v.to_repr().to_string()
+        Some(v) => Repr(v).to_string()
         None => "_"
       },
     )

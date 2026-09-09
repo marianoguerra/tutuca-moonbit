@@ -10,6 +10,8 @@
 // back is a log; until the same events reach the same state, nothing else built
 // on it is worth having.
 import {
+  "marianoguerra/tutuca/anode/sanitize",
+  "marianoguerra/tutuca/vdom/filter",
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/component",

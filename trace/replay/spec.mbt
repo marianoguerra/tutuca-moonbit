@@ -158,6 +158,7 @@ declare pub fn mount(
   scope : @component.ComponentStack,
   fidelity? : Fidelity,
   verify? : Bool,
+  markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter,
 ) -> Player raise ReplayError
 
 ///|

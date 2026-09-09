@@ -141,37 +141,34 @@ function resolveCore(t, tok) {
     .replace(new RegExp(`^\\./_build/${t}/debug/build/`), buildDir(t) + "/");
 }
 
-// ordered core link closure from `moon build --dry-run <demo>`, minus the demo's
-// own module packages (replaced at runtime by the host + user cores).
-function linkClosure(t, demoPkg) {
-  const dry = execSync(`moon build --target ${t} --dry-run ${demoPkg}`, { cwd: REPO, encoding: "utf8" });
+// Ask Moon for the host's ordered dependency closure using a small executable
+// link root. Only that root is replaced by the user module at runtime.
+function linkClosure(t, linkPkg) {
+  const dry = execSync(`moon build --target ${t} --dry-run ${linkPkg}`, { cwd: REPO, encoding: "utf8" });
   const line = dry.split("\n").find((l) => l.includes("link-core"));
   if (!line) throw new Error(`no link-core in dry-run for ${t}`);
   return [...line.matchAll(/'?([^ ']+\.core)'?/g)].map((m) => m[1])
-    .filter((tk) => !/counterlib|demo\/counter/.test(tk))
+    .filter((tk) => !tk.includes(`/${linkPkg}/`))
     .map((tk) => resolveCore(t, tk));
 }
 
-function assembleTarget(t, demoPkg) {
+function assembleTarget(t, linkPkg) {
   const fsdir = join(OUT, "fs", t);
   const std = walk(bundleDir(t), ".mi");
   for (const [rel, abs] of std) { const d = join(fsdir, "std", rel); mkdirSync(dirname(d), { recursive: true }); cpSync(abs, d); }
   const lib = walk(buildDir(t), ".mi").filter(([r]) => !/_test|\/test\//.test(r) && !r.includes("/demo/"));
   for (const [rel, abs] of lib) { const d = join(fsdir, "lib", rel); mkdirSync(dirname(d), { recursive: true }); cpSync(abs, d); }
-  const closure = linkClosure(t, demoPkg);
+  const closure = linkClosure(t, linkPkg);
   const coreRel = [];
   for (const abs of closure) {
     const rel = "cores/" + String(coreRel.length).padStart(3, "0") + "_" + abs.split("/").slice(-2).join("_");
     const d = join(fsdir, rel); mkdirSync(dirname(d), { recursive: true }); cpSync(abs, d);
     coreRel.push(rel);
   }
-  const host = t === "wasm-gc"
-    ? { core: "playground/host_wasm/host_wasm.core", mi: "playground/host_wasm/host_wasm" }
-    : { core: "playground/host/host.core", mi: "playground/host/host" };
-  const hostRel = "cores/" + String(coreRel.length).padStart(3, "0") + "_playground_host.core";
-  cpSync(join(buildDir(t), host.core), join(fsdir, hostRel));
-  coreRel.push(hostRel);
-  const directList = DIRECT.map(([, sub]) => sub === "playground/host/host" ? host.mi : sub);
+  const hostMi = t === "wasm-gc"
+    ? "playground/host_wasm/host_wasm"
+    : "playground/host/host";
+  const directList = DIRECT.map(([, sub]) => sub === "playground/host/host" ? hostMi : sub);
   const directMi = new Set(directList.map((sub) => `lib/${sub}.mi`));
   // wasm-gc user modules name @core.Any (the on_event signature), so mizchi's
   // js/core must be a DIRECT import — its alias is the last path segment, `core`.
@@ -257,21 +254,21 @@ const manifest = {
 // wasm-gc toggle (see docs/playground-wasm.md for what the two backends do
 // differently). Set JS_ONLY=1 to assemble the js backend only.
 const TARGETS = process.env.JS_ONLY
-  ? [["js", "demo/counter", "playground/host"]]
-  : [["js", "demo/counter", "playground/host"], ["wasm-gc", "demo/counter_wasm", "playground/host_wasm"]];
-for (const [t, demo, hostPkg] of TARGETS) {
+  ? [["js", "playground/link_js"]]
+  : [["js", "playground/link_js"], ["wasm-gc", "playground/link_wasm"]];
+for (const [t, linkPkg] of TARGETS) {
   // Build the moon artifacts this target needs (project + its mount host) so a
   // bare `node assemble.mjs` is self-contained — no manual pre-build step.
   console.log("building moon artifacts for target", t, "...");
   execSync(`moon build --target ${t}`, { cwd: REPO, stdio: "inherit" });
-  execSync(`moon build --target ${t} ${hostPkg}`, { cwd: REPO, stdio: "inherit" });
+  execSync(`moon build --target ${t} ${linkPkg}`, { cwd: REPO, stdio: "inherit" });
   // The module-ROOT package (the @tutuca facade, see DIRECT above) is not in
   // any build closure — nothing imports it and it has no main — so a bare
   // `moon build` never emits its .mi and @tutuca silently fails to resolve in
   // the browser. Build it by path.
   execSync(`moon build --target ${t} .`, { cwd: REPO, stdio: "inherit" });
   console.log("assembling target", t, "...");
-  manifest.targets[t] = assembleTarget(t, demo);
+  manifest.targets[t] = assembleTarget(t, linkPkg);
 }
 writeFileSync(join(OUT, "manifest.json"), JSON.stringify(manifest, null, 1));
 const m = manifest.targets.js;

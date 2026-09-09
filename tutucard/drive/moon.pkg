@@ -16,6 +16,7 @@
 // what its answer means; it does not decide what "click the third row" does,
 // because two implementations of that is how two of them start disagreeing.
 import {
+  "marianoguerra/tutuca/vdom/filter/markdown" @mdfilter,
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/app",

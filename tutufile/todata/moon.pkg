@@ -16,7 +16,6 @@ import {
 }
 
 import {
-  // The printer this reader is held against, and nothing in the package itself
-  // imports it.
-  "moonbitlang/core/debug",
+// The printer this reader is held against, and nothing in the package itself
+// imports it.
 } for "test"

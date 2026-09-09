@@ -16,8 +16,6 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/compose/catalog",
-  "moonbitlang/core/json",
-  "moonbitlang/core/debug",
 }
 
 import {

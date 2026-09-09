@@ -10,6 +10,7 @@
 // is everything a person puts in it, which is the claim the demo exists to
 // make: the palette cannot tell them apart because there is nothing to tell.
 import {
+  "marianoguerra/tutuca/vdom/filter/markdown" @mdfilter,
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/css",

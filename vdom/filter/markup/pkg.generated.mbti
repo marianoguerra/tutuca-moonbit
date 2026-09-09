@@ -15,6 +15,8 @@ pub const SAFE_HTML_ATTR : String = "setInnerHtml"
 
 pub const SAFE_SVG_ATTR : String = "setInnerSvg"
 
+pub fn filter_for(@sanitize.Sanitizer, markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter) -> &@filter.VdomFilter
+
 pub fn html_nodes(@sanitize.Sanitizer, String, String, (String, String, String, String) -> Unit, attr? : String) -> Array[@vdom.Vdom]
 
 pub fn svg_nodes(@sanitize.Sanitizer, String, String, (String, String, String, String) -> Unit, attr? : String) -> Array[@vdom.Vdom]

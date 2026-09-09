@@ -40,7 +40,7 @@ pub struct App[N] {
   /// added. Append-only: nothing can be taken out, and nothing can get in FRONT
   /// of the built-in chain.
   extra_filters : Array[&@filter.VdomFilter]
-  /// The two above composed — `@mdfilter.filter_for(sanitizer)` with the extras
+  /// The two above composed — `@markup.filter_for(sanitizer)` with the extras
   /// behind it — rebuilt by `install_filter` whenever either changes.
   ///
   /// Runs over the freshly built tree, between evaluating anode and diffing
@@ -49,6 +49,7 @@ pub struct App[N] {
   ///
   /// Never absent. Every app filters; what an app can change is WHICH policy,
   /// not whether.
+  markdown_filter : ((@sanitize.Sanitizer) -> &@filter.VdomFilter)?
   mut filter : &@filter.VdomFilter
   /// Which of the root component's views to mount it under; "" is the ordinary
   /// resolution.
@@ -75,6 +76,7 @@ pub fn[N : @vdom.DomWalk] App::new(
   opts : @vdom.RenderOpts[N],
   view? : String = "",
   intents? : &@transactor.Intents,
+  markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter,
 ) -> App[N] raise {
   scope.compile_all()
   let tx = @transactor.Transactor::new(
@@ -96,20 +98,11 @@ pub fn[N : @vdom.DomWalk] App::new(
     drag: None,
     cur_drag_over: None,
     render_cache: @render.RenderCache::new(),
-    // Safe by default and safe afterwards: `set_sanitizer` can change what the
-    // chain enforces and `add_filter` can add to it, but nothing removes it.
-    // `filter_for` under the default sanitizer is `MdFilter` in front of
-    // `@filter.Baseline`: the URL and `on*` rules every app has had, plus the
-    // one that makes `@setinnermd` render at all (`set_prop` fails closed on
-    // its attribute otherwise).
-    //
-    // The cost is that every app links the vendored markdown parser, because
-    // this call constructs the filter unconditionally and nothing about it is
-    // dead — there is no escape hatch, and the reason is in `set_sanitizer`.
     sanitizer: @sanitize.Sanitizer::default(),
     event_paths: Open,
     extra_filters: [],
-    filter: @mdfilter.default_filter(),
+    markdown_filter,
+    filter: @markup.filter_for(@sanitize.Sanitizer::default(), markdown_filter?),
     root_view: view,
   }
   // Batched re-render (the setTimeout-scheduler analogue): swaps only
@@ -136,13 +129,21 @@ pub fn[N : @vdom.DomWalk] App::from_module(
   opts : @vdom.RenderOpts[N],
   args? : Map[String, @tutuca.Value] = Map([]),
   view? : String = "",
+  markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter,
 ) -> App[N] raise {
   let scope = @component.ComponentStack::new()
   m.register_into(scope)
   guard scope.lookup_component(root) is Some(comp) else {
     fail("mount: no component named '\{root}' in module '\{m.name}'")
   }
-  let app = App::new(scope, comp.make(args), root_node, opts, view~)
+  let app = App::new(
+    scope,
+    comp.make(args),
+    root_node,
+    opts,
+    view~,
+    markdown_filter?,
+  )
   app.start()
   app
 }
@@ -283,53 +284,9 @@ fn[N : @vdom.DomWalk] App::render_now(self : App[N]) -> Unit {
 }
 
 ///|
-/// Change the POLICY the render-time rules enforce.
-///
-/// The seam a host gets, and it is deliberately not "here is my filter".
-///
-/// ## Why a policy and not a filter
-///
-/// A filter is opaque — `&VdomFilter` is a trait object, so "is this one at
-/// least as strict as the one it replaces" is not a question any code here can
-/// ask. An API that takes one can therefore only offer replacement, and
-/// replacement includes removal.
-///
-/// A sanitizer is a VALUE with structure. Narrowing it is a thing a host can
-/// write down and `SanitizerConfig::validate` can check, and whatever it says,
-/// `@mdfilter.filter_for` puts the same rules around it — which is why the
-/// pairing lives in that one function rather than in a host's call sequence
-/// (order between the members is load-bearing: a filter that REPLACES a subtree
-/// must run before the ones that inspect attributes).
-///
-/// So: the URL rule and the `on*` rule are not configurable and cannot be
-/// removed, because neither has anything to configure — a view has no
-/// legitimate `javascript:` URL and no legitimate `onclick`. What a policy
-/// decides is names, raw markup and CSS.
-///
-/// ## What replaced the opt-out
-///
-/// Three reasons were documented for turning the filter off, and none of them
-/// is one now:
-///
-/// - **a deliberate `javascript:` URL** — gone, and deliberately: it was rare,
-///   and the alternative was an API where every app's defense could be removed
-///   by one call somebody wrote for one link;
-/// - **an all-developer-authored tree** — "hard to promise", as the doc that
-///   proposed it said;
-/// - **a render loop hot enough that one walk matters** — measured away. The
-///   filter now asks the tree which rules could apply before doing anything
-///   (`@sinks.SinkHints`), and what is left is inside the noise. See
-///   `benchmarks/OPTIMIZATIONS.md` §13.
-///
-/// A host with a rule of its OWN — something no policy here describes — adds it
-/// with `add_filter`, which can only ever remove more.
-///
-/// ## When it applies
-///
-/// From the next render. Not retroactive: a value already in the DOM stays
-/// until something re-renders over it, for the same reason a host policy
-/// applies at load — retracting what is already on the page is dropping it, not
-/// filtering it.
+/// Apply this policy from the next render and invalidate cached subtrees.
+/// Built-in markup and baseline filters remain installed. An optional Markdown
+/// factory is rebuilt with the same policy, before host-added filters.
 pub fn[N] App::set_sanitizer(
   self : App[N],
   sanitizer : @sanitize.Sanitizer,
@@ -392,7 +349,10 @@ pub fn[N] App::add_filter(self : App[N], filter : &@filter.VdomFilter) -> Unit {
 /// — the next render would be hits all the way down. Dropping them costs one
 /// full rebuild, on a call a host makes about once.
 fn[N] App::install_filter(self : App[N]) -> Unit {
-  let built = @mdfilter.filter_for(self.sanitizer)
+  let built = @markup.filter_for(
+    self.sanitizer,
+    markdown_filter?=self.markdown_filter,
+  )
   self.filter = if self.extra_filters.is_empty() {
     built
   } else {
@@ -409,7 +369,7 @@ fn[N] App::install_filter(self : App[N]) -> Unit {
 
 ///|
 /// Everything the installed filter dropped since the last call, and clears its
-/// log. Empty when no filter is installed.
+/// log.
 ///
 /// The default filter is one the host never constructed, so this is the only
 /// handle on what it removed. By render time there is no author to report to —

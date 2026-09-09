@@ -17,6 +17,8 @@ pub fn default_filter() -> &@filter.VdomFilter
 
 pub fn filter_for(@sanitize.Sanitizer) -> &@filter.VdomFilter
 
+pub fn make_filter(@sanitize.Sanitizer) -> &@filter.VdomFilter
+
 // Errors
 
 // Types and methods

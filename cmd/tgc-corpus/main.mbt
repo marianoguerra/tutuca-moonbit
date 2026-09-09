@@ -179,7 +179,7 @@ fn card_of(
   let spec = StringBuilder()
   for t in def.types {
     @totutu.print_user_ty(t, spec) catch {
-      @totutu.NoSpelling(what~, help~) =>
+      NoSpelling(what~, help~) =>
         abort(
           "tgc-corpus: a declared type does not spell: " + what + " — " + help,
         )
@@ -187,12 +187,12 @@ fn card_of(
     spec.write_string("\n")
   }
   @totutu.print_spec(def, root=true, names=Map([]), spec) catch {
-    @totutu.NoSpelling(what~, help~) =>
+    NoSpelling(what~, help~) =>
       abort("tgc-corpus: a schema does not spell: " + what + " — " + help)
   }
   let logic = StringBuilder()
   @totutu.print_logic(def.component, decls, Some(def), logic) catch {
-    @totutu.NoSpelling(what~, help~) =>
+    NoSpelling(what~, help~) =>
       abort("tgc-corpus: a case does not spell: " + what + " — " + help)
   }
   // The view NAMES a row member, because that is the only place a `pred` says

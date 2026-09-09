@@ -14,7 +14,7 @@
 ///|
 let overview_body : String =
   #|tutuca — the CLI for tutuca projects: compile views ahead of time, watch
-  #|them, serve the storybook gallery, install the Claude Code skill.
+  #|them, scaffold a storybook gallery, install the Claude Code skill.
   #|
   #|SYNOPSIS
   #|  tutuca <command> [flags]
@@ -96,13 +96,6 @@ let overview_body : String =
   #|        --css-entry, --css-classes  the CSS commands' --entry / --classes.
   #|                  Pass them here if your build passes them.
   #|
-  #|  storybook [dir] [--port <n>] [--out <dir>]
-  #|      Serve a pre-built storybook gallery bundle over HTTP (default port
-  #|      4321, falling back to a free one), or copy it with --out. A bundle is
-  #|      a directory with an index.html and a .wasm beside it, built ahead of
-  #|      time by the project's own build script (see new-storybook); this
-  #|      command is a static file server and nothing more.
-  #|
   #|  install-skill [--user | --project] [--dot-agents] [--dry-run] [--force]
   #|      Write the bundled tutuca Claude Code skill into .claude/skills/tutuca/.
   #|      The assets are compiled into the binary, so this works anywhere.
@@ -157,7 +150,7 @@ let overview_body : String =
   #|      pipeline; mount and drive a module with the
   #|      marianoguerra/tutuca/testing/harness package.
   #|    - `moon run --target native cmd/dev -- dist` builds the storybook and
-  #|      `tutuca storybook` serves it, to look at components rendered.
+  #|      `python3 -m http.server --directory dist` serves it, to look at components rendered.
   #|
   #|GLOBAL FLAGS
   #|      --json                 Emit errors as a single-line JSON envelope on
