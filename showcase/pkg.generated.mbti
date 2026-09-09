@@ -1,0 +1,321 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/showcase"
+
+import {
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub let contact_directory_common_style : String
+
+pub fn contact_directory_component(name? : String, views? : Map[String, @anode.View], initial? : ContactDirectoryState, common_style? : String, global_style? : String, update? : (ContactDirectoryState, @core.Dispatch, &@core.Ctx) -> @component.Update[ContactDirectoryState], enrich? : (ContactDirectoryEnrich) -> ((ContactDirectoryState, Map[String, @core.Value], @core.Value, @core.Value, @core.Value, &@core.Stack) -> Unit)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let contact_directory_global_style : String
+
+pub fn contact_directory_init_args(String) -> Map[String, @core.Value]?
+
+pub fn contact_directory_module() -> @component.ModuleDef
+
+pub let contact_directory_spec_source : String
+
+pub fn contact_directory_views() -> Map[String, @anode.View]
+
+pub let contact_editor_common_style : String
+
+pub fn contact_editor_component(name? : String, views? : Map[String, @anode.View], initial? : ContactEditorState, common_style? : String, global_style? : String, update? : (ContactEditorState, @core.Dispatch, &@core.Ctx) -> @component.Update[ContactEditorState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let contact_editor_global_style : String
+
+pub fn contact_editor_views() -> Map[String, @anode.View]
+
+pub fn demo_intents(later? : (() -> Unit) -> Unit) -> Map[String, Array[@core.IntentFn]]
+
+pub let document_editor_common_style : String
+
+pub fn document_editor_component(name? : String, views? : Map[String, @anode.View], initial? : DocumentEditorState, common_style? : String, global_style? : String, update? : (DocumentEditorState, @core.Dispatch, &@core.Ctx) -> @component.Update[DocumentEditorState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let document_editor_global_style : String
+
+pub fn document_editor_views() -> Map[String, @anode.View]
+
+pub let document_workspace_common_style : String
+
+pub fn document_workspace_component(name? : String, views? : Map[String, @anode.View], initial? : DocumentWorkspaceState, common_style? : String, global_style? : String, update? : (DocumentWorkspaceState, @core.Dispatch, &@core.Ctx) -> @component.Update[DocumentWorkspaceState], compute? : (DocumentWorkspaceCompute) -> ((DocumentWorkspaceState, Array[@core.Value], &@core.Stack) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let document_workspace_global_style : String
+
+pub fn document_workspace_init_args(String) -> Map[String, @core.Value]?
+
+pub fn document_workspace_module(later? : (() -> Unit) -> Unit) -> @component.ModuleDef
+
+pub let document_workspace_spec_source : String
+
+pub fn document_workspace_views() -> Map[String, @anode.View]
+
+pub let notification_preferences_common_style : String
+
+pub fn notification_preferences_component(name? : String, views? : Map[String, @anode.View], initial? : NotificationPreferencesState, common_style? : String, global_style? : String, update? : (NotificationPreferencesState, @core.Dispatch, &@core.Ctx) -> @component.Update[NotificationPreferencesState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let notification_preferences_global_style : String
+
+pub fn notification_preferences_init_args(String) -> Map[String, @core.Value]?
+
+pub fn notification_preferences_module() -> @component.ModuleDef
+
+pub let notification_preferences_spec_source : String
+
+pub fn notification_preferences_views() -> Map[String, @anode.View]
+
+pub let quantity_picker_common_style : String
+
+pub fn quantity_picker_component(name? : String, views? : Map[String, @anode.View], initial? : QuantityPickerState, common_style? : String, global_style? : String, update? : (QuantityPickerState, @core.Dispatch, &@core.Ctx) -> @component.Update[QuantityPickerState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let quantity_picker_global_style : String
+
+pub fn quantity_picker_init_args(String) -> Map[String, @core.Value]?
+
+pub fn quantity_picker_module() -> @component.ModuleDef
+
+pub let quantity_picker_spec_source : String
+
+pub fn quantity_picker_views() -> Map[String, @anode.View]
+
+pub let task_item_common_style : String
+
+pub fn task_item_component(name? : String, views? : Map[String, @anode.View], initial? : TaskItemState, common_style? : String, global_style? : String, update? : (TaskItemState, @core.Dispatch, &@core.Ctx) -> @component.Update[TaskItemState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let task_item_global_style : String
+
+pub fn task_item_views() -> Map[String, @anode.View]
+
+pub let task_list_common_style : String
+
+pub fn task_list_component(name? : String, views? : Map[String, @anode.View], initial? : TaskListState, common_style? : String, global_style? : String, update? : (TaskListState, @core.Dispatch, &@core.Ctx) -> @component.Update[TaskListState], compute? : (TaskListCompute) -> ((TaskListState, Array[@core.Value], &@core.Stack) -> @core.Value)?, when? : (TaskListWhen) -> ((TaskListState, @core.Value, @core.Value, @core.Value, &@core.Stack) -> Bool)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let task_list_global_style : String
+
+pub fn task_list_init_args(String) -> Map[String, @core.Value]?
+
+pub fn task_list_module() -> @component.ModuleDef
+
+pub let task_list_spec_source : String
+
+pub fn task_list_views() -> Map[String, @anode.View]
+
+// Errors
+
+// Types and methods
+pub(all) struct ContactDirectoryContactData {
+  name : String
+  email : String
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ContactDirectoryEnrich {
+  ContactLabel
+} derive(Eq, @debug.Debug)
+pub fn ContactDirectoryEnrich::name(Self) -> String
+
+pub(all) enum ContactDirectoryIntent {
+  UpdateContact(String, String, String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ContactDirectoryIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
+pub fn ContactDirectoryIntent::from_dispatch(@core.Dispatch) -> Self?
+pub fn ContactDirectoryIntent::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) enum ContactDirectoryMsg {
+  Init
+  ContactPageOk(@core.Value)
+  ContactPageFailed(@core.Value)
+  ContactPageUnhandled
+  Next
+  Previous
+  Search(String)
+  Select(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ContactDirectoryMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn ContactDirectoryMsg::send(Self, &@core.Ctx) -> Unit
+pub fn ContactDirectoryMsg::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct ContactDirectoryState {
+  contacts : Map[String, @core.Value]
+  order : Array[String]
+  query : String
+  page : Int
+  pages : Int
+  keys : Array[String]
+  selected : String
+  editor : @core.Value
+  error : String
+}
+pub fn ContactDirectoryState::fixture(String) -> Self?
+pub fn ContactDirectoryState::zero() -> Self
+
+pub(all) struct ContactEditorContactData {
+  name : String
+  email : String
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ContactEditorMsg {
+  Save
+  Unknown(String, Array[@core.Value])
+}
+pub fn ContactEditorMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn ContactEditorMsg::send(Self, &@core.Ctx) -> Unit
+pub fn ContactEditorMsg::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct ContactEditorState {
+  id : String
+  name : String
+  email : String
+  feedback : String
+}
+pub fn ContactEditorState::zero() -> Self
+
+pub(all) enum DocumentEditorMsg {
+  LoadDocumentOk(@core.Value)
+  LoadDocumentFailed(@core.Value)
+  LoadDocumentUnhandled
+  SaveDocumentOk(@core.Value)
+  SaveDocumentFailed(@core.Value)
+  SaveDocumentUnhandled
+  Edit(String)
+  Load
+  Save
+  Unknown(String, Array[@core.Value])
+}
+pub fn DocumentEditorMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn DocumentEditorMsg::send(Self, &@core.Ctx) -> Unit
+pub fn DocumentEditorMsg::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct DocumentEditorState {
+  id : String
+  title : String
+  source : String
+  saved_source : String
+  revision : Int
+  load_revision : Int
+  busy : Bool
+  fail_next : Bool
+  feedback : String
+  view : String
+}
+pub fn DocumentEditorState::zero() -> Self
+
+pub(all) enum DocumentWorkspaceCompute {
+  SelectedDocument
+} derive(Eq, @debug.Debug)
+pub fn DocumentWorkspaceCompute::name(Self) -> String
+
+pub(all) enum DocumentWorkspaceMsg {
+  Init
+  Unknown(String, Array[@core.Value])
+}
+pub fn DocumentWorkspaceMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn DocumentWorkspaceMsg::send(Self, &@core.Ctx) -> Unit
+pub fn DocumentWorkspaceMsg::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct DocumentWorkspaceState {
+  documents : Map[String, @core.Value]
+  selected : String
+}
+pub fn DocumentWorkspaceState::fixture(String) -> Self?
+pub fn DocumentWorkspaceState::zero() -> Self
+
+pub(all) enum NotificationPreferencesMsg {
+  Apply
+  Reset
+  Unknown(String, Array[@core.Value])
+}
+pub fn NotificationPreferencesMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn NotificationPreferencesMsg::send(Self, &@core.Ctx) -> Unit
+pub fn NotificationPreferencesMsg::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct NotificationPreferencesState {
+  enabled : Bool
+  email : String
+  frequency : String
+  saved_enabled : Bool
+  saved_email : String
+  saved_frequency : String
+  feedback : String
+}
+pub fn NotificationPreferencesState::fixture(String) -> Self?
+pub fn NotificationPreferencesState::zero() -> Self
+
+pub(all) enum QuantityPickerMsg {
+  Decrease
+  Increase
+  Unknown(String, Array[@core.Value])
+}
+pub fn QuantityPickerMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn QuantityPickerMsg::send(Self, &@core.Ctx) -> Unit
+pub fn QuantityPickerMsg::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct QuantityPickerState {
+  quantity : Int
+  unit_cents : Int
+}
+pub fn QuantityPickerState::fixture(String) -> Self?
+pub fn QuantityPickerState::zero() -> Self
+
+pub(all) enum TaskItemMsg {
+  Remove
+  Toggle
+  Unknown(String, Array[@core.Value])
+}
+pub fn TaskItemMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn TaskItemMsg::send(Self, &@core.Ctx) -> Unit
+pub fn TaskItemMsg::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct TaskItemState {
+  id : String
+  text : String
+  done : Bool
+}
+pub fn TaskItemState::zero() -> Self
+
+pub(all) enum TaskListCompute {
+  Visible
+} derive(Eq, @debug.Debug)
+pub fn TaskListCompute::name(Self) -> String
+
+pub(all) enum TaskListIntent {
+  RemoveTask(String)
+  TaskDone(String, Bool)
+  Unknown(String, Array[@core.Value])
+}
+pub fn TaskListIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
+pub fn TaskListIntent::from_dispatch(@core.Dispatch) -> Self?
+pub fn TaskListIntent::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) enum TaskListMsg {
+  Add
+  Unknown(String, Array[@core.Value])
+}
+pub fn TaskListMsg::from_dispatch(@core.Dispatch) -> Self?
+pub fn TaskListMsg::send(Self, &@core.Ctx) -> Unit
+pub fn TaskListMsg::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct TaskListState {
+  draft : String
+  next_id : Int
+  items : Map[String, @core.Value]
+  completed : Map[String, Bool]
+  filter : String
+}
+pub fn TaskListState::fixture(String) -> Self?
+pub fn TaskListState::zero() -> Self
+
+pub(all) enum TaskListWhen {
+  Visible
+} derive(Eq, @debug.Debug)
+pub fn TaskListWhen::name(Self) -> String
+
+// Type aliases
+
+// Traits

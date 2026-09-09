@@ -1,12 +1,3 @@
-// Dynamic bindings used as render targets — a single item and a whole
-// sequence. `Root` owns a keyed map of entries and a `selected_key`; it
-// PRODUCES two dynamics: `items` = `.items` (the whole sequence) and
-// `selected` = `.items[.selected_key]` (a seq-access to the selected entry).
-// The child `Editor` CONSUMES both: it iterates `*items` and renders the
-// `*selected` entry with its `edit` view. The edited entry physically lives
-// in `Root.items`, so edits in the child TELEPORT back to the owner — both
-// lists update in lock-step.
-
 ///|
 fn dse_entry_comp() -> @component.Component {
   dse_entry_component(name="Entry", initial={ name: "", })

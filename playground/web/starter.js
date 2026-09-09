@@ -202,7 +202,16 @@ fn build() -> @component.ModuleDef {
 };
 
 // expose on window so the module driver can read them
-window.EXAMPLES = EXAMPLES;
-// default to the ahead-of-time Counter (component + its View tab)
-window.STARTER = EXAMPLES.Counter.code;
-window.STARTER_VIEW = EXAMPLES.Counter.view;
+const codeFirst = source => source.replace(/^(?:\s*\/\/[^\n]*(?:\n|$)|\s*\n)+/, "");
+for (const [name, example] of Object.entries(EXAMPLES)) {
+  if (typeof example === "string") {
+    EXAMPLES[name] = codeFirst(example);
+    continue;
+  }
+  if (typeof example.code === "string") example.code = codeFirst(example.code);
+  if (typeof example.view === "string") example.view = codeFirst(example.view);
+}
+window.EXAMPLES = { ...window.SHOWCASE, ...EXAMPLES };
+// Start with the first shared learning example.
+window.STARTER = window.SHOWCASE["Quantity picker"].code;
+window.STARTER_VIEW = window.SHOWCASE["Quantity picker"].view;

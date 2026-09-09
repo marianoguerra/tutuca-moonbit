@@ -1,54 +1,18 @@
-// StorybookGallery's storybook: which components the gallery shows, and the six
-// entry points the page calls.
-//
-// The story set is a PROJECTION of the modules below — one story per example a
-// module declares — so adding a story is adding an example to a `ModuleDef`,
-// not editing a list here. Sections, descriptions and per-story `init` are
-// `.map` overrides on top of it.
-
 ///|
 fn main {
 
 }
 
 ///|
-/// One module of components. `counter_component` is generated from
-/// counter.html by `tutuca gen`; nothing here restates the view file.
-///
-/// The `examples` are the stories: each names a component, the args to make it
-/// with, and optionally the view to render it under. They are also what
-/// `@harness.mount_example` mounts in a test, so a story and a test agree by
-/// construction.
-pub fn counter_module() -> @component.ModuleDef {
-  @component.ModuleDef::new(name="counter", components=[counter_component()], examples=[
-    { component: "Counter", title: "Zero", args: Map([]), view: None },
-    {
-      component: "Counter",
-      title: "Negative start",
-      args: { "count": Num(-5) },
-      view: None,
-    },
-    // `view` picks one of the component's named views — `<template
-    // id="Counter:compact">` in counter.html — instead of its default.
-    {
-      component: "Counter",
-      title: "Compact",
-      args: { "count": Num(3) },
-      view: Some("compact"),
-    },
-  ])
-}
-
-///|
 /// The gallery's sections, in the order the sidebar shows them. Add a module
 /// to the list and every example it declares becomes a story.
 fn sections() -> Array[@sb.Section] {
-  let stories = @sb.stories_of_modules([counter_module()], section_of=m => match
+  let stories = @sb.stories_of_modules([quantity_picker_module()], section_of=m => match
     m.name {
-      "counter" => "Basics"
+      "quantity-picker" => "Learn"
       _ => "Other"
     })
-  @sb.sections_of(stories, order=["Basics", "Other"])
+  @sb.sections_of(stories, order=["Learn", "Other"])
 }
 
 ///|

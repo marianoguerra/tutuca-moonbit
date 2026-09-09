@@ -1,29 +1,4 @@
-// Teaches send/receive messaging (`ctx.send`,
-// `ctx.at.field(..).send` + receive), tree recursion, and `ask(…, ~route: dyn)`.
-//
-// PORT RULE — where a handler goes in the typed API.
-// A dispatched handler can always send messages, so a `methods.submit(ctx)`
-// works. MoonBit splits the buckets by what they can do:
-//
-//   update  (S, Dispatch, &Ctx) -> S?     // effectful: Input/Receive/Bubble/
-//                                         // Response arms, may send/bubble
-//   mutate  (S, Array[Value]) -> S        // pure state change, $-callable
-//   compute (S, Array[Value]) -> Value    // pure value read, $-callable
-//
-// because a $-callable is ALSO evaluated in value positions (`@text="$label"`,
-// `@show="$canSubmit"`) where no event and no ctx exist. So: a handler that
-// needs ctx goes in an `update` arm (Input for view events, Receive/Bubble/
-// Response for messages), and the view calls it by BARE name. The tutorial
-// already says the methods/input split is organizational, so this costs
-// nothing.
-
 ///|
-/// A sibling that owns its own state and knows nothing about who messages it —
-/// the path is the only coupling.
-///
-/// Both messages are declared in the schema's `receive Status` block and
-/// answered in the file's `<script type="tutuca/script">` block, so the whole
-/// component is its view file: nothing is left to pass.
 fn status_comp() -> @component.Component {
   status_component(initial={ message: "", count: 0, })
 }

@@ -13,7 +13,7 @@
 // `pred` is answered from — so a generated component names it in four
 // signatures, and a card that declares one would not compile in the browser
 // without it.
-pub using @core {type Value, trait Ctx, trait Obj, trait Stack}
+pub using @core {type Value, trait Ctx, trait Obj, trait Stack, type NullStack}
 
 // The intent types, for the same reason and with the same failure mode.
 //

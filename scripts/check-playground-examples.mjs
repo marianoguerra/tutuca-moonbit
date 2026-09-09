@@ -73,15 +73,15 @@ const nameOf = (src) => {
 };
 
 const examples = readdirSync(EXAMPLES).filter((f) => f.endsWith(".mbt")).sort();
+const shared = new Set(JSON.parse(readFileSync(join(REPO, "showcase/catalog.json"), "utf8")).map(e => `${e.id}.mbt`));
 if (!examples.length) {
   console.error("no examples found in", EXAMPLES);
   process.exit(1);
 }
 
 // One unit to check: the MoonBit source, and the view file it reads (null for
-// a runtime-view example). Examples come from disk; the landing page's hero
-// snippet is carved out of index.html — it is the first code anyone sees and
-// nothing else compiles it, so it drifted twice before this check existed.
+// a runtime-view example). The landing page embeds these shared files;
+// check-showcase verifies its generated references and copies.
 const units = examples.map((name) => ({
   name,
   mbt: readFileSync(join(EXAMPLES, name), "utf8"),
@@ -89,29 +89,6 @@ const units = examples.map((name) => ({
     ? readFileSync(join(EXAMPLES, name.replace(/\.mbt$/, ".tutu")), "utf8")
     : null,
 }));
-units.push(heroTeaser());
-
-// The `<pre class="hero-teaser">` block on the landing page holds BOTH halves
-// of a component — the view file, then the MoonBit that uses it, separated by
-// the `// counter.mbt` line. Split them and check the pair like any example.
-function heroTeaser() {
-  const page = readFileSync(join(REPO, "playground/site/index.html"), "utf8");
-  const block = /<pre class="hero-teaser"><code>([\s\S]*?)<\/code><\/pre>/.exec(page);
-  if (!block) throw new Error("no hero-teaser block in playground/site/index.html");
-  const src = block[1]
-    .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-    .replace(/&amp;/g, "&");
-  const split = src.indexOf("// counter.mbt");
-  if (split < 0) throw new Error("hero-teaser has no `// counter.mbt` divider");
-  return {
-    name: "index.html (hero snippet)",
-    // A fragment, not a whole example: it shows one `let`, so give it
-    // somewhere to live rather than rewriting the snippet to suit the check.
-    mbt: `fn hero_teaser() -> @component.Component {\n${src.slice(split)}\n  counter\n}\n`,
-    html: src.slice(0, split),
-  };
-}
 
 const failures = [];
 try {
@@ -141,9 +118,12 @@ try {
       // nothing — and these are the landing page's own examples, so one firing
       // here is a demo that is wrong in front of a visitor. Fatal for that
       // reason, and for no other: elsewhere a hint is a hint.
-      if ((r.hints || []).length > 0) {
+      // Shared examples supply tested MoonBit adapters for these declarations.
+      // Other diagnostics still fail, and the assembled pair must type-check.
+      const hints = (r.hints || []).filter(h => !(shared.has(name) && h.endsWith("(script-refusal)")));
+      if (hints.length > 0) {
         console.log(`FAILED  ${name}`);
-        failures.push([name, r.hints.map((h) => `  ${h}`).join("\n") + "\n"]);
+        failures.push([name, hints.map((h) => `  ${h}`).join("\n") + "\n"]);
         continue;
       }
     }

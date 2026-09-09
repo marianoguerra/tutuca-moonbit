@@ -877,7 +877,27 @@ pub impl @tutuca.Obj for DynObj with fn handler(self, bucket, name) {
           // The host applies these exactly as it applies a host component's —
           // a guest is not a special case, which is the whole point of the
           // calls being buffered rather than acting.
-          Intent(name, args, opts) => ctx.intent(name, args, opts)
+          Intent(name, args, opts) => {
+            // Named outcome handlers declared by the card also cover route
+            // exhaustion. Explicit guest callback names take precedence.
+            let declared = (existing : String?, suffix : String) => {
+              if existing is Some(_) {
+                return existing
+              }
+              let handler = name + suffix
+              if self.def.receives.contains(handler) {
+                Some(handler)
+              } else {
+                None
+              }
+            }
+            ctx.intent(name, args, {
+              ..opts,
+              on_ok_name: declared(opts.on_ok_name, "_ok"),
+              on_failed_name: declared(opts.on_failed_name, "_failed"),
+              on_unhandled_name: declared(opts.on_unhandled_name, "_unhandled"),
+            })
+          }
           IntentAt(steps, name, args, opts) =>
             ctx.intent_at_path(ctx.path().concat(steps), name, args, opts)
           Forward(args, opts) =>

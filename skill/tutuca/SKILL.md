@@ -5,6 +5,10 @@ description: Author, review, debug, and test Tutuca MoonBit components and Tutuc
 
 # Tutuca and Tutucard
 
+For a worked example, start with [the practical progression](examples.md):
+quantity picker, notification preferences, task list, contact directory, and
+document workspace. Their shared `.tutu` sources are included with this skill.
+
 Tutuca is an immutable-state UI framework for MoonBit. A `.tutu` file holds
 what a component IS — its typed `spec:` and the rules it keeps — alongside its
 `view:`, its styles, and a `logic:` section for what it DOES.

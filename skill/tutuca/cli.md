@@ -56,8 +56,8 @@ Optional. Keeps a component's views in a `.tutu` file instead of a MoonBit
 string literal, and turns the view's vocabulary into types:
 
 ```sh
-tutuca gen demo/counterlib/counter.html --name Counter
-# -> demo/counterlib/counter_view_gen.mbt   (checked in; regenerate, never edit)
+tutuca gen quantity-picker.tutu
+# -> quantity-picker_view_gen.mbt   (checked in; regenerate, never edit)
 
 tutuca gen src/            # the whole project, in one invocation
 ```

@@ -105,13 +105,13 @@ fn wasm_opt(path : String) -> Command {
 // --- build-output and dist layout paths (moon's default debug build) ---
 
 ///|
-const COUNTER_JS = "_build/js/debug/build/demo/counter/counter.js"
+const QUANTITY_JS = "_build/js/debug/build/demo/quantity_picker/quantity_picker.js"
 
 ///|
 // dist ships the RELEASE wasm (the debug build is ~4x larger: 18 MB vs ~4.8 MB
 // for storybook), then shrinks it further with wasm-opt (see wasm_opt / the
 // `moon build … --release` steps in dist_steps).
-const COUNTER_WASM = "_build/wasm-gc/release/build/demo/counter_wasm/counter_wasm.wasm"
+const QUANTITY_WASM = "_build/wasm-gc/release/build/demo/quantity_picker_wasm/quantity_picker_wasm.wasm"
 
 ///|
 const STORYBOOK_WASM = "_build/wasm-gc/release/build/demo/storybook_wasm/storybook_wasm.wasm"
@@ -128,6 +128,24 @@ const DIST = "dist"
 /// (`ci`, `dist`) are assembled in `plan`, so there is one source of truth.
 pub fn tasks() -> Array[Task] {
   [
+    {
+      name: "gen-showcase",
+      about: "generate shared component examples",
+      commands: [
+        moon("format shared assembly", ["fmt", "showcase"]),
+        moon("generate shared examples", ["run", "scripts/showcase.mbtx"]),
+        moon("format generated metadata", ["fmt"]),
+      ],
+    },
+    {
+      name: "check-showcase",
+      about: "check shared example sources and catalog assets for drift",
+      commands: [
+        moon("check shared examples", [
+          "run", "scripts/showcase.mbtx", "--check",
+        ]),
+      ],
+    },
     {
       name: "check-generated",
       about: "regenerate in a temporary checkout and compare generated files without changing sources",
@@ -546,6 +564,11 @@ fn gen_conformance_commands() -> Array[Command] {
 fn gen_views_commands() -> Array[Command] {
   // (relative .tutu path, --name override or None)
   let files : Array[(String, String?)] = [
+    ("showcase/quantity-picker.tutu", None),
+    ("showcase/notification-preferences.tutu", None),
+    ("showcase/task-list.tutu", None),
+    ("showcase/contact-directory.tutu", None),
+    ("showcase/document-workspace.tutu", None),
     ("demo/counterlib/counter.tutu", Some("Counter")),
     ("demo/universal/ui/shell.tutu", Some("Shell")),
     ("tscript/conformance/mbt/corpus.tutu", Some("Corpus")),
@@ -596,7 +619,7 @@ fn gen_views_commands() -> Array[Command] {
     // Not a package of this module — it is the demo component inside the
     // project `tutuca new-storybook` writes. It is swept here so the generated
     // module the template hands a stranger is the one this generator produces.
-    ("storybook/template/page/counter.tutu", None),
+    ("storybook/template/page/quantity-picker.tutu", None),
   ]
   let commands : Array[Command] = []
   for entry in files {
@@ -736,8 +759,8 @@ fn composites() -> Array[(String, String, Array[String])] {
       "regenerate",
       "regenerate and format every offline-generated artifact",
       [
-        "gen-conformance", "skill-embed", "storybook-template-embed", "rt-embed",
-        "universal-embed",
+        "gen-showcase", "gen-conformance", "gen-showcase", "skill-embed", "storybook-template-embed",
+        "rt-embed", "universal-embed",
       ],
     ),
     // Check generated views and embedded assets before compiling: stale files
@@ -747,9 +770,9 @@ fn composites() -> Array[(String, String, Array[String])] {
       "ci",
       "generated-artifact checks, then check, the example/skill/template/tgc/card checks, test and build",
       [
-        "check-generated", "check", "check-examples", "check-skill", "check-storybook-template",
-        "check-publish-graph", "check-diagnostics", "check-tgc", "check-cards", "universal",
-        "test", "build",
+        "check-generated", "check-showcase", "check", "check-examples", "check-skill",
+        "check-storybook-template", "check-publish-graph", "check-diagnostics", "check-tgc",
+        "check-cards", "universal", "test", "build",
       ],
     ),
   ]
@@ -780,41 +803,52 @@ fn dist_steps() -> Array[Step] {
   steps.push(
     Run(
       moon("build · wasm-gc demos (release)", [
-        "build", "--target", "wasm-gc", "--release", "demo/counter_wasm", "demo/storybook_wasm",
+        "build", "--target", "wasm-gc", "--release", "demo/quantity_picker_wasm",
+        "demo/storybook_wasm",
       ]),
     ),
   )
   steps.push(Mkdir(DIST))
-  steps.push(Mkdir("\{DIST}/counter"))
-  steps.push(Mkdir("\{DIST}/counter-wasm"))
+  steps.push(Mkdir("\{DIST}/quantity-picker"))
+  steps.push(Mkdir("\{DIST}/quantity-picker-wasm"))
   steps.push(Mkdir("\{DIST}/storybook"))
   steps.push(Mkdir("\{DIST}/cli"))
-  steps.push(Copy(from=COUNTER_JS, to="\{DIST}/counter/counter.js"))
+  steps.push(
+    Copy(from=QUANTITY_JS, to="\{DIST}/quantity-picker/quantity_picker.js"),
+  )
   steps.push(Copy(from=NATIVE_BIN, to="\{DIST}/cli/tutuca"))
   // wasm counter: the .wasm plus its loader + host page. index.html already
-  // loads ./loader.mjs and ./counter_wasm.wasm relative to its folder, so the
+  // loads ./loader.mjs and ./quantity_picker_wasm.wasm relative to its folder, so the
   // page and loader copy verbatim (no rewrite).
   steps.push(
-    Copy(from=COUNTER_WASM, to="\{DIST}/counter-wasm/counter_wasm.wasm"),
-  )
-  steps.push(Run(wasm_opt("\{DIST}/counter-wasm/counter_wasm.wasm")))
-  steps.push(
     Copy(
-      from="demo/counter_wasm/loader.mjs",
-      to="\{DIST}/counter-wasm/loader.mjs",
+      from=QUANTITY_WASM,
+      to="\{DIST}/quantity-picker-wasm/quantity_picker_wasm.wasm",
     ),
   )
   steps.push(
-    Copy(from="app/wasm/loader.mjs", to="\{DIST}/counter-wasm/app-loader.mjs"),
+    Run(wasm_opt("\{DIST}/quantity-picker-wasm/quantity_picker_wasm.wasm")),
   )
   steps.push(
     Copy(
-      from="demo/counter_wasm/index.html",
-      to="\{DIST}/counter-wasm/index.html",
+      from="demo/quantity_picker_wasm/loader.mjs",
+      to="\{DIST}/quantity-picker-wasm/loader.mjs",
+    ),
+  )
+  steps.push(
+    Copy(
+      from="app/wasm/loader.mjs",
+      to="\{DIST}/quantity-picker-wasm/app-loader.mjs",
+    ),
+  )
+  steps.push(
+    Copy(
+      from="demo/quantity_picker_wasm/index.html",
+      to="\{DIST}/quantity-picker-wasm/index.html",
     ),
   )
   // storybook: the gallery host page loads ./loader.mjs and ./storybook_wasm.wasm
-  // relative to its folder (like counter-wasm), so page + loader copy verbatim.
+  // relative to its folder (like quantity-picker-wasm), so page + loader copy verbatim.
   // The gallery bundle is served as static content from dist/storybook.
   steps.push(
     Copy(from=STORYBOOK_WASM, to="\{DIST}/storybook/storybook_wasm.wasm"),
@@ -851,10 +885,10 @@ fn dist_steps() -> Array[Step] {
   )
   steps.push(
     WriteRewritten(
-      from="demo/counter/index.html",
-      to="\{DIST}/counter/index.html",
-      old_src="../../" + COUNTER_JS,
-      new_src="./counter.js",
+      from="demo/quantity_picker/index.html",
+      to="\{DIST}/quantity-picker/index.html",
+      old_src="../../" + QUANTITY_JS,
+      new_src="./quantity_picker.js",
     ),
   )
   // The in-browser playground compiler payload (assemble.mjs), reused by the

@@ -1,0 +1,37 @@
+[
+  {
+    "id": "quantity-picker",
+    "root": "QuantityPicker",
+    "title": "Quantity picker",
+    "summary": "Choose a quantity within limits and see the total.",
+    "learn": "Fields, events, derived values and invariants."
+  },
+  {
+    "id": "notification-preferences",
+    "root": "NotificationPreferences",
+    "title": "Notification preferences",
+    "summary": "Edit, validate and apply notification settings.",
+    "learn": "Bindings, conditional fields and draft state."
+  },
+  {
+    "id": "task-list",
+    "root": "TaskList",
+    "title": "Task list",
+    "summary": "Add, complete and filter tasks with stable identities.",
+    "learn": "Child components, messages and keyed collections."
+  },
+  {
+    "id": "contact-directory",
+    "root": "ContactDirectory",
+    "title": "Contact directory",
+    "summary": "Find a contact and edit their details.",
+    "learn": "Search, pagination, selection and owner-held state."
+  },
+  {
+    "id": "document-workspace",
+    "root": "DocumentWorkspace",
+    "title": "Document workspace",
+    "summary": "Edit Markdown documents and save through a host service.",
+    "learn": "Composition, alternate views and asynchronous intents."
+  }
+]

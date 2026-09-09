@@ -1,16 +1,4 @@
-// Rendering:
-//   @push-view + <x render-each> + @when
-//   .seq[.key] item access as a render target
-//   @loop-with returning a start/end slice
-//   a list of child components
-//
-// Note on building child instances: a Component value carries its own id and is
-// bound to the scope it is registered in, so each module builds ONE `entry_comp()`
-// and uses that same value both in `components=[...]` and to make its instances.
-
 ///|
-/// Entries built from the shared sample list — the seed data three of these
-/// examples share.
 fn entries_of(entry : @component.Component) -> Array[@tutuca.Value] {
   items().map(v => {
     match v {

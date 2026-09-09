@@ -1,24 +1,4 @@
-// A filterable list of entries with
-// category and role facets, sorting, and a solo/unsolo (alt-click) interaction.
-//
-// IMPLEMENTATION NOTES:
-//
-// 1. Sets. The MoonBit runtime has no Set field kind yet, so the
-//    selected-category / selected-role facets are MAP-backed sets here — a
-//    `Map` whose KEYS are the members. The `fp_set_*` helpers give the
-//    has/toggle/only/all-but set semantics. Behavior is identical.
-//
-// 2. Data source. A headless test
-//    can't fetch a remote JSON file, so this ships a compact fixture request
-//    handler; the component is
-//    unchanged (the request implementation lives outside it, the whole point of
-//    request handlers). The host dispatches `init` after start, as always.
-//
-// 3. `currentlyActive` (the current year) is dropped — the fixture
-//    supplies explicit end years so nothing depends on the wall clock.
-
 ///|
-/// A Map-backed set: membership is key-presence.
 fn ps_set_of(members : Array[String]) -> Map[String, Bool] {
   let m : Map[String, Bool] = Map([])
   for s in members {

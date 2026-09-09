@@ -1,0 +1,139 @@
+spec:
+  ContactDirectory:
+    field contacts :: Map.of(String, Any)
+    field order :: List.of(String)
+    field query :: String
+    field page :: Int
+    field pages :: Int
+    field keys :: List.of(String)
+    field selected :: String
+    field editor :: Instance.of(ContactEditor)
+    field error :: String
+    message init
+    message contact_page_ok(Any)
+    message contact_page_failed(Any)
+    message contact_page_unhandled
+    intent update_contact(String, String, String)
+
+  ContactEditor:
+    field id :: String
+    field name :: String
+    field email :: String
+    field feedback :: String
+
+  struct ContactData(name :: String, email :: String)
+
+logic:
+  ContactDirectory:
+    receive init:
+      ask("contact_page", it.contacts, it.query, it.page, it.order, ~route: lex)
+
+    receive search(query):
+      it.query := query
+      it.page := 0
+      send("init")
+
+    receive previous:
+      it.page := math.max(0, it.page - 1)
+      send("init")
+
+    receive next:
+      it.page := math.min(it.pages - 1, it.page + 1)
+      send("init")
+
+    receive contact_page_ok(result):
+      it.keys := result.keys
+      it.page := result.page.to_int()
+      it.pages := result.pages.to_int()
+      it.error := ""
+
+    receive contact_page_failed(error):
+      it.error := "Could not search contacts. Try again."
+
+    receive contact_page_unhandled:
+      it.error := "Connect the contact_page host handler to search contacts."
+
+    receive select(id):
+      it.selected := id
+      it.editor := ContactEditor(id: id, name: it.contacts[id].name, email: it.contacts[id].email)
+
+    answer update_contact(id, name, email):
+      it.contacts.set_at(id, ContactData(name: name, email: email))
+      send("init")
+
+    enrich contact_label(value, key):
+      label = it.contacts[value].name
+    compute page_label: @str{Page @(it.page + 1) of @(it.pages)}
+    pred first_page: it.page <= 0
+    pred last_page: it.page >= (it.pages - 1)
+
+  ContactEditor:
+    receive save:
+      if (it.name.trim() == "" || !(it.email.contains("@")))
+      | it.feedback := "Enter a name and an email address containing @."
+      |
+          notify("update_contact", it.id, it.name.trim(), it.email.trim(), ~route: dyn)
+          it.feedback := "Contact updated for this session."
+
+view:
+  ContactDirectory:
+    section(class: "card bg-base-200 max-w-2xl"):
+      div(class: "card-body gap-3"):
+        h2(class: "card-title"): "Contact directory"
+        label():
+          "Search by name or email"
+          input(type: "search", class: "input w-full query", value: it.query, ~on_input: search(e.value))
+        ul(class: "flex flex-col gap-2"):
+          each(value, key in it.keys, ~enrich_with: contact_label):
+            li():
+              button(class: "btn btn-ghost contact", ~on_click: select(value)): @(label)
+        show(it.keys.is_empty()):
+          p(class: "empty"): "No contacts match your search."
+        div(class: "join items-center"):
+          button(class: "btn join-item previous", disabled: first_page(), ~on_click: previous): "Previous"
+          span(class: "px-3 page"): @(page_label())
+          button(class: "btn join-item next", disabled: last_page(), ~on_click: next): "Next"
+        p(class: "error", role: "status"): @(it.error)
+        hide(it.selected.is_empty()):
+          render(it.editor)
+
+  ContactEditor:
+    section(class: "flex flex-col gap-2 editor"):
+      h3(): "Edit contact"
+      label():
+        "Name"
+        input(class: "input w-full name", value: it.name, ~on_input: it.name := e.value)
+      label():
+        "Email"
+        input(class: "input w-full email", value: it.email, ~on_input: it.email := e.value)
+      button(class: "btn btn-primary save", ~on_click: save): "Save contact"
+      p(class: "feedback", role: "status"): @(it.feedback)
+
+fixtures:
+  "fresh" ~default:
+    it.order = ["alex", "bea", "casey", "dev", "ellis", "fran"]
+    it.pages = 2
+    it.keys = ["alex", "bea", "casey"]
+    it.contacts = {alex: {name: "Alex Chen", email: "alex@example.test"}, bea: {name: "Bea Singh", email: "bea@example.test"}, casey: {name: "Casey Rivera", email: "casey@example.test"}, dev: {name: "Dev Morgan", email: "dev@example.test"}, ellis: {name: "Ellis Park", email: "ellis@example.test"}, fran: {name: "Fran Silva", email: "fran@example.test"}}
+
+  "no results":
+    it.pages = 1
+    it.query = "nobody"
+
+tests:
+  "selection opens a child editor":
+    ~init: "fresh"
+    click("button.contact")
+    expect value("input.name") == "Alex Chen"
+    type("input.name", "")
+    click("button.save")
+    expect text("p.feedback") == "Enter a name and an email address containing @."
+
+  "editing writes to the selected owner entry":
+    ~init: "fresh"
+    click("button.contact")
+    type("input.name", "Alex Wu")
+    click("button.save")
+    expect text("button.contact") == "Alex Wu"
+    expect state it.selected == "alex"
+    expect text("p.feedback") == "Contact updated for this session."

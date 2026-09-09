@@ -1,18 +1,8 @@
-// THIS repo's story set: every compiled example in this package, with the
-// curated metadata that makes the gallery read like the tutorial rather than
-// like the registry order. Section assignment and titles are metadata-only.
-//
-// It lives on the corpus side of the split on purpose. `@sb` ships the model
-// and the grouping; a name -> section table for 52 examples nobody else has is
-// not a library, it is this repo's editorial voice.
-
 ///|
-/// The section order shown in the sidebar; any example whose name is not mapped
-/// below falls into "Other" (appended last). Public because the HOST passes it
-/// back to `@sb.sections_of` — the grouping is generic, the order is ours.
 pub let section_order : Array[String] = [
-  "Basics", "Lists & Data", "Composition & Views", "Macros & Styles", "Graphics",
-  "Behavior", "Lint", "Inspectors", "Traces", "Other",
+  "Learn", "Reference · Basics", "Reference · Lists & Data", "Reference · Composition & Views",
+  "Reference · Macros & Styles", "Reference · Graphics", "Reference · Behavior",
+  "Reference · Lint", "Reference · Inspectors", "Reference · Traces", "Reference · Other",
 ]
 
 ///|
@@ -236,13 +226,13 @@ fn meta_for(name : String) -> (String, String) {
 /// Every compiled example as a Story, in registry order. Title and description
 /// come from `meta_for` (the human metadata for the example).
 pub fn stories() -> Array[@sb.Story] {
-  let out : Array[@sb.Story] = []
+  let out = primary_stories()
   for e in all_examples() {
     let (title, description) = meta_for(e.name)
     out.push({
       id: e.name,
       title,
-      section: section_for(e.name),
+      section: "Reference · " + section_for(e.name),
       description,
       module_: e.module_,
       root: e.root,

@@ -1,0 +1,184 @@
+spec:
+  DocumentWorkspace:
+    field documents :: Map.of(String, Instance.of(DocumentEditor))
+    field selected :: String
+    message init
+
+  DocumentEditor:
+    field id :: String
+    field title :: String
+    field source :: String
+    field saved_source :: String
+    field revision :: Int
+    field load_revision :: Int
+    field busy :: Bool
+    field fail_next :: Bool
+    field feedback :: String
+    field view :: String
+    message load_document_ok(Any)
+    message load_document_failed(Any)
+    message load_document_unhandled
+    message save_document_ok(Any)
+    message save_document_failed(Any)
+    message save_document_unhandled
+
+logic:
+  DocumentWorkspace:
+    pred selected_document(value, key): key == it.selected
+
+    receive init:
+      if it.documents.is_empty()
+      |
+          it.documents.set_at("welcome", DocumentEditor(id: "welcome", title: "Welcome", source: "# Welcome", saved_source: "# Welcome", view: "edit"))
+          it.documents.set_at("notes", DocumentEditor(id: "notes", title: "Meeting notes", source: "# Meeting notes", saved_source: "# Meeting notes", view: "edit"))
+          it.selected := "welcome"
+
+  DocumentEditor:
+    receive edit(text):
+      it.source := text
+      it.revision += 1
+      it.feedback := ""
+
+    receive load:
+      if !it.busy
+      |
+          it.busy := true
+          it.load_revision := it.revision
+          it.feedback := "Loading…"
+          ask("load_document", it.id, it.fail_next, ~route: lex)
+          it.fail_next := false
+
+    receive save:
+      if !it.busy
+      |
+          it.busy := true
+          it.feedback := "Saving…"
+          ask("save_document", it.id, it.source, it.fail_next, ~route: lex)
+          it.fail_next := false
+
+    receive load_document_ok(result):
+      if (result.id == it.id)
+      |
+          it.busy := false
+          if (it.revision == it.load_revision && it.source == it.saved_source)
+          |
+              it.source := result.source.to_string()
+              it.saved_source := result.source.to_string()
+              it.feedback := "Document loaded."
+          | it.feedback := "Your unsaved draft was kept."
+
+    receive load_document_failed(error):
+      it.busy := false
+      it.feedback := "Could not load. Choose Reload to retry."
+
+    receive load_document_unhandled:
+      it.busy := false
+      it.feedback := "Connect the load_document host handler to reload."
+
+    receive save_document_ok(result):
+      if (result.id == it.id)
+      |
+          it.busy := false
+          it.saved_source := result.source.to_string()
+          it.feedback := "Saved in this demo session."
+
+    receive save_document_failed(error):
+      it.busy := false
+      it.feedback := "Could not save. Your draft is kept; choose Save to retry."
+
+    receive save_document_unhandled:
+      it.busy := false
+      it.feedback := "Connect the save_document host handler to save."
+
+    pred dirty: it.source != it.saved_source
+
+view:
+  DocumentWorkspace:
+    section(class: "card bg-base-200 max-w-3xl"):
+      div(class: "card-body gap-3"):
+        h2(class: "card-title"): "Document workspace"
+        nav(class: "join", aria_label: "Documents"):
+          button(class: "btn join-item welcome", ~on_click: it.selected := "welcome"): "Welcome"
+          button(class: "btn join-item notes", ~on_click: it.selected := "notes"): "Meeting notes"
+        each(value, key in it.documents, ~when: selected_document):
+          render(value)
+        p(class: "text-sm opacity-70"): "Demo storage lasts until this example is restarted."
+
+  DocumentEditor:
+    section(class: "flex flex-col gap-3 document"):
+      h3(class: "title"): @(it.title)
+      div(class: "join"):
+        button(class: "btn join-item edit-tab", ~on_click: it.view := "edit"): "Edit"
+        button(class: "btn join-item preview-tab", ~on_click: it.view := "preview"): "Preview"
+      show(it.view == "edit"):
+        label():
+          "Markdown source"
+          textarea(class: "textarea w-full min-h-48 source", value: it.source, ~on_input: edit(e.value))
+      show(it.view == "preview"):
+        article(class: "prose preview", inner_md: it.source)
+      div(class: "flex gap-2"):
+        button(class: "btn btn-primary save", disabled: it.busy, ~on_click: save): "Save"
+        button(class: "btn reload", disabled: it.busy, ~on_click: load): "Reload"
+      label(class: "flex gap-2 items-center"):
+        input(type: "checkbox", class: "checkbox fail-next", checked: it.fail_next, ~on_click: it.fail_next := !it.fail_next)
+        "Simulate the next request failing"
+      show(dirty()):
+        p(class: "dirty"): "Unsaved changes"
+      p(class: "feedback", role: "status"): @(it.feedback)
+
+fixtures:
+  "fresh" ~default:
+    ~drive:
+      send("init")
+
+  "unsaved draft":
+    ~drive:
+      send("init")
+      type("textarea.source", "# A draft to keep")
+
+tests:
+  "save clears the dirty indicator":
+    ~intents:
+      ok("save_document", {id: "welcome", source: "# Saved draft"})
+    send("init")
+    type("textarea.source", "# Saved draft")
+    click("button.save")
+    expect text("p.feedback") == "Saved in this demo session."
+    expect count("p.dirty") == 0
+
+  "failed saves keep the draft and enable retry":
+    ~intents:
+      failed("save_document", "offline")
+    send("init")
+    type("textarea.source", "# Keep this draft")
+    click("button.save")
+    expect value("textarea.source") == "# Keep this draft"
+    expect text("p.feedback") == "Could not save. Your draft is kept; choose Save to retry."
+    click("button.save")
+    expect text("p.feedback") == "Could not save. Your draft is kept; choose Save to retry."
+
+  "reload preserves an unsaved draft":
+    ~intents:
+      ok("load_document", {id: "welcome", source: "# Remote copy"})
+    send("init")
+    type("textarea.source", "# Local draft")
+    click("button.reload")
+    expect value("textarea.source") == "# Local draft"
+    expect text("p.feedback") == "Your unsaved draft was kept."
+
+  "drafts survive document switches":
+    send("init")
+    type("textarea.source", "# My draft")
+    click("button.notes")
+    expect value("textarea.source") == "# Meeting notes"
+    click("button.welcome")
+    expect value("textarea.source") == "# My draft"
+    click("button.preview-tab")
+    expect text("article.preview") == "My draft"
+
+  "a missing save handler keeps the draft":
+    send("init")
+    type("textarea.source", "# Keep this")
+    click("button.save")
+    expect value("textarea.source") == "# Keep this"
+    expect text("p.feedback") == "Connect the save_document host handler to save."

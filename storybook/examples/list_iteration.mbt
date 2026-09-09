@@ -1,7 +1,3 @@
-// Teaches: `@each=".items"` repeats the host element once per entry. Inside the
-// loop `@key` is the index (List) or key (Map) and `@value` is the item — local
-// bindings, read with the `@` prefix.
-
 ///|
 fn list_iteration_comp() -> @component.Component {
   list_iteration_component(initial={ items: [], })

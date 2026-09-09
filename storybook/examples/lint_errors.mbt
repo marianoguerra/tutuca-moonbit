@@ -1,20 +1,3 @@
-// Components with INTENTIONAL lint
-// errors for the linter demo (and the semantic-lint fixture; see
-// lint_errors_test.mbt). Sections whose rules are statically
-// impossible in MoonBit are dropped: ASYNC_HANDLER, UNKNOWN_COMPONENT_SPEC_KEY,
-// COMP_FIELD_BAD_SHAPE, FIELD_NAME_RESERVED_BY_RECORD, SUGGEST_BINDING_MEMBER
-// and the object-shaped LOOKUP_BAD_SHAPE (LookupSpec is typed — only a
-// malformed target string remains, which is LOOKUP_TARGET_MALFORMED).
-//
-// Typed-state divergence: `update` is one opaque pattern match, so the linter
-// can no longer enumerate input-handler names — INPUT_HANDLER_NOT_REFERENCED
-// and INPUT_HANDLER_FOR_INPUT_HANDLER_METHOD are catalog-only and dropped
-// here. LintDemo deliberately has NO `update` fn: that is the only case where
-// bare-name references stay checkable, so `doClick` (a $-callable referenced
-// bare) still yields INPUT_HANDLER_METHOD_FOR_INPUT_HANDLER, and the
-// unimplemented `doKeyDown` bare references now yield
-// INPUT_HANDLER_NOT_IMPLEMENTED.
-
 ///|
 fn lint_demo_comp() -> @component.Component {
   @component.component(

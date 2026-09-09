@@ -1,28 +1,4 @@
-// A visual editor for WebAssembly
-// modules. The largest example: ~75 components, most produced by FACTORIES
-// (instr / type / instrImmInt), dispatched through lookup tables, with recursive
-// Block/Loop/If nesting and per-component editor/compact views.
-//
-// PATTERNS (all seen in earlier examples, at scale here):
-//   - factories = plain functions returning components (json, tree)
-//   - a `reg` map for mutual recursion and lookup-table dispatch (json)
-//   - self-replacement handlers: setType / selectInstructionById return a fresh
-//     instance of a DIFFERENT component type — the `swap` bucket (see json.mbt)
-//   - `^handler`/`^onadd` macro indirection (todo-macros)
-//   - editor/compact named views, `:style="$'…'"` (styles, multiple-views)
-//
-// DIVERGENCES:
-//   1. The picker's `selectInstructionById(target)` reads `target.dataset.value`
-//      off the raw DOM element — which the value layer does not expose, so
-//      the loop's `@value` (the instruction id) is passed directly instead; no
-//      DOM object is needed. The click handler is `selectInstructionById @value`.
-//   2. This required implementing `insertInItemsAt` (the generated list-insert
-//      mutator, which was missing) in the runtime — see component/component.mbt.
-//   3. Self-replacing instances (types, pickers) declare their replacement
-//      handlers in the `swap` bucket, closing over the `reg` for lookup.
-
 ///|
-/// name -> Component, for the lookup-table dispatch and mutual recursion.
 priv struct VwReg {
   comps : Map[String, @component.Component]
 }

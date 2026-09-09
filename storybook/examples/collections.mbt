@@ -1,21 +1,4 @@
-// The "Collections" tutorial examples:
-//
-//   @enrich-with WITHOUT @each (scope form)
-//   @each + @when + @enrich-with
-//   + @loop-with (shared per-loop data)
-//
-// Each render-time directive now has its own TYPED bucket, so the handler
-// signatures say what the renderer hands them (state first, always):
-//
-//   when         (s, key, value, iterData) -> Bool           true keeps the item
-//   enrich       (s, binds, key, value, iterData) -> Unit    MUTATE binds; return ignored
-//   loop_with    (s, seq, loopCtx) -> LoopWith               iter_data? / start? / end? / keys?
-//   bind_with (s) -> Map[String, Value]                   RETURN the binds (no @each)
-
 ///|
-/// `@enrich-with` on an element with no `@each` is the *scope* form: the
-/// `bind_with` handler returns a map whose keys become `@`-bindings for the
-/// subtree. Derived values without putting them in component state.
 fn render_with_scope_comp() -> @component.Component {
   render_with_scope_component(initial={ text: "Hello", }, bind_with=e => {
     match e {

@@ -1,8 +1,3 @@
-// Teaches: reading a file input. `@on.change="onPickFile e.value"` — the app
-// glue turns the chosen File's synchronously-available metadata
-// (name/size/type/last_modified) into a Value::Map, which is what
-// `onPickFile` reads. No file selected -> Null.
-
 ///|
 let file_size_units : Array[String] = ["B", "KB", "MB", "GB", "TB"]
 

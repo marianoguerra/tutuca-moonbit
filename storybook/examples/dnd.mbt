@@ -1,23 +1,4 @@
-// Reorder a list by dragging.
-//
-// How a drop knows what was dragged: `dragstart` captures a DragInfo from the
-// SOURCE render — the dragged value plus the source's rebuilt stack — so the
-// drop handler reads the source row's loop key with
-// `dragInfo.lookupBind("key")`, even though the event fires on the TARGET row.
-// The `data-dragtype` / `data-droptarget` attributes pair a source with the
-// targets that accept it; the app stamps `data-dragging` / `data-draggingover`
-// for styling.
-//
-// Drop geometry: MoonBit's
-// event layer deliberately does not expose DOM objects as Values (there is no
-// `event` / `target` arg; see render/dom_event.mbt), so the side is derived
-// from the drag DIRECTION instead of pointer-vs-target geometry: dragging
-// downward lands after the target, upward lands before it. Same reorder, no
-// geometry.
-
 ///|
-/// Move `source` to sit at `target`, shifting the rest — the list equivalent of
-/// dragging a row onto another row.
 fn[T] move_index_to_index(
   list : Array[T],
   source : Int,

@@ -1,0 +1,107 @@
+spec:
+  TaskList:
+    field draft :: String
+    field next_id :: Int
+    field items :: Map.of(String, Instance.of(TaskItem))
+    field completed :: Map.of(String, Bool)
+    field filter :: String
+    intent remove_task(String)
+    intent task_done(String, Bool)
+
+  TaskItem:
+    field id :: String
+    field text :: String
+    field done :: Bool
+
+logic:
+  TaskList:
+    receive add:
+      if (it.draft.trim() != "")
+      |
+          it.next_id += 1
+          it.items.set_at(@str{task-@(it.next_id)}, TaskItem(id: @str{task-@(it.next_id)}, text: it.draft.trim()))
+          it.draft := ""
+
+    answer remove_task(id):
+      it.items.delete_at(id)
+      it.completed.delete_at(id)
+
+    answer task_done(id, done):
+      if done
+      | it.completed.set_at(id, true)
+      | it.completed.delete_at(id)
+
+    pred visible(value, key): (it.filter == "all" || (it.filter == "completed" && it.completed[key]) || (it.filter == "active" && !it.completed[key]))
+    compute remaining: it.items.length() - it.completed.length()
+
+  TaskItem:
+    receive toggle:
+      it.done := !it.done
+      notify("task_done", it.id, it.done, ~route: dyn)
+
+    receive remove:
+      notify("remove_task", it.id, ~route: dyn)
+
+view:
+  TaskList:
+    section(class: "card bg-base-200 max-w-lg"):
+      div(class: "card-body gap-3"):
+        h2(class: "card-title"): "Task list"
+        label():
+          "New task"
+          input(class: "input w-full draft", value: it.draft, ~on_input: it.draft := e.value, ~on_keydown: add ~send)
+        button(class: "btn btn-primary add", ~on_click: add): "Add task"
+        div(class: "join"):
+          button(class: "btn join-item all", ~on_click: it.filter := "all"): "All"
+          button(class: "btn join-item active", ~on_click: it.filter := "active"): "Active"
+          button(class: "btn join-item completed", ~on_click: it.filter := "completed"): "Completed"
+        ul(class: "flex flex-col gap-2"):
+          each(value, key in it.items, ~when: visible):
+            render(value)
+        show(it.items.is_empty()):
+          p(): "No tasks yet. Add something you need to do."
+        p(class: "remaining", aria_live: "polite"):
+          @(remaining())
+          " remaining"
+
+  TaskItem:
+    li(class: "flex gap-2 items-center task"):
+      label(class: "flex gap-2 items-center grow"):
+        input(type: "checkbox", class: "checkbox done", checked: it.done, ~on_click: toggle)
+        span(class: if it.done | "label line-through" | "label"): @(it.text)
+      button(class: "btn btn-sm remove", ~on_click: remove): "Remove"
+
+fixtures:
+  "fresh" ~default:
+    it.filter = "all"
+
+  "two tasks":
+    it.filter = "all"
+    ~drive:
+      type("input.draft", "Book a dentist appointment")
+      click("button.add")
+      type("input.draft", "Return library books")
+      click("button.add")
+
+tests:
+  "blank drafts do not create tasks":
+    ~init: "fresh"
+    type("input.draft", "   ")
+    click("button.add")
+    expect count("li.task") == 0
+
+  "complete filter and remove a child":
+    ~init: "fresh"
+    type("input.draft", "  Return library books  ")
+    click("button.add")
+    expect text("span.label") == "Return library books"
+    expect text("p.remaining") == "1 remaining"
+    click("input.done")
+    expect text("p.remaining") == "0 remaining"
+    click("button.active")
+    expect count("li.task") == 0
+    click("button.completed")
+    expect count("li.task") == 1
+    click("button.remove")
+    expect count("li.task") == 0
+    expect text("p.remaining") == "0 remaining"

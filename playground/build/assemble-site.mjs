@@ -118,7 +118,7 @@ if (missing.length) {
 }
 
 const examples = readdirSync(join(SITE, "examples")).filter((f) => f.endsWith(".mbt"));
-const cards = readdirSync(join(SITE, "cards")).filter((f) => f.endsWith(".html"));
+const cards = readdirSync(join(SITE, "cards")).filter((f) => f.endsWith(".tutu"));
 console.log(
   `done -> ${DIST}\n  ${PAGES.join(" + ")} + styles/ + site/embed.js + ${examples.length} examples` +
     ` + site/card-embed.js + ${cards.length} card${cards.length === 1 ? "" : "s"}`,

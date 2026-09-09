@@ -22,6 +22,7 @@
 // `tscript` carried spans — and `mountCompiled`, which takes a module the page
 // has already instantiated.
 import {
+  "marianoguerra/tutuca/showcase",
   "marianoguerra/tutuca/vdom/filter/markdown" @mdfilter,
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/transactor",

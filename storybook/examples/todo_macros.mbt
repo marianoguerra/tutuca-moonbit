@@ -1,13 +1,3 @@
-// The to-do app rebuilt with macros for
-// its repeated markup: checkbox, input, and button fragments, plus hbox/vbox
-// layout wrappers, factored into reusable templates.
-//
-// The interesting bit is `^handler ^arg` INDIRECTION: a macro takes the handler
-// name AND its argument as parameters, so `<x:btn-rm :handler="onRemoveItem"
-// :arg="@key">` expands to `@on.click="removeInItemsAt @key"`. Macro params are
-// substituted as SOURCE TEXT, so a handler name or a loop binding threads
-// straight through.
-
 ///|
 fn tm_checkbox_macro() -> @anode.Macro {
   {

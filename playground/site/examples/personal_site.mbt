@@ -1,20 +1,3 @@
-// Personal site: a filterable list of entries with category/role facets,
-// sorting, and a solo/unsolo (alt-click) interaction; fixture data loads
-// through an `ask(…, ~route: lex)` raised on `init` after mount.
-//
-// The three components' views live in the View tab (personal_site.tutu) and
-// arrive compiled — alt_url_views(), p_s_entry_views(), root_views(). Root's
-// `update` keeps a raw `match msg`: it also answers the messages an intent's
-// three outcomes arrive as, which a view cannot declare, so the generated
-// RootMsg cannot type them.
-
-// Reads of an entry's fields go straight through `@tutuca.Value::field` plus a
-// coercer — `e.field("start_year").int()`.
-
-// --- personal_site (adapted from examples/personal_site.mbt) ---
-
-///|
-/// A Map-backed set: membership is key-presence.
 fn ps_set_of(members : Array[String]) -> Map[String, Bool] {
   let m : Map[String, Bool] = Map([])
   for s in members {

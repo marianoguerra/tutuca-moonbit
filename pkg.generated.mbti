@@ -55,6 +55,8 @@ pub using @core {type Leg}
 
 pub using @core {type Lit}
 
+pub using @core {type NullStack}
+
 pub using @core {type OpFamily}
 
 pub using @core {type PathStep}

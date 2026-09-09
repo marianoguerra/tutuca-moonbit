@@ -251,6 +251,10 @@ test "the any marker takes whatever it is given, as a Value" {
     lit(c, "{ \"f\": { \"blob\": [true] } }", "blob"),
     "@tutuca.Value::from_json(Json::array([Json::boolean(true)]))",
   )
+  assert_eq(
+    lit(c, "{ \"f\": { \"blob\": { \"name\": \"Alex\" } } }", "blob"),
+    "@tutuca.Value::from_json(Json::object(Map([(\"name\", Json::string(\"Alex\"))])))",
+  )
 }
 
 ///|

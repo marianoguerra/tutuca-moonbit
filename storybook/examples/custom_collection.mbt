@@ -1,11 +1,4 @@
-// Teaches: making `@each` iterate a CUSTOM collection: implement
-// `@tutuca.Obj::seq_entries` — the renderer iterates the entries it
-// returns, keyed (`sk` breadcrumbs) so event paths resolve back to entries.
-// `item` resolves the same keys for seq-access reads.
-
 ///|
-/// A minimal immutable keyed list: values in a map, explicit key order in an
-/// array. Operations return new instances so state transactions see a change.
 priv struct KeyedList {
   order : Array[String]
   items : Map[String, @tutuca.Value]

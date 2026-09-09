@@ -2,7 +2,13 @@
 
 A [MoonBit](https://docs.moonbitlang.com) port of
 [tutuca](https://github.com/marianoguerra/tutuca), a small UI framework built
-around a reactive value language, HTML-ish templates, and a virtual DOM.
+around a reactive value language, `.tutu` views, and a virtual DOM.
+
+Start with [five practical components](docs/tutorial.mbt.md): a quantity
+picker, notification preferences, a task list, a contact directory, and a
+document workspace. The landing page, playgrounds, Storybook and bundled skill
+use their shared sources. This document is the detailed API guide; focused
+examples below explain individual mechanisms.
 
 It runs on all three MoonBit backends: **wasm-gc** (the default, for
 target-agnostic logic and the browser demos), **js** (the real-DOM adapter, via

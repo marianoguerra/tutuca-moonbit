@@ -1,9 +1,3 @@
-// Teaches: composing independent example apps as fields of one root. A
-// declared slot plus `slot_args~`
-// builds each child through the registration scope at make() time, with the
-// args taken from the sub-module's own ExampleDef (the same seed the
-// standalone example mounts with).
-
 ///|
 fn example_args(
   m : @component.ModuleDef,

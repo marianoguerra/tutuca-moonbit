@@ -1,16 +1,3 @@
-// All Together Now — compose independent example components as fields of one
-// root. Each sub-component (Counter, the to-do list, the tree) is defined with
-// no knowledge of being composed; the root embeds each with
-// a declared child slot and renders it in its own tab with `<x render=".field">`.
-// (The full docs example also folds in the JSON editor, personal site and
-// drag-and-drop — see those playgrounds above; the mechanism is identical.)
-//
-// Six components, ONE view file: composability.tutu names each with
-// `<template id="Name">`, and the generator emits a `<name>_views()` builder
-// per component (counter_views(), items_views(), tree_root_views(), …).
-
-// --- Counter (from the counter example) ------------------------------------
-
 fn cx_counter_comp() -> @component.Component {
   // `inc` and `dec` are in the view file's `<script type="tutuca/script"
   // for="Counter">` block, so the whole counter is its seed.

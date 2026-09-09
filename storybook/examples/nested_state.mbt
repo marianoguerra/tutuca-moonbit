@@ -1,18 +1,4 @@
-// Teaches: the state schema's NAMED and STRUCTURAL types — `record`, `enum`,
-// `variant`, `option` and `tuple` — not just the scalars and lists the rest of
-// the corpus uses.
-//
-// Every one of them becomes a real MoonBit type in nested_state_view_gen.mbt
-// (`NestedStateLabel`, `NestedStatePriority`, `NestedStateDue`, `String?`,
-// `(Int, Int)`), so `update` pattern-matches them directly and a missing case
-// is a compile error rather than a null at render time.
-//
-// It also pins the generated codec. `nested_state_encode`/`_decode` convert
-// each of these shapes to and from `@tutuca.Value` field by field, and the
-// tests below check the round trip.
-
 ///|
-/// Flip a label's `done` by index, leaving the rest alone.
 fn ns_toggle_label(
   labels : Array[NestedStateLabel],
   key : @tutuca.Value,

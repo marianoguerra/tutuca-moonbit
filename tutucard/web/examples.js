@@ -55,7 +55,10 @@
 // (tabs, attributes, modifiers) stay scriptless — a test does not undo a
 // lesson.
 
+import { SHOWCASE } from "./showcase.js";
+
 export const EXAMPLES = [
+  ...SHOWCASE,
   {
     name: "counter",
     source: `spec:

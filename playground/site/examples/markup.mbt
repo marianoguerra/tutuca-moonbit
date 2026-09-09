@@ -1,34 +1,3 @@
-// Two panes of markup that the app did not write, and nothing between them and
-// the DOM but `@setinnerhtml` and `@setinnersvg`.
-//
-// The markdown example next door makes the same argument about a source
-// language. This one makes it about markup itself, which is the harder case and
-// the one people reach for `@dangerouslysetinnerhtml` to solve. The payload is
-// parsed ONCE, walked into described nodes, and every element and every
-// attribute value is judged by the app's own sanitizer on the way out.
-// `set_inner_html` is never called, so the browser never re-parses a string
-// this code produced — there is no second parse to disagree with the first.
-// See docs/sanitizer.md.
-//
-// Neither directive takes a permission, and that is not a shortcut. The
-// dangerous one needs `raw_markup` because its FALLBACK is `set_inner_html`:
-// mount an app without the filter and the payload goes to the browser
-// unexamined. These two fail closed — no filter, empty element — so there is no
-// unchecked path for a host to permit.
-//
-// Edit either pane. Everything above each rule renders; nothing below it does.
-//
-// Two cases are worth opening devtools for rather than reading on the page.
-// The SVG `<animate>` is the subtle one: it is refused as an ELEMENT, not for
-// anything in its value, because SMIL writes `href` in the browser after every
-// check has already run — the `href` the URL rule inspected is not the one that
-// would navigate. And `style` is dropped, which is the one rule these two have
-// that `@dangerouslysetinnerhtml` does not: `url(…)` is a request to an origin
-// the payload chose, and nothing here parses CSS to tell a background image
-// from a beacon.
-
-///|
-/// Ordinary document markup, then everything the sanitizer takes back.
 let html_sample : String =
   #|<h2>Markup, sanitized</h2>
   #|<p>

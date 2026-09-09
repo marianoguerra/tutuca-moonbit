@@ -5,7 +5,11 @@ test "stories() covers the example registry and groups into sections" {
   let sections = @sb.sections_of(all, order=section_order)
   // curated sections come first and are non-empty
   assert_true(sections.length() >= 5)
-  assert_eq(sections[0].title, "Basics")
+  assert_eq(sections[0].title, "Learn")
+  assert_eq(sections[0].stories.map(s => s.id), [
+    "quantity-picker", "notification-preferences", "task-list", "contact-directory",
+    "document-workspace",
+  ])
   // every story lands in exactly one section (counts add up)
   let mut total = 0
   for sec in sections {

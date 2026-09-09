@@ -1,10 +1,3 @@
-// Todo list — a list of editable child Item components you can add and remove.
-// Both components' views live in the View tab (todo.tutu): one file per module,
-// `<template id="Item">` / `<template id="Items">` naming each. They arrive
-// here as `item_views()` and `items_views()`.
-
-
-///|
 fn todo_item_comp() -> @component.Component {
   item_component(
     initial=ItemState::{ completed: false, text: "do the thing" },

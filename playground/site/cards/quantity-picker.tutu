@@ -1,0 +1,66 @@
+spec:
+  QuantityPicker:
+    field quantity :: Int
+    field unit_cents :: Int
+
+    invariant quantity_in_range:
+      ~format: "Choose a quantity from 1 to 10."
+      (it.quantity >= 1 && it.quantity <= 10)
+
+logic:
+  QuantityPicker:
+    receive decrease:
+      it.quantity := math.max(1, it.quantity - 1)
+
+    receive increase:
+      it.quantity := math.min(10, it.quantity + 1)
+
+    compute total_cents: it.quantity * it.unit_cents
+    compute total: @str{Total: €@((it.quantity * it.unit_cents) / 100)}
+    pred minimum: it.quantity <= 1
+    pred maximum: it.quantity >= 10
+
+view:
+  QuantityPicker:
+    section(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        h2(class: "card-title"): "Quantity picker"
+        p(): "Notebook · €5 each"
+        div(class: "join items-center"):
+          button(class: "btn join-item decrease", aria_label: "Decrease quantity", disabled: minimum(), ~on_click: decrease): "−"
+          output(class: "px-4 quantity", aria_live: "polite"): @(it.quantity)
+          button(class: "btn join-item increase", aria_label: "Increase quantity", disabled: maximum(), ~on_click: increase): "+"
+        p(class: "total"): @(total())
+
+fixtures:
+  "fresh" ~default:
+    it.quantity = 1
+    it.unit_cents = 500
+
+  "maximum":
+    it.quantity = 10
+    it.unit_cents = 500
+
+tests:
+  "quantity changes the total":
+    ~init: "fresh"
+    click("button.increase")
+    expect text("output.quantity") == "2"
+    expect text("p.total") == "Total: €10"
+    click("button.decrease")
+    click("button.decrease")
+    expect text("output.quantity") == "1"
+
+  "the upper bound is enforced":
+    ~init: "fresh"
+    send("increase")
+    send("increase")
+    send("increase")
+    send("increase")
+    send("increase")
+    send("increase")
+    send("increase")
+    send("increase")
+    send("increase")
+    send("increase")
+    expect text("output.quantity") == "10"

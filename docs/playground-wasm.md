@@ -34,7 +34,7 @@ module lives in, and how to verify a change to any of it.
 | string ABI | n/a | JS-String-Builtins, chosen at link time and matched at instantiate |
 
 The reference for a working wasm-gc mount is the shipped demo
-`demo/counter_wasm/` (`loader.mjs` + `main.mbt`); `mountWasm()` in
+`demo/quantity_picker_wasm/` (`loader.mjs` + `main.mbt`); `mountWasm()` in
 `playground/web/runtime.js` mirrors it.
 
 ## The string ABI must be chosen at link time

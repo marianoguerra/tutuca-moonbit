@@ -1,13 +1,3 @@
-// The registry of examples: name -> (ModuleDef, root component).
-//
-// One list, consumed by three things:
-//   - the storybook gallery (storybook/ + storybook/ui) — grouped into sections
-//     and mounted as one live app (demo/storybook_wasm)
-//   - the headless tests    (*_test.mbt) — mount and drive them
-//   - the view-corpus sweep (gen_views_corpus_test.mbt) — every view through
-//     the generator
-//
-
 ///|
 pub struct ExampleModule {
   name : String

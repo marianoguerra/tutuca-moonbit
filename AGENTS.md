@@ -139,8 +139,8 @@ The wasm demos are driven by the `vdom/wasm` + `app/wasm` packages (the wasm-gc
 twins of `vdom/browser` + `app/browser`): the DOM is reached from wasm-gc
 through mizchi/js's `@core.Any` plus a small `tdom` FFI, and — since MoonBit
 closures can't cross into JS on wasm-gc — JS calls the exported `on_event` on
-each DOM event instead of receiving a closure. `demo/counter_wasm` and
-`demo/storybook_wasm` are the wasm-gc hosts (`demo/counter_wasm` is the twin of
+each DOM event instead of receiving a closure. `demo/quantity_picker_wasm` and
+`demo/storybook_wasm` are the wasm-gc hosts (`demo/quantity_picker_wasm` is the twin of
 the js `demo/counter`; `storybook_wasm` is the same shape over the
 published `storybook/ui/wasm` — an export list and this repo's story set,
 nothing else, an export list being per-package `link` config that cannot come

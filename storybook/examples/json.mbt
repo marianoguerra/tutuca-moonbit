@@ -1,27 +1,4 @@
-// A composable JSON editor built from typed
-// primitives (null/bool/string/number/array/object), 8 mutually-recursive
-// components.
-//
-// TWO PATTERNS worth calling out:
-//
-// 1. Self-replacement. The handler returns
-//    `Comp.make()` — a fresh instance of a DIFFERENT component type, which the
-//    framework swaps in where the selector was. The typed `update` bucket
-//    cannot express that (it returns a new S), so these handlers go in the
-//    `swap` bucket: `(S, args, ctx) -> Value?` — Input-dispatched by name,
-//    returning the replacement node (None = keep).
-//
-// 2. The component-as-argument problem (as in todo.mbt), but sharper: a selector
-//    must build SIX different component types, and Array/Object build each other
-//    and the selector — mutual recursion that a capture-at-definition closure
-//    can't express. The fix is a `reg` map of name -> Component, populated AFTER
-//    all components are built; the handlers close over `reg` and look their
-//    target up at dispatch time. This mirrors what the scope does, using only
-//    public API.
-
 ///|
-/// name -> Component, shared by the handlers that construct other component
-/// types. Filled once, after every component is built.
 priv struct JsonReg {
   comps : Map[String, @component.Component]
 }

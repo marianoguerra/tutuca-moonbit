@@ -1125,11 +1125,19 @@ function pickExample(name) {
 }
 
 function boot() {
+  const groups = new Map();
   for (const ex of EXAMPLES) {
+    const group = ex.group || "Reference";
+    if (!groups.has(group)) {
+      const node = document.createElement("optgroup");
+      node.label = group;
+      groups.set(group, node);
+      els.example.append(node);
+    }
     const opt = document.createElement("option");
     opt.value = ex.name;
-    opt.textContent = ex.name;
-    els.example.append(opt);
+    opt.textContent = ex.title || ex.name;
+    groups.get(group).append(opt);
   }
   els.example.addEventListener("change", () => pickExample(els.example.value));
   // The preview tab, and with it the mounted tab's note and findings hidden:
@@ -1163,7 +1171,10 @@ function boot() {
       true,
     );
   }
-  pickExample(EXAMPLES[0].name);
+  const requested = new URLSearchParams(location.search).get("example");
+  const first = EXAMPLES.find(e => e.name === requested) || EXAMPLES[0];
+  els.example.value = first.name;
+  pickExample(first.name);
   // Last, and not awaited: the page is a working playground by the time the
   // editor is asked for, so the 330 KB lands on a card that is already mounted
   // and typeable rather than in front of it.

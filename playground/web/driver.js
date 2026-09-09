@@ -384,11 +384,19 @@ const exampleSet = () => window.EXAMPLES || {};
 function fillExamples() {
   const set = exampleSet();
   examplesSel.innerHTML = "";
+  const groups = new Map();
   for (const name of Object.keys(set)) {
+    const group = set[name]?.group || "Reference";
+    if (!groups.has(group)) {
+      const node = document.createElement("optgroup");
+      node.label = group;
+      groups.set(group, node);
+      examplesSel.appendChild(node);
+    }
     const opt = document.createElement("option");
     opt.value = name;
     opt.textContent = name;
-    examplesSel.appendChild(opt);
+    groups.get(group).appendChild(opt);
   }
 }
 examplesSel.addEventListener("change", () => {
@@ -427,6 +435,13 @@ targetSel.addEventListener("change", () => {
     }
     targetSel.value = bootTarget();
     fillExamples();
+    const requested = new URLSearchParams(location.search).get("example");
+    const chosen = exampleSet()[requested];
+    if (chosen?.code) {
+      examplesSel.value = requested;
+      editor.setValue(chosen.code);
+      viewEditor.setValue(chosen.view || "");
+    }
     generate();
     const info = await compiler.init(currentTarget());
     const wasmNote = availableTargets.includes("wasm-gc")

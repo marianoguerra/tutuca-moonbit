@@ -87,6 +87,7 @@ const cases = [];
 // check-playground-examples.mjs' sibling scaffold instead.)
 const starterSrc = readFileSync(join(OUT, "starter.js"), "utf8");
 const window = {};
+new Function("window", readFileSync(join(OUT, "showcase.js"), "utf8"))(window);
 new Function("window", starterSrc)(window);
 const withViews = Object.entries(window.EXAMPLES).filter(([, ex]) => ex && ex.view);
 if (!withViews.length) throw new Error("starter has no view-tab example");
@@ -95,7 +96,7 @@ for (const [name, ex] of withViews) {
 }
 
 for (const file of readdirSync(SITE_EXAMPLES).filter((f) => f.endsWith(".mbt")).sort()) {
-  const html = join(SITE_EXAMPLES, file.replace(/\.mbt$/, ".html"));
+  const html = join(SITE_EXAMPLES, file.replace(/\.mbt$/, ".tutu"));
   // an example with no view file is a runtime-view escape hatch: nothing to
   // generate, and check-playground-examples.mjs already compiles it
   if (!existsSync(html)) continue;

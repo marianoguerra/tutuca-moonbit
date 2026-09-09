@@ -1,18 +1,3 @@
-// The four macro tutorial examples:
-//
-//   a macro with no parameters
-//   ^params, static vs :dynamic passing
-//   <x:slot>, the default slot
-//   named slots
-//
-// A macro is pure template expansion: no state, no lifecycle, no handlers of
-// its own. `@on.click="inc"` inside a macro calls `inc` on the COMPONENT the
-// macro expands into — that is the key difference from a component.
-//
-// In MoonBit a macro is the plain record `@anode.Macro::{ defaults, raw_view }`;
-// `defaults` maps a parameter name to its default *source text* (so a string
-// default is written with its quotes: `"'New'"`).
-
 ///|
 fn badge_macro() -> @anode.Macro {
   {

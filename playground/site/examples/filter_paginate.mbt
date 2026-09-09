@@ -1,27 +1,3 @@
-// The richest example: three takes
-// on the same feature (filter a list, show one page of the matches), trading
-// simplicity for how many times the list is scanned per render. All three
-// return `keys` (original indices) from @loop-with, so @key keeps each row's
-// identity; they differ only in WHO does the scanning:
-//
-//   1. NaivePeople   — two independent full scans (table + pager).
-//   2. SharedPeople  — one count scan + one partial (early-exit) collect scan,
-//                      the loop-with reading the enrich's clamped page via `lookup`
-//                      and reusing the @when via `filter`.
-//   3. CoupledPeople — one scan total: the enrich builds the page keys and
-//                      stashes them under `__keys__`; the loop-with just forwards
-//                      them. Fast, but the two handlers are welded together.
-//
-// This exercises the whole @loop-with contract: `keys` (authoritative, skips
-// @when), the loopCtx `lookup` (read an @-binding published by a scope enrich)
-// and `filter` (reuse the declared @when), and scope @enrich-with feeding it.
-//
-// All five components keep their views in the View tab (filter_paginate.tutu).
-// The three strategies are written out in full there rather than shared through
-// a helper: the diff between their `<li>` directives IS the example.
-
-///|
-/// The one match predicate, shared everywhere. `person` is a Person instance.
 fn fp_matches(person : @tutuca.Value, query : String) -> Bool {
   let q = query.trim().to_lower().to_owned()
   if q == "" {

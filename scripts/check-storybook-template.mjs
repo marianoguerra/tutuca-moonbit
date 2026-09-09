@@ -56,8 +56,10 @@ const files = [
   ".gitignore",
   "page/moon.pkg",
   "page/main.mbt",
-  "page/counter.tutu",
-  "page/counter_view_gen.mbt",
+  "page/quantity-picker.tutu",
+  "page/quantity-picker.mbt",
+  "page/quantity-picker_view_gen.mbt",
+  "page/quantity-picker_view_ir_gen.mbt",
 ];
 for (const rel of files) {
   if (!existsSync(join(OUT, rel))) {

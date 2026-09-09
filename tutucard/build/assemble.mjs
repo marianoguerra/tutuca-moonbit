@@ -39,6 +39,7 @@ const WEB_FILES = [
   "shell.js",
   "shell.css",
   "examples.js",
+  "showcase.js",
   "regions.js",
   // The embeddable element ships beside the playground rather than only in
   // the landing site's folder: a host that has this directory has the

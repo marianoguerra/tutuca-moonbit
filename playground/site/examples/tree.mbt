@@ -1,11 +1,3 @@
-// Tree navigation — click folders to toggle open/closed, files to select
-// (logged below). Both components' views live in the View tab (tree.tutu) and
-// arrive here compiled, as `tree_item_views()` and `tree_root_views()`.
-
-
-///|
-/// A TreeItem renders its own children with `<x render-each=".items">` — the
-/// component renders ITSELF, recursively, stopping where `items` is empty.
 fn tree_item_comp() -> @component.Component {
   tree_item_component(
     initial=TreeItemState::{

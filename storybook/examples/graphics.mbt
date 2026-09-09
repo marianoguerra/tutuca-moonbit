@@ -1,10 +1,3 @@
-// SVG and MathML rendering: clickable SVG with :attr bindings on shapes, and
-// a reactive MathML formula.
-//
-// SVG and MathML subtrees keep their namespace through the parser, so the usual
-// directives (@each, :attr, @on.click, @if, @enrich-with, macros) all work on
-// real namespaced elements — no special casing.
-
 ///|
 let palette : Array[String] = [
   "#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899",

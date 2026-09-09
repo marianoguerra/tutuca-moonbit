@@ -1,20 +1,4 @@
-// The "State and Updates" tutorial examples:
-//
-//   :attr bindings + $'templates'           (attribute binding)
-//   @if.attr / @then / @else                (conditional attributes)
-//   @on.keydown+send / +cancel              (event modifiers)
-//   @show / @hide
-//
-// Note the event modifiers tutuca actually defines. Guards: keydown takes
-// send/cancel/ctrl/cmd/meta/alt, click takes ctrl/cmd/meta/alt; an unknown
-// guard is the identity (it does not gate the handler). Effects: +prevent
-// calls preventDefault and +stop calls stopPropagation when the handler
-// runs — on any event, gated by any guards written beside them.
-
 ///|
-/// `:attr=".field"` binds state into any attribute; `$'…{.field}…'` is a string
-/// template. Typing calls the GENERATED `setStr`; the number input goes through
-/// a hand-written `setRawNumber` that parses and validates first.
 fn attribute_binding_comp() -> @component.Component {
   attribute_binding_component(
     initial={ str: "hello", num: 42, bool: true, not_set: Null, },

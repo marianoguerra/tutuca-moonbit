@@ -1,12 +1,10 @@
 # Guides
 
-Long-form, human-facing, and executable where it can be: `tutorial.mbt.md` and
-`first_principles.mbt.md` are blackbox test files, so `moon test docs` compiles
-and runs every code block in them.
+Long-form, human-facing, and executable where it can be: the tutorial is generated from the shared component sources and their interaction tests; `first_principles.mbt.md` runs its executable code blocks through `moon test docs`.
 
 | | |
 |---|---|
-| [tutorial.mbt.md](tutorial.mbt.md) | build an app from a counter up |
+| [tutorial.mbt.md](tutorial.mbt.md) | five practical components, from a quantity picker to a document workspace |
 | [first_principles.mbt.md](first_principles.mbt.md) | the framework rebuilt layer by layer, if you want to know *why* it works |
 | [dynamic-components.md](dynamic-components.md) | hosting a component fetched at runtime from someone you have no reason to trust |
 | [storybook.md](storybook.md) | the gallery as a library, and why the story set is a projection |

@@ -1,10 +1,3 @@
-// Rendering a component from another
-// component's field.
-//
-// Teaches: `<x render=".field">` renders a child component held in a field;
-// `as="edit"` picks one of its named views. A rendered child gets a CLEAN
-// namespace — the parent's @-bindings do not cross into it.
-
 ///|
 fn greeting_comp() -> @component.Component {
   greeting_component(initial={ name: "world", })

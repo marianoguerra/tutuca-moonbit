@@ -1,35 +1,4 @@
-// Async requests.
-//
-// TWO NOTES.
-//
-// 1. Lifecycle. Tutuca has NO lifecycle: nothing in the framework calls
-//    `receive.init`. The host dispatches it through the `App::send_at_root`
-//    hook (app/loop.mbt). `init` is an ordinary receive handler.
-//
-// 2. Intents on the `lex` leg are CALLBACK-style here, not async/await. An
-//    IntentFn is `(call, answer) -> Unit`; it calls `answer(Ok(v))`,
-//    `answer(Failed(e))` or `answer(Pass)` whenever it is done — immediately,
-//    or from a real fetch's callback. `Pass` is the one that matters: a
-//    handler with nothing to contribute DECLINES, and the walk goes on to the
-//    next one instead of it having to invent an error.
-//
-//    The component side dispatches `ask("load_data", ~route: lex)`, and the answer
-//    arrives as an ordinary message — `load_data_ok`, `load_data_failed` or
-//    `load_data_unhandled` — in the same `receive` bucket everything else lands
-//    in. A handler cannot tell an answer from a message a parent sent, and
-//    does not need to.
-//
-// Because the request handler is registered OUTSIDE the component, the same
-// component can be driven by a real fetch in production and by a fixture in a
-// test — which is exactly what the tests here do.
-
 ///|
-/// `init` and `toggleView` are in the view file's
-/// `<script type="tutuca/script">` block: `intent` is one of the effects that
-/// language spells, and the block queues it so it goes out only if the whole
-/// transition finished. What is left here is the half a small language would
-/// model badly — an intent's OPTIONS, and the answers, which unpack a result
-/// into entries.
 fn request_example_comp(entry : @component.Component) -> @component.Component {
   request_example_component(
     initial={

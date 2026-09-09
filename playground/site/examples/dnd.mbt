@@ -1,12 +1,3 @@
-// Drag to reorder a filterable list. `dragstart` captures the source row from
-// its render; the drop handler on the TARGET row reads the source's loop key via
-// `dragInfo.lookupBind("key")`. data-dragtype/data-droptarget pair a source with
-// the targets that accept it. Styled with margaui classes.
-//
-// The view lives in the View tab (dnd.tutu): `dnd_example_views()` is its
-// compiled tree, and `DnDExampleMsg` types the one `@on` handler it declares,
-// argument shapes included.
-
 fn build() -> @component.ModuleDef {
   let dnd = dn_d_example_component(
     initial=DnDExampleState::{ items: [], query: "" },

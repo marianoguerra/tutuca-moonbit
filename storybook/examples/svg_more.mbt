@@ -1,26 +1,4 @@
-// Two examples showing SVG rendering straight from a tutuca template — a
-// reactive bar chart and parametrized SVG icons as macros. The `<svg>` subtree
-// keeps its namespace, so `<rect>`/`<line>`/`<text>`/`<path>` are real SVG
-// elements and every directive (@each, @loop-with, @enrich-with, :attr, macros)
-// works on them.
-
 ///|
-/// A bar chart driven by a list field. `@loop-with` computes shared layout once,
-/// `@enrich-with` derives each bar's geometry, and the buttons mutate the data.
-///
-/// `randomize` avoids real randomness: to keep the headless
-/// tests deterministic (and because randomness is not the point), this derives
-/// the next heights from the current ones instead — still reactive, still
-/// re-renders the bars, just reproducible.
-///
-/// `addBar` and `removeBar` are in the view file's
-/// `<script type="tutuca/script">` block: adding to and deleting from a list
-/// under a bound is what its collection methods are for, and their caps are
-/// `requires` clauses, so a press at the limit is refused by a rule with a
-/// name rather than by an `if` nobody hears. `randomize` stays here — it
-/// rewrites EVERY element, which is a map over the list and not a mutation of
-/// one position, and being a MoonBit handler it is not one of the transitions
-/// the block's contracts cover.
 fn bar_chart_comp() -> @component.Component {
   bar_chart_component(
     initial={ values: [40, 72, 28, 90, 55, 63], },

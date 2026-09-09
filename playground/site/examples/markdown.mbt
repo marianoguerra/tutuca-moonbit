@@ -1,33 +1,3 @@
-// A live markdown editor: source on the left, rendered output on the right,
-// and NOTHING between them but `@setinnermd`.
-//
-// The directive is the whole example. `:value` / `@on.input` keep `source` in
-// step with the textarea the ordinary way (see text_input); `@setinnermd`
-// parses that string on every render, sanitizes the result against the app's
-// sanitizer, and replaces the preview pane's CHILDREN with described nodes.
-// `set_inner_html` is never called, so the browser never re-parses a string
-// this code produced — there is no second parse to disagree with the first.
-// See docs/sanitizer.md.
-//
-// The starting document is half feature tour, half attack list. Edit either
-// half: everything in the first renders, and nothing in the second executes.
-// The point worth taking away is that they go through the SAME sanitizer that
-// judges every other node in the tree — there is no markdown-specific
-// allow-list to fall behind, and no permission a host has to remember to
-// withhold.
-//
-// One case is worth watching in a devtools inspector rather than on the page.
-// `[x](java&#9;script:…)` written as a markdown DESTINATION keeps its href,
-// because nothing on that path decodes the entity: the scheme stays the literal
-// `java&#9;script`, which navigates nowhere, and the value reaches the DOM
-// through `setAttribute`, where entities do not exist. Serialize the sanitized
-// tree back to HTML text instead and the browser's parser decodes it on the way
-// back in — `java\tscript:` → `javascript:` → it fires. That one input is the
-// whole argument for building nodes, and there is a test on it in
-// `vdom/filter/markdown/markdown_test.mbt`.
-
-///|
-/// Everything the renderer supports, then everything it refuses.
 let sample : String =
   #|# Live markdown
   #|

@@ -1,8 +1,3 @@
-// Conditionals:
-//   @show + the binary `equals?` predicate
-//   one string field drives the whole UI (a tabbed UI)
-//   @each + @when (a `when` predicate)
-
 ///|
 let traffic_lights : Array[String] = ["red", "orange", "green"]
 

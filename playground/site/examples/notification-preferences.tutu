@@ -1,0 +1,80 @@
+spec:
+  NotificationPreferences:
+    field enabled :: Bool
+    field email :: String
+    field frequency :: String
+    field saved_enabled :: Bool
+    field saved_email :: String
+    field saved_frequency :: String
+    field feedback :: String
+
+logic:
+  NotificationPreferences:
+    receive apply:
+      if (it.enabled && !(it.email.contains("@")))
+      | it.feedback := "Enter an email address containing @."
+      |
+          it.saved_enabled := it.enabled
+          it.saved_email := it.email.trim()
+          it.saved_frequency := it.frequency
+          it.feedback := "Preferences applied for this session."
+
+    receive reset:
+      it.enabled := it.saved_enabled
+      it.email := it.saved_email
+      it.frequency := it.saved_frequency
+      it.feedback := "Draft reset."
+
+view:
+  NotificationPreferences:
+    section(class: "card bg-base-200 max-w-md"):
+      div(class: "card-body gap-3"):
+        h2(class: "card-title"): "Notification preferences"
+        label(class: "flex gap-2 items-center"):
+          input(type: "checkbox", class: "checkbox enabled", checked: it.enabled, ~on_click: it.enabled := !it.enabled)
+          "Email me updates"
+        show(it.enabled):
+          label():
+            "Email address"
+            input(type: "email", class: "input w-full email", value: it.email, ~on_input: it.email := e.value)
+          label():
+            "Frequency"
+            select(class: "select w-full frequency", value: it.frequency, ~on_change: it.frequency := e.value):
+              option(value: "daily"): "Daily digest"
+              option(value: "weekly"): "Weekly digest"
+        div(class: "flex gap-2"):
+          button(class: "btn btn-primary apply", ~on_click: apply): "Apply preferences"
+          button(class: "btn reset", ~on_click: reset): "Reset draft"
+        p(class: "feedback", role: "status"): @(it.feedback)
+
+fixtures:
+  "fresh" ~default:
+    it.frequency = "weekly"
+    it.saved_frequency = "weekly"
+
+  "email enabled":
+    it.enabled = true
+    it.email = "alex@example.test"
+    it.frequency = "weekly"
+    it.saved_frequency = "weekly"
+
+tests:
+  "validate before applying":
+    ~init: "fresh"
+    click("input.enabled")
+    click("button.apply")
+    expect text("p.feedback") == "Enter an email address containing @."
+    type("input.email", "alex@example.test")
+    click("button.apply")
+    expect text("p.feedback") == "Preferences applied for this session."
+    type("input.email", "draft@example.test")
+    click("button.reset")
+    expect value("input.email") == "alex@example.test"
+
+  "disabled notifications hide email fields":
+    ~init: "fresh"
+    expect count("input.email") == 0
+    click("input.enabled")
+    expect count("input.email") == 1
+    click("button.reset")
+    expect count("input.email") == 0

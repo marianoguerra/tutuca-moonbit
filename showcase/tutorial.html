@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learn Tutuca — five practical components</title>
+  <link rel="stylesheet" href="./styles/site.css">
+  <style>mb-card { max-width: 64rem; margin: 1.5rem auto; } main > section > p { max-width: 48rem; margin-inline: auto; }</style>
+  <script src="./site/tutucard.js"></script>
+  <script type="module" src="./site/card-embed.js"></script>
+</head>
+<body>
+  <nav><a href="./">Home</a><a href="./tutucard/">Card playground</a><a href="./playground/">MoonBit playground</a><a href="./storybook/">Storybook</a></nav>
+  <header><h1>Learn Tutuca</h1><h2>From a small control to a document workspace</h2><p>Five practical components, using the same sources you can inspect in Storybook and reuse in a MoonBit application.</p></header>
+  <main>
+    <section><h2>Read a component</h2><p><code>spec:</code> declares fields and contracts. <code>logic:</code> defines updates and derived values. <code>view:</code> describes the interface. Named <code>fixtures:</code> show useful states; <code>tests:</code> checks interactions. Start by using each component, then change its source.</p></section>
+    <!-- examples -->
+    <section><h2>Connect a real application</h2><p>The directory uses a host handler to filter contacts before pagination. The workspace uses delayed load/save handlers backed by session-local memory. Your application registers those handlers against its own services. A component states the job; the host supplies the implementation.</p><p><a href="https://github.com/marianoguerra/tutuca-moonbit/blob/main/docs/tutorial.mbt.md">Read the MoonBit integration guide</a> or explore focused language and integration examples in the playgrounds' Reference groups.</p></section>
+  </main>
+</body>
+</html>

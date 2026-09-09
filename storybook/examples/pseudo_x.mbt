@@ -1,11 +1,3 @@
-// The @x escape hatch.
-//
-// The HTML parser strips a literal `<x>` element that is not a legal child of
-// its parent: `<x>` inside `<table>` or `<select>` vanishes before tutuca sees
-// it. The fix is to attach `@x` as the FIRST attribute of a tag the parser DOES
-// accept there — `<tr @x render-each=".rows">` or `<option @x render-each=".options">`.
-// The element pretends to be an `<x>` op while satisfying the parser.
-
 ///|
 fn table_row_comp() -> @component.Component {
   table_row_component(initial={ name: "", qty: 0, price: 0.0, })

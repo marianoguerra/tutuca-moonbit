@@ -153,6 +153,12 @@ pub fn mount_compiled(
   // is offered to its module's own handlers first — it registers none — and
   // then to these.
   scope.register_intent_handlers(playground_intents(slot, slot.gen))
+  let generation = slot.gen
+  scope.register_intent_handlers(
+    @showcase.demo_intents(later=f => {
+      set_timeout(() => if slot.gen == generation { f() }, 300)
+    }),
+  )
   let made = match fixture {
     Some(f) => loaded.make_instance(component, args=f.args)
     None => loaded.make_instance(component)

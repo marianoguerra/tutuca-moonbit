@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tutuca — practical components in one file</title>
+  <meta name="description" content="Build interactive components in one .tutu file. Learn Tutuca through five practical examples, from a quantity picker to a document workspace.">
+  <link rel="stylesheet" href="./styles/site.css">
+  <style>mb-card, mb-playground { max-width: 64rem; margin: 1.5rem auto; } main > section > p { max-width: 48rem; margin-inline: auto; }</style>
+  <script type="module" src="./site/embed.js"></script>
+  <script src="./site/tutucard.js"></script>
+  <script type="module" src="./site/card-embed.js"></script>
+</head>
+<body>
+  <nav><a href="#examples">Examples</a><a href="./cards.html">Tutorial</a><a href="./tutucard/">Card playground</a><a href="./playground/">MoonBit playground</a><a href="./storybook/">Storybook</a><a href="https://github.com/marianoguerra/tutuca-moonbit">GitHub</a></nav>
+  <header>
+    <h1>Tutuca</h1>
+    <h2>Build interactive components in one <code>.tutu</code> file</h2>
+    <p class="hero-tagline">Declare the state, write the behavior, and describe the view. Start with a small control, then compose a working interface.</p>
+    <div class="hero-actions"><a class="btn btn-primary" href="#quantity-picker">Try a component</a><a class="btn" href="./cards.html">Follow the tutorial</a></div>
+    <ul class="hero-highlights"><li>State, logic, views and tests together</li><li>Editable cards that run in your browser</li><li>MoonBit integration for your application</li></ul>
+  </header>
+  <main>
+    <section id="examples"><h2>Five examples, one learning path</h2><p>Edit the source and try the result. These same components appear in the tutorial, playgrounds, documentation and Storybook. Card examples need no MoonBit compiler download. The contact directory also shows the MoonBit code that filters and paginates its data.</p></section>
+    <!-- examples -->
+    <section id="get-started"><h2>Use Tutuca in your project</h2><p>Start with a portable card, or add Tutuca to a MoonBit project and generate compiled components from the same file format.</p><pre><code>moon add marianoguerra/tutuca</code></pre><p><a href="https://github.com/marianoguerra/tutuca-moonbit/blob/main/docs/tutorial.mbt.md">Read the guide</a> · <a href="./quantity-picker/">JS demo</a> · <a href="./quantity-picker-wasm/">WebAssembly demo</a></p></section>
+    <section id="reference"><h2>Explore a specific feature</h2><p>The <a href="./storybook/">Storybook Reference sections</a> cover recursion, graphics, drag and drop, host integrations and diagnostics. Both playgrounds keep focused examples under Reference. Use them when you need that feature.</p></section>
+  </main>
+  <footer><a href="https://github.com/marianoguerra/tutuca-moonbit">Tutuca source</a></footer>
+</body>
+</html>

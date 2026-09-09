@@ -393,9 +393,9 @@ fn json_src(v : Json) -> String {
     Object(o) => {
       let parts : Array[String] = []
       for k, x in o {
-        parts.push(json_quote(k) + ": " + json_src(x))
+        parts.push("(" + json_quote(k) + ", " + json_src(x) + ")")
       }
-      "Json::object({ " + parts.join(", ") + " })"
+      "Json::object(Map([" + parts.join(", ") + "]))"
     }
   }
 }

@@ -27,10 +27,10 @@ Needs `moon` and Node >= 20, and a browser with the JS String Builtins proposal
 A story is an **example on a `ModuleDef`**, not an entry in a list:
 
 ```moonbit
-pub fn counter_module() -> @component.ModuleDef {
-  @component.ModuleDef::new(name="counter", components=[counter_component()], examples=[
-    { component: "Counter", title: "Zero", args: Map([]), view: None },
-    { component: "Counter", title: "Seeded", args: { "count": Num(7) }, view: None },
+pub fn quantity_picker_module() -> @component.ModuleDef {
+  @component.ModuleDef::new(name="quantity-picker", components=[quantity_picker_component(initial=QuantityPickerState::fresh())], examples=[
+    { component: "QuantityPicker", title: "Minimum", args: Map([]), view: None },
+    { component: "QuantityPicker", title: "Seeded", args: { "quantity": Num(7) }, view: None },
   ])
 }
 ```
@@ -43,7 +43,7 @@ a test, so a story and a test cannot disagree.
 Overrides are ordinary `.map`s over the projected list — `Story` is `pub(all)`:
 
 ```moonbit
-stories.map(s => if s.id == "counter-counter-seeded" { { ..s, init: true } } else { s })
+stories.map(s => if s.id == "quantity-picker-quantitypicker-seeded" { { ..s, init: true } } else { s })
 ```
 
 - `init: true` — the host dispatches `init` into the pane after mount, for a
@@ -70,8 +70,8 @@ The generated `page/my_thing_view_gen.mbt` is checked in and never hand-edited;
 | File | |
 | --- | --- |
 | `page/main.mbt` | the story set and the wasm entry points |
-| `page/counter.tutu` | a demo component's spec, logic and views |
-| `page/counter_view_gen.mbt` | generated from it — regenerate, never edit |
+| `page/quantity-picker.tutu` | a demo component's spec, logic and views |
+| `page/quantity-picker_view_gen.mbt` | generated from it — regenerate, never edit |
 | `page/moon.pkg` | the executable's `link.exports` list |
 | `index.html` | the page: the margaui `<style>` slot, `#app`, the loader |
 | `build.mjs` | wasm build, wasm-opt, and the JS the page needs beside it |

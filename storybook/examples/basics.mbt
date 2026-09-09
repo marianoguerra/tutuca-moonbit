@@ -1,17 +1,4 @@
-// Four of the smallest tutorial examples, which exist to show that
-// nearly everything about a component is optional:
-//
-//   component({})             — no view at all
-//   a static view             — a view, no state
-//   @text / <x text>          — the text directive
-//   set-inner-html            — the raw-HTML escape hatch
-
 ///|
-/// The smallest component there is: no fields, no view, no logic. It renders
-/// nothing visible — the point is that it is legal.
-///
-/// MoonBit divergence: `views~` is a required argument, so "no view" is an
-/// empty `<template>` in basics.tutu rather than JS's absent key.
 fn minimum_viable_comp() -> @component.Component {
   minimum_viable_component_component()
 }

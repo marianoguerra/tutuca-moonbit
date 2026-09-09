@@ -1,7 +1,3 @@
-// The sample list (Borges' "Celestial
-// Emporium of Benevolent Knowledge" classification of animals) that the
-// iteration examples share.
-
 ///|
 pub fn items() -> Array[@tutuca.Value] {
   [

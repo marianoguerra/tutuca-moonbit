@@ -1,29 +1,5 @@
 # Playground examples
 
-These are the editable sources the `<mb-playground>` embeds load — standalone
-**teaching editions**, deliberately distinct from `storybook/examples/`:
+The five primary pairs are generated from `showcase/` by `gen-showcase`. Edit the canonical `.tutu` and `.mbt` sources there. Their behavior, fixtures and host services are shared with cards and Storybook. Editors start with code; explanations belong on the page.
 
-- compact (they fit an editor pane), framework-free inline styles instead of
-  margaui classes, and a bare `fn build() -> @component.ModuleDef` entry;
-- compiled **in the browser** against the packages `assemble.mjs` exposes
-  (`@tutuca` is the module-root facade, plus `@component`, `@anode`, …).
-
-Each example is a PAIR: `foo.mbt` (the Component tab) and `foo.html` (the View
-tab), named by the embed's `src` / `view` attributes in `../index.html`. The
-views are compiled ahead of time — the page runs the same generator
-`tutuca gen` does, and hands the result to the compiler as extra files of
-the example's package, so `foo.mbt` can name `<comp>_views()` and `<Comp>Msg`
-with no import. Every component is named by its heading under `spec:` and
-`view:`, so one file can carry a whole module's components and the page reads
-the names straight out of the file.
-
-No checked-in `*_view_gen.mbt` here: unlike `storybook/examples/`, these are
-generated in the browser on every run, so they are NOT registered in the
-`gen` task.
-
-Don't sync them from the storybook ports — edit them for what reads well in a
-small embedded editor. No moon package includes these files, so CI compiles
-each one (generating its views first) via
-`moon run --target native cmd/dev -- check-examples`
-(`scripts/check-playground-examples.mjs`); run that after touching them or
-after any library API change.
+Other pairs are focused Reference examples. `check-examples` checks every pair locally; `check-viewgen-tab.mjs` compiles and links them through the actual browser compiler on both backends. Views are generated in the browser, so no generated MoonBit files are checked in here.

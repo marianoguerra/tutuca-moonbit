@@ -12,36 +12,9 @@ including inside a loop. It runs on all three
 backends: **wasm-gc** (the default), **js** (the real-DOM adapter) and
 **native** (the CLI).
 
-```
-# counter.tutu
-spec:
-  Counter:
-    field count :: Int
+Follow the same five components everywhere: **Quantity picker → Notification preferences → Task list → Contact directory → Document workspace**.
 
-    message inc
-
-logic:
-  Counter:
-    receive inc:
-      it.count += 1
-
-view:
-  Counter:
-    button(~on_click: inc): @(it.count)
-```
-
-```moonbit
-// `tutuca gen` made CounterState and counter_component out of the three
-// sections above, checked `it.count` against the spec in both the view and
-// the handler, and compiled `inc` into the update the wrapper already passes.
-// The name, the views, the styles, the codec and the spec are not arguments —
-// the view file states them.
-counter_component()
-```
-
-A handler the block cannot compile — one that walks a path, or builds a child
-component — is REFUSED by name, with the reason, and comes back as an
-`update~` argument. The rest stay in the file.
+[Try them in your browser](https://marianoguerra.github.io/tutuca-moonbit/) or [follow the tutorial](docs/tutorial.mbt.md). The small examples run directly as cards; the MoonBit examples show host integration and compiled assembly.
 
 ## Start here
 
@@ -49,10 +22,8 @@ component — is REFUSED by name, with the reason, and comes back as an
   ahead-of-time views, the value language, the CLI, and what each backend
   adapter does. Every code block in it is compiled and run by `moon test`.
 - **[docs/](docs/)** — the guides. Start with
-  [tutorial.mbt.md](docs/tutorial.mbt.md), which builds an app from a counter
-  up; [first_principles.mbt.md](docs/first_principles.mbt.md) rebuilds the
-  framework layer by layer if you want to know *why* it works. Both are
-  executable. [dynamic-components.md](docs/dynamic-components.md) is the part
+  [tutorial.mbt.md](docs/tutorial.mbt.md), which builds five practical components; [first_principles.mbt.md](docs/first_principles.mbt.md) rebuilds the
+  framework layer by layer if you want to know *why* it works. Their examples have interaction tests. [dynamic-components.md](docs/dynamic-components.md) is the part
   that is *not* decided before the program runs: a WebAssembly module fetched at
   runtime, from someone you have no reason to trust, mounted into a page that is
   already running.

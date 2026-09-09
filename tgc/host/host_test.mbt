@@ -292,7 +292,25 @@ impl Guest for FakeGuest with fn handle_dispatch(
           ),
         ],
       }
-    (Receive, "doubled") =>
+    (Receive, "infer") =>
+      {
+        handled: true,
+        next: None,
+        msgs: [
+          Intent("double", [Num(count)], @tutuca.IntentOpts::new(route=[Lex])),
+        ],
+      }
+    (Receive, "missing") =>
+      {
+        handled: true,
+        next: None,
+        msgs: [Intent("missing", [], @tutuca.IntentOpts::new(route=[Lex]))],
+      }
+    (Receive, "missing_unhandled") =>
+      { handled: true, next: Some(self.next_of(handle, -2)), msgs: [], }
+    (Receive, "double_failed") =>
+      { handled: true, next: Some(self.next_of(handle, -1)), msgs: [], }
+    (Receive, "doubled" | "double_ok") =>
       match args {
         [Num(n), ..] =>
           { handled: true, next: Some(self.next_of(handle, n)), msgs: [], }
@@ -605,6 +623,8 @@ fn counter_manifest() -> DynManifest {
       #|      "\n"
       #|      button(class: "double", ~on_click: double):
       #|        "double"
+      #|      button(class: "infer", ~on_click: infer): "infer"
+      #|      button(class: "missing", ~on_click: missing): "missing"
       #|      "\n"
       #|      button(class: "notify", ~on_click: notify):
       #|        "notify"
@@ -704,7 +724,9 @@ fn counter_manifest() -> DynManifest {
           },
         ],
         domains: [],
-        receives: ["init", "set_to"],
+        receives: [
+          "init", "set_to", "double_ok", "double_failed", "missing_unhandled",
+        ],
         intents: [],
         express_messages: [],
         express_intents: [],
@@ -1098,6 +1120,28 @@ test "a guest `request` round-trips through a host IntentFn" {
 }
 
 ///|
+test "guest declared outcome handlers receive success failure and route exhaustion" {
+  let (h, loaded) = mount_with_bundle(FakeGuest::new())
+  let failing = Ref(false)
+  guard! loaded.make_instance("Counter", args={ "count": Num(21) }) is Some(c)
+  h.send_at_root("set_slot", args=[c.to_value()])
+  h.app.scope.register_intent_handlers({
+    "double": [
+      IntentFn((_, answer) => {
+        answer(if failing.val { Failed(Str("offline")) } else { Ok(Num(42)) })
+      }),
+    ],
+  })
+  h.click(".infer")
+  assert_eq(h.text(".count"), "42")
+  failing.val = true
+  h.click(".infer")
+  assert_eq(h.text(".count"), "-1")
+  h.click(".missing")
+  assert_eq(h.text(".count"), "-2")
+}
+
+///|
 test "nested guest children render and dispatch through two DynObj levels" {
   let fake = FakeGuest::new()
   let (h, loaded) = mount_with_bundle(fake)
@@ -1310,6 +1354,8 @@ test "inputs are read off the compiled views, not declared" {
       #|  "dec",
       #|  "inc",
       #|  "double",
+      #|  "infer",
+      #|  "missing",
       #|  "notify",
       #|  "readUndeclared",
       #|  "announce",
