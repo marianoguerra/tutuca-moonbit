@@ -27,6 +27,12 @@ pub(all) struct Roles {
 } derive(Debug, Eq)
 
 ///|
+pub extend Roles with Debug::{to_repr}
+
+///|
+pub extend Roles with Eq::{not_equal, equal}
+
+///|
 /// No name is reached through anything: transitions only.
 declare pub fn Roles::none() -> Roles
 
@@ -39,6 +45,18 @@ pub(all) enum Role {
   REnrich
   RBindWith
 } derive(Debug, Eq, Hash, Compare)
+
+///|
+pub extend Role with Debug::{to_repr}
+
+///|
+pub extend Role with Eq::{not_equal, equal}
+
+///|
+pub extend Role with Hash::{hash, hash_combine}
+
+///|
+pub extend Role with Compare::{op_lt, op_le, op_ge, compare, op_gt}
 
 ///|
 /// The generated function's name for one declaration in one role.
@@ -90,6 +108,12 @@ pub(all) struct Emitted {
   answers_property_set : Array[String]
   refusals : Array[@check.Refusal]
 } derive(Debug, Eq)
+
+///|
+pub extend Emitted with Debug::{to_repr}
+
+///|
+pub extend Emitted with Eq::{not_equal, equal}
 
 ///|
 /// Compile a script block against a schema.

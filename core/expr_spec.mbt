@@ -47,10 +47,22 @@ pub(all) enum OpFamily {
 } derive(Debug, Eq)
 
 ///|
+pub extend OpFamily with Debug::{to_repr}
+
+///|
+pub extend OpFamily with Eq::{not_equal, equal}
+
+///|
 pub(all) enum UnOp {
   UNot
   UNeg
 } derive(Debug, Eq)
+
+///|
+pub extend UnOp with Debug::{to_repr}
+
+///|
+pub extend UnOp with Eq::{not_equal, equal}
 
 ///|
 /// One piece of a `$'…'` template: literal text, or an interpolated
@@ -98,6 +110,12 @@ pub(all) enum PlaceRoot {
   /// parameter is the one kind of name that can never be applied.
   PParam(String)
 } derive(Debug, Eq)
+
+///|
+pub extend PlaceRoot with Debug::{to_repr}
+
+///|
+pub extend PlaceRoot with Eq::{not_equal, equal}
 
 ///|
 /// The name `new` writes and the statements under it read: `cur`.
@@ -279,10 +297,16 @@ pub impl Eq for Expr with fn equal(self, other) {
 }
 
 ///|
+pub extend Expr with Eq::{not_equal, equal}
+
+///|
 /// Places compare by root and steps; the span is not part of the position.
 pub impl Eq for Place with fn equal(self, other) {
   self.root == other.root && self.steps == other.steps
 }
+
+///|
+pub extend Place with Eq::{not_equal, equal}
 
 ///|
 pub impl Eq for PathStep with fn equal(self, other) {
@@ -294,6 +318,9 @@ pub impl Eq for PathStep with fn equal(self, other) {
 }
 
 ///|
+pub extend PathStep with Eq::{not_equal, equal}
+
+///|
 pub impl Eq for TplPart with fn equal(self, other) {
   match (self, other) {
     (TText(text~, from_macro~), TText(text=t2, from_macro=f2)) =>
@@ -302,6 +329,9 @@ pub impl Eq for TplPart with fn equal(self, other) {
     _ => false
   }
 }
+
+///|
+pub extend TplPart with Eq::{not_equal, equal}
 
 ///|
 /// Debug, SPAN-FREE. See this file's header: a debug dump of a tree is
@@ -353,9 +383,15 @@ pub impl Debug for Expr with fn to_repr(self) {
 }
 
 ///|
+pub extend Expr with Debug::{to_repr}
+
+///|
 pub impl Debug for Place with fn to_repr(self) {
   Repr::record({ "root": Repr(self.root), "steps": Repr(self.steps) })
 }
+
+///|
+pub extend Place with Debug::{to_repr}
 
 ///|
 pub impl Debug for PathStep with fn to_repr(self) {
@@ -364,6 +400,9 @@ pub impl Debug for PathStep with fn to_repr(self) {
     PIndex(e) => Repr::ctor("PIndex", [(None, Repr(e))])
   }
 }
+
+///|
+pub extend PathStep with Debug::{to_repr}
 
 ///|
 pub impl Debug for TplPart with fn to_repr(self) {
@@ -376,3 +415,6 @@ pub impl Debug for TplPart with fn to_repr(self) {
     TExpr(e) => Repr::ctor("TExpr", [(None, Repr(e))])
   }
 }
+
+///|
+pub extend TplPart with Debug::{to_repr}

@@ -16,10 +16,10 @@ fn safe_host(attr : String, value : @vdom.AttrValue) -> @vdom.Vdom {
 ///|
 fn run_html(
   payload : String,
-  sanitizer? : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
+  sanitizer~ : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
 ) -> (@vdom.Vdom, Array[String]) {
-  let tree = safe_host(SAFE_HTML_ATTR, SafeHtml(payload))
-  let f = SafeMarkupFilter::new(sanitizer~)
+  let tree = safe_host(@markup.SAFE_HTML_ATTR, SafeHtml(payload))
+  let f = @markup.SafeMarkupFilter::new(sanitizer~)
   f.filter_tree(tree)
   (tree, f.take_reports().map(@filter.Dropped::to_string))
 }
@@ -27,10 +27,10 @@ fn run_html(
 ///|
 fn run_svg(
   payload : String,
-  sanitizer? : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
+  sanitizer~ : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
 ) -> (@vdom.Vdom, Array[String]) {
-  let tree = safe_host(SAFE_SVG_ATTR, Svg(payload))
-  let f = SafeMarkupFilter::new(sanitizer~)
+  let tree = safe_host(@markup.SAFE_SVG_ATTR, Svg(payload))
+  let f = @markup.SafeMarkupFilter::new(sanitizer~)
   f.filter_tree(tree)
   (tree, f.take_reports().map(@filter.Dropped::to_string))
 }
@@ -105,7 +105,7 @@ fn ns_shape(v : @vdom.Vdom) -> String {
 test "setinnerhtml becomes children and the directive disappears" {
   let (tree, reports) = run_html("<p>hello <b>world</b></p>")
   guard tree is Node(el) else { fail("expected an element") }
-  debug_inspect(el.attrs.contains(SAFE_HTML_ATTR), content="false")
+  debug_inspect(el.attrs.contains(@markup.SAFE_HTML_ATTR), content="false")
   inspect(
     ns_shape(tree),
     content=(
@@ -122,10 +122,10 @@ test "setinnerhtml becomes children and the directive disappears" {
 test "setinnerhtml replaces declared children" {
   let tree = @vdom.h(
     "DIV",
-    attrs=Map::from_array([(SAFE_HTML_ATTR, SafeHtml("<i>payload</i>"))]),
+    attrs=Map::from_array([(@markup.SAFE_HTML_ATTR, SafeHtml("<i>payload</i>"))]),
     childs=[@vdom.h("SPAN", childs=[Text("declared")])],
   )
-  SafeMarkupFilter::new().filter_tree(tree)
+  @markup.SafeMarkupFilter::new().filter_tree(tree)
   inspect(
     ns_shape(tree),
     content=(
@@ -560,12 +560,14 @@ test "setinnersvg strips event handlers, which SVG would otherwise honour" {
 test "a wrongly-shaped value drops the attribute and leaves the element" {
   let tree = @vdom.h(
     "DIV",
-    attrs=Map::from_array([(SAFE_HTML_ATTR, Str("<b>not a SafeHtml</b>"))]),
+    attrs=Map::from_array([
+      (@markup.SAFE_HTML_ATTR, Str("<b>not a SafeHtml</b>")),
+    ]),
     childs=[Text("declared")],
   )
-  SafeMarkupFilter::new().filter_tree(tree)
+  @markup.SafeMarkupFilter::new().filter_tree(tree)
   guard tree is Node(el) else { fail("expected an element") }
-  debug_inspect(el.attrs.contains(SAFE_HTML_ATTR), content="false")
+  debug_inspect(el.attrs.contains(@markup.SAFE_HTML_ATTR), content="false")
   inspect(
     ns_shape(tree),
     content=(
@@ -584,7 +586,7 @@ test "an element with neither directive is left alone" {
     "href": Str("javascript:alert(1)"),
     "style": Str("color:red"),
   })
-  let f = SafeMarkupFilter::new()
+  let f = @markup.SafeMarkupFilter::new()
   f.filter_tree(tree)
   inspect(
     ns_shape(tree),

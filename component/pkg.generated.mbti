@@ -61,12 +61,15 @@ pub struct ComponentStack {
   intents : Map[String, Array[@core.IntentFn]]
   macros : Map[String, @anode.Macro]
 }
+pub fn ComponentStack::build(Self, String?, String, Map[String, @core.Value], at~ : String) -> @core.Value?
 pub fn ComponentStack::check_names(Self) -> Array[@lint.Finding]
 pub fn ComponentStack::compile_all(Self) -> Unit raise
 pub fn ComponentStack::component_names(Self) -> Array[String]
+pub fn ComponentStack::describe(Self, String?, String) -> @core.SchemaInfo?
 pub fn ComponentStack::enter(Self) -> Self
 pub fn ComponentStack::lookup_component(Self, String) -> Component?
 pub fn ComponentStack::lookup_intent(Self, String) -> Array[@core.IntentFn]
+pub fn ComponentStack::lookup_macro(Self, String) -> @anode.Macro?
 pub fn ComponentStack::lookup_path(Self, String) -> @core.Path?
 pub fn ComponentStack::new(comps? : Components) -> Self
 pub fn ComponentStack::register_components(Self, Array[Component], aliases? : Map[String, String]) -> Unit
@@ -112,16 +115,21 @@ pub(all) struct LocatedValue {
   value : @core.Value
   path : @core.Path?
 } derive(Eq, @debug.Debug)
+pub fn LocatedValue::equal(Self, Self) -> Bool
+pub fn LocatedValue::not_equal(Self, Self) -> Bool
+pub fn LocatedValue::to_repr(Self) -> @debug.Repr
 
 pub(all) struct LookupInfo {
   name : String
   default_val : @core.Expr?
 } derive(@debug.Debug)
+pub fn LookupInfo::to_repr(Self) -> @debug.Repr
 
 pub(all) struct LookupSpec {
   name : String
   default : String?
 } derive(@debug.Debug)
+pub fn LookupSpec::to_repr(Self) -> @debug.Repr
 
 pub(all) struct LoopCtx {
   lookup : (String) -> @core.Value
@@ -156,12 +164,16 @@ pub(all) struct ProvideInfo {
   name : String
   val : @core.Expr
 } derive(@debug.Debug)
+pub fn ProvideInfo::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ProvideKind {
   ProvideValue
   ProvideSelfType
   ProvideBadType
 } derive(Eq, @debug.Debug)
+pub fn ProvideKind::equal(Self, Self) -> Bool
+pub fn ProvideKind::not_equal(Self, Self) -> Bool
+pub fn ProvideKind::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Update[S] {
   Unhandled

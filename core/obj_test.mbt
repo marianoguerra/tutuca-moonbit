@@ -9,7 +9,7 @@ priv struct Card {
 }
 
 ///|
-fn card(title : String, tags? : Array[@core.Value] = []) -> @core.Value {
+fn card(title : String, tags~ : Array[@core.Value] = []) -> @core.Value {
   Obj(Card::{ title, tags, })
 }
 

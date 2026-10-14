@@ -67,14 +67,14 @@ pub fn margaui_themes() -> Array[String] {
 priv struct ShellSpec {
   mut comp : @component.Component?
   filter_text : Array[String]
-  sec_of : Array[Int]
+  sec_of : Array[Int32]
   id_to_field : Map[String, String]
   /// a renderable story's id to the view it declared, for focus mode (the
   /// panes carry their own `pvN` field; the overlay renders `.focusValue`
   /// and so needs the name handed to it)
   view_of : Map[String, String]
   init_fields : Array[String]
-  num_sections : Int
+  num_sections : Int32
   /// The tabs beside Story, in the order they are drawn. The shell resolves a
   /// tab key to a field prefix and a builder through this and nothing else.
   panels : Array[PanelDef]
@@ -293,11 +293,11 @@ impl @tutuca.Obj for ShellInst with fn with_field(self, name, v) {
 ///|
 /// `s12` -> 12, for any other field name None. The story panes address their
 /// fields by index, and this is the one place that has to read one back.
-fn story_index(name : String) -> Int? {
+fn story_index(name : String) -> Int32? {
   guard name.length() > 1 && name[0] is 's' else { return None }
   let digits = name[1:].to_owned()
   for c in digits {
-    if !(c is ('0'..='9')) {
+    if !(c is ('0'..<='9')) {
       return None
     }
   }
@@ -694,7 +694,7 @@ fn build_shell(
     panels.push(p)
   }
   let filter_text : Array[String] = []
-  let sec_of : Array[Int] = []
+  let sec_of : Array[Int32] = []
   let id_to_field : Map[String, String] = Map([])
   let view_of : Map[String, String] = Map([])
   let init_fields : Array[String] = []
@@ -979,14 +979,14 @@ pub fn[N : @vdom.DomWalk] mount(
   sections : Array[@sb.Section],
   root_node : N,
   opts : @vdom.RenderOpts[N],
-  url_handlers? : Map[String, Array[@component.IntentFn]] = Map([]),
+  url_handlers~ : Map[String, Array[@component.IntentFn]] = Map([]),
   /// The palettes the theme switcher offers. The default is margaui's, which
   /// is what the compiled stylesheet carries; a gallery that ships two
   /// palettes passes two.
-  themes? : Array[String] = margaui_themes(),
+  themes~ : Array[String] = margaui_themes(),
   /// The per-story tabs. Everything this package knows about a panel is in
   /// here: a key, a label, a field prefix and a closure.
-  panels? : PanelSet[N] = PanelSet::none(),
+  panels~ : PanelSet[N] = PanelSet::none(),
 ) -> @app.App[N] raise {
   let root_scope = @component.ComponentStack::new()
   let (shell, spec, fields) = build_shell(

@@ -103,7 +103,7 @@ fn forms() -> Array[(String, @core.Expr)] {
 
 ///|
 /// Left-align `s` in `width` columns.
-fn pad(s : String, width : Int) -> String {
+fn pad(s : String, width : Int32) -> String {
   let b = StringBuilder()
   b.write_string(s)
   for _ in s.length()..<width {

@@ -4,10 +4,10 @@
 pub fn ModuleDef::new(
   name~ : String,
   components~ : Array[Component],
-  paths? : Map[String, @tutuca.Path] = Map([]),
-  macros? : Map[String, @anode.Macro] = Map([]),
-  intents? : Map[String, Array[IntentFn]] = Map([]),
-  examples? : Array[ExampleDef] = [],
+  paths~ : Map[String, @tutuca.Path] = Map([]),
+  macros~ : Map[String, @anode.Macro] = Map([]),
+  intents~ : Map[String, Array[IntentFn]] = Map([]),
+  examples~ : Array[ExampleDef] = [],
 ) -> ModuleDef {
   { name, components, paths, macros, intents, examples, }
 }

@@ -144,6 +144,9 @@ pub impl ComponentSource for FnSource with fn describe(self, module_, name) {
 }
 
 ///|
+pub extend FnSource with ComponentSource::{describe, build}
+
+///|
 pub impl ComponentSource for FnSource with fn build(
   self,
   module_,
@@ -493,9 +496,9 @@ fn decode_args(
 pub fn Value::args_of_component_json(
   j : Json,
   src : &ComponentSource,
-  component? : String = "",
+  component~ : String = "",
   module_? : String,
-  at? : String = "",
+  at~ : String = "",
 ) -> Map[String, Value] {
   guard j is Object(m) else { return Map([]) }
   let name = tag_of(m, component)

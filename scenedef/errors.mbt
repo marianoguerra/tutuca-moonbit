@@ -56,7 +56,7 @@ pub fn SceneError::message(self : SceneError) -> String {
 /// `at == -1` is a fact about the scene rather than about a step — `args` and
 /// `intents` are read before the list is — and then the step half is left off
 /// rather than printed as a position that does not exist.
-fn at_(scene : String, at : Int) -> String {
+fn at_(scene : String, at : Int32) -> String {
   if at < 0 {
     "test block: scene `\{scene}`: "
   } else {
@@ -68,3 +68,6 @@ fn at_(scene : String, at : Int) -> String {
 pub impl Show for SceneError with fn output(self, logger) {
   logger.write_string(self.message())
 }
+
+///|
+pub extend SceneError with Show::{to_string, output}

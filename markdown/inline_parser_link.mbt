@@ -17,7 +17,7 @@ fn split_wikilink_destination(destination : String) -> (String, String) {
 /// Try to parse a wiki link: [[target]] or [[target|label]].
 fn InlineParser::try_parse_wikilink(
   self : InlineParser,
-  start : Int,
+  start : Int32,
 ) -> Inline? {
   if !self.wikilinks || !self.scanner.matches("[[") {
     return None
@@ -91,7 +91,7 @@ fn InlineParser::try_parse_wikilink(
 
 ///|
 /// Try to parse link
-fn InlineParser::try_parse_link(self : InlineParser, start : Int) -> Inline? {
+fn InlineParser::try_parse_link(self : InlineParser, start : Int32) -> Inline? {
   self.scanner.advance(1) // Skip [
 
   // Parse link text
@@ -355,7 +355,7 @@ fn InlineParser::try_parse_link(self : InlineParser, start : Int) -> Inline? {
 /// Try to parse footnote reference [^label]
 fn InlineParser::try_parse_footnote_reference(
   self : InlineParser,
-  start : Int,
+  start : Int32,
 ) -> Inline? {
   self.scanner.advance(1) // Skip [
   if !char_is(self.scanner.peek(), '^') {
@@ -400,7 +400,7 @@ fn InlineParser::try_parse_footnote_reference(
 
 ///|
 /// Try to parse image
-fn InlineParser::try_parse_image(self : InlineParser, start : Int) -> Inline? {
+fn InlineParser::try_parse_image(self : InlineParser, start : Int32) -> Inline? {
   self.scanner.advance(1) // Skip !
   if !char_is(self.scanner.peek(), '[') {
     self.scanner.restore(start)

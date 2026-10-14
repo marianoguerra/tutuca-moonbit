@@ -9,11 +9,11 @@
 
 ///|
 priv struct Box {
-  n : Int
+  n : Int32
 }
 
 ///|
-fn box(n : Int) -> @tutuca.Value {
+fn box(n : Int32) -> @tutuca.Value {
   (Obj(Box::{ n, }) : @tutuca.Value)
 }
 
@@ -115,7 +115,7 @@ fn rooted() -> @tutuca.Value {
 
 ///|
 /// The counter inside the box, which is how every test here says "it ran".
-fn n_of(root : @tutuca.Value) -> Int {
+fn n_of(root : @tutuca.Value) -> Int32 {
   @tutuca.Path::new(steps=[FieldStep("box"), FieldStep("n")])
   .lookup(root)
   .map(v => v.int())

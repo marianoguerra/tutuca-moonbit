@@ -5,10 +5,10 @@ pub fn run(
   gmod : &@host.GuestModule,
   manifest : @host.DynManifest,
   scenes : Array[@scenedef.Scene],
-  root? : String = "",
-  take_log? : () -> Array[String] = () => [],
-  on_bundle? : (@host.Module) -> Unit = _b => (),
-  on_app? : (@app.App[@memdom.MemNode]) -> Unit = _a => (),
+  root~ : String = "",
+  take_log~ : () -> Array[String] = () => [],
+  on_bundle~ : (@host.Module) -> Unit = _b => (),
+  on_app~ : (@app.App[@memdom.MemNode]) -> Unit = _a => (),
 ) -> Array[SceneResult] {
   scenes.map(s => run_one(gmod, manifest, s, root, take_log, on_bundle, on_app))
 }
@@ -160,7 +160,7 @@ fn run_one(
 pub fn drive_scene(
   h : @harness.Harness[@memdom.MemNode],
   scene : @scenedef.Scene,
-  take_log? : () -> Array[String] = () => [],
+  take_log~ : () -> Array[String] = () => [],
 ) -> SceneResult {
   reset_refusals()
   // Every refusal the whole scene raised, so a report can show the ones no

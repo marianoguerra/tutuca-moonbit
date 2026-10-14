@@ -29,6 +29,12 @@ pub(all) struct WatchPlan {
 } derive(Debug, Eq)
 
 ///|
+pub extend WatchPlan with Debug::{to_repr}
+
+///|
+pub extend WatchPlan with Eq::{not_equal, equal}
+
+///|
 let watch_help : String =
   #|tutuca watch [path...] [--out <dir>] [--name <Name>] [--no-ir]
   #|             [--tailwind-css <file> | --margaui-css <file>]
@@ -197,7 +203,7 @@ pub fn watch_error_line(message : String) -> String {
 
 ///|
 /// The line printed after watch rewrites the stylesheet.
-pub fn watch_css_line(target : String, classes~ : Int) -> String {
+pub fn watch_css_line(target : String, classes~ : Int32) -> String {
   "  → \{target} (\{classes} classes)\n"
 }
 

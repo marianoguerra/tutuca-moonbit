@@ -15,12 +15,12 @@
 
 ///|
 /// The AST as one line, so a test reads as a claim rather than a dump.
-fn shape(doc : Document) -> String {
+fn shape(doc : @markdown.Document) -> String {
   doc.children.map(block).join("")
 }
 
 ///|
-fn block(b : Block) -> String {
+fn block(b : @markdown.Block) -> String {
   match b {
     ThematicBreak(..) => "(hr)"
     Heading(level~, children~, ..) => "(h\{level} \{inlines(children)})"
@@ -46,7 +46,7 @@ fn block(b : Block) -> String {
 }
 
 ///|
-fn item(li : ListItem) -> String {
+fn item(li : @markdown.ListItem) -> String {
   let box = match li.checked {
     Some(true) => "[x]"
     Some(false) => "[ ]"
@@ -56,12 +56,12 @@ fn item(li : ListItem) -> String {
 }
 
 ///|
-fn cell(c : TableCell) -> String {
+fn cell(c : @markdown.TableCell) -> String {
   "(td \{inlines(c.children)})"
 }
 
 ///|
-fn align(a : TableAlign) -> String {
+fn align(a : @markdown.TableAlign) -> String {
   match a {
     Left => "l"
     Center => "c"
@@ -71,12 +71,12 @@ fn align(a : TableAlign) -> String {
 }
 
 ///|
-fn inlines(xs : Array[Inline]) -> String {
+fn inlines(xs : Array[@markdown.Inline]) -> String {
   xs.map(inline).join("")
 }
 
 ///|
-fn inline(i : Inline) -> String {
+fn inline(i : @markdown.Inline) -> String {
   match i {
     Text(content~, ..) => content.escape()
     SoftBreak(..) => "(soft)"
@@ -101,7 +101,9 @@ fn inline(i : Inline) -> String {
 ///|
 test "headings, paragraphs and the emphasis pair" {
   inspect(
-    shape(parse("# Title\n\nsome *soft* and **hard** text\n").document),
+    shape(
+      @markdown.parse("# Title\n\nsome *soft* and **hard** text\n").document,
+    ),
     content=(
       #|(h1 "Title")(p "some "(em "soft")" and "(strong "hard")" text")
     ),
@@ -112,7 +114,7 @@ test "headings, paragraphs and the emphasis pair" {
 /// Setext, so the builder cannot assume `style` is always `Atx`.
 test "setext headings reach the same variant" {
   inspect(
-    shape(parse("Title\n=====\n\nSub\n---\n").document),
+    shape(@markdown.parse("Title\n=====\n\nSub\n---\n").document),
     content=(
       #|(h1 "Title")(h2 "Sub")
     ),
@@ -122,7 +124,7 @@ test "setext headings reach the same variant" {
 ///|
 test "lists carry tightness, start and nesting" {
   inspect(
-    shape(parse("- one\n- two\n\n3. three\n4. four\n").document),
+    shape(@markdown.parse("- one\n- two\n\n3. three\n4. four\n").document),
     content=(
       #|(ul (li (p "one"))(li (p "two")))(ol@3 (li (p "three"))(li (p "four")))
     ),
@@ -133,7 +135,7 @@ test "lists carry tightness, start and nesting" {
 /// GFM, with nothing switched on to get it.
 test "task lists put the checkbox on the item, not in the text" {
   inspect(
-    shape(parse("- [x] done\n- [ ] todo\n").document),
+    shape(@markdown.parse("- [x] done\n- [ ] todo\n").document),
     content=(
       #|(ul (li[x] (p "done"))(li[ ] (p "todo")))
     ),
@@ -143,7 +145,9 @@ test "task lists put the checkbox on the item, not in the text" {
 ///|
 test "tables keep their alignments" {
   inspect(
-    shape(parse("| a | b | c |\n|:--|:-:|--:|\n| 1 | 2 | 3 |\n").document),
+    shape(
+      @markdown.parse("| a | b | c |\n|:--|:-:|--:|\n| 1 | 2 | 3 |\n").document,
+    ),
     content=(
       #|(table [l,c,r] (td "a")(td "b")(td "c") [(td "1")(td "2")(td "3")])
     ),
@@ -153,7 +157,7 @@ test "tables keep their alignments" {
 ///|
 test "strikethrough and inline code" {
   inspect(
-    shape(parse("~~gone~~ and `kept`\n").document),
+    shape(@markdown.parse("~~gone~~ and `kept`\n").document),
     content=(
       #|(p (del "gone")" and "(tt "kept"))
     ),
@@ -163,7 +167,7 @@ test "strikethrough and inline code" {
 ///|
 test "footnotes are a reference and a definition" {
   inspect(
-    shape(parse("text[^a]\n\n[^a]: the note\n").document),
+    shape(@markdown.parse("text[^a]\n\n[^a]: the note\n").document),
     content=(
       #|(p "text"(fnref a))(footnote a (p "the note"))
     ),
@@ -175,7 +179,9 @@ test "footnotes are a reference and a definition" {
 /// entirely untrusted. `attr_value_allowed` is what has to look at it.
 test "links and images carry raw urls" {
   inspect(
-    shape(parse("[t](javascript:alert(1)) ![a](x.png \"ti\")\n").document),
+    shape(
+      @markdown.parse("[t](javascript:alert(1)) ![a](x.png \"ti\")\n").document,
+    ),
     content=(
       #|(p (a "javascript:alert(1)" "t")" "(img "x.png" "a"))
     ),
@@ -184,7 +190,7 @@ test "links and images carry raw urls" {
 
 ///|
 test "reference links keep the label for the caller to resolve" {
-  let r = parse("[t][ref]\n\n[ref]: /u \"ti\"\n")
+  let r = @markdown.parse("[t][ref]\n\n[ref]: /u \"ti\"\n")
   inspect(
     shape(r.document),
     content=(
@@ -204,7 +210,7 @@ test "reference links keep the label for the caller to resolve" {
 ///|
 test "fenced code keeps its info string and body verbatim" {
   inspect(
-    shape(parse("```moonbit meta\nlet x = 1\n```\n").document),
+    shape(@markdown.parse("```moonbit meta\nlet x = 1\n```\n").document),
     content=(
       #|(fence "moonbit meta" "let x = 1\n")
     ),
@@ -216,7 +222,9 @@ test "fenced code keeps its info string and body verbatim" {
 /// hand to `parse_fragment` on its own.
 test "html blocks arrive whole" {
   inspect(
-    shape(parse("<div class=\"x\">\n<span>hi</span>\n</div>\n").document),
+    shape(
+      @markdown.parse("<div class=\"x\">\n<span>hi</span>\n</div>\n").document,
+    ),
     content=(
       #|(html "<div class=\"x\">\n<span>hi</span>\n</div>\n")
     ),
@@ -242,7 +250,7 @@ test "html blocks arrive whole" {
 /// builder in `vdom/filter/markdown` needs revisiting before the bump lands.
 test "inline raw html is only ever a comment; bare tags become bogus autolinks" {
   inspect(
-    shape(parse("a <span>b</span> c <!-- note --> d\n").document),
+    shape(@markdown.parse("a <span>b</span> c <!-- note --> d\n").document),
     content=(
       #|(p "a "(auto "span")"b"(auto "/span")" c "(rawinline "<!-- note -->")" d")
     ),
@@ -255,7 +263,7 @@ test "inline raw html is only ever a comment; bare tags become bogus autolinks" 
 /// tag reaches the DOM as markup.
 test "an inline tag with attributes is plain text" {
   inspect(
-    shape(parse("x <a href=\"y\">z</a>\n").document),
+    shape(@markdown.parse("x <a href=\"y\">z</a>\n").document),
     content=(
       #|(p "x <a href=\"y\">z"(auto "/a"))
     ),
@@ -268,7 +276,7 @@ test "an inline tag with attributes is plain text" {
 /// `<https://e.com>`.
 test "autolinks distinguish mail from web" {
   inspect(
-    shape(parse("<https://e.com> <a@e.com>\n").document),
+    shape(@markdown.parse("<https://e.com> <a@e.com>\n").document),
     content=(
       #|(p (auto "https://e.com")" "(auto:mail "a@e.com"))
     ),
@@ -278,7 +286,7 @@ test "autolinks distinguish mail from web" {
 ///|
 test "blockquotes nest blocks" {
   inspect(
-    shape(parse("> quoted\n>\n> - a\n").document),
+    shape(@markdown.parse("> quoted\n>\n> - a\n").document),
     content=(
       #|(quote (p "quoted")(ul (li (p "a"))))
     ),
@@ -288,7 +296,7 @@ test "blockquotes nest blocks" {
 ///|
 test "thematic breaks and hard breaks" {
   inspect(
-    shape(parse("a  \nb\n\n---\n").document),
+    shape(@markdown.parse("a  \nb\n\n---\n").document),
     content=(
       #|(p "a"(br)"b")(hr)
     ),
@@ -299,13 +307,13 @@ test "thematic breaks and hard breaks" {
 /// Off by default, so the builder never has to render a `WikiLink`.
 test "wikilinks stay off unless asked for" {
   inspect(
-    shape(parse("[[target]]").document),
+    shape(@markdown.parse("[[target]]").document),
     content=(
       #|(p "[[target]]")
     ),
   )
   inspect(
-    shape(parse("[[target]]", wikilinks=true).document),
+    shape(@markdown.parse("[[target]]", wikilinks=true).document),
     content=(
       #|(p (wiki target))
     ),
@@ -318,7 +326,7 @@ test "wikilinks stay off unless asked for" {
 /// anything here calls it.
 test "strict mode parses the same shapes" {
   inspect(
-    shape(parse("# T\n\n*a* **b**\n", strict=true).document),
+    shape(@markdown.parse("# T\n\n*a* **b**\n", strict=true).document),
     content=(
       #|(h1 "T")(p (em "a")" "(strong "b"))
     ),

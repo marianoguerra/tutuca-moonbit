@@ -9,10 +9,10 @@
 
 ///|
 pub fn Answers::of_trace(t : @trace.Trace) -> Answers {
-  let by_walk : Map[Int, Array[(String, Int, @tutuca.IntentAnswer)]] = Map([])
+  let by_walk : Map[Int32, Array[(String, Int32, @tutuca.IntentAnswer)]] = Map([])
   // An answer carries no name — it is a reply, and a reply is about a walk —
   // so the name comes from the intent the walk was.
-  let name_of : Map[Int, String] = Map([])
+  let name_of : Map[Int32, String] = Map([])
   for e in t.events {
     match e.op {
       Intent(name~, ..) => if e.walk != 0 { name_of[e.walk] = name }

@@ -59,8 +59,8 @@ pub struct CssFilter {
 /// URLs only — because a host installing this at all is one that knows its
 /// `style` values are not entirely its own.
 pub fn CssFilter::new(
-  policy? : @safecss.CssPolicy = @safecss.CssPolicy::payload(),
-  max_reports? : Int = 64,
+  policy~ : @safecss.CssPolicy = @safecss.CssPolicy::payload(),
+  max_reports~ : Int32 = 64,
 ) -> CssFilter {
   { policy, log: DropLog::new(max_reports~), }
 }
@@ -68,6 +68,14 @@ pub fn CssFilter::new(
 ///|
 pub impl VdomFilter for CssFilter with fn take_reports(self) {
   self.log.take()
+}
+
+///|
+pub extend CssFilter with VdomFilter::{
+  filter_elem_hinted,
+  filter_elem,
+  take_reports,
+  filter_tree,
 }
 
 ///|
@@ -83,7 +91,7 @@ pub fn is_css_attr(name : String) -> Bool {
     return true
   }
   for c in name {
-    if c is ('A'..='Z') {
+    if c is ('A'..<='Z') {
       let lower = name.to_lower()
       return lower == "style" || @safecss.css_properties.contains(lower)
     }

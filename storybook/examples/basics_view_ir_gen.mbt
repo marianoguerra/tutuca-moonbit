@@ -67,18 +67,18 @@ pub fn minimum_viable_component_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn minimum_viable_component_component(
-  name? : String = "MinimumViableComponent",
-  views? : Map[String, @anode.View] = minimum_viable_component_views(),
-  initial? : MinimumViableComponentState = MinimumViableComponentState::zero(),
-  common_style? : String = minimum_viable_component_common_style,
-  global_style? : String = minimum_viable_component_global_style,
+  name~ : String = "MinimumViableComponent",
+  views~ : Map[String, @anode.View] = minimum_viable_component_views(),
+  initial~ : MinimumViableComponentState = MinimumViableComponentState::zero(),
+  common_style~ : String = minimum_viable_component_common_style,
+  global_style~ : String = minimum_viable_component_global_style,
   update? : (MinimumViableComponentState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     MinimumViableComponentState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -123,18 +123,18 @@ pub fn static_view_component_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn static_view_component_component(
-  name? : String = "StaticViewComponent",
-  views? : Map[String, @anode.View] = static_view_component_views(),
-  initial? : StaticViewComponentState = StaticViewComponentState::zero(),
-  common_style? : String = static_view_component_common_style,
-  global_style? : String = static_view_component_global_style,
+  name~ : String = "StaticViewComponent",
+  views~ : Map[String, @anode.View] = static_view_component_views(),
+  initial~ : StaticViewComponentState = StaticViewComponentState::zero(),
+  common_style~ : String = static_view_component_common_style,
+  global_style~ : String = static_view_component_global_style,
   update? : (StaticViewComponentState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     StaticViewComponentState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -216,11 +216,11 @@ pub fn text_directive_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn text_directive_component(
-  name? : String = "TextDirective",
-  views? : Map[String, @anode.View] = text_directive_views(),
-  initial? : TextDirectiveState = TextDirectiveState::zero(),
-  common_style? : String = text_directive_common_style,
-  global_style? : String = text_directive_global_style,
+  name~ : String = "TextDirective",
+  views~ : Map[String, @anode.View] = text_directive_views(),
+  initial~ : TextDirectiveState = TextDirectiveState::zero(),
+  common_style~ : String = text_directive_common_style,
+  global_style~ : String = text_directive_global_style,
   update? : (TextDirectiveState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TextDirectiveState,
   ],
@@ -229,10 +229,10 @@ pub fn text_directive_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -295,18 +295,18 @@ pub fn danger_set_inner_html_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn danger_set_inner_html_component(
-  name? : String = "DangerSetInnerHtml",
-  views? : Map[String, @anode.View] = danger_set_inner_html_views(),
-  initial? : DangerSetInnerHtmlState = DangerSetInnerHtmlState::zero(),
-  common_style? : String = danger_set_inner_html_common_style,
-  global_style? : String = danger_set_inner_html_global_style,
+  name~ : String = "DangerSetInnerHtml",
+  views~ : Map[String, @anode.View] = danger_set_inner_html_views(),
+  initial~ : DangerSetInnerHtmlState = DangerSetInnerHtmlState::zero(),
+  common_style~ : String = danger_set_inner_html_common_style,
+  global_style~ : String = danger_set_inner_html_global_style,
   update? : (DangerSetInnerHtmlState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     DangerSetInnerHtmlState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -360,18 +360,18 @@ pub fn set_inner_md_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn set_inner_md_component(
-  name? : String = "SetInnerMd",
-  views? : Map[String, @anode.View] = set_inner_md_views(),
-  initial? : SetInnerMdState = SetInnerMdState::zero(),
-  common_style? : String = set_inner_md_common_style,
-  global_style? : String = set_inner_md_global_style,
+  name~ : String = "SetInnerMd",
+  views~ : Map[String, @anode.View] = set_inner_md_views(),
+  initial~ : SetInnerMdState = SetInnerMdState::zero(),
+  common_style~ : String = set_inner_md_common_style,
+  global_style~ : String = set_inner_md_global_style,
   update? : (SetInnerMdState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SetInnerMdState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

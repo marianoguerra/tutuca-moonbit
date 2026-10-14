@@ -25,7 +25,10 @@ pub(all) struct Finding {
   location : Location?
   suggestion : Suggestion?
 } derive(Eq, @debug.Debug)
+pub fn Finding::equal(Self, Self) -> Bool
+pub fn Finding::not_equal(Self, Self) -> Bool
 pub fn Finding::to_line(Self, String) -> String
+pub fn Finding::to_repr(Self) -> @debug.Repr
 
 pub(all) enum LintCode {
   UnknownDirective
@@ -45,18 +48,27 @@ pub(all) enum LintCode {
   EventPathUnsafeStep
   InertConstraint
 } derive(Eq, @debug.Debug)
+pub fn LintCode::equal(Self, Self) -> Bool
+pub fn LintCode::not_equal(Self, Self) -> Bool
+pub fn LintCode::to_repr(Self) -> @debug.Repr
 
 pub(all) enum LintLevel {
   Error
   Warn
   Hint
 } derive(Eq, @debug.Debug)
+pub fn LintLevel::equal(Self, Self) -> Bool
+pub fn LintLevel::not_equal(Self, Self) -> Bool
+pub fn LintLevel::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Location {
   line : Int
   column : Int
   offset : Int
 } derive(Eq, @debug.Debug)
+pub fn Location::equal(Self, Self) -> Bool
+pub fn Location::not_equal(Self, Self) -> Bool
+pub fn Location::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Suggestion {
   ReplaceName(from~ : String, to~ : String)
@@ -67,6 +79,9 @@ pub(all) enum Suggestion {
   Rewrite(from~ : String, to~ : String)
   Wrap(from~ : String, to~ : String)
 } derive(Eq, @debug.Debug)
+pub fn Suggestion::equal(Self, Self) -> Bool
+pub fn Suggestion::not_equal(Self, Self) -> Bool
+pub fn Suggestion::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

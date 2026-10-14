@@ -1,6 +1,6 @@
 ///|
 test "personal-site: nothing until init, then the fixture loads and sorts" {
-  let h = @harness.mount(personal_site_module(), "Root")
+  let h = @harness.mount(@examples.personal_site_module(), "Root")
   inspect(h.find_all(".entry-row").length(), content="0")
   h.send_at_root("init")
   // 4 fixture entries; featured-first + newest-first is the default sort
@@ -15,7 +15,7 @@ test "personal-site: nothing until init, then the fixture loads and sorts" {
 
 ///|
 test "personal-site: the facets are the distinct categories and roles" {
-  let h = @harness.mount(personal_site_module(), "Root")
+  let h = @harness.mount(@examples.personal_site_module(), "Root")
   h.send_at_root("init")
   // categories, sorted and de-duped across entries
   debug_inspect(
@@ -36,7 +36,7 @@ test "personal-site: the facets are the distinct categories and roles" {
 
 ///|
 test "personal-site: toggling a category off filters the entries" {
-  let h = @harness.mount(personal_site_module(), "Root")
+  let h = @harness.mount(@examples.personal_site_module(), "Root")
   h.send_at_root("init")
   // enrich composes the margaui classes + the `cat-btn on|off` hooks
   debug_inspect(
@@ -60,7 +60,7 @@ test "personal-site: toggling a category off filters the entries" {
 
 ///|
 test "personal-site: alt-click inverse-solos a selected tag, then solos it" {
-  let h = @harness.mount(personal_site_module(), "Root")
+  let h = @harness.mount(@examples.personal_site_module(), "Root")
   h.send_at_root("init")
   // categories sorted: [Distributed Systems, Programming Languages, Web, WebAssembly]
   // Everything starts selected, so alt-clicking Web (index 2, already selected)
@@ -103,7 +103,7 @@ test "personal-site: alt-click inverse-solos a selected tag, then solos it" {
 
 ///|
 test "personal-site: sort toggles re-order the entries" {
-  let h = @harness.mount(personal_site_module(), "Root")
+  let h = @harness.mount(@examples.personal_site_module(), "Root")
   h.send_at_root("init")
   // default: featured first, newest first -> Tutuca(2024,feat), WASM(2021,feat), ...
   inspect(h.text(".title", nth=0), content="Tutuca")
@@ -127,7 +127,7 @@ test "personal-site: sort toggles re-order the entries" {
 
 ///|
 test "personal-site: Clear Filters appears only when a facet is deselected" {
-  let h = @harness.mount(personal_site_module(), "Root")
+  let h = @harness.mount(@examples.personal_site_module(), "Root")
   h.send_at_root("init")
   // all selected -> @show="$hasActiveFilters" is false
   inspect(h.find_all(".clear-filters").length(), content="0")
@@ -140,7 +140,7 @@ test "personal-site: Clear Filters appears only when a facet is deselected" {
 
 ///|
 test "personal-site: an Entry renders its year, role, categories and alt-urls" {
-  let h = @harness.mount(personal_site_module(), "Root")
+  let h = @harness.mount(@examples.personal_site_module(), "Root")
   h.send_at_root("init")
   // the first entry (Tutuca) is featured, 2024-2026, Author, 2 categories, 1 alt-url
   inspect(h.text(".years"), content="2024-2026")

@@ -3,7 +3,7 @@ package "marianoguerra/tutuca/vdom/wasm"
 
 import {
   "marianoguerra/tutuca/vdom",
-  "mizchi/js/core",
+  "mizchi/js_core",
 }
 
 // Values
@@ -11,9 +11,37 @@ import {
 // Errors
 
 // Types and methods
-pub struct WasmNode(@core.Any)
-pub fn WasmNode::as_any(Self) -> @core.Any
-pub fn WasmNode::of_any(@core.Any) -> Self
+pub struct WasmNode(@js_core.Any)
+pub fn WasmNode::append_child(Self, Self) -> Unit
+pub fn WasmNode::as_any(Self) -> @js_core.Any
+pub fn WasmNode::attribute(Self, String) -> String?
+pub fn WasmNode::char_data(Self) -> String
+pub fn WasmNode::child_node_at(Self, Int) -> Self?
+pub fn WasmNode::child_nodes(Self) -> Array[Self]
+pub fn WasmNode::create_comment(Self, String) -> Self
+pub fn WasmNode::create_element(Self, String, @vdom.Ns?, String?) -> Self
+pub fn WasmNode::create_fragment(Self) -> Self
+pub fn WasmNode::create_text(Self, String) -> Self
+pub fn WasmNode::first_child(Self) -> Self?
+pub fn WasmNode::get_inner_html(Self) -> String
+pub fn WasmNode::has_property(Self, String) -> Bool
+pub fn WasmNode::insert_before(Self, Self, Self?) -> Unit
+pub fn WasmNode::is_same_node(Self, Self) -> Bool
+pub fn WasmNode::namespace_uri(Self) -> @vdom.Ns?
+pub fn WasmNode::next_sibling(Self) -> Self?
+pub fn WasmNode::node_kind(Self) -> Int
+pub fn WasmNode::of_any(@js_core.Any) -> Self
+pub fn WasmNode::parent_node(Self) -> Self?
+pub fn WasmNode::prev_sibling(Self) -> Self?
+pub fn WasmNode::remove_attribute(Self, String) -> Unit
+pub fn WasmNode::remove_child(Self, Self) -> Unit
+pub fn WasmNode::replace_child(Self, Self, Self) -> Unit
+pub fn WasmNode::replace_children(Self) -> Unit
+pub fn WasmNode::set_attribute(Self, String, String) -> Unit
+pub fn WasmNode::set_data(Self, String) -> Unit
+pub fn WasmNode::set_inner_html(Self, String) -> Unit
+pub fn WasmNode::set_property(Self, String, @vdom.AttrValue) -> Bool
+pub fn WasmNode::tag_name(Self) -> String
 pub impl @vdom.DomNode for WasmNode
 pub impl @vdom.DomWalk for WasmNode
 

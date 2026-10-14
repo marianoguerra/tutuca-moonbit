@@ -117,7 +117,7 @@ fn B::num(self : B, n : Double) -> @wast.Node {
 }
 
 ///|
-fn B::int_(self : B, n : Int) -> @wast.Node {
+fn B::int_(self : B, n : Int32) -> @wast.Node {
   self.made(Int(n.to_string()))
 }
 
@@ -133,7 +133,7 @@ fn B::bind(
   name : String,
   value : @wast.Node,
   typ? : @wast.Type,
-  mutable? : Bool = false,
+  mutable~ : Bool = false,
 ) -> @wast.Node {
   self.made(
     Bind(

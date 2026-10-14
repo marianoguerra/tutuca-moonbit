@@ -467,7 +467,7 @@ pub impl @transactor.Intents for Registry with fn intents_for(self, _leaf, name)
 
 ///|
 /// A handler that declines, counting that it was asked.
-fn passer(count : Ref[Int]) -> @tutuca.IntentFn {
+fn passer(count : Ref[Int32]) -> @tutuca.IntentFn {
   IntentFn((_call, answer) => {
     count.val = count.val + 1
     answer(Pass)
@@ -476,7 +476,7 @@ fn passer(count : Ref[Int]) -> @tutuca.IntentFn {
 
 ///|
 test "a lex handler answers, and the answer reaches the sender" {
-  let asked : Ref[Int] = { val: 0, }
+  let asked : Ref[Int32] = { val: 0, }
   let reg = Registry::{
     handlers: [
       IntentFn((call, answer) => {
@@ -494,7 +494,7 @@ test "a lex handler answers, and the answer reaches the sender" {
 
 ///|
 test "a declining lex handler hands the intent to the next one, and costs no transaction" {
-  let passed : Ref[Int] = { val: 0, }
+  let passed : Ref[Int32] = { val: 0, }
   let reg = Registry::{
     handlers: [
       passer(passed),
@@ -525,7 +525,7 @@ test "a declining lex handler hands the intent to the next one, and costs no tra
 
 ///|
 test "a lex leg that answers nothing falls through to the next leg" {
-  let passed : Ref[Int] = { val: 0, }
+  let passed : Ref[Int32] = { val: 0, }
   let reg = Registry::{ handlers: [passer(passed), passer(passed)], }
   let tx = @transactor.Transactor::new(tree("none", "reply"), intents=reg)
   let _ = tx.push_send(item_at(), "go-lex-first", [])
@@ -561,7 +561,7 @@ test "INTENT_DEPTH cuts a walk that will not end, and the sender is told" {
   // components; this is the same counter reached the cheap way, and it is the
   // exhaustion path that has to run afterwards — a sender that asked for an
   // answer must learn something rather than wait forever.
-  let passed : Ref[Int] = { val: 0, }
+  let passed : Ref[Int32] = { val: 0, }
   let handlers : Array[@tutuca.IntentFn] = []
   for _ in 0..<(@transactor.INTENT_DEPTH + 10) {
     handlers.push(passer(passed))

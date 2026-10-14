@@ -55,6 +55,9 @@ pub(all) struct NoIntents {}
 pub impl Intents for NoIntents
 
 ///|
+pub extend NoIntents with Intents::{intents_for}
+
+///|
 /// The name-resolution seam: the two environments a route walks, for the
 /// questions that are not "who handles this intent".
 ///
@@ -83,7 +86,7 @@ pub(open) trait Names {
     root : @tutuca.Value,
     at : @tutuca.DispatchPath,
     name : String,
-  ) -> Int? = _
+  ) -> Int32? = _
   /// The `lex` leg for a VALUE: the app-root-relative path registered under
   /// `name` in the scope of the component at `at`.
   fn lex_value(
@@ -99,9 +102,9 @@ pub(open) trait Names {
     root : @tutuca.Value,
     at : @tutuca.DispatchPath,
     name : String,
-  ) -> Int? = _
+  ) -> Int32? = _
   /// Build an instance of the component `id` names.
-  fn build(Self, id : Int, args : Map[String, @tutuca.Value]) -> @tutuca.Value? = _
+  fn build(Self, id : Int32, args : Map[String, @tutuca.Value]) -> @tutuca.Value? = _
 }
 
 ///|
@@ -138,6 +141,9 @@ pub(all) struct NoNames {}
 pub impl Names for NoNames
 
 ///|
+pub extend NoNames with Names::{dyn_value, dyn_type, build, lex_type, lex_value}
+
+///|
 /// How many positions one intent may walk before the runtime cuts it off
 ///.
 ///
@@ -146,7 +152,7 @@ pub impl Names for NoNames
 /// means two components are forwarding to each other, a loop only a multi-hop
 /// walk can build. It is a different number from `settle`'s `max_turns`, which
 /// bounds the whole QUEUE rather than one chain, and it does not replace it.
-pub const INTENT_DEPTH : Int = 64
+pub const INTENT_DEPTH : Int32 = 64
 
 ///|
 /// Per-transaction completion scope (WaitGroup style): a counter of
@@ -154,7 +160,7 @@ pub const INTENT_DEPTH : Int = 64
 /// one per derived child or in-flight request. Self settles when the handler
 /// runs; the subtree settles when the counter reaches zero.
 pub struct Completion {
-  mut pending : Int
+  mut pending : Int32
   mut self_settled : Bool
   mut subtree_settled : Bool
   mut self_released : Bool
@@ -204,6 +210,12 @@ pub(all) enum ObserveMatch {
 } derive(Debug, Eq)
 
 ///|
+pub extend ObserveMatch with Debug::{to_repr}
+
+///|
+pub extend ObserveMatch with Eq::{not_equal, equal}
+
+///|
 /// How the handler was resolved, as the wire/display word.
 declare pub fn ObserveMatch::label(self : ObserveMatch) -> String
 
@@ -248,17 +260,17 @@ pub(all) struct ObserveRecord {
   matched : ObserveMatch
   before : @tutuca.Value?
   after : @tutuca.Value?
-  seq : Int
+  seq : Int32
   /// The intent walk this is one hop of, 0 for a message. Shared by every hop
   /// of one intent and by the answer it produced, which is what lets a reader
   /// group a walk instead of guessing at it from names.
-  walk : Int
+  walk : Int32
   /// The `seq` of the record whose handler caused this one, 0 for none.
   ///
   /// `Transaction.parent` has always existed and has always been private, so an
   /// activity log could only ever be a flat list — a cascade of twelve sends
   /// from one click read as twelve unrelated rows. This is that link, projected.
-  parent_seq : Int
+  parent_seq : Int32
 }
 
 ///|
@@ -282,7 +294,7 @@ pub(all) struct Dispatched {
   /// names the item this was addressed to.
   at : @tutuca.Path
   /// The intent walk this belongs to; 0 for a message.
-  walk : Int
+  walk : Int32
   /// The `seq` of the dispatch whose handler caused this one, 0 for none.
   ///
   /// Read at PUSH time, which is why it is a different number from
@@ -290,7 +302,7 @@ pub(all) struct Dispatched {
   /// parent's observation is emitted after its handler returns, and by then the
   /// child it pushed is already on the queue. Each stream is internally
   /// consistent, and a consumer reads one or the other.
-  parent : Int
+  parent : Int32
   /// The walk's options, and `IntentOpts::new()` for a message.
   ///
   /// On the dispatch rather than only on the walk because they decide the NAME
@@ -301,8 +313,8 @@ pub(all) struct Dispatched {
   /// Dispatches pushed between two settles share a turn. One DOM event with two
   /// handlers is one turn, which is the grouping a rerun has to reproduce to
   /// batch the way the recording did.
-  turn : Int
-  seq : Int
+  turn : Int32
+  seq : Int32
 }
 
 ///|
@@ -314,17 +326,17 @@ pub(all) struct Dispatched {
 /// until the host says it. Without this an observer sees an intent climb the
 /// tree, stop, and an answer appear from nowhere.
 pub(all) struct Offered {
-  walk : Int
+  walk : Int32
   /// The `seq` of the dispatch that raised the intent.
-  parent : Int
+  parent : Int32
   name : String
   args : Array[@tutuca.Value]
   /// The sender's position — who is asking, which is what a host gates on.
   from : @tutuca.Path
   /// Which handler in the lexical chain. A `Pass` and the next handler after it
   /// are two offers and not one, because they are two decisions.
-  nth : Int
-  seq : Int
+  nth : Int32
+  seq : Int32
 }
 
 ///|
@@ -335,12 +347,12 @@ pub(all) struct Offered {
 /// replay a host that answered late, answered differently the second time, or
 /// did not answer at all.
 pub(all) struct Answered {
-  walk : Int
+  walk : Int32
   /// The `seq` of the dispatch that raised the intent.
-  parent : Int
-  nth : Int
+  parent : Int32
+  nth : Int32
   answer : @tutuca.IntentAnswer
-  seq : Int
+  seq : Int32
 }
 
 ///|
@@ -408,13 +420,28 @@ pub(all) struct NullRecorder {}
 pub impl Recorder for NullRecorder
 
 ///|
+pub extend NullRecorder with Recorder::{
+  on_observed,
+  on_answer,
+  recording,
+  on_offered,
+  on_dispatch,
+}
+
+///|
 /// Outcome of one bounded settle pass. `pending` tells the caller whether it
 /// must schedule another pass; a non-positive budget processes nothing and
 /// reports the queue unchanged.
 pub(all) struct SettleResult {
-  processed : Int
+  processed : Int32
   pending : Bool
 } derive(Eq, Debug)
+
+///|
+pub extend SettleResult with Eq::{not_equal, equal}
+
+///|
+pub extend SettleResult with Debug::{to_repr}
 
 ///|
 /// One queued dispatch, the buckets collapsed onto `HandlerBucket`: `path`
@@ -463,21 +490,21 @@ pub struct Transaction {
   priv mut obs_after : @tutuca.Value?
   /// The `seq` this transaction's record was emitted under, 0 before it ran or
   /// when nothing was watching. Read by its CHILDREN, to say what caused them.
-  priv mut obs_seq : Int
+  priv mut obs_seq : Int32
   /// The `seq` this dispatch was recorded under when it entered the queue, 0
   /// when nothing was recording. Read by the transactions this one PUSHES, to
   /// say what caused them.
-  priv mut push_seq : Int
+  priv mut push_seq : Int32
   /// The walk's `raise_seq`, for a transaction the walk produced rather than a
   /// handler. Its cause, when `parent` is None and there still was one.
-  priv walk_parent : Int
+  priv walk_parent : Int32
   /// Which walk this belongs to, 0 for none.
   ///
   /// Not read off `walk`, and the difference matters: `walk` is what a
   /// transaction ADVANCES when it finishes, so an intent's answer must not
   /// carry one or it would advance a walk that is already over. The answer
   /// still belongs to the walk, and this is how it says so.
-  priv walk_id : Int
+  priv walk_id : Int32
 }
 
 ///|
@@ -500,20 +527,20 @@ pub struct Transactor {
   priv names : &Names
   mut root : @tutuca.Value
   priv mut queue : Array[Transaction]
-  priv mut queue_head : Int
+  priv mut queue_head : Int32
   priv change_subs : Array[(@tutuca.Value, @tutuca.Value) -> Unit]
   priv mut draining : Bool
   priv observers : Array[(ObserveRecord) -> Unit]
-  priv mut obs_seq : Int
+  priv mut obs_seq : Int32
   priv drain_subs : Array[() -> Unit]
   /// The capture strategy, `NullRecorder` until somebody swaps one in.
   priv mut recorder : &Recorder
   /// Hands out `IntentWalk.id`.
-  priv mut walk_seq : Int
+  priv mut walk_seq : Int32
   /// Bumped at the end of every outermost `settle`, so everything pushed
   /// between two drains shares a number. The grouping falls out of `draining`
   /// and nothing outside this package has to know it exists.
-  priv mut turn : Int
+  priv mut turn : Int32
 }
 
 ///|
@@ -678,19 +705,19 @@ pub struct IntentWalk {
   /// recording. Every hop, every offer, every answer and the reply message
   /// point back at it — a walk is not a transaction, so this is the only thing
   /// its consequences have to name as their cause.
-  mut raise_seq : Int
+  mut raise_seq : Int32
   /// This walk's identity, unique within the transactor.
   ///
   /// A walk had none, so an answer could not name the intent it answered: an
   /// observer saw an intent climb and an answer arrive and had to infer the
   /// pairing from the name. A recorded trace cannot infer it at all, because
   /// two walks of the same intent may be in flight at once.
-  id : Int
+  id : Int32
   name : String
   /// The legs, in the order written. `[Dyn, Lex]` when nothing said otherwise.
   mut route : Array[@tutuca.Leg]
   /// Which leg is being walked.
-  mut leg : Int
+  mut leg : Int32
   /// Where the NEXT `dyn` hop runs. Starts at the sender's own path and is
   /// popped before each hop, which is how "the `dyn` leg starts at the parent"
   /// is spelled: a component never re-enters its own handler.
@@ -714,7 +741,7 @@ pub struct IntentWalk {
   /// Ended by `stop`: served, and no answer.
   mut stopped : Bool
   /// Positions visited, against `INTENT_DEPTH`.
-  mut hops : Int
+  mut hops : Int32
 }
 
 ///|
@@ -736,7 +763,7 @@ declare pub fn Transactor::push_intent(
 /// making invalid batching explicit without trapping a caller in a loop.
 declare pub fn Transactor::settle(
   self : Transactor,
-  max_turns? : Int,
+  max_turns? : Int32,
 ) -> SettleResult
 
 ///|

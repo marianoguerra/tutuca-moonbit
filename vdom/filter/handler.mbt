@@ -45,7 +45,7 @@ pub struct HandlerFilter {
 }
 
 ///|
-pub fn HandlerFilter::new(max_reports? : Int = 64) -> HandlerFilter {
+pub fn HandlerFilter::new(max_reports~ : Int32 = 64) -> HandlerFilter {
   { log: DropLog::new(max_reports~), }
 }
 
@@ -53,6 +53,14 @@ pub fn HandlerFilter::new(max_reports? : Int = 64) -> HandlerFilter {
 /// Everything dropped since the last call, and clears the log.
 pub impl VdomFilter for HandlerFilter with fn take_reports(self) {
   self.log.take()
+}
+
+///|
+pub extend HandlerFilter with VdomFilter::{
+  filter_elem_hinted,
+  filter_elem,
+  take_reports,
+  filter_tree,
 }
 
 ///|

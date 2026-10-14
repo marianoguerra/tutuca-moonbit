@@ -176,18 +176,18 @@ pub fn spec_field_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn spec_field_component(
-  name? : String = "SpecField",
-  views? : Map[String, @anode.View] = spec_field_views(),
-  initial? : SpecFieldState = SpecFieldState::zero(),
-  common_style? : String = spec_field_common_style,
-  global_style? : String = spec_field_global_style,
+  name~ : String = "SpecField",
+  views~ : Map[String, @anode.View] = spec_field_views(),
+  initial~ : SpecFieldState = SpecFieldState::zero(),
+  common_style~ : String = spec_field_common_style,
+  global_style~ : String = spec_field_global_style,
   update? : (SpecFieldState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SpecFieldState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -270,18 +270,18 @@ pub fn spec_msg_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn spec_msg_component(
-  name? : String = "SpecMsg",
-  views? : Map[String, @anode.View] = spec_msg_views(),
-  initial? : SpecMsgState = SpecMsgState::zero(),
-  common_style? : String = spec_msg_common_style,
-  global_style? : String = spec_msg_global_style,
+  name~ : String = "SpecMsg",
+  views~ : Map[String, @anode.View] = spec_msg_views(),
+  initial~ : SpecMsgState = SpecMsgState::zero(),
+  common_style~ : String = spec_msg_common_style,
+  global_style~ : String = spec_msg_global_style,
   update? : (SpecMsgState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SpecMsgState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -380,18 +380,18 @@ pub fn spec_rule_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn spec_rule_component(
-  name? : String = "SpecRule",
-  views? : Map[String, @anode.View] = spec_rule_views(),
-  initial? : SpecRuleState = SpecRuleState::zero(),
-  common_style? : String = spec_rule_common_style,
-  global_style? : String = spec_rule_global_style,
+  name~ : String = "SpecRule",
+  views~ : Map[String, @anode.View] = spec_rule_views(),
+  initial~ : SpecRuleState = SpecRuleState::zero(),
+  common_style~ : String = spec_rule_common_style,
+  global_style~ : String = spec_rule_global_style,
   update? : (SpecRuleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SpecRuleState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -444,18 +444,18 @@ pub fn spec_doc_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn spec_doc_component(
-  name? : String = "SpecDoc",
-  views? : Map[String, @anode.View] = spec_doc_views(),
-  initial? : SpecDocState = SpecDocState::zero(),
-  common_style? : String = spec_doc_common_style,
-  global_style? : String = spec_doc_global_style,
+  name~ : String = "SpecDoc",
+  views~ : Map[String, @anode.View] = spec_doc_views(),
+  initial~ : SpecDocState = SpecDocState::zero(),
+  common_style~ : String = spec_doc_common_style,
+  global_style~ : String = spec_doc_global_style,
   update? : (SpecDocState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SpecDocState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -556,18 +556,18 @@ fn spec_viewer_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn spec_viewer_component(
-  name? : String = "SpecViewer",
-  views? : Map[String, @anode.View] = spec_viewer_views(),
-  initial? : SpecViewerState = SpecViewerState::zero(),
-  common_style? : String = spec_viewer_common_style,
-  global_style? : String = spec_viewer_global_style,
+  name~ : String = "SpecViewer",
+  views~ : Map[String, @anode.View] = spec_viewer_views(),
+  initial~ : SpecViewerState = SpecViewerState::zero(),
+  common_style~ : String = spec_viewer_common_style,
+  global_style~ : String = spec_viewer_global_style,
   update? : (SpecViewerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SpecViewerState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -687,18 +687,18 @@ fn spec_source_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn spec_source_component(
-  name? : String = "SpecSource",
-  views? : Map[String, @anode.View] = spec_source_views(),
-  initial? : SpecSourceState = SpecSourceState::zero(),
-  common_style? : String = spec_source_common_style,
-  global_style? : String = spec_source_global_style,
+  name~ : String = "SpecSource",
+  views~ : Map[String, @anode.View] = spec_source_views(),
+  initial~ : SpecSourceState = SpecSourceState::zero(),
+  common_style~ : String = spec_source_common_style,
+  global_style~ : String = spec_source_global_style,
   update? : (SpecSourceState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SpecSourceState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

@@ -14,7 +14,7 @@
 /// Try to parse emphasis or strong
 fn InlineParser::try_parse_emphasis(
   self : InlineParser,
-  start : Int,
+  start : Int32,
   marker_char : Char,
 ) -> Inline? {
   // Count opening markers
@@ -72,7 +72,7 @@ fn InlineParser::try_parse_emphasis(
 fn InlineParser::parse_until_closing_marker(
   self : InlineParser,
   marker_char : Char,
-  marker_count : Int,
+  marker_count : Int32,
 ) -> Array[Inline] {
   let children : Array[Inline] = []
   let text_buf = StringBuilder()

@@ -149,7 +149,7 @@ fn[N : DomNode] morph_children(
     }
   }
   let dom_nodes = parent.child_nodes()
-  let old_key_map : Map[String, Int] = Map([])
+  let old_key_map : Map[String, Int32] = Map([])
   for i in 0..<old_childs.length() {
     if old_childs[i].key() is Some(k) {
       old_key_map[k] = i

@@ -142,7 +142,7 @@ pub fn build_dispatch_stack(
     fn enter_binds_at(
       st : RenderStack,
       render_path : @tutuca.DispatchPath,
-      at : Int,
+      at : Int32,
     ) -> (RenderStack, @tutuca.DispatchPath) {
       let mut st = st
       let mut render_path = render_path

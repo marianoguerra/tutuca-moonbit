@@ -160,11 +160,11 @@ fn traffic_light_inline_update(
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn traffic_light_component(
-  name? : String = "TrafficLight",
-  views? : Map[String, @anode.View] = traffic_light_views(),
-  initial? : TrafficLightState = TrafficLightState::zero(),
-  common_style? : String = traffic_light_common_style,
-  global_style? : String = traffic_light_global_style,
+  name~ : String = "TrafficLight",
+  views~ : Map[String, @anode.View] = traffic_light_views(),
+  initial~ : TrafficLightState = TrafficLightState::zero(),
+  common_style~ : String = traffic_light_common_style,
+  global_style~ : String = traffic_light_global_style,
   update? : (TrafficLightState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TrafficLightState,
   ],
@@ -173,10 +173,10 @@ pub fn traffic_light_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -385,18 +385,18 @@ pub fn tabbed_u_i_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn tabbed_u_i_component(
-  name? : String = "TabbedUI",
-  views? : Map[String, @anode.View] = tabbed_u_i_views(),
-  initial? : TabbedUIState = TabbedUIState::zero(),
-  common_style? : String = tabbed_u_i_common_style,
-  global_style? : String = tabbed_u_i_global_style,
+  name~ : String = "TabbedUI",
+  views~ : Map[String, @anode.View] = tabbed_u_i_views(),
+  initial~ : TabbedUIState = TabbedUIState::zero(),
+  common_style~ : String = tabbed_u_i_common_style,
+  global_style~ : String = tabbed_u_i_global_style,
   update? : (TabbedUIState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TabbedUIState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -485,11 +485,11 @@ pub fn list_and_filter_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn list_and_filter_component(
-  name? : String = "ListAndFilter",
-  views? : Map[String, @anode.View] = list_and_filter_views(),
-  initial? : ListAndFilterState = ListAndFilterState::zero(),
-  common_style? : String = list_and_filter_common_style,
-  global_style? : String = list_and_filter_global_style,
+  name~ : String = "ListAndFilter",
+  views~ : Map[String, @anode.View] = list_and_filter_views(),
+  initial~ : ListAndFilterState = ListAndFilterState::zero(),
+  common_style~ : String = list_and_filter_common_style,
+  global_style~ : String = list_and_filter_global_style,
   update? : (ListAndFilterState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ListAndFilterState,
   ],
@@ -500,10 +500,10 @@ pub fn list_and_filter_component(
     @tutuca.Value,
     &@tutuca.Stack,
   ) -> Bool)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

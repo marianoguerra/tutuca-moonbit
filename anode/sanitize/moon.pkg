@@ -15,7 +15,6 @@ import {
   // not write wants anyway — see `Sanitizer::css`.
   "marianoguerra/tutuca/anode/sanitize/css" @safecss,
   "moonbitlang/core/set",
-  "moonbitlang/core/debug",
 }
 
 import {

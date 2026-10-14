@@ -15,6 +15,12 @@ pub(all) struct CorpusLabel {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend CorpusLabel with Eq::{not_equal, equal}
+
+///|
+pub extend CorpusLabel with @debug.Debug::{to_repr}
+
+///|
 /// The state of the Corpus component.
 ///
 /// Declared with `field` in the `spec:` section. Adding one there adds it
@@ -22,13 +28,13 @@ pub(all) struct CorpusLabel {
 /// this struct lacks fails generation.
 pub(all) struct CorpusState {
   name : String
-  count : Int
+  count : Int32
   ratio : Double
   ok : Bool
   items : Array[String]
   labels : Array[CorpusLabel]
   tags : Map[String, Bool]
-  page : Int
+  page : Int32
   note : String?
 }
 
@@ -56,12 +62,14 @@ pub fn CorpusState::zero() -> CorpusState {
 
 ///|
 /// The `Label` record as a `@tutuca.Value`.
+#warnings("-unused_value")
 fn corpus_label_to_value(x : CorpusLabel) -> @tutuca.Value {
   Map({ "text": Str(x.text), "done": Bool(x.done) })
 }
 
 ///|
 /// The `Label` record back out. None on a shape mismatch.
+#warnings("-unused_value")
 fn corpus_label_of_value(v : @tutuca.Value) -> CorpusLabel? {
   guard v is Map(m) else { return None }
   guard m.get("text") is Some(Str(f_text)) else { return None }
@@ -165,9 +173,9 @@ impl @component.Fields for CorpusState with fn decode(f) {
 pub(all) enum CorpusMsg {
   Case0
   Case1
-  Case2(Int)
+  Case2(Int32)
   Case3(String)
-  Case4(Int)
+  Case4(Int32)
   Case5(String)
   Case6(String)
   Case7(String)
@@ -175,13 +183,13 @@ pub(all) enum CorpusMsg {
   Case9(String)
   Case10
   Case11
-  Case12(Int)
+  Case12(Int32)
   Case13
   Case14
   Case15
   Case16
   Case17
-  Case26(Int)
+  Case26(Int32)
   Case27(String)
   Case28(String)
   /// A message the schema does not declare, or a declared name whose
@@ -316,8 +324,8 @@ pub fn CorpusMsg::send(self : CorpusMsg, ctx : &@tutuca.Ctx) -> Unit {
 pub(all) enum CorpusIntent {
   Case18(String)
   Case19(String)
-  Case20(Int)
-  Case21(Int)
+  Case20(Int32)
+  Case21(Int32)
   Case22(String)
   Case23(String)
   Case24(String)
@@ -402,7 +410,7 @@ pub fn CorpusIntent::to_dispatch(
 pub fn CorpusIntent::dispatch(
   self : CorpusIntent,
   ctx : &@tutuca.Ctx,
-  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
+  opts~ : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
 ) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.intent(name, args, opts)

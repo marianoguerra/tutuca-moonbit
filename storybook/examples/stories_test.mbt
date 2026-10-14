@@ -1,8 +1,8 @@
 ///|
 test "stories() covers the example registry and groups into sections" {
-  let all = stories()
+  let all = @examples.stories()
   assert_true(all.length() >= 40)
-  let sections = @sb.sections_of(all, order=section_order)
+  let sections = @sb.sections_of(all, order=@examples.section_order)
   // curated sections come first and are non-empty
   assert_true(sections.length() >= 5)
   assert_eq(sections[0].title, "Learn")

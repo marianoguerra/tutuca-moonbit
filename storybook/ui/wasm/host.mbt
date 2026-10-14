@@ -35,7 +35,7 @@ pub let default_theme_base_url : String = "https://marianoguerra.github.io/marga
 /// URL is the only thing that can answer for it — so each list has one entry.
 /// A host with more to say adds its own names through `mount`'s `intents~`.
 pub fn url_request_handlers(
-  theme_base_url? : String = default_theme_base_url,
+  theme_base_url~ : String = default_theme_base_url,
 ) -> Map[String, Array[@component.IntentFn]] {
   {
     "load_state": [
@@ -186,7 +186,7 @@ fn parse_query(search : String) -> Map[String, String] {
 /// empty ones, leave keys the snapshot doesn't mention (e.g. `theme` while the
 /// filter changes) untouched — then push or replace the history entry. Built as
 /// a string and handed to history.pushState (no URL/URLSearchParams constructor,
-/// which `mizchi/js/core` doesn't expose on wasm-gc).
+/// which `mizchi/js_core` doesn't expose on wasm-gc).
 fn write_url(m : Map[String, @tutuca.Value], push : Bool) -> Unit {
   let g = @core.global_this()
   let cur = parse_query(g._get("location")._get("search").to_string())
@@ -224,16 +224,16 @@ fn write_url(m : Map[String, @tutuca.Value], push : Bool) -> Unit {
 /// clock) is answered from here.
 pub fn mount(
   sections : Array[@sb.Section],
-  root_id? : String = "app",
-  themes? : Array[String] = @sbui.margaui_themes(),
+  root_id~ : String = "app",
+  themes~ : Array[String] = @sbui.margaui_themes(),
   /// The tabs beside Story. NONE by default, and that is a linking decision
   /// rather than a taste one: this package imports no panel layer, so a page
   /// that wants stories and nothing else carries no inspector, no recorder and
   /// no fuzz driver in its wasm. `storybook/ui/panels/wasm`'s `all()` is the
   /// standard set, and asking for it is what pulls it in.
-  panels? : @sbui.PanelSet[@wdom.WasmNode] = @sbui.PanelSet::none(),
-  intents? : Map[String, Array[@component.IntentFn]] = Map([]),
-  theme_base_url? : String = default_theme_base_url,
+  panels~ : @sbui.PanelSet[@wdom.WasmNode] = @sbui.PanelSet::none(),
+  intents~ : Map[String, Array[@component.IntentFn]] = Map([]),
+  theme_base_url~ : String = default_theme_base_url,
 ) -> @app.App[@wdom.WasmNode]? {
   let doc = @wglue.document()
   guard @wglue.element_by_id(doc, root_id) is Some(root) else {
@@ -302,7 +302,7 @@ pub fn refresh_margaui() -> Unit {
 /// version that does.
 pub fn on_event(
   ev : @core.Any,
-  before? : (@wdom.WasmNode, String) -> Bool = (_node, _name) => false,
+  before~ : (@wdom.WasmNode, String) -> Bool = (_node, _name) => false,
 ) -> Unit {
   @wglue.on_event(ev, before~)
 }

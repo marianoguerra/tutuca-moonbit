@@ -313,7 +313,7 @@ fn check_where_cycles(
     }
   }
   // 0 unvisited, 1 on the stack, 2 done.
-  let mark : Map[String, Int] = Map([])
+  let mark : Map[String, Int32] = Map([])
   let stack : Array[String] = []
   fn walk(name : String) -> Unit raise DefError {
     if mark.get(name) is Some(2) {

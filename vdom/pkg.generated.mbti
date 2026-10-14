@@ -43,15 +43,21 @@ pub(all) enum AttrValue {
   Svg(String)
   Data(Json)
 } derive(Eq, @debug.Debug)
+pub fn AttrValue::equal(Self, Self) -> Bool
 pub fn AttrValue::int(Int) -> Self
+pub fn AttrValue::not_equal(Self, Self) -> Bool
 pub fn AttrValue::to_attr_string(Self) -> String
+pub fn AttrValue::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Ns {
   Svg
   MathMl
   Other(String)
 } derive(Eq, @debug.Debug)
+pub fn Ns::equal(Self, Self) -> Bool
 pub fn Ns::from_uri(String) -> Self
+pub fn Ns::not_equal(Self, Self) -> Bool
+pub fn Ns::to_repr(Self) -> @debug.Repr
 pub fn Ns::to_uri(Self) -> String
 
 pub(all) struct RenderOpts[N] {
@@ -72,6 +78,9 @@ pub(all) struct VElem {
   key : String?
   ns : Ns?
 } derive(Eq, @debug.Debug)
+pub fn VElem::equal(Self, Self) -> Bool
+pub fn VElem::not_equal(Self, Self) -> Bool
+pub fn VElem::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Vdom {
   Text(String)
@@ -79,8 +88,11 @@ pub(all) enum Vdom {
   Fragment(Array[Vdom])
   Node(VElem)
 } derive(Eq, @debug.Debug)
+pub fn Vdom::equal(Self, Self) -> Bool
 pub fn Vdom::is_equal_to(Self, Self) -> Bool
 pub fn Vdom::node_type(Self) -> Int
+pub fn Vdom::not_equal(Self, Self) -> Bool
+pub fn Vdom::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

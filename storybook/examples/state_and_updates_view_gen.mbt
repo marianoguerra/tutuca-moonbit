@@ -15,7 +15,7 @@
 /// this struct lacks fails generation.
 pub(all) struct AttributeBindingState {
   str : String
-  num : Int
+  num : Int32
   bool : Bool
   not_set : @tutuca.Value
 }
@@ -376,7 +376,7 @@ impl @component.Fields for EventModifiersState with fn schema() {
 /// this struct lacks fails generation.
 pub(all) struct ShowHideState {
   is_open : Bool
-  count : Int
+  count : Int32
 }
 
 ///|
@@ -496,6 +496,12 @@ pub let show_hide_global_style : String = ""
 pub(all) enum ShowHideCompute {
   Label
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend ShowHideCompute with Eq::{not_equal, equal}
+
+///|
+pub extend ShowHideCompute with @debug.Debug::{to_repr}
 
 ///|
 pub fn ShowHideCompute::name(self : ShowHideCompute) -> String {

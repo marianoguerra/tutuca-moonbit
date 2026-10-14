@@ -110,18 +110,18 @@ pub fn alt_url_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn alt_url_component(
-  name? : String = "AltUrl",
-  views? : Map[String, @anode.View] = alt_url_views(),
-  initial? : AltUrlState = AltUrlState::zero(),
-  common_style? : String = alt_url_common_style,
-  global_style? : String = alt_url_global_style,
+  name~ : String = "AltUrl",
+  views~ : Map[String, @anode.View] = alt_url_views(),
+  initial~ : AltUrlState = AltUrlState::zero(),
+  common_style~ : String = alt_url_common_style,
+  global_style~ : String = alt_url_global_style,
   update? : (AltUrlState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     AltUrlState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -267,11 +267,11 @@ pub fn ps_entry_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn ps_entry_component(
-  name? : String = "PsEntry",
-  views? : Map[String, @anode.View] = ps_entry_views(),
-  initial? : PsEntryState = PsEntryState::zero(),
-  common_style? : String = ps_entry_common_style,
-  global_style? : String = ps_entry_global_style,
+  name~ : String = "PsEntry",
+  views~ : Map[String, @anode.View] = ps_entry_views(),
+  initial~ : PsEntryState = PsEntryState::zero(),
+  common_style~ : String = ps_entry_common_style,
+  global_style~ : String = ps_entry_global_style,
   update? : (PsEntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     PsEntryState,
   ],
@@ -288,10 +288,10 @@ pub fn ps_entry_component(
     @tutuca.Value,
     &@tutuca.Stack,
   ) -> Unit)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -606,11 +606,11 @@ fn root_inline_update(
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn root_component(
-  name? : String = "Root",
-  views? : Map[String, @anode.View] = root_views(),
-  initial? : RootState = RootState::zero(),
-  common_style? : String = root_common_style,
-  global_style? : String = root_global_style,
+  name~ : String = "Root",
+  views~ : Map[String, @anode.View] = root_views(),
+  initial~ : RootState = RootState::zero(),
+  common_style~ : String = root_common_style,
+  global_style~ : String = root_global_style,
   update? : (RootState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     RootState,
   ],
@@ -630,10 +630,10 @@ pub fn root_component(
     @tutuca.Value,
     &@tutuca.Stack,
   ) -> Unit)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

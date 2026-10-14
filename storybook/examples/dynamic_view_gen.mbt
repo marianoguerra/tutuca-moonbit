@@ -381,6 +381,9 @@ impl @component.Fields for SheetState with fn schema() {
 pub(all) struct ToolbarState {} derive(Default)
 
 ///|
+pub extend ToolbarState with Default::{default}
+
+///|
 /// The zero state: every field at its type's empty value.
 ///
 /// The `spec:` section states no defaults here — a default is a value,
@@ -552,6 +555,12 @@ pub let workspace_global_style : String = ""
 pub(all) enum WorkspaceCompute {
   SheetTitle
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend WorkspaceCompute with Eq::{not_equal, equal}
+
+///|
+pub extend WorkspaceCompute with @debug.Debug::{to_repr}
 
 ///|
 pub fn WorkspaceCompute::name(self : WorkspaceCompute) -> String {

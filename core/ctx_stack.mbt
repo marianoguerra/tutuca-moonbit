@@ -30,3 +30,15 @@ pub(all) struct CtxStack(&Ctx)
 pub impl Stack for CtxStack with fn lookup_dynamic(self, name) {
   self.0.lookup(name, LookupOpts::new())
 }
+
+///|
+pub extend CtxStack with Stack::{
+  lookup_bind,
+  lookup_method,
+  lookup_trigger,
+  lookup_dynamic,
+  lookup_storage,
+  lookup_bare,
+  lookup_event_path,
+  lookup_member,
+}

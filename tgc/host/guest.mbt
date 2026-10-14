@@ -44,27 +44,45 @@ pub(all) enum ControlMsg {
 } derive(Debug, Eq)
 
 ///|
+pub extend ControlMsg with Debug::{to_repr}
+
+///|
+pub extend ControlMsg with Eq::{not_equal, equal}
+
+///|
 /// Result of forwarding one event to the guest. `handled` distinguishes a
 /// real no-op handler from an unknown input name, which lets the host fall
 /// back to a generated field mutator only for the latter.
 pub(all) struct DispatchResult {
   handled : Bool
-  next : Int?
+  next : Int32?
   msgs : Array[ControlMsg]
 } derive(Debug, Eq)
+
+///|
+pub extend DispatchResult with Debug::{to_repr}
+
+///|
+pub extend DispatchResult with Eq::{not_equal, equal}
 
 ///|
 pub(all) enum GuestPropertyResult {
   GuestPropertyMissing
   GuestPropertyUnchanged
   GuestPropertyRefused
-  GuestPropertyChanged(Int)
+  GuestPropertyChanged(Int32)
 } derive(Debug, Eq)
 
 ///|
+pub extend GuestPropertyResult with Debug::{to_repr}
+
+///|
+pub extend GuestPropertyResult with Eq::{not_equal, equal}
+
+///|
 pub(open) trait Guest {
-  fn create(Self, component : String, args : Map[String, @tutuca.Value]) -> Int
-  fn get_field(Self, handle : Int, name : String) -> @tutuca.Value?
+  fn create(Self, component : String, args : Map[String, @tutuca.Value]) -> Int32
+  fn get_field(Self, handle : Int32, name : String) -> @tutuca.Value?
   /// Forward one event to the guest.
   ///
   /// `bindings` is what this component's DECLARED lookups resolve to, at this
@@ -76,7 +94,7 @@ pub(open) trait Guest {
   /// lookup, which is most of them.
   fn handle_dispatch(
     Self,
-    handle : Int,
+    handle : Int32,
     bucket : @tutuca.HandlerBucket,
     name : String,
     args : Array[@tutuca.Value],
@@ -84,14 +102,14 @@ pub(open) trait Guest {
   ) -> DispatchResult
   fn handle_message(
     Self,
-    handle : Int,
+    handle : Int32,
     name : String,
     args : Array[@tutuca.Value],
     bindings : Map[String, @tutuca.Value],
   ) -> DispatchResult = _
   fn handle_intent(
     Self,
-    handle : Int,
+    handle : Int32,
     name : String,
     args : Array[@tutuca.Value],
     bindings : Map[String, @tutuca.Value],
@@ -107,7 +125,7 @@ pub(open) trait Guest {
   /// argument exists to remove.
   fn render_call(
     Self,
-    handle : Int,
+    handle : Int32,
     category : String,
     name : String,
     args : Array[@tutuca.Value],
@@ -115,34 +133,34 @@ pub(open) trait Guest {
   ) -> @tutuca.Value
   fn compute(
     Self,
-    handle : Int,
+    handle : Int32,
     name : String,
     args : Array[@tutuca.Value],
     bindings : Map[String, @tutuca.Value],
   ) -> @tutuca.Value = _
   fn when(
     Self,
-    handle : Int,
+    handle : Int32,
     name : String,
     args : Array[@tutuca.Value],
     bindings : Map[String, @tutuca.Value],
   ) -> Bool = _
   fn enrich(
     Self,
-    handle : Int,
+    handle : Int32,
     name : String,
     args : Array[@tutuca.Value],
     bindings : Map[String, @tutuca.Value],
   ) -> @tutuca.Value = _
   fn bind_with(
     Self,
-    handle : Int,
+    handle : Int32,
     name : String,
     bindings : Map[String, @tutuca.Value],
   ) -> @tutuca.Value = _
-  fn get_property(Self, handle : Int, name : String) -> @tutuca.Value? = _
-  fn set_property(Self, handle : Int, name : String, value : @tutuca.Value) -> GuestPropertyResult = _
-  fn with_field(Self, handle : Int, name : String, v : @tutuca.Value) -> Int?
+  fn get_property(Self, handle : Int32, name : String) -> @tutuca.Value? = _
+  fn set_property(Self, handle : Int32, name : String, value : @tutuca.Value) -> GuestPropertyResult = _
+  fn with_field(Self, handle : Int32, name : String, v : @tutuca.Value) -> Int32?
   /// Serve one of the intents the module declares on its own scope.
   /// Synchronous, like every call across this boundary: a guest that must wait
   /// dispatches an intent of its own and lets the host do the waiting.
@@ -153,12 +171,12 @@ pub(open) trait Guest {
   /// This instance's state as bytes only the guest interprets (WIT
   /// `instance.persist`). Empty means the guest does not persist — not a
   /// failure, since the host can project the declared fields itself.
-  fn persist(Self, handle : Int) -> Bytes
+  fn persist(Self, handle : Int32) -> Bytes
   /// Bytes from `persist`, back into a live instance (WIT
   /// `[static]instance.restore`). None is the guest REFUSING them, and the
   /// caller then rebuilds from the declared fields instead.
-  fn restore(Self, component : String, state : Bytes) -> Int?
-  fn drop_instance(Self, handle : Int) -> Unit
+  fn restore(Self, component : String, state : Bytes) -> Int32?
+  fn drop_instance(Self, handle : Int32) -> Unit
 }
 
 ///|

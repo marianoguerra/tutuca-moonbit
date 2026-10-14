@@ -17,7 +17,7 @@
 pub fn CssPolicy::declarations(
   self : CssPolicy,
   src : String,
-  screen? : (String) -> Bool = _ => false,
+  screen~ : (String) -> Bool = _ => false,
 ) -> CssResult {
   let dropped : Array[CssDrop] = []
   let urls : Array[String] = []
@@ -79,7 +79,7 @@ pub fn CssPolicy::value(
   self : CssPolicy,
   property : String,
   src : String,
-  screen? : (String) -> Bool = _ => false,
+  screen~ : (String) -> Bool = _ => false,
 ) -> String? {
   let name = ascii_lower(property)
   if property_verdict(name, self) is Err(_) {
@@ -106,7 +106,7 @@ pub fn CssPolicy::value_checked(
   self : CssPolicy,
   property : String,
   src : String,
-  screen? : (String) -> Bool = _ => false,
+  screen~ : (String) -> Bool = _ => false,
 ) -> CssResult {
   let name = ascii_lower(property)
   if property_verdict(name, self) is Err(reason) {

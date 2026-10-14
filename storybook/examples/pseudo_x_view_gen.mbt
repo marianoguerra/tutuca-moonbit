@@ -4,8 +4,7 @@
 //   tutuca gen pseudo_x.tutu --name PseudoX --out <dir>
 //
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component",
-//   "moonbitlang/core/debug"
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 
 ///|
 /// The state of the TableRow component.
@@ -15,7 +14,7 @@
 /// this struct lacks fails generation.
 pub(all) struct TableRowState {
   name : String
-  qty : Int
+  qty : Int32
   price : Double
 }
 

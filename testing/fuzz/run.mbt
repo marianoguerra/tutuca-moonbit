@@ -40,7 +40,7 @@ pub(all) struct Step {
   after : Map[String, @tutuca.Value]
   /// How many renders it caused. Usually 1 — the loop batches one morph per
   /// drained cascade — and 0 for a dispatch that changed nothing.
-  renders : Int
+  renders : Int32
 }
 
 ///|
@@ -52,16 +52,22 @@ pub(all) enum Outcome {
   /// refused the transition that got there. `rule` names it and `sentence` is
   /// the rule's own `format` — the words the author wrote for exactly this
   /// moment, which is why they are carried rather than recomposed.
-  Broke(rule~ : String, sentence~ : String, at~ : Int)
+  Broke(rule~ : String, sentence~ : String, at~ : Int32)
   /// The interpreted rule and the compiled one disagreed at step `at`.
   ///
   /// A distinct outcome from `Broke` because it is a distinct bug: `Broke`
   /// says a rule is not enforced, and this says two readings of one
   /// declaration do not mean the same thing.
-  Disagreed(rule~ : String, at~ : Int)
+  Disagreed(rule~ : String, at~ : Int32)
   /// The run could not start: no plan, or the component would not mount.
   Stuck(String)
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend Outcome with Eq::{not_equal, equal}
+
+///|
+pub extend Outcome with Debug::{to_repr}
 
 ///|
 /// A finished run.
@@ -148,7 +154,7 @@ pub fn[N] Plan::step(
   self : Plan,
   h : @harness.Harness[N],
   d : Action,
-  at? : @tutuca.DispatchPath = @tutuca.DispatchPath::new(),
+  at~ : @tutuca.DispatchPath = @tutuca.DispatchPath::new(),
   read? : Reader,
 ) -> Step raise {
   let renders_before = h.render_count()
@@ -243,8 +249,8 @@ pub fn[N] Plan::run(
   self : Plan,
   h : @harness.Harness[N],
   script : Array[Action],
-  seed? : UInt64 = 0,
-  at? : @tutuca.DispatchPath = @tutuca.DispatchPath::new(),
+  seed~ : UInt64 = 0,
+  at~ : @tutuca.DispatchPath = @tutuca.DispatchPath::new(),
   read? : Reader,
 ) -> Run raise {
   let steps : Array[Step] = []
@@ -295,9 +301,9 @@ pub fn[N] Plan::run(
 pub fn[N] Plan::run_live(
   self : Plan,
   h : @harness.Harness[N],
-  steps~ : Int,
-  seed? : UInt64 = 0,
-  at? : @tutuca.DispatchPath = @tutuca.DispatchPath::new(),
+  steps~ : Int32,
+  seed~ : UInt64 = 0,
+  at~ : @tutuca.DispatchPath = @tutuca.DispatchPath::new(),
   read? : Reader,
 ) -> Run raise {
   let out : Array[Step] = []

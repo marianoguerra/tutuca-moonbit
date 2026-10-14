@@ -88,8 +88,8 @@ fn is_inline_marker_code_unit(c : UInt16) -> Bool {
 /// When strict=false (default), uses fast single-pass parser
 pub fn parse_inlines(
   text : String,
-  strict? : Bool = false,
-  wikilinks? : Bool = false,
+  strict~ : Bool = false,
+  wikilinks~ : Bool = false,
 ) -> Array[Inline] {
   if strict {
     // In strict mode, always use delimiter stack for full CommonMark compliance
@@ -103,7 +103,7 @@ pub fn parse_inlines(
 /// Fast path: simple inline parsing without delimiter stack
 fn parse_inlines_fast(
   text : String,
-  wikilinks? : Bool = false,
+  wikilinks~ : Bool = false,
 ) -> Array[Inline] {
   let scanner = Scanner::new(text)
   let parser = InlineParser::new(scanner, wikilinks~)
@@ -113,8 +113,8 @@ fn parse_inlines_fast(
 ///|
 fn parse_inlines_known_bmp(
   text : String,
-  strict? : Bool = false,
-  wikilinks? : Bool = false,
+  strict~ : Bool = false,
+  wikilinks~ : Bool = false,
 ) -> Array[Inline] {
   if strict {
     parse_inlines_with_delimiter_stack(text, wikilinks~, known_bmp=true)
@@ -135,7 +135,7 @@ priv struct InlineParser {
 ///|
 fn InlineParser::new(
   scanner : Scanner,
-  wikilinks? : Bool = false,
+  wikilinks~ : Bool = false,
 ) -> InlineParser {
   { scanner, wikilinks, }
 }
@@ -169,7 +169,7 @@ fn InlineParser::parse(self : InlineParser) -> Array[Inline] {
 }
 
 ///|
-fn InlineParser::read_text_run(self : InlineParser, start : Int) -> String {
+fn InlineParser::read_text_run(self : InlineParser, start : Int32) -> String {
   let mut idx = start
   match self.scanner.utf16_offsets {
     Some(_) =>
@@ -289,7 +289,10 @@ fn InlineParser::parse_inline(self : InlineParser) -> Inline? {
 
 ///|
 /// Try to parse backslash escape
-fn InlineParser::try_parse_escape(self : InlineParser, start : Int) -> Inline? {
+fn InlineParser::try_parse_escape(
+  self : InlineParser,
+  start : Int32,
+) -> Inline? {
   self.scanner.advance(1) // Skip backslash
   match self.scanner.peek() {
     Some('\n') => {
@@ -326,7 +329,7 @@ fn InlineParser::try_parse_escape(self : InlineParser, start : Int) -> Inline? {
 /// Try to parse code span
 fn InlineParser::try_parse_code_span(
   self : InlineParser,
-  start : Int,
+  start : Int32,
 ) -> Inline? {
   // Count opening backticks
   let backtick_count = self.scanner.count_char('`')
@@ -388,7 +391,7 @@ fn InlineParser::try_parse_code_span(
 /// Try to parse strikethrough
 fn InlineParser::try_parse_strikethrough(
   self : InlineParser,
-  start : Int,
+  start : Int32,
 ) -> Inline? {
   // Need exactly two tildes
   if self.scanner.count_char('~') < 2 {
@@ -435,7 +438,7 @@ fn InlineParser::try_parse_strikethrough(
 /// Try to parse an inline HTML comment
 fn InlineParser::try_parse_html_comment(
   self : InlineParser,
-  start : Int,
+  start : Int32,
 ) -> Inline? {
   if !self.scanner.matches("<!--") {
     return None
@@ -461,7 +464,7 @@ fn InlineParser::try_parse_html_comment(
 /// Try to parse autolink
 fn InlineParser::try_parse_autolink(
   self : InlineParser,
-  start : Int,
+  start : Int32,
 ) -> Inline? {
   self.scanner.advance(1) // Skip <
   let url_buf = StringBuilder()
@@ -504,7 +507,7 @@ fn InlineParser::try_parse_autolink(
 /// Try to parse hard break (two or more spaces followed by newline)
 fn InlineParser::try_parse_hard_break(
   self : InlineParser,
-  start : Int,
+  start : Int32,
 ) -> Inline? {
   let space_count = self.scanner.count_char(' ')
   if space_count < 2 {

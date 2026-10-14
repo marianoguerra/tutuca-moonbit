@@ -147,7 +147,7 @@ pub fn declining_request_handlers() -> Map[String, Array[@component.IntentFn]] {
 
 ///|
 pub fn request_module(
-  intents? : Map[String, Array[@component.IntentFn]] = fixture_request_handlers(),
+  intents~ : Map[String, Array[@component.IntentFn]] = fixture_request_handlers(),
 ) -> @component.ModuleDef {
   let entry = entry_comp()
   @component.ModuleDef::new(

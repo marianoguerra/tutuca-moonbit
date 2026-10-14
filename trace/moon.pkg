@@ -14,10 +14,4 @@ import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/transactor",
   "moonbitlang/core/json",
-  "moonbitlang/core/string",
-  "moonbitlang/core/debug",
 }
-
-import {
-  "moonbitlang/core/debug",
-} for "test"

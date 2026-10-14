@@ -4,8 +4,8 @@
 /// Try to parse fenced code block
 fn BlockParser::try_parse_fenced_code(
   self : BlockParser,
-  start : Int,
-  indent : Int,
+  start : Int32,
+  indent : Int32,
 ) -> Block? {
   if indent > 3 {
     return None
@@ -85,7 +85,7 @@ fn BlockParser::try_parse_fenced_code(
 /// Try to parse indented code block
 fn BlockParser::try_parse_indented_code(
   self : BlockParser,
-  start : Int,
+  start : Int32,
 ) -> Block? {
   let leading = Trivia::empty()
   let code_buf = StringBuilder()

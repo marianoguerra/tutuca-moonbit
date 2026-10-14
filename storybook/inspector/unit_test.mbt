@@ -53,7 +53,7 @@ fn olist(v : @tutuca.Value, name : String) -> Array[@tutuca.Value] {
 }
 
 ///|
-fn long_list_value(n : Int) -> @tutuca.Value {
+fn long_list_value(n : Int32) -> @tutuca.Value {
   let items : Array[@tutuca.Value] = []
   for i in 1..<=n {
     items.push(Num(i.to_double()))
@@ -182,7 +182,7 @@ test "deep_expand opens every level" {
 ///|
 priv struct RichState {
   title : String
-  count : Int
+  count : Int32
   tags : Array[@tutuca.Value]
   open : Bool
 }
@@ -609,7 +609,7 @@ impl @component.Fields for RichState with fn schema() {
 /// needs a second type.
 priv struct DescribedState {
   title : String
-  count : Int
+  count : Int32
   tags : Array[@tutuca.Value]
   open : Bool
 }

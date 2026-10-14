@@ -13,7 +13,7 @@
 /// fallback the shared half asks for.
 pub fn state_of_tutu(
   decls : Array[@tutufile.Decl],
-  name? : String = "",
+  name~ : String = "",
 ) -> Array[StateDef] raise DefError {
   // A file with no `spec:` section declares no component, which is a legal
   // thing to write: a `view:` on its own is most of the skill's examples and a
@@ -517,7 +517,7 @@ fn rule_of(m : @sh.Member, word : String, at : Span) -> RuleDecl raise DefError 
 /// `message hold(Any)` — a channel case, qualified or not.
 fn case_of(
   parts : Array[@ast.Node],
-  from : Int,
+  from : Int32,
   m : @sh.Member,
   at : Span,
 ) -> RawCase raise DefError {

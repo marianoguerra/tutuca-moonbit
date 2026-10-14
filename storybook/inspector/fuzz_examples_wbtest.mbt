@@ -12,8 +12,8 @@
 
 ///|
 priv struct DrawerState {
-  held : Int
-  owed : Int
+  held : Int32
+  owed : Int32
 }
 
 ///|

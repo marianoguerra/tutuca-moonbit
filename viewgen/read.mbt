@@ -19,7 +19,7 @@
 /// shared half of `statedef` asks for.
 pub fn read_file(
   source : String,
-  name? : String = "",
+  name~ : String = "",
 ) -> @viewfile.ViewFile raise GenError {
   let reports = []
   let file = read_into(source, name, reports)
@@ -45,7 +45,7 @@ pub fn read_file(
 /// rather than a compile error, and was chased as one.
 pub fn read_card(
   source : String,
-  name? : String = "",
+  name~ : String = "",
 ) -> (@viewfile.ViewFile, Array[@report.Report]) raise GenError {
   let reports = []
   let file = read_into(source, name, reports)
@@ -368,7 +368,7 @@ fn read_scenes(
 
 ///|
 /// The offset of the start of the line `at` is on.
-fn line_start(source : String, at : Int) -> Int {
+fn line_start(source : String, at : Int32) -> Int32 {
   let cs = source.to_array()
   let mut i = if at > cs.length() { cs.length() } else { at }
   while i > 0 && cs[i - 1] != '\n' {

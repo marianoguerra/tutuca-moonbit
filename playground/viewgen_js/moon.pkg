@@ -8,7 +8,6 @@
 // file of the user's package.
 import {
   "marianoguerra/tutuca/viewgen",
-  "moonbitlang/core/json",
 }
 
 supported_targets = "js"

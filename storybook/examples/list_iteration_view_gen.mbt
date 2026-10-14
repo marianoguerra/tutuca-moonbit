@@ -4,8 +4,7 @@
 //   tutuca gen list_iteration.tutu --name ListIteration --out <dir>
 //
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component",
-//   "moonbitlang/core/debug"
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 
 ///|
 /// The state of the ListIteration component.

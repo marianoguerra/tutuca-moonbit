@@ -8,8 +8,8 @@
 /// parse subtree — the HTML tokenizer included. See `View.parse`.
 pub fn View::new(
   name : String,
-  raw_view? : String = "No View Defined",
-  style? : String = "",
+  raw_view~ : String = "No View Defined",
+  style~ : String = "",
   config_vars? : Map[String, String],
 ) -> View {
   {

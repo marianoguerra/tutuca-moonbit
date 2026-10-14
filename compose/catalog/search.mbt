@@ -8,9 +8,15 @@ pub(all) struct Hit {
   entry : Entry
   /// The preset this row offers, or "" for the component's own row.
   preset : String
-  score : Int
+  score : Int32
   why : Array[String]
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend Hit with Eq::{not_equal, equal}
+
+///|
+pub extend Hit with Debug::{to_repr}
 
 ///|
 /// What this row shows as its name: the preset's, when it has one.
@@ -84,7 +90,7 @@ pub fn Catalog::all(self : Catalog) -> Array[Entry] {
 pub fn Catalog::find(
   self : Catalog,
   name : String,
-  module_? : String = "",
+  module_~ : String = "",
 ) -> Entry? {
   self.rows
   .iter()
@@ -105,7 +111,7 @@ fn score_term(
   entry : Entry,
   term : String,
   why : Array[String],
-) -> Int {
+) -> Int32 {
   let mut score = 0
   let n = lower(name)
   if n == term {
@@ -153,7 +159,7 @@ fn score_term(
 pub fn Catalog::search(
   self : Catalog,
   query : String,
-  limit? : Int = 20,
+  limit~ : Int32 = 20,
 ) -> Array[Hit] {
   let terms = lower(query).split(" ").filter(t => t.length() > 0).collect()
   let hits : Array[Hit] = []

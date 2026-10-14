@@ -7,20 +7,20 @@
 
 ///|
 priv struct FakeGuest {
-  counters : Map[Int, Double]
+  counters : Map[Int32, Double]
   /// every value this counter has held, so a view can `@each` over it with a
   /// `@when` filter the GUEST answers
-  histories : Map[Int, Array[Double]]
-  pairs : Map[Int, (Int, Int)]
+  histories : Map[Int32, Array[Double]]
+  pairs : Map[Int32, (Int32, Int32)]
   /// `Framed` instances, by handle. Its OTHER field — the placeholder — is not
   /// here and cannot be: the guest never sees what fills it.
-  titles : Map[Int, String]
+  titles : Map[Int32, String]
   /// `Rack` instances, by handle, holding the HANDLES of the cells they were
   /// given. Its `holds` is a bare `component` the host keeps, so the guest has
   /// no state for that one; its `cells` are whatever crossed, which for an
   /// instance of this module is a token — so the guest keeps the tokens and
   /// answers reads through `wrap_instance`, exactly as the wasm bridge does.
-  racks : Map[Int, Array[Int]]
+  racks : Map[Int32, Array[Int32]]
   /// `Shelf` instances, holding the VALUE they were handed rather than a token
   /// for it.
   ///
@@ -29,9 +29,9 @@ priv struct FakeGuest {
   /// stranger: the re-wrap names the component AND the module, and both were
   /// its own. A shelf keeps what it was given, which is what a guest holding a
   /// component from somewhere else amounts to from the host's side.
-  shelves : Map[Int, @tutuca.Value]
-  next : Ref[Int]
-  loaded : Ref[Module?]
+  shelves : Map[Int32, @tutuca.Value]
+  next : Ref[Int32]
+  loaded : Ref[@host.Module?]
   /// requests the module served, in order (the guest-served request test)
   served : Array[String]
 }
@@ -55,8 +55,8 @@ fn FakeGuest::new() -> FakeGuest {
 fn FakeGuest::alloc(
   self : FakeGuest,
   count : Double,
-  history? : Array[Double] = [],
-) -> Int {
+  history~ : Array[Double] = [],
+) -> Int32 {
   let h = self.next.val
   self.next.val = h + 1
   self.counters[h] = count
@@ -67,14 +67,22 @@ fn FakeGuest::alloc(
 ///|
 /// A successor of `handle` at `count`, keeping the history and appending the
 /// value being left behind (mirrors the real counter guest).
-fn FakeGuest::next_of(self : FakeGuest, handle : Int, count : Double) -> Int {
+fn FakeGuest::next_of(
+  self : FakeGuest,
+  handle : Int32,
+  count : Double,
+) -> Int32 {
   let history = self.histories.get(handle).unwrap_or([]).copy()
   history.push(self.counters.get(handle).unwrap())
   self.alloc(count, history~)
 }
 
 ///|
-fn FakeGuest::alloc_pair(self : FakeGuest, left : Int, right : Int) -> Int {
+fn FakeGuest::alloc_pair(
+  self : FakeGuest,
+  left : Int32,
+  right : Int32,
+) -> Int32 {
   let h = self.next.val
   self.next.val = h + 1
   self.pairs[h] = (left, right)
@@ -82,22 +90,22 @@ fn FakeGuest::alloc_pair(self : FakeGuest, left : Int, right : Int) -> Int {
 }
 
 ///|
-fn FakeGuest::wrap_child(self : FakeGuest, handle : Int) -> @tutuca.Value {
+fn FakeGuest::wrap_child(self : FakeGuest, handle : Int32) -> @tutuca.Value {
   // mirrors the wasm bridge: resolve through the registered module
   self.loaded.val.unwrap().wrap_instance("Counter", handle).unwrap()
 }
 
 ///|
 /// The same, for a `Rack` in another `Rack`'s cells.
-fn FakeGuest::wrap_rack(self : FakeGuest, handle : Int) -> @tutuca.Value {
+fn FakeGuest::wrap_rack(self : FakeGuest, handle : Int32) -> @tutuca.Value {
   self.loaded.val.unwrap().wrap_instance("Rack", handle).unwrap()
 }
 
 ///|
-fn child_handle(v : @tutuca.Value) -> Int? {
+fn child_handle(v : @tutuca.Value) -> Int32? {
   match v {
     Obj(o) =>
-      match o.field(handle_field) {
+      match o.field(@host.handle_field) {
         Some(Num(n)) => Some(n.to_int())
         _ => None
       }
@@ -127,7 +135,7 @@ impl Guest for FakeGuest with fn create(self, component, args) {
     "Rack" => {
       let h = self.next.val
       self.next.val = h + 1
-      let cells : Array[Int] = []
+      let cells : Array[Int32] = []
       if args.get("cells") is Some(List(items)) {
         for item in items {
           if child_handle(item) is Some(token) {
@@ -550,7 +558,7 @@ impl Guest for FakeGuest with fn drop_instance(self, handle) {
 /// A field with no v3 metadata. Most of this fixture is about how the contract
 /// BEHAVES, and spelling three blanks per field there would bury it; the
 /// documented and constrained shapes are exercised in the parsing tests below.
-fn plain_field(name : String, ty : @tutuca.Ty) -> DynFieldDef {
+fn plain_field(name : String, ty : @tutuca.Ty) -> @host.DynFieldDef {
   { name, ty, doc: "", required: false, default: None, domains: [], }
 }
 
@@ -560,18 +568,18 @@ fn plain_field(name : String, ty : @tutuca.Ty) -> DynFieldDef {
 /// The question `install_gc` and the reachability sweep existed to make
 /// answerable, asked directly: there is no table, so what is alive is what the
 /// tree holds.
-fn held(h : @harness.Harness[@memdom.MemNode]) -> Int {
+fn held(h : @harness.Harness[@memdom.MemNode]) -> Int32 {
   let seen : Array[String] = []
-  live_instances(h.app.root_value(), seen)
+  @host.live_instances(h.app.root_value(), seen)
   seen.length()
 }
 
 ///|
 /// The transport's name for the one instance the host holds.
-fn held_one(h : @harness.Harness[@memdom.MemNode]) -> Int {
+fn held_one(h : @harness.Harness[@memdom.MemNode]) -> Int32 {
   match h.app.root_value().field("slot") {
     Obj(o) =>
-      match o.field(handle_field) {
+      match o.field(@host.handle_field) {
         Some(Num(n)) => n.to_int()
         _ => -1
       }
@@ -591,7 +599,7 @@ fn vouched() -> @policy.Policy {
 }
 
 ///|
-fn counter_manifest() -> DynManifest {
+fn counter_manifest() -> @host.DynManifest {
   {
     api_version: 10,
     module_name: "counterlib",
@@ -1023,11 +1031,13 @@ fn filler_comp() -> @component.Component {
 }
 
 ///|
-fn mount_with_bundle(fake : FakeGuest) -> (@harness.MemHarness, Module) raise {
+fn mount_with_bundle(
+  fake : FakeGuest,
+) -> (@harness.MemHarness, @host.Module) raise {
   let h = @harness.mount(shell_module(), "Shell")
-  let loaded = register_module(
+  let loaded = @host.register_module(
     h.app.scope,
-    HandleModule::new(fake),
+    @host.HandleModule::new(fake),
     counter_manifest(),
     policy=vouched(),
   )
@@ -1297,9 +1307,9 @@ test "event_names reflects a module registered after boot" {
   // (`@on.keydown+cancel="reset"`). Not `click` — the host's own `Filler`, the
   // component a guest's placeholder names, has a button.
   assert_false(h.app.event_names().contains("keydown"))
-  let _ = register_module(
+  let _ = @host.register_module(
     h.app.scope,
-    HandleModule::new(FakeGuest::new()),
+    @host.HandleModule::new(FakeGuest::new()),
     counter_manifest(),
     policy=vouched(),
   )
@@ -1512,7 +1522,7 @@ test "manifest parses a type written as the type it is" {
     #|              {"name": "mystery", "ty": {"k": "no-such-kind"}}],
     #|   "properties": [{"name": "count", "ty": {"k": "float"}, "writable": true, "public": true}],
     #|   "receives": [], "intents": [], "methods": [], "style": ""}]}
-  let m = DynManifest::from_json_string(json)
+  let m = @host.DynManifest::from_json_string(json)
   debug_inspect(
     m.components[0].field_infos().map(f => "\{f.name}:\{f.ty.show_source()}"),
     content=(
@@ -1548,7 +1558,7 @@ test "manifest parses from the bridge's JSON projection" {
     #|   "properties": [{"name": "count", "ty": {"k": "int"}, "writable": true, "public": true}],
     #|   "receives": ["init", "double"], "intents": [],
     #|   "methods": ["label"], "style": ""}]}
-  let m = DynManifest::from_json_string(json)
+  let m = @host.DynManifest::from_json_string(json)
   inspect(m.module_name, content="counterlib")
   inspect(m.components[0].views[0].bytes, content="30")
   inspect(
@@ -1576,11 +1586,15 @@ test "manifest parses from the bridge's JSON projection" {
 test "the default policy refuses CSS and a bomb" {
   let h = @harness.mount(shell_module(), "Shell")
   let base = counter_manifest()
-  let refused = (m : DynManifest) => {
+  let refused = (m : @host.DynManifest) => {
     let mut ok = true
     // no `policy=`: this is what a page gets when it just drops a module on
     try
-      register_module(h.app.scope, HandleModule::new(FakeGuest::new()), m)
+      @host.register_module(
+        h.app.scope,
+        @host.HandleModule::new(FakeGuest::new()),
+        m,
+      )
       |> ignore
     catch {
       _ => ok = false
@@ -1591,14 +1605,16 @@ test "the default policy refuses CSS and a bomb" {
   assert_true(refused(base))
   // ...the same module without it is fine, which is what every sample guest
   // already does — the strict default costs nothing real
-  let styleless : DynManifest = {
+  let styleless : @host.DynManifest = {
     ..base,
     module_name: "styleless",
-    components: base.components.map(c => ({ ..c, style: "", } : DynComponentDef)),
+    components: base.components.map(c => {
+      ({ ..c, style: "", } : @host.DynComponentDef)
+    }),
   }
   assert_false(refused(styleless))
   // and a manifest too large to parse before rendering anything
-  let many : Array[DynComponentDef] = []
+  let many : Array[@host.DynComponentDef] = []
   for i in 0..<200 {
     many.push({ ..styleless.components[0], name: "C\{i}", })
   }
@@ -1612,7 +1628,7 @@ test "untrusted registration blocks DOM egress but keeps custom elements" {
   let register_view = (body : String) => {
     let h = @harness.mount(shell_module(), "Shell")
     let base = counter_manifest()
-    let manifest : DynManifest = {
+    let manifest : @host.DynManifest = {
       ..base,
       module_name: "view-policy",
       tutu: "view:\n  Counter:\n    " + body + "\n",
@@ -1626,9 +1642,9 @@ test "untrusted registration blocks DOM egress but keeps custom elements" {
     }
     let mut ok = true
     try
-      register_module(
+      @host.register_module(
         h.app.scope,
-        HandleModule::new(FakeGuest::new()),
+        @host.HandleModule::new(FakeGuest::new()),
         manifest,
       )
       |> ignore
@@ -1652,7 +1668,7 @@ test "allowing external URLs lets a registered guest view name a pinned image" {
   let register_view = (body : String, policy : @policy.Policy) => {
     let h = @harness.mount(shell_module(), "Shell")
     let base = counter_manifest()
-    let manifest : DynManifest = {
+    let manifest : @host.DynManifest = {
       ..base,
       module_name: "avatar-policy",
       tutu: "view:\n  Counter:\n    " + body + "\n",
@@ -1666,9 +1682,9 @@ test "allowing external URLs lets a registered guest view name a pinned image" {
     }
     let mut ok = true
     try
-      register_module(
+      @host.register_module(
         h.app.scope,
-        HandleModule::new(FakeGuest::new()),
+        @host.HandleModule::new(FakeGuest::new()),
         manifest,
         policy~,
       )
@@ -1699,7 +1715,7 @@ test "allowing external URLs lets a registered guest view name a pinned image" {
 test "a guest view that sets markup directly is refused" {
   let h = @harness.mount(shell_module(), "Shell")
   let base = counter_manifest()
-  let m : DynManifest = {
+  let m : @host.DynManifest = {
     ..base,
     module_name: "sneakylib",
     tutu: "view:\n  Sneaky:\n    div(class: \"sneaky-marker\", dangerously_inner_html: it.payload)\n",
@@ -1712,12 +1728,12 @@ test "a guest view that sets markup directly is refused" {
       },
     ],
   }
-  let register = (man : DynManifest) => {
+  let register = (man : @host.DynManifest) => {
     let mut ok = true
     try
-      register_module(
+      @host.register_module(
         h.app.scope,
-        HandleModule::new(FakeGuest::new()),
+        @host.HandleModule::new(FakeGuest::new()),
         man,
         policy=vouched(),
       )
@@ -1737,7 +1753,7 @@ test "a guest view that sets markup directly is refused" {
   assert_false(h.app.scope.comps.collect_classes().contains("sneaky-marker"))
   // The same module without the one construct is fine: it is the directive
   // that is refused, not the guest.
-  let ok_m : DynManifest = {
+  let ok_m : @host.DynManifest = {
     ..m,
     module_name: "tidylib",
     tutu: "view:\n  Sneaky:\n    div(class: \"tidy-marker\")\n",
@@ -1771,7 +1787,7 @@ test "catalog metadata parses: docs and constraints" {
     #|   "receives": [], "intents": [], "methods": [],
     #|   "inits": [{"name": "blank", "argsJson": "{}", "doc": "Nothing filled in."}],
     #|   "style": ""}]}
-  let m = DynManifest::from_json_string(json)
+  let m = @host.DynManifest::from_json_string(json)
   inspect(m.doc, content="Form controls.")
   inspect(m.version, content="1.2.0")
   let c = m.components[0]
@@ -1818,7 +1834,7 @@ test "a manifest with no catalog metadata still parses" {
     #|   "fields": [], "properties": [],
     #|   "receives": [], "intents": [], "methods": [],
     #|   "style": ""}]}
-  let m = DynManifest::from_json_string(json)
+  let m = @host.DynManifest::from_json_string(json)
   inspect(m.doc, content="")
   inspect(m.components[0].category, content="")
   debug_inspect(m.components[0].message_docs, content="{}")
@@ -1837,7 +1853,7 @@ test "an unreadable member type reads as `any`" {
     #|   "properties": [],
     #|   "receives": [], "intents": [], "methods": [],
     #|   "style": ""}]}
-  let m = DynManifest::from_json_string(json)
+  let m = @host.DynManifest::from_json_string(json)
   let fields = m.components[0].field_infos()
   inspect(fields[0].ty.show_source(), content="String")
   inspect(fields[1].ty.show_source(), content="Any")
@@ -1907,7 +1923,7 @@ test "manifest with wrong api version is rejected" {
   let bad =
     #|{"manifestVersion": 4, "abiVersion": 2, "apiVersion": 1, "moduleName": "x", "components": []}
   let mut failed = false
-  let _ = DynManifest::from_json_string(bad) catch {
+  let _ = @host.DynManifest::from_json_string(bad) catch {
     _ => {
       failed = true
       {
@@ -1937,7 +1953,7 @@ test "old manifest shapes and implicit property surfaces are rejected" {
     #|]}
   let mut refused = 0
   for text in [old, implicit] {
-    try DynManifest::from_json_string(text) |> ignore catch {
+    try @host.DynManifest::from_json_string(text) |> ignore catch {
       _ => refused = refused + 1
     }
   }
@@ -1966,7 +1982,7 @@ impl @component.Fields for TestShellState with fn schema() {
 
 ///|
 test "a module's views are read at load, and an unreadable one refuses it" {
-  let bad : DynManifest = {
+  let bad : @host.DynManifest = {
     api_version: 10,
     module_name: "sloppylib",
     doc: "",
@@ -2017,9 +2033,9 @@ test "a module's views are read at load, and an unreadable one refuses it" {
   }
   let h = @harness.mount(shell_module(), "Shell")
   let said = try {
-    register_module(
+    @host.register_module(
       h.app.scope,
-      HandleModule::new(FakeGuest::new()),
+      @host.HandleModule::new(FakeGuest::new()),
       bad,
       policy=vouched(),
     )
@@ -2049,7 +2065,7 @@ test "a module's views are read at load, and an unreadable one refuses it" {
 /// was arguing they should be. The rule still runs, over views built as markup
 /// through `@anode.View::new`, where the distinction can still be written.
 test "a `compute` the manifest never declared is reported at load" {
-  let sloppy : DynManifest = {
+  let sloppy : @host.DynManifest = {
     api_version: 10,
     module_name: "statlib",
     doc: "",
@@ -2114,9 +2130,9 @@ test "a `compute` the manifest never declared is reported at load" {
     ],
   }
   let h = @harness.mount(shell_module(), "Shell")
-  let loaded = register_module(
+  let loaded = @host.register_module(
     h.app.scope,
-    HandleModule::new(FakeGuest::new()),
+    @host.HandleModule::new(FakeGuest::new()),
     sloppy,
     policy=vouched(),
   )
@@ -2167,7 +2183,7 @@ test "a foreign placeholder is filled by the host and never reaches the guest" {
   assert_eq(h.text(".filler-note"), "fresh")
   // The guest was never told about it: asked for `body` it answers nothing,
   // and the host answered anyway.
-  assert_true(Guest::get_field(fake, framed.handle(), "body") is None)
+  assert_true(@host.Guest::get_field(fake, framed.handle(), "body") is None)
 }
 
 ///|
@@ -2203,7 +2219,7 @@ test "a same-module child is the guest's own, and the host does not fill it" {
   h.send_at_root("set_slot", args=[pair.to_value()])
   // The guest's own children, with the guest's own values.
   assert_eq(h.texts(".count"), ["1", "100"])
-  assert_true(Guest::get_field(fake, pair.handle(), "left") is Some(_))
+  assert_true(@host.Guest::get_field(fake, pair.handle(), "left") is Some(_))
 }
 
 ///|
@@ -2218,7 +2234,7 @@ test "a same-module child is the guest's own, and the host does not fill it" {
 /// type was not a decision.
 test "a bound the type cannot carry is a load-time hint" {
   let h = @harness.mount(shell_module(), "Shell")
-  let manifest : DynManifest = {
+  let manifest : @host.DynManifest = {
     ..counter_manifest(),
     components: [
       {
@@ -2250,9 +2266,9 @@ test "a bound the type cannot carry is a load-time hint" {
       },
     ],
   }
-  let loaded = register_module(
+  let loaded = @host.register_module(
     h.app.scope,
-    HandleModule::new(FakeGuest::new()),
+    @host.HandleModule::new(FakeGuest::new()),
     manifest,
     policy=vouched(),
   )
@@ -2267,7 +2283,7 @@ test "a bound the type cannot carry is a load-time hint" {
   // …and a bound the type CAN carry is not mentioned: `maxLen` on text is a
   // real bound, including a zero, and second-guessing one is not this pass's
   // job.
-  let fine : DynManifest = {
+  let fine : @host.DynManifest = {
     ..manifest,
     components: [
       {
@@ -2285,9 +2301,9 @@ test "a bound the type cannot carry is a load-time hint" {
       },
     ],
   }
-  let quiet = register_module(
+  let quiet = @host.register_module(
     h.app.scope,
-    HandleModule::new(FakeGuest::new()),
+    @host.HandleModule::new(FakeGuest::new()),
     fine,
     policy=vouched(),
   )
@@ -2301,7 +2317,7 @@ test "a bound the type cannot carry is a load-time hint" {
 /// A mastodon-shaped module: one config-origin variable, one view that spends
 /// it, and a module name the caller varies so the `by_name` hot-swap does not
 /// eat the previous registration mid-test.
-fn config_manifest(module_name : String) -> DynManifest {
+fn config_manifest(module_name : String) -> @host.DynManifest {
   let base = counter_manifest()
   {
     ..base,
@@ -2343,15 +2359,15 @@ test "a config origin lets one module serve two instances" {
     ("mediaOrigin", @policy.origin("https://files.mastodon.social")),
     ("instanceName", @policy.text("mastodon.social")),
   ])
-  let a = register_module(
+  let a = @host.register_module(
     h.app.scope,
-    HandleModule::new(FakeGuest::new()),
+    @host.HandleModule::new(FakeGuest::new()),
     config_manifest("reader"),
     policy=hachyderm,
   )
-  let b = register_module(
+  let b = @host.register_module(
     h.app.scope,
-    HandleModule::new(FakeGuest::new()),
+    @host.HandleModule::new(FakeGuest::new()),
     config_manifest("reader"),
     policy=masto,
   )
@@ -2380,9 +2396,9 @@ test "a config origin lets one module serve two instances" {
   )
   // Registering the same module with the SAME config is the same registration,
   // which is what keeps hot-swap meaning what it always meant.
-  let again = register_module(
+  let again = @host.register_module(
     h.app.scope,
-    HandleModule::new(FakeGuest::new()),
+    @host.HandleModule::new(FakeGuest::new()),
     config_manifest("reader"),
     policy=hachyderm,
   )
@@ -2404,9 +2420,9 @@ test "the screened tree and the rendered tree resolve config the same way" {
     let h = @harness.mount(shell_module(), "Shell")
     let mut ok = true
     try
-      register_module(
+      @host.register_module(
         h.app.scope,
-        HandleModule::new(FakeGuest::new()),
+        @host.HandleModule::new(FakeGuest::new()),
         config_manifest(module_name),
         policy~,
       )
@@ -2440,9 +2456,9 @@ test "a manifest's own origin default is not a grant" {
   // The manifest defaults to files.mastodon.social. A host that bound nothing
   // has granted nothing, so the view cannot spend it.
   let refused = try {
-    register_module(
+    @host.register_module(
       h.app.scope,
-      HandleModule::new(FakeGuest::new()),
+      @host.HandleModule::new(FakeGuest::new()),
       config_manifest("default-only"),
     )
     |> ignore
@@ -2454,9 +2470,9 @@ test "a manifest's own origin default is not a grant" {
   // ...until the host says, in as many words, that it ships these modules and
   // their defaults are its own decision.
   let trusting = @policy.Policy::untrusted().trusting_manifest_config()
-  let b = register_module(
+  let b = @host.register_module(
     h.app.scope,
-    HandleModule::new(FakeGuest::new()),
+    @host.HandleModule::new(FakeGuest::new()),
     config_manifest("default-trusted"),
     policy=trusting,
   )
@@ -2480,9 +2496,9 @@ test "a config type the host and the manifest disagree about refuses" {
     ("mediaOrigin", @policy.text("https://files.hachyderm.io/")),
   ])
   let why = try {
-    register_module(
+    @host.register_module(
       h.app.scope,
-      HandleModule::new(FakeGuest::new()),
+      @host.HandleModule::new(FakeGuest::new()),
       config_manifest("mismatch"),
       policy=mismatched,
     )
@@ -2508,14 +2524,14 @@ test "a bound name the module does not declare is a diagnostic" {
   let base = counter_manifest()
   // No `config` section at all — the ordinary module, sharing the page's one
   // policy with the one module that does read a variable.
-  let plain : DynManifest = {
+  let plain : @host.DynManifest = {
     ..base,
     module_name: "no-config-here",
     components: [{ ..base.components[0], style: "", }],
   }
-  let b = register_module(
+  let b = @host.register_module(
     h.app.scope,
-    HandleModule::new(FakeGuest::new()),
+    @host.HandleModule::new(FakeGuest::new()),
     plain,
     policy=@policy.Policy::untrusted().with_config([
       ("mediaOrigin", @policy.origin("https://files.hachyderm.io")),
@@ -2563,9 +2579,9 @@ test "a guest reads a value a host ancestor provides" {
 test "a guest with no provider above it reads its declared default" {
   let h = @harness.mount(no_provide_shell(), "Bare")
   let fake = FakeGuest::new()
-  let loaded = register_module(
+  let loaded = @host.register_module(
     h.app.scope,
-    HandleModule::new(fake),
+    @host.HandleModule::new(fake),
     counter_manifest(),
     policy=vouched(),
   )
@@ -2730,7 +2746,7 @@ test "a guest replies to whoever sent it a message" {
 /// from this one and the drift would look like a domain that stopped working.
 fn bounded_counter_manifest(
   domains : Array[@tutuca.FieldDomain],
-) -> DynManifest {
+) -> @host.DynManifest {
   let base = counter_manifest()
   {
     ..base,
@@ -2748,11 +2764,11 @@ fn bounded_counter_manifest(
 fn mount_with_domains(
   fake : FakeGuest,
   domains : Array[@tutuca.FieldDomain],
-) -> (@harness.MemHarness, Module) raise {
+) -> (@harness.MemHarness, @host.Module) raise {
   let h = @harness.mount(shell_module(), "Shell")
-  let loaded = register_module(
+  let loaded = @host.register_module(
     h.app.scope,
-    HandleModule::new(fake),
+    @host.HandleModule::new(fake),
     bounded_counter_manifest(domains),
     policy=vouched(),
   )
@@ -2983,7 +2999,7 @@ test "a protocol's properties parse as objects or as bare names" {
     #|      "properties": ["title"],
     #|      "views": [], "provides": [], "lookups": []}],
     #|   "receives": [], "intents": [], "methods": [], "style": ""}]}
-  let m = DynManifest::from_json_string(json)
+  let m = @host.DynManifest::from_json_string(json)
   let comp = m.components[0]
   let typed = comp.protocols[0].properties[0]
   assert_eq(typed.name, "filled")
@@ -2996,9 +3012,9 @@ test "a protocol's properties parse as objects or as bare names" {
   // host the member's TYPE. A name alone says what it is called and nothing
   // more, which is `any`.
   let h = @harness.mount(shell_module(), "Shell")
-  let loaded = register_module(
+  let loaded = @host.register_module(
     h.app.scope,
-    HandleModule::new(FakeGuest::new()),
+    @host.HandleModule::new(FakeGuest::new()),
     m,
     policy=vouched(),
   )
@@ -3200,7 +3216,7 @@ test "who keeps a slot, for every spelling and every value" {
   for spelling in spellings {
     for given in givens {
       let answer = match
-        slot_owner(spelling.1, given.1, declared_here=n => {
+        @host.slot_owner(spelling.1, given.1, declared_here=n => {
           loaded.def_of(n) is Some(_)
         }) {
         Guest => "guest"
@@ -3270,7 +3286,7 @@ test "a component says which module declared it" {
     #|  {"name": "Older",
     #|   "views": [{"name": "main", "bytes": 20}],
     #|   "fields": [], "properties": [], "receives": [], "intents": [], "methods": [], "style": ""}]}
-  let m = DynManifest::from_json_string(json)
+  let m = @host.DynManifest::from_json_string(json)
   assert_eq(m.components.map(c => "\{c.name}/\{c.module_}"), [
     "Hole/kit", "Older/",
   ])
@@ -3294,9 +3310,9 @@ test "a counter from another module answers a click through its holder" {
   // A SECOND module, its own guest, its own registration, in the same scope —
   // which is the arrangement a page holding two cards is in.
   let other = FakeGuest::new()
-  let loaded_other = register_module(
+  let loaded_other = @host.register_module(
     h.app.scope,
-    HandleModule::new(other),
+    @host.HandleModule::new(other),
     { ..counter_manifest(), module_name: "otherlib", },
     policy=vouched(),
   )

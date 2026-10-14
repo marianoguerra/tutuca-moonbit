@@ -1,6 +1,6 @@
 ///|
 test "todo-macros: the checkbox/input macros expand with two-way bindings" {
-  let h = @harness.mount_example(todo_macros_module(), "Default Item")
+  let h = @harness.mount_example(@examples.todo_macros_module(), "Default Item")
   // <x:hbox> wraps <x:checkbox> + <x:input>
   inspect(h.find_all(".hbox").length(), content="1")
   inspect(h.value_of("input.input"), content="do the thing")
@@ -14,14 +14,17 @@ test "todo-macros: the checkbox/input macros expand with two-way bindings" {
 
 ///|
 test "todo-macros: the completed item disables its text input via ^disabled" {
-  let h = @harness.mount_example(todo_macros_module(), "Completed Item")
+  let h = @harness.mount_example(
+    @examples.todo_macros_module(),
+    "Completed Item",
+  )
   inspect(h.checked_of("input.checkbox"), content="true")
   inspect(h.prop("input.input", "disabled") is Some(Bool(true)), content="true")
 }
 
 ///|
 test "todo-macros: btn-action's ^handler adds an item, btn-rm's removes one" {
-  let h = @harness.mount_example(todo_macros_module(), "Empty List")
+  let h = @harness.mount_example(@examples.todo_macros_module(), "Empty List")
   inspect(h.find_all(".entry").length(), content="0")
   // <x:btn-action :handler="on_add_item"> -> @on.click="onAddItem ..."
   h.click(".add")
@@ -34,7 +37,7 @@ test "todo-macros: btn-action's ^handler adds an item, btn-rm's removes one" {
 
 ///|
 test "todo-macros: the seeded list renders one row per item" {
-  let h = @harness.mount_example(todo_macros_module(), "Some Items")
+  let h = @harness.mount_example(@examples.todo_macros_module(), "Some Items")
   inspect(h.find_all(".entry").length(), content="3")
   inspect(h.checked_of("input.checkbox", nth=0), content="false")
   inspect(h.checked_of("input.checkbox", nth=1), content="true")

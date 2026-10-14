@@ -103,18 +103,18 @@ pub fn schema_property_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn schema_property_component(
-  name? : String = "SchemaProperty",
-  views? : Map[String, @anode.View] = schema_property_views(),
-  initial? : SchemaPropertyState = SchemaPropertyState::zero(),
-  common_style? : String = schema_property_common_style,
-  global_style? : String = schema_property_global_style,
+  name~ : String = "SchemaProperty",
+  views~ : Map[String, @anode.View] = schema_property_views(),
+  initial~ : SchemaPropertyState = SchemaPropertyState::zero(),
+  common_style~ : String = schema_property_common_style,
+  global_style~ : String = schema_property_global_style,
   update? : (SchemaPropertyState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaPropertyState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -194,11 +194,11 @@ pub fn schema_branch_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn schema_branch_component(
-  name? : String = "SchemaBranch",
-  views? : Map[String, @anode.View] = schema_branch_views(),
-  initial? : SchemaBranchState = SchemaBranchState::zero(),
-  common_style? : String = schema_branch_common_style,
-  global_style? : String = schema_branch_global_style,
+  name~ : String = "SchemaBranch",
+  views~ : Map[String, @anode.View] = schema_branch_views(),
+  initial~ : SchemaBranchState = SchemaBranchState::zero(),
+  common_style~ : String = schema_branch_common_style,
+  global_style~ : String = schema_branch_global_style,
   update? : (SchemaBranchState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaBranchState,
   ],
@@ -207,10 +207,10 @@ pub fn schema_branch_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

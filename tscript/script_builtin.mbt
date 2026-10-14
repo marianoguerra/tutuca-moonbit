@@ -21,7 +21,7 @@
 /// The parser does not consult this: juxtaposition binds an argument list
 /// greedily over ATOMS, so a wrong count is a type error rather than a syntax
 /// error, and it is reported with the rest of them.
-pub fn script_builtin(name : String) -> Int? {
+pub fn script_builtin(name : String) -> Int32? {
   match name {
     // Shape predicates — the same four `core.builtin` answers for a slot.
     "empty?" | "truthy?" | "falsy?" | "null?" => Some(1)

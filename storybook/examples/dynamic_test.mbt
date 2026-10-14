@@ -1,6 +1,9 @@
 ///|
 test "dynamic-bindings: the consumer reads the producer's list as *entries" {
-  let h = @harness.mount_example(dynamic_bindings_module(), "With Entries")
+  let h = @harness.mount_example(
+    @examples.dynamic_bindings_module(),
+    "With Entries",
+  )
   // Selector has NO items of its own; every <option> comes from the producer's
   // .items through the `entries` dynamic
   inspect(h.find_all("option").length(), content="2")
@@ -15,7 +18,7 @@ test "dynamic-bindings: the consumer reads the producer's list as *entries" {
 
 ///|
 test "dynamic-bindings: adding an item updates the distant consumer" {
-  let h = @harness.mount_example(dynamic_bindings_module(), "Default")
+  let h = @harness.mount_example(@examples.dynamic_bindings_module(), "Default")
   // no items yet: the producer provides an empty list
   inspect(h.find_all("option").length(), content="0")
   h.click(".add")
@@ -46,7 +49,7 @@ test "dynamic-bindings: adding an item updates the distant consumer" {
 
 ///|
 test "dynamic-path: a dynamic var as a RENDER TARGET, across a deep tree" {
-  let h = @harness.mount_example(dynamic_path_module(), "Default")
+  let h = @harness.mount_example(@examples.dynamic_path_module(), "Default")
   // Workspace -> Panel -> Toolbar, and the Toolbar renders <x render="*active">
   inspect(h.find_all(".panel").length(), content="1")
   inspect(h.find_all(".toolbar").length(), content="1")
@@ -57,7 +60,7 @@ test "dynamic-path: a dynamic var as a RENDER TARGET, across a deep tree" {
 
 ///|
 test "dynamic-path: editing the resumed Sheet mutates Workspace.sheet" {
-  let h = @harness.mount_example(dynamic_path_module(), "Default")
+  let h = @harness.mount_example(@examples.dynamic_path_module(), "Default")
   // The Sheet is rendered inside Toolbar but LIVES at Workspace.sheet. The
   // transaction skips the intermediate components and lands on the real owner —
   // the echo at the Workspace level is the proof.

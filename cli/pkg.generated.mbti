@@ -134,6 +134,9 @@ pub(all) struct CommandSpec {
   flags : Array[FlagSpec]
   positionals : Array[PositionalSpec]
 } derive(Eq, @debug.Debug)
+pub fn CommandSpec::equal(Self, Self) -> Bool
+pub fn CommandSpec::not_equal(Self, Self) -> Bool
+pub fn CommandSpec::to_repr(Self) -> @debug.Repr
 
 pub(all) struct CssPlan {
   paths : Array[String]
@@ -144,12 +147,18 @@ pub(all) struct CssPlan {
   polyfills : Int
   margaui : Bool
 } derive(Eq, @debug.Debug)
+pub fn CssPlan::equal(Self, Self) -> Bool
+pub fn CssPlan::not_equal(Self, Self) -> Bool
+pub fn CssPlan::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Emit {
   out : String
   err : String
   exit_code : Int
 } derive(Eq, @debug.Debug)
+pub fn Emit::equal(Self, Self) -> Bool
+pub fn Emit::not_equal(Self, Self) -> Bool
+pub fn Emit::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ErrShape {
   code : String
@@ -159,6 +168,9 @@ pub(all) struct ErrShape {
   where_ : String?
   exit_code : Int
 } derive(Eq, @debug.Debug)
+pub fn ErrShape::equal(Self, Self) -> Bool
+pub fn ErrShape::not_equal(Self, Self) -> Bool
+pub fn ErrShape::to_repr(Self) -> @debug.Repr
 
 pub(all) struct FlagSpec {
   name : String
@@ -167,11 +179,17 @@ pub(all) struct FlagSpec {
   enum_ : Array[String]?
   description : String?
 } derive(Eq, @debug.Debug)
+pub fn FlagSpec::equal(Self, Self) -> Bool
+pub fn FlagSpec::not_equal(Self, Self) -> Bool
+pub fn FlagSpec::to_repr(Self) -> @debug.Repr
 
 pub(all) enum FlagValue {
   Bool(Bool)
   Str(String)
 } derive(Eq, @debug.Debug)
+pub fn FlagValue::equal(Self, Self) -> Bool
+pub fn FlagValue::not_equal(Self, Self) -> Bool
+pub fn FlagValue::to_repr(Self) -> @debug.Repr
 
 pub(all) struct GenInput {
   input : String
@@ -179,16 +197,25 @@ pub(all) struct GenInput {
   name : String
   source : String
 } derive(Eq, @debug.Debug)
+pub fn GenInput::equal(Self, Self) -> Bool
+pub fn GenInput::not_equal(Self, Self) -> Bool
+pub fn GenInput::to_repr(Self) -> @debug.Repr
 
 pub(all) struct GenPlan {
   files : Array[(String, String)]
   diagnostics : Array[String]
 } derive(Eq, @debug.Debug)
+pub fn GenPlan::equal(Self, Self) -> Bool
+pub fn GenPlan::not_equal(Self, Self) -> Bool
+pub fn GenPlan::to_repr(Self) -> @debug.Repr
 
 pub(all) struct GlobalOpts {
   json : Bool
   help : Bool
 } derive(Eq, @debug.Debug)
+pub fn GlobalOpts::equal(Self, Self) -> Bool
+pub fn GlobalOpts::not_equal(Self, Self) -> Bool
+pub fn GlobalOpts::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Outcome {
   Done(Emit)
@@ -201,11 +228,17 @@ pub(all) enum Outcome {
   Trace(GlobalOpts, plan~ : TracePlan)
   Outline(GlobalOpts, plan~ : OutlinePlan)
 } derive(Eq, @debug.Debug)
+pub fn Outcome::equal(Self, Self) -> Bool
+pub fn Outcome::not_equal(Self, Self) -> Bool
+pub fn Outcome::to_repr(Self) -> @debug.Repr
 
 pub(all) struct OutlinePlan {
   path : String
   json : Bool
 } derive(Eq, @debug.Debug)
+pub fn OutlinePlan::equal(Self, Self) -> Bool
+pub fn OutlinePlan::not_equal(Self, Self) -> Bool
+pub fn OutlinePlan::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ParsedArgs {
   flags : Map[String, FlagValue]
@@ -220,6 +253,9 @@ pub(all) struct PositionalSpec {
   description : String?
   note : String?
 } derive(Eq, @debug.Debug)
+pub fn PositionalSpec::equal(Self, Self) -> Bool
+pub fn PositionalSpec::not_equal(Self, Self) -> Bool
+pub fn PositionalSpec::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SkillInstallPlan {
   target_rel : String
@@ -227,6 +263,9 @@ pub(all) struct SkillInstallPlan {
   force : Bool
   files : Array[(String, String)]
 } derive(Eq, @debug.Debug)
+pub fn SkillInstallPlan::equal(Self, Self) -> Bool
+pub fn SkillInstallPlan::not_equal(Self, Self) -> Bool
+pub fn SkillInstallPlan::to_repr(Self) -> @debug.Repr
 
 pub(all) struct StorybookScaffoldPlan {
   dir : String
@@ -234,24 +273,36 @@ pub(all) struct StorybookScaffoldPlan {
   force : Bool
   files : Array[(String, String)]
 } derive(Eq, @debug.Debug)
+pub fn StorybookScaffoldPlan::equal(Self, Self) -> Bool
+pub fn StorybookScaffoldPlan::not_equal(Self, Self) -> Bool
+pub fn StorybookScaffoldPlan::to_repr(Self) -> @debug.Repr
 
 pub(all) enum TraceOp {
   Info
   Trim(at~ : Int)
   Relocate(place~ : String, compact~ : Bool)
 } derive(Eq, @debug.Debug)
+pub fn TraceOp::equal(Self, Self) -> Bool
+pub fn TraceOp::not_equal(Self, Self) -> Bool
+pub fn TraceOp::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TracePlan {
   path : String
   op : TraceOp
   out : String?
 } derive(Eq, @debug.Debug)
+pub fn TracePlan::equal(Self, Self) -> Bool
+pub fn TracePlan::not_equal(Self, Self) -> Bool
+pub fn TracePlan::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TraceResult {
   file : String?
   report : String
   diagnostics : Array[String]
 } derive(Eq, @debug.Debug)
+pub fn TraceResult::equal(Self, Self) -> Bool
+pub fn TraceResult::not_equal(Self, Self) -> Bool
+pub fn TraceResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct WatchPlan {
   paths : Array[String]
@@ -260,6 +311,9 @@ pub(all) struct WatchPlan {
   ir : Bool
   css : CssPlan?
 } derive(Eq, @debug.Debug)
+pub fn WatchPlan::equal(Self, Self) -> Bool
+pub fn WatchPlan::not_equal(Self, Self) -> Bool
+pub fn WatchPlan::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

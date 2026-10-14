@@ -11,7 +11,7 @@
 ///
 /// Known divergence: input containing a literal `</template>`
 /// closes the wrapper early, truncating the fragment.
-pub fn parse_fragment(html : String) -> (@html5.Document, Array[Int]) {
+pub fn parse_fragment(html : String) -> (@html5.Document, Array[Int32]) {
   let doc = @html5.parse("<template>" + html + "</template>")
   // The wrapper is the FIRST template element in document order (a template
   // with no surrounding markup typically lands in <head>, so don't assume a
@@ -48,7 +48,7 @@ pub fn parse_fragment(html : String) -> (@html5.Document, Array[Int]) {
 /// containing a literal `</svg>` closes the wrapper early, and everything after
 /// it is dropped rather than returned. Truncating is the safe direction — the
 /// alternative would be content that escaped the namespace it was promised.
-pub fn parse_fragment_svg(svg : String) -> (@html5.Document, Array[Int]) {
+pub fn parse_fragment_svg(svg : String) -> (@html5.Document, Array[Int32]) {
   let (doc, roots) = parse_fragment("<svg>" + svg + "</svg>")
   for id in roots {
     if doc.get_node(id) is Some(ElementNode(el)) &&

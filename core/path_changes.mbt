@@ -39,7 +39,7 @@ pub fn PathChanges::field(self : PathChanges, name : String) -> PathChanges {
 pub fn PathChanges::index(
   self : PathChanges,
   name : String,
-  i : Int,
+  i : Int32,
 ) -> PathChanges {
   self.of_path(self.as_path().index(name, i))
 }
@@ -78,7 +78,7 @@ pub fn PathChanges::intent(
   self : PathChanges,
   name : String,
   args : Array[Value],
-  opts? : IntentOpts = IntentOpts::new(),
+  opts~ : IntentOpts = IntentOpts::new(),
 ) -> Unit {
   self.ctx.intent_at_path(self.build_path(), name, args, opts)
 }

@@ -20,6 +20,9 @@ pub(all) struct Block {
   offset : Int
   line : Int
 } derive(Eq, @debug.Debug)
+pub fn Block::equal(Self, Self) -> Bool
+pub fn Block::not_equal(Self, Self) -> Bool
+pub fn Block::to_repr(Self) -> @debug.Repr
 
 pub(all) struct CompiledTree {
   root : @anode.ANode
@@ -32,6 +35,9 @@ pub(all) struct MacroDef {
   defaults : Map[String, String]
   source : String
 } derive(Eq, @debug.Debug)
+pub fn MacroDef::equal(Self, Self) -> Bool
+pub fn MacroDef::not_equal(Self, Self) -> Bool
+pub fn MacroDef::to_repr(Self) -> @debug.Repr
 
 pub(all) struct RawView {
   name : String

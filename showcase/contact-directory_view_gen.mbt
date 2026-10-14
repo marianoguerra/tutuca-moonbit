@@ -15,6 +15,12 @@ pub(all) struct ContactDirectoryContactData {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend ContactDirectoryContactData with Eq::{not_equal, equal}
+
+///|
+pub extend ContactDirectoryContactData with @debug.Debug::{to_repr}
+
+///|
 /// The state of the ContactDirectory component.
 ///
 /// Declared with `field` in the `spec:` section. Adding one there adds it
@@ -24,8 +30,8 @@ pub(all) struct ContactDirectoryState {
   contacts : Map[String, @tutuca.Value]
   order : Array[String]
   query : String
-  page : Int
-  pages : Int
+  page : Int32
+  pages : Int32
   keys : Array[String]
   selected : String
   editor : @tutuca.Value
@@ -180,6 +186,7 @@ pub fn contact_directory_init_args(
 
 ///|
 /// The `ContactData` record as a `@tutuca.Value`.
+#warnings("-unused_value")
 fn contact_directory_contact_data_to_value(
   x : ContactDirectoryContactData,
 ) -> @tutuca.Value {
@@ -188,6 +195,7 @@ fn contact_directory_contact_data_to_value(
 
 ///|
 /// The `ContactData` record back out. None on a shape mismatch.
+#warnings("-unused_value")
 fn contact_directory_contact_data_of_value(
   v : @tutuca.Value,
 ) -> ContactDirectoryContactData? {
@@ -441,7 +449,7 @@ pub fn ContactDirectoryIntent::to_dispatch(
 pub fn ContactDirectoryIntent::dispatch(
   self : ContactDirectoryIntent,
   ctx : &@tutuca.Ctx,
-  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
+  opts~ : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
 ) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.intent(name, args, opts)
@@ -460,6 +468,12 @@ pub let contact_directory_global_style : String = ""
 pub(all) enum ContactDirectoryEnrich {
   ContactLabel
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend ContactDirectoryEnrich with Eq::{not_equal, equal}
+
+///|
+pub extend ContactDirectoryEnrich with @debug.Debug::{to_repr}
 
 ///|
 pub fn ContactDirectoryEnrich::name(self : ContactDirectoryEnrich) -> String {
@@ -509,6 +523,12 @@ pub(all) struct ContactEditorContactData {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend ContactEditorContactData with Eq::{not_equal, equal}
+
+///|
+pub extend ContactEditorContactData with @debug.Debug::{to_repr}
+
+///|
 /// The state of the ContactEditor component.
 ///
 /// Declared with `field` in the `spec:` section. Adding one there adds it
@@ -535,6 +555,7 @@ pub fn ContactEditorState::zero() -> ContactEditorState {
 
 ///|
 /// The `ContactData` record as a `@tutuca.Value`.
+#warnings("-unused_value")
 fn contact_editor_contact_data_to_value(
   x : ContactEditorContactData,
 ) -> @tutuca.Value {
@@ -543,6 +564,7 @@ fn contact_editor_contact_data_to_value(
 
 ///|
 /// The `ContactData` record back out. None on a shape mismatch.
+#warnings("-unused_value")
 fn contact_editor_contact_data_of_value(
   v : @tutuca.Value,
 ) -> ContactEditorContactData? {

@@ -1,12 +1,12 @@
 ///|
 test "counter: renders the initial count" {
-  let h = @harness.mount(counter_module(), "Counter")
+  let h = @harness.mount(@examples.counter_module(), "Counter")
   inspect(h.text(".stat-value"), content="0")
 }
 
 ///|
 test "counter: $inc (a method) increments, dec (an input handler) decrements" {
-  let h = @harness.mount(counter_module(), "Counter")
+  let h = @harness.mount(@examples.counter_module(), "Counter")
   h.click(".btn-success") // the + button, @on.click="inc"
   inspect(h.text(".stat-value"), content="1")
   h.click(".btn-error") // the - button, @on.click="dec"
@@ -16,14 +16,16 @@ test "counter: $inc (a method) increments, dec (an input handler) decrements" {
 
 ///|
 test "counter: starts from the example's initial count" {
-  let h = @harness.mount(counter_module(), "Counter", args={ "count": Num(-5) })
+  let h = @harness.mount(@examples.counter_module(), "Counter", args={
+    "count": Num(-5),
+  })
   h.click(".btn-success")
   inspect(h.text(".stat-value"), content="-4")
 }
 
 ///|
 test "counter: one re-render per interaction (batching)" {
-  let h = @harness.mount(counter_module(), "Counter")
+  let h = @harness.mount(@examples.counter_module(), "Counter")
   let before = h.render_count()
   h.click(".btn-success")
   assert_eq(h.render_count(), before + 1)
@@ -31,7 +33,9 @@ test "counter: one re-render per interaction (batching)" {
 
 ///|
 test "counter: simple and abstract properties are synchronous" {
-  let h = @harness.mount(counter_module(), "Counter", args={ "count": Num(-5) })
+  let h = @harness.mount(@examples.counter_module(), "Counter", args={
+    "count": Num(-5),
+  })
   assert_eq(h.drive_value().property("count"), Num(-5))
   assert_eq(h.drive_value().property("magnitude"), Num(5))
 
@@ -57,7 +61,7 @@ test "counter: simple and abstract properties are synchronous" {
 
 ///|
 test "counter: a host cannot dispatch the generated field mutator" {
-  let h = @harness.mount(counter_module(), "Counter")
+  let h = @harness.mount(@examples.counter_module(), "Counter")
   let refused = @harness.refusals_while(() => {
     h.send_at_root("set_count", args=[Num(7)])
   })
@@ -68,7 +72,8 @@ test "counter: a host cannot dispatch the generated field mutator" {
 
 ///|
 test "counter: public fuzzer plans generate properties, never internal mutators" {
-  guard @fuzz.Plan::of_component(counter_module().components[0]) is Some(plan) else {
+  guard @fuzz.Plan::of_component(@examples.counter_module().components[0])
+    is Some(plan) else {
     fail("Counter carries its spec")
   }
   let actions = plan.script(seed=3, steps=80)

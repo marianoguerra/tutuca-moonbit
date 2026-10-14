@@ -14,7 +14,7 @@ extern "js" fn is_absent(v : @core.Any) -> Bool =
   #|(v) => v === null || v === undefined
 
 ///|
-extern "js" fn as_int(v : @core.Any) -> Int =
+extern "js" fn as_int(v : @core.Any) -> Int32 =
   #|(v) => v
 
 ///|
@@ -22,7 +22,7 @@ extern "js" fn as_double(v : @core.Any) -> Double =
   #|(v) => v
 
 ///|
-extern "js" fn of_int(v : Int) -> @core.Any =
+extern "js" fn of_int(v : Int32) -> @core.Any =
   #|(v) => v
 
 ///|
@@ -141,7 +141,7 @@ extern "js" fn rt4(
 extern "js" fn mk_instant(
   rt : @core.Any,
   secs : String,
-  nanos : Int,
+  nanos : Int32,
 ) -> @core.Any =
   #|(rt, secs, nanos) => rt.mk_instant(BigInt(secs), nanos)
 
@@ -162,9 +162,9 @@ extern "js" fn rt0(rt : @core.Any, name : String) -> @core.Any =
   #|(rt, name) => rt[name]()
 
 ///|
-extern "js" fn arr_len(a : @core.Any) -> Int =
+extern "js" fn arr_len(a : @core.Any) -> Int32 =
   #|(a) => a.length
 
 ///|
-extern "js" fn arr_at(a : @core.Any, i : Int) -> @core.Any =
+extern "js" fn arr_at(a : @core.Any, i : Int32) -> @core.Any =
   #|(a, i) => a[i]

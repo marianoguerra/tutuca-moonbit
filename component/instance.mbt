@@ -120,7 +120,7 @@ const REUSE_FUEL = 64
 /// after the first handful. Identity is preserved exactly where preserving it
 /// is nearly free, which is also where it pays: the subtrees a transaction
 /// did not touch.
-fn reuse_equal(a : @tutuca.Value, b : @tutuca.Value, fuel : Ref[Int]) -> Bool {
+fn reuse_equal(a : @tutuca.Value, b : @tutuca.Value, fuel : Ref[Int32]) -> Bool {
   if physical_equal(a, b) {
     return true
   }

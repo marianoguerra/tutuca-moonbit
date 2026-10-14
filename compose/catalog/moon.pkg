@@ -18,5 +18,4 @@
 
 import {
   "moonbitlang/core/debug",
-  "moonbitlang/core/json",
 }

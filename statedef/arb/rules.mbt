@@ -202,8 +202,8 @@ fn Rules::lookup(self : Rules, name : String) -> @tutuca.Expr? {
 /// draws are what a caller discards with `@qc.filter`.
 pub fn Rules::filter(
   self : Rules,
-  g : @gen.Gen[Map[String, @tutuca.Value]],
-) -> @gen.Gen[Map[String, @tutuca.Value]?] {
+  g : @gen.Generator[Map[String, @tutuca.Value]],
+) -> @gen.Generator[Map[String, @tutuca.Value]?] {
   g.such_that_maybe(s => self.invariants_hold(s))
 }
 

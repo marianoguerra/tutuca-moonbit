@@ -53,6 +53,12 @@ pub(all) struct SinkHints {
 } derive(Eq, Debug)
 
 ///|
+pub extend SinkHints with Eq::{not_equal, equal}
+
+///|
+pub extend SinkHints with Debug::{to_repr}
+
+///|
 /// Every rule may have something to decide: the answer when nobody has looked.
 ///
 /// The default everywhere it is not known, and the reason a missing hint is a

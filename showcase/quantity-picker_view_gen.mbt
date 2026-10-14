@@ -4,8 +4,7 @@
 //   tutuca gen quantity-picker.tutu --name QuantityPicker --out <dir>
 //
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component",
-//   "moonbitlang/core/debug"
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 
 ///|
 /// The state of the QuantityPicker component.
@@ -14,8 +13,8 @@
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct QuantityPickerState {
-  quantity : Int
-  unit_cents : Int
+  quantity : Int32
+  unit_cents : Int32
 }
 
 ///|

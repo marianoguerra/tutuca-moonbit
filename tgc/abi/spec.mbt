@@ -22,7 +22,7 @@
 /// REFUSES the module rather than adapting to it — there is nothing to adapt
 /// to, because a different group is a different set of types and no reference
 /// can cross between them.
-pub const ABI_VERSION : Int = 2
+pub const ABI_VERSION : Int32 = 2
 
 ///|
 /// The tag every `tg_val` carries in its first field.
@@ -46,10 +46,22 @@ pub(all) enum Tag {
 } derive(Eq, Compare, Hash, Debug)
 
 ///|
+pub extend Tag with Eq::{not_equal, equal}
+
+///|
+pub extend Tag with Compare::{op_lt, op_le, op_ge, compare, op_gt}
+
+///|
+pub extend Tag with Hash::{hash, hash_combine}
+
+///|
+pub extend Tag with Debug::{to_repr}
+
+///|
 /// The tag's wire number. Frozen: a value written by a module built today is
 /// read by one built years later, and this number is the whole of what says
 /// which case it is.
-declare pub fn Tag::code(self : Tag) -> Int
+declare pub fn Tag::code(self : Tag) -> Int32
 
 ///|
 /// The tag for a wire number, or `None` for one this ABI does not define.
@@ -57,7 +69,7 @@ declare pub fn Tag::code(self : Tag) -> Int
 /// It cannot happen through a reference — a foreign tag would mean a foreign
 /// group, and then no reference crosses at all — but it can happen through the
 /// JSON boundary, which is text and believes whoever wrote it.
-declare pub fn Tag::of_code(code : Int) -> Tag?
+declare pub fn Tag::of_code(code : Int32) -> Tag?
 
 ///|
 /// The name of the preamble type that holds this case, e.g. `tg_str`.
@@ -96,8 +108,20 @@ pub(all) enum Op {
 } derive(Eq, Compare, Hash, Debug)
 
 ///|
+pub extend Op with Eq::{not_equal, equal}
+
+///|
+pub extend Op with Compare::{op_lt, op_le, op_ge, compare, op_gt}
+
+///|
+pub extend Op with Hash::{hash, hash_combine}
+
+///|
+pub extend Op with Debug::{to_repr}
+
+///|
 /// The op's wire number. Frozen for the same reason a tag is.
-declare pub fn Op::code(self : Op) -> Int
+declare pub fn Op::code(self : Op) -> Int32
 
 ///|
 /// The op for a wire number, or `None`.
@@ -105,7 +129,7 @@ declare pub fn Op::code(self : Op) -> Int
 /// A module that meets an unknown op answers `ref.null` — "I do not do that" —
 /// which is exactly the answer an older module gives for an op invented after it
 /// was built. That is what makes the space extensible rather than merely large.
-declare pub fn Op::of_code(code : Int) -> Op?
+declare pub fn Op::of_code(code : Int32) -> Op?
 
 ///|
 /// The op's name, as a host writes it in a log.
@@ -185,6 +209,9 @@ pub impl Show for PreambleError with fn output(self, logger) {
 }
 
 ///|
+pub extend PreambleError with Show::{to_string, output}
+
+///|
 /// The function vocabulary a generated module reaches for, as TYPES.
 ///
 /// `tgc/1` kept this as eighty signature STRINGS in `tgc/emit`, spliced into
@@ -215,6 +242,12 @@ pub(all) enum Supplier {
   /// that could send.
   Host
 } derive(Eq, Debug)
+
+///|
+pub extend Supplier with Eq::{not_equal, equal}
+
+///|
+pub extend Supplier with Debug::{to_repr}
 
 ///|
 pub(all) struct VocabFn {

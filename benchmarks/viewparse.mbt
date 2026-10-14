@@ -11,7 +11,7 @@
 
 ///|
 /// Stage 1: source text -> per-component raw view sources.
-pub fn split(source : String) -> Int {
+pub fn split(source : String) -> Int32 {
   let file = split_corpus(source)
   let mut n = file.macros.length()
   for c in file.components {
@@ -26,7 +26,7 @@ pub fn split(source : String) -> Int {
 ///|
 /// Stage 2: compile every view and extract its typed surface. This is where the
 /// views actually go through @anode (and, under it, the HTML parser).
-pub fn surface(source : String) -> Int {
+pub fn surface(source : String) -> Int32 {
   let file = split_corpus(source)
   let mut n = 0
   for c in file.components {
@@ -42,7 +42,7 @@ pub fn surface(source : String) -> Int {
 ///|
 /// Stage 3: build the compiled views without emitting anything — the value the
 /// generated IR module reconstructs.
-pub fn build(source : String) -> Int {
+pub fn build(source : String) -> Int32 {
   let file = split_corpus(source)
   let mut n = 0
   for c in file.components {
@@ -57,7 +57,7 @@ pub fn build(source : String) -> Int {
 ///|
 /// The whole thing, exactly as cli/gen_views.mbt drives it: split, emit the
 /// types module, then the companion IR module.
-pub fn gen(source : String) -> Int {
+pub fn gen(source : String) -> Int32 {
   let file = split_corpus(source)
   let generated = @viewgen.emit_modules(WORKLOAD_NAME, WORKLOAD_FILE, file) catch {
     e => fail_stage("gen", e)
@@ -93,7 +93,7 @@ fn[T] fail_stage(stage : String, e : @viewgen.GenError) -> T {
 /// `one_big_view_body` under one component `times` times over: one view
 /// holding `times` copies of every view body in the repo. `giant_view(1)` is
 /// benchmarks/one_big_view.tutu; higher counts are the scaling probe.
-pub fn giant_view(times : Int) -> String {
+pub fn giant_view(times : Int32) -> String {
   let sb = StringBuilder()
   sb.write_string("view:\n  GiantView:\n")
   for _ in 0..<times {
@@ -112,7 +112,7 @@ pub let corpora : Array[(String, String)] = [
 ]
 
 ///|
-pub let stages : Array[(String, (String) -> Int)] = [
+pub let stages : Array[(String, (String) -> Int32)] = [
   ("split", split),
   ("surface", surface),
   ("build", build),

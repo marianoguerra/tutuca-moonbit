@@ -258,7 +258,7 @@ fn truncated(
 
 ///|
 /// The slot a place ultimately writes.
-fn state_slot(ctx : Ctx, place : @tutuca.Place) -> Int raise Refused {
+fn state_slot(ctx : Ctx, place : @tutuca.Place) -> Int32 raise Refused {
   match place.root {
     PState(name) =>
       match ctx.comp.field_index(name) {
@@ -317,7 +317,7 @@ fn write_place(
   b : B,
   out : Array[@wast.Node],
   place : @tutuca.Place,
-  slot : Int,
+  slot : Int32,
   value : @wast.Node,
 ) -> Unit raise Refused {
   let cell = b.made(Index(b.var_("f"), b.int_(slot)))
@@ -545,7 +545,7 @@ fn message_arg(
   effect : String,
   kind : @tscript.DeclKind,
   named_question : Bool,
-) -> Int? {
+) -> Int32? {
   match effect {
     "send" => Some(0)
     "sendAt" => Some(1)
@@ -561,7 +561,7 @@ fn message_arg(
 /// An array LITERAL now, where `tgc/1` allocated a local and wrote each slot on
 /// its own line. The values are already held in locals, so nothing about the
 /// evaluation order changes; what changes is that the array is one node.
-fn tail_vals(b : B, vals : Array[@wast.Node], from : Int) -> @wast.Node {
+fn tail_vals(b : B, vals : Array[@wast.Node], from : Int32) -> @wast.Node {
   if vals.length() - from <= 0 {
     return b.rt("tg_no_args", [])
   }
@@ -579,7 +579,7 @@ fn tail_vals(b : B, vals : Array[@wast.Node], from : Int) -> @wast.Node {
 /// exactly the kind of thing two backends can agree to disagree about while
 /// every case with an explicit route passes. `tscript/conformance` records it
 /// resolved for the same reason.
-fn route_of(route : Array[@tutuca.Leg]) -> Int {
+fn route_of(route : Array[@tutuca.Leg]) -> Int32 {
   if route.length() == 0 {
     return ROUTE_DYN_LEX
   }
@@ -594,16 +594,16 @@ fn route_of(route : Array[@tutuca.Leg]) -> Int {
 }
 
 ///|
-const ROUTE_DYN : Int = 1
+const ROUTE_DYN : Int32 = 1
 
 ///|
-const ROUTE_LEX : Int = 2
+const ROUTE_LEX : Int32 = 2
 
 ///|
-const ROUTE_DYN_LEX : Int = 3
+const ROUTE_DYN_LEX : Int32 = 3
 
 ///|
-const ROUTE_LEX_DYN : Int = 4
+const ROUTE_LEX_DYN : Int32 = 4
 
 ///|
 /// A `&.place`, reified as the path a host walks.

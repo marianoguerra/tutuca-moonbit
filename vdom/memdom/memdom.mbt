@@ -8,6 +8,12 @@ pub(all) enum MemKind {
 } derive(Eq, Debug)
 
 ///|
+pub extend MemKind with Eq::{not_equal, equal}
+
+///|
+pub extend MemKind with Debug::{to_repr}
+
+///|
 /// An in-memory DOM node. `attrs` is the serialized attribute map (what
 /// assert-equal-DOM compares); `props` is the live IDL property bag (where
 /// `value` / `checked` state lives). `dangerous_html` holds markup written
@@ -26,15 +32,15 @@ pub struct MemNode {
   mut data : String
   mut created_is : String? // `is` option passed at creation time
   mut dangerous_html : String?
-  mut inner_html_sets : Int // counts real set_inner_html writes (skip test)
+  mut inner_html_sets : Int32 // counts real set_inner_html writes (skip test)
 }
 
 ///|
 fn MemNode::make(
   kind : MemKind,
-  tag? : String = "",
-  ns? : @vdom.Ns? = None,
-  data? : String = "",
+  tag~ : String = "",
+  ns~ : @vdom.Ns? = None,
+  data~ : String = "",
 ) -> MemNode {
   {
     kind,
@@ -92,7 +98,7 @@ fn detach(node : MemNode) -> Unit {
 ///|
 /// Insert `node` under `parent` at `index`. Splices document fragments like
 /// the real DOM: the fragment's children move in and the fragment empties.
-fn insert_at(parent : MemNode, node : MemNode, index : Int) -> Unit {
+fn insert_at(parent : MemNode, node : MemNode, index : Int32) -> Unit {
   if node.kind is FragmentNode {
     let moving = node.childs.copy()
     node.childs.clear()
@@ -110,7 +116,7 @@ fn insert_at(parent : MemNode, node : MemNode, index : Int) -> Unit {
 }
 
 ///|
-fn index_of(parent : MemNode, node : MemNode) -> Int? {
+fn index_of(parent : MemNode, node : MemNode) -> Int32? {
   for i, c in parent.childs {
     if physical_equal(c, node) {
       return Some(i)

@@ -105,18 +105,18 @@ pub fn item_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn item_component(
-  name? : String = "Item",
-  views? : Map[String, @anode.View] = item_views(),
-  initial? : ItemState = ItemState::zero(),
-  common_style? : String = item_common_style,
-  global_style? : String = item_global_style,
+  name~ : String = "Item",
+  views~ : Map[String, @anode.View] = item_views(),
+  initial~ : ItemState = ItemState::zero(),
+  common_style~ : String = item_common_style,
+  global_style~ : String = item_global_style,
   update? : (ItemState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ItemState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -207,18 +207,18 @@ pub fn items_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn items_component(
-  name? : String = "Items",
-  views? : Map[String, @anode.View] = items_views(),
-  initial? : ItemsState = ItemsState::zero(),
-  common_style? : String = items_common_style,
-  global_style? : String = items_global_style,
+  name~ : String = "Items",
+  views~ : Map[String, @anode.View] = items_views(),
+  initial~ : ItemsState = ItemsState::zero(),
+  common_style~ : String = items_common_style,
+  global_style~ : String = items_global_style,
   update? : (ItemsState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ItemsState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

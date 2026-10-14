@@ -22,16 +22,16 @@ priv struct FuzzSession {
   mut plan : @fuzz.Plan?
   /// The story index the run is about, so the panel goes back to the pane that
   /// started it.
-  mut idx : Int
+  mut idx : Int32
   mut seed : UInt64
-  mut steps : Int
+  mut steps : Int32
   mut source : String
   /// The script as drawn. Redrawn whenever a knob moves, because a row list
   /// that outlived its seed would be a lie about what is going to be sent.
   mut script : Array[@fuzz.Action]
   /// What has run so far, and how far in.
   mut ran : Array[@fuzz.Step]
-  mut at : Int
+  mut at : Int32
   /// What the next tick should do. `""` is idle.
   ///
   /// Every mode runs on the TICK and none of them runs inside the click that
@@ -502,7 +502,7 @@ fn[N] fuzz_handlers(
 /// approximately undone.
 fn[N] remount_story(
   app : @app.App[N],
-  idx : Int,
+  idx : Int32,
   sections : Array[@sb.Section],
 ) -> Unit {
   guard idx >= 0 else { return }
@@ -634,6 +634,6 @@ pub fn fuzz_tick() -> Unit {
 ///
 /// A closure rather than the value, because a run reads it back after every
 /// step and the whole point is that it changed.
-fn[N] story_reader(app : @app.App[N], idx : Int) -> @fuzz.Reader {
+fn[N] story_reader(app : @app.App[N], idx : Int32) -> @fuzz.Reader {
   Reader(() => @sbui.story_value(app, idx))
 }

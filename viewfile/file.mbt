@@ -15,7 +15,7 @@
 /// and because two of them — `viewgen` and `cli` — had written it out
 /// byte-identically. `line_at` below is the same rule over an array the caller
 /// already has, which is what the splitter itself works in.
-pub fn line_of(text : String, offset : Int) -> Int {
+pub fn line_of(text : String, offset : Int32) -> Int32 {
   let mut line = 1
   let mut i = 0
   for c in text {

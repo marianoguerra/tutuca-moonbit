@@ -41,7 +41,7 @@ pub fn Place::label(self : Place) -> String {
 }
 
 ///|
-pub fn Place::depth(self : Place) -> Int {
+pub fn Place::depth(self : Place) -> Int32 {
   let Place(keys) = self
   keys.length()
 }

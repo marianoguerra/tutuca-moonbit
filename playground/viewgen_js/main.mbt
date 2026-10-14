@@ -45,22 +45,18 @@ fn generate_json(source : String, name : String) -> String {
       hints~,
     )
     let m : Map[String, Json] = {
-      "ok": true.to_json(),
+      "ok": Json(true),
       // No moon.pkg in the playground package to import
       // moonbitlang/core/debug from, so the enums derive Eq alone.
-      "module": generated.types_source.to_json(),
-      "hints": hints.map(h => h.to_json()).to_json(),
+      "module": Json(generated.types_source),
+      "hints": Json(hints.map(h => Json(h))),
     }
     if generated.ir_source is Some(src) {
-      m["ir"] = src.to_json()
+      m["ir"] = Json(src)
     }
     m
   } catch {
-    e =>
-      {
-        "ok": false.to_json(),
-        "error": @viewgen.GenError::message(e).to_json(),
-      }
+    e => { "ok": Json(false), "error": Json(@viewgen.GenError::message(e)) }
   }
   Json::object(obj).stringify()
 }

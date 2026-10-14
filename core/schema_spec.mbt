@@ -32,6 +32,9 @@ pub(all) enum FieldKind {
 } derive(Debug)
 
 ///|
+pub extend FieldKind with Debug::{to_repr}
+
+///|
 /// One declared field of a component's state.
 ///
 /// Two parts, where there were six. The WIT spelling, the runtime kind, a
@@ -61,6 +64,12 @@ pub(all) struct PropertyInfo {
 } derive(Eq, Debug)
 
 ///|
+pub extend PropertyInfo with Eq::{not_equal, equal}
+
+///|
+pub extend PropertyInfo with Debug::{to_repr}
+
+///|
 /// Runtime projection of a protocol surface. All names are wire names and the
 /// id is canonical; source aliases never cross this boundary.
 pub(all) struct ProtocolInfo {
@@ -76,6 +85,12 @@ pub(all) struct ProtocolInfo {
 } derive(Eq, Debug)
 
 ///|
+pub extend ProtocolInfo with Eq::{not_equal, equal}
+
+///|
+pub extend ProtocolInfo with Debug::{to_repr}
+
+///|
 /// A component's explicit provider for one protocol operation.
 pub(all) struct ProtocolBindingInfo {
   protocol_id : String
@@ -84,12 +99,24 @@ pub(all) struct ProtocolBindingInfo {
 } derive(Eq, Debug)
 
 ///|
+pub extend ProtocolBindingInfo with Eq::{not_equal, equal}
+
+///|
+pub extend ProtocolBindingInfo with Debug::{to_repr}
+
+///|
 /// The result of checking one runtime schema against a protocol assumption.
 pub(all) enum ProtocolConformance {
   Verified
   Deferred(Array[String])
   Invalid(Array[String])
 } derive(Eq, Debug)
+
+///|
+pub extend ProtocolConformance with Eq::{not_equal, equal}
+
+///|
+pub extend ProtocolConformance with Debug::{to_repr}
 
 ///|
 /// What a component declares, as static metadata.

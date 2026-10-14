@@ -13,7 +13,7 @@ import {
   // need; naming it is what links them
   "marianoguerra/tutuca/storybook/ui/panels/wasm" @panelsw,
   // @core.Any: the DOM event the exported on_event receives from JS
-  "mizchi/js/core",
+  "mizchi/js_core" @core,
 }
 
 supported_targets = "wasm-gc"

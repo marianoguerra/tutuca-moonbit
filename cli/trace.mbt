@@ -21,10 +21,16 @@ pub(all) enum TraceOp {
   /// file they want to know about before they change it.
   Info
   /// Keep the first `at` events.
-  Trim(at~ : Int)
+  Trim(at~ : Int32)
   /// Cut it down to one subtree, and rewrite every address to suit.
   Relocate(place~ : String, compact~ : Bool)
 } derive(Debug, Eq)
+
+///|
+pub extend TraceOp with Debug::{to_repr}
+
+///|
+pub extend TraceOp with Eq::{not_equal, equal}
 
 ///|
 pub(all) struct TracePlan {
@@ -33,6 +39,12 @@ pub(all) struct TracePlan {
   /// Where to write; `None` is stdout.
   out : String?
 } derive(Debug, Eq)
+
+///|
+pub extend TracePlan with Debug::{to_repr}
+
+///|
+pub extend TracePlan with Eq::{not_equal, equal}
 
 ///|
 pub(all) struct TraceResult {
@@ -45,6 +57,12 @@ pub(all) struct TraceResult {
   /// having.
   diagnostics : Array[String]
 } derive(Debug, Eq)
+
+///|
+pub extend TraceResult with Debug::{to_repr}
+
+///|
+pub extend TraceResult with Eq::{not_equal, equal}
 
 ///|
 /// One line per fact, which is what `info` is for: a file somebody was handed,
@@ -79,7 +97,7 @@ fn trace_report(t : @trace.Trace) -> String {
   // The places, with how much of the recording is about each: what a reader
   // picks a `--at` from, and the reason `info` is worth running before
   // `--at` rather than guessing at an address.
-  let counts : Map[String, Int] = Map([])
+  let counts : Map[String, Int32] = Map([])
   for e in t.events {
     let k = e.at.label()
     counts[k] = counts.get(k).unwrap_or(0) + 1

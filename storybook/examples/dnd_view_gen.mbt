@@ -140,6 +140,12 @@ pub(all) enum DnDExampleWhen {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend DnDExampleWhen with Eq::{not_equal, equal}
+
+///|
+pub extend DnDExampleWhen with @debug.Debug::{to_repr}
+
+///|
 pub fn DnDExampleWhen::name(self : DnDExampleWhen) -> String {
   match self {
     FilterItem => "filter_item"

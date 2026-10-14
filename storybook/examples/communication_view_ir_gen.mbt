@@ -160,18 +160,18 @@ fn status_inline_update(
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn status_component(
-  name? : String = "Status",
-  views? : Map[String, @anode.View] = status_views(),
-  initial? : StatusState = StatusState::zero(),
-  common_style? : String = status_common_style,
-  global_style? : String = status_global_style,
+  name~ : String = "Status",
+  views~ : Map[String, @anode.View] = status_views(),
+  initial~ : StatusState = StatusState::zero(),
+  common_style~ : String = status_common_style,
+  global_style~ : String = status_global_style,
   update? : (StatusState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     StatusState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -286,18 +286,18 @@ fn send_receive_inline_update(
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn send_receive_component(
-  name? : String = "SendReceive",
-  views? : Map[String, @anode.View] = send_receive_views(),
-  initial? : SendReceiveState = SendReceiveState::zero(),
-  common_style? : String = send_receive_common_style,
-  global_style? : String = send_receive_global_style,
+  name~ : String = "SendReceive",
+  views~ : Map[String, @anode.View] = send_receive_views(),
+  initial~ : SendReceiveState = SendReceiveState::zero(),
+  common_style~ : String = send_receive_common_style,
+  global_style~ : String = send_receive_global_style,
   update? : (SendReceiveState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SendReceiveState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -415,11 +415,11 @@ fn tree_item_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn tree_item_component(
-  name? : String = "TreeItem",
-  views? : Map[String, @anode.View] = tree_item_views(),
-  initial? : TreeItemState = TreeItemState::zero(),
-  common_style? : String = tree_item_common_style,
-  global_style? : String = tree_item_global_style,
+  name~ : String = "TreeItem",
+  views~ : Map[String, @anode.View] = tree_item_views(),
+  initial~ : TreeItemState = TreeItemState::zero(),
+  common_style~ : String = tree_item_common_style,
+  global_style~ : String = tree_item_global_style,
   update? : (TreeItemState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TreeItemState,
   ],
@@ -428,10 +428,10 @@ pub fn tree_item_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -511,18 +511,18 @@ pub fn tree_root_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn tree_root_component(
-  name? : String = "TreeRoot",
-  views? : Map[String, @anode.View] = tree_root_views(),
-  initial? : TreeRootState = TreeRootState::zero(),
-  common_style? : String = tree_root_common_style,
-  global_style? : String = tree_root_global_style,
+  name~ : String = "TreeRoot",
+  views~ : Map[String, @anode.View] = tree_root_views(),
+  initial~ : TreeRootState = TreeRootState::zero(),
+  common_style~ : String = tree_root_common_style,
+  global_style~ : String = tree_root_global_style,
   update? : (TreeRootState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TreeRootState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

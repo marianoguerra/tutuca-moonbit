@@ -13,10 +13,10 @@ fn host(source : String) -> @vdom.Vdom {
 ///|
 fn run(
   source : String,
-  sanitizer? : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
+  sanitizer~ : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
 ) -> (String, Array[String]) {
   let tree = host(source)
-  let f = MdFilter::new(sanitizer~)
+  let f = @markdown.MdFilter::new(sanitizer~)
   f.filter_tree(tree)
   (shape(tree), f.take_reports().map(@filter.Dropped::to_string))
 }
@@ -50,10 +50,10 @@ fn shape(v : @vdom.Vdom) -> String {
 /// `set_inner_html` would be worse. Neither happens.
 test "the payload becomes children and the directive disappears" {
   let tree = host("# Title\n\ntext\n")
-  let f = MdFilter::new()
+  let f = @markdown.MdFilter::new()
   f.filter_tree(tree)
   guard tree is Node(el) else { fail("expected an element") }
-  debug_inspect(el.attrs.contains(MD_ATTR), content="false")
+  debug_inspect(el.attrs.contains(@markdown.MD_ATTR), content="false")
   inspect(
     shape(tree),
     content=(
@@ -70,7 +70,7 @@ test "declared children do not survive the payload" {
   let tree = @vdom.h("DIV", attrs={ "setInnerMd": Md("hi") }, childs=[
     @vdom.h("SPAN", childs=[Text("gone")]),
   ])
-  MdFilter::new().filter_tree(tree)
+  @markdown.MdFilter::new().filter_tree(tree)
   inspect(
     shape(tree),
     content=(
@@ -87,7 +87,7 @@ test "a non-Md value under the name is just removed" {
   let tree = @vdom.h("DIV", attrs={ "setInnerMd": Str("hi") }, childs=[
     Text("kept"),
   ])
-  MdFilter::new().filter_tree(tree)
+  @markdown.MdFilter::new().filter_tree(tree)
   inspect(
     shape(tree),
     content=(
@@ -520,7 +520,7 @@ test "an entity in a url is decoded on the html route and never on the markdown 
   // Raw HTML — a real block, so it goes through `parse_fragment`. Decoded,
   // normalized, denied: the anchor survives with no href at all.
   let raw = host("<div><a href=\"java&#9;script:alert(1)\">x</a></div>\n")
-  MdFilter::new().filter_tree(raw)
+  @markdown.MdFilter::new().filter_tree(raw)
   guard raw is Node(rd) else { fail("expected an element") }
   guard rd.childs[0] is Node(inner) else { fail("expected the html block") }
   guard inner.childs[0] is Node(ra) else { fail("expected an anchor") }
@@ -529,7 +529,7 @@ test "an entity in a url is decoded on the html route and never on the markdown 
   // Markdown destination — never decoded, so never `javascript:`. It survives
   // as an unknown scheme, which navigates nowhere.
   let md = host("[x](java&#9;script:alert(1))\n")
-  MdFilter::new().filter_tree(md)
+  @markdown.MdFilter::new().filter_tree(md)
   guard md is Node(mdiv) else { fail("expected an element") }
   guard mdiv.childs[0] is Node(p) else { fail("expected a paragraph") }
   guard p.childs[0] is Node(a) else { fail("expected an anchor") }
@@ -557,7 +557,7 @@ test "an entity in a url is decoded on the html route and never on the markdown 
 /// hole; asking the tree what it contains gets the right answer.
 test "an inline anchor is a text node, not an element" {
   let tree = host("<a href=\"javascript:alert(1)\">x</a>\n")
-  MdFilter::new().filter_tree(tree)
+  @markdown.MdFilter::new().filter_tree(tree)
   guard tree is Node(div) else { fail("expected an element") }
   guard div.childs[0] is Node(p) else { fail("expected a paragraph") }
   // Every child is text. No element, so nothing to sanitize and nothing to run.
@@ -612,7 +612,7 @@ test "attacks are either dropped as elements or degraded to inert text" {
       "<script>alert(1)</script>\n", "<object data=\"x\"></object>\n", "<span style=\"color:red\">x</span>\n",
     ] {
     let tree = host(src)
-    let f = MdFilter::new()
+    let f = @markdown.MdFilter::new()
     f.filter_tree(tree)
     debug_inspect(f.take_reports(), content="[]")
     // Every descendant of the paragraph is a text node — no elements at all.

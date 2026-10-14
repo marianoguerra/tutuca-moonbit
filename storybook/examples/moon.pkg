@@ -48,17 +48,11 @@ import {
   "marianoguerra/tutuca/viewgen",
   "marianoguerra/tutuca/viewfile",
   "moonbitlang/core/test",
-  // The spec-derived generators, for `svg_more_property_test.mbt`: a
-  // component's own `<script type="tutuca/spec">` block, parsed at test time,
-  // is what says which states and which messages exist. Nothing is generated
-  // from a MoonBit type here, because the declaration is not one.
-  "marianoguerra/tutuca/statedef",
-  "marianoguerra/tutuca/statedef/arb",
   // The driver the storybook's Fuzz tab runs, so the property here and the run
   // a reader watches there are the same run.
   "marianoguerra/tutuca/testing/fuzz",
   "moonbitlang/quickcheck" @qc,
-  "moonbitlang/quickcheck/gen",
+  "moonbitlang/core/quickcheck" @gen,
 } for "test"
 
 // Warning 73 (`unnecessary_annotation`) is off here because this package holds

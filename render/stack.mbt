@@ -7,10 +7,10 @@
 ///|
 pub fn RenderStack::new(
   it : @tutuca.Value,
-  binds? : Map[String, @tutuca.Value] = Map([]),
+  binds~ : Map[String, @tutuca.Value] = Map([]),
   comps? : @component.Components,
   event? : DomEvent,
-  event_paths? : @eventpath.EventPathProfile = Open,
+  event_paths~ : @eventpath.EventPathProfile = Open,
 ) -> RenderStack {
   let stack : RenderStack = {
     root: it,
@@ -34,7 +34,7 @@ pub fn RenderStack::enter(
   self : RenderStack,
   it : @tutuca.Value,
   binds : Map[String, @tutuca.Value],
-  is_frame? : Bool = true,
+  is_frame~ : Bool = true,
   render_path? : @tutuca.DispatchPath,
   pending_frame? : Bool,
 ) -> RenderStack {
@@ -91,7 +91,7 @@ fn RenderStack::push_provides(self : RenderStack) -> RenderStack {
       None => () // compile() already drops this shape
     }
   }
-  let types : Map[String, Int] = Map([])
+  let types : Map[String, Int32] = Map([])
   for tname, cid in comp.provide_type {
     types[tname] = cid
   }
@@ -189,6 +189,18 @@ fn RenderStack::lookup_bind_chain(
 /// A bare name resolves against the BIND chain and nothing else.
 pub impl @tutuca.Stack for RenderStack with fn lookup_bare(self, name) {
   self.lookup_bind_chain(name)
+}
+
+///|
+pub extend RenderStack with @tutuca.Stack::{
+  lookup_bind,
+  lookup_method,
+  lookup_trigger,
+  lookup_dynamic,
+  lookup_storage,
+  lookup_bare,
+  lookup_event_path,
+  lookup_member,
 }
 
 ///|
@@ -329,7 +341,10 @@ pub fn RenderStack::lookup_dynamic_located(
 /// Not on the `@tutuca.Stack` trait, because the value language has no way to
 /// write one — a type left the value language with `K_TYPE`. A handler asks
 /// for it through `ctx.make`.
-pub fn RenderStack::lookup_dyn_type(self : RenderStack, name : String) -> Int? {
+pub fn RenderStack::lookup_dyn_type(
+  self : RenderStack,
+  name : String,
+) -> Int32? {
   match self.dyn_binds {
     Some(db) => db.lookup_type(name)
     None => None

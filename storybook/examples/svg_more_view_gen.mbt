@@ -14,7 +14,7 @@
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct IconGalleryState {
-  size : Int
+  size : Int32
 }
 
 ///|
@@ -71,7 +71,7 @@ impl @component.Fields for IconGalleryState with fn schema() {
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct BarChartState {
-  values : Array[Int]
+  values : Array[Int32]
 }
 
 ///|
@@ -103,7 +103,7 @@ impl @component.Fields for BarChartState with fn encode(s) {
 impl @component.Fields for BarChartState with fn decode(f) {
   guard f.get("values") is Some(t1_values) else { return None }
   guard t1_values is List(u1_values) else { return None }
-  let v_values : Array[Int] = []
+  let v_values : Array[Int32] = []
   for e1_values in u1_values {
     guard e1_values is Num(u2_values) else { return None }
     let x1_values = u2_values.to_int()
@@ -201,6 +201,12 @@ pub(all) enum BarChartEnrich {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend BarChartEnrich with Eq::{not_equal, equal}
+
+///|
+pub extend BarChartEnrich with @debug.Debug::{to_repr}
+
+///|
 pub fn BarChartEnrich::name(self : BarChartEnrich) -> String {
   match self {
     Bar => "bar"
@@ -212,6 +218,12 @@ pub fn BarChartEnrich::name(self : BarChartEnrich) -> String {
 pub(all) enum BarChartLoopWith {
   Layout
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend BarChartLoopWith with Eq::{not_equal, equal}
+
+///|
+pub extend BarChartLoopWith with @debug.Debug::{to_repr}
 
 ///|
 pub fn BarChartLoopWith::name(self : BarChartLoopWith) -> String {

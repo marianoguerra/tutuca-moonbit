@@ -56,6 +56,9 @@ pub fn Driver::trace(Self) -> @trace.Trace
 pub(all) enum Fidelity {
   Live
 } derive(Eq, @debug.Debug)
+pub fn Fidelity::equal(Self, Self) -> Bool
+pub fn Fidelity::not_equal(Self, Self) -> Bool
+pub fn Fidelity::to_repr(Self) -> @debug.Repr
 
 pub struct Player {
   app : @app.App[@memdom.MemNode]
@@ -79,6 +82,7 @@ pub fn Player::trace(Self) -> @trace.Trace
 pub struct RecordedHost {
   // private fields
 }
+pub fn RecordedHost::intents_for(Self, @core.Value, String) -> Array[@core.IntentFn]
 pub fn RecordedHost::new(Answers, fallback? : &@transactor.Intents) -> Self
 pub impl @transactor.Intents for RecordedHost
 

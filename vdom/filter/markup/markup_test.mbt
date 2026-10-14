@@ -13,10 +13,10 @@ fn host(payload : String) -> @vdom.Vdom {
 ///|
 fn run(
   payload : String,
-  sanitizer? : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
+  sanitizer~ : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
 ) -> (@vdom.Vdom, Array[String]) {
   let tree = host(payload)
-  let f = MarkupFilter::new(sanitizer~)
+  let f = @markup.MarkupFilter::new(sanitizer~)
   f.filter_tree(tree)
   (tree, f.take_reports().map(@filter.Dropped::to_string))
 }
@@ -48,7 +48,7 @@ fn shape(v : @vdom.Vdom) -> String {
 test "the payload becomes children and the directive disappears" {
   let (tree, reports) = run("<p>hello <b>world</b></p>")
   guard tree is Node(el) else { fail("expected an element") }
-  debug_inspect(el.attrs.contains(RAW_ATTR), content="false")
+  debug_inspect(el.attrs.contains(@markup.RAW_ATTR), content="false")
   inspect(
     shape(tree),
     content=(
@@ -192,7 +192,7 @@ test "declared children are replaced, as innerHTML replaced them" {
     attrs={ "dangerouslySetInnerHTML": Html("<i>new</i>") },
     childs=[@vdom.h("SPAN", childs=[Text("old")])],
   )
-  MarkupFilter::new().filter_tree(tree)
+  @markup.MarkupFilter::new().filter_tree(tree)
   inspect(
     shape(tree),
     content=(
@@ -212,7 +212,7 @@ test "the walk reaches a payload anywhere and touches nothing else" {
     @vdom.h("P", attrs={ "class": Str("plain") }, childs=[Text("kept")]),
     inner,
   ])
-  MarkupFilter::new().filter_tree(tree)
+  @markup.MarkupFilter::new().filter_tree(tree)
   inspect(
     shape(tree),
     content=(
@@ -229,9 +229,9 @@ test "a non-Html value under the directive is dropped" {
   let tree = @vdom.h("DIV", attrs={
     "dangerouslySetInnerHTML": Str("<b>not html</b>"),
   })
-  MarkupFilter::new().filter_tree(tree)
+  @markup.MarkupFilter::new().filter_tree(tree)
   guard tree is Node(el) else { fail("expected an element") }
-  debug_inspect(el.attrs.contains(RAW_ATTR), content="false")
+  debug_inspect(el.attrs.contains(@markup.RAW_ATTR), content="false")
   inspect(
     shape(tree),
     content=(

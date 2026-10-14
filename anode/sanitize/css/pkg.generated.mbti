@@ -48,6 +48,9 @@ pub(all) struct CssDrop {
   property : String
   reason : CssReason
 } derive(Eq, @debug.Debug)
+pub fn CssDrop::equal(Self, Self) -> Bool
+pub fn CssDrop::not_equal(Self, Self) -> Bool
+pub fn CssDrop::to_repr(Self) -> @debug.Repr
 pub fn CssDrop::to_string(Self) -> String
 
 pub(all) enum CssLevel {
@@ -55,6 +58,9 @@ pub(all) enum CssLevel {
   Constant
   Computed
 } derive(Eq, @debug.Debug)
+pub fn CssLevel::equal(Self, Self) -> Bool
+pub fn CssLevel::not_equal(Self, Self) -> Bool
+pub fn CssLevel::to_repr(Self) -> @debug.Repr
 
 pub(all) struct CssPolicy {
   level : CssLevel
@@ -65,7 +71,10 @@ pub(all) struct CssPolicy {
 pub fn CssPolicy::app() -> Self
 pub fn CssPolicy::declarations(Self, String, screen? : (String) -> Bool) -> CssResult
 pub fn CssPolicy::deny() -> Self
+pub fn CssPolicy::equal(Self, Self) -> Bool
+pub fn CssPolicy::not_equal(Self, Self) -> Bool
 pub fn CssPolicy::payload() -> Self
+pub fn CssPolicy::to_repr(Self) -> @debug.Repr
 pub fn CssPolicy::value(Self, String, String, screen? : (String) -> Bool) -> String?
 pub fn CssPolicy::value_checked(Self, String, String, screen? : (String) -> Bool) -> CssResult
 
@@ -80,18 +89,27 @@ pub(all) enum CssReason {
   Overlay
   TooLarge
 } derive(Eq, @debug.Debug)
+pub fn CssReason::equal(Self, Self) -> Bool
+pub fn CssReason::not_equal(Self, Self) -> Bool
+pub fn CssReason::to_repr(Self) -> @debug.Repr
 
 pub(all) struct CssResult {
   css : String?
   dropped : Array[CssDrop]
   screened_urls : Array[String]
 } derive(Eq, @debug.Debug)
+pub fn CssResult::equal(Self, Self) -> Bool
+pub fn CssResult::not_equal(Self, Self) -> Bool
+pub fn CssResult::to_repr(Self) -> @debug.Repr
 
 pub(all) enum UrlRule {
   NoUrl
   FragmentOnly
   Screened
 } derive(Eq, @debug.Debug)
+pub fn UrlRule::equal(Self, Self) -> Bool
+pub fn UrlRule::not_equal(Self, Self) -> Bool
+pub fn UrlRule::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

@@ -289,11 +289,11 @@ fn bar_chart_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn bar_chart_component(
-  name? : String = "BarChart",
-  views? : Map[String, @anode.View] = bar_chart_views(),
-  initial? : BarChartState = BarChartState::zero(),
-  common_style? : String = bar_chart_common_style,
-  global_style? : String = bar_chart_global_style,
+  name~ : String = "BarChart",
+  views~ : Map[String, @anode.View] = bar_chart_views(),
+  initial~ : BarChartState = BarChartState::zero(),
+  common_style~ : String = bar_chart_common_style,
+  global_style~ : String = bar_chart_global_style,
   update? : (BarChartState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     BarChartState,
   ],
@@ -310,10 +310,10 @@ pub fn bar_chart_component(
     @tutuca.Value,
     @component.LoopCtx,
   ) -> @component.LoopWith)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

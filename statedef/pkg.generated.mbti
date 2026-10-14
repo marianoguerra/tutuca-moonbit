@@ -61,7 +61,9 @@ pub suberror DefError {
   CyclicWhere(names~ : Array[String], span~ : @core.Span)
 }
 pub fn DefError::message(Self) -> String
+pub fn DefError::output(Self, &Logger) -> Unit
 pub fn DefError::span(Self) -> @core.Span
+pub fn DefError::to_string(Self) -> String
 pub impl Show for DefError
 
 pub suberror InitError {
@@ -76,6 +78,8 @@ pub suberror InitError {
   BadDrive(state~ : String, message~ : String)
 }
 pub fn InitError::message(Self) -> String
+pub fn InitError::output(Self, &Logger) -> Unit
+pub fn InitError::to_string(Self) -> String
 pub impl Show for InitError
 
 // Types and methods
@@ -84,6 +88,9 @@ pub(all) enum AttrValue {
   AStr(String)
   AFlag
 } derive(Eq, @debug.Debug)
+pub fn AttrValue::equal(Self, Self) -> Bool
+pub fn AttrValue::not_equal(Self, Self) -> Bool
+pub fn AttrValue::to_repr(Self) -> @debug.Repr
 
 pub(all) struct FieldDef {
   name : String
@@ -95,6 +102,9 @@ pub(all) struct FieldDef {
 pub fn FieldDef::attr_default(Self) -> @core.Value?
 pub fn FieldDef::attr_domains(Self) -> Array[@core.Domain]
 pub fn FieldDef::attr_required(Self) -> Bool
+pub fn FieldDef::equal(Self, Self) -> Bool
+pub fn FieldDef::not_equal(Self, Self) -> Bool
+pub fn FieldDef::to_repr(Self) -> @debug.Repr
 
 pub(all) struct InitState {
   name : String
@@ -108,12 +118,18 @@ pub(all) struct InitState {
   intents : Json
   args : Map[String, @core.Value]
 } derive(Eq, @debug.Debug)
+pub fn InitState::equal(Self, Self) -> Bool
+pub fn InitState::not_equal(Self, Self) -> Bool
+pub fn InitState::to_repr(Self) -> @debug.Repr
 
 pub(all) struct LookupDecl {
   name : String
   default : String?
   span : @core.Span
 } derive(Eq, @debug.Debug)
+pub fn LookupDecl::equal(Self, Self) -> Bool
+pub fn LookupDecl::not_equal(Self, Self) -> Bool
+pub fn LookupDecl::to_repr(Self) -> @debug.Repr
 
 pub(all) struct MsgDef {
   source_name : String
@@ -123,6 +139,9 @@ pub(all) struct MsgDef {
   variadic : Bool
   doc : String?
 } derive(Eq, @debug.Debug)
+pub fn MsgDef::equal(Self, Self) -> Bool
+pub fn MsgDef::not_equal(Self, Self) -> Bool
+pub fn MsgDef::to_repr(Self) -> @debug.Repr
 
 pub(all) struct PropertyDef {
   name : String
@@ -133,6 +152,9 @@ pub(all) struct PropertyDef {
   setter : String?
   doc : String?
 } derive(Eq, @debug.Debug)
+pub fn PropertyDef::equal(Self, Self) -> Bool
+pub fn PropertyDef::not_equal(Self, Self) -> Bool
+pub fn PropertyDef::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ProtocolBinding {
   protocol_id : String
@@ -140,6 +162,9 @@ pub(all) struct ProtocolBinding {
   source : String
   span : @core.Span
 } derive(Eq, @debug.Debug)
+pub fn ProtocolBinding::equal(Self, Self) -> Bool
+pub fn ProtocolBinding::not_equal(Self, Self) -> Bool
+pub fn ProtocolBinding::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ProtocolDef {
   local_name : String
@@ -155,6 +180,9 @@ pub(all) struct ProtocolDef {
   doc : String?
   span : @core.Span
 } derive(Eq, @debug.Debug)
+pub fn ProtocolDef::equal(Self, Self) -> Bool
+pub fn ProtocolDef::not_equal(Self, Self) -> Bool
+pub fn ProtocolDef::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ProtocolDiagnostic {
   code : @core.ProtocolIssueCode
@@ -165,23 +193,35 @@ pub(all) struct ProtocolDiagnostic {
   error : Bool
   span : @core.Span
 } derive(Eq, @debug.Debug)
+pub fn ProtocolDiagnostic::equal(Self, Self) -> Bool
+pub fn ProtocolDiagnostic::not_equal(Self, Self) -> Bool
+pub fn ProtocolDiagnostic::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ProtocolRef {
   local_name : String
   id : String
   span : @core.Span
 } derive(Eq, @debug.Debug)
+pub fn ProtocolRef::equal(Self, Self) -> Bool
+pub fn ProtocolRef::not_equal(Self, Self) -> Bool
+pub fn ProtocolRef::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ProtocolValidation {
   mode : ValidationMode
   diagnostics : Array[ProtocolDiagnostic]
 } derive(Eq, @debug.Debug)
+pub fn ProtocolValidation::equal(Self, Self) -> Bool
+pub fn ProtocolValidation::not_equal(Self, Self) -> Bool
+pub fn ProtocolValidation::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ProvideDecl {
   name : String
   source : String
   span : @core.Span
 } derive(Eq, @debug.Debug)
+pub fn ProvideDecl::equal(Self, Self) -> Bool
+pub fn ProvideDecl::not_equal(Self, Self) -> Bool
+pub fn ProvideDecl::to_repr(Self) -> @debug.Repr
 
 pub(all) struct RuleDecl {
   kind : RuleKind
@@ -192,11 +232,17 @@ pub(all) struct RuleDecl {
   span : @core.Span
   name_span : @core.Span
 } derive(Eq, @debug.Debug)
+pub fn RuleDecl::equal(Self, Self) -> Bool
+pub fn RuleDecl::not_equal(Self, Self) -> Bool
+pub fn RuleDecl::to_repr(Self) -> @debug.Repr
 
 pub(all) enum RuleKind {
   RPred
   RInvariant
 } derive(Eq, @debug.Debug)
+pub fn RuleKind::equal(Self, Self) -> Bool
+pub fn RuleKind::not_equal(Self, Self) -> Bool
+pub fn RuleKind::to_repr(Self) -> @debug.Repr
 
 pub(all) struct StateDef {
   source_name : String
@@ -224,16 +270,19 @@ pub(all) struct StateDef {
   keywords : Array[String]
 } derive(Eq, @debug.Debug)
 pub fn StateDef::component_name(Self, String) -> String
+pub fn StateDef::equal(Self, Self) -> Bool
 pub fn StateDef::field(Self, String) -> FieldDef?
 pub fn StateDef::field_domains(Self) -> Array[@core.FieldDomain]
 pub fn StateDef::field_of(Self, @core.Ty, String) -> @core.Ty?
 pub fn StateDef::invariants(Self) -> Array[String]
 pub fn StateDef::member_ty(Self, String) -> @core.Ty?
 pub fn StateDef::moonbit_ty(Self, @core.Ty) -> String
+pub fn StateDef::not_equal(Self, Self) -> Bool
 pub fn StateDef::operation_name(Self, String) -> String?
 pub fn StateDef::property(Self, String) -> PropertyDef?
 pub fn StateDef::resolve_ty(Self, String, Array[@core.Ty]) -> @core.Ty?
 pub fn StateDef::rule(Self, String) -> RuleDecl?
+pub fn StateDef::to_repr(Self) -> @debug.Repr
 pub fn StateDef::to_value_src(Self, @core.Ty, String) -> String
 pub fn StateDef::user_ty(Self, String) -> UserTy?
 pub fn StateDef::zero_expr(Self, @core.Ty) -> String
@@ -244,17 +293,26 @@ pub(all) struct UserTy {
   kind : UserTyKind
   doc : String?
 } derive(Eq, @debug.Debug)
+pub fn UserTy::equal(Self, Self) -> Bool
+pub fn UserTy::not_equal(Self, Self) -> Bool
+pub fn UserTy::to_repr(Self) -> @debug.Repr
 
 pub(all) enum UserTyKind {
   URecord(Array[FieldDef])
   UEnum(Array[(String, String)])
   UVariant(Array[MsgDef])
 } derive(Eq, @debug.Debug)
+pub fn UserTyKind::equal(Self, Self) -> Bool
+pub fn UserTyKind::not_equal(Self, Self) -> Bool
+pub fn UserTyKind::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ValidationMode {
   Strict
   Gradual
 } derive(Eq, @debug.Debug)
+pub fn ValidationMode::equal(Self, Self) -> Bool
+pub fn ValidationMode::not_equal(Self, Self) -> Bool
+pub fn ValidationMode::to_repr(Self) -> @debug.Repr
 
 pub(all) struct WhereDecl {
   subject : String
@@ -264,6 +322,9 @@ pub(all) struct WhereDecl {
   doc : String?
   span : @core.Span
 } derive(Eq, @debug.Debug)
+pub fn WhereDecl::equal(Self, Self) -> Bool
+pub fn WhereDecl::not_equal(Self, Self) -> Bool
+pub fn WhereDecl::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 pub using @core {type Span}

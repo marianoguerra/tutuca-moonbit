@@ -388,7 +388,7 @@ fn earlier(read : Array[SectionBlock], want : Section) -> SectionBlock? {
 /// The first section already read that this one belongs above.
 fn out_of_order(read : Array[SectionBlock], want : Section) -> SectionBlock? {
   let order = Section::all()
-  let rank = fn(s : Section) -> Int {
+  let rank = fn(s : Section) -> Int32 {
     let mut i = 0
     for o in order {
       if o == s {

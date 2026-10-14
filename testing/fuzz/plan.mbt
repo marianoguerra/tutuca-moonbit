@@ -29,9 +29,9 @@ pub struct Plan {
   /// `script` samples and what a component with no `where` needs; `next_at`
   /// rebuilds a state-aware one per step, which is why the two inputs it needs
   /// are kept below rather than discarded after this was made.
-  one : @gen.Gen[Action]?
+  one : @gen.Generator[Action]?
   source : Source
-  depth : Int
+  depth : Int32
 }
 
 ///|
@@ -66,6 +66,12 @@ pub(all) enum Source {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend Source with Eq::{not_equal, equal}
+
+///|
+pub extend Source with Debug::{to_repr}
+
+///|
 /// One operation the driver can perform.
 ///
 /// A write is not encoded as a pretend message: it goes through the
@@ -80,6 +86,12 @@ pub(all) enum Action {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend Action with Eq::{not_equal, equal}
+
+///|
+pub extend Action with Debug::{to_repr}
+
+///|
 /// The generators for `comp`, or None when it carries no spec block.
 ///
 /// None is the ordinary answer for a hand-written component and for anything
@@ -87,8 +99,8 @@ pub(all) enum Action {
 /// generate from.
 pub fn Plan::of_component(
   comp : @component.Component,
-  source? : Source = Public(BEither),
-  depth? : Int = @arb.MAX_DEPTH,
+  source~ : Source = Public(BEither),
+  depth~ : Int32 = @arb.MAX_DEPTH,
 ) -> Plan? {
   guard comp.spec != "" else { return None }
   // The NAME is part of the parse, not a filter applied after it: a bare
@@ -129,12 +141,12 @@ pub fn Plan::of_component(
 fn dispatch_gen(
   def : @statedef.StateDef,
   source : Source,
-  depth : Int,
+  depth : Int32,
   /// The fields as they stand, for a `set<Field>` whose domain is relative to
   /// them. Empty means "no state in hand", which is what the up-front build
   /// passes and which draws exactly what it always did.
   state : Map[String, @tutuca.Value],
-) -> @gen.Gen[Action]? {
+) -> @gen.Generator[Action]? {
   match source {
     Public(bucket) =>
       combine(declared_gen(def, bucket, depth), property_gen(def, depth, state))
@@ -171,7 +183,10 @@ fn backing_field(source : String?) -> String? {
 }
 
 ///|
-fn combine(a : @gen.Gen[Action]?, b : @gen.Gen[Action]?) -> @gen.Gen[Action]? {
+fn combine(
+  a : @gen.Generator[Action]?,
+  b : @gen.Generator[Action]?,
+) -> @gen.Generator[Action]? {
   match (a, b) {
     (Some(x), Some(y)) => Some(@gen.one_of([x, y]))
     (Some(x), None) => Some(x)
@@ -183,29 +198,29 @@ fn combine(a : @gen.Gen[Action]?, b : @gen.Gen[Action]?) -> @gen.Gen[Action]? {
 fn declared_gen(
   def : @statedef.StateDef,
   bucket : @arb.Bucket,
-  depth : Int,
-) -> @gen.Gen[Action]? {
-  @arb.dispatch_of(def, bucket~, depth~).map(g => g.fmap(d => Message(d)))
+  depth : Int32,
+) -> @gen.Generator[Action]? {
+  @arb.dispatch_of(def, bucket~, depth~).map(g => g.map(d => Message(d)))
 }
 
 ///|
 fn internal_gen(
   def : @statedef.StateDef,
-  depth : Int,
+  depth : Int32,
   state : Map[String, @tutuca.Value],
-) -> @gen.Gen[Action]? {
+) -> @gen.Generator[Action]? {
   @arb.property_write_of(def, depth~, state~).map(g => {
-    g.fmap(w => SetField(w.0, w.1))
+    g.map(w => SetField(w.0, w.1))
   })
 }
 
 ///|
 fn property_gen(
   def : @statedef.StateDef,
-  depth : Int,
+  depth : Int32,
   state : Map[String, @tutuca.Value],
-) -> @gen.Gen[Action]? {
-  let choices : Array[@gen.Gen[Action]] = []
+) -> @gen.Generator[Action]? {
+  let choices : Array[@gen.Generator[Action]] = []
   for p in def.properties {
     if p.public_ && p.writable {
       // A property declared `set .view` writes THAT field, so it draws what
@@ -219,7 +234,7 @@ fn property_gen(
           )
         None => @arb.value_of(def, p.ty, depth~)
       }
-      choices.push(g.fmap(v => SetProperty(p.name, v)))
+      choices.push(g.map(v => SetProperty(p.name, v)))
     }
   }
   if choices.is_empty() {
@@ -239,7 +254,11 @@ fn property_gen(
 /// be the same one twice.
 ///
 /// Empty when the component has nothing to draw from.
-pub fn Plan::script(self : Plan, seed~ : UInt64, steps~ : Int) -> Array[Action] {
+pub fn Plan::script(
+  self : Plan,
+  seed~ : UInt64,
+  steps~ : Int32,
+) -> Array[Action] {
   guard self.one is Some(one) else { return [] }
   guard steps > 0 else { return [] }
   one.array_with_size(steps).sample(seed~)
@@ -264,7 +283,7 @@ pub fn Plan::next_at(
   self : Plan,
   state : Map[String, @tutuca.Value],
   seed~ : UInt64,
-  step~ : Int,
+  step~ : Int32,
 ) -> Action? {
   guard self.one is Some(_) else { return None }
   guard dispatch_gen(self.def, self.source, self.depth, state) is Some(g) else {
@@ -303,10 +322,10 @@ pub fn Plan::state_aware(self : Plan) -> Bool {
 ///
 /// SplitMix64's finalizer over `seed + i * GOLDEN`, written out rather than
 /// depended on: the property wanted is only that consecutive steps get
-/// unrelated streams, and `seed + i` does not give that — `@gen.Gen`s built
+/// unrelated streams, and `seed + i` does not give that — `@gen.Generator`s built
 /// from neighbouring seeds draw visibly similar values, which would make step
 /// three a near-copy of step two.
-fn step_seed(seed : UInt64, step : Int) -> UInt64 {
+fn step_seed(seed : UInt64, step : Int32) -> UInt64 {
   let mut z = seed + step.to_uint64() * 0x9E3779B97F4A7C15UL
   z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9UL
   z = (z ^ (z >> 27)) * 0x94D049BB133111EBUL
@@ -326,7 +345,10 @@ fn step_seed(seed : UInt64, step : Int) -> UInt64 {
 /// Empty scripts when the component has nothing to draw from, rather than a
 /// missing generator: a `forall` over nothing is a property that passes
 /// vacuously either way, and an Option here would make every call site say so.
-pub fn Plan::script_gen(self : Plan, steps : Int) -> @gen.Gen[Array[Action]] {
+pub fn Plan::script_gen(
+  self : Plan,
+  steps : Int32,
+) -> @gen.Generator[Array[Action]] {
   guard self.one is Some(one) && steps > 0 else { return @gen.pure([]) }
   one.array_with_size(steps)
 }

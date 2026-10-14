@@ -149,11 +149,11 @@ fn swatch_picker_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn swatch_picker_component(
-  name? : String = "SwatchPicker",
-  views? : Map[String, @anode.View] = swatch_picker_views(),
-  initial? : SwatchPickerState = SwatchPickerState::zero(),
-  common_style? : String = swatch_picker_common_style,
-  global_style? : String = swatch_picker_global_style,
+  name~ : String = "SwatchPicker",
+  views~ : Map[String, @anode.View] = swatch_picker_views(),
+  initial~ : SwatchPickerState = SwatchPickerState::zero(),
+  common_style~ : String = swatch_picker_common_style,
+  global_style~ : String = swatch_picker_global_style,
   update? : (SwatchPickerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SwatchPickerState,
   ],
@@ -165,10 +165,10 @@ pub fn swatch_picker_component(
     @tutuca.Value,
     &@tutuca.Stack,
   ) -> Unit)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -364,11 +364,11 @@ pub fn quadratic_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn quadratic_component(
-  name? : String = "Quadratic",
-  views? : Map[String, @anode.View] = quadratic_views(),
-  initial? : QuadraticState = QuadraticState::zero(),
-  common_style? : String = quadratic_common_style,
-  global_style? : String = quadratic_global_style,
+  name~ : String = "Quadratic",
+  views~ : Map[String, @anode.View] = quadratic_views(),
+  initial~ : QuadraticState = QuadraticState::zero(),
+  common_style~ : String = quadratic_common_style,
+  global_style~ : String = quadratic_global_style,
   update? : (QuadraticState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     QuadraticState,
   ],
@@ -377,10 +377,10 @@ pub fn quadratic_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

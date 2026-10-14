@@ -28,9 +28,9 @@
 priv trait Composite {
   fn items(Self) -> Array[@tutuca.Value]
   fn is_expanded(Self) -> Bool
-  fn per_page(Self) -> Int
-  fn current_page(Self) -> Int
-  fn with_current_page(Self, Int) -> Self
+  fn per_page(Self) -> Int32
+  fn current_page(Self) -> Int32
+  fn with_current_page(Self, Int32) -> Self
 }
 
 ///|
@@ -89,23 +89,23 @@ impl Composite for JsonObjectState with fn with_current_page(self, p) {
 }
 
 ///|
-fn[S : Composite] items_per_page(s : S) -> Int {
+fn[S : Composite] items_per_page(s : S) -> Int32 {
   @cmp.maximum(1, s.per_page())
 }
 
 ///|
-fn[S : Composite] page_count_of(s : S) -> Int {
+fn[S : Composite] page_count_of(s : S) -> Int32 {
   let per = items_per_page(s)
   @cmp.maximum(1, (s.items().length() + per - 1) / per) // ceil
 }
 
 ///|
-fn[S : Composite] page_start_of(s : S) -> Int {
+fn[S : Composite] page_start_of(s : S) -> Int32 {
   s.current_page() * items_per_page(s)
 }
 
 ///|
-fn[S : Composite] page_end_of(s : S) -> Int {
+fn[S : Composite] page_end_of(s : S) -> Int32 {
   @cmp.minimum(s.items().length(), page_start_of(s) + items_per_page(s))
 }
 

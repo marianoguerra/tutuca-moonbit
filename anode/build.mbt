@@ -55,7 +55,7 @@ pub fn attr_val(name : String, val : @tutuca.Expr) -> AttrItem {
 }
 
 ///|
-pub fn eid(id : Int) -> AttrItem {
+pub fn eid(id : Int32) -> AttrItem {
   attr_num("data-eid", id.to_double())
 }
 
@@ -124,37 +124,37 @@ pub fn frag(childs : Array[ANode]) -> ANode {
 }
 
 ///|
-pub fn dyn_text(val : @tutuca.Expr, id? : Int) -> ANode {
+pub fn dyn_text(val : @tutuca.Expr, id? : Int32) -> ANode {
   RenderText({ node_id: id, val, })
 }
 
 ///|
-pub fn render(id : Int, val : @tutuca.Expr, view? : @tutuca.Expr) -> ANode {
+pub fn render(id : Int32, val : @tutuca.Expr, view? : @tutuca.Expr) -> ANode {
   Render({ node_id: id, val, view_val: view, })
 }
 
 ///|
-pub fn render_it(id : Int, view? : @tutuca.Expr) -> ANode {
+pub fn render_it(id : Int32, view? : @tutuca.Expr) -> ANode {
   RenderIt({ node_id: id, view_val: view, })
 }
 
 ///|
-pub fn show(val : @tutuca.Expr, node : ANode, id? : Int) -> ANode {
+pub fn show(val : @tutuca.Expr, node : ANode, id? : Int32) -> ANode {
   Show({ node_id: id, val, node, })
 }
 
 ///|
-pub fn hide(val : @tutuca.Expr, node : ANode, id? : Int) -> ANode {
+pub fn hide(val : @tutuca.Expr, node : ANode, id? : Int32) -> ANode {
   Hide({ node_id: id, val, node, })
 }
 
 ///|
-pub fn push_view(val : @tutuca.Expr, node : ANode, id? : Int) -> ANode {
+pub fn push_view(val : @tutuca.Expr, node : ANode, id? : Int32) -> ANode {
   PushView({ node_id: id, val, node, })
 }
 
 ///|
-pub fn scope(id : Int, val : @tutuca.Expr, node : ANode) -> ANode {
+pub fn scope(id : Int32, val : @tutuca.Expr, node : ANode) -> ANode {
   Scope({ node_id: Some(id), val, node, })
 }
 
@@ -165,13 +165,13 @@ pub fn slot(name : String, node : ANode) -> ANode {
 
 ///|
 pub fn each(
-  id : Int,
+  id : Int32,
   val : @tutuca.Expr,
   node : ANode,
   when_val? : @tutuca.Expr,
   loop_with_val? : @tutuca.Expr,
   enrich_with_val? : @tutuca.Expr,
-  from_render_each? : Bool = false,
+  from_render_each~ : Bool = false,
 ) -> ANode {
   Each({
     node_id: id,
@@ -188,8 +188,8 @@ pub fn each(
 pub fn on(
   name : String,
   handler : @tutuca.Expr,
-  args? : Array[@tutuca.Expr] = [],
-  modifiers? : Array[String] = [],
+  args~ : Array[@tutuca.Expr] = [],
+  modifiers~ : Array[String] = [],
   binding? : BindCoercion,
   action? : @tscript.PropertyAction,
 ) -> NodeEvent {

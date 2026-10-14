@@ -34,6 +34,12 @@ pub(all) struct Checked {
 } derive(Eq, Debug)
 
 ///|
+pub extend Checked with Eq::{not_equal, equal}
+
+///|
+pub extend Checked with Debug::{to_repr}
+
+///|
 /// One thing wrong with a card, from `tscript/check` or from the view checker.
 pub(all) struct Issue {
   comp : String
@@ -48,9 +54,15 @@ pub(all) struct Issue {
   /// page as JSON, and a consumer reading one field should not have to import
   /// the checker to know what it says.
   severity : String
-  line : Int
+  line : Int32
   span : @tutuca.Span
 } derive(Eq, Debug)
+
+///|
+pub extend Issue with Eq::{not_equal, equal}
+
+///|
+pub extend Issue with Debug::{to_repr}
 
 ///|
 /// The card being turned away whole.
@@ -70,6 +82,9 @@ declare pub fn GenError::message(self : GenError) -> String
 
 ///|
 pub impl Show for GenError
+
+///|
+pub extend GenError with Show::{to_string, output}
 
 ///|
 /// Check a card without compiling it: does it split, parse and check?

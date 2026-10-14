@@ -104,7 +104,7 @@ fn parse_view_name(s : String, px : ParseContext) -> @tutuca.Expr {
 fn parse_x_op(
   attrs : Array[(String, String)],
   childs : Array[ANode],
-  op_idx : Int,
+  op_idx : Int32,
   px : ParseContext,
 ) -> ANode? {
   // `<X>` with no attrs or a bare `@x` with no op attr: plain fragment.
@@ -161,7 +161,7 @@ fn process_x_extras(
   attrs : Array[(String, String)],
   op_name : String,
   op : XOp,
-  start_idx : Int,
+  start_idx : Int32,
   px : ParseContext,
 ) -> ANode? {
   let wrappers : Array[(WrapperKind, @tutuca.Expr?)] = []

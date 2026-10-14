@@ -61,21 +61,35 @@ pub struct IntentWalk {
 
 pub(all) struct NoIntents {
 }
+pub fn NoIntents::intents_for(Self, @core.Value, String) -> Array[@core.IntentFn]
 pub impl Intents for NoIntents
 
 pub(all) struct NoNames {
 }
+pub fn NoNames::build(Self, Int, Map[String, @core.Value]) -> @core.Value?
+pub fn NoNames::dyn_type(Self, @core.Value, @core.DispatchPath, String) -> Int?
+pub fn NoNames::dyn_value(Self, @core.Value, @core.DispatchPath, String) -> @core.Value?
+pub fn NoNames::lex_type(Self, @core.Value, @core.DispatchPath, String) -> Int?
+pub fn NoNames::lex_value(Self, @core.Value, @core.DispatchPath, String) -> @core.Value?
 pub impl Names for NoNames
 
 pub(all) struct NullRecorder {
 }
+pub fn NullRecorder::on_answer(Self, Answered) -> Unit
+pub fn NullRecorder::on_dispatch(Self, Dispatched) -> Unit
+pub fn NullRecorder::on_observed(Self, ObserveRecord) -> Unit
+pub fn NullRecorder::on_offered(Self, Offered) -> Unit
+pub fn NullRecorder::recording(Self) -> Bool
 pub impl Recorder for NullRecorder
 
 pub(all) enum ObserveMatch {
   Exact
   NoHandler
 } derive(Eq, @debug.Debug)
+pub fn ObserveMatch::equal(Self, Self) -> Bool
 pub fn ObserveMatch::label(Self) -> String
+pub fn ObserveMatch::not_equal(Self, Self) -> Bool
+pub fn ObserveMatch::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ObserveRecord {
   origin : @core.Origin
@@ -110,6 +124,9 @@ pub(all) struct SettleResult {
   processed : Int
   pending : Bool
 } derive(Eq, @debug.Debug)
+pub fn SettleResult::equal(Self, Self) -> Bool
+pub fn SettleResult::not_equal(Self, Self) -> Bool
+pub fn SettleResult::to_repr(Self) -> @debug.Repr
 
 pub struct Transaction {
   path : @core.DispatchPath

@@ -1,4 +1,4 @@
-// A parsed schema as GENERATORS: `StateDef` -> `@gen.Gen[...]`.
+// A parsed schema as GENERATORS: `StateDef` -> `@gen.Generator[...]`.
 //
 // The randomized twin of `statedef/info`, and a sub-package for the same
 // reason that one is: `statedef` stays pure text-in/text-out, and the value
@@ -28,7 +28,7 @@
 // `Rules::unlowerable` rather than being silently treated as satisfied — name
 // the sum with a `compute` and compare against `$name`.
 //
-// Named `arb` rather than `gen` because `moonbitlang/quickcheck/gen` is `@gen`
+// Named `arb` rather than `gen` because `moonbitlang/core/quickcheck` is `@gen`
 // by convention everywhere in this repo, and a caller needs both.
 import {
   "marianoguerra/tutuca/statedef",
@@ -39,7 +39,7 @@ import {
   "marianoguerra/tutuca/component",
   // `parse_bool` + `ParseCtx`: a rule's source is the block language, and this
   // is the only thing that turns it into something evaluable.
-  "moonbitlang/quickcheck/gen",
+  "moonbitlang/core/quickcheck" @gen,
   "moonbitlang/core/debug",
   // The declared int widths, for a generator that draws at a field's own edges.
   "moonbitlang/core/int",

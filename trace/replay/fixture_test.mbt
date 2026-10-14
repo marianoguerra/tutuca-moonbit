@@ -14,7 +14,7 @@
 ///|
 priv struct RowState {
   label : String
-  n : Int
+  n : Int32
 }
 
 ///|

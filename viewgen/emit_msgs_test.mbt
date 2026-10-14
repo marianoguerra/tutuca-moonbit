@@ -6,7 +6,7 @@
 // directions. What is asserted here is that the name is now written once.
 
 ///|
-fn msgs_src(channels : String, types? : String = "") -> String raise {
+fn msgs_src(channels : String, types~ : String = "") -> String raise {
   @viewgen.emit_module(
     "Chat",
     "chat.tutu",

@@ -148,6 +148,12 @@ pub(all) enum PushViewCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend PushViewCompute with Eq::{not_equal, equal}
+
+///|
+pub extend PushViewCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn PushViewCompute::name(self : PushViewCompute) -> String {
   match self {
     GetToggleLabel => "get_toggle_label"
@@ -159,6 +165,12 @@ pub fn PushViewCompute::name(self : PushViewCompute) -> String {
 pub(all) enum PushViewWhen {
   FilterItem
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend PushViewWhen with Eq::{not_equal, equal}
+
+///|
+pub extend PushViewWhen with @debug.Debug::{to_repr}
 
 ///|
 pub fn PushViewWhen::name(self : PushViewWhen) -> String {
@@ -200,7 +212,7 @@ pub(all) struct SeqItemAccessState {
   by_key : Map[String, @tutuca.Value]
   by_index : Array[@tutuca.Value]
   current_key : @tutuca.Value
-  current_index : Int
+  current_index : Int32
 }
 
 ///|
@@ -283,6 +295,12 @@ pub(all) enum SeqItemAccessCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend SeqItemAccessCompute with Eq::{not_equal, equal}
+
+///|
+pub extend SeqItemAccessCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn SeqItemAccessCompute::name(self : SeqItemAccessCompute) -> String {
   match self {
     GetMaxIndex => "get_max_index"
@@ -326,8 +344,8 @@ impl @component.Fields for SeqItemAccessState with fn schema() {
 /// this struct lacks fails generation.
 pub(all) struct PaginationState {
   items : Array[String]
-  page : Int
-  page_size : Int
+  page : Int32
+  page_size : Int32
 }
 
 ///|
@@ -471,6 +489,12 @@ pub(all) enum PaginationCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend PaginationCompute with Eq::{not_equal, equal}
+
+///|
+pub extend PaginationCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn PaginationCompute::name(self : PaginationCompute) -> String {
   match self {
     IsFirstPage => "is_first_page"
@@ -484,6 +508,12 @@ pub fn PaginationCompute::name(self : PaginationCompute) -> String {
 pub(all) enum PaginationLoopWith {
   Paginate
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend PaginationLoopWith with Eq::{not_equal, equal}
+
+///|
+pub extend PaginationLoopWith with @debug.Debug::{to_repr}
 
 ///|
 pub fn PaginationLoopWith::name(self : PaginationLoopWith) -> String {

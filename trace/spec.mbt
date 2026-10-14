@@ -14,7 +14,7 @@
 /// A reader that does not know a version REFUSES rather than guessing, because
 /// the failure it would otherwise produce is a replay that diverges for a
 /// reason nobody can find.
-pub const VERSION : Int = 1
+pub const VERSION : Int32 = 1
 
 ///|
 /// A position in the state tree, as data.
@@ -30,6 +30,12 @@ pub const VERSION : Int = 1
 /// mutates. Caller frames matter to bubbling and intent routing, not to the
 /// mutation address recorded here.
 pub(all) struct Place(Array[@tutuca.StepKey]) derive(Eq, Debug)
+
+///|
+pub extend Place with Eq::{not_equal, equal}
+
+///|
+pub extend Place with Debug::{to_repr}
 
 ///|
 /// What a dispatch was.
@@ -50,10 +56,10 @@ pub(all) enum Op {
   /// Derived — a rerun produces it again — but it is what makes the boundary
   /// legible, and it is what `relocate` reads to know an intent left the
   /// subtree it is cutting to.
-  Offered(name~ : String, args~ : Array[@tutuca.Value], nth~ : Int)
+  Offered(name~ : String, args~ : Array[@tutuca.Value], nth~ : Int32)
   /// The host answered. An INPUT: nothing inside the tree can recompute it,
   /// and the same question asked twice may get two different answers.
-  Answer(nth~ : Int, answer~ : @tutuca.IntentAnswer)
+  Answer(nth~ : Int32, answer~ : @tutuca.IntentAnswer)
   /// The runtime declined. Never an input — a rerun raises its own — but a
   /// recording of a bug that ends in a refusal has to carry the refusal, or it
   /// is a recording of nothing happening.
@@ -61,20 +67,26 @@ pub(all) enum Op {
 } derive(Eq, Debug)
 
 ///|
+pub extend Op with Eq::{not_equal, equal}
+
+///|
+pub extend Op with Debug::{to_repr}
+
+///|
 /// One thing that happened.
 pub(all) struct Event {
   /// Position in the recording. Unique and increasing; a reader orders by it.
-  seq : Int
+  seq : Int32
   /// Everything pushed between two drains shares a turn. One DOM event with two
   /// handlers is one turn, and a rerun that ignored this would settle twice
   /// where the recording settled once — and re-render twice.
-  turn : Int
+  turn : Int32
   /// The intent walk this belongs to, 0 for none. Shared by the intent, every
   /// hop of its route, every offer to a host, and the answer.
-  walk : Int
+  walk : Int32
   /// The `seq` of the event whose handler caused this one, 0 for none. What
   /// makes a cascade of twelve sends from one click readable as one thing.
-  parent : Int
+  parent : Int32
   at : Place
   op : Op
   /// Whether a rerun FEEDS this event.
@@ -90,6 +102,12 @@ pub(all) struct Event {
   /// rerun never reads it.
   after : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend Event with Eq::{not_equal, equal}
+
+///|
+pub extend Event with Debug::{to_repr}
 
 ///|
 /// Where the initial state came from, when the recorder knew.
@@ -109,9 +127,15 @@ pub(all) struct Origin {
 } derive(Eq, Debug)
 
 ///|
+pub extend Origin with Eq::{not_equal, equal}
+
+///|
+pub extend Origin with Debug::{to_repr}
+
+///|
 /// A recording: where it started, and everything that happened after.
 pub(all) struct Trace {
-  version : Int
+  version : Int32
   origin : Origin
   /// The initial root as a tagged document (`Value::to_component_json`), which
   /// is the only projection that can be read back into instances. Rebuilt
@@ -132,6 +156,12 @@ pub(all) struct Trace {
 } derive(Eq, Debug)
 
 ///|
+pub extend Trace with Eq::{not_equal, equal}
+
+///|
+pub extend Trace with Debug::{to_repr}
+
+///|
 /// Anything that makes a trace file unusable.
 ///
 /// Every case carries a line number, because the file this reads is routinely
@@ -141,22 +171,22 @@ pub suberror TraceError {
   /// The file is empty, or has fewer than the two header lines.
   NoHeader(String)
   /// A line is not JSON.
-  NotJson(line~ : Int, why~ : String)
+  NotJson(line~ : Int32, why~ : String)
   /// The first line does not name this format.
-  NotATrace(line~ : Int)
+  NotATrace(line~ : Int32)
   /// The first line names a version this reader does not know.
-  BadVersion(line~ : Int, got~ : Int, want~ : Int)
+  BadVersion(line~ : Int32, got~ : Int32, want~ : Int32)
   /// The second line is not the root snapshot.
-  NoRoot(line~ : Int)
+  NoRoot(line~ : Int32)
   /// A header line appeared after the events began.
-  LateHeader(line~ : Int)
+  LateHeader(line~ : Int32)
   /// An event line names no verb this reader knows.
-  NoOp(line~ : Int, keys~ : Array[String])
+  NoOp(line~ : Int32, keys~ : Array[String])
   /// An event line is missing a key its verb cannot be read without, or has one
   /// with the wrong shape.
-  BadField(line~ : Int, key~ : String, want~ : String)
+  BadField(line~ : Int32, key~ : String, want~ : String)
   /// An address that does not read as one.
-  BadPlace(line~ : Int, why~ : String)
+  BadPlace(line~ : Int32, why~ : String)
 }
 
 ///|
@@ -185,7 +215,7 @@ declare pub fn Place::label(self : Place) -> String
 
 ///|
 /// How many steps deep.
-declare pub fn Place::depth(self : Place) -> Int
+declare pub fn Place::depth(self : Place) -> Int32
 
 ///|
 /// Whether this address is at or below `prefix`. The test `relocate` cuts on.
@@ -233,7 +263,7 @@ declare pub fn Origin::empty() -> Origin
 
 ///|
 /// How many events a rerun would FEED, as opposed to hold.
-declare pub fn Trace::input_count(self : Trace) -> Int
+declare pub fn Trace::input_count(self : Trace) -> Int32
 
 ///|
 /// The turns, in order, with the events in each. What a viewer groups rows by
@@ -287,7 +317,10 @@ declare pub fn Trace::from_json(j : Json) -> Trace raise TraceError
 declare pub fn Event::to_json(self : Event) -> Json
 
 ///|
-declare pub fn Event::from_json(j : Json, line~ : Int) -> Event raise TraceError
+declare pub fn Event::from_json(
+  j : Json,
+  line~ : Int32,
+) -> Event raise TraceError
 
 // --- the recorders ----------------------------------------------------------
 
@@ -351,14 +384,14 @@ declare pub fn TraceRecorder::stop_watching_refusals(
 /// of one — a suffix would start from a state nothing describes.
 pub struct RingRecorder {
   priv inner : TraceRecorder
-  priv turns : Int
+  priv turns : Int32
   priv snapshot : () -> Json
-  priv mut cur_turn : Int
+  priv mut cur_turn : Int32
 }
 
 ///|
 declare pub fn RingRecorder::new(
-  turns~ : Int,
+  turns~ : Int32,
   snapshot~ : () -> Json,
   origin? : Origin,
   keep_after? : Bool,
@@ -390,11 +423,11 @@ pub struct ScopedRecorder {
   /// The `seq`s that were kept, so a derived event can be asked whether its
   /// cause survived. The same question `relocate` answers from the finished
   /// list; asked one event at a time, because there is no finished list yet.
-  priv kept : Map[Int, Bool]
+  priv kept : Map[Int32, Bool]
   /// Walks raised inside the scope. An offer and an answer belong to their
   /// walk rather than to a position — an offer's address is the sender's and
   /// an answer has none at all — so they are kept by whose walk it is.
-  priv walks : Map[Int, Bool]
+  priv walks : Map[Int32, Bool]
 }
 
 ///|
@@ -416,13 +449,13 @@ declare pub fn ScopedRecorder::take(self : ScopedRecorder) -> Trace
 ///|
 /// The first `n` events. The cheapest of the three: a prefix of a recording is
 /// a recording, because the state it starts from has not changed.
-declare pub fn Trace::prefix(self : Trace, n : Int) -> Trace
+declare pub fn Trace::prefix(self : Trace, n : Int32) -> Trace
 
 ///|
 /// The first index at or after `n` that starts a turn — where a cut can
 /// actually be made. `rebase` rounds through this, and a caller who wants to
 /// know where it will land can ask first.
-declare pub fn Trace::turn_boundary(self : Trace, n : Int) -> Int
+declare pub fn Trace::turn_boundary(self : Trace, n : Int32) -> Int32
 
 ///|
 /// Replace the first `n` events with the state they produced.
@@ -436,7 +469,7 @@ declare pub fn Trace::turn_boundary(self : Trace, n : Int) -> Int
 /// renumbered from 1, with walk ids and `parent` links remapped so an answer
 /// still names its intent. An answer whose intent fell in the discarded prefix
 /// goes with it: there is nothing left for it to answer.
-declare pub fn Trace::rebase(self : Trace, at~ : Int, root~ : Json) -> Trace
+declare pub fn Trace::rebase(self : Trace, at~ : Int32, root~ : Json) -> Trace
 
 ///|
 /// Everything the subtree at `place` saw, with `place` as the new root.
@@ -473,7 +506,7 @@ pub(all) enum Gap {
   /// The subtree raised an intent that something outside answered, and no
   /// answer was recorded for it. A rerun will hear `<name>Unhandled` where the
   /// recording heard a reply.
-  UnansweredIntent(name~ : String, seq~ : Int)
+  UnansweredIntent(name~ : String, seq~ : Int32)
   /// The subtree reads a name an ancestor provided. A read is not a dispatch,
   /// so nothing recorded it, and after the cut nothing remains to answer it.
   UnprovidedName(name~ : String)
@@ -489,6 +522,12 @@ pub(all) enum Gap {
   /// `.rows[0]` was meant.
   NotAComponent(place~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend Gap with Eq::{not_equal, equal}
+
+///|
+pub extend Gap with Debug::{to_repr}
 
 ///|
 declare pub fn Gap::message(self : Gap) -> String

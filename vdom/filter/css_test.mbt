@@ -4,7 +4,7 @@
 /// Run the filter over one element and report what the attribute became.
 fn run_css(
   attrs : Array[(String, @vdom.AttrValue)],
-  policy? : @safecss.CssPolicy = @safecss.CssPolicy::payload(),
+  policy~ : @safecss.CssPolicy = @safecss.CssPolicy::payload(),
 ) -> (String, String) {
   let el = @vdom.h("div", attrs=Map::from_array(attrs))
   let f = @filter.CssFilter::new(policy~)

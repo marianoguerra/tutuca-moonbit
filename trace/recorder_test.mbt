@@ -6,11 +6,11 @@
 
 ///|
 priv struct Counter {
-  n : Int
+  n : Int32
 }
 
 ///|
-fn counter(n : Int) -> @tutuca.Value {
+fn counter(n : Int32) -> @tutuca.Value {
   (Obj(Counter::{ n, }) : @tutuca.Value)
 }
 
@@ -104,7 +104,7 @@ fn box_at() -> @tutuca.DispatchPath {
 fn recorded(
   drive : (@transactor.Transactor) -> Unit,
   intents? : &@transactor.Intents,
-  keep_after? : Bool = false,
+  keep_after~ : Bool = false,
 ) -> @trace.Trace {
   let tx = @transactor.Transactor::new(app_root(), intents?)
   let rec = @trace.TraceRecorder::new(

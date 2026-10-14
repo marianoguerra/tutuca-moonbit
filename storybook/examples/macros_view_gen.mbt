@@ -4,8 +4,7 @@
 //   tutuca gen macros.tutu --name Macros --out <dir>
 //
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component",
-//   "moonbitlang/core/debug"
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 
 ///|
 /// The state of the MacrosNo component.
@@ -14,6 +13,9 @@
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct MacrosNoState {} derive(Default)
+
+///|
+pub extend MacrosNoState with Default::{default}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -121,7 +123,7 @@ impl @component.Fields for MacroParamsState with fn schema() {
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct MacroSlotsState {
-  count : Int
+  count : Int32
 }
 
 ///|
@@ -176,7 +178,7 @@ impl @component.Fields for MacroSlotsState with fn schema() {
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct MacroNamedSlotsState {
-  count : Int
+  count : Int32
 }
 
 ///|

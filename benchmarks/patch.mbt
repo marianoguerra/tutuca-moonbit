@@ -32,7 +32,7 @@
 ///|
 /// n todo rows, mounted. `.checkbox` / `.input` / `.add` / `.rm` are the row
 /// controls; see storybook/examples/todo.tutu.
-pub fn mount_todo(n : Int) -> @harness.MemHarness {
+pub fn mount_todo(n : Int32) -> @harness.MemHarness {
   mounted("todo/\{n}", todo_module, "Items", todo_args(n))
 }
 
@@ -45,7 +45,7 @@ pub fn mount_counter() -> @harness.MemHarness {
 ///|
 /// n people behind a filter + pager: a change to the query re-runs the pipeline
 /// over every item while only a page of them is in the DOM.
-pub fn mount_people(n : Int) -> @harness.MemHarness {
+pub fn mount_people(n : Int32) -> @harness.MemHarness {
   mounted("people/\{n}", filter_paginate_module, "SharedPeople", people_args(n))
 }
 
@@ -53,7 +53,7 @@ pub fn mount_people(n : Int) -> @harness.MemHarness {
 /// The JSON editor's array, whose rows are draggable — the one example with a
 /// reorder handler, so the one that can measure a MOVE as opposed to a
 /// replacement.
-pub fn mount_json(depth : Int, breadth : Int) -> @harness.MemHarness {
+pub fn mount_json(depth : Int32, breadth : Int32) -> @harness.MemHarness {
   mounted(
     "json/\{depth}x\{breadth}",
     json_module,
@@ -93,7 +93,7 @@ pub fn mount_tabs() -> @harness.MemHarness {
 /// `patch_test.mbt` asserts the render count does NOT move here, so a
 /// regression that reintroduces the render shows up as a failing test and not
 /// just a slower number.
-pub fn patch_noop(h : @harness.MemHarness) -> Int {
+pub fn patch_noop(h : @harness.MemHarness) -> Int32 {
   let before = h.checked_of(".checkbox") catch { e => fail_patch("noop", e) }
   act("noop", () => h.check(".checkbox", before))
   act("noop", () => h.check(".checkbox", before))
@@ -102,7 +102,7 @@ pub fn patch_noop(h : @harness.MemHarness) -> Int {
 
 ///|
 /// SMALL: one text node changes. `+` then `-` on the counter.
-pub fn patch_counter(h : @harness.MemHarness) -> Int {
+pub fn patch_counter(h : @harness.MemHarness) -> Int32 {
   act("counter", () => h.click(".btn-success"))
   act("counter", () => h.click(".btn-error"))
   h.render_count()
@@ -111,7 +111,7 @@ pub fn patch_counter(h : @harness.MemHarness) -> Int {
 ///|
 /// SMALL: one row's attributes change. Tick the first row's checkbox and untick
 /// it — a real DOM write, on one node, either way.
-pub fn patch_toggle(h : @harness.MemHarness) -> Int {
+pub fn patch_toggle(h : @harness.MemHarness) -> Int32 {
   let before = h.checked_of(".checkbox") catch { e => fail_patch("toggle", e) }
   act("toggle", () => h.check(".checkbox", !before))
   act("toggle", () => h.check(".checkbox", before))
@@ -124,7 +124,7 @@ pub fn patch_toggle(h : @harness.MemHarness) -> Int {
 /// length and rotates by one — the differ sees an insert at the end and a
 /// removal at the front, which is the shape that makes an unkeyed differ move
 /// every row.
-pub fn patch_add_remove(h : @harness.MemHarness) -> Int {
+pub fn patch_add_remove(h : @harness.MemHarness) -> Int32 {
   act("add", () => h.click(".add"))
   act("remove", () => h.click(".rm"))
   h.render_count()
@@ -133,7 +133,7 @@ pub fn patch_add_remove(h : @harness.MemHarness) -> Int {
 ///|
 /// MIDDLE: a page of rows is replaced. Next then Prev on the pager — same node
 /// count, entirely different contents.
-pub fn patch_page(h : @harness.MemHarness) -> Int {
+pub fn patch_page(h : @harness.MemHarness) -> Int32 {
   act("page", () => h.click(".next"))
   act("page", () => h.click(".prev"))
   h.render_count()
@@ -143,7 +143,7 @@ pub fn patch_page(h : @harness.MemHarness) -> Int {
 /// MIDDLE: reorder. Drag the first row onto the third and back — nodes MOVE
 /// rather than change, which is the case a differ can either handle in two
 /// splices or by rewriting everything in between.
-pub fn patch_move(h : @harness.MemHarness) -> Int {
+pub fn patch_move(h : @harness.MemHarness) -> Int32 {
   act("move", () => h.drag(".entry", 0, 2))
   act("move", () => h.drag(".entry", 2, 0))
   h.render_count()
@@ -153,7 +153,7 @@ pub fn patch_move(h : @harness.MemHarness) -> Int {
 /// BIG: every rendered row changes. Typing a query re-runs the filter over all n
 /// items and the page fills with different people; clearing it puts the first
 /// page back.
-pub fn patch_refilter(h : @harness.MemHarness) -> Int {
+pub fn patch_refilter(h : @harness.MemHarness) -> Int32 {
   act("refilter", () => h.type_into(".q", "person 7"))
   act("refilter", () => h.type_into(".q", ""))
   h.render_count()
@@ -162,7 +162,7 @@ pub fn patch_refilter(h : @harness.MemHarness) -> Int {
 ///|
 /// FULL: switch views. Another tab's pane replaces the current one — a whole
 /// component subtree unmounts and another renders from scratch.
-pub fn patch_switch_view(h : @harness.MemHarness) -> Int {
+pub fn patch_switch_view(h : @harness.MemHarness) -> Int32 {
   act("switch-view", () => h.click("#tab-json"))
   act("switch-view", () => h.click("#tab-todo"))
   h.render_count()
@@ -172,7 +172,7 @@ pub fn patch_switch_view(h : @harness.MemHarness) -> Int {
 /// The harness's own overhead, on its own: resolve the selector the way a
 /// dispatch does, twice, and dispatch nothing. Subtract from the workload above
 /// that fires at the same selector.
-pub fn find_cost(h : @harness.MemHarness, sel : String) -> Int {
+pub fn find_cost(h : @harness.MemHarness, sel : String) -> Int32 {
   let a = h.find(sel) catch { e => fail_patch("find \{sel}", e) }
   let b = h.find(sel) catch { e => fail_patch("find \{sel}", e) }
   a.childs.length() + b.childs.length()
@@ -230,7 +230,7 @@ let composability_module : @component.ModuleDef = @examples.composability_module
 /// app so a profile of one is not polluted by another's DOM. Mirrors
 /// patch_bench_test.mbt; the shell exists to run these under a profiler, where
 /// only the big ones are worth the sampling time.
-pub fn patch_workloads() -> Array[(String, () -> Int)] {
+pub fn patch_workloads() -> Array[(String, () -> Int32)] {
   let todo_1000 = mount_todo(1000)
   let noop_1000 = mount_todo(1000)
   let add_1000 = mount_todo(1000)

@@ -25,7 +25,7 @@ fn kept_at_constant(src : String) -> String {
 /// `String`'s own `Compare` orders by LENGTH first, which is a fine total order
 /// and an unreadable one for a pinned list of property names: it would put
 /// `stop-color` before `font-stretch`. These lists exist to be read in a diff.
-fn lex(a : String, b : String) -> Int {
+fn lex(a : String, b : String) -> Int32 {
   let n = if a.length() < b.length() { a.length() } else { b.length() }
   for i = 0; i < n; i = i + 1 {
     let x = a.unsafe_get(i).to_int()

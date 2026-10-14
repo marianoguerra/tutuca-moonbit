@@ -18,7 +18,7 @@ fn is_val_space(c : Char) -> Bool {
 /// Scan a quoted run starting at the opening quote index (the `'`). Returns
 /// the index just past the closing quote, or None when unterminated.
 /// Inside the run `\` escapes the next character (`\\.`).
-fn scan_quoted(chars : Array[Char], open : Int) -> Int? {
+fn scan_quoted(chars : Array[Char], open : Int32) -> Int32? {
   let mut i = open + 1
   while i < chars.length() {
     match chars[i] {
@@ -45,7 +45,7 @@ pub fn tokenize(s : String) -> Array[Token] {
       continue
     }
     let start = i
-    let quote_end : Int? = if chars[i] == '\'' {
+    let quote_end : Int32? = if chars[i] == '\'' {
       scan_quoted(chars, i)
     } else if chars[i] == '$' && i + 1 < chars.length() && chars[i + 1] == '\'' {
       scan_quoted(chars, i + 1)

@@ -25,6 +25,12 @@ pub(all) enum AttrValue {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend AttrValue with Eq::{not_equal, equal}
+
+///|
+pub extend AttrValue with Debug::{to_repr}
+
+///|
 /// One field of the state record.
 pub(all) struct FieldDef {
   /// The one name used by the state block, views, messages, and JSON.
@@ -41,6 +47,12 @@ pub(all) struct FieldDef {
   /// which bounds exist.
   attrs : Array[(String, AttrValue)]
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend FieldDef with Eq::{not_equal, equal}
+
+///|
+pub extend FieldDef with Debug::{to_repr}
 
 ///|
 /// One case of a receive or intent bucket.
@@ -65,6 +77,12 @@ pub(all) struct MsgDef {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend MsgDef with Eq::{not_equal, equal}
+
+///|
+pub extend MsgDef with Debug::{to_repr}
+
+///|
 /// A protocol name in source and the canonical string id it resolves to.
 /// Aliases are lexical conveniences only; ids are what metadata and runtime
 /// checks carry, so separately loaded modules agree without sharing a path.
@@ -73,6 +91,12 @@ pub(all) struct ProtocolRef {
   id : String
   span : Span
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend ProtocolRef with Eq::{not_equal, equal}
+
+///|
+pub extend ProtocolRef with Debug::{to_repr}
 
 ///|
 /// A typed readable observation. It promises an operation, not storage: an
@@ -94,6 +118,12 @@ pub(all) struct PropertyDef {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend PropertyDef with Eq::{not_equal, equal}
+
+///|
+pub extend PropertyDef with Debug::{to_repr}
+
+///|
 /// A protocol's full capability surface.
 pub(all) struct ProtocolDef {
   local_name : String
@@ -111,6 +141,12 @@ pub(all) struct ProtocolDef {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend ProtocolDef with Eq::{not_equal, equal}
+
+///|
+pub extend ProtocolDef with Debug::{to_repr}
+
+///|
 /// An explicit implementation binding. `source` is `.field`, `$compute`, or
 /// a local view name depending on the section that owns it.
 pub(all) struct ProtocolBinding {
@@ -119,6 +155,12 @@ pub(all) struct ProtocolBinding {
   source : String
   span : Span
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend ProtocolBinding with Eq::{not_equal, equal}
+
+///|
+pub extend ProtocolBinding with Debug::{to_repr}
 
 ///|
 /// A named type the state or its messages mention.
@@ -134,6 +176,12 @@ pub(all) enum UserTyKind {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend UserTyKind with Eq::{not_equal, equal}
+
+///|
+pub extend UserTyKind with Debug::{to_repr}
+
+///|
 /// A named type declared beside a component's state, with its MoonBit name.
 pub(all) struct UserTy {
   /// The type name exactly as the author wrote it.
@@ -143,6 +191,12 @@ pub(all) struct UserTy {
   kind : UserTyKind
   doc : String?
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend UserTy with Eq::{not_equal, equal}
+
+///|
+pub extend UserTy with Debug::{to_repr}
 
 ///|
 /// One component's whole data contract.
@@ -217,6 +271,12 @@ pub(all) struct StateDef {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend StateDef with Eq::{not_equal, equal}
+
+///|
+pub extend StateDef with Debug::{to_repr}
+
+///|
 /// One `provide` entry: a name, and the source text that produces it.
 ///
 /// `source` is the value language and is NOT read here — a lowercase name
@@ -236,6 +296,12 @@ pub(all) struct ProvideDecl {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend ProvideDecl with Eq::{not_equal, equal}
+
+///|
+pub extend ProvideDecl with Debug::{to_repr}
+
+///|
 /// One `lookup` entry: a name, and the fallback expression to use when nothing
 /// above provides it. There is no alias — the local name IS the provided name.
 pub(all) struct LookupDecl {
@@ -244,6 +310,12 @@ pub(all) struct LookupDecl {
   default : String?
   span : Span
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend LookupDecl with Eq::{not_equal, equal}
+
+///|
+pub extend LookupDecl with Debug::{to_repr}
 
 ///|
 /// Which of the two roles a rule has.
@@ -261,6 +333,12 @@ pub(all) enum RuleKind {
   /// still callable from a slot like any other.
   RInvariant
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend RuleKind with Eq::{not_equal, equal}
+
+///|
+pub extend RuleKind with Debug::{to_repr}
 
 ///|
 /// One `pred` or `invariant`: a name, the one expression it is, and the
@@ -303,6 +381,12 @@ pub(all) struct RuleDecl {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend RuleDecl with Eq::{not_equal, equal}
+
+///|
+pub extend RuleDecl with Debug::{to_repr}
+
+///|
 /// One `where` clause: a field, and the domain its values are drawn from.
 ///
 /// It sits beside `pred` and `invariant` rather than inside the field's type
@@ -332,6 +416,12 @@ pub(all) struct WhereDecl {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend WhereDecl with Eq::{not_equal, equal}
+
+///|
+pub extend WhereDecl with Debug::{to_repr}
+
+///|
 /// Anything that makes a state block unusable. Rendered by `Show` into the
 /// message the CLI reports.
 ///
@@ -356,7 +446,7 @@ pub suberror DefError {
   /// sibling component.
   UnknownTypeRef(name~ : String, span~ : Span)
   /// A type application whose argument count is wrong: `Array[A, B]`.
-  BadTypeArgs(name~ : String, want~ : Int, got~ : Int, span~ : Span)
+  BadTypeArgs(name~ : String, want~ : Int32, got~ : Int32, span~ : Span)
   /// A named type that refers to itself with no `?` or `Array` in between.
   CyclicType(name~ : String, span~ : Span)
   /// Two names collapse onto one MoonBit identifier.
@@ -441,6 +531,12 @@ pub(all) enum ValidationMode {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend ValidationMode with Eq::{not_equal, equal}
+
+///|
+pub extend ValidationMode with Debug::{to_repr}
+
+///|
 /// A static protocol finding. `code` is the same enum runtime notices carry.
 pub(all) struct ProtocolDiagnostic {
   code : @tutuca.ProtocolIssueCode
@@ -453,10 +549,22 @@ pub(all) struct ProtocolDiagnostic {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend ProtocolDiagnostic with Eq::{not_equal, equal}
+
+///|
+pub extend ProtocolDiagnostic with Debug::{to_repr}
+
+///|
 pub(all) struct ProtocolValidation {
   mode : ValidationMode
   diagnostics : Array[ProtocolDiagnostic]
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend ProtocolValidation with Eq::{not_equal, equal}
+
+///|
+pub extend ProtocolValidation with Debug::{to_repr}
 
 ///|
 /// Validate every protocol declaration and implementation visible in a batch.

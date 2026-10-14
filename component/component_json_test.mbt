@@ -12,7 +12,7 @@
 ///|
 priv struct JLeaf {
   text : String
-  n : Int
+  n : Int32
 } derive(Default)
 
 ///|

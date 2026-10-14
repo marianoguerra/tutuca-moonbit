@@ -89,6 +89,12 @@ pub(all) enum RefusalCode {
 } derive(Eq, Debug)
 
 ///|
+pub extend RefusalCode with Eq::{not_equal, equal}
+
+///|
+pub extend RefusalCode with Debug::{to_repr}
+
+///|
 /// The screaming-snake spelling — the one an author reads in a test failure.
 ///
 /// One vocabulary learned once: a build-time hint about a missing arm and the
@@ -145,6 +151,12 @@ pub(all) struct Refusal {
 } derive(Eq, Debug)
 
 ///|
+pub extend Refusal with Eq::{not_equal, equal}
+
+///|
+pub extend Refusal with Debug::{to_repr}
+
+///|
 /// One vocabulary shared with the static protocol validator.
 pub(all) enum ProtocolIssueCode {
   ProtocolUnresolved
@@ -161,6 +173,12 @@ pub(all) enum ProtocolIssueCode {
   ProtocolResultType
   ProtocolExpressionUndeclared
 } derive(Eq, Debug)
+
+///|
+pub extend ProtocolIssueCode with Eq::{not_equal, equal}
+
+///|
+pub extend ProtocolIssueCode with Debug::{to_repr}
 
 ///|
 pub fn ProtocolIssueCode::word(self : ProtocolIssueCode) -> String {
@@ -198,6 +216,12 @@ pub(all) enum RuntimeResolution {
 } derive(Eq, Debug)
 
 ///|
+pub extend RuntimeResolution with Eq::{not_equal, equal}
+
+///|
+pub extend RuntimeResolution with Debug::{to_repr}
+
+///|
 pub(all) struct RuntimeProtocolNotice {
   code : ProtocolIssueCode
   protocol_id : String
@@ -211,12 +235,24 @@ pub(all) struct RuntimeProtocolNotice {
 } derive(Eq, Debug)
 
 ///|
+pub extend RuntimeProtocolNotice with Eq::{not_equal, equal}
+
+///|
+pub extend RuntimeProtocolNotice with Debug::{to_repr}
+
+///|
 /// The single centralized runtime diagnostics channel.
 pub(all) enum RuntimeNotice {
   Refused(Refusal)
   ProtocolMismatch(RuntimeProtocolNotice)
   RuntimeWarning(String)
 } derive(Eq, Debug)
+
+///|
+pub extend RuntimeNotice with Eq::{not_equal, equal}
+
+///|
+pub extend RuntimeNotice with Debug::{to_repr}
 
 ///|
 /// A one-line rendering, for a host that wants text rather than the record.

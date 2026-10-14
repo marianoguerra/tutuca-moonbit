@@ -1,6 +1,6 @@
 ///|
 test "dnd: dragging a row onto a later one reorders the list" {
-  let h = @harness.mount_example(dnd_module(), "Default")
+  let h = @harness.mount_example(@examples.dnd_module(), "Default")
   inspect(h.text(".row"), content="0: those belonging to the Emperor")
   // drag row 0 onto row 2
   h.drag(".row", 0, 2)
@@ -20,7 +20,7 @@ test "dnd: dragging a row onto a later one reorders the list" {
 
 ///|
 test "dnd: dragging upward moves the row earlier" {
-  let h = @harness.mount_example(dnd_module(), "Default")
+  let h = @harness.mount_example(@examples.dnd_module(), "Default")
   h.drag(".row", 3, 0) // "suckling pigs" to the top
   debug_inspect(
     h.texts(".row")[0:4],
@@ -38,7 +38,7 @@ test "dnd: dragging upward moves the row earlier" {
 
 ///|
 test "dnd: dropping a row on itself changes nothing" {
-  let h = @harness.mount_example(dnd_module(), "Default")
+  let h = @harness.mount_example(@examples.dnd_module(), "Default")
   h.drag(".row", 2, 2)
   inspect(h.text(".row", nth=2), content="2: trained ones")
   inspect(h.find_all(".row").length(), content="14")
@@ -46,7 +46,7 @@ test "dnd: dropping a row on itself changes nothing" {
 
 ///|
 test "dnd: the drag markup carries the drag/drop pairing attributes" {
-  let h = @harness.mount_example(dnd_module(), "Default")
+  let h = @harness.mount_example(@examples.dnd_module(), "Default")
   debug_inspect(
     h.attr(".row", "draggable"),
     content=(
@@ -69,7 +69,7 @@ test "dnd: the drag markup carries the drag/drop pairing attributes" {
 
 ///|
 test "dnd: a filtered view drags by the row's ORIGINAL key, not its screen position" {
-  let h = @harness.mount_example(dnd_module(), "Pre-filtered")
+  let h = @harness.mount_example(@examples.dnd_module(), "Pre-filtered")
   // only the rows containing "ones" are visible, but they keep their real keys
   debug_inspect(
     h.texts(".row"),

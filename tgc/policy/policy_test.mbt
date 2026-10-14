@@ -11,7 +11,7 @@ fn parsed(html : String) -> @anode.ANode {
 }
 
 ///|
-fn shown(rejections : Array[Rejection]) -> Array[String] {
+fn shown(rejections : Array[@policy.Rejection]) -> Array[String] {
   rejections.map(r => r.to_string())
 }
 
@@ -19,7 +19,7 @@ fn shown(rejections : Array[Rejection]) -> Array[String] {
 /// The default, and the tier the whole design is FOR: a runtime-extensible
 /// catalog is only interesting if a bundle nobody vetted is usable at it.
 test "an untrusted bundle allows no external URLs and ships no CSS" {
-  let p = Policy::untrusted()
+  let p = @policy.Policy::untrusted()
   debug_inspect(p.tier, content="Untrusted")
   assert_false(p.allows_external_urls)
   debug_inspect(
@@ -37,7 +37,7 @@ test "an untrusted bundle allows no external URLs and ships no CSS" {
 /// fetch. Sink NAMES are rejected because their values may be dynamic and
 /// unknowable until render.
 test "untrusted views cannot name direct browser network or CSS sinks" {
-  let p = Policy::untrusted()
+  let p = @policy.Policy::untrusted()
   for
     pair in [
       // The two the external-URL allowance would reopen say so; every other
@@ -88,7 +88,7 @@ test "untrusted views cannot name direct browser network or CSS sinks" {
 /// CSS rule; so there is nothing downstream that would look at what this pass
 /// cannot see. Admitting it here would be admitting it unchecked.
 test "untrusted views may state a constant style" {
-  let p = Policy::untrusted()
+  let p = @policy.Policy::untrusted()
   // Admitted.
   for
     view in [
@@ -138,7 +138,7 @@ test "untrusted views may state a constant style" {
 /// authority check against them explicitly.
 test "untrusted network checks reach macro slots" {
   let rejections = shown(
-    Policy::untrusted().check_view(
+    @policy.Policy::untrusted().check_view(
       "Guest/main",
       parsed("<x:card><a href=\"https://attacker.test\">go</a></x:card>"),
     ),
@@ -148,7 +148,7 @@ test "untrusted network checks reach macro slots" {
   // and a directive hidden one level down is exactly the shape this walk has
   // been wrong about before.
   let nested = shown(
-    Policy::untrusted().check_view(
+    @policy.Policy::untrusted().check_view(
       "Guest/main",
       parsed(
         "<x:card><div @setinnerhtml=\".body\"></div><svg @setinnersvg=\".chart\"></svg></x:card>",
@@ -166,7 +166,7 @@ test "untrusted network checks reach macro slots" {
 /// is no permission here to have forgotten, because there is no unchecked path
 /// to permit.
 test "the safe markup directives need no grant above the untrusted tier" {
-  for p in [Policy::granted(), Policy::system()] {
+  for p in [@policy.Policy::granted(), @policy.Policy::system()] {
     debug_inspect(
       shown(
         p.check_view("Guest/main", parsed("<div @setinnerhtml=\".b\"></div>")),
@@ -202,7 +202,7 @@ test "the safe markup directives need no grant above the untrusted tier" {
 /// nothing unless a macro named `card` is in scope. That is what makes it a
 /// gap in the walk rather than a hole under everyone.
 test "untrusted macro arguments cannot carry a URL or arbitrary CSS" {
-  let p = Policy::untrusted()
+  let p = @policy.Policy::untrusted()
   for
     pair in [
       (
@@ -242,7 +242,9 @@ test "untrusted macro arguments cannot carry a URL or arbitrary CSS" {
 /// host can read in the bundle in front of it, rather than a string the guest
 /// assembles once it is running.
 test "allowing external URLs opens img src and a href, with the origin pinned" {
-  let p = Policy::untrusted().allowing_external_urls(["https://cdn.bsky.app"])
+  let p = @policy.Policy::untrusted().allowing_external_urls([
+    "https://cdn.bsky.app",
+  ])
   for
     view in [
       // A constant, and the shape a real one has: literal through the '/' that
@@ -293,8 +295,10 @@ test "allowing external URLs opens img src and a href, with the origin pinned" {
 ///|
 /// The list and the allowance are one decision, so one call makes both.
 test "allowing external URLs is a decision a host makes deliberately" {
-  assert_false(Policy::untrusted().allows_external_urls)
-  let p = Policy::untrusted().allowing_external_urls(["https://cdn.bsky.app/"])
+  assert_false(@policy.Policy::untrusted().allows_external_urls)
+  let p = @policy.Policy::untrusted().allowing_external_urls([
+    "https://cdn.bsky.app/",
+  ])
   assert_true(p.allows_external_urls)
   debug_inspect(
     p.external_origins,
@@ -311,7 +315,7 @@ test "allowing external URLs is a decision a host makes deliberately" {
 /// An empty list is the widest form the allowance has: any `https://` origin,
 /// and still no origin the guest computes.
 test "allowing external URLs with no origins still refuses http and a computed host" {
-  let p = Policy::untrusted().allowing_external_urls([])
+  let p = @policy.Policy::untrusted().allowing_external_urls([])
   debug_inspect(
     p.check_view(
       "Guest/main",
@@ -344,8 +348,8 @@ test "an origin a host cannot have meant is refused loudly" {
        "https://", // no authority
        "https://cdn.bsky.app@evil.test", // userinfo
     ] {
-    try Policy::untrusted().allowing_external_urls([bad]) catch {
-      e => assert_true(InvalidOrigin::to_string(e).contains(bad))
+    try @policy.Policy::untrusted().allowing_external_urls([bad]) catch {
+      e => assert_true(@policy.InvalidOrigin::to_string(e).contains(bad))
     } noraise {
       _ => fail("expected \{bad} to be refused")
     }
@@ -361,7 +365,7 @@ test "untrusted views retain autonomous custom elements" {
     "<x-picker :items=\".items\" mode=\"compact\" class=\"flex gap-2\"></x-picker>",
   )
   debug_inspect(
-    Policy::untrusted().check_view("Guest/main", view),
+    @policy.Policy::untrusted().check_view("Guest/main", view),
     content="[]",
   )
 }
@@ -374,10 +378,13 @@ test "trusted tiers retain network and CSS-capable view syntax" {
     "<section style=\"background:url(/trusted)\"><a href=\"/ok\">ok</a><div @setinnermd=\".body\"></div></section>",
   )
   debug_inspect(
-    Policy::granted().check_view("Trusted/main", view),
+    @policy.Policy::granted().check_view("Trusted/main", view),
     content="[]",
   )
-  debug_inspect(Policy::system().check_view("Trusted/main", view), content="[]")
+  debug_inspect(
+    @policy.Policy::system().check_view("Trusted/main", view),
+    content="[]",
+  )
 }
 
 ///|
@@ -387,7 +394,12 @@ test "trusted tiers retain network and CSS-capable view syntax" {
 /// about.
 test "a view that sets markup directly is refused at every tier" {
   let raw = parsed("<div @dangerouslysetinnerhtml=\".payload\"></div>")
-  for p in [Policy::untrusted(), Policy::granted(), Policy::system()] {
+  for
+    p in [
+      @policy.Policy::untrusted(),
+      @policy.Policy::granted(),
+      @policy.Policy::system(),
+    ] {
     debug_inspect(
       shown(p.check_view("Sneaky/main", raw)),
       content=(
@@ -399,7 +411,10 @@ test "a view that sets markup directly is refused at every tier" {
   let fine = parsed(
     "<div><ul><li @each=\".items\" @text=\"@value\"></li></ul><button @on.click=\"go\">go</button></div>",
   )
-  debug_inspect(Policy::untrusted().check_view("Ok/main", fine), content="[]")
+  debug_inspect(
+    @policy.Policy::untrusted().check_view("Ok/main", fine),
+    content="[]",
+  )
 }
 
 ///|
@@ -407,7 +422,7 @@ test "a view that sets markup directly is refused at every tier" {
 /// baseline, and stay that way.
 test "a policy carries a sanitizer a host can replace" {
   let raw = parsed("<div @dangerouslysetinnerhtml=\".payload\"></div>")
-  let strict = Policy::untrusted()
+  let strict = @policy.Policy::untrusted()
   assert_false(strict.allows_raw_markup())
   assert_true(strict.check_view("Sneaky/main", raw).length() == 1)
 
@@ -425,7 +440,7 @@ test "a policy carries a sanitizer a host can replace" {
     }),
   )
 
-  let loose = Policy::granted().with_sanitizer({
+  let loose = @policy.Policy::granted().with_sanitizer({
     ..@sanitize.SanitizerConfig::empty(),
     raw_markup: Some(true),
   })
@@ -452,7 +467,7 @@ test "a policy carries a sanitizer a host can replace" {
 /// Tightening is the other direction, and the one a host reaching for an
 /// allow-list wants.
 test "a policy can be tightened with an allow-list" {
-  let p = Policy::untrusted().with_sanitizer({
+  let p = @policy.Policy::untrusted().with_sanitizer({
     ..@sanitize.SanitizerConfig::empty(),
     elements: Some([
       @sanitize.ElementRule::of(@sanitize.html("div")),
@@ -482,7 +497,7 @@ test "an invalid sanitizer config is refused loudly" {
     elements: Some([@sanitize.ElementRule::of(@sanitize.html("div"))]),
     remove_elements: Some([@sanitize.html("span")]),
   }
-  try Policy::untrusted().with_sanitizer(bad) catch {
+  try @policy.Policy::untrusted().with_sanitizer(bad) catch {
     e =>
       inspect(
         @sanitize.InvalidConfig::to_string(e),
@@ -501,7 +516,7 @@ test "an invalid sanitizer config is refused loudly" {
 /// live gap — either of those inside a macro call's slot, which
 /// `ANode::for_each_child` never visits. See SECURITY.md §3.
 test "the sanitizer refuses more than raw markup" {
-  let p = Policy::untrusted()
+  let p = @policy.Policy::untrusted()
   debug_inspect(
     shown(p.check_view("Sneaky/main", parsed("<div><script></script></div>"))),
     content=(
@@ -537,8 +552,8 @@ test "the sanitizer refuses more than raw markup" {
 /// big manifest — but an availability one. The host parses every view and
 /// compiles every component before it renders anything.
 test "quotas bound what a host will parse before it renders" {
-  let p = Policy::untrusted()
-  let ok : ModuleFacts = {
+  let p = @policy.Policy::untrusted()
+  let ok : @policy.ModuleFacts = {
     components: 4,
     max_views: 3,
     max_view_bytes: 2000,
@@ -546,7 +561,7 @@ test "quotas bound what a host will parse before it renders" {
     max_fields: 12,
   }
   debug_inspect(p.check_quotas(ok), content="[]")
-  let bomb : ModuleFacts = {
+  let bomb : @policy.ModuleFacts = {
     components: 10000,
     max_views: 3,
     max_view_bytes: 40_000_000,
@@ -568,15 +583,15 @@ test "quotas bound what a host will parse before it renders" {
 /// Generous on purpose: these catch a runaway, not an author. A real component
 /// has a handful of views and a dozen types.
 test "the default quotas are orders of magnitude clear of real use" {
-  let q = Quotas::default()
-  let realistic : ModuleFacts = {
+  let q = @policy.Quotas::default()
+  let realistic : @policy.ModuleFacts = {
     components: 8,
     max_views: 4,
     max_view_bytes: 8000,
     max_style_bytes: 1200,
     max_fields: 20,
   }
-  debug_inspect(Policy::granted().check_quotas(realistic), content="[]")
+  debug_inspect(@policy.Policy::granted().check_quotas(realistic), content="[]")
   assert_true(q.max_components >= 100)
   assert_true(q.max_view_bytes >= 100000)
 }
@@ -593,8 +608,8 @@ fn parsed_with(html : String, config : Map[String, String]) -> @anode.ANode {
 /// The point of the whole mechanism: the origin is still a literal, and still
 /// settled before anything renders — it is just a literal the HOST wrote.
 test "a bound config origin pins a sink the same way a written one does" {
-  let p = Policy::untrusted().with_config([
-    ("mediaOrigin", origin("https://files.hachyderm.io")),
+  let p = @policy.Policy::untrusted().with_config([
+    ("mediaOrigin", @policy.origin("https://files.hachyderm.io")),
   ])
   // Binding it allowed it: one call, one decision.
   assert_true(p.allows_external_urls)
@@ -641,7 +656,7 @@ test "an unbound config origin reaches the guest and never a view" {
   // No `with_config` at all: `register_bundle` still hands the guest the
   // manifest's default, but `view_config` is empty, so the name resolves to
   // nothing and the view says so.
-  let p = Policy::untrusted()
+  let p = @policy.Policy::untrusted()
   debug_inspect(p.view_config(), content="{}")
   let px = @anode.ParseContext::new()
   let tree = @anode.ANode::parse(
@@ -664,9 +679,9 @@ test "an unbound config origin reaches the guest and never a view" {
 ///|
 /// The reason `view_config` is a subset rather than the whole table.
 test "a text config variable cannot become an origin" {
-  let p = Policy::untrusted().with_config([
-    ("instanceName", text("hachyderm.io")),
-    ("mediaOrigin", origin("https://files.hachyderm.io")),
+  let p = @policy.Policy::untrusted().with_config([
+    ("instanceName", @policy.text("hachyderm.io")),
+    ("mediaOrigin", @policy.origin("https://files.hachyderm.io")),
   ])
   let cfg = p.view_config()
   // Bound, readable by the guest, absent from what a view can name.
@@ -709,7 +724,10 @@ test "a config value cannot smuggle an origin past origin_of" {
        "https://",
     ] {
     let refused = try {
-      Policy::untrusted().with_config([("mediaOrigin", origin(bad))]) |> ignore
+      @policy.Policy::untrusted().with_config([
+        ("mediaOrigin", @policy.origin(bad)),
+      ])
+      |> ignore
       false
     } catch {
       InvalidConfig(_) => true
@@ -723,8 +741,8 @@ test "a config value cannot smuggle an origin past origin_of" {
 /// in `allowing_external_urls`: `/public/../private/key` is a URL to
 /// `/private/key`, so a path prefix is not a boundary.
 test "a path in a bound origin is dropped, not honored" {
-  let p = Policy::untrusted().with_config([
-    ("mediaOrigin", origin("https://files.hachyderm.io/public/")),
+  let p = @policy.Policy::untrusted().with_config([
+    ("mediaOrigin", @policy.origin("https://files.hachyderm.io/public/")),
   ])
   debug_inspect(
     p.view_config().get("mediaOrigin"),
@@ -740,7 +758,7 @@ test "a path in a bound origin is dropped, not honored" {
 /// the host bound as prose and turn a string into a network grant.
 test "a bound value carries its own type, and a bad one is loud" {
   let refused = try {
-    Policy::untrusted().with_config([
+    @policy.Policy::untrusted().with_config([
       ("retries", { ty: TyNumber, value: "a lot", }),
       ("verbose", { ty: TyBool, value: "yes", }),
     ])
@@ -761,7 +779,9 @@ test "a bound value carries its own type, and a bad one is loud" {
 /// `pinned_prefix` reads the whole template head, so a literal head split
 /// across parts still pins.
 test "a literal head split across parts still pins" {
-  let p = Policy::untrusted().allowing_external_urls(["https://cdn.example"])
+  let p = @policy.Policy::untrusted().allowing_external_urls([
+    "https://cdn.example",
+  ])
   // Two literal parts and then a field: the head is `https://cdn.example/`,
   // whose authority is closed, so nothing interpolated after it can re-point
   // the request.
@@ -803,8 +823,8 @@ test "a literal head split across parts still pins" {
 /// Binding is granting, but only for what was bound: the rest of the origin
 /// rule is untouched.
 test "a config origin does not widen anything else" {
-  let p = Policy::untrusted().with_config([
-    ("mediaOrigin", origin("https://files.hachyderm.io")),
+  let p = @policy.Policy::untrusted().with_config([
+    ("mediaOrigin", @policy.origin("https://files.hachyderm.io")),
   ])
   let cfg = p.view_config()
   debug_inspect(
@@ -856,10 +876,10 @@ fn parsed_events(html : String) -> Array[@anode.NodeEvents] {
 /// are data here whoever shipped them (SECURITY.md §9): an off-list traversal
 /// step is ambient authority no guest declared.
 test "an off-list event path refuses the bundle at registration" {
-  debug_inspect(Policy::untrusted().event_paths, content="Safe")
-  debug_inspect(Policy::granted().event_paths, content="Safe")
-  debug_inspect(Policy::system().event_paths, content="Safe")
-  let p = Policy::system()
+  debug_inspect(@policy.Policy::untrusted().event_paths, content="Safe")
+  debug_inspect(@policy.Policy::granted().event_paths, content="Safe")
+  debug_inspect(@policy.Policy::system().event_paths, content="Safe")
+  let p = @policy.Policy::system()
   // The line SECURITY.md §9 exists for: target is fine, ownerDocument is
   // where it leaves, and the leaf is a number that converts cleanly.
   debug_inspect(
@@ -879,7 +899,7 @@ test "an off-list event path refuses the bundle at registration" {
 
 ///|
 test "paths the safe profile permits refuse nothing, at any tier" {
-  fn clean(p : Policy) -> Unit raise {
+  fn clean(p : @policy.Policy) -> Unit raise {
     debug_inspect(
       p.check_event_paths(
         "Guest/main",
@@ -891,14 +911,14 @@ test "paths the safe profile permits refuse nothing, at any tier" {
     )
   }
 
-  clean(Policy::untrusted())
-  clean(Policy::granted())
-  clean(Policy::system())
+  clean(@policy.Policy::untrusted())
+  clean(@policy.Policy::granted())
+  clean(@policy.Policy::system())
 }
 
 ///|
 test "a host may open its page's event paths deliberately" {
-  let open = Policy::untrusted().with_open_event_paths()
+  let open = @policy.Policy::untrusted().with_open_event_paths()
   debug_inspect(open.event_paths, content="Open")
   debug_inspect(
     shown(

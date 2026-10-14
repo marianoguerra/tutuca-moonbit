@@ -25,7 +25,7 @@ fn read_one(src : String) -> String {
     Some(v) => @sh.row_members(v.decls)
     None => []
   }
-  let direct = read_logic(decl, rows~) catch {
+  let direct = @tologic.read_logic(decl, rows~) catch {
     ExError(message~, ..) => return "ERR " + message
   }
   flat(scrub(direct))

@@ -2,9 +2,9 @@
 
 ///|
 priv struct CompNode {
-  cid : Int
+  cid : Int32
   child : @tutuca.Value?
-  collector : Array[Int] // shared across the tree; the walk handler fills it
+  collector : Array[Int32] // shared across the tree; the walk handler fills it
 }
 
 ///|
@@ -55,7 +55,7 @@ impl @tutuca.Obj for CompNode with fn component_id(self) {
 
 ///|
 test "walk_path visits component instances leaf -> root" {
-  let collector : Array[Int] = []
+  let collector : Array[Int32] = []
   let leaf : @tutuca.Value = Obj(CompNode::{ cid: 2, child: None, collector, })
   let root : @tutuca.Value = Obj(CompNode::{
     cid: 1,
@@ -75,7 +75,7 @@ test "walk_path visits component instances leaf -> root" {
 
 ///|
 test "walk_path callback can stop early by returning false" {
-  let collector : Array[Int] = []
+  let collector : Array[Int32] = []
   let leaf : @tutuca.Value = Obj(CompNode::{ cid: 2, child: None, collector, })
   let root : @tutuca.Value = Obj(CompNode::{
     cid: 1,

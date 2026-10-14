@@ -83,6 +83,12 @@ pub(all) enum SchemaViewerCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend SchemaViewerCompute with Eq::{not_equal, equal}
+
+///|
+pub extend SchemaViewerCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn SchemaViewerCompute::name(self : SchemaViewerCompute) -> String {
   match self {
     ToggleLabel => "toggle_label"

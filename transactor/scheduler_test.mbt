@@ -51,7 +51,7 @@ test "batched drive yields between batches until the queue drains" {
     |> ignore
   }
   // the App::drain_batched loop, replicated with a yield counter
-  let yields : Ref[Int] = { val: 0, }
+  let yields : Ref[Int32] = { val: 0, }
   while tx.has_pending() {
     let batch = tx.settle(max_turns=2)
     if batch.pending {

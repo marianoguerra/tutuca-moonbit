@@ -106,6 +106,8 @@ pub let warn_hook : @ref.Ref[(String) -> Unit]
 pub suberror BadInstant {
   BadInstant(String)
 }
+pub fn BadInstant::output(Self, &Logger) -> Unit
+pub fn BadInstant::to_string(Self) -> String
 pub impl Show for BadInstant
 
 // Types and methods
@@ -114,6 +116,9 @@ pub(all) enum Admission {
   NotHere
   Refused(String)
 } derive(Eq, @debug.Debug)
+pub fn Admission::equal(Self, Self) -> Bool
+pub fn Admission::not_equal(Self, Self) -> Bool
+pub fn Admission::to_repr(Self) -> @debug.Repr
 
 pub struct Builtin {
   name : String
@@ -122,6 +127,14 @@ pub struct Builtin {
 }
 
 pub(all) struct CtxStack(&Ctx)
+pub fn CtxStack::lookup_bare(Self, String) -> Value
+pub fn CtxStack::lookup_bind(Self, String) -> Value
+pub fn CtxStack::lookup_dynamic(Self, String) -> Value
+pub fn CtxStack::lookup_event_path(Self, Array[String]) -> Value
+pub fn CtxStack::lookup_member(Self, String) -> Value
+pub fn CtxStack::lookup_method(Self, String) -> Value
+pub fn CtxStack::lookup_storage(Self, String) -> Value
+pub fn CtxStack::lookup_trigger(Self, String) -> Value
 pub impl Stack for CtxStack
 
 pub(all) enum Dispatch {
@@ -130,13 +143,19 @@ pub(all) enum Dispatch {
 } derive(Eq, @debug.Debug)
 pub fn Dispatch::args(Self) -> Array[Value]
 pub fn Dispatch::bucket(Self) -> HandlerBucket
+pub fn Dispatch::equal(Self, Self) -> Bool
 pub fn Dispatch::name(Self) -> String
+pub fn Dispatch::not_equal(Self, Self) -> Bool
+pub fn Dispatch::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DispatchFrame {
   base : Path
   items : Array[DispatchStep]
   binds : Array[(Int, FrameBind)]
 } derive(Eq, @debug.Debug)
+pub fn DispatchFrame::equal(Self, Self) -> Bool
+pub fn DispatchFrame::not_equal(Self, Self) -> Bool
+pub fn DispatchFrame::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DispatchPath {
   frames : Array[DispatchFrame]
@@ -144,18 +163,24 @@ pub(all) struct DispatchPath {
 pub fn DispatchPath::can_pop(Self) -> Bool
 pub fn DispatchPath::compact(Self) -> Self
 pub fn DispatchPath::concat(Self, Array[Step]) -> Self
+pub fn DispatchPath::equal(Self, Self) -> Bool
 pub fn DispatchPath::is_root(Self) -> Bool
 pub fn DispatchPath::new(items? : Array[DispatchStep]) -> Self
+pub fn DispatchPath::not_equal(Self, Self) -> Bool
 pub fn DispatchPath::of_steps(Array[Step]) -> Self
 pub fn DispatchPath::pop_step(Self) -> Self
 pub fn DispatchPath::push_bind(Self, FrameBind) -> Self
 pub fn DispatchPath::push_frame(Self, Path) -> Self
 pub fn DispatchPath::push_item(Self, DispatchStep) -> Self
+pub fn DispatchPath::to_repr(Self) -> @debug.Repr
 pub fn DispatchPath::to_transaction_path(Self) -> Path
 
 pub(all) enum DispatchStep {
   Plain(step~ : Step, origin~ : Int?)
 } derive(Eq, @debug.Debug)
+pub fn DispatchStep::equal(Self, Self) -> Bool
+pub fn DispatchStep::not_equal(Self, Self) -> Bool
+pub fn DispatchStep::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Domain {
   DIndexOf(field~ : String, allow_none~ : Bool)
@@ -172,7 +197,10 @@ pub(all) enum Domain {
   DFormat(String)
 } derive(Eq, @debug.Debug)
 pub fn Domain::applies_to(Self, Ty) -> Bool
+pub fn Domain::equal(Self, Self) -> Bool
+pub fn Domain::not_equal(Self, Self) -> Bool
 pub fn Domain::to_mbt_source(Self) -> String
+pub fn Domain::to_repr(Self) -> @debug.Repr
 
 pub(all) enum DomainOp {
   DGe
@@ -180,11 +208,17 @@ pub(all) enum DomainOp {
   DLe
   DLt
 } derive(Eq, @debug.Debug)
+pub fn DomainOp::equal(Self, Self) -> Bool
+pub fn DomainOp::not_equal(Self, Self) -> Bool
+pub fn DomainOp::to_repr(Self) -> @debug.Repr
 
 pub(all) enum DomainOperand {
   DLit(Double)
   DField(String)
 } derive(Eq, @debug.Debug)
+pub fn DomainOperand::equal(Self, Self) -> Bool
+pub fn DomainOperand::not_equal(Self, Self) -> Bool
+pub fn DomainOperand::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Expr {
   ELit(lit~ : Lit, from_macro~ : Bool, span~ : Span)
@@ -213,6 +247,7 @@ pub fn Expr::as_seq_access(Self) -> (String, String)?
 pub fn Expr::bind(String, span? : Span) -> Self
 pub fn Expr::bind_member(String, String, span? : Span) -> Self
 pub fn Expr::dyn_(String, span? : Span) -> Self
+pub fn Expr::equal(Self, Self) -> Bool
 pub fn Expr::eval(Self, &Stack) -> Value
 pub fn Expr::eval_as_handler(Self, &Stack) -> Value
 pub fn Expr::event_path(Array[String], span? : Span) -> Self
@@ -221,11 +256,15 @@ pub fn Expr::is_literal(Self) -> Bool
 pub fn Expr::lit(Lit, from_macro? : Bool, span? : Span) -> Self
 pub fn Expr::method_(String, span? : Span) -> Self
 pub fn Expr::name(String, span? : Span) -> Self
+pub fn Expr::not_equal(Self, Self) -> Bool
+pub fn Expr::output(Self, &Logger) -> Unit
 pub fn Expr::seq_access(String, String, span? : Span) -> Self
 pub fn Expr::show_source(Self) -> String
 pub fn Expr::span(Self) -> Span
 pub fn Expr::to_path_item(Self) -> Step?
+pub fn Expr::to_repr(Self) -> @debug.Repr
 pub fn Expr::to_source(Self) -> String
+pub fn Expr::to_string(Self) -> String
 pub fn Expr::tpl(Array[TplPart], span? : Span) -> Self
 pub fn Expr::type_name(String, span? : Span) -> Self
 pub impl Eq for Expr
@@ -236,6 +275,9 @@ pub(all) struct FieldDomain {
   field : String
   domain : Domain
 } derive(Eq, @debug.Debug)
+pub fn FieldDomain::equal(Self, Self) -> Bool
+pub fn FieldDomain::not_equal(Self, Self) -> Bool
+pub fn FieldDomain::to_repr(Self) -> @debug.Repr
 
 pub(all) struct FieldInfo {
   name : String
@@ -257,10 +299,13 @@ pub(all) enum FieldKind {
   FSet
   FOMap
 } derive(@debug.Debug)
+pub fn FieldKind::to_repr(Self) -> @debug.Repr
 
 pub struct FnSource {
   // private fields
 }
+pub fn FnSource::build(Self, String?, String, Map[String, Value], at~ : String) -> Value?
+pub fn FnSource::describe(Self, String?, String) -> SchemaInfo?
 pub fn FnSource::new((String?, String, Map[String, Value], String) -> Value?, describe? : (String?, String) -> SchemaInfo?) -> Self
 pub impl ComponentSource for FnSource
 
@@ -268,6 +313,9 @@ pub(all) enum FrameBind {
   Scope(val~ : Expr)
   Each(val~ : Expr, when_val~ : Expr?, enrich_with_val~ : Expr?, loop_with_val~ : Expr?, key~ : PathKey)
 } derive(Eq, @debug.Debug)
+pub fn FrameBind::equal(Self, Self) -> Bool
+pub fn FrameBind::not_equal(Self, Self) -> Bool
+pub fn FrameBind::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Handler((Array[Value], &Ctx) -> Value?)
 
@@ -275,20 +323,29 @@ pub(all) enum HandlerBucket {
   Receive
   Intent
 } derive(Eq, @debug.Debug)
+pub fn HandlerBucket::equal(Self, Self) -> Bool
 pub fn HandlerBucket::label(Self) -> String
+pub fn HandlerBucket::not_equal(Self, Self) -> Bool
 pub fn HandlerBucket::ordinal(Self) -> Int
+pub fn HandlerBucket::to_repr(Self) -> @debug.Repr
 
 pub(all) enum IntentAnswer {
   Ok(Value)
   Failed(Value)
   Pass
 } derive(Eq, @debug.Debug)
+pub fn IntentAnswer::equal(Self, Self) -> Bool
+pub fn IntentAnswer::not_equal(Self, Self) -> Bool
+pub fn IntentAnswer::to_repr(Self) -> @debug.Repr
 
 pub(all) struct IntentCall {
   name : String
   args : Array[Value]
   from : DispatchPath
 } derive(Eq, @debug.Debug)
+pub fn IntentCall::equal(Self, Self) -> Bool
+pub fn IntentCall::not_equal(Self, Self) -> Bool
+pub fn IntentCall::to_repr(Self) -> @debug.Repr
 
 pub(all) struct IntentFn((IntentCall, (IntentAnswer) -> Unit) -> Unit)
 
@@ -299,12 +356,18 @@ pub(all) struct IntentOpts {
   on_unhandled_name : String?
   live_path : Bool
 } derive(Eq, @debug.Debug)
+pub fn IntentOpts::equal(Self, Self) -> Bool
 pub fn IntentOpts::new(route? : Array[Leg], on_ok_name? : String, on_failed_name? : String, on_unhandled_name? : String, live_path? : Bool) -> Self
+pub fn IntentOpts::not_equal(Self, Self) -> Bool
+pub fn IntentOpts::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Leg {
   Dyn
   Lex
 } derive(Eq, @debug.Debug)
+pub fn Leg::equal(Self, Self) -> Bool
+pub fn Leg::not_equal(Self, Self) -> Bool
+pub fn Leg::to_repr(Self) -> @debug.Repr
 pub fn Leg::word(Self) -> String
 
 pub(all) enum Lit {
@@ -313,27 +376,63 @@ pub(all) enum Lit {
   LNum(Double)
   LStr(String)
 } derive(Eq, @debug.Debug)
+pub fn Lit::equal(Self, Self) -> Bool
+pub fn Lit::not_equal(Self, Self) -> Bool
+pub fn Lit::to_repr(Self) -> @debug.Repr
 
 pub(all) struct LookupOpts {
   route : Array[Leg]
 } derive(Eq, @debug.Debug)
+pub fn LookupOpts::equal(Self, Self) -> Bool
 pub fn LookupOpts::new(route? : Array[Leg]) -> Self
+pub fn LookupOpts::not_equal(Self, Self) -> Bool
+pub fn LookupOpts::to_repr(Self) -> @debug.Repr
 
 pub(all) struct NullCtx {
 }
+pub fn NullCtx::at(Self) -> PathChanges
+pub fn NullCtx::fail(Self, Value) -> Unit
+pub fn NullCtx::forward(Self, Array[Value]?, IntentOpts?) -> Unit
+pub fn NullCtx::intent(Self, String, Array[Value], IntentOpts) -> Unit
+pub fn NullCtx::intent_at_path(Self, DispatchPath, String, Array[Value], IntentOpts) -> Unit
+pub fn NullCtx::lookup(Self, String, LookupOpts) -> Value
+pub fn NullCtx::make(Self, String, Map[String, Value], LookupOpts) -> Value?
+pub fn NullCtx::name(Self) -> String?
+pub fn NullCtx::origin(Self) -> Origin
+pub fn NullCtx::path(Self) -> DispatchPath
+pub fn NullCtx::reply(Self, Value) -> Unit
+pub fn NullCtx::send(Self, String, Array[Value]) -> Unit
+pub fn NullCtx::send_at_path(Self, DispatchPath, String, Array[Value]) -> Unit
+pub fn NullCtx::send_reply(Self, String, Array[Value]) -> Unit
+pub fn NullCtx::set_member_at_path(Self, DispatchPath, String, Value) -> Unit
+pub fn NullCtx::set_property_at_path(Self, DispatchPath, String, Value) -> Unit
+pub fn NullCtx::stop_propagation(Self) -> Unit
+pub fn NullCtx::target_path(Self) -> DispatchPath
+pub fn NullCtx::walk_path(Self, (Int, Value) -> Bool) -> Unit
 pub impl Ctx for NullCtx
 
 pub(all) struct NullStack {
 }
+pub fn NullStack::lookup_bare(Self, String) -> Value
+pub fn NullStack::lookup_bind(Self, String) -> Value
+pub fn NullStack::lookup_dynamic(Self, String) -> Value
+pub fn NullStack::lookup_event_path(Self, Array[String]) -> Value
+pub fn NullStack::lookup_member(Self, String) -> Value
+pub fn NullStack::lookup_method(Self, String) -> Value
+pub fn NullStack::lookup_storage(Self, String) -> Value
+pub fn NullStack::lookup_trigger(Self, String) -> Value
 pub impl Stack for NullStack
 
 pub(all) struct ObjId {
   origin : UInt64
   rev : Int
 } derive(Eq, @debug.Debug)
+pub fn ObjId::equal(Self, Self) -> Bool
 pub fn ObjId::next(Self) -> Self
+pub fn ObjId::not_equal(Self, Self) -> Bool
 pub fn ObjId::of(String, Map[String, Value]) -> Self
 pub fn ObjId::to_hex(Self) -> String
+pub fn ObjId::to_repr(Self) -> @debug.Repr
 
 pub(all) enum OpFamily {
   FLogic
@@ -342,14 +441,20 @@ pub(all) enum OpFamily {
   FAdd
   FMul
 } derive(Eq, @debug.Debug)
+pub fn OpFamily::equal(Self, Self) -> Bool
+pub fn OpFamily::not_equal(Self, Self) -> Bool
+pub fn OpFamily::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Origin {
   Host
   View
   Handler
 } derive(Eq, @debug.Debug)
+pub fn Origin::equal(Self, Self) -> Bool
 pub fn Origin::is_external(Self) -> Bool
 pub fn Origin::label(Self) -> String
+pub fn Origin::not_equal(Self, Self) -> Bool
+pub fn Origin::to_repr(Self) -> @debug.Repr
 
 #alias(PropertyWrite)
 pub(all) enum Outcome {
@@ -363,17 +468,22 @@ pub(all) struct Path {
   steps : Array[Step]
 } derive(Eq, @debug.Debug)
 pub fn Path::concat(Self, Array[Step]) -> Self
+pub fn Path::equal(Self, Self) -> Bool
 pub fn Path::field(Self, String) -> Self
 pub fn Path::index(Self, String, Int) -> Self
 pub fn Path::key(Self, String, String) -> Self
 pub fn Path::lookup(Self, Value) -> Value?
 pub fn Path::new(steps? : Array[Step]) -> Self
+pub fn Path::not_equal(Self, Self) -> Bool
+pub fn Path::output(Self, &Logger) -> Unit
 pub fn Path::pin_keys(Self, Value) -> Self
 pub fn Path::pop_step(Self) -> Self
 pub fn Path::resolve_chain(Self, Value) -> Array[Value]
 pub fn Path::set_value(Self, Value, Value) -> Value
 pub fn Path::to_keys(Self) -> Array[StepKey]
 pub fn Path::to_label(Self) -> String
+pub fn Path::to_repr(Self) -> @debug.Repr
+pub fn Path::to_string(Self) -> String
 pub fn Path::update(Self, Value, HandlerBucket, String, Array[Value]) -> Value
 pub impl Show for Path
 
@@ -394,15 +504,21 @@ pub(all) enum PathKey {
   KInt(Int)
   KStr(String)
 } derive(Eq, @debug.Debug)
+pub fn PathKey::equal(Self, Self) -> Bool
 pub fn PathKey::from_json(Json) -> Self?
+pub fn PathKey::not_equal(Self, Self) -> Bool
 pub fn PathKey::to_json(Self) -> Json
 pub fn PathKey::to_label(Self) -> String
+pub fn PathKey::to_repr(Self) -> @debug.Repr
 pub fn PathKey::to_value(Self) -> Value
 
 pub(all) enum PathStep {
   PField(String)
   PIndex(Expr)
 }
+pub fn PathStep::equal(Self, Self) -> Bool
+pub fn PathStep::not_equal(Self, Self) -> Bool
+pub fn PathStep::to_repr(Self) -> @debug.Repr
 pub impl Eq for PathStep
 pub impl @debug.Debug for PathStep
 
@@ -411,6 +527,9 @@ pub(all) struct Place {
   steps : Array[PathStep]
   span : Span
 }
+pub fn Place::equal(Self, Self) -> Bool
+pub fn Place::not_equal(Self, Self) -> Bool
+pub fn Place::to_repr(Self) -> @debug.Repr
 pub fn Place::to_source(Self) -> String
 pub impl Eq for Place
 pub impl @debug.Debug for Place
@@ -421,6 +540,9 @@ pub(all) enum PlaceRoot {
   PTarget
   PParam(String)
 } derive(Eq, @debug.Debug)
+pub fn PlaceRoot::equal(Self, Self) -> Bool
+pub fn PlaceRoot::not_equal(Self, Self) -> Bool
+pub fn PlaceRoot::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Position {
   PosCondition
@@ -435,6 +557,9 @@ pub(all) enum Position {
   PosMacroAttr
   PosBody
 } derive(Eq, @debug.Debug)
+pub fn Position::equal(Self, Self) -> Bool
+pub fn Position::not_equal(Self, Self) -> Bool
+pub fn Position::to_repr(Self) -> @debug.Repr
 
 pub(all) struct PropertyInfo {
   name : String
@@ -442,18 +567,27 @@ pub(all) struct PropertyInfo {
   public_ : Bool
   writable : Bool
 } derive(Eq, @debug.Debug)
+pub fn PropertyInfo::equal(Self, Self) -> Bool
+pub fn PropertyInfo::not_equal(Self, Self) -> Bool
+pub fn PropertyInfo::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ProtocolBindingInfo {
   protocol_id : String
   member_name : String
   source : String
 } derive(Eq, @debug.Debug)
+pub fn ProtocolBindingInfo::equal(Self, Self) -> Bool
+pub fn ProtocolBindingInfo::not_equal(Self, Self) -> Bool
+pub fn ProtocolBindingInfo::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ProtocolConformance {
   Verified
   Deferred(Array[String])
   Invalid(Array[String])
 } derive(Eq, @debug.Debug)
+pub fn ProtocolConformance::equal(Self, Self) -> Bool
+pub fn ProtocolConformance::not_equal(Self, Self) -> Bool
+pub fn ProtocolConformance::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ProtocolInfo {
   id : String
@@ -466,6 +600,9 @@ pub(all) struct ProtocolInfo {
   provides : Array[(String, Ty)]
   lookups : Array[(String, Ty)]
 } derive(Eq, @debug.Debug)
+pub fn ProtocolInfo::equal(Self, Self) -> Bool
+pub fn ProtocolInfo::not_equal(Self, Self) -> Bool
+pub fn ProtocolInfo::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ProtocolIssueCode {
   ProtocolUnresolved
@@ -482,6 +619,9 @@ pub(all) enum ProtocolIssueCode {
   ProtocolResultType
   ProtocolExpressionUndeclared
 } derive(Eq, @debug.Debug)
+pub fn ProtocolIssueCode::equal(Self, Self) -> Bool
+pub fn ProtocolIssueCode::not_equal(Self, Self) -> Bool
+pub fn ProtocolIssueCode::to_repr(Self) -> @debug.Repr
 pub fn ProtocolIssueCode::word(Self) -> String
 
 pub(all) struct Refusal {
@@ -492,8 +632,11 @@ pub(all) struct Refusal {
   state : Value
   path : Path
 } derive(Eq, @debug.Debug)
+pub fn Refusal::equal(Self, Self) -> Bool
+pub fn Refusal::not_equal(Self, Self) -> Bool
 pub fn Refusal::to_json(Self) -> Json
 pub fn Refusal::to_line(Self) -> String
+pub fn Refusal::to_repr(Self) -> @debug.Repr
 
 pub(all) enum RefusalCode {
   PathUnresolved
@@ -507,6 +650,9 @@ pub(all) enum RefusalCode {
   NoSender
   BadPayload
 } derive(Eq, @debug.Debug)
+pub fn RefusalCode::equal(Self, Self) -> Bool
+pub fn RefusalCode::not_equal(Self, Self) -> Bool
+pub fn RefusalCode::to_repr(Self) -> @debug.Repr
 pub fn RefusalCode::word(Self) -> String
 
 pub(all) enum RuntimeNotice {
@@ -514,6 +660,9 @@ pub(all) enum RuntimeNotice {
   ProtocolMismatch(RuntimeProtocolNotice)
   RuntimeWarning(String)
 } derive(Eq, @debug.Debug)
+pub fn RuntimeNotice::equal(Self, Self) -> Bool
+pub fn RuntimeNotice::not_equal(Self, Self) -> Bool
+pub fn RuntimeNotice::to_repr(Self) -> @debug.Repr
 
 pub(all) struct RuntimeProtocolNotice {
   code : ProtocolIssueCode
@@ -526,6 +675,9 @@ pub(all) struct RuntimeProtocolNotice {
   state : Value
   resolution : RuntimeResolution
 } derive(Eq, @debug.Debug)
+pub fn RuntimeProtocolNotice::equal(Self, Self) -> Bool
+pub fn RuntimeProtocolNotice::not_equal(Self, Self) -> Bool
+pub fn RuntimeProtocolNotice::to_repr(Self) -> @debug.Repr
 
 pub(all) enum RuntimeResolution {
   KeptPreviousState
@@ -540,6 +692,9 @@ pub(all) enum RuntimeResolution {
   SkippedProvider
   RejectedComponentValue
 } derive(Eq, @debug.Debug)
+pub fn RuntimeResolution::equal(Self, Self) -> Bool
+pub fn RuntimeResolution::not_equal(Self, Self) -> Bool
+pub fn RuntimeResolution::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SchemaInfo {
   name : String
@@ -574,6 +729,9 @@ pub(all) struct Span {
   start : Int
   end_ : Int
 } derive(Eq, @debug.Debug)
+pub fn Span::equal(Self, Self) -> Bool
+pub fn Span::not_equal(Self, Self) -> Bool
+pub fn Span::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Step {
   FieldStep(String)
@@ -581,18 +739,27 @@ pub(all) enum Step {
   SeqAccessStep(seq_field~ : String, key_field~ : String)
   EachRenderItStep(field~ : String, key~ : PathKey)
 } derive(Eq, @debug.Debug)
+pub fn Step::equal(Self, Self) -> Bool
+pub fn Step::not_equal(Self, Self) -> Bool
+pub fn Step::to_repr(Self) -> @debug.Repr
 
 pub(all) struct StepKey {
   field : String
   key : PathKey?
 } derive(Eq, @debug.Debug)
+pub fn StepKey::equal(Self, Self) -> Bool
 pub fn StepKey::from_json(Json) -> Self?
+pub fn StepKey::not_equal(Self, Self) -> Bool
 pub fn StepKey::to_json(Self) -> Json
+pub fn StepKey::to_repr(Self) -> @debug.Repr
 
 pub(all) enum TplPart {
   TText(text~ : String, from_macro~ : Bool)
   TExpr(Expr)
 }
+pub fn TplPart::equal(Self, Self) -> Bool
+pub fn TplPart::not_equal(Self, Self) -> Bool
+pub fn TplPart::to_repr(Self) -> @debug.Repr
 pub impl Eq for TplPart
 pub impl @debug.Debug for TplPart
 
@@ -619,23 +786,29 @@ pub(all) enum Ty {
 pub fn Ty::accepts(Self, Value) -> Bool
 pub fn Ty::component_named(Self) -> String?
 pub fn Ty::elem(Self) -> Self?
+pub fn Ty::equal(Self, Self) -> Bool
 pub fn Ty::in_struct(Self) -> Bool
 pub fn Ty::is_boolish(Self) -> Bool
 pub fn Ty::is_renderable(Self) -> Bool
 pub fn Ty::iterable_elem(Self) -> Self?
 pub fn Ty::kind(Self) -> FieldKind
 pub fn Ty::members(Self) -> Array[String]
+pub fn Ty::not_equal(Self, Self) -> Bool
 pub fn Ty::of_json(Json) -> Self
 pub fn Ty::show_source(Self) -> String
 pub fn Ty::slot(Self) -> String?
 pub fn Ty::to_json(Self) -> Json
 pub fn Ty::to_mbt_source(Self) -> String
+pub fn Ty::to_repr(Self) -> @debug.Repr
 pub fn Ty::zero(Self) -> Value
 
 pub(all) enum UnOp {
   UNot
   UNeg
 } derive(Eq, @debug.Debug)
+pub fn UnOp::equal(Self, Self) -> Bool
+pub fn UnOp::not_equal(Self, Self) -> Bool
+pub fn UnOp::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Value {
   Null
@@ -659,6 +832,7 @@ pub fn Value::bool_opt(Self) -> Bool?
 pub fn Value::call(Self, Array[Self], this? : Self) -> Self
 pub fn Value::call_field(Self, String, Array[Self]) -> Self
 pub fn Value::entries(Self) -> Array[(PathKey, Self)]
+pub fn Value::equal(Self, Self) -> Bool
 pub fn Value::field(Self, String) -> Self
 pub fn Value::field_info(Self, String) -> FieldInfo?
 pub fn Value::field_names(Self) -> Array[String]
@@ -681,6 +855,7 @@ pub fn Value::map_opt(Self) -> Map[String, Self]?
 pub fn Value::member_at(Self, String, &Stack) -> Self?
 pub fn Value::method_at(Self, String, &Stack) -> Self?
 pub fn Value::mutate_member(Self, String, String, Array[Self]) -> Outcome
+pub fn Value::not_equal(Self, Self) -> Bool
 pub fn Value::num(Self, default? : Double) -> Double
 pub fn Value::num_opt(Self) -> Double?
 pub fn Value::property(Self, String) -> Self
@@ -697,6 +872,7 @@ pub fn Value::str_opt(Self) -> String?
 pub fn Value::to_component_json(Self, claim? : (Self, String) -> Json?) -> Json
 pub fn Value::to_display_string(Self) -> String
 pub fn Value::to_json(Self) -> Json
+pub fn Value::to_repr(Self) -> @debug.Repr
 pub fn Value::trigger_at(Self, String, &Stack) -> Self?
 pub fn Value::with_at(Self, Path, Self) -> Self
 pub fn Value::with_field(Self, String, Self) -> Self

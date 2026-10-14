@@ -547,12 +547,18 @@ pub(all) enum CompSectionCompute {
   ShowPagination
   TypeText
 } derive(Eq, @debug.Debug)
+pub fn CompSectionCompute::equal(Self, Self) -> Bool
 pub fn CompSectionCompute::name(Self) -> String
+pub fn CompSectionCompute::not_equal(Self, Self) -> Bool
+pub fn CompSectionCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum CompSectionLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+pub fn CompSectionLoopWith::equal(Self, Self) -> Bool
 pub fn CompSectionLoopWith::name(Self) -> String
+pub fn CompSectionLoopWith::not_equal(Self, Self) -> Bool
+pub fn CompSectionLoopWith::to_repr(Self) -> @debug.Repr
 
 pub(all) enum CompSectionMsg {
   NextPage
@@ -576,7 +582,10 @@ pub fn CompSectionState::zero() -> Self
 pub(all) enum CompViewCompute {
   ArrowText
 } derive(Eq, @debug.Debug)
+pub fn CompViewCompute::equal(Self, Self) -> Bool
 pub fn CompViewCompute::name(Self) -> String
+pub fn CompViewCompute::not_equal(Self, Self) -> Bool
+pub fn CompViewCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum CompViewMsg {
   Toggle(Bool)
@@ -596,7 +605,10 @@ pub fn CompViewState::zero() -> Self
 pub(all) enum ComponentInspectorCompute {
   IdText
 } derive(Eq, @debug.Debug)
+pub fn ComponentInspectorCompute::equal(Self, Self) -> Bool
 pub fn ComponentInspectorCompute::name(Self) -> String
+pub fn ComponentInspectorCompute::not_equal(Self, Self) -> Bool
+pub fn ComponentInspectorCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ComponentInspectorIntent {
   ToggleAllSections(Bool)
@@ -774,12 +786,18 @@ pub(all) enum InstanceFieldsCompute {
   ShowPagination
   TypeText
 } derive(Eq, @debug.Debug)
+pub fn InstanceFieldsCompute::equal(Self, Self) -> Bool
 pub fn InstanceFieldsCompute::name(Self) -> String
+pub fn InstanceFieldsCompute::not_equal(Self, Self) -> Bool
+pub fn InstanceFieldsCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum InstanceFieldsLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+pub fn InstanceFieldsLoopWith::equal(Self, Self) -> Bool
 pub fn InstanceFieldsLoopWith::name(Self) -> String
+pub fn InstanceFieldsLoopWith::not_equal(Self, Self) -> Bool
+pub fn InstanceFieldsLoopWith::to_repr(Self) -> @debug.Repr
 
 pub(all) enum InstanceFieldsMsg {
   NextPage
@@ -814,12 +832,18 @@ pub(all) enum JsonArrayCompute {
   ShowPagination
   TypeText
 } derive(Eq, @debug.Debug)
+pub fn JsonArrayCompute::equal(Self, Self) -> Bool
 pub fn JsonArrayCompute::name(Self) -> String
+pub fn JsonArrayCompute::not_equal(Self, Self) -> Bool
+pub fn JsonArrayCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum JsonArrayLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+pub fn JsonArrayLoopWith::equal(Self, Self) -> Bool
 pub fn JsonArrayLoopWith::name(Self) -> String
+pub fn JsonArrayLoopWith::not_equal(Self, Self) -> Bool
+pub fn JsonArrayLoopWith::to_repr(Self) -> @debug.Repr
 
 pub(all) enum JsonArrayMsg {
   NextPage
@@ -842,7 +866,10 @@ pub(all) enum JsonBooleanCompute {
   CssClass
   Text
 } derive(Eq, @debug.Debug)
+pub fn JsonBooleanCompute::equal(Self, Self) -> Bool
 pub fn JsonBooleanCompute::name(Self) -> String
+pub fn JsonBooleanCompute::not_equal(Self, Self) -> Bool
+pub fn JsonBooleanCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) struct JsonBooleanState {
   value : Bool
@@ -851,12 +878,16 @@ pub fn JsonBooleanState::zero() -> Self
 
 pub(all) struct JsonNullState {
 } derive(Default)
+pub fn JsonNullState::default() -> Self
 pub fn JsonNullState::zero() -> Self
 
 pub(all) enum JsonNumberCompute {
   Text
 } derive(Eq, @debug.Debug)
+pub fn JsonNumberCompute::equal(Self, Self) -> Bool
 pub fn JsonNumberCompute::name(Self) -> String
+pub fn JsonNumberCompute::not_equal(Self, Self) -> Bool
+pub fn JsonNumberCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) struct JsonNumberState {
   value : Double
@@ -873,12 +904,18 @@ pub(all) enum JsonObjectCompute {
   ShowPagination
   TypeText
 } derive(Eq, @debug.Debug)
+pub fn JsonObjectCompute::equal(Self, Self) -> Bool
 pub fn JsonObjectCompute::name(Self) -> String
+pub fn JsonObjectCompute::not_equal(Self, Self) -> Bool
+pub fn JsonObjectCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum JsonObjectLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+pub fn JsonObjectLoopWith::equal(Self, Self) -> Bool
 pub fn JsonObjectLoopWith::name(Self) -> String
+pub fn JsonObjectLoopWith::not_equal(Self, Self) -> Bool
+pub fn JsonObjectLoopWith::to_repr(Self) -> @debug.Repr
 
 pub(all) enum JsonObjectMsg {
   NextPage
@@ -906,7 +943,10 @@ pub fn JsonPropertyState::zero() -> Self
 pub(all) enum JsonStringCompute {
   Text
 } derive(Eq, @debug.Debug)
+pub fn JsonStringCompute::equal(Self, Self) -> Bool
 pub fn JsonStringCompute::name(Self) -> String
+pub fn JsonStringCompute::not_equal(Self, Self) -> Bool
+pub fn JsonStringCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) struct JsonStringState {
   value : String
@@ -944,7 +984,10 @@ pub(all) enum RichSampleCompute {
   Double
   Label
 } derive(Eq, @debug.Debug)
+pub fn RichSampleCompute::equal(Self, Self) -> Bool
 pub fn RichSampleCompute::name(Self) -> String
+pub fn RichSampleCompute::not_equal(Self, Self) -> Bool
+pub fn RichSampleCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum RichSampleIntent {
   OnChild
@@ -957,7 +1000,10 @@ pub fn RichSampleIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) enum RichSampleLoopWith {
   Rows
 } derive(Eq, @debug.Debug)
+pub fn RichSampleLoopWith::equal(Self, Self) -> Bool
 pub fn RichSampleLoopWith::name(Self) -> String
+pub fn RichSampleLoopWith::not_equal(Self, Self) -> Bool
+pub fn RichSampleLoopWith::to_repr(Self) -> @debug.Repr
 
 pub(all) enum RichSampleMsg {
   Ping
@@ -981,7 +1027,10 @@ pub fn RichSampleState::zero() -> Self
 pub(all) enum SampleCardCompute {
   Label
 } derive(Eq, @debug.Debug)
+pub fn SampleCardCompute::equal(Self, Self) -> Bool
 pub fn SampleCardCompute::name(Self) -> String
+pub fn SampleCardCompute::not_equal(Self, Self) -> Bool
+pub fn SampleCardCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SampleCardMsg {
   Bump
@@ -1009,12 +1058,18 @@ pub(all) enum SchemaArrayCompute {
   ShowPagination
   TypeText
 } derive(Eq, @debug.Debug)
+pub fn SchemaArrayCompute::equal(Self, Self) -> Bool
 pub fn SchemaArrayCompute::name(Self) -> String
+pub fn SchemaArrayCompute::not_equal(Self, Self) -> Bool
+pub fn SchemaArrayCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SchemaArrayLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+pub fn SchemaArrayLoopWith::equal(Self, Self) -> Bool
 pub fn SchemaArrayLoopWith::name(Self) -> String
+pub fn SchemaArrayLoopWith::not_equal(Self, Self) -> Bool
+pub fn SchemaArrayLoopWith::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SchemaArrayMsg {
   NextPage
@@ -1042,7 +1097,10 @@ pub(all) enum SchemaBooleanCompute {
   CssClass
   Text
 } derive(Eq, @debug.Debug)
+pub fn SchemaBooleanCompute::equal(Self, Self) -> Bool
 pub fn SchemaBooleanCompute::name(Self) -> String
+pub fn SchemaBooleanCompute::not_equal(Self, Self) -> Bool
+pub fn SchemaBooleanCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SchemaBooleanState {
   value : Bool
@@ -1052,7 +1110,10 @@ pub fn SchemaBooleanState::zero() -> Self
 pub(all) enum SchemaBranchCompute {
   LabelCssClass
 } derive(Eq, @debug.Debug)
+pub fn SchemaBranchCompute::equal(Self, Self) -> Bool
 pub fn SchemaBranchCompute::name(Self) -> String
+pub fn SchemaBranchCompute::not_equal(Self, Self) -> Bool
+pub fn SchemaBranchCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SchemaBranchState {
   label : String
@@ -1071,12 +1132,18 @@ pub(all) enum SchemaCombinatorCompute {
   ShowPagination
   TypeText
 } derive(Eq, @debug.Debug)
+pub fn SchemaCombinatorCompute::equal(Self, Self) -> Bool
 pub fn SchemaCombinatorCompute::name(Self) -> String
+pub fn SchemaCombinatorCompute::not_equal(Self, Self) -> Bool
+pub fn SchemaCombinatorCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SchemaCombinatorLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+pub fn SchemaCombinatorLoopWith::equal(Self, Self) -> Bool
 pub fn SchemaCombinatorLoopWith::name(Self) -> String
+pub fn SchemaCombinatorLoopWith::not_equal(Self, Self) -> Bool
+pub fn SchemaCombinatorLoopWith::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SchemaCombinatorMsg {
   NextPage
@@ -1125,12 +1192,18 @@ pub(all) enum SchemaEnumCompute {
   ShowPagination
   TypeText
 } derive(Eq, @debug.Debug)
+pub fn SchemaEnumCompute::equal(Self, Self) -> Bool
 pub fn SchemaEnumCompute::name(Self) -> String
+pub fn SchemaEnumCompute::not_equal(Self, Self) -> Bool
+pub fn SchemaEnumCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SchemaEnumLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+pub fn SchemaEnumLoopWith::equal(Self, Self) -> Bool
 pub fn SchemaEnumLoopWith::name(Self) -> String
+pub fn SchemaEnumLoopWith::not_equal(Self, Self) -> Bool
+pub fn SchemaEnumLoopWith::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SchemaEnumMsg {
   NextPage
@@ -1169,12 +1242,18 @@ pub(all) enum SchemaObjectCompute {
   ShowPagination
   TypeText
 } derive(Eq, @debug.Debug)
+pub fn SchemaObjectCompute::equal(Self, Self) -> Bool
 pub fn SchemaObjectCompute::name(Self) -> String
+pub fn SchemaObjectCompute::not_equal(Self, Self) -> Bool
+pub fn SchemaObjectCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SchemaObjectLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+pub fn SchemaObjectLoopWith::equal(Self, Self) -> Bool
 pub fn SchemaObjectLoopWith::name(Self) -> String
+pub fn SchemaObjectLoopWith::not_equal(Self, Self) -> Bool
+pub fn SchemaObjectLoopWith::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SchemaObjectMsg {
   NextPage
@@ -1220,12 +1299,18 @@ pub(all) enum SchemaScalarCompute {
   ShowPagination
   TypeText
 } derive(Eq, @debug.Debug)
+pub fn SchemaScalarCompute::equal(Self, Self) -> Bool
 pub fn SchemaScalarCompute::name(Self) -> String
+pub fn SchemaScalarCompute::not_equal(Self, Self) -> Bool
+pub fn SchemaScalarCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SchemaScalarLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+pub fn SchemaScalarLoopWith::equal(Self, Self) -> Bool
 pub fn SchemaScalarLoopWith::name(Self) -> String
+pub fn SchemaScalarLoopWith::not_equal(Self, Self) -> Bool
+pub fn SchemaScalarLoopWith::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SchemaScalarMsg {
   NextPage
@@ -1252,7 +1337,10 @@ pub fn SchemaScalarState::zero() -> Self
 pub(all) enum SchemaViewerCompute {
   ToggleLabel
 } derive(Eq, @debug.Debug)
+pub fn SchemaViewerCompute::equal(Self, Self) -> Bool
 pub fn SchemaViewerCompute::name(Self) -> String
+pub fn SchemaViewerCompute::not_equal(Self, Self) -> Bool
+pub fn SchemaViewerCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SchemaViewerState {
   value : @core.Value
@@ -1477,6 +1565,7 @@ pub fn TraceRowState::zero() -> Self
 
 pub(all) struct ValueFnState {
 } derive(Default)
+pub fn ValueFnState::default() -> Self
 pub fn ValueFnState::zero() -> Self
 
 pub(all) struct ValueObjState {

@@ -14,7 +14,6 @@ import {
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/css",
-  "marianoguerra/tutuca/transactor",
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/demo/universal/ui",
   "marianoguerra/tutuca/demo/universal/std",
@@ -23,7 +22,6 @@ import {
   // The card compiler, as a LIBRARY in this bundle rather than a payload
   // fetched beside it. A card pasted into the page compiles here.
   "marianoguerra/tutuca/tgc/emit",
-  "marianoguerra/tutuca/tgc/host",
   "marianoguerra/tutuca/tgc/policy",
   "marianoguerra/tutuca/tutucard/guest",
   "marianoguerra/tutuca/app/browser" @glue,

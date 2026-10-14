@@ -20,8 +20,14 @@ pub(all) struct DynViewDef {
   /// body it counts is in `DynManifest.tutu` with every other view's. The
   /// compiler knows the length and says it; a host that read the source to
   /// measure it would have done the work the quota exists to refuse.
-  bytes : Int
+  bytes : Int32
 } derive(Debug, Eq)
+
+///|
+pub extend DynViewDef with Debug::{to_repr}
+
+///|
+pub extend DynViewDef with Eq::{not_equal, equal}
 
 ///|
 pub(all) struct DynFieldDef {
@@ -39,6 +45,12 @@ pub(all) struct DynFieldDef {
 } derive(Debug, Eq)
 
 ///|
+pub extend DynFieldDef with Debug::{to_repr}
+
+///|
+pub extend DynFieldDef with Eq::{not_equal, equal}
+
+///|
 pub(all) struct DynPropertyDef {
   name : String
   ty : @tutuca.Ty
@@ -46,6 +58,12 @@ pub(all) struct DynPropertyDef {
   writable : Bool
   doc : String
 } derive(Debug, Eq)
+
+///|
+pub extend DynPropertyDef with Debug::{to_repr}
+
+///|
+pub extend DynPropertyDef with Eq::{not_equal, equal}
 
 ///|
 /// One protocol DEFINITION, as a dictionary entry rather than a claim.
@@ -74,11 +92,23 @@ pub(all) struct DynProtocolDef {
 } derive(Debug, Eq)
 
 ///|
+pub extend DynProtocolDef with Debug::{to_repr}
+
+///|
+pub extend DynProtocolDef with Eq::{not_equal, equal}
+
+///|
 pub(all) struct DynProtocolBinding {
   protocol_id : String
   member_name : String
   source : String
 } derive(Debug, Eq)
+
+///|
+pub extend DynProtocolBinding with Debug::{to_repr}
+
+///|
+pub extend DynProtocolBinding with Eq::{not_equal, equal}
 
 ///|
 /// One variable this module reads, as the module DECLARES it: a name, what
@@ -99,6 +129,12 @@ pub(all) struct DynConfigDef {
   default_ : String
   doc : String
 } derive(Debug, Eq)
+
+///|
+pub extend DynConfigDef with Debug::{to_repr}
+
+///|
+pub extend DynConfigDef with Eq::{not_equal, equal}
 
 ///|
 /// A named initial state the guest declares, with its constructor args already
@@ -123,6 +159,12 @@ pub(all) struct DynInitDef {
   drive_json : String
   intents_json : String
 } derive(Debug, Eq)
+
+///|
+pub extend DynInitDef with Debug::{to_repr}
+
+///|
+pub extend DynInitDef with Eq::{not_equal, equal}
 
 ///|
 pub(all) struct DynComponentDef {
@@ -214,8 +256,14 @@ pub(all) struct DynComponentDef {
 } derive(Debug, Eq)
 
 ///|
+pub extend DynComponentDef with Debug::{to_repr}
+
+///|
+pub extend DynComponentDef with Eq::{not_equal, equal}
+
+///|
 pub(all) struct DynManifest {
-  api_version : Int
+  api_version : Int32
   module_name : String
   /// Catalog metadata. All four are ADVISORY: the host shows them, nothing
   /// resolves against them, and a module's identity is the hash of the archive
@@ -246,6 +294,12 @@ pub(all) struct DynManifest {
 } derive(Debug, Eq)
 
 ///|
+pub extend DynManifest with Debug::{to_repr}
+
+///|
+pub extend DynManifest with Eq::{not_equal, equal}
+
+///|
 /// One macro: its name and its `data-` defaults.
 ///
 /// The defaults are here because a CALLER may override them and the reader
@@ -257,19 +311,28 @@ pub(all) struct DynMacroDef {
 } derive(Debug, Eq)
 
 ///|
+pub extend DynMacroDef with Debug::{to_repr}
+
+///|
+pub extend DynMacroDef with Eq::{not_equal, equal}
+
+///|
 /// The manifest api-version this host implements. A module declaring anything
 /// else is refused rather than adapted: the contract is small enough that a
 /// shim would cost more than a rebuild of the guest.
-pub let supported_api_version : Int = 10
+pub let supported_api_version : Int32 = 10
 
 ///|
 /// The archive JSON shape paired with `supported_api_version`.
-pub let supported_manifest_version : Int = 4
+pub let supported_manifest_version : Int32 = 4
 
 ///|
 suberror ManifestError {
   ManifestError(String)
 } derive(Debug)
+
+///|
+pub extend ManifestError with Debug::{to_repr}
 
 ///|
 /// Why the module was refused, as a sentence for whoever is looking at the
@@ -314,7 +377,7 @@ fn str_array(
 }
 
 ///|
-fn int_field(m : Map[String, Json], name : String) -> Int raise ManifestError {
+fn int_field(m : Map[String, Json], name : String) -> Int32 raise ManifestError {
   match m.get(name) {
     Some(Number(n, ..)) => n.to_int()
     _ => raise ManifestError("manifest: missing number field \{name}")
@@ -343,7 +406,7 @@ fn opt_num(m : Map[String, Json], name : String) -> Double? {
 }
 
 ///|
-fn opt_int(m : Map[String, Json], name : String) -> Int? {
+fn opt_int(m : Map[String, Json], name : String) -> Int32? {
   match opt_num(m, name) {
     Some(n) => Some(n.to_int())
     None => None

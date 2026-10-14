@@ -7,6 +7,6 @@ import {
 import {
   "marianoguerra/tutuca/vdom",
   "moonbitlang/quickcheck" @qc,
-  "moonbitlang/quickcheck/gen",
+  "moonbitlang/core/quickcheck" @gen,
   "moonbitlang/core/debug",
 } for "test"

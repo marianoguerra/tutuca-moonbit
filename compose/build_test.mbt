@@ -14,8 +14,8 @@ struct Fake {
 
 ///|
 fn Fake::new(
-  cell_fields? : Map[String, String] = Map([]),
-  refuse? : Array[String] = [],
+  cell_fields~ : Map[String, String] = Map([]),
+  refuse~ : Array[String] = [],
 ) -> Fake {
   { built: [], cell_fields, refuse, }
 }
@@ -54,15 +54,15 @@ fn Fake::host(self : Fake) -> @compose.ComposeHost {
 ///|
 fn node(
   name : String,
-  cells? : Int = 0,
-  args? : Map[String, Json] = Map([]),
-  children? : Array[(Int, @compose.PlanNode)] = [],
+  cells~ : Int32 = 0,
+  args~ : Map[String, Json] = Map([]),
+  children~ : Array[(Int32, @compose.PlanNode)] = [],
 ) -> @compose.PlanNode {
   { ref_: { module_: "kit", name, }, args, cells, children, }
 }
 
 ///|
-fn cell_at(v : @tutuca.Value, field : String, i : Int) -> @tutuca.Value {
+fn cell_at(v : @tutuca.Value, field : String, i : Int32) -> @tutuca.Value {
   match v {
     Map(m) =>
       match m.get(field) {

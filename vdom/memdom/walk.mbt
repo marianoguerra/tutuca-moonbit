@@ -14,6 +14,14 @@ pub impl @vdom.DomWalk for MemNode with fn prev_sibling(self) {
 }
 
 ///|
+pub extend MemNode with @vdom.DomWalk::{
+  node_kind,
+  char_data,
+  attribute,
+  prev_sibling,
+}
+
+///|
 pub impl @vdom.DomWalk for MemNode with fn node_kind(self) {
   match self.kind {
     Element => 1

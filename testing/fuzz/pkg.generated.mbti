@@ -8,7 +8,7 @@ import {
   "marianoguerra/tutuca/statedef/arb",
   "marianoguerra/tutuca/testing/harness",
   "moonbitlang/core/debug",
-  "moonbitlang/quickcheck/gen",
+  "moonbitlang/core/quickcheck",
 }
 
 // Values
@@ -26,6 +26,9 @@ pub(all) enum Action {
   SetProperty(String, @core.Value)
   SetField(String, @core.Value)
 } derive(Eq, @debug.Debug)
+pub fn Action::equal(Self, Self) -> Bool
+pub fn Action::not_equal(Self, Self) -> Bool
+pub fn Action::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Outcome {
   Held
@@ -33,12 +36,15 @@ pub(all) enum Outcome {
   Disagreed(rule~ : String, at~ : Int)
   Stuck(String)
 } derive(Eq, @debug.Debug)
+pub fn Outcome::equal(Self, Self) -> Bool
+pub fn Outcome::not_equal(Self, Self) -> Bool
+pub fn Outcome::to_repr(Self) -> @debug.Repr
 
 pub struct Plan {
   component : String
   def : @statedef.StateDef
   rules : @arb.Rules
-  one : @gen.Gen[Action]?
+  one : @quickcheck.Generator[Action]?
   source : Source
   depth : Int
 }
@@ -49,7 +55,7 @@ pub fn Plan::of_component(@component.Component, source? : Source, depth? : Int) 
 pub fn[N] Plan::run(Self, @harness.Harness[N], Array[Action], seed? : UInt64, at? : @core.DispatchPath, read? : Reader) -> Run raise
 pub fn[N] Plan::run_live(Self, @harness.Harness[N], steps~ : Int, seed? : UInt64, at? : @core.DispatchPath, read? : Reader) -> Run raise
 pub fn Plan::script(Self, seed~ : UInt64, steps~ : Int) -> Array[Action]
-pub fn Plan::script_gen(Self, Int) -> @gen.Gen[Array[Action]]
+pub fn Plan::script_gen(Self, Int) -> @quickcheck.Generator[Array[Action]]
 pub fn Plan::sentence_of(Self, String) -> String
 pub fn Plan::state_aware(Self) -> Bool
 pub fn[N] Plan::step(Self, @harness.Harness[N], Action, at? : @core.DispatchPath, read? : Reader) -> Step raise
@@ -72,6 +78,9 @@ pub(all) enum Source {
   Fields
   All(@arb.Bucket)
 } derive(Eq, @debug.Debug)
+pub fn Source::equal(Self, Self) -> Bool
+pub fn Source::not_equal(Self, Self) -> Bool
+pub fn Source::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Step {
   dispatch : Action

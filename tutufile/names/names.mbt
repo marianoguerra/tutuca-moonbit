@@ -14,14 +14,14 @@ pub fn snake_of(name : String) -> String {
   let cs : Array[Char] = name.iter().collect()
   let out = StringBuilder()
   for i, c in cs {
-    if c is ('A'..='Z') {
+    if c is ('A'..<='Z') {
       // A boundary is a capital after a lowercase or a digit (`loadRows`), or
       // the last capital of a run that is starting a new word (`HTMLDoc`).
-      let after_lower = i > 0 && cs[i - 1] is ('a'..='z' | '0'..='9')
+      let after_lower = i > 0 && cs[i - 1] is ('a'..<='z' | '0'..<='9')
       let starts_word = i > 0 &&
-        cs[i - 1] is ('A'..='Z') &&
+        cs[i - 1] is ('A'..<='Z') &&
         i + 1 < cs.length() &&
-        cs[i + 1] is ('a'..='z')
+        cs[i + 1] is ('a'..<='z')
       if after_lower || starts_word {
         out.write_char('_')
       }
@@ -36,7 +36,7 @@ pub fn snake_of(name : String) -> String {
 ///|
 /// One ASCII capital, lowered.
 fn lower_ascii(c : Char) -> Char {
-  Int::unsafe_to_char(c.to_int() + 32)
+  Int32::unsafe_to_char(c.to_int() + 32)
 }
 
 ///|
@@ -62,7 +62,7 @@ pub fn rename_member(name : String) -> String {
 ///|
 /// A component TYPE keeps its PascalCase: it names a type, not a member.
 pub fn is_type_name(name : String) -> Bool {
-  name.length() > 0 && name[0] is ('A'..='Z')
+  name.length() > 0 && name[0] is ('A'..<='Z')
 }
 
 ///|

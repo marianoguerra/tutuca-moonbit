@@ -11,6 +11,12 @@ pub struct Command {
 } derive(Eq, Debug)
 
 ///|
+pub extend Command with Eq::{not_equal, equal}
+
+///|
+pub extend Command with Debug::{to_repr}
+
+///|
 /// A single step in a task plan. Simple tasks are all `Run`; `dist` also emits
 /// the file ops. cmd/dev is the only place that turns these into real effects.
 pub enum Step {
@@ -34,6 +40,12 @@ pub enum Step {
   // package of this module.
   GenStorybookTemplate(to~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend Step with Eq::{not_equal, equal}
+
+///|
+pub extend Step with Debug::{to_repr}
 
 ///|
 /// A named task: an ordered list of commands run until one fails.
@@ -85,6 +97,16 @@ fn moon(label : String, args : Array[String]) -> Command {
 /// The other native commands are deliberately uncapped: `build · native cli`
 /// links ONE package, and `check · native` does not link at all.
 const NATIVE_TEST_JOBS : String = "4"
+
+///|
+/// The stack, in KB, the native test leg's links run with.
+///
+/// moonc v0.10.15's `link-core` recurses deeply enough linking the
+/// `storybook/examples` blackbox test to overflow the usual 8 MB default and
+/// die with an internal "Stack overflow" — an ICE, not a failing test. 16 MB
+/// links it; drop this back to a plain `moon` step once the linker stops
+/// needing it.
+const NATIVE_LINK_STACK_KB : String = "16384"
 
 ///|
 /// Shrink a wasm-gc module in place with `moon-wasm-opt` (ships with moon, on
@@ -193,13 +215,14 @@ pub fn tasks() -> Array[Task] {
           args: ["--test", "app/wasm/loader.test.mjs"],
         },
         moon("test · default", ["test"]),
-        moon("test · native", [
-          "test",
-          "--target",
-          "native",
-          "-j",
-          NATIVE_TEST_JOBS,
-        ]),
+        {
+          label: "test · native",
+          prog: "sh",
+          args: [
+            "-c",
+            "ulimit -s \{NATIVE_LINK_STACK_KB} && exec moon test --target native -j \{NATIVE_TEST_JOBS}",
+          ],
+        },
         moon("test · js browser adapters", [
           "test", "--target", "js", "vdom/browser", "app/browser",
         ]),

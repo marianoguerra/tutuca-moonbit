@@ -13,7 +13,7 @@
 ///|
 priv struct IdState {
   title : String
-  count : Int
+  count : Int32
   items : Array[@tutuca.Value]
   tags : Map[String, @tutuca.Value]
 }

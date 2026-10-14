@@ -16,6 +16,9 @@
 pub(all) struct JsonNullState {} derive(Default)
 
 ///|
+pub extend JsonNullState with Default::{default}
+
+///|
 /// The zero state: every field at its type's empty value.
 ///
 /// The `spec:` section states no defaults here — a default is a value,
@@ -123,6 +126,12 @@ pub(all) enum JsonBooleanCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend JsonBooleanCompute with Eq::{not_equal, equal}
+
+///|
+pub extend JsonBooleanCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn JsonBooleanCompute::name(self : JsonBooleanCompute) -> String {
   match self {
     CssClass => "css_class"
@@ -201,6 +210,12 @@ pub let json_number_global_style : String = ""
 pub(all) enum JsonNumberCompute {
   Text
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend JsonNumberCompute with Eq::{not_equal, equal}
+
+///|
+pub extend JsonNumberCompute with @debug.Debug::{to_repr}
 
 ///|
 pub fn JsonNumberCompute::name(self : JsonNumberCompute) -> String {
@@ -282,6 +297,12 @@ pub(all) enum JsonStringCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend JsonStringCompute with Eq::{not_equal, equal}
+
+///|
+pub extend JsonStringCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn JsonStringCompute::name(self : JsonStringCompute) -> String {
   match self {
     Text => "text"
@@ -312,6 +333,9 @@ impl @component.Fields for JsonStringState with fn schema() {
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct ValueFnState {} derive(Default)
+
+///|
+pub extend ValueFnState with Default::{default}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -438,8 +462,8 @@ impl @component.Fields for ValueObjState with fn schema() {
 pub(all) struct JsonArrayState {
   items : Array[@tutuca.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
 }
 
 ///|
@@ -592,6 +616,12 @@ pub(all) enum JsonArrayCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend JsonArrayCompute with Eq::{not_equal, equal}
+
+///|
+pub extend JsonArrayCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn JsonArrayCompute::name(self : JsonArrayCompute) -> String {
   match self {
     ArrowText => "arrow_text"
@@ -610,6 +640,12 @@ pub fn JsonArrayCompute::name(self : JsonArrayCompute) -> String {
 pub(all) enum JsonArrayLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend JsonArrayLoopWith with Eq::{not_equal, equal}
+
+///|
+pub extend JsonArrayLoopWith with @debug.Debug::{to_repr}
 
 ///|
 pub fn JsonArrayLoopWith::name(self : JsonArrayLoopWith) -> String {
@@ -658,8 +694,8 @@ impl @component.Fields for JsonArrayState with fn schema() {
 pub(all) struct JsonObjectState {
   items : Array[@tutuca.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
 }
 
 ///|
@@ -812,6 +848,12 @@ pub(all) enum JsonObjectCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend JsonObjectCompute with Eq::{not_equal, equal}
+
+///|
+pub extend JsonObjectCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn JsonObjectCompute::name(self : JsonObjectCompute) -> String {
   match self {
     ArrowText => "arrow_text"
@@ -830,6 +872,12 @@ pub fn JsonObjectCompute::name(self : JsonObjectCompute) -> String {
 pub(all) enum JsonObjectLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend JsonObjectLoopWith with Eq::{not_equal, equal}
+
+///|
+pub extend JsonObjectLoopWith with @debug.Debug::{to_repr}
 
 ///|
 pub fn JsonObjectLoopWith::name(self : JsonObjectLoopWith) -> String {

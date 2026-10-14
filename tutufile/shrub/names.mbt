@@ -9,7 +9,7 @@
 
 ///|
 /// A qualified name — `Holder::hold` — if the terms start with one.
-pub fn qualified(parts : Array[@ast.Node], from : Int) -> (String, Int)? {
+pub fn qualified(parts : Array[@ast.Node], from : Int32) -> (String, Int32)? {
   guard from + 2 < parts.length() else { return None }
   guard parts[from].it is Id(a) else { return None }
   // A protocol name is UpperCamel, which is what tells `Holder::hold` from
@@ -23,7 +23,7 @@ pub fn qualified(parts : Array[@ast.Node], from : Int) -> (String, Int)? {
 
 ///|
 /// A member name, qualified or not, and where it ends.
-pub fn member_name(parts : Array[@ast.Node], from : Int) -> (String, Int)? {
+pub fn member_name(parts : Array[@ast.Node], from : Int32) -> (String, Int32)? {
   match qualified(parts, from) {
     Some(pair) => Some(pair)
     None => {
@@ -135,7 +135,7 @@ pub fn row_members(decls : Array[@tutufile.Decl]) -> Array[String] {
 /// them, which is what makes a member read on one checkable.
 pub fn split_binder(
   raw : Array[@ast.Node],
-) -> (Array[String], Ex, Int) raise ExError {
+) -> (Array[String], Ex, Int32) raise ExError {
   let names = []
   let mut g = 0
   while g < raw.length() {

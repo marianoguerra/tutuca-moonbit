@@ -4,8 +4,7 @@
 //   tutuca gen visual_wasm.tutu --name VisualWasm --out <dir>
 //
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component",
-//   "moonbitlang/core/debug"
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 
 ///|
 /// The state of the VwEmpty component.
@@ -14,6 +13,9 @@
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct VwEmptyState {} derive(Default)
+
+///|
+pub extend VwEmptyState with Default::{default}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -63,7 +65,7 @@ impl @component.Fields for VwEmptyState with fn schema() {
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct VwImmState {
-  value : Int
+  value : Int32
   raw_value : String
 }
 
@@ -353,7 +355,7 @@ impl @component.Fields for VwIfState with fn schema() {
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct VwSectionState {
-  id : Int
+  id : Int32
   name : String
   items : Array[@tutuca.Value]
   expanded : Bool
@@ -445,8 +447,8 @@ impl @component.Fields for VwSectionState with fn schema() {
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct VwMemoryState {
-  n : Int
-  m : Int
+  n : Int32
+  m : Int32
 }
 
 ///|

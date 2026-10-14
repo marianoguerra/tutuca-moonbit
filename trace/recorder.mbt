@@ -35,7 +35,7 @@ pub fn TraceRecorder::new(
   root~ : Json,
   origin? : Origin,
   sink? : (String) -> Unit,
-  keep_after? : Bool = false,
+  keep_after~ : Bool = false,
 ) -> TraceRecorder {
   let r : TraceRecorder = {
     origin: origin.unwrap_or(Origin::empty()),
@@ -143,6 +143,15 @@ pub impl @transactor.Recorder for TraceRecorder with fn recording(_self) {
 }
 
 ///|
+pub extend TraceRecorder with @transactor.Recorder::{
+  on_observed,
+  on_answer,
+  recording,
+  on_offered,
+  on_dispatch,
+}
+
+///|
 pub impl @transactor.Recorder for TraceRecorder with fn on_dispatch(self, d) {
   let op : Op = match d.bucket {
     Receive => Send(name=d.name, args=d.args)
@@ -228,10 +237,10 @@ pub impl @transactor.Recorder for TraceRecorder with fn on_observed(self, r) {
 
 ///|
 pub fn RingRecorder::new(
-  turns~ : Int,
+  turns~ : Int32,
   snapshot~ : () -> Json,
   origin? : Origin,
-  keep_after? : Bool = false,
+  keep_after~ : Bool = false,
 ) -> RingRecorder {
   {
     inner: TraceRecorder::new(
@@ -266,12 +275,12 @@ pub fn RingRecorder::take(self : RingRecorder) -> Trace {
 /// asked for, which is the whole reason this is a live recorder and not a
 /// post-hoc trim: by the time somebody asks, the state the survivors start from
 /// is long gone.
-fn RingRecorder::rotate(self : RingRecorder, turn : Int) -> Unit {
+fn RingRecorder::rotate(self : RingRecorder, turn : Int32) -> Unit {
   if turn == self.cur_turn {
     return
   }
   self.cur_turn = turn
-  let seen : Array[Int] = []
+  let seen : Array[Int32] = []
   for e in self.inner.events {
     if e.turn != 0 && !seen.contains(e.turn) {
       seen.push(e.turn)
@@ -304,6 +313,15 @@ pub impl @transactor.Recorder for RingRecorder with fn recording(_self) {
 }
 
 ///|
+pub extend RingRecorder with @transactor.Recorder::{
+  on_observed,
+  on_answer,
+  recording,
+  on_offered,
+  on_dispatch,
+}
+
+///|
 pub impl @transactor.Recorder for RingRecorder with fn on_dispatch(self, d) {
   self.rotate(d.turn)
   @transactor.Recorder::on_dispatch(self.inner, d)
@@ -331,7 +349,7 @@ pub fn ScopedRecorder::new(
   at~ : Place,
   root~ : Json,
   origin? : Origin,
-  keep_after? : Bool = false,
+  keep_after~ : Bool = false,
 ) -> ScopedRecorder {
   {
     inner: TraceRecorder::new(
@@ -363,9 +381,9 @@ pub fn ScopedRecorder::take(self : ScopedRecorder) -> Trace {
 /// event that came from outside is spotted and promoted.
 fn ScopedRecorder::admit(
   self : ScopedRecorder,
-  seq : Int,
+  seq : Int32,
   at : @tutuca.Path,
-  walk : Int,
+  walk : Int32,
 ) -> Place? {
   let place = Place::of_path(at)
   let inside = place.starts_with(self.at)
@@ -381,6 +399,15 @@ fn ScopedRecorder::admit(
 ///|
 pub impl @transactor.Recorder for ScopedRecorder with fn recording(_self) {
   true
+}
+
+///|
+pub extend ScopedRecorder with @transactor.Recorder::{
+  on_observed,
+  on_answer,
+  recording,
+  on_offered,
+  on_dispatch,
 }
 
 ///|

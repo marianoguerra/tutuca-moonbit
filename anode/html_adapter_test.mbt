@@ -3,7 +3,7 @@
 // fail, the fragment strategy has to change before anything is built on it.
 
 ///|
-fn tag_of(doc : @html5.Document, id : Int) -> String {
+fn tag_of(doc : @html5.Document, id : Int32) -> String {
   doc.get_tag_name(id).unwrap_or("?")
 }
 

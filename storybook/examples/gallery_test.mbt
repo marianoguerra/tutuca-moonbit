@@ -11,14 +11,14 @@
 
 ///|
 fn pick(ids : Array[String]) -> Array[@sb.Section] {
-  let all = stories()
+  let all = @examples.stories()
   let picked : Array[@sb.Story] = []
   for s in all {
     if ids.contains(s.id) {
       picked.push(s)
     }
   }
-  @sb.sections_of(picked, order=section_order)
+  @sb.sections_of(picked, order=@examples.section_order)
 }
 
 ///|
@@ -73,7 +73,7 @@ fn url_fixture(
   story : String,
   focus : String,
   filter : String,
-  theme? : String = "",
+  theme~ : String = "",
 ) -> Map[String, Array[@component.IntentFn]] {
   {
     "load_state": [

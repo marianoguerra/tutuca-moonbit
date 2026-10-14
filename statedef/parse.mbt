@@ -11,7 +11,7 @@
 /// The parser's cursor.
 priv struct P {
   toks : Array[Token]
-  mut at : Int
+  mut at : Int32
 }
 
 ///|
@@ -28,7 +28,7 @@ fn P::span(self : P) -> Span {
 /// The token `n` places ahead, for the one decision that needs a second look:
 /// `provide` opens a wiring section only when a brace follows it, and is an
 /// ordinary field name otherwise.
-fn P::peek_at(self : P, n : Int) -> Tok {
+fn P::peek_at(self : P, n : Int32) -> Tok {
   let i = self.at + n
   if i < self.toks.length() {
     self.toks[i].tok
@@ -1354,7 +1354,7 @@ priv struct Env {
 ///|
 pub fn parse_state(
   source : String,
-  name? : String = "",
+  name~ : String = "",
 ) -> Array[StateDef] raise DefError {
   let p : P = { toks: tokenize(source), at: 0, }
   defs_of(parse_decls(p), name)
@@ -1814,7 +1814,7 @@ fn resolve(t : RawTy, env : Env) -> @tutuca.Ty raise DefError {
 fn arity(
   name : String,
   args : Array[RawTy],
-  want : Int,
+  want : Int32,
   span : Span,
 ) -> Unit raise DefError {
   if args.length() != want {

@@ -1,6 +1,6 @@
 ///|
 test "quantity bounds and total" {
-  let h = @harness.mount(quantity_picker_module(), "QuantityPicker")
+  let h = @harness.mount(@showcase.quantity_picker_module(), "QuantityPicker")
   assert_eq(h.text("output.quantity"), "1")
   h.click("button.increase")
   assert_eq(h.text("p.total"), "Total: €10")
@@ -17,7 +17,7 @@ test "quantity bounds and total" {
 ///|
 test "preferences validate apply and reset" {
   let h = @harness.mount(
-    notification_preferences_module(),
+    @showcase.notification_preferences_module(),
     "NotificationPreferences",
   )
   h.click("input.enabled")
@@ -32,7 +32,7 @@ test "preferences validate apply and reset" {
 
 ///|
 test "task children retain identity through filtering and removal" {
-  let h = @harness.mount(task_list_module(), "TaskList")
+  let h = @harness.mount(@showcase.task_list_module(), "TaskList")
   h.type_into("input.draft", "   ")
   h.click("button.add")
   assert_eq(h.find_all("li.task").length(), 0)
@@ -53,7 +53,10 @@ test "task children retain identity through filtering and removal" {
 
 ///|
 test "contact search precedes paging and editing retains selection" {
-  let h = @harness.mount(contact_directory_module(), "ContactDirectory")
+  let h = @harness.mount(
+    @showcase.contact_directory_module(),
+    "ContactDirectory",
+  )
   assert_eq(h.texts("button.contact"), [
     "Alex Chen", "Bea Singh", "Casey Rivera",
   ])
@@ -82,7 +85,7 @@ test "contact search precedes paging and editing retains selection" {
 test "document save responses follow their original child and preserve newer edits" {
   let pending : Array[() -> Unit] = []
   let h = @harness.mount(
-    document_workspace_module(later=f => pending.push(f)),
+    @showcase.document_workspace_module(later=f => pending.push(f)),
     "DocumentWorkspace",
     markdown_filter=@mdfilter.make_filter,
   )

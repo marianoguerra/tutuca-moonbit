@@ -108,7 +108,7 @@ fn run_gen_css(
 /// usage error rather than a silent clamp. The values ARE the compiler's
 /// `@tw.POLYFILL_*` constants (0..3), so the shell forwards the int unchanged —
 /// keeping the pure core free of a dependency on the compiler package.
-fn parse_polyfills(value : String) -> Int? {
+fn parse_polyfills(value : String) -> Int32? {
   match value {
     "0" => Some(0)
     "1" => Some(1)
@@ -182,13 +182,17 @@ pub fn collect_view_classes(
 /// is read by a person, and a list that runs "b, k, n, s, on, rm, add, btn"
 /// looks broken. Alphabetical is also the order a class list is scanned in when
 /// checking what the collector missed.
-pub fn lex_compare(a : String, b : String) -> Int {
+pub fn lex_compare(a : String, b : String) -> Int32 {
   a.lexical_compare(b)
 }
 
 ///|
 /// The line the shell prints after writing the CSS.
-pub fn gen_css_success(target : String, files~ : Int, classes~ : Int) -> String {
+pub fn gen_css_success(
+  target : String,
+  files~ : Int32,
+  classes~ : Int32,
+) -> String {
   let file_word = if files == 1 { "view" } else { "views" }
   let class_word = if classes == 1 { "class" } else { "classes" }
   "generated \{target} from \{files} \{file_word} (\{classes} \{class_word})\n"

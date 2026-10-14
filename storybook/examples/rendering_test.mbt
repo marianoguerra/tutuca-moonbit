@@ -1,6 +1,6 @@
 ///|
 test "push-view: one field flips EVERY nested Entry to its edit view" {
-  let h = @harness.mount_example(push_view_module(), "Read Only")
+  let h = @harness.mount_example(@examples.push_view_module(), "Read Only")
   // main view: read-only cards, and no Entry edit inputs anywhere
   inspect(h.text(".toggle-btn"), content="Set Edit Mode")
   inspect(h.find_all(".card-title").length(), content="14")
@@ -14,7 +14,7 @@ test "push-view: one field flips EVERY nested Entry to its edit view" {
 
 ///|
 test "push-view: @when filters render-each by calling a method ON THE ITEM" {
-  let h = @harness.mount_example(push_view_module(), "Read Only")
+  let h = @harness.mount_example(@examples.push_view_module(), "Read Only")
   h.type_into("input", "Emperor")
   inspect(h.find_all(".card-title").length(), content="1")
   inspect(h.text(".card-title"), content="those belonging to the Emperor")
@@ -22,7 +22,7 @@ test "push-view: @when filters render-each by calling a method ON THE ITEM" {
 
 ///|
 test "push-view: the example that starts in edit mode" {
-  let h = @harness.mount_example(push_view_module(), "Edit Mode")
+  let h = @harness.mount_example(@examples.push_view_module(), "Edit Mode")
   inspect(h.find_all("input.title").length(), content="14")
   // each rendered Entry is a live component: editing one updates only that one
   h.type_into("input.title", "renamed", nth=2)
@@ -32,7 +32,7 @@ test "push-view: the example that starts in edit mode" {
 
 ///|
 test "seq-item-access: .byIndex[.currentIndex] and .byKey[.currentKey]" {
-  let h = @harness.mount_example(seq_item_access_module(), "Default")
+  let h = @harness.mount_example(@examples.seq_item_access_module(), "Default")
   // two components render: byIndex[0] and byKey["key-0"]
   debug_inspect(
     h.texts(".card-title"),
@@ -48,7 +48,7 @@ test "seq-item-access: .byIndex[.currentIndex] and .byKey[.currentKey]" {
 
 ///|
 test "seq-item-access: moving the range re-renders the item at that index" {
-  let h = @harness.mount_example(seq_item_access_module(), "Default")
+  let h = @harness.mount_example(@examples.seq_item_access_module(), "Default")
   // @on.input="setCurrentIndex e.valueAsInt" — the event's value, coerced to Int
   h.fire("input", @render.DomEvent::new(name="input", value=Str("3")))
   debug_inspect(
@@ -61,7 +61,7 @@ test "seq-item-access: moving the range re-renders the item at that index" {
 
 ///|
 test "seq-item-access: picking a key re-renders the keyed item" {
-  let h = @harness.mount_example(seq_item_access_module(), "Default")
+  let h = @harness.mount_example(@examples.seq_item_access_module(), "Default")
   h.fire("select", @render.DomEvent::new(name="input", value=Str("key-4")))
   debug_inspect(
     h.texts(".card-title"),
@@ -73,7 +73,7 @@ test "seq-item-access: picking a key re-renders the keyed item" {
 
 ///|
 test "pagination: @loop-with slices the page, keeping ORIGINAL keys" {
-  let h = @harness.mount_example(pagination_module(), "First Page")
+  let h = @harness.mount_example(@examples.pagination_module(), "First Page")
   inspect(h.text(".label"), content="Page 1 of 3")
   inspect(h.find_all("li").length(), content="5")
   debug_inspect(
@@ -96,7 +96,7 @@ test "pagination: @loop-with slices the page, keeping ORIGINAL keys" {
 
 ///|
 test "pagination: the last page is short, and the buttons clamp" {
-  let h = @harness.mount_example(pagination_module(), "Second Page")
+  let h = @harness.mount_example(@examples.pagination_module(), "Second Page")
   h.click(".next")
   inspect(h.text(".label"), content="Page 3 of 3")
   inspect(h.find_all("li").length(), content="4") // 14 items = 5 + 5 + 4
@@ -116,7 +116,7 @@ test "pagination: the last page is short, and the buttons clamp" {
 
 ///|
 test "todo: add and remove child components" {
-  let h = @harness.mount(todo_module(), "Items")
+  let h = @harness.mount(@examples.todo_module(), "Items")
   inspect(h.find_all(".row").length(), content="0")
   h.click(".add") // the handler CAPTURES the Item component and makes one
   h.click(".add")
@@ -134,7 +134,7 @@ test "todo: add and remove child components" {
 
 ///|
 test "todo: the seeded example renders one row per item" {
-  let h = @harness.mount_example(todo_module(), "Some Items")
+  let h = @harness.mount_example(@examples.todo_module(), "Some Items")
   inspect(h.find_all(".row").length(), content="3")
   inspect(h.checked_of("input.checkbox", nth=0), content="false")
   inspect(h.checked_of("input.checkbox", nth=1), content="true")
@@ -142,7 +142,7 @@ test "todo: the seeded example renders one row per item" {
 
 ///|
 test "todo: :disabled tracks the checkbox on the SAME child" {
-  let h = @harness.mount(todo_module(), "Items")
+  let h = @harness.mount(@examples.todo_module(), "Items")
   h.click(".add")
   inspect(
     h.prop("input.input", "disabled") is Some(Bool(true)),

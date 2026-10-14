@@ -19,7 +19,7 @@
 ///|
 /// The node id a node was filed under, for the "every node is at its own
 /// index" check below. Only the id-carrying node kinds answer.
-fn node_id_of(n : @anode.ANode) -> Int? {
+fn node_id_of(n : @anode.ANode) -> Int32? {
   match n {
     RenderText(d) => d.node_id
     Render(d) => Some(d.node_id)

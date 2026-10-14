@@ -28,7 +28,7 @@ pub(all) enum Ty {
   /// decode can range-check, even though every one of them emits a MoonBit
   /// `Int` — by the time a value reaches the runtime the generated codec has
   /// already applied the check.
-  TyInt(width~ : Int, signed~ : Bool)
+  TyInt(width~ : Int32, signed~ : Bool)
   TyFloat
   TyText
   TyList(Ty)
@@ -67,6 +67,12 @@ pub(all) enum Ty {
   /// An arbitrary `Value`.
   TyAny
 } derive(Eq, Debug)
+
+///|
+pub extend Ty with Eq::{not_equal, equal}
+
+///|
+pub extend Ty with Debug::{to_repr}
 
 ///|
 /// How the author wrote it. The WIT spelling, because that is what is in the

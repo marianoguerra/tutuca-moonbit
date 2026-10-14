@@ -21,6 +21,12 @@ pub(all) enum TrustTier {
 } derive(Eq, Debug)
 
 ///|
+pub extend TrustTier with Eq::{not_equal, equal}
+
+///|
+pub extend TrustTier with Debug::{to_repr}
+
+///|
 /// Bounds on how large a manifest may be.
 ///
 /// Not a security boundary — a bundle with no authority cannot do harm with a
@@ -29,12 +35,18 @@ pub(all) enum TrustTier {
 /// thousand views is a frozen tab. Cheap to check, and it makes the failure a
 /// message instead of a hang.
 pub(all) struct Quotas {
-  max_components : Int
-  max_views_per_component : Int
-  max_view_bytes : Int
-  max_style_bytes : Int
-  max_fields : Int
+  max_components : Int32
+  max_views_per_component : Int32
+  max_view_bytes : Int32
+  max_style_bytes : Int32
+  max_fields : Int32
 } derive(Eq, Debug)
+
+///|
+pub extend Quotas with Eq::{not_equal, equal}
+
+///|
+pub extend Quotas with Debug::{to_repr}
 
 ///|
 /// Generous on purpose. These are meant to catch a runaway or a bomb, not to
@@ -202,6 +214,12 @@ pub(all) struct Rejection {
 } derive(Eq, Debug)
 
 ///|
+pub extend Rejection with Eq::{not_equal, equal}
+
+///|
+pub extend Rejection with Debug::{to_repr}
+
+///|
 fn rejection(where_ : String, message : String) -> Rejection {
   { where_, message, }
 }
@@ -224,12 +242,18 @@ pub fn Rejection::to_string(self : Rejection) -> String {
 /// manifest's type. What it needs is five integers, and asking for five
 /// integers is honest about that.
 pub(all) struct ModuleFacts {
-  components : Int
-  max_views : Int
-  max_view_bytes : Int
-  max_style_bytes : Int
-  max_fields : Int
+  components : Int32
+  max_views : Int32
+  max_view_bytes : Int32
+  max_style_bytes : Int32
+  max_fields : Int32
 } derive(Eq, Debug)
+
+///|
+pub extend ModuleFacts with Eq::{not_equal, equal}
+
+///|
+pub extend ModuleFacts with Debug::{to_repr}
 
 ///|
 pub fn Policy::check_quotas(
@@ -238,7 +262,7 @@ pub fn Policy::check_quotas(
 ) -> Array[Rejection] {
   let q = self.quotas
   let out : Array[Rejection] = []
-  let check = (n : Int, limit : Int, what : String) => {
+  let check = (n : Int32, limit : Int32, what : String) => {
     if n > limit {
       out.push(rejection("", "too many \{what}: \{n} (the limit is \{limit})"))
     }

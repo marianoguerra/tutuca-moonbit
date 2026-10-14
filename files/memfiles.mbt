@@ -19,11 +19,17 @@ pub(all) struct SavedFile {
 } derive(Eq, Debug)
 
 ///|
+pub extend SavedFile with Eq::{not_equal, equal}
+
+///|
+pub extend SavedFile with Debug::{to_repr}
+
+///|
 pub struct MemFiles {
   priv saved : Array[SavedFile]
   /// What a read of each id answers. An id with no entry is an error, which is
   /// the same answer a browser gives for a file the viewer never picked.
-  priv provided : Map[Int, Result[String, String]]
+  priv provided : Map[Int32, Result[String, String]]
 }
 
 ///|
@@ -48,7 +54,7 @@ pub fn MemFiles::last_saved(self : MemFiles) -> SavedFile? {
 
 ///|
 /// Make `id` answer with `text`.
-pub fn MemFiles::provide(self : MemFiles, id~ : Int, text : String) -> Unit {
+pub fn MemFiles::provide(self : MemFiles, id~ : Int32, text : String) -> Unit {
   self.provided[id] = Ok(text)
 }
 
@@ -57,7 +63,7 @@ pub fn MemFiles::provide(self : MemFiles, id~ : Int, text : String) -> Unit {
 /// panel's error path is never otherwise exercised by.
 pub fn MemFiles::provide_error(
   self : MemFiles,
-  id~ : Int,
+  id~ : Int32,
   why : String,
 ) -> Unit {
   self.provided[id] = Err(why)
@@ -69,7 +75,7 @@ pub fn MemFiles::provide_error(
 /// The round trip in one call, because that is the shape a test actually wants:
 /// save a trace, read the same trace. Answers the id it filed it under, or
 /// `None` when nothing has been saved.
-pub fn MemFiles::round_trip(self : MemFiles) -> Int? {
+pub fn MemFiles::round_trip(self : MemFiles) -> Int32? {
   match self.last_saved() {
     Some(f) => {
       let id = self.provided.length() + 1
@@ -84,6 +90,9 @@ pub fn MemFiles::round_trip(self : MemFiles) -> Int? {
 pub impl FileService for MemFiles with fn save_text(self, name~, mime~, text) {
   self.saved.push({ name, mime, text, })
 }
+
+///|
+pub extend MemFiles with FileService::{save_text, read_text}
 
 ///|
 /// Synchronous, which a browser's read is not — and that is the one way this

@@ -24,6 +24,12 @@ pub(all) enum Lit {
 } derive(Debug, Eq)
 
 ///|
+pub extend Lit with Debug::{to_repr}
+
+///|
+pub extend Lit with Eq::{not_equal, equal}
+
+///|
 /// One name an application may head: its arity, and what it does to
 /// already-evaluated arguments.
 ///
@@ -34,16 +40,22 @@ pub(all) enum Lit {
 /// lets the implementations index positionally.
 pub struct Builtin {
   name : String
-  arity : Int
+  arity : Int32
   apply : (Array[Value]) -> Value
 }
 
 ///|
 /// A concrete sequence key: list index or map key (int|string)
 pub(all) enum PathKey {
-  KInt(Int)
+  KInt(Int32)
   KStr(String)
 } derive(Debug, Eq)
+
+///|
+pub extend PathKey with Debug::{to_repr}
+
+///|
+pub extend PathKey with Eq::{not_equal, equal}
 
 ///|
 /// Path steps: the ways one value addresses another.
@@ -67,6 +79,12 @@ pub(all) enum Step {
   SeqAccessStep(seq_field~ : String, key_field~ : String)
   EachRenderItStep(field~ : String, key~ : PathKey)
 } derive(Debug, Eq)
+
+///|
+pub extend Step with Debug::{to_repr}
+
+///|
+pub extend Step with Eq::{not_equal, equal}
 
 ///|
 /// Dynamic runtime value: what eval(stack) reads and returns.
@@ -109,7 +127,7 @@ pub(all) enum Value {
   /// `nanos` is always in `0 ..< 1_000_000_000`, so an instant before 1970 has
   /// a NEGATIVE `secs` and a positive `nanos` — the way `timespec` does it, and
   /// the reason two instants can be compared as a pair.
-  Instant(secs~ : Int64, nanos~ : Int)
+  Instant(secs~ : Int64, nanos~ : Int32)
   List(Array[Value])
   Map(Map[String, Value])
   Fn((Array[Value]) -> Value) // handler / raw-function values
@@ -158,8 +176,14 @@ pub(all) struct ObjId {
   /// 0 at creation, +1 per successor. Two generations of one instance differ
   /// here even when nothing else does, so a pass that still holds both does
   /// not make them fight for one bucket.
-  rev : Int
+  rev : Int32
 } derive(Eq, Debug)
+
+///|
+pub extend ObjId with Eq::{not_equal, equal}
+
+///|
+pub extend ObjId with Debug::{to_repr}
 
 ///|
 /// The fingerprint of a freshly created instance: its component's schema
@@ -188,7 +212,7 @@ declare pub fn ObjId::to_hex(self : ObjId) -> String
 /// the no-downcast analogue of late-bound `this`) and ignore args element 0.
 /// Every method defaults to an empty/None answer.
 pub(open) trait Obj {
-  fn component_id(Self) -> Int? = _
+  fn component_id(Self) -> Int32? = _
   fn field(Self, name : String) -> Value? = _ // fields; methods surface as pre-bound Fn
   fn with_field(Self, name : String, v : Value) -> Value? = _ // COW -> Some(Obj(new_self))
   /// Read a declared public abstract property. This is distinct from
@@ -262,7 +286,7 @@ pub(open) trait Obj {
   // The sized half of the seq_entries hook, so `size_of` stops answering
   // None for a custom collection. The default counts the entries; override
   // when the length is known without materializing them.
-  fn size(Self) -> Int? = _
+  fn size(Self) -> Int32? = _
   // This instance's render-cache bucket (see ObjId). None is the honest answer
   // for an ad-hoc Obj that does not track its own generations, and it is what
   // makes the cache DECLINE at that render site rather than build a key and
@@ -522,6 +546,18 @@ pub(all) struct NullStack {}
 pub impl Stack for NullStack
 
 ///|
+pub extend NullStack with Stack::{
+  lookup_bind,
+  lookup_method,
+  lookup_trigger,
+  lookup_dynamic,
+  lookup_storage,
+  lookup_bare,
+  lookup_event_path,
+  lookup_member,
+}
+
+///|
 /// Evaluate this value against a stack
 declare pub fn Expr::eval(self : Expr, stack : &Stack) -> Value
 
@@ -558,4 +594,4 @@ declare pub fn builtin_names() -> Array[String]
 
 ///|
 /// size_of: Some(length) for Str/List/Map, None for unsized values
-declare pub fn size_of(v : Value) -> Int?
+declare pub fn size_of(v : Value) -> Int32?

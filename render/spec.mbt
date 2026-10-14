@@ -63,7 +63,7 @@ pub(all) struct DomEvent {
   name : String
   value : @tutuca.Value
   key : String
-  key_code : Int
+  key_code : Int32
   alt : Bool
   shift : Bool
   ctrl_or_cmd : Bool
@@ -97,6 +97,9 @@ pub(all) struct DomEvent {
 } derive(Debug)
 
 ///|
+pub extend DomEvent with Debug::{to_repr}
+
+///|
 /// One live-event side effect, as a named type.
 ///
 /// A newtype for the same reason `EventPathReader` is: `DomEvent` derives
@@ -107,6 +110,9 @@ pub(all) struct EventEffect(() -> Unit)
 pub impl @debug.Debug for EventEffect with fn to_repr(_self) {
   Repr("<effect>")
 }
+
+///|
+pub extend EventEffect with Debug::{to_repr}
 
 ///|
 /// Layer 2's resolver, as a named type.
@@ -123,12 +129,15 @@ pub impl @debug.Debug for EventPathReader with fn to_repr(_self) {
 }
 
 ///|
+pub extend EventPathReader with Debug::{to_repr}
+
+///|
 declare pub fn DomEvent::new(
   name~ : String,
   value? : @tutuca.Value,
   read_path? : EventPathReader,
   key? : String,
-  key_code? : Int,
+  key_code? : Int32,
   alt? : Bool,
   shift? : Bool,
   ctrl_or_cmd? : Bool,
@@ -199,9 +208,12 @@ declare pub impl @tutuca.Stack for RenderStack
 /// (vid) — the effective view name of the matched Component/View pair.
 pub(all) struct ResolvedView {
   node : @anode.ANode
-  cid : Int
+  cid : Int32
   vid : String
 } derive(Debug)
+
+///|
+pub extend ResolvedView with Debug::{to_repr}
 
 ///|
 /// `<x render>`/`<x render-it>`'s component and view resolution. Receives
@@ -258,10 +270,16 @@ declare pub fn RenderCtx::new(
 /// marks a loop-less @enrich-with subtree. One type shared by emission
 /// (renderer) and parsing (event-path reconstruction) so they cannot drift.
 pub(all) enum Meta {
-  Comp(nid~ : Int?, cid~ : Int, vid~ : String, base~ : @tutuca.Path?)
-  Each(nid~ : Int, key~ : @tutuca.PathKey)
-  Scope(nid~ : Int)
+  Comp(nid~ : Int32?, cid~ : Int32, vid~ : String, base~ : @tutuca.Path?)
+  Each(nid~ : Int32, key~ : @tutuca.PathKey)
+  Scope(nid~ : Int32)
 } derive(Debug, Eq)
+
+///|
+pub extend Meta with Debug::{to_repr}
+
+///|
+pub extend Meta with Eq::{not_equal, equal}
 
 ///|
 declare pub fn Meta::to_comment_text(self : Meta) -> String
@@ -289,7 +307,7 @@ declare pub fn render_root(
   value : @tutuca.Value,
   stack : RenderStack,
   ctx : RenderCtx,
-  view? : String = "",
+  view~ : String = "",
 ) -> @vdom.Vdom?
 
 ///|
@@ -335,8 +353,8 @@ declare pub fn is_meta_comment(text : String) -> Bool
 /// event registrations by (cid, vid, nid|eid). Defaults answer None so test
 /// mocks implement only what they use.
 pub(open) trait Boundaries {
-  fn node_for(Self, cid : Int, vid : String, nid : Int) -> @anode.ANode? = _
-  fn events_for(Self, cid : Int, vid : String, eid : Int) -> @anode.NodeEvents? = _
+  fn node_for(Self, cid : Int32, vid : String, nid : Int32) -> @anode.ANode? = _
+  fn events_for(Self, cid : Int32, vid : String, eid : Int32) -> @anode.NodeEvents? = _
 }
 
 ///|
@@ -368,7 +386,7 @@ declare pub fn[N : @vdom.DomWalk] from_node_and_event_name(
   event_name : String,
   root_node : N,
   comps : &Boundaries,
-  max_depth? : Int,
+  max_depth? : Int32,
   stop_on_no_event? : Bool,
 ) -> EventDispatch?
 

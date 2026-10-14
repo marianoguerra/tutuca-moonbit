@@ -120,18 +120,18 @@ pub fn selector_entry_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn selector_entry_component(
-  name? : String = "SelectorEntry",
-  views? : Map[String, @anode.View] = selector_entry_views(),
-  initial? : SelectorEntryState = SelectorEntryState::zero(),
-  common_style? : String = selector_entry_common_style,
-  global_style? : String = selector_entry_global_style,
+  name~ : String = "SelectorEntry",
+  views~ : Map[String, @anode.View] = selector_entry_views(),
+  initial~ : SelectorEntryState = SelectorEntryState::zero(),
+  common_style~ : String = selector_entry_common_style,
+  global_style~ : String = selector_entry_global_style,
   update? : (SelectorEntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SelectorEntryState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -210,18 +210,18 @@ pub fn selector_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn selector_component(
-  name? : String = "Selector",
-  views? : Map[String, @anode.View] = selector_views(),
-  initial? : SelectorState = SelectorState::zero(),
-  common_style? : String = selector_common_style,
-  global_style? : String = selector_global_style,
+  name~ : String = "Selector",
+  views~ : Map[String, @anode.View] = selector_views(),
+  initial~ : SelectorState = SelectorState::zero(),
+  common_style~ : String = selector_common_style,
+  global_style~ : String = selector_global_style,
   update? : (SelectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SelectorState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -316,18 +316,18 @@ pub fn entry_editor_and_selector_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn entry_editor_and_selector_component(
-  name? : String = "EntryEditorAndSelector",
-  views? : Map[String, @anode.View] = entry_editor_and_selector_views(),
-  initial? : EntryEditorAndSelectorState = EntryEditorAndSelectorState::zero(),
-  common_style? : String = entry_editor_and_selector_common_style,
-  global_style? : String = entry_editor_and_selector_global_style,
+  name~ : String = "EntryEditorAndSelector",
+  views~ : Map[String, @anode.View] = entry_editor_and_selector_views(),
+  initial~ : EntryEditorAndSelectorState = EntryEditorAndSelectorState::zero(),
+  common_style~ : String = entry_editor_and_selector_common_style,
+  global_style~ : String = entry_editor_and_selector_global_style,
   update? : (EntryEditorAndSelectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     EntryEditorAndSelectorState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -401,18 +401,18 @@ pub fn sheet_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn sheet_component(
-  name? : String = "Sheet",
-  views? : Map[String, @anode.View] = sheet_views(),
-  initial? : SheetState = SheetState::zero(),
-  common_style? : String = sheet_common_style,
-  global_style? : String = sheet_global_style,
+  name~ : String = "Sheet",
+  views~ : Map[String, @anode.View] = sheet_views(),
+  initial~ : SheetState = SheetState::zero(),
+  common_style~ : String = sheet_common_style,
+  global_style~ : String = sheet_global_style,
   update? : (SheetState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SheetState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -471,18 +471,18 @@ pub fn toolbar_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn toolbar_component(
-  name? : String = "Toolbar",
-  views? : Map[String, @anode.View] = toolbar_views(),
-  initial? : ToolbarState = ToolbarState::zero(),
-  common_style? : String = toolbar_common_style,
-  global_style? : String = toolbar_global_style,
+  name~ : String = "Toolbar",
+  views~ : Map[String, @anode.View] = toolbar_views(),
+  initial~ : ToolbarState = ToolbarState::zero(),
+  common_style~ : String = toolbar_common_style,
+  global_style~ : String = toolbar_global_style,
   update? : (ToolbarState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ToolbarState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -541,18 +541,18 @@ pub fn panel_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn panel_component(
-  name? : String = "Panel",
-  views? : Map[String, @anode.View] = panel_views(),
-  initial? : PanelState = PanelState::zero(),
-  common_style? : String = panel_common_style,
-  global_style? : String = panel_global_style,
+  name~ : String = "Panel",
+  views~ : Map[String, @anode.View] = panel_views(),
+  initial~ : PanelState = PanelState::zero(),
+  common_style~ : String = panel_common_style,
+  global_style~ : String = panel_global_style,
   update? : (PanelState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     PanelState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -608,11 +608,11 @@ pub fn workspace_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn workspace_component(
-  name? : String = "Workspace",
-  views? : Map[String, @anode.View] = workspace_views(),
-  initial? : WorkspaceState = WorkspaceState::zero(),
-  common_style? : String = workspace_common_style,
-  global_style? : String = workspace_global_style,
+  name~ : String = "Workspace",
+  views~ : Map[String, @anode.View] = workspace_views(),
+  initial~ : WorkspaceState = WorkspaceState::zero(),
+  common_style~ : String = workspace_common_style,
+  global_style~ : String = workspace_global_style,
   update? : (WorkspaceState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     WorkspaceState,
   ],
@@ -621,10 +621,10 @@ pub fn workspace_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

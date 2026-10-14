@@ -8,7 +8,7 @@
 // snapshot's shape is the state's shape, so the subtree is cut out of the JSON.
 
 ///|
-pub fn Trace::input_count(self : Trace) -> Int {
+pub fn Trace::input_count(self : Trace) -> Int32 {
   self.events.filter(e => e.input).length()
 }
 
@@ -46,7 +46,7 @@ pub fn Trace::places(self : Trace) -> Array[Place] {
 // --- prefix -------------------------------------------------------------------
 
 ///|
-pub fn Trace::prefix(self : Trace, n : Int) -> Trace {
+pub fn Trace::prefix(self : Trace, n : Int32) -> Trace {
   let n = if n < 0 {
     0
   } else if n > self.events.length() {
@@ -60,14 +60,14 @@ pub fn Trace::prefix(self : Trace, n : Int) -> Trace {
 // --- rebase -------------------------------------------------------------------
 
 ///|
-pub fn Trace::rebase(self : Trace, at~ : Int, root~ : Json) -> Trace {
+pub fn Trace::rebase(self : Trace, at~ : Int32, root~ : Json) -> Trace {
   let at = self.turn_boundary(at)
   let dropped = self.events[0:at].to_owned()
   let tail = self.events[at:].to_owned()
   // A walk whose intent is gone has nothing left to answer, and an answer with
   // no question is an answer a rerun would deliver to a handler that was never
   // waiting. Both go.
-  let live_walks : Map[Int, Bool] = Map([])
+  let live_walks : Map[Int32, Bool] = Map([])
   for e in tail {
     if e.walk != 0 && e.op is Intent(_) {
       live_walks[e.walk] = true
@@ -81,7 +81,7 @@ pub fn Trace::rebase(self : Trace, at~ : Int, root~ : Json) -> Trace {
   })
   // Renumber from 1, and carry `parent` across only where the parent survived:
   // a link to a discarded event is a link a reader would follow into nothing.
-  let seq_of : Map[Int, Int] = Map([])
+  let seq_of : Map[Int32, Int32] = Map([])
   for i, e in kept {
     seq_of[e.seq] = i + 1
   }
@@ -109,7 +109,7 @@ pub fn Trace::rebase(self : Trace, at~ : Int, root~ : Json) -> Trace {
 /// Rounding FORWARD, so a caller who asks to keep less keeps less: rounding
 /// back would hand them a longer trace than they asked for, which is the
 /// opposite of what they were doing.
-pub fn Trace::turn_boundary(self : Trace, n : Int) -> Int {
+pub fn Trace::turn_boundary(self : Trace, n : Int32) -> Int32 {
   if n <= 0 {
     return 0
   }
@@ -195,13 +195,13 @@ pub fn Trace::relocate(self : Trace, place : Place) -> (Trace, Array[Gap]) {
   // Which walks are the subtree's own. An intent RAISED inside the cut keeps
   // its offers and its answer even though those are recorded elsewhere: an
   // offer's address is the sender's, and an answer has none at all.
-  let own_walks : Map[Int, String] = Map([])
+  let own_walks : Map[Int32, String] = Map([])
   for e in self.events {
     if e.walk != 0 && e.op is Intent(name~, ..) && e.at.starts_with(place) {
       own_walks[e.walk] = name
     }
   }
-  let answered : Map[Int, Bool] = Map([])
+  let answered : Map[Int32, Bool] = Map([])
   for e in self.events {
     if e.op is Answer(_) && e.walk != 0 {
       answered[e.walk] = true
@@ -210,7 +210,7 @@ pub fn Trace::relocate(self : Trace, place : Place) -> (Trace, Array[Gap]) {
   // Which events survive the cut, by seq. What makes the promotion below exact:
   // a derived event whose cause is still here was caused from INSIDE, and a
   // rerun of the subtree produces it again.
-  let surviving : Map[Int, Bool] = Map([])
+  let surviving : Map[Int32, Bool] = Map([])
   for e in self.events {
     if e.at.starts_with(place) ||
       (e.walk != 0 && own_walks.get(e.walk) is Some(_)) {
@@ -256,7 +256,7 @@ pub fn Trace::relocate(self : Trace, place : Place) -> (Trace, Array[Gap]) {
   // the cut discarded is a link a reader would follow into nothing — and it is
   // the same link `relocate` just used to decide what to promote, so leaving it
   // pointing at the old numbering would be leaving a trap.
-  let seq_of : Map[Int, Int] = Map([])
+  let seq_of : Map[Int32, Int32] = Map([])
   for i, e in events {
     seq_of[e.seq] = i + 1
   }

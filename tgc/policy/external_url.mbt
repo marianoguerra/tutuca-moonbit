@@ -91,7 +91,7 @@ pub fn normalized_origin(text : String) -> String? {
 
 ///|
 /// The index of the `:` in `://`, which is where a scheme ends.
-fn scheme_end(url : String) -> Int? {
+fn scheme_end(url : String) -> Int32? {
   let n = url.length()
   let mut i = 0
   while i + 2 < n {

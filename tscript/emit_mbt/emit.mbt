@@ -104,7 +104,7 @@ priv struct E {
   answer_arms : Set[String]
   /// A counter for the temporaries those guards bind, and what is already
   /// bound: reading `q` twice is one guard, not two.
-  mut tmp : Int
+  mut tmp : Int32
   mut guards : Map[String, String]
   /// The block's own callables, name -> the emitted function that answers it.
   /// This is what lets one body call another: `compute status { if over { … } }`
@@ -130,7 +130,7 @@ priv struct E {
   /// outlive it.
   mut target : (String, @tutuca.Ty)?
   /// A counter for those temporaries, so two `new`s in one body do not shadow.
-  mut target_n : Int
+  mut target_n : Int32
 }
 
 ///|
@@ -139,9 +139,9 @@ pub fn emit(
   def : @statedef.StateDef,
   state_ty~ : String,
   fn_name~ : String,
-  prefix? : String = "",
-  roles? : Roles = Roles::none(),
-  surface? : @check.Surface = @check.Surface::empty(),
+  prefix~ : String = "",
+  roles~ : Roles = Roles::none(),
+  surface~ : @check.Surface = @check.Surface::empty(),
 ) -> Emitted {
   // The SPEC block's rules, as declarations, ahead of the block's own.
   //
@@ -1401,7 +1401,7 @@ fn E::target_update(
   src : String,
   ty : @tutuca.Ty,
   steps : Array[@tutuca.PathStep],
-  i : Int,
+  i : Int32,
   leaf : (@tutuca.Ty, String) -> String raise NoWay,
 ) -> String raise NoWay {
   guard steps.get(i) is Some(st) else { return leaf(ty, src) }
@@ -1503,7 +1503,7 @@ fn E::collection_call_at(
   ty : @tutuca.Ty,
   args : Array[@tutuca.Expr],
 ) -> String raise NoWay {
-  fn arity(n : Int) -> Unit raise NoWay {
+  fn arity(n : Int32) -> Unit raise NoWay {
     if args.length() != n {
       raise Cannot("`\{call}` takes \{n} argument(s), not \{args.length()}")
     }

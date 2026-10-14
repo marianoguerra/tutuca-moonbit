@@ -13,7 +13,7 @@ pub fn Components::register(self : Components, comp : Component) -> Unit {
 ///|
 pub fn Components::get_component_for_id(
   self : Components,
-  id : Int,
+  id : Int32,
 ) -> Component? {
   self.by_id.get(id)
 }
@@ -95,7 +95,7 @@ pub fn ComponentStack::enter(self : ComponentStack) -> ComponentStack {
 pub fn ComponentStack::register_components(
   self : ComponentStack,
   comps : Array[Component],
-  aliases? : Map[String, String] = Map([]),
+  aliases~ : Map[String, String] = Map([]),
 ) -> Unit {
   for comp in comps {
     comp.scope = Some(self.enter()) // fresh scope per comp (JS)
@@ -217,6 +217,9 @@ pub impl @anode.MacroScope for ComponentStack with fn lookup_macro(self, name) {
 }
 
 ///|
+pub extend ComponentStack with @anode.MacroScope::{lookup_macro}
+
+///|
 pub fn ComponentStack::compile_all(self : ComponentStack) -> Unit raise {
   for _, comp in self.comps.by_id {
     comp.compile()
@@ -267,7 +270,7 @@ pub fn DynBinds::lookup(self : DynBinds, name : String) -> @tutuca.Value? {
 ///|
 /// The nearest component TYPE published under `name`, walking outward. The
 /// same walk as `lookup`, over the frame's other half — see `DynBinds`.
-pub fn DynBinds::lookup_type(self : DynBinds, name : String) -> Int? {
+pub fn DynBinds::lookup_type(self : DynBinds, name : String) -> Int32? {
   match self.types.get(name) {
     Some(id) => Some(id)
     None =>

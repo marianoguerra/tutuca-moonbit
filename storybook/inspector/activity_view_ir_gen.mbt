@@ -256,18 +256,18 @@ fn activity_entry_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn activity_entry_component(
-  name? : String = "ActivityEntry",
-  views? : Map[String, @anode.View] = activity_entry_views(),
-  initial? : ActivityEntryState = ActivityEntryState::zero(),
-  common_style? : String = activity_entry_common_style,
-  global_style? : String = activity_entry_global_style,
+  name~ : String = "ActivityEntry",
+  views~ : Map[String, @anode.View] = activity_entry_views(),
+  initial~ : ActivityEntryState = ActivityEntryState::zero(),
+  common_style~ : String = activity_entry_common_style,
+  global_style~ : String = activity_entry_global_style,
   update? : (ActivityEntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ActivityEntryState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -362,18 +362,18 @@ fn activity_log_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn activity_log_component(
-  name? : String = "ActivityLog",
-  views? : Map[String, @anode.View] = activity_log_views(),
-  initial? : ActivityLogState = ActivityLogState::zero(),
-  common_style? : String = activity_log_common_style,
-  global_style? : String = activity_log_global_style,
+  name~ : String = "ActivityLog",
+  views~ : Map[String, @anode.View] = activity_log_views(),
+  initial~ : ActivityLogState = ActivityLogState::zero(),
+  common_style~ : String = activity_log_common_style,
+  global_style~ : String = activity_log_global_style,
   update? : (ActivityLogState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ActivityLogState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

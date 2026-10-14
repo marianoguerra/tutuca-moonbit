@@ -61,6 +61,12 @@ pub(all) enum EventPathProfile {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend EventPathProfile with Eq::{not_equal, equal}
+
+///|
+pub extend EventPathProfile with Debug::{to_repr}
+
+///|
 /// The object-valued steps a path may traverse.
 ///
 /// Six, and each one is here for a stated reason. Adding a seventh is the whole
@@ -133,8 +139,14 @@ pub(all) enum EventPathVerdict {
   /// refused at `ownerDocument`, and saying which step is what tells an author
   /// the difference between "this path is wrong" and "this path is not allowed
   /// to go that far".
-  BadStep(step~ : String, index~ : Int)
+  BadStep(step~ : String, index~ : Int32)
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend EventPathVerdict with Eq::{not_equal, equal}
+
+///|
+pub extend EventPathVerdict with Debug::{to_repr}
 
 ///|
 /// Whether `e.<segments>` is permitted under this profile.

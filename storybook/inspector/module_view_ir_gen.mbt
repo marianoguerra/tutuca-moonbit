@@ -105,11 +105,11 @@ pub fn rich_sample_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn rich_sample_component(
-  name? : String = "RichSample",
-  views? : Map[String, @anode.View] = rich_sample_views(),
-  initial? : RichSampleState = RichSampleState::zero(),
-  common_style? : String = rich_sample_common_style,
-  global_style? : String = rich_sample_global_style,
+  name~ : String = "RichSample",
+  views~ : Map[String, @anode.View] = rich_sample_views(),
+  initial~ : RichSampleState = RichSampleState::zero(),
+  common_style~ : String = rich_sample_common_style,
+  global_style~ : String = rich_sample_global_style,
   update? : (RichSampleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     RichSampleState,
   ],
@@ -123,10 +123,10 @@ pub fn rich_sample_component(
     @tutuca.Value,
     @component.LoopCtx,
   ) -> @component.LoopWith)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -191,11 +191,11 @@ pub fn sample_card_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn sample_card_component(
-  name? : String = "SampleCard",
-  views? : Map[String, @anode.View] = sample_card_views(),
-  initial? : SampleCardState = SampleCardState::zero(),
-  common_style? : String = sample_card_common_style,
-  global_style? : String = sample_card_global_style,
+  name~ : String = "SampleCard",
+  views~ : Map[String, @anode.View] = sample_card_views(),
+  initial~ : SampleCardState = SampleCardState::zero(),
+  common_style~ : String = sample_card_common_style,
+  global_style~ : String = sample_card_global_style,
   update? : (SampleCardState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SampleCardState,
   ],
@@ -204,10 +204,10 @@ pub fn sample_card_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

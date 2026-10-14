@@ -46,14 +46,14 @@ test "all() does what filter_elem does, for every rule" {
   // Each rule twice over the same element: once through the primitive, once
   // through the hinted entry point claiming everything. Same survivors.
   let direct = every_sink()
-  UrlFilter::new().filter_elem(direct)
-  HandlerFilter::new().filter_elem(direct)
-  CssFilter::new().filter_elem(direct)
+  @filter.UrlFilter::new().filter_elem(direct)
+  @filter.HandlerFilter::new().filter_elem(direct)
+  @filter.CssFilter::new().filter_elem(direct)
   let hinted = every_sink()
   let all = @sinks.SinkHints::all()
-  UrlFilter::new().filter_elem_hinted(hinted, all)
-  HandlerFilter::new().filter_elem_hinted(hinted, all)
-  CssFilter::new().filter_elem_hinted(hinted, all)
+  @filter.UrlFilter::new().filter_elem_hinted(hinted, all)
+  @filter.HandlerFilter::new().filter_elem_hinted(hinted, all)
+  @filter.CssFilter::new().filter_elem_hinted(hinted, all)
   assert_eq(names_of(direct), names_of(hinted))
   // And it is not vacuous: the three sinks went and `class` stayed.
   assert_eq(names_of(hinted), ["class"])
@@ -63,10 +63,10 @@ test "all() does what filter_elem does, for every rule" {
 test "a rule whose bit is clear does nothing" {
   let el = every_sink()
   let none = @sinks.SinkHints::empty()
-  UrlFilter::new().filter_elem_hinted(el, none)
-  HandlerFilter::new().filter_elem_hinted(el, none)
-  CssFilter::new().filter_elem_hinted(el, none)
-  Baseline::new().filter_elem_hinted(el, none)
+  @filter.UrlFilter::new().filter_elem_hinted(el, none)
+  @filter.HandlerFilter::new().filter_elem_hinted(el, none)
+  @filter.CssFilter::new().filter_elem_hinted(el, none)
+  @filter.Baseline::new().filter_elem_hinted(el, none)
   assert_eq(names_of(el), ["class", "href", "onclick", "style"])
 }
 
@@ -75,15 +75,15 @@ test "each rule reads its own bit and no other" {
   // `url` set alone: the URL goes, the handler and the CSS stay.
   let el = every_sink()
   let url_only = { ..@sinks.SinkHints::empty(), url: true, }
-  UrlFilter::new().filter_elem_hinted(el, url_only)
-  HandlerFilter::new().filter_elem_hinted(el, url_only)
-  CssFilter::new().filter_elem_hinted(el, url_only)
+  @filter.UrlFilter::new().filter_elem_hinted(el, url_only)
+  @filter.HandlerFilter::new().filter_elem_hinted(el, url_only)
+  @filter.CssFilter::new().filter_elem_hinted(el, url_only)
   assert_eq(names_of(el), ["class", "onclick", "style"])
 
   // `handler` set alone, through `Baseline`, which reads both its halves'
   // bits separately rather than one bit for the pair.
   let el2 = every_sink()
-  Baseline::new().filter_elem_hinted(el2, {
+  @filter.Baseline::new().filter_elem_hinted(el2, {
     ..@sinks.SinkHints::empty(),
     handler: true,
   })
@@ -92,7 +92,10 @@ test "each rule reads its own bit and no other" {
 
 ///|
 test "a Chain passes the hints through to every member" {
-  let chain = Chain::new([CssFilter::new(), Baseline::new()])
+  let chain = @filter.Chain::new([
+    @filter.CssFilter::new(),
+    @filter.Baseline::new(),
+  ])
   let all = every_sink()
   chain.filter_elem_hinted(all, @sinks.SinkHints::all())
   assert_eq(names_of(all), ["class"])
@@ -107,7 +110,7 @@ test "a filter that ignores the hints still sees every element" {
   // must not be skippable: nothing here can describe what it looks for, so a
   // clear bit says nothing about it.
   let counter = { seen: 0, }
-  let f : &VdomFilter = counter
+  let f : &@filter.VdomFilter = counter
   f.filter_elem_hinted(every_sink(), @sinks.SinkHints::empty())
   f.filter_elem_hinted(every_sink(), @sinks.SinkHints::all())
   assert_eq(counter.seen, 2)
@@ -115,7 +118,7 @@ test "a filter that ignores the hints still sees every element" {
 
 ///|
 priv struct CountingFilter {
-  mut seen : Int
+  mut seen : Int32
 }
 
 ///|

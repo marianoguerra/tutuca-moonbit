@@ -112,7 +112,7 @@ test "method names in the payload expression are collected" {
 // parse_fragment_svg
 
 ///|
-fn svg_tag(doc : @html5.Document, id : Int) -> String {
+fn svg_tag(doc : @html5.Document, id : Int32) -> String {
   match doc.get_node(id) {
     Some(ElementNode(el)) => el.tag_name
     Some(TextNode(s)) => "#text:" + s

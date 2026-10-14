@@ -25,6 +25,8 @@ pub suberror GenError {
   BadModule(Array[String])
 }
 pub fn GenError::message(Self) -> String
+pub fn GenError::output(Self, &Logger) -> Unit
+pub fn GenError::to_string(Self) -> String
 pub impl Show for GenError
 
 // Types and methods
@@ -33,6 +35,9 @@ pub(all) struct Checked {
   components : Array[String]
   issues : Array[Issue]
 } derive(Eq, @debug.Debug)
+pub fn Checked::equal(Self, Self) -> Bool
+pub fn Checked::not_equal(Self, Self) -> Bool
+pub fn Checked::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Compiled {
   component : String
@@ -52,6 +57,9 @@ pub(all) struct Issue {
   line : Int
   span : @core.Span
 } derive(Eq, @debug.Debug)
+pub fn Issue::equal(Self, Self) -> Bool
+pub fn Issue::not_equal(Self, Self) -> Bool
+pub fn Issue::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

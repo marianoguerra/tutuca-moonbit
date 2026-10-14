@@ -217,8 +217,8 @@ fn binds_var(d : @tscript.Decl) -> String? {
 }
 
 ///|
-fn params_of(d : @tscript.Decl) -> Map[String, Int] {
-  let out : Map[String, Int] = Map([])
+fn params_of(d : @tscript.Decl) -> Map[String, Int32] {
+  let out : Map[String, Int32] = Map([])
   for i, p in d.params {
     out[p.name] = i
   }

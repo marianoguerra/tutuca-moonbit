@@ -408,3 +408,6 @@ pub fn DefError::message(self : DefError) -> String {
 pub impl Show for DefError with fn output(self, logger) {
   logger.write_string(self.message())
 }
+
+///|
+pub extend DefError with Show::{to_string, output}

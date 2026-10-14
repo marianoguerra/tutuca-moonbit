@@ -18,7 +18,7 @@ fn collected_classes(h : @harness.MemHarness) -> Set[String] {
 
 ///|
 test "counter example exposes its margaui classes to the collector" {
-  let h = @harness.mount(counter_module(), "Counter")
+  let h = @harness.mount(@examples.counter_module(), "Counter")
   let classes = collected_classes(h)
   for
     c in [
@@ -31,13 +31,13 @@ test "counter example exposes its margaui classes to the collector" {
 
 ///|
 test "macro-expanded and @if.class classes are collected (todo_macros, conditionals)" {
-  let h = @harness.mount_example(todo_macros_module(), "Empty List")
+  let h = @harness.mount_example(@examples.todo_macros_module(), "Empty List")
   let classes = collected_classes(h)
   // btn-rm / btn-action macros expand to margaui buttons
   for c in ["btn", "btn-soft", "btn-error", "btn-circle", "btn-success"] {
     assert_true(classes.contains(c), msg="missing class: \{c}")
   }
-  let h2 = @harness.mount(tabbed_ui_module(), "TabbedUI")
+  let h2 = @harness.mount(@examples.tabbed_ui_module(), "TabbedUI")
   let classes2 = collected_classes(h2)
   // @if.class branches: 'tab tab-active' / 'tab'
   assert_true(classes2.contains("tab"))

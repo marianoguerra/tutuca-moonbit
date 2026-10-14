@@ -148,7 +148,7 @@ fn print_body_decl(
   d : @tscript.Decl,
   head : String,
   out : StringBuilder,
-  binds? : Bool = false,
+  binds~ : Bool = false,
 ) -> Unit raise NoSpelling {
   let opts = []
   match d.requires_ {
@@ -295,7 +295,7 @@ fn print_stmts(
   stmts : Array[@tscript.Stmt],
   indent : String,
   out : StringBuilder,
-  binds? : Bool = false,
+  binds~ : Bool = false,
 ) -> Unit raise NoSpelling {
   let mut i = 0
   while i < stmts.length() {
@@ -422,7 +422,7 @@ fn print_stmt(
   s : @tscript.Stmt,
   indent : String,
   out : StringBuilder,
-  binds? : Bool = false,
+  binds~ : Bool = false,
 ) -> Unit raise NoSpelling {
   match s {
     SAssign(place~, op~, value~, ..) => {

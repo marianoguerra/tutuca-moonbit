@@ -1,6 +1,6 @@
 ///|
 test "traffic-light: the button cycles red -> orange -> green -> red" {
-  let h = @harness.mount(traffic_light_module(), "TrafficLight")
+  let h = @harness.mount(@examples.traffic_light_module(), "TrafficLight")
   inspect(h.text("code"), content="red")
   // only the matching @show="equals? $light '…'" span survives
   inspect(h.text(".advice"), content="You must STOP")
@@ -15,7 +15,7 @@ test "traffic-light: the button cycles red -> orange -> green -> red" {
 
 ///|
 test "tabbed-ui: one string field drives the active tab and the visible panel" {
-  let h = @harness.mount(tabbed_ui_module(), "TabbedUI")
+  let h = @harness.mount(@examples.tabbed_ui_module(), "TabbedUI")
   debug_inspect(
     h.attr("#t-overview", "class"),
     content=(
@@ -49,8 +49,8 @@ test "tabbed-ui: one string field drives the active tab and the visible panel" {
 
 ///|
 test "list-and-filter: @when narrows the list, keeping ORIGINAL keys" {
-  let h = @harness.mount(list_and_filter_module(), "ListAndFilter", args={
-    "items": List(items()),
+  let h = @harness.mount(@examples.list_and_filter_module(), "ListAndFilter", args={
+    "items": List(@examples.items()),
   })
   inspect(h.find_all("li").length(), content="14")
   h.type_into("input", "those")
@@ -73,8 +73,8 @@ test "list-and-filter: @when narrows the list, keeping ORIGINAL keys" {
 
 ///|
 test "list-and-filter: the filter is case-insensitive, and Escape resets it" {
-  let h = @harness.mount(list_and_filter_module(), "ListAndFilter", args={
-    "items": List(items()),
+  let h = @harness.mount(@examples.list_and_filter_module(), "ListAndFilter", args={
+    "items": List(@examples.items()),
   })
   h.type_into("input", "EMPEROR")
   inspect(h.find_all("li").length(), content="1")

@@ -43,8 +43,7 @@ test "the generated counter module" {
       #|//   tutuca gen counter.tutu --name Counter --out <dir>
       #|//
       #|// The package this file lives in must import:
-      #|//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component",
-      #|//   "moonbitlang/core/debug"
+      #|//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
       #|
       #|///|
       #|/// The file-level style — pass as `common_style~`.
@@ -130,6 +129,7 @@ test "the generated counter module" {
       #|}
       #|
       #|
+
     ),
   )
 }
@@ -338,6 +338,12 @@ test "a view with a $method, several views and styles" {
       #|pub(all) enum TodoListCompute {
       #|  DoneLabel
       #|} derive(Eq, @debug.Debug)
+      #|
+      #|///|
+      #|pub extend TodoListCompute with Eq::{not_equal, equal}
+      #|
+      #|///|
+      #|pub extend TodoListCompute with @debug.Debug::{to_repr}
       #|
       #|///|
       #|pub fn TodoListCompute::name(self : TodoListCompute) -> String {

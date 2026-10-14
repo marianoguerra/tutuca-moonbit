@@ -41,7 +41,7 @@ fn AttrParser::new(px : ParseContext) -> AttrParser {
 fn parse_attributes(
   attrs : Array[(String, String)],
   px : ParseContext,
-  parse_all? : Bool = false,
+  parse_all~ : Bool = false,
 ) -> AttrParseResult {
   AttrParser::new(px).parse(attrs, parse_all~)
 }
@@ -50,7 +50,7 @@ fn parse_attributes(
 fn AttrParser::parse(
   self : AttrParser,
   attrs : Array[(String, String)],
-  parse_all? : Bool = false,
+  parse_all~ : Bool = false,
 ) -> AttrParseResult {
   for pair in attrs {
     let (name, value) = pair
@@ -134,7 +134,7 @@ fn AttrParser::parse_attr(
   self : AttrParser,
   name : String,
   value : String,
-  parse_all? : Bool = false,
+  parse_all~ : Bool = false,
 ) -> Unit {
   let val = if parse_all {
     self.px.pval(value, @tscript.parse_macro_attr)

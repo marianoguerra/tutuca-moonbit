@@ -37,6 +37,12 @@ pub(all) enum ConfigTy {
 } derive(Eq, Debug)
 
 ///|
+pub extend ConfigTy with Eq::{not_equal, equal}
+
+///|
+pub extend ConfigTy with Debug::{to_repr}
+
+///|
 pub fn ConfigTy::to_string(self : ConfigTy) -> String {
   match self {
     TyOrigin => "origin"
@@ -71,6 +77,12 @@ pub(all) struct ConfigBinding {
   ty : ConfigTy
   value : String
 } derive(Eq, Debug)
+
+///|
+pub extend ConfigBinding with Eq::{not_equal, equal}
+
+///|
+pub extend ConfigBinding with Debug::{to_repr}
 
 ///|
 /// An origin the host binds: normalized to `scheme://authority/` and checked

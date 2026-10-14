@@ -5,7 +5,7 @@
 // its wasm twin. Build/validate: moon check --target wasm-gc vdom/wasm
 import {
   "marianoguerra/tutuca/vdom",
-  "mizchi/js/core",
+  "mizchi/js_core" @core,
 }
 
 supported_targets = "wasm-gc"

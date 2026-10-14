@@ -23,7 +23,7 @@ pub fn MountError::message(self : MountError) -> String {
 fn run_step(
   h : @harness.Harness[@memdom.MemNode],
   scene : @scenedef.Scene,
-  at : Int,
+  at : Int32,
   step : @scenedef.Step,
   take_log : () -> Array[String],
 ) -> (StepResult, Array[String], Array[String]) {
@@ -176,7 +176,7 @@ fn[N : @vdom.DomWalk] perform(
 fn judge(
   h : @harness.Harness[@memdom.MemNode],
   scene : @scenedef.Scene,
-  at : Int,
+  at : Int32,
   e : @scenedef.Expect,
   refused : Array[String],
 ) -> StepResult {

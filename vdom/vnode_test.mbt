@@ -185,7 +185,7 @@ test "h: class and for pass through verbatim" {
 test "h: data-* and aria-* kept without coercion" {
   guard! @vdom.h("div", attrs={
       "data-foo": Str("bar"),
-      "data-user-id": AttrValue::int(123),
+      "data-user-id": @vdom.AttrValue::int(123),
       "aria-hidden": Bool(true),
       "data-active": Bool(false),
     })
@@ -207,7 +207,7 @@ test "h: key and namespace extracted from attrs map" {
     is Node(el2)
   assert_true(el2.key is Some("labeled"))
   // numeric keys are coerced like String(key)
-  guard! @vdom.h("div", attrs={ "key": AttrValue::int(7) }) is Node(el3)
+  guard! @vdom.h("div", attrs={ "key": @vdom.AttrValue::int(7) }) is Node(el3)
   assert_true(el3.key is Some("7"))
   // namespace attr entry
   guard! @vdom.h("circle", attrs={

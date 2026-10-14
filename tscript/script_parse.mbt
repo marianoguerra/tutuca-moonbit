@@ -22,7 +22,7 @@
 /// The parser's cursor over the token stream.
 priv struct P {
   toks : Array[ScriptToken]
-  mut at : Int
+  mut at : Int32
   /// Which declaration's body is being parsed.
   ///
   /// One question turns on it, and it is the one this family exists to settle:
@@ -48,7 +48,7 @@ fn P::gap(self : P) -> Bool {
 }
 
 ///|
-fn P::peek_at(self : P, n : Int) -> STok {
+fn P::peek_at(self : P, n : Int32) -> STok {
   let i = self.at + n
   if i < self.toks.length() {
     self.toks[i].tok
@@ -153,7 +153,7 @@ fn P::skip_seps(self : P) -> Unit {
 /// `delete` and `remove` are one method under two names, and so are `deleteAt`
 /// and `removeAt` — a language that took only one of each would make the choice
 /// of spelling a thing to look up.
-pub fn collection_method(name : String) -> Int? {
+pub fn collection_method(name : String) -> Int32? {
   match name {
     "clear" => Some(0)
     "push" | "deleteAt" | "removeAt" | "add" | "remove" | "delete" | "toggle" =>
@@ -206,7 +206,7 @@ pub fn effect_names() -> Array[String] {
 
 ///|
 /// The effects, and the fewest arguments each takes.
-pub fn effect_min_arity(name : String) -> Int? {
+pub fn effect_min_arity(name : String) -> Int32? {
   match name {
     "drop" => Some(0)
     // Bare in a `receive` body — the question is the message that arrived —

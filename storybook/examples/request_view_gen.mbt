@@ -194,6 +194,12 @@ pub(all) enum RequestExampleWhen {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend RequestExampleWhen with Eq::{not_equal, equal}
+
+///|
+pub extend RequestExampleWhen with @debug.Debug::{to_repr}
+
+///|
 pub fn RequestExampleWhen::name(self : RequestExampleWhen) -> String {
   match self {
     FilterItem => "filter_item"

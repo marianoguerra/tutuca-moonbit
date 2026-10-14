@@ -157,6 +157,12 @@ pub(all) enum FilePickerCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend FilePickerCompute with Eq::{not_equal, equal}
+
+///|
+pub extend FilePickerCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn FilePickerCompute::name(self : FilePickerCompute) -> String {
   match self {
     LastModifiedLabel => "last_modified_label"

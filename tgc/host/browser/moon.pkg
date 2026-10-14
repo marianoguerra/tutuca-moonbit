@@ -19,8 +19,7 @@
 import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/tgc/host",
-  "mizchi/js/core",
-  "moonbitlang/core/json",
+  "mizchi/js_core" @core,
   "moonbitlang/core/string",
 }
 

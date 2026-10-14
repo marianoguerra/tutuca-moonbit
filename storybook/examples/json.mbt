@@ -7,7 +7,7 @@ priv struct JsonReg {
 fn JsonReg::make_(
   self : JsonReg,
   name : String,
-  args? : Map[String, @tutuca.Value] = Map([]),
+  args~ : Map[String, @tutuca.Value] = Map([]),
 ) -> @tutuca.Value {
   match self.comps.get(name) {
     Some(c) => c.make(args)
@@ -88,8 +88,8 @@ fn json_selector_comp(reg : JsonReg) -> @component.Component {
 /// Move the item currently at `source` to sit just before `target`.
 fn move_before(
   list : Array[@tutuca.Value],
-  source : Int,
-  target : Int,
+  source : Int32,
+  target : Int32,
 ) -> Array[@tutuca.Value] {
   if source < 0 || target < 0 || source >= list.length() || source == target {
     return list

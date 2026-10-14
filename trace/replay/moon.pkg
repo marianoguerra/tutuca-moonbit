@@ -20,7 +20,6 @@ import {
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/memdom",
   "marianoguerra/tutuca/testing/harness",
-  "moonbitlang/core/debug",
 }
 
 // Test-only: the fixtures build their components the way a generated view
@@ -28,5 +27,4 @@ import {
 // this package SHIPS does.
 import {
   "marianoguerra/tutuca/anode",
-  "moonbitlang/core/debug",
 } for "test"

@@ -2,7 +2,7 @@
 
 ///|
 /// Try to parse GFM table
-fn BlockParser::try_parse_table(self : BlockParser, start : Int) -> Block? {
+fn BlockParser::try_parse_table(self : BlockParser, start : Int32) -> Block? {
   let saved = self.scanner.pos
   let leading = self.read_leading_trivia()
 
@@ -133,7 +133,7 @@ fn parse_table_alignments(line : String) -> Array[TableAlign] {
 /// Parse a table row into cells
 fn parse_table_row(
   line : String,
-  expected_cols : Int,
+  expected_cols : Int32,
   strict : Bool,
   wikilinks : Bool,
   known_bmp~ : Bool,

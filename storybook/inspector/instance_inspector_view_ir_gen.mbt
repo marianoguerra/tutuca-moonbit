@@ -238,11 +238,11 @@ fn instance_fields_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn instance_fields_component(
-  name? : String = "InstanceFields",
-  views? : Map[String, @anode.View] = instance_fields_views(),
-  initial? : InstanceFieldsState = InstanceFieldsState::zero(),
-  common_style? : String = instance_fields_common_style,
-  global_style? : String = instance_fields_global_style,
+  name~ : String = "InstanceFields",
+  views~ : Map[String, @anode.View] = instance_fields_views(),
+  initial~ : InstanceFieldsState = InstanceFieldsState::zero(),
+  common_style~ : String = instance_fields_common_style,
+  global_style~ : String = instance_fields_global_style,
   update? : (InstanceFieldsState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     InstanceFieldsState,
   ],
@@ -256,10 +256,10 @@ pub fn instance_fields_component(
     @tutuca.Value,
     @component.LoopCtx,
   ) -> @component.LoopWith)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -340,18 +340,18 @@ pub fn instance_inspector_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn instance_inspector_component(
-  name? : String = "InstanceInspector",
-  views? : Map[String, @anode.View] = instance_inspector_views(),
-  initial? : InstanceInspectorState = InstanceInspectorState::zero(),
-  common_style? : String = instance_inspector_common_style,
-  global_style? : String = instance_inspector_global_style,
+  name~ : String = "InstanceInspector",
+  views~ : Map[String, @anode.View] = instance_inspector_views(),
+  initial~ : InstanceInspectorState = InstanceInspectorState::zero(),
+  common_style~ : String = instance_inspector_common_style,
+  global_style~ : String = instance_inspector_global_style,
   update? : (InstanceInspectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     InstanceInspectorState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -556,18 +556,18 @@ fn instance_explorer_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn instance_explorer_component(
-  name? : String = "InstanceExplorer",
-  views? : Map[String, @anode.View] = instance_explorer_views(),
-  initial? : InstanceExplorerState = InstanceExplorerState::zero(),
-  common_style? : String = instance_explorer_common_style,
-  global_style? : String = instance_explorer_global_style,
+  name~ : String = "InstanceExplorer",
+  views~ : Map[String, @anode.View] = instance_explorer_views(),
+  initial~ : InstanceExplorerState = InstanceExplorerState::zero(),
+  common_style~ : String = instance_explorer_common_style,
+  global_style~ : String = instance_explorer_global_style,
   update? : (InstanceExplorerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     InstanceExplorerState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

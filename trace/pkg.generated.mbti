@@ -43,8 +43,11 @@ pub(all) struct Event {
   input : Bool
   after : Json?
 } derive(Eq, @debug.Debug)
+pub fn Event::equal(Self, Self) -> Bool
 pub fn Event::from_json(Json, line~ : Int) -> Self raise TraceError
+pub fn Event::not_equal(Self, Self) -> Bool
 pub fn Event::to_json(Self) -> Json
+pub fn Event::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Gap {
   UnansweredIntent(name~ : String, seq~ : Int)
@@ -53,7 +56,10 @@ pub(all) enum Gap {
   NoSuchPlace(place~ : String)
   NotAComponent(place~ : String)
 } derive(Eq, @debug.Debug)
+pub fn Gap::equal(Self, Self) -> Bool
 pub fn Gap::message(Self) -> String
+pub fn Gap::not_equal(Self, Self) -> Bool
+pub fn Gap::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Op {
   Send(name~ : String, args~ : Array[@core.Value])
@@ -62,6 +68,9 @@ pub(all) enum Op {
   Answer(nth~ : Int, answer~ : @core.IntentAnswer)
   Refused(code~ : String, asked~ : String, rule~ : String, sentence~ : String)
 } derive(Eq, @debug.Debug)
+pub fn Op::equal(Self, Self) -> Bool
+pub fn Op::not_equal(Self, Self) -> Bool
+pub fn Op::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Origin {
   module_ : String
@@ -71,16 +80,22 @@ pub(all) struct Origin {
   fingerprint : String
 } derive(Eq, @debug.Debug)
 pub fn Origin::empty() -> Self
+pub fn Origin::equal(Self, Self) -> Bool
+pub fn Origin::not_equal(Self, Self) -> Bool
+pub fn Origin::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Place(Array[@core.StepKey]) derive(Eq, @debug.Debug)
 pub fn Place::depth(Self) -> Int
+pub fn Place::equal(Self, Self) -> Bool
 pub fn Place::from_json(Json) -> Self?
 pub fn Place::label(Self) -> String
+pub fn Place::not_equal(Self, Self) -> Bool
 pub fn Place::of_path(@core.Path) -> Self
 pub fn Place::starts_with(Self, Self) -> Bool
 pub fn Place::strip_prefix(Self, Self) -> Self?
 pub fn Place::to_json(Self) -> Json
 pub fn Place::to_path(Self) -> @core.Path
+pub fn Place::to_repr(Self) -> @debug.Repr
 pub fn Place::to_steps(Self) -> Array[@core.Step]
 pub fn Place::under(Self, Self) -> Self
 
@@ -88,6 +103,11 @@ pub struct RingRecorder {
   // private fields
 }
 pub fn RingRecorder::new(turns~ : Int, snapshot~ : () -> Json, origin? : Origin, keep_after? : Bool) -> Self
+pub fn RingRecorder::on_answer(Self, @transactor.Answered) -> Unit
+pub fn RingRecorder::on_dispatch(Self, @transactor.Dispatched) -> Unit
+pub fn RingRecorder::on_observed(Self, @transactor.ObserveRecord) -> Unit
+pub fn RingRecorder::on_offered(Self, @transactor.Offered) -> Unit
+pub fn RingRecorder::recording(Self) -> Bool
 pub fn RingRecorder::take(Self) -> Trace
 pub impl @transactor.Recorder for RingRecorder
 
@@ -95,6 +115,11 @@ pub struct ScopedRecorder {
   // private fields
 }
 pub fn ScopedRecorder::new(at~ : Place, root~ : Json, origin? : Origin, keep_after? : Bool) -> Self
+pub fn ScopedRecorder::on_answer(Self, @transactor.Answered) -> Unit
+pub fn ScopedRecorder::on_dispatch(Self, @transactor.Dispatched) -> Unit
+pub fn ScopedRecorder::on_observed(Self, @transactor.ObserveRecord) -> Unit
+pub fn ScopedRecorder::on_offered(Self, @transactor.Offered) -> Unit
+pub fn ScopedRecorder::recording(Self) -> Bool
 pub fn ScopedRecorder::take(Self) -> Trace
 pub impl @transactor.Recorder for ScopedRecorder
 
@@ -107,15 +132,18 @@ pub(all) struct Trace {
   events : Array[Event]
 } derive(Eq, @debug.Debug)
 pub fn Trace::compact(Self) -> Self
+pub fn Trace::equal(Self, Self) -> Bool
 pub fn Trace::from_json(Json) -> Self raise TraceError
 pub fn Trace::input_count(Self) -> Int
 pub fn Trace::new(root~ : Json, origin? : Origin) -> Self
+pub fn Trace::not_equal(Self, Self) -> Bool
 pub fn Trace::places(Self) -> Array[Place]
 pub fn Trace::prefix(Self, Int) -> Self
 pub fn Trace::rebase(Self, at~ : Int, root~ : Json) -> Self
 pub fn Trace::relocate(Self, Place) -> (Self, Array[Gap])
 pub fn Trace::to_json(Self) -> Json
 pub fn Trace::to_jsonl(Self) -> String
+pub fn Trace::to_repr(Self) -> @debug.Repr
 pub fn Trace::turn_boundary(Self, Int) -> Int
 pub fn Trace::turns(Self) -> Array[Array[Event]]
 
@@ -123,6 +151,11 @@ pub struct TraceRecorder {
   // private fields
 }
 pub fn TraceRecorder::new(root~ : Json, origin? : Origin, sink? : (String) -> Unit, keep_after? : Bool) -> Self
+pub fn TraceRecorder::on_answer(Self, @transactor.Answered) -> Unit
+pub fn TraceRecorder::on_dispatch(Self, @transactor.Dispatched) -> Unit
+pub fn TraceRecorder::on_observed(Self, @transactor.ObserveRecord) -> Unit
+pub fn TraceRecorder::on_offered(Self, @transactor.Offered) -> Unit
+pub fn TraceRecorder::recording(Self) -> Bool
 pub fn TraceRecorder::stop_watching_refusals(Self) -> Unit
 pub fn TraceRecorder::take(Self) -> Trace
 pub fn TraceRecorder::watch_refusals(Self) -> () -> Unit

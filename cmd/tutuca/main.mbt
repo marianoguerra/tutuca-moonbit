@@ -2,10 +2,10 @@
 // pure @cli package; this file only does argv, stdio, stdin, fs and exit.
 
 ///|
-extern "c" fn process_exit(code : Int) = "exit"
+extern "c" fn process_exit(code : Int32) = "exit"
 
 ///|
-extern "c" fn isatty(fd : Int) -> Int = "isatty"
+extern "c" fn isatty(fd : Int32) -> Int32 = "isatty"
 
 ///|
 async fn emit_and_exit(emit : @cli.Emit) -> Unit noraise {
@@ -679,7 +679,7 @@ async fn read_gen_inputs(
 async fn regenerate_batch(
   paths : Array[String],
   plan : @cli.WatchPlan,
-  report? : async (String) -> Unit noraise = write_out,
+  report~ : async (String) -> Unit noraise = write_out,
 ) -> Bool noraise {
   let inputs = match read_gen_inputs(paths, plan.out, plan.name) {
     Ok(inputs) => inputs

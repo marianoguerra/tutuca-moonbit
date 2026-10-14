@@ -15,7 +15,7 @@
 /// Place every value-bearing node at its own node_id, growing `into` as
 /// needed.
 fn collect_registered(node : ANode, into : Array[ANode?]) -> Unit {
-  fn put(id : Int) {
+  fn put(id : Int32) {
     while into.length() <= id {
       into.push(None)
     }
@@ -94,7 +94,7 @@ pub fn View::from_ir(
   name : String,
   root : ANode,
   handlers : Array[Array[NodeEvent]],
-  style? : String = "",
+  style~ : String = "",
 ) -> View {
   let ctx = ParseContext::from_ir(root, events_of(handlers))
   root.set_data_attr("data-vid", LStr(name))

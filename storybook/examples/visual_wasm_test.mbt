@@ -1,6 +1,6 @@
 ///|
 test "visual-wasm: an empty module renders its two sections" {
-  let h = @harness.mount_example(visual_wasm_module(), "Empty Module")
+  let h = @harness.mount_example(@examples.visual_wasm_module(), "Empty Module")
   debug_inspect(
     h.texts(".sec-name"),
     content=(
@@ -14,7 +14,10 @@ test "visual-wasm: an empty module renders its two sections" {
 
 ///|
 test "visual-wasm: the instruction picker lists every instruction, sorted" {
-  let h = @harness.mount_example(visual_wasm_module(), "Instruction Picker")
+  let h = @harness.mount_example(
+    @examples.visual_wasm_module(),
+    "Instruction Picker",
+  )
   // 54 plain + 9 imm + block/loop/if = 66 instructions in the 'all' list
   inspect(h.find_all(".pick").length(), content="66")
   // sorted lexically -> block is first
@@ -23,7 +26,10 @@ test "visual-wasm: the instruction picker lists every instruction, sorted" {
 
 ///|
 test "visual-wasm: the filter narrows the picker via @loop-with + @when" {
-  let h = @harness.mount_example(visual_wasm_module(), "Instruction Picker")
+  let h = @harness.mount_example(
+    @examples.visual_wasm_module(),
+    "Instruction Picker",
+  )
   h.type_into(".filter", "i32")
   inspect(h.find_all(".pick").length(), content="16") // the i32.* instructions
   h.type_into(".filter", "i32.div")
@@ -37,7 +43,10 @@ test "visual-wasm: the filter narrows the picker via @loop-with + @when" {
 
 ///|
 test "visual-wasm: the category radios swap the instruction set" {
-  let h = @harness.mount_example(visual_wasm_module(), "Instruction Picker")
+  let h = @harness.mount_example(
+    @examples.visual_wasm_module(),
+    "Instruction Picker",
+  )
   h.fire(".r-control", @render.DomEvent::new(name="input"))
   debug_inspect(
     h.texts(".pick"),
@@ -56,7 +65,10 @@ test "visual-wasm: the category radios swap the instruction set" {
 
 ///|
 test "visual-wasm: picking an instruction self-replaces the picker with it" {
-  let h = @harness.mount_example(visual_wasm_module(), "Instruction Picker")
+  let h = @harness.mount_example(
+    @examples.visual_wasm_module(),
+    "Instruction Picker",
+  )
   h.type_into(".filter", "i32.add")
   inspect(h.find_all(".pick").length(), content="1")
   h.click(".pick")
@@ -67,7 +79,10 @@ test "visual-wasm: picking an instruction self-replaces the picker with it" {
 
 ///|
 test "visual-wasm: picking a Block enters it in edit mode (setEditing)" {
-  let h = @harness.mount_example(visual_wasm_module(), "Instruction Picker")
+  let h = @harness.mount_example(
+    @examples.visual_wasm_module(),
+    "Instruction Picker",
+  )
   h.type_into(".filter", "block")
   h.click(".pick")
   // a Block replaced the picker, and it started editing (its blockType editor shows)
@@ -77,7 +92,7 @@ test "visual-wasm: picking a Block enters it in edit mode (setEditing)" {
 
 ///|
 test "visual-wasm: adding a function to the Functions section, then an item" {
-  let h = @harness.mount_example(visual_wasm_module(), "Empty Module")
+  let h = @harness.mount_example(@examples.visual_wasm_module(), "Empty Module")
   // the Functions section's + adds its defaultItem — but Empty Module has none,
   // so seed a Func-bearing section by mounting the picker route instead:
   // add a Memory to the Memory section (its defaultItem is a Memory)
@@ -88,7 +103,10 @@ test "visual-wasm: adding a function to the Functions section, then an item" {
 
 ///|
 test "visual-wasm: BlockType editor lets you change an arg type (self-replace)" {
-  let h = @harness.mount_example(visual_wasm_module(), "Instruction Picker")
+  let h = @harness.mount_example(
+    @examples.visual_wasm_module(),
+    "Instruction Picker",
+  )
   h.type_into(".filter", "block")
   h.click(".pick") // now editing a Block
   // the block type editor has empty arg/return type lists with append buttons

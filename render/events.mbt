@@ -5,7 +5,7 @@
 
 ///|
 priv struct NodeRef {
-  nid : Int?
+  nid : Int32?
   key : @tutuca.PathKey?
   base : @tutuca.Path?
 }
@@ -25,17 +25,17 @@ fn event_bubbles(event_name : String) -> Bool {
 }
 
 ///|
-fn parse_int_attr(s : String) -> Int? {
-  let n : Int = @string.parse_int(s) catch { _ => return None }
+fn parse_int_attr(s : String) -> Int32? {
+  let n : Int32 = @string.parse_int(s) catch { _ => return None }
   Some(n)
 }
 
 ///|
 fn find_handlers(
   comps : &Boundaries,
-  cid : Int,
+  cid : Int32,
   vid : String,
-  event_ids : Array[Int],
+  event_ids : Array[Int32],
   event_name : String,
 ) -> Array[@anode.NodeEvent]? {
   for eid in event_ids {
@@ -67,7 +67,7 @@ fn base_step(val : @tutuca.Expr, key : @tutuca.PathKey?) -> @tutuca.Step? {
 }
 
 ///|
-fn item_part(step : @tutuca.Step?, cid : Int) -> PathPart? {
+fn item_part(step : @tutuca.Step?, cid : Int32) -> PathPart? {
   match step {
     Some(s) => Some(Item(Plain(step=s, origin=Some(cid))))
     None => None
@@ -77,10 +77,10 @@ fn item_part(step : @tutuca.Step?, cid : Int) -> PathPart? {
 ///|
 fn ref_part(
   comps : &Boundaries,
-  cid : Int,
+  cid : Int32,
   vid : String,
   refs : Array[NodeRef],
-  i : Int,
+  i : Int32,
 ) -> PathPart? {
   match refs[i].base {
     Some(path) => return Some(Frame(path))
@@ -134,7 +134,7 @@ fn ref_part(
 ///|
 fn resolve_path_part(
   comps : &Boundaries,
-  cid : Int,
+  cid : Int32,
   vid : String,
   refs : Array[NodeRef],
 ) -> PathPart? {
@@ -166,17 +166,17 @@ pub fn[N : @vdom.DomWalk] from_node_and_event_name(
   event_name : String,
   root_node : N,
   comps : &Boundaries,
-  max_depth? : Int = 1000000,
-  stop_on_no_event? : Bool = true,
+  max_depth~ : Int32 = 1000000,
+  stop_on_no_event~ : Bool = true,
 ) -> EventDispatch? {
   let parts : Array[PathPart] = []
   let bubbles = event_bubbles(event_name)
-  let event_ids : Array[Int] = []
+  let event_ids : Array[Int32] = []
   let refs : Array[NodeRef] = []
   let mut handlers : Array[@anode.NodeEvent]? = None
   let mut is_leaf_component = true
 
-  fn cross_component(cid : Int, vid : String) -> Bool {
+  fn cross_component(cid : Int32, vid : String) -> Bool {
     let mut push_part = true
     if handlers is None && (is_leaf_component || bubbles) {
       match find_handlers(comps, cid, vid, event_ids, event_name) {

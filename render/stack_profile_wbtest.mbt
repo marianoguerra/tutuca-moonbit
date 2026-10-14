@@ -12,7 +12,7 @@ test "the root frame's event-path profile governs nested scopes" {
   }
 
   fn read_at(
-    depth : Int,
+    depth : Int32,
     profile : @eventpath.EventPathProfile,
   ) -> @tutuca.Value {
     let e = DomEvent::new(name="click", read_path=EventPathReader(probe))

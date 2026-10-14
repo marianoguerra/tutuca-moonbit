@@ -78,7 +78,7 @@ test "property: equal trees morph without touching the DOM" {
 ///|
 test "property: keyed reorder preserves DOM node identity" {
   // n keyed children k0..k(n-1), target order = seeded Fisher-Yates shuffle
-  let gen = @gen.tuple(@gen.int_range(2, 9), @gen.int_range(0, 1073741823))
+  let gen = @gen.int_range(2, 9).zip(@gen.int_range(0, 1073741823))
   @qc.quick_check(
     @qc.forall(gen, p => {
       let (n, seed) = p
@@ -154,7 +154,7 @@ fn apply_props_diff(
 ///|
 test "property: diff_props roundtrips" {
   @qc.quick_check(
-    @qc.forall(@gen.tuple(gen_attrs(), gen_attrs()), p => {
+    @qc.forall(gen_attrs().zip(gen_attrs()), p => {
       let (a, b) = p
       apply_props_diff(a, @vdom.diff_props(a, b)) == b
     }),

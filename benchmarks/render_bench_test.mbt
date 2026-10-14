@@ -90,7 +90,7 @@ test "bench render json 8x4" (it : @bench.T) {
 /// Rendered-HTML length at each size. Every workload has to actually render
 /// something, and keep rendering the same thing: a mount that silently produced
 /// an empty DOM would make a fast but meaningless benchmark.
-fn at_sizes(f : (Int) -> Int) -> String {
+fn at_sizes(f : (Int32) -> Int32) -> String {
   @benchmarks.sizes.map(n => f(n).to_string()).join(" ")
 }
 

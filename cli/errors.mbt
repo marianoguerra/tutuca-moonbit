@@ -63,7 +63,7 @@ pub fn err(
   suggestion? : @lint.Suggestion,
   hint? : String,
   where_? : String,
-  exit_code? : Int = 1,
+  exit_code~ : Int32 = 1,
 ) -> ErrShape {
   { code, message, suggestion, hint, where_, exit_code, }
 }
@@ -103,18 +103,17 @@ fn suggestion_to_message(suggestion : @lint.Suggestion?) -> String? {
 fn suggestion_to_json(suggestion : @lint.Suggestion) -> Json {
   match suggestion {
     ReplaceName(from~, to~) =>
-      { "kind": "replace-name", "from": from.to_json(), "to": to.to_json() }
+      { "kind": "replace-name", "from": Json(from), "to": Json(to) }
     AddPrefix(from~, to~) =>
-      { "kind": "add-prefix", "from": from.to_json(), "to": to.to_json() }
+      { "kind": "add-prefix", "from": Json(from), "to": Json(to) }
     DropPrefix(from~, to~) =>
-      { "kind": "drop-prefix", "from": from.to_json(), "to": to.to_json() }
-    Remove(what~) => { "kind": "remove", "what": what.to_json() }
+      { "kind": "drop-prefix", "from": Json(from), "to": Json(to) }
+    Remove(what~) => { "kind": "remove", "what": Json(what) }
     Rephrase(from~, text~) =>
-      { "kind": "rephrase", "from": from.to_json(), "text": text.to_json() }
+      { "kind": "rephrase", "from": Json(from), "text": Json(text) }
     Rewrite(from~, to~) =>
-      { "kind": "rewrite", "from": from.to_json(), "to": to.to_json() }
-    Wrap(from~, to~) =>
-      { "kind": "wrap", "from": from.to_json(), "to": to.to_json() }
+      { "kind": "rewrite", "from": Json(from), "to": Json(to) }
+    Wrap(from~, to~) => { "kind": "wrap", "from": Json(from), "to": Json(to) }
   }
 }
 
@@ -122,19 +121,19 @@ fn suggestion_to_json(suggestion : @lint.Suggestion) -> Json {
 fn render_error(opts : GlobalOpts, shape : ErrShape) -> String {
   if opts.json {
     let error : Map[String, Json] = {
-      "code": shape.code.to_json(),
-      "message": shape.message.to_json(),
+      "code": Json(shape.code),
+      "message": Json(shape.message),
     }
     match shape.suggestion {
       Some(s) => error["suggestion"] = suggestion_to_json(s)
       None => ()
     }
     match shape.hint {
-      Some(h) => error["hint"] = h.to_json()
+      Some(h) => error["hint"] = Json(h)
       None => ()
     }
     match shape.where_ {
-      Some(w) => error["where"] = w.to_json()
+      Some(w) => error["where"] = Json(w)
       None => ()
     }
     let envelope : Json = Json::object({ "error": Json::object(error) })

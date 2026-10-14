@@ -17,8 +17,8 @@
 ///|
 priv struct IrState {
   label : String
-  count : Int
-  history : Array[Int]
+  count : Int32
+  history : Array[Int32]
 }
 
 ///|
@@ -151,7 +151,7 @@ test "handlers dispatch through a compiled tree" {
 
 ///|
 /// The node_id a registered node carries, for the index check above.
-fn node_id_of(n : @anode.ANode) -> Int? {
+fn node_id_of(n : @anode.ANode) -> Int32? {
   match n {
     RenderText(d) => d.node_id
     Render(d) => Some(d.node_id)
@@ -253,7 +253,7 @@ impl @component.Fields for IrState with fn decode(f) {
   guard f.get("count") is Some(Num(n_count)) else { return None }
   let v_count = n_count.to_int()
   guard f.get("history") is Some(List(l_history)) else { return None }
-  let v_history : Array[Int] = []
+  let v_history : Array[Int32] = []
   for x in l_history {
     guard x is Num(n) else { return None }
     v_history.push(n.to_int())

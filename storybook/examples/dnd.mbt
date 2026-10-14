@@ -1,8 +1,8 @@
 ///|
 fn[T] move_index_to_index(
   list : Array[T],
-  source : Int,
-  target : Int,
+  source : Int32,
+  target : Int32,
 ) -> Array[T] {
   if source < 0 || target < 0 || source == target || source >= list.length() {
     return list

@@ -160,11 +160,11 @@ fn document_workspace_inline_when() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn document_workspace_component(
-  name? : String = "DocumentWorkspace",
-  views? : Map[String, @anode.View] = document_workspace_views(),
-  initial? : DocumentWorkspaceState = DocumentWorkspaceState::zero(),
-  common_style? : String = document_workspace_common_style,
-  global_style? : String = document_workspace_global_style,
+  name~ : String = "DocumentWorkspace",
+  views~ : Map[String, @anode.View] = document_workspace_views(),
+  initial~ : DocumentWorkspaceState = DocumentWorkspaceState::zero(),
+  common_style~ : String = document_workspace_common_style,
+  global_style~ : String = document_workspace_global_style,
   update? : (DocumentWorkspaceState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     DocumentWorkspaceState,
   ],
@@ -173,10 +173,10 @@ pub fn document_workspace_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -558,18 +558,18 @@ fn document_editor_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn document_editor_component(
-  name? : String = "DocumentEditor",
-  views? : Map[String, @anode.View] = document_editor_views(),
-  initial? : DocumentEditorState = DocumentEditorState::zero(),
-  common_style? : String = document_editor_common_style,
-  global_style? : String = document_editor_global_style,
+  name~ : String = "DocumentEditor",
+  views~ : Map[String, @anode.View] = document_editor_views(),
+  initial~ : DocumentEditorState = DocumentEditorState::zero(),
+  common_style~ : String = document_editor_common_style,
+  global_style~ : String = document_editor_global_style,
   update? : (DocumentEditorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     DocumentEditorState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

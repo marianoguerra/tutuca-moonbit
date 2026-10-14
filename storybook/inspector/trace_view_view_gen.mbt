@@ -4,8 +4,7 @@
 //   tutuca gen trace_view.tutu --name TraceView --out <dir>
 //
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component",
-//   "moonbitlang/core/debug"
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 
 ///|
 /// One line of a recording.
@@ -20,9 +19,9 @@
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct TraceRowState {
-  seq : Int
-  turn : Int
-  walk : Int
+  seq : Int32
+  turn : Int32
+  walk : Int32
   has_walk : Bool
   verb : String
   /// The badge's WHOLE class list, colour and all.
@@ -40,7 +39,7 @@ pub(all) struct TraceRowState {
   /// it. Whole for the same reason `verbClass` is: a computed `:class`
   /// replaces the written one.
   row_class : String
-  depth : Int
+  depth : Int32
   /// Set for the row a viewer is parked on, so a step slider has something
   /// to point at.
   current : Bool
@@ -300,7 +299,7 @@ pub(all) struct TraceLogState {
   has_rows : Bool
   inputs_only : Bool
   /// 0 shows every turn.
-  turn : Int
+  turn : Int32
   empty_hint : String
 }
 
@@ -368,7 +367,7 @@ impl @component.Fields for TraceLogState with fn decode(f) {
 /// the schema's declared payload wins, and a view whose call sites
 /// disagree with it is a build error.
 pub(all) enum TraceLogMsg {
-  SetTurn(Int)
+  SetTurn(Int32)
   ShowAllTurns
   /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
@@ -475,9 +474,9 @@ pub(all) struct TraceHeaderState {
   module_ : String
   example : String
   fingerprint : String
-  events : Int
-  inputs : Int
-  turns : Int
+  events : Int32
+  inputs : Int32
+  turns : Int32
   relocated_from : String
   is_relocated : Bool
   compacted : Bool
@@ -618,8 +617,8 @@ pub(all) struct TracePlaceState {
   label : String
   display : String
   component : String
-  events : Int
-  depth : Int
+  events : Int32
+  depth : Int32
   selected : Bool
   row_class : String
   /// Whether cutting here yields something mountable. A list is a correct
@@ -920,8 +919,8 @@ pub(all) struct RecorderBarState {
   all_class : String
   section_class : String
   example_class : String
-  events : Int
-  turns : Int
+  events : Int32
+  turns : Int32
   /// Set once a recording exists and has been stopped — the moment the
   /// trace view is worth switching to.
   has_trace : Bool
@@ -1187,8 +1186,8 @@ pub(all) struct TracePanelState {
   show_replay : Bool
   show_import : Bool
   /// How far through the recording the viewer is parked.
-  at : Int
-  total : Int
+  at : Int32
+  total : Int32
   /// Whatever the last thing the reader asked for had to say for itself: a
   /// file that would not parse, a cut that could not carry something across,
   /// a rerun that diverged. ONE field for all three because they are one
@@ -1352,7 +1351,7 @@ impl @component.Fields for TracePanelState with fn decode(f) {
 /// disagree with it is a build error.
 pub(all) enum TracePanelMsg {
   SetTab(String)
-  SetAt(Int)
+  SetAt(Int32)
   ToggleSelecting
   ExportTrace
   ImportDraft

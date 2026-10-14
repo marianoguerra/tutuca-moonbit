@@ -50,8 +50,8 @@ test "the v2 corpus still holds every case it was written with" {
 /// to know what to emit, so a word gained or lost here is a word a backend
 /// has to learn — which is a decision, not a typo.
 test "the v2 effects use the vocabulary the design gives them" {
-  let seen : Map[String, Int] = Map([])
-  let routes : Map[String, Int] = Map([])
+  let seen : Map[String, Int32] = Map([])
+  let routes : Map[String, Int32] = Map([])
   for c in @conformance.cases() {
     for e in c.effects {
       seen[e.kind] = seen.get(e.kind).unwrap_or(0) + 1
@@ -60,7 +60,7 @@ test "the v2 effects use the vocabulary the design gives them" {
       }
     }
   }
-  fn tally(m : Map[String, Int], order : Array[String]) -> String {
+  fn tally(m : Map[String, Int32], order : Array[String]) -> String {
     let out : Array[String] = []
     for k in order {
       out.push("\{k}=\{m.get(k).unwrap_or(0)}")

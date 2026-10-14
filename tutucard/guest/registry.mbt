@@ -68,7 +68,7 @@ pub fn register(
 pub fn make_instance(
   key : String,
   component : String,
-  args? : Map[String, @tutuca.Value] = Map([]),
+  args~ : Map[String, @tutuca.Value] = Map([]),
 ) -> @tutuca.Value? {
   match module_of(key) {
     Some(loaded) =>

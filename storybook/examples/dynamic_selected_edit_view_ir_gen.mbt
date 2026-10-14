@@ -111,18 +111,18 @@ pub fn dse_root_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn dse_root_component(
-  name? : String = "DseRoot",
-  views? : Map[String, @anode.View] = dse_root_views(),
-  initial? : DseRootState = DseRootState::zero(),
-  common_style? : String = dse_root_common_style,
-  global_style? : String = dse_root_global_style,
+  name~ : String = "DseRoot",
+  views~ : Map[String, @anode.View] = dse_root_views(),
+  initial~ : DseRootState = DseRootState::zero(),
+  common_style~ : String = dse_root_common_style,
+  global_style~ : String = dse_root_global_style,
   update? : (DseRootState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     DseRootState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -202,18 +202,18 @@ pub fn dse_editor_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn dse_editor_component(
-  name? : String = "DseEditor",
-  views? : Map[String, @anode.View] = dse_editor_views(),
-  initial? : DseEditorState = DseEditorState::zero(),
-  common_style? : String = dse_editor_common_style,
-  global_style? : String = dse_editor_global_style,
+  name~ : String = "DseEditor",
+  views~ : Map[String, @anode.View] = dse_editor_views(),
+  initial~ : DseEditorState = DseEditorState::zero(),
+  common_style~ : String = dse_editor_common_style,
+  global_style~ : String = dse_editor_global_style,
   update? : (DseEditorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     DseEditorState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -290,18 +290,18 @@ pub fn dse_entry_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn dse_entry_component(
-  name? : String = "DseEntry",
-  views? : Map[String, @anode.View] = dse_entry_views(),
-  initial? : DseEntryState = DseEntryState::zero(),
-  common_style? : String = dse_entry_common_style,
-  global_style? : String = dse_entry_global_style,
+  name~ : String = "DseEntry",
+  views~ : Map[String, @anode.View] = dse_entry_views(),
+  initial~ : DseEntryState = DseEntryState::zero(),
+  common_style~ : String = dse_entry_common_style,
+  global_style~ : String = dse_entry_global_style,
   update? : (DseEntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     DseEntryState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

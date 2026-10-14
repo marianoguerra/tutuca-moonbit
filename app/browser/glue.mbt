@@ -26,7 +26,7 @@ extern "js" fn event_key_ffi(e : @core.Any) -> String =
   #|(e) => e.key ?? ""
 
 ///|
-extern "js" fn event_key_code_ffi(e : @core.Any) -> Int =
+extern "js" fn event_key_code_ffi(e : @core.Any) -> Int32 =
   #|(e) => e.keyCode ?? 0
 
 ///|
@@ -230,7 +230,7 @@ extern "js" fn leaf_json_ffi(o : @core.Any, name : String) -> String =
   #|}
 
 ///|
-extern "js" fn get_int_ffi(o : @core.Any, name : String) -> Int =
+extern "js" fn get_int_ffi(o : @core.Any, name : String) -> Int32 =
   #|(o, n) => o[n] | 0
 
 ///|

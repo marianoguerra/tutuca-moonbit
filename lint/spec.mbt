@@ -18,6 +18,12 @@ pub(all) enum LintLevel {
 } derive(Debug, Eq)
 
 ///|
+pub extend LintLevel with Debug::{to_repr}
+
+///|
+pub extend LintLevel with Eq::{not_equal, equal}
+
+///|
 /// Lint rule codes: the parse-issue-driven subset of the component linter
 /// plus every HTML_* structural code.
 pub(all) enum LintCode {
@@ -58,6 +64,12 @@ pub(all) enum LintCode {
 } derive(Debug, Eq)
 
 ///|
+pub extend LintCode with Debug::{to_repr}
+
+///|
+pub extend LintCode with Eq::{not_equal, equal}
+
+///|
 /// Machine-applicable fix suggestions (one variant per
 /// `kind`).
 pub(all) enum Suggestion {
@@ -71,12 +83,24 @@ pub(all) enum Suggestion {
 } derive(Debug, Eq)
 
 ///|
+pub extend Suggestion with Debug::{to_repr}
+
+///|
+pub extend Suggestion with Eq::{not_equal, equal}
+
+///|
 /// 1-based line/column plus 0-based char offset into the linted source.
 pub(all) struct Location {
-  line : Int
-  column : Int
-  offset : Int
+  line : Int32
+  column : Int32
+  offset : Int32
 } derive(Debug, Eq)
+
+///|
+pub extend Location with Debug::{to_repr}
+
+///|
+pub extend Location with Eq::{not_equal, equal}
 
 ///|
 /// One lint finding. `info` is freeform key/value detail; `location` is set
@@ -91,10 +115,16 @@ pub(all) struct Finding {
 } derive(Debug, Eq)
 
 ///|
+pub extend Finding with Debug::{to_repr}
+
+///|
+pub extend Finding with Eq::{not_equal, equal}
+
+///|
 /// Damerau-Levenshtein "did you mean": closest candidate within max_distance
 /// edits; case-insensitive match wins outright; exact match returns None.
 declare pub fn closest_name(
   name : String,
   candidates : Array[String],
-  max_distance? : Int = 2,
+  max_distance~ : Int32 = 2,
 ) -> String?

@@ -9,7 +9,7 @@
 /// predecessor. Same rule as everywhere else a member is read.
 pub fn read_logic(
   decl : @tutufile.Decl,
-  rows? : Array[String] = [],
+  rows~ : Array[String] = [],
 ) -> Array[@tscript.Decl] raise @sh.ExError {
   let out = []
   let members = @sh.body_groups(decl)
@@ -240,7 +240,7 @@ fn value_body(
 fn row_binds(
   m : @sh.Member,
   rows : Array[String],
-  always? : Bool = false,
+  always~ : Bool = false,
 ) -> Map[String, String] {
   let out : Map[String, String] = Map([])
   guard always || rows.contains(m.name) else { return out }

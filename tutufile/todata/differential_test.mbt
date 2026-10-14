@@ -19,13 +19,13 @@ fn section_json(src : String) -> String {
   let file = @tutufile.read(src, id)
   let out = match file.section(Fixtures) {
     Some(s) =>
-      fixtures_json(s.decls) catch {
+      @todata.fixtures_json(s.decls) catch {
         ExError(message~, ..) => return "ERR " + message
       }
     None =>
       match file.section(Tests) {
         Some(s) =>
-          scenes_json(s.decls) catch {
+          @todata.scenes_json(s.decls) catch {
             ExError(message~, ..) => return "ERR " + message
           }
         None => return "no section"

@@ -31,6 +31,9 @@ pub impl @transactor.Intents for ScopeIntents with fn intents_for(
 }
 
 ///|
+pub extend ScopeIntents with @transactor.Intents::{intents_for}
+
+///|
 /// Event-modifier gating: each modifier
 /// is a predicate on the event; a failing one makes the handler a no-op.
 /// Only keydown and click define guard modifiers; unknown pairs pass
@@ -213,7 +216,7 @@ pub fn[N : @vdom.DomWalk] dispatch_dom_event(
   event_name : String,
   root_node : N,
   comps : @component.Components,
-  event_paths? : @eventpath.EventPathProfile = Open,
+  event_paths~ : @eventpath.EventPathProfile = Open,
 ) -> Bool {
   dispatch_event(
     tx,

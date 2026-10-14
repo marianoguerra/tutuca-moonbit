@@ -93,6 +93,15 @@ pub impl @transactor.Names for ScopeNames with fn dyn_value(
 }
 
 ///|
+pub extend ScopeNames with @transactor.Names::{
+  dyn_value,
+  dyn_type,
+  build,
+  lex_type,
+  lex_value,
+}
+
+///|
 pub impl @transactor.Names for ScopeNames with fn dyn_type(self, root, at, name) {
   match self.stack_at(root, at) {
     Some(s) => s.lookup_dyn_type(name)

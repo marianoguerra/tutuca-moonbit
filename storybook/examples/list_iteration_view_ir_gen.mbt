@@ -72,18 +72,18 @@ pub fn list_iteration_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn list_iteration_component(
-  name? : String = "ListIteration",
-  views? : Map[String, @anode.View] = list_iteration_views(),
-  initial? : ListIterationState = ListIterationState::zero(),
-  common_style? : String = list_iteration_common_style,
-  global_style? : String = list_iteration_global_style,
+  name~ : String = "ListIteration",
+  views~ : Map[String, @anode.View] = list_iteration_views(),
+  initial~ : ListIterationState = ListIterationState::zero(),
+  common_style~ : String = list_iteration_common_style,
+  global_style~ : String = list_iteration_global_style,
   update? : (ListIterationState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ListIterationState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

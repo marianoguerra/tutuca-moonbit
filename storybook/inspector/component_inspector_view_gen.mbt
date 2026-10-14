@@ -280,6 +280,12 @@ pub(all) enum CompViewCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend CompViewCompute with Eq::{not_equal, equal}
+
+///|
+pub extend CompViewCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn CompViewCompute::name(self : CompViewCompute) -> String {
   match self {
     ArrowText => "arrow_text"
@@ -318,8 +324,8 @@ impl @component.Fields for CompViewState with fn schema() {
 pub(all) struct CompSectionState {
   items : Array[@tutuca.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
   label : String
 }
 
@@ -488,6 +494,12 @@ pub(all) enum CompSectionCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend CompSectionCompute with Eq::{not_equal, equal}
+
+///|
+pub extend CompSectionCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn CompSectionCompute::name(self : CompSectionCompute) -> String {
   match self {
     ArrowText => "arrow_text"
@@ -506,6 +518,12 @@ pub fn CompSectionCompute::name(self : CompSectionCompute) -> String {
 pub(all) enum CompSectionLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend CompSectionLoopWith with Eq::{not_equal, equal}
+
+///|
+pub extend CompSectionLoopWith with @debug.Debug::{to_repr}
 
 ///|
 pub fn CompSectionLoopWith::name(self : CompSectionLoopWith) -> String {
@@ -554,7 +572,7 @@ impl @component.Fields for CompSectionState with fn schema() {
 /// this struct lacks fails generation.
 pub(all) struct ComponentInspectorState {
   comp_name : String
-  comp_id : Int
+  comp_id : Int32
   sections : Array[@tutuca.Value]
 }
 
@@ -671,7 +689,7 @@ pub fn ComponentInspectorIntent::to_dispatch(
 pub fn ComponentInspectorIntent::dispatch(
   self : ComponentInspectorIntent,
   ctx : &@tutuca.Ctx,
-  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
+  opts~ : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
 ) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.intent(name, args, opts)
@@ -690,6 +708,12 @@ pub let component_inspector_global_style : String = ""
 pub(all) enum ComponentInspectorCompute {
   IdText
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend ComponentInspectorCompute with Eq::{not_equal, equal}
+
+///|
+pub extend ComponentInspectorCompute with @debug.Debug::{to_repr}
 
 ///|
 pub fn ComponentInspectorCompute::name(

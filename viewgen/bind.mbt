@@ -216,7 +216,7 @@ fn has_attr(attrs : @anode.Attrs, wanted : String) -> Bool {
 }
 
 ///|
-fn attr_count(attrs : @anode.Attrs, wanted : String) -> Int {
+fn attr_count(attrs : @anode.Attrs, wanted : String) -> Int32 {
   match attrs {
     ConstAttrs(m) => if m.contains(wanted) { 1 } else { 0 }
     DynAttrs(items) => {

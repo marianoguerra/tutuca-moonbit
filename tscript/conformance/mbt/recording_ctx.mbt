@@ -29,6 +29,29 @@ pub impl @tutuca.Ctx for Recorder with fn send_at_path(self, path, name, args) {
 }
 
 ///|
+pub extend Recorder with @tutuca.Ctx::{
+  name,
+  forward,
+  path,
+  make,
+  fail,
+  send_at_path,
+  set_member_at_path,
+  stop_propagation,
+  walk_path,
+  target_path,
+  reply,
+  at,
+  send,
+  intent_at_path,
+  lookup,
+  origin,
+  set_property_at_path,
+  intent,
+  send_reply,
+}
+
+///|
 pub impl @tutuca.Ctx for Recorder with fn stop_propagation(self) {
   self.seen.push("drop")
 }

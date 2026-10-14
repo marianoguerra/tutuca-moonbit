@@ -89,18 +89,18 @@ pub fn table_row_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn table_row_component(
-  name? : String = "TableRow",
-  views? : Map[String, @anode.View] = table_row_views(),
-  initial? : TableRowState = TableRowState::zero(),
-  common_style? : String = table_row_common_style,
-  global_style? : String = table_row_global_style,
+  name~ : String = "TableRow",
+  views~ : Map[String, @anode.View] = table_row_views(),
+  initial~ : TableRowState = TableRowState::zero(),
+  common_style~ : String = table_row_common_style,
+  global_style~ : String = table_row_global_style,
   update? : (TableRowState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TableRowState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -161,18 +161,18 @@ pub fn item_table_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn item_table_component(
-  name? : String = "ItemTable",
-  views? : Map[String, @anode.View] = item_table_views(),
-  initial? : ItemTableState = ItemTableState::zero(),
-  common_style? : String = item_table_common_style,
-  global_style? : String = item_table_global_style,
+  name~ : String = "ItemTable",
+  views~ : Map[String, @anode.View] = item_table_views(),
+  initial~ : ItemTableState = ItemTableState::zero(),
+  common_style~ : String = item_table_common_style,
+  global_style~ : String = item_table_global_style,
   update? : (ItemTableState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ItemTableState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -221,18 +221,18 @@ pub fn select_option_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn select_option_component(
-  name? : String = "SelectOption",
-  views? : Map[String, @anode.View] = select_option_views(),
-  initial? : SelectOptionState = SelectOptionState::zero(),
-  common_style? : String = select_option_common_style,
-  global_style? : String = select_option_global_style,
+  name~ : String = "SelectOption",
+  views~ : Map[String, @anode.View] = select_option_views(),
+  initial~ : SelectOptionState = SelectOptionState::zero(),
+  common_style~ : String = select_option_common_style,
+  global_style~ : String = select_option_global_style,
   update? : (SelectOptionState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SelectOptionState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -303,18 +303,18 @@ pub fn item_select_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn item_select_component(
-  name? : String = "ItemSelect",
-  views? : Map[String, @anode.View] = item_select_views(),
-  initial? : ItemSelectState = ItemSelectState::zero(),
-  common_style? : String = item_select_common_style,
-  global_style? : String = item_select_global_style,
+  name~ : String = "ItemSelect",
+  views~ : Map[String, @anode.View] = item_select_views(),
+  initial~ : ItemSelectState = ItemSelectState::zero(),
+  common_style~ : String = item_select_common_style,
+  global_style~ : String = item_select_global_style,
   update? : (ItemSelectState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ItemSelectState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -363,18 +363,18 @@ pub fn pseudo_x_demo_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn pseudo_x_demo_component(
-  name? : String = "PseudoXDemo",
-  views? : Map[String, @anode.View] = pseudo_x_demo_views(),
-  initial? : PseudoXDemoState = PseudoXDemoState::zero(),
-  common_style? : String = pseudo_x_demo_common_style,
-  global_style? : String = pseudo_x_demo_global_style,
+  name~ : String = "PseudoXDemo",
+  views~ : Map[String, @anode.View] = pseudo_x_demo_views(),
+  initial~ : PseudoXDemoState = PseudoXDemoState::zero(),
+  common_style~ : String = pseudo_x_demo_common_style,
+  global_style~ : String = pseudo_x_demo_global_style,
   update? : (PseudoXDemoState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     PseudoXDemoState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

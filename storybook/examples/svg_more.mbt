@@ -44,7 +44,7 @@ fn bar_chart_comp() -> @component.Component {
       match msg {
         Receive("randomize", _) => {
           // deterministic stand-in for Math.random, in the 10..99 range
-          let next : Array[Int] = s.values.map(v => (v * 7 + 13) % 90 + 10)
+          let next : Array[Int32] = s.values.map(v => (v * 7 + 13) % 90 + 10)
           Next({ values: next, })
         }
         _ => Unhandled

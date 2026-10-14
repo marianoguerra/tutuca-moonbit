@@ -51,6 +51,11 @@ pub(all) enum BulletMarker {
   Asterisk
   Plus
 } derive(Eq, @debug.Debug)
+pub fn BulletMarker::equal(Self, Self) -> Bool
+pub fn BulletMarker::not_equal(Self, Self) -> Bool
+pub fn BulletMarker::output(Self, &Logger) -> Unit
+pub fn BulletMarker::to_repr(Self) -> @debug.Repr
+pub fn BulletMarker::to_string(Self) -> String
 pub impl Show for BulletMarker
 
 pub(all) struct Document {
@@ -63,12 +68,22 @@ pub(all) enum EmphasisMarker {
   Asterisk
   Underscore
 } derive(Eq, @debug.Debug)
+pub fn EmphasisMarker::equal(Self, Self) -> Bool
+pub fn EmphasisMarker::not_equal(Self, Self) -> Bool
+pub fn EmphasisMarker::output(Self, &Logger) -> Unit
+pub fn EmphasisMarker::to_repr(Self) -> @debug.Repr
+pub fn EmphasisMarker::to_string(Self) -> String
 pub impl Show for EmphasisMarker
 
 pub(all) enum FenceMarker {
   Backtick
   Tilde
 } derive(Eq, @debug.Debug)
+pub fn FenceMarker::equal(Self, Self) -> Bool
+pub fn FenceMarker::not_equal(Self, Self) -> Bool
+pub fn FenceMarker::output(Self, &Logger) -> Unit
+pub fn FenceMarker::to_repr(Self) -> @debug.Repr
+pub fn FenceMarker::to_string(Self) -> String
 pub impl Show for FenceMarker
 
 pub(all) struct Frontmatter {
@@ -81,12 +96,22 @@ pub(all) enum HardBreakStyle {
   TwoSpaces
   Backslash
 } derive(Eq, @debug.Debug)
+pub fn HardBreakStyle::equal(Self, Self) -> Bool
+pub fn HardBreakStyle::not_equal(Self, Self) -> Bool
+pub fn HardBreakStyle::output(Self, &Logger) -> Unit
+pub fn HardBreakStyle::to_repr(Self) -> @debug.Repr
+pub fn HardBreakStyle::to_string(Self) -> String
 pub impl Show for HardBreakStyle
 
 pub(all) enum HeadingStyle {
   Atx
   Setext
 } derive(Eq, @debug.Debug)
+pub fn HeadingStyle::equal(Self, Self) -> Bool
+pub fn HeadingStyle::not_equal(Self, Self) -> Bool
+pub fn HeadingStyle::output(Self, &Logger) -> Unit
+pub fn HeadingStyle::to_repr(Self) -> @debug.Repr
+pub fn HeadingStyle::to_string(Self) -> String
 pub impl Show for HeadingStyle
 
 pub(all) enum Inline {
@@ -126,6 +151,11 @@ pub(all) enum OrderedDelimiter {
   Dot
   Paren
 } derive(Eq, @debug.Debug)
+pub fn OrderedDelimiter::equal(Self, Self) -> Bool
+pub fn OrderedDelimiter::not_equal(Self, Self) -> Bool
+pub fn OrderedDelimiter::output(Self, &Logger) -> Unit
+pub fn OrderedDelimiter::to_repr(Self) -> @debug.Repr
+pub fn OrderedDelimiter::to_string(Self) -> String
 pub impl Show for OrderedDelimiter
 
 pub(all) struct ParseResult {
@@ -164,7 +194,12 @@ pub(all) struct Span {
   to : Int
 } derive(Eq, @debug.Debug)
 pub fn Span::empty() -> Self
+pub fn Span::equal(Self, Self) -> Bool
 pub fn Span::new(Int, Int) -> Self
+pub fn Span::not_equal(Self, Self) -> Bool
+pub fn Span::output(Self, &Logger) -> Unit
+pub fn Span::to_repr(Self) -> @debug.Repr
+pub fn Span::to_string(Self) -> String
 pub impl Show for Span
 
 pub(all) enum TableAlign {
@@ -173,6 +208,11 @@ pub(all) enum TableAlign {
   Right
   None
 } derive(Eq, @debug.Debug)
+pub fn TableAlign::equal(Self, Self) -> Bool
+pub fn TableAlign::not_equal(Self, Self) -> Bool
+pub fn TableAlign::output(Self, &Logger) -> Unit
+pub fn TableAlign::to_repr(Self) -> @debug.Repr
+pub fn TableAlign::to_string(Self) -> String
 pub impl Show for TableAlign
 
 pub(all) struct TableCell {
@@ -184,7 +224,12 @@ pub(all) struct Trivia {
   content : String
 } derive(Eq, @debug.Debug)
 pub fn Trivia::empty() -> Self
+pub fn Trivia::equal(Self, Self) -> Bool
 pub fn Trivia::new(String) -> Self
+pub fn Trivia::not_equal(Self, Self) -> Bool
+pub fn Trivia::output(Self, &Logger) -> Unit
+pub fn Trivia::to_repr(Self) -> @debug.Repr
+pub fn Trivia::to_string(Self) -> String
 pub impl Show for Trivia
 
 // Type aliases

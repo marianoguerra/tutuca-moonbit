@@ -5,7 +5,6 @@ import {
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/core" @tutuca,
-  "moonbitlang/core/debug",
 }
 
 // The headless harness mounts the module as a live app and drives it through

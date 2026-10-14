@@ -435,18 +435,18 @@ fn fuzz_row_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn fuzz_row_component(
-  name? : String = "FuzzRow",
-  views? : Map[String, @anode.View] = fuzz_row_views(),
-  initial? : FuzzRowState = FuzzRowState::zero(),
-  common_style? : String = fuzz_row_common_style,
-  global_style? : String = fuzz_row_global_style,
+  name~ : String = "FuzzRow",
+  views~ : Map[String, @anode.View] = fuzz_row_views(),
+  initial~ : FuzzRowState = FuzzRowState::zero(),
+  common_style~ : String = fuzz_row_common_style,
+  global_style~ : String = fuzz_row_global_style,
   update? : (FuzzRowState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     FuzzRowState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -550,18 +550,18 @@ fn fuzz_log_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn fuzz_log_component(
-  name? : String = "FuzzLog",
-  views? : Map[String, @anode.View] = fuzz_log_views(),
-  initial? : FuzzLogState = FuzzLogState::zero(),
-  common_style? : String = fuzz_log_common_style,
-  global_style? : String = fuzz_log_global_style,
+  name~ : String = "FuzzLog",
+  views~ : Map[String, @anode.View] = fuzz_log_views(),
+  initial~ : FuzzLogState = FuzzLogState::zero(),
+  common_style~ : String = fuzz_log_common_style,
+  global_style~ : String = fuzz_log_global_style,
   update? : (FuzzLogState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     FuzzLogState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -1529,18 +1529,18 @@ fn fuzz_controls_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn fuzz_controls_component(
-  name? : String = "FuzzControls",
-  views? : Map[String, @anode.View] = fuzz_controls_views(),
-  initial? : FuzzControlsState = FuzzControlsState::zero(),
-  common_style? : String = fuzz_controls_common_style,
-  global_style? : String = fuzz_controls_global_style,
+  name~ : String = "FuzzControls",
+  views~ : Map[String, @anode.View] = fuzz_controls_views(),
+  initial~ : FuzzControlsState = FuzzControlsState::zero(),
+  common_style~ : String = fuzz_controls_common_style,
+  global_style~ : String = fuzz_controls_global_style,
   update? : (FuzzControlsState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     FuzzControlsState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -1855,18 +1855,18 @@ fn fuzz_verdict_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn fuzz_verdict_component(
-  name? : String = "FuzzVerdict",
-  views? : Map[String, @anode.View] = fuzz_verdict_views(),
-  initial? : FuzzVerdictState = FuzzVerdictState::zero(),
-  common_style? : String = fuzz_verdict_common_style,
-  global_style? : String = fuzz_verdict_global_style,
+  name~ : String = "FuzzVerdict",
+  views~ : Map[String, @anode.View] = fuzz_verdict_views(),
+  initial~ : FuzzVerdictState = FuzzVerdictState::zero(),
+  common_style~ : String = fuzz_verdict_common_style,
+  global_style~ : String = fuzz_verdict_global_style,
   update? : (FuzzVerdictState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     FuzzVerdictState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -1979,18 +1979,18 @@ fn fuzz_panel_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn fuzz_panel_component(
-  name? : String = "FuzzPanel",
-  views? : Map[String, @anode.View] = fuzz_panel_views(),
-  initial? : FuzzPanelState = FuzzPanelState::zero(),
-  common_style? : String = fuzz_panel_common_style,
-  global_style? : String = fuzz_panel_global_style,
+  name~ : String = "FuzzPanel",
+  views~ : Map[String, @anode.View] = fuzz_panel_views(),
+  initial~ : FuzzPanelState = FuzzPanelState::zero(),
+  common_style~ : String = fuzz_panel_common_style,
+  global_style~ : String = fuzz_panel_global_style,
   update? : (FuzzPanelState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     FuzzPanelState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

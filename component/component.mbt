@@ -3,10 +3,10 @@
 // (views, styles, provide/lookup compilation, make).
 
 ///|
-let comp_id_counter : Ref[Int] = { val: 0, }
+let comp_id_counter : Ref[Int32] = { val: 0, }
 
 ///|
-fn next_comp_id() -> Int {
+fn next_comp_id() -> Int32 {
   comp_id_counter.val = comp_id_counter.val + 1
   comp_id_counter.val
 }
@@ -62,9 +62,9 @@ fn new_component(
   provide : Map[String, String],
   lookup : Array[LookupSpec],
   specs : Map[String, FieldSpec],
-  alter_names? : Array[String] = [],
+  alter_names~ : Array[String] = [],
   schema~ : SchemaInfo,
-  spec? : String = "",
+  spec~ : String = "",
 ) -> Component {
   // Views arrive already built — either compiled ahead of time by
   // `tutuca gen` (View::from_ir) or parsed from source by
@@ -123,20 +123,20 @@ pub fn[S : @tutuca.Fields] component(
   name~ : String,
   views~ : Map[String, @anode.View],
   initial~ : S,
-  common_style? : String = "",
-  global_style? : String = "",
+  common_style~ : String = "",
+  global_style~ : String = "",
   update? : (S, Dispatch, &@tutuca.Ctx) -> Update[S],
-  get_property? : Map[String, (S) -> @tutuca.Value] = Map([]),
-  set_property? : Map[String, (S, @tutuca.Value) -> Update[S]] = Map([]),
-  compute? : Map[
+  get_property~ : Map[String, (S) -> @tutuca.Value] = Map([]),
+  set_property~ : Map[String, (S, @tutuca.Value) -> Update[S]] = Map([]),
+  compute~ : Map[
     String,
     (S, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
   ] = Map([]),
-  when? : Map[
+  when~ : Map[
     String,
     (S, @tutuca.Value, @tutuca.Value, @tutuca.Value, &@tutuca.Stack) -> Bool,
   ] = Map([]),
-  enrich? : Map[
+  enrich~ : Map[
     String,
     (
       S,
@@ -147,14 +147,14 @@ pub fn[S : @tutuca.Fields] component(
       &@tutuca.Stack,
     ) -> Unit,
   ] = Map([]),
-  bind_with? : Map[String, (S, &@tutuca.Stack) -> Map[String, @tutuca.Value]] = Map([],
+  bind_with~ : Map[String, (S, &@tutuca.Stack) -> Map[String, @tutuca.Value]] = Map([],
   ),
-  loop_with? : Map[String, (S, @tutuca.Value, LoopCtx) -> LoopWith] = Map([]),
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[LookupSpec] = [],
-  spec? : String = "",
+  loop_with~ : Map[String, (S, @tutuca.Value, LoopCtx) -> LoopWith] = Map([]),
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[LookupSpec] = [],
+  spec~ : String = "",
 ) -> Component {
   // The three facts only the author knows — the declared schema and the
   // conversion to and from the fields map — arrive as ONE trait implemented on
@@ -361,12 +361,12 @@ pub fn Component::for_type(
   name~ : String,
   views~ : Map[String, @anode.View],
   schema~ : SchemaInfo,
-  common_style? : String = "",
-  global_style? : String = "",
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[LookupSpec] = [],
+  common_style~ : String = "",
+  global_style~ : String = "",
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[LookupSpec] = [],
   make? : (Map[String, @tutuca.Value]) -> @tutuca.Value,
-  spec? : String = "",
+  spec~ : String = "",
 ) -> Component {
   let comp = new_component(
     name,
@@ -514,8 +514,8 @@ pub fn Component::compile_style(self : Component) -> String {
 /// thing no type states — which arguments a child slot is built with.
 fn field_specs(
   schema : SchemaInfo,
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  seed? : Map[String, @tutuca.Value] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  seed~ : Map[String, @tutuca.Value] = Map([]),
 ) -> Map[String, FieldSpec] {
   let out : Map[String, FieldSpec] = Map([])
   for fi in schema.fields {
@@ -610,7 +610,7 @@ fn gen_mutators(
   /// install one rather than recomputed by a second walk of the same fields:
   /// a second walk is a second opinion about which names those are, and the
   /// whole point of the list is that it cannot disagree with the table.
-  readers? : Array[String] = [],
+  readers~ : Array[String] = [],
 ) -> Unit {
   for name, spec in fields {
     into[mut_name("set", name)] = (inst, args) => {
@@ -793,8 +793,8 @@ fn seq_delete(
 ///|
 pub fn LoopWith::new(
   iter_data? : @tutuca.Value,
-  start? : Int,
-  end? : Int,
+  start? : Int32,
+  end? : Int32,
   keys? : Array[@tutuca.Value],
 ) -> LoopWith {
   { iter_data, start, end, keys, }

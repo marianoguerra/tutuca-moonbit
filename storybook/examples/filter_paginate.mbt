@@ -11,20 +11,20 @@ fn fp_matches(person : @tutuca.Value, query : String) -> Bool {
 
 ///|
 /// Clamp a possibly-stale page against the match count.
-fn fp_clamp(page : Int, total : Int, page_size : Int) -> (Int, Int) {
+fn fp_clamp(page : Int32, total : Int32, page_size : Int32) -> (Int32, Int32) {
   let page_count = @cmp.maximum(1, (total + page_size - 1) / page_size) // ceil
   let current = @cmp.minimum(@cmp.maximum(0, page), page_count - 1)
   (page_count, current)
 }
 
 ///|
-fn fp_pager_label(current : Int, page_count : Int, total : Int) -> String {
+fn fp_pager_label(current : Int32, page_count : Int32, total : Int32) -> String {
   let suffix = if total == 1 { "" } else { "es" }
   "Page \{current + 1} of \{page_count} · \{total} match\{suffix}"
 }
 
 ///|
-fn fp_match_count(s : NaivePeopleState) -> Int {
+fn fp_match_count(s : NaivePeopleState) -> Int32 {
   let mut n = 0
   for p in s.items {
     if fp_matches(p, s.query) {
@@ -87,7 +87,7 @@ fn fp_only_matches() -> Map[
 /// directives on the <li> and the scope @enrich-with differ).
 
 ///|
-fn fp_num_keys(keys : Array[Int]) -> @component.LoopWith {
+fn fp_num_keys(keys : Array[Int32]) -> @component.LoopWith {
   @component.LoopWith::new(
     keys=keys.map(k => (Num(k.to_double()) : @tutuca.Value)),
   )
@@ -136,7 +136,7 @@ fn naive_people_comp() -> @component.Component {
       match l {
         TablePage =>
           Some((s, seq, ctx) => {
-            let all : Array[Int] = []
+            let all : Array[Int32] = []
             for i, v in seq.list() {
               if (ctx.filter)(Num(i.to_double()), v, Null) {
                 all.push(i)
@@ -171,7 +171,7 @@ fn shared_people_comp() -> @component.Component {
         }
         let start = current * s.page_size
         let end = start + s.page_size
-        let keys : Array[Int] = []
+        let keys : Array[Int32] = []
         let mut m = 0
         for i, v in seq.list() {
           if m >= end {
@@ -201,7 +201,7 @@ fn coupled_people_comp() -> @component.Component {
     update=fp_update(),
     bind_with={
       "pager_info": (s : NaivePeopleState, _stack) => {
-        let all : Array[Int] = []
+        let all : Array[Int32] = []
         for i, p in s.items {
           if fp_matches(p, s.query) {
             all.push(i)
@@ -234,8 +234,8 @@ fn coupled_people_comp() -> @component.Component {
 
 ///|
 /// keys[start .. start+n], clamped.
-fn page_slice(keys : Array[Int], start : Int, n : Int) -> Array[Int] {
-  let out : Array[Int] = []
+fn page_slice(keys : Array[Int32], start : Int32, n : Int32) -> Array[Int32] {
+  let out : Array[Int32] = []
   let end = @cmp.minimum(start + n, keys.length())
   for i in start..<end {
     if i >= 0 {

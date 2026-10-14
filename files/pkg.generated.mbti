@@ -20,7 +20,9 @@ pub fn MemFiles::last_saved(Self) -> SavedFile?
 pub fn MemFiles::new() -> Self
 pub fn MemFiles::provide(Self, id~ : Int, String) -> Unit
 pub fn MemFiles::provide_error(Self, id~ : Int, String) -> Unit
+pub fn MemFiles::read_text(Self, id~ : Int, then~ : (Result[String, String]) -> Unit) -> Unit
 pub fn MemFiles::round_trip(Self) -> Int?
+pub fn MemFiles::save_text(Self, name~ : String, mime~ : String, String) -> Unit
 pub fn MemFiles::saved(Self) -> Array[SavedFile]
 pub impl FileService for MemFiles
 
@@ -29,6 +31,9 @@ pub(all) struct SavedFile {
   mime : String
   text : String
 } derive(Eq, @debug.Debug)
+pub fn SavedFile::equal(Self, Self) -> Bool
+pub fn SavedFile::not_equal(Self, Self) -> Bool
+pub fn SavedFile::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

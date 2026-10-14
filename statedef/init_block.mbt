@@ -76,6 +76,12 @@ pub(all) struct InitState {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend InitState with Eq::{not_equal, equal}
+
+///|
+pub extend InitState with Debug::{to_repr}
+
+///|
 /// Something wrong with an init block.
 pub suberror InitError {
   /// The block is not JSON.
@@ -134,6 +140,9 @@ pub fn InitError::message(self : InitError) -> String {
 pub impl Show for InitError with fn output(self, logger) {
   logger.write_string(self.message())
 }
+
+///|
+pub extend InitError with Show::{to_string, output}
 
 ///|
 /// Parse and validate an init block against a component's schema.

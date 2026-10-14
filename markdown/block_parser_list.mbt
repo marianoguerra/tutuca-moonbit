@@ -2,7 +2,7 @@
 
 ///|
 /// Try to parse list
-fn BlockParser::try_parse_list(self : BlockParser, start : Int) -> Block? {
+fn BlockParser::try_parse_list(self : BlockParser, start : Int32) -> Block? {
   let leading = self.read_leading_trivia()
 
   // Check for bullet or ordered list marker
@@ -24,14 +24,14 @@ fn BlockParser::try_parse_list(self : BlockParser, start : Int) -> Block? {
 /// List marker kind
 priv enum ListMarkerKind {
   Bullet(BulletMarker)
-  Ordered(Int, OrderedDelimiter)
+  Ordered(Int32, OrderedDelimiter)
 }
 
 ///|
 /// Detect list marker at current position
 fn BlockParser::detect_list_marker(
   self : BlockParser,
-) -> (ListMarkerKind, Int)? {
+) -> (ListMarkerKind, Int32)? {
   let saved = self.scanner.pos
 
   // Check for bullet marker
@@ -138,10 +138,10 @@ fn BlockParser::current_bullet_item_matches(
 /// Parse bullet list
 fn BlockParser::parse_bullet_list(
   self : BlockParser,
-  start : Int,
+  start : Int32,
   leading : Trivia,
   marker : BulletMarker,
-  _marker_width : Int,
+  _marker_width : Int32,
 ) -> Block? {
   let items : Array[ListItem] = []
   let mut tight = true
@@ -195,11 +195,11 @@ fn BlockParser::parse_bullet_list(
 /// Parse ordered list
 fn BlockParser::parse_ordered_list(
   self : BlockParser,
-  start : Int,
+  start : Int32,
   leading : Trivia,
-  start_num : Int,
+  start_num : Int32,
   delimiter : OrderedDelimiter,
-  _marker_width : Int,
+  _marker_width : Int32,
 ) -> Block? {
   let items : Array[ListItem] = []
   let mut tight = true
@@ -289,9 +289,9 @@ fn BlockParser::next_ordered_item_matches(
 /// Parse list item content
 fn BlockParser::parse_list_item(
   self : BlockParser,
-  start : Int,
-  marker_offset : Int,
-  content_offset : Int,
+  start : Int32,
+  marker_offset : Int32,
+  content_offset : Int32,
 ) -> ListItem {
   // Parse first line content
   let content_buf = StringBuilder()
@@ -361,7 +361,7 @@ fn BlockParser::parse_list_item(
 fn BlockParser::parse_nested_bullet_list(
   self : BlockParser,
   marker : BulletMarker,
-  min_indent : Int,
+  min_indent : Int32,
 ) -> Block? {
   let items : Array[ListItem] = []
   let mut tight = true
@@ -417,9 +417,9 @@ fn BlockParser::parse_nested_bullet_list(
 /// Parse nested list item (simplified, no recursion)
 fn BlockParser::parse_nested_list_item(
   self : BlockParser,
-  start : Int,
-  marker_offset : Int,
-  content_offset : Int,
+  start : Int32,
+  marker_offset : Int32,
+  content_offset : Int32,
 ) -> ListItem {
   let content_buf = StringBuilder()
   self.scanner.append_line_to(content_buf)
@@ -475,7 +475,7 @@ fn parse_task_checkbox(content : String) -> (Bool?, String) {
 
 ///|
 /// Skip first n characters of a string
-fn skip_n_chars(s : String, n : Int) -> String {
+fn skip_n_chars(s : String, n : Int32) -> String {
   let buf = StringBuilder()
   let mut i = 0
   for c in s {

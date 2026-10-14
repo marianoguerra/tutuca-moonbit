@@ -43,8 +43,14 @@ pub(all) enum AttrValue {
 } derive(Eq, Debug)
 
 ///|
+pub extend AttrValue with Eq::{not_equal, equal}
+
+///|
+pub extend AttrValue with Debug::{to_repr}
+
+///|
 /// Convenience constructor wrapping an `Int` as `Num`.
-pub fn AttrValue::int(i : Int) -> AttrValue {
+pub fn AttrValue::int(i : Int32) -> AttrValue {
   Num(i.to_double())
 }
 

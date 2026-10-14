@@ -5,7 +5,7 @@
 // test module.
 
 ///|
-fn RenderCache::size(self : RenderCache) -> (Int, Int) {
+fn RenderCache::size(self : RenderCache) -> (Int32, Int32) {
   (self.cur.length(), self.prev.length())
 }
 

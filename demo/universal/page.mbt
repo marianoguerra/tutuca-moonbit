@@ -34,7 +34,7 @@ let live : Ref[@app.App[@bdom.BrowserNode]?] = Ref(None)
 
 ///|
 /// Say something on the page.
-fn note(text : String, tone? : String = "") -> Unit {
+fn note(text : String, tone~ : String = "") -> Unit {
   match live.val {
     Some(app) =>
       app.send_at_root("add_note", args=[Str(text), Str(tone)]) |> ignore

@@ -28,7 +28,7 @@
 pub fn value_in_domain(
   domain : @tutuca.Domain,
   drawn : Map[String, @tutuca.Value],
-) -> @gen.Gen[@tutuca.Value]? {
+) -> @gen.Generator[@tutuca.Value]? {
   match domain {
     DIndexOf(field~, allow_none~) => {
       guard drawn.get(field) is Some(seq) && @tutuca.size_of(seq) is Some(len) else {
@@ -38,18 +38,18 @@ pub fn value_in_domain(
       // value left — and without one there is nothing to draw.
       if len == 0 {
         return if allow_none {
-          Some(@gen.one_of_array([(Num(-1.0) : @tutuca.Value), Num(0.0)]))
+          Some(@gen.elements([(Num(-1.0) : @tutuca.Value), Num(0.0)]))
         } else {
           None
         }
       }
       let ends : Array[@tutuca.Value] = [Num(0.0), Num((len - 1).to_double())]
-      let body = @gen.int_range(0, len).fmap(i => {
+      let body = @gen.int_range(0, len).map(i => {
         (Num(i.to_double()) : @tutuca.Value)
       })
       // The two ends first, for the same reason `int_value` draws the width's
       // edges first: a fold and an off-by-one both live there.
-      let in_range = @gen.frequency([(2, @gen.one_of_array(ends)), (3, body)])
+      let in_range = @gen.frequency([(2, @gen.elements(ends)), (3, body)])
       if allow_none {
         Some(
           @gen.frequency([
@@ -67,7 +67,7 @@ pub fn value_in_domain(
       if keys.is_empty() {
         return None
       }
-      Some(@gen.one_of_array(keys.map(k => (Str(k) : @tutuca.Value))))
+      Some(@gen.elements(keys.map(k => (Str(k) : @tutuca.Value))))
     }
     // A member is a key the set HOLDS — value `Bool(true)`. A key present and
     // false is non-membership, which is what `toggleIn` leaves behind.
@@ -82,7 +82,7 @@ pub fn value_in_domain(
       if members.is_empty() {
         return None
       }
-      Some(@gen.one_of_array(members))
+      Some(@gen.elements(members))
     }
     DSubsetOf(field~) => {
       guard drawn.get(field) is Some(Map(m)) else { return None }
@@ -95,23 +95,22 @@ pub fn value_in_domain(
       // Each member in or out independently, which is the same walk
       // `subset_of` already makes over a closed set's declared members.
       Some(
-        @gen.flatten_array(members.map(_ => @gen.one_of_array([true, false]))).fmap(picks => {
-            let out : Map[String, @tutuca.Value] = Map([])
-            for i, k in members {
-              if picks[i] {
-                out[k] = Bool(true)
-              }
+        sequence(members.map(_ => @gen.elements([true, false]))).map(picks => {
+          let out : Map[String, @tutuca.Value] = Map([])
+          for i, k in members {
+            if picks[i] {
+              out[k] = Bool(true)
             }
-            (Map(out) : @tutuca.Value)
-          },
-        ),
+          }
+          (Map(out) : @tutuca.Value)
+        }),
       )
     }
     DOneOf(members) => {
       if members.is_empty() {
         return None
       }
-      Some(@gen.one_of_array(members))
+      Some(@gen.elements(members))
     }
     // The list the value has to come from, drawn from. An empty one bounds
     // nothing a draw can satisfy — the same answer `DKeyOf` gives for an empty
@@ -120,7 +119,7 @@ pub fn value_in_domain(
       guard drawn.get(field) is Some(List(items)) && !items.is_empty() else {
         return None
       }
-      Some(@gen.one_of_array(items))
+      Some(@gen.elements(items))
     }
     // A length, not a value. The caller is what knows how to build a
     // collection of a given size, so these two answer the SIZE and
@@ -170,17 +169,17 @@ const BAND : Double = 32.0
 /// The corner bias `int_value` argues for, kept across the narrowing: the ends
 /// of a range are where an off-by-one shows, and a uniform draw over a
 /// thirty-wide band reaches them one time in fifteen.
-fn num_between(lo : Double, hi : Double) -> @gen.Gen[@tutuca.Value] {
+fn num_between(lo : Double, hi : Double) -> @gen.Generator[@tutuca.Value] {
   let a = lo.to_int()
   let b = hi.to_int()
   if a >= b {
     return @gen.pure((Num(a.to_double()) : @tutuca.Value))
   }
   @gen.frequency([
-    (2, @gen.one_of_array([a, b])),
-    (1, @gen.one_of_array([a + 1, b - 1])),
+    (2, @gen.elements([a, b])),
+    (1, @gen.elements([a + 1, b - 1])),
     (3, @gen.int_range(a, b + 1)),
-  ]).fmap(n => (Num(n.to_double()) : @tutuca.Value))
+  ]).map(n => (Num(n.to_double()) : @tutuca.Value))
 }
 
 ///|
@@ -207,7 +206,7 @@ fn operand_of(
 pub fn size_in_domain(
   domains : Array[@tutuca.Domain],
   drawn : Map[String, @tutuca.Value],
-) -> @gen.Gen[Int]? {
+) -> @gen.Generator[Int32]? {
   let mut least = 0
   let mut most = MAX_ITEMS
   let mut said = false

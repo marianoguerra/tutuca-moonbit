@@ -55,7 +55,7 @@ fn ANode::for_each_child(self : ANode, visit : (ANode) -> Unit) -> Unit {
 }
 
 ///|
-fn ANode::condense_whitespace(self : ANode, replacement? : String = "") -> Unit {
+fn ANode::condense_whitespace(self : ANode, replacement~ : String = "") -> Unit {
   match self {
     Text(d) | Comment(d) => d.val = replacement
     _ => ()
@@ -128,3 +128,6 @@ pub impl Debug for MacroData with fn to_repr(self) {
     data_attrs: self.data_attrs,
   })
 }
+
+///|
+pub extend MacroData with Debug::{to_repr}

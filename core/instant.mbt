@@ -24,13 +24,16 @@ pub impl Show for BadInstant with fn output(self, logger) {
 }
 
 ///|
+pub extend BadInstant with Show::{to_string, output}
+
+///|
 /// RFC 3339, always UTC.
 ///
 /// `moonbitlang/x/time` owns the calendar — turning 1 725 000 000 into a date is
 /// exactly the arithmetic nobody should write twice — and this owns the
 /// spelling, which the library does not: `ZonedDateTime::to_string` appends a
 /// zone name, and RFC 3339 wants an offset.
-pub fn instant_to_rfc3339(secs : Int64, nanos : Int) -> String {
+pub fn instant_to_rfc3339(secs : Int64, nanos : Int32) -> String {
   let z = @time.ZonedDateTime::from_unix_second(secs, nanosecond=nanos) catch {
     // Unreachable for any instant TInstant can hold; a total function is still
     // better than a raise nobody can trigger.
@@ -59,7 +62,7 @@ pub fn instant_to_rfc3339(secs : Int64, nanos : Int) -> String {
 /// Three groups rather than nine digits with the zeros trimmed, because
 /// `.100` and `.1` are the same instant and only one of them is a spelling a
 /// reader recognises as milliseconds.
-fn fraction(nanos : Int) -> String {
+fn fraction(nanos : Int32) -> String {
   if nanos == 0 {
     return ""
   }
@@ -75,7 +78,7 @@ fn fraction(nanos : Int) -> String {
 }
 
 ///|
-fn pad(n : Int64, width : Int) -> String {
+fn pad(n : Int64, width : Int32) -> String {
   let neg = n < 0L
   let digits = (if neg { -n } else { n }).to_string()
   let buf = StringBuilder()
@@ -92,7 +95,7 @@ fn pad(n : Int64, width : Int) -> String {
 ///|
 /// The reverse. `Z` and a numeric offset both parse; the offset is APPLIED and
 /// not kept, because what comes back is an instant and an instant has no zone.
-pub fn instant_of_rfc3339(text : String) -> (Int64, Int) raise BadInstant {
+pub fn instant_of_rfc3339(text : String) -> (Int64, Int32) raise BadInstant {
   let cs : Array[Char] = text.iter().collect()
   let n = cs.length()
   guard n >= 20 else { raise BadInstant(text) }
@@ -166,9 +169,9 @@ pub fn instant_of_rfc3339(text : String) -> (Int64, Int) raise BadInstant {
 fn int_at(
   cs : Array[Char],
   text : String,
-  at : Int,
-  width : Int,
-) -> Int raise BadInstant {
+  at : Int32,
+  width : Int32,
+) -> Int32 raise BadInstant {
   guard at + width <= cs.length() else { raise BadInstant(text) }
   let mut acc = 0
   for i in at..<(at + width) {
@@ -181,7 +184,7 @@ fn int_at(
 
 ///|
 /// The display spelling of an instant, for `to_display_string` and `to_json`.
-fn instant_text(secs : Int64, nanos : Int) -> String {
+fn instant_text(secs : Int64, nanos : Int32) -> String {
   instant_to_rfc3339(secs, nanos)
 }
 

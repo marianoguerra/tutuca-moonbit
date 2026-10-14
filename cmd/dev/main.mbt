@@ -3,7 +3,7 @@
 // exits. Run with: moon run --target native cmd/dev -- <task>
 
 ///|
-extern "c" fn process_exit(code : Int) = "exit"
+extern "c" fn process_exit(code : Int32) = "exit"
 
 ///|
 async fn out(text : String) -> Unit noraise {
@@ -22,7 +22,7 @@ async fn err(text : String) -> Unit noraise {
 ///|
 /// Ensure a directory exists. `@fs.mkdir` raises when the dir already exists,
 /// even with `recursive=true`, so guard on `exists` first (same as cmd/tutuca).
-async fn ensure_dir(path : String) -> Int noraise {
+async fn ensure_dir(path : String) -> Int32 noraise {
   try {
     if !@fs.exists(path) {
       @fs.mkdir(path, recursive=true)
@@ -37,7 +37,7 @@ async fn ensure_dir(path : String) -> Int noraise {
 }
 
 ///|
-async fn copy_file(from : String, to : String) -> Int noraise {
+async fn copy_file(from : String, to : String) -> Int32 noraise {
   try {
     let data = @fs.read_file(from)
     // 0o755 so the copied native CLI binary stays executable; harmless for js.
@@ -57,7 +57,7 @@ async fn write_rewritten(
   to : String,
   old_src : String,
   new_src : String,
-) -> Int noraise {
+) -> Int32 noraise {
   try {
     let text = @fs.read_file(from).text()
     let html = @tasks.rewrite(text, old_src~, new_src~)
@@ -92,7 +92,7 @@ async fn walk_rel(root : String, prefix : String) -> Array[String] {
 ///|
 /// The skill-embed codegen: walk `src_dir`, read every file, write the
 /// generated MoonBit module (@tasks.skill_assets_source) to `to`.
-async fn gen_skill_assets(src_dir : String, to : String) -> Int noraise {
+async fn gen_skill_assets(src_dir : String, to : String) -> Int32 noraise {
   try {
     let files : Array[(String, String)] = []
     for rel in walk_rel(src_dir, "") {
@@ -127,7 +127,7 @@ const STORYBOOK_TEMPLATE : String = "storybook/template"
 /// deterministic — enough for a reproducible embed — but lists a directory tree
 /// in an order nobody can follow, and `new-storybook --dry-run` prints this
 /// list to a person. Compare character by character instead.
-fn path_before(a : String, b : String) -> Int {
+fn path_before(a : String, b : String) -> Int32 {
   let n = if a.length() < b.length() { a.length() } else { b.length() }
   for i in 0..<n {
     if a[i] != b[i] {
@@ -167,7 +167,7 @@ fn is_build_output(rel : String) -> Bool {
 ///|
 /// Embed the storybook template and write the generated module to `to`. Paths
 /// are sorted so two runs on the same tree agree.
-async fn gen_storybook_template(to : String) -> Int noraise {
+async fn gen_storybook_template(to : String) -> Int32 noraise {
   try {
     let files : Array[(String, String)] = []
     for rel in walk_rel(STORYBOOK_TEMPLATE, "") {
@@ -203,7 +203,7 @@ async fn gen_storybook_template(to : String) -> Int noraise {
 
 ///|
 /// Run one step; returns the process/op exit code (0 = ok).
-async fn run_step(step : @tasks.Step) -> Int noraise {
+async fn run_step(step : @tasks.Step) -> Int32 noraise {
   match step {
     Run(cmd) => {
       out("› \{cmd.label}\n")

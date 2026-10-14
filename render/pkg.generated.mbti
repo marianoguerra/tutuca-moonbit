@@ -40,6 +40,9 @@ pub(all) struct Crossing {
   vid : String
   path : @core.DispatchPath
 } derive(Eq, @debug.Debug)
+pub fn Crossing::equal(Self, Self) -> Bool
+pub fn Crossing::not_equal(Self, Self) -> Bool
+pub fn Crossing::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DomEvent {
   name : String
@@ -57,6 +60,7 @@ pub(all) struct DomEvent {
 } derive(@debug.Debug)
 pub fn DomEvent::bind_value(Self, @anode.BindCoercion) -> @core.Value?
 pub fn DomEvent::new(name~ : String, value? : @core.Value, read_path? : EventPathReader, key? : String, key_code? : Int, alt? : Bool, shift? : Bool, ctrl_or_cmd? : Bool, meta? : Bool, drag_info? : @core.Value, prevent_default? : EventEffect, stop_propagation? : EventEffect) -> Self
+pub fn DomEvent::to_repr(Self) -> @debug.Repr
 
 pub(all) struct EventDispatch {
   path : @core.DispatchPath
@@ -64,9 +68,11 @@ pub(all) struct EventDispatch {
 }
 
 pub(all) struct EventEffect(() -> Unit)
+pub fn EventEffect::to_repr(Self) -> @debug.Repr
 pub impl @debug.Debug for EventEffect
 
 pub(all) struct EventPathReader((Array[String]) -> @core.Value)
+pub fn EventPathReader::to_repr(Self) -> @debug.Repr
 pub impl @debug.Debug for EventPathReader
 
 pub(all) enum Meta {
@@ -74,8 +80,11 @@ pub(all) enum Meta {
   Each(nid~ : Int, key~ : @core.PathKey)
   Scope(nid~ : Int)
 } derive(Eq, @debug.Debug)
+pub fn Meta::equal(Self, Self) -> Bool
+pub fn Meta::not_equal(Self, Self) -> Bool
 pub fn Meta::parse(String) -> Self?
 pub fn Meta::to_comment_text(Self) -> String
+pub fn Meta::to_repr(Self) -> @debug.Repr
 
 pub struct RenderCache {
   // private fields
@@ -106,8 +115,16 @@ pub(all) struct RenderStack {
   event_paths : @eventpath.EventPathProfile
 }
 pub fn RenderStack::enter(Self, @core.Value, Map[String, @core.Value], is_frame? : Bool, render_path? : @core.DispatchPath, pending_frame? : Bool) -> Self
+pub fn RenderStack::lookup_bare(Self, String) -> @core.Value
+pub fn RenderStack::lookup_bind(Self, String) -> @core.Value
 pub fn RenderStack::lookup_dyn_type(Self, String) -> Int?
+pub fn RenderStack::lookup_dynamic(Self, String) -> @core.Value
 pub fn RenderStack::lookup_dynamic_located(Self, String) -> @component.LocatedValue?
+pub fn RenderStack::lookup_event_path(Self, Array[String]) -> @core.Value
+pub fn RenderStack::lookup_member(Self, String) -> @core.Value
+pub fn RenderStack::lookup_method(Self, String) -> @core.Value
+pub fn RenderStack::lookup_storage(Self, String) -> @core.Value
+pub fn RenderStack::lookup_trigger(Self, String) -> @core.Value
 pub fn RenderStack::new(@core.Value, binds? : Map[String, @core.Value], comps? : @component.Components, event? : DomEvent, event_paths? : @eventpath.EventPathProfile) -> Self
 pub fn RenderStack::push_view_name(Self, String) -> Self
 pub impl @core.Stack for RenderStack
@@ -117,6 +134,7 @@ pub(all) struct ResolvedView {
   cid : Int
   vid : String
 } derive(@debug.Debug)
+pub fn ResolvedView::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

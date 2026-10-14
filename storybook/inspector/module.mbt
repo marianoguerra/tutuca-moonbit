@@ -26,7 +26,7 @@ pub struct Inspector {
 fn Inspector::make_(
   self : Inspector,
   name : String,
-  args? : Map[String, @tutuca.Value] = Map([]),
+  args~ : Map[String, @tutuca.Value] = Map([]),
 ) -> @tutuca.Value {
   match self.comps.get(name) {
     Some(c) => c.make(args)
@@ -287,7 +287,7 @@ fn conditional_schema() -> @tutuca.Value {
 }
 
 ///|
-fn long_list(n : Int) -> @tutuca.Value {
+fn long_list(n : Int32) -> @tutuca.Value {
   let items : Array[@tutuca.Value] = []
   for i in 1..<=n {
     items.push(Num(i.to_double()))

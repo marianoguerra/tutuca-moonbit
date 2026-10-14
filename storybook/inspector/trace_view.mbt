@@ -91,12 +91,12 @@ fn args_of(op : @trace.Op) -> String {
 /// on: without it a cascade of twelve sends from one click is twelve unrelated
 /// rows. Bounded, because a malformed or hand-edited file can point a parent at
 /// a descendant and a walk over that does not terminate.
-fn depths_of(events : Array[@trace.Event]) -> Map[Int, Int] {
-  let by_seq : Map[Int, @trace.Event] = Map([])
+fn depths_of(events : Array[@trace.Event]) -> Map[Int32, Int32] {
+  let by_seq : Map[Int32, @trace.Event] = Map([])
   for e in events {
     by_seq[e.seq] = e
   }
-  let out : Map[Int, Int] = Map([])
+  let out : Map[Int32, Int32] = Map([])
   for e in events {
     let mut d = 0
     let mut cur = e.parent
@@ -122,8 +122,8 @@ fn depths_of(events : Array[@trace.Event]) -> Map[Int, Int] {
 pub fn Inspector::trace_row(
   self : Inspector,
   e : @trace.Event,
-  depth? : Int = 0,
-  current? : Bool = false,
+  depth~ : Int32 = 0,
+  current~ : Bool = false,
 ) -> @tutuca.Value {
   let (verb, verb_class) = verb_of(e.op)
   let after = match e.after {
@@ -166,9 +166,9 @@ pub fn Inspector::trace_row(
 pub fn Inspector::trace_log(
   self : Inspector,
   t : @trace.Trace,
-  at? : Int = -1,
-  inputs_only? : Bool = false,
-  turn? : Int = 0,
+  at~ : Int32 = -1,
+  inputs_only~ : Bool = false,
+  turn~ : Int32 = 0,
 ) -> @tutuca.Value {
   let depths = depths_of(t.events)
   let rows : Array[@tutuca.Value] = []
@@ -236,10 +236,10 @@ pub fn Inspector::trace_places(
   self : Inspector,
   t : @trace.Trace,
   selected? : String,
-  heading? : String = "Relocate to",
-  empty_hint? : String = "This recording touched nothing below the root.",
+  heading~ : String = "Relocate to",
+  empty_hint~ : String = "This recording touched nothing below the root.",
 ) -> @tutuca.Value {
-  let counts : Map[String, Int] = Map([])
+  let counts : Map[String, Int32] = Map([])
   for e in t.events {
     let k = e.at.label()
     counts[k] = counts.get(k).unwrap_or(0) + 1
@@ -306,7 +306,7 @@ pub fn Inspector::place_candidates(
   t : @trace.Trace,
   selected? : String,
 ) -> @tutuca.Value {
-  let counts : Map[String, Int] = Map([])
+  let counts : Map[String, Int32] = Map([])
   for e in t.events {
     let k = e.at.label()
     counts[k] = counts.get(k).unwrap_or(0) + 1
@@ -369,12 +369,12 @@ fn pick_class(scope : String, want : String) -> String {
 /// The recorder, as a control.
 pub fn Inspector::recorder_bar(
   self : Inspector,
-  recording? : Bool = false,
-  scope? : String = "all",
-  events? : Int = 0,
-  turns? : Int = 0,
-  has_trace? : Bool = false,
-  picking? : Bool = false,
+  recording~ : Bool = false,
+  scope~ : String = "all",
+  events~ : Int32 = 0,
+  turns~ : Int32 = 0,
+  has_trace~ : Bool = false,
+  picking~ : Bool = false,
 ) -> @tutuca.Value {
   self.make_("RecorderBar", args={
     "recording": Bool(recording),
@@ -405,19 +405,19 @@ fn tab_class(name : String, on : Bool) -> String {
 pub fn Inspector::trace_panel(
   self : Inspector,
   trace? : @trace.Trace,
-  tab? : String = "record",
-  recording? : Bool = false,
-  scope? : String = "all",
-  picking? : Bool = false,
-  selecting? : Bool = false,
-  at? : Int = -1,
+  tab~ : String = "record",
+  recording~ : Bool = false,
+  scope~ : String = "all",
+  picking~ : Bool = false,
+  selecting~ : Bool = false,
+  at~ : Int32 = -1,
   selected_place? : String,
-  inputs_only? : Bool = false,
+  inputs_only~ : Bool = false,
   places? : @tutuca.Value,
-  notice? : String = "",
-  draft? : String = "",
-  can_replay? : Bool = false,
-  replaying? : Bool = false,
+  notice~ : String = "",
+  draft~ : String = "",
+  can_replay~ : Bool = false,
+  replaying~ : Bool = false,
 ) -> @tutuca.Value {
   let has_trace = trace is Some(_)
   let empty = @trace.Trace::new(root=Json::null())

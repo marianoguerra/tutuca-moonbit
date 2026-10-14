@@ -5,39 +5,39 @@ import {
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/statedef",
   "moonbitlang/core/debug",
-  "moonbitlang/quickcheck/gen",
+  "moonbitlang/core/quickcheck",
 }
 
 // Values
 pub const MAX_DEPTH : Int = 3
 
-pub fn dispatch_of(@statedef.StateDef, bucket? : Bucket, depth? : Int) -> @gen.Gen[@core.Dispatch]?
+pub fn dispatch_of(@statedef.StateDef, bucket? : Bucket, depth? : Int) -> @quickcheck.Generator[@core.Dispatch]?
 
 pub fn domain_deps(@core.Domain) -> Array[String]
 
-pub fn field_value_of(@statedef.StateDef, String, depth? : Int, state? : Map[String, @core.Value]) -> @gen.Gen[@core.Value]?
+pub fn field_value_of(@statedef.StateDef, String, depth? : Int, state? : Map[String, @core.Value]) -> @quickcheck.Generator[@core.Value]?
 
 pub fn implied_domains(Array[@core.FieldDomain], String) -> Array[@core.Domain]
 
-pub fn mutator_args(@statedef.StateDef, depth? : Int, state? : Map[String, @core.Value]) -> Map[String, @gen.Gen[Array[@core.Value]]]
+pub fn mutator_args(@statedef.StateDef, depth? : Int, state? : Map[String, @core.Value]) -> Map[String, @quickcheck.Generator[Array[@core.Value]]]
 
-pub fn property_write_of(@statedef.StateDef, depth? : Int, state? : Map[String, @core.Value]) -> @gen.Gen[(String, @core.Value)]?
+pub fn property_write_of(@statedef.StateDef, depth? : Int, state? : Map[String, @core.Value]) -> @quickcheck.Generator[(String, @core.Value)]?
 
-pub fn protocol_dispatch_of(@statedef.StateDef, String, depth? : Int) -> @gen.Gen[@core.Dispatch]?
+pub fn protocol_dispatch_of(@statedef.StateDef, String, depth? : Int) -> @quickcheck.Generator[@core.Dispatch]?
 
 pub fn rules_of(@statedef.StateDef) -> Rules
 
-pub fn script_of(@statedef.StateDef, bucket? : Bucket, len? : @gen.Gen[Int], depth? : Int) -> @gen.Gen[Array[@core.Dispatch]]?
+pub fn script_of(@statedef.StateDef, bucket? : Bucket, len? : @quickcheck.Generator[Int], depth? : Int) -> @quickcheck.Generator[Array[@core.Dispatch]]?
 
 pub fn shrink_script(Array[@core.Dispatch]) -> Iter[Array[@core.Dispatch]]
 
-pub fn size_in_domain(Array[@core.Domain], Map[String, @core.Value]) -> @gen.Gen[Int]?
+pub fn size_in_domain(Array[@core.Domain], Map[String, @core.Value]) -> @quickcheck.Generator[Int]?
 
-pub fn state_of(@statedef.StateDef, depth? : Int) -> @gen.Gen[Map[String, @core.Value]]
+pub fn state_of(@statedef.StateDef, depth? : Int) -> @quickcheck.Generator[Map[String, @core.Value]]
 
-pub fn value_in_domain(@core.Domain, Map[String, @core.Value]) -> @gen.Gen[@core.Value]?
+pub fn value_in_domain(@core.Domain, Map[String, @core.Value]) -> @quickcheck.Generator[@core.Value]?
 
-pub fn value_of(@statedef.StateDef, @core.Ty, depth? : Int) -> @gen.Gen[@core.Value]
+pub fn value_of(@statedef.StateDef, @core.Ty, depth? : Int) -> @quickcheck.Generator[@core.Value]
 
 // Errors
 
@@ -47,6 +47,9 @@ pub(all) enum Bucket {
   BIntent
   BEither
 } derive(Eq, @debug.Debug)
+pub fn Bucket::equal(Self, Self) -> Bool
+pub fn Bucket::not_equal(Self, Self) -> Bool
+pub fn Bucket::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Rules {
   preds : Map[String, @core.Expr]
@@ -54,7 +57,7 @@ pub(all) struct Rules {
   unlowerable : Array[(String, String)]
 }
 pub fn Rules::broken(Self, Map[String, @core.Value]) -> Array[String]
-pub fn Rules::filter(Self, @gen.Gen[Map[String, @core.Value]]) -> @gen.Gen[Map[String, @core.Value]?]
+pub fn Rules::filter(Self, @quickcheck.Generator[Map[String, @core.Value]]) -> @quickcheck.Generator[Map[String, @core.Value]?]
 pub fn Rules::holds(Self, String, Map[String, @core.Value]) -> Bool?
 pub fn Rules::invariants_hold(Self, Map[String, @core.Value]) -> Bool
 pub fn Rules::usable(Self) -> Bool

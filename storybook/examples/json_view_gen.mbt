@@ -4,8 +4,7 @@
 //   tutuca gen json.tutu --name Json --out <dir>
 //
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component",
-//   "moonbitlang/core/debug"
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 
 ///|
 /// The state of the JsonSelector component.
@@ -14,6 +13,9 @@
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct JsonSelectorState {} derive(Default)
+
+///|
+pub extend JsonSelectorState with Default::{default}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -170,6 +172,9 @@ impl @component.Fields for JsonSelectorState with fn schema() {
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct JsonNullState {} derive(Default)
+
+///|
+pub extend JsonNullState with Default::{default}
 
 ///|
 /// The zero state: every field at its type's empty value.

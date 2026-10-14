@@ -45,6 +45,8 @@ pub fn vocab() -> Array[VocabFn]
 pub suberror PreambleError {
   PreambleBug(String)
 }
+pub fn PreambleError::output(Self, &Logger) -> Unit
+pub fn PreambleError::to_string(Self) -> String
 pub impl Show for PreambleError
 
 // Types and methods
@@ -66,13 +68,26 @@ pub(all) enum Op {
   OpDebug
 } derive(Compare, Eq, Hash, @debug.Debug)
 pub fn Op::code(Self) -> Int
+pub fn Op::compare(Self, Self) -> Int
+pub fn Op::equal(Self, Self) -> Bool
+pub fn Op::hash(Self) -> Int
+pub fn Op::hash_combine(Self, Hasher) -> Unit
 pub fn Op::name(Self) -> String
+pub fn Op::not_equal(Self, Self) -> Bool
 pub fn Op::of_code(Int) -> Self?
+pub fn Op::op_ge(Self, Self) -> Bool
+pub fn Op::op_gt(Self, Self) -> Bool
+pub fn Op::op_le(Self, Self) -> Bool
+pub fn Op::op_lt(Self, Self) -> Bool
+pub fn Op::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Supplier {
   Runtime
   Host
 } derive(Eq, @debug.Debug)
+pub fn Supplier::equal(Self, Self) -> Bool
+pub fn Supplier::not_equal(Self, Self) -> Bool
+pub fn Supplier::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Tag {
   TagNull
@@ -89,7 +104,17 @@ pub(all) enum Tag {
   TagExt
 } derive(Compare, Eq, Hash, @debug.Debug)
 pub fn Tag::code(Self) -> Int
+pub fn Tag::compare(Self, Self) -> Int
+pub fn Tag::equal(Self, Self) -> Bool
+pub fn Tag::hash(Self) -> Int
+pub fn Tag::hash_combine(Self, Hasher) -> Unit
+pub fn Tag::not_equal(Self, Self) -> Bool
 pub fn Tag::of_code(Int) -> Self?
+pub fn Tag::op_ge(Self, Self) -> Bool
+pub fn Tag::op_gt(Self, Self) -> Bool
+pub fn Tag::op_le(Self, Self) -> Bool
+pub fn Tag::op_lt(Self, Self) -> Bool
+pub fn Tag::to_repr(Self) -> @debug.Repr
 pub fn Tag::type_name(Self) -> String
 
 pub(all) struct VocabFn {

@@ -513,7 +513,7 @@ fn emit_decode_arm(
 
 ///|
 /// The inclusive range of a WIT integer width, as decimal text.
-fn int_range(width : Int, signed : Bool) -> (String, String) {
+fn int_range(width : Int32, signed : Bool) -> (String, String) {
   if signed {
     match width {
       8 => ("-128", "127")

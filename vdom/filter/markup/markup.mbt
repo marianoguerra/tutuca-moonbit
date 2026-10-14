@@ -40,8 +40,8 @@ pub const RAW_ATTR : String = "dangerouslySetInnerHTML"
 
 ///|
 pub fn MarkupFilter::new(
-  sanitizer? : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
-  max_reports? : Int = 64,
+  sanitizer~ : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
+  max_reports~ : Int32 = 64,
 ) -> MarkupFilter {
   { sanitizer, log: @filter.DropLog::new(max_reports~), }
 }
@@ -50,6 +50,14 @@ pub fn MarkupFilter::new(
 /// Everything dropped since the last call, and clears the log.
 pub impl @filter.VdomFilter for MarkupFilter with fn take_reports(self) {
   self.log.take()
+}
+
+///|
+pub extend MarkupFilter with @filter.VdomFilter::{
+  filter_elem_hinted,
+  filter_elem,
+  take_reports,
+  filter_tree,
 }
 
 ///|

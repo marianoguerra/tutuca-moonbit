@@ -28,8 +28,8 @@ fn mount_render(
   m : @component.ModuleDef,
   root : String,
   args : Map[String, @tutuca.Value],
-  init? : Bool = false,
-) -> Int {
+  init~ : Bool = false,
+) -> Int32 {
   let h = @harness.mount(m, root, args~) catch {
     e => abort("benchmark render \{label}: \{e}")
   }
@@ -58,7 +58,7 @@ const SKIPPED_EXAMPLE = "lint-errors"
 /// Every example, mounted the way storybook/stories.mbt mounts it. The
 /// broad "does anything in the render path regress" number: 50 modules, between
 /// them every view directive the framework has.
-pub fn render_all_examples() -> Int {
+pub fn render_all_examples() -> Int32 {
   let mut n = 0
   for e in @examples.all_examples() {
     if e.name == SKIPPED_EXAMPLE {
@@ -85,7 +85,7 @@ fn comp_of(m : @component.ModuleDef, name : String) -> @component.Component {
 
 ///|
 /// `@each` over n plain values: the cheapest list there is, no child components.
-pub fn render_list(n : Int) -> Int {
+pub fn render_list(n : Int32) -> Int32 {
   mount_render("list/\{n}", list_module, "ListIteration", list_args(n))
 }
 
@@ -93,7 +93,7 @@ pub fn render_list(n : Int) -> Int {
 /// n CHILD COMPONENT INSTANCES in a list (`@each` + `<x render-it>`): every item
 /// is its own component with its own state and view, which is the shape a real
 /// list of rows has.
-pub fn render_todo(n : Int) -> Int {
+pub fn render_todo(n : Int32) -> Int32 {
   mount_render("todo/\{n}", todo_module, "Items", todo_args(n))
 }
 
@@ -101,7 +101,7 @@ pub fn render_todo(n : Int) -> Int {
 /// n rows through a filter + pagination pipeline: the same list, but every item
 /// also passes through `@filter-with` / `@enrich-with` before rendering, and
 /// pagination bounds how many of them reach the DOM.
-pub fn render_people(n : Int) -> Int {
+pub fn render_people(n : Int32) -> Int32 {
   mount_render(
     "people/\{n}",
     filter_paginate_module,
@@ -115,7 +115,7 @@ pub fn render_people(n : Int) -> Int {
 /// times, `breadth` leaves at each level. Every level is a component rendering
 /// another instance of a component, which is the one shape the flat lists above
 /// never reach.
-pub fn render_json(depth : Int, breadth : Int) -> Int {
+pub fn render_json(depth : Int32, breadth : Int32) -> Int32 {
   mount_render(
     "json/\{depth}x\{breadth}",
     json_module,
@@ -131,7 +131,7 @@ pub fn render_json(depth : Int, breadth : Int) -> Int {
 // so mounting the same seed twice is safe: an app never writes back into it.
 
 ///|
-pub fn list_args(n : Int) -> Map[String, @tutuca.Value] {
+pub fn list_args(n : Int32) -> Map[String, @tutuca.Value] {
   {
     "items": items_for(list_items, n, () => {
       List(Array::makei(n, i => Str("item \{i}")))
@@ -140,7 +140,7 @@ pub fn list_args(n : Int) -> Map[String, @tutuca.Value] {
 }
 
 ///|
-pub fn todo_args(n : Int) -> Map[String, @tutuca.Value] {
+pub fn todo_args(n : Int32) -> Map[String, @tutuca.Value] {
   {
     "items": items_for(todo_rows, n, () => {
       let item = comp_of(todo_module, "Item")
@@ -154,7 +154,7 @@ pub fn todo_args(n : Int) -> Map[String, @tutuca.Value] {
 }
 
 ///|
-pub fn people_args(n : Int) -> Map[String, @tutuca.Value] {
+pub fn people_args(n : Int32) -> Map[String, @tutuca.Value] {
   {
     "items": items_for(people_rows, n, () => {
       let person = comp_of(filter_paginate_module, "Person")
@@ -172,12 +172,12 @@ pub fn people_args(n : Int) -> Map[String, @tutuca.Value] {
 
 ///|
 /// `breadth` string leaves plus one nested JsonArray, `depth` levels down.
-pub fn json_args(depth : Int, breadth : Int) -> Map[String, @tutuca.Value] {
+pub fn json_args(depth : Int32, breadth : Int32) -> Map[String, @tutuca.Value] {
   {
     "items": items_for(json_levels, depth * 100 + breadth, () => {
       let str_comp = comp_of(json_module, "JsonString")
       let arr_comp = comp_of(json_module, "JsonArray")
-      fn level(d : Int) -> @tutuca.Value {
+      fn level(d : Int32) -> @tutuca.Value {
         let items = Array::makei(breadth, i => {
           str_comp.make({ "value": Str("leaf \{d}.\{i}") })
         })
@@ -195,8 +195,8 @@ pub fn json_args(depth : Int, breadth : Int) -> Map[String, @tutuca.Value] {
 ///|
 /// The memo: build `key`'s value once, hand back the same one after that.
 fn items_for(
-  cache : Map[Int, @tutuca.Value],
-  key : Int,
+  cache : Map[Int32, @tutuca.Value],
+  key : Int32,
   build : () -> @tutuca.Value,
 ) -> @tutuca.Value {
   match cache.get(key) {
@@ -210,16 +210,16 @@ fn items_for(
 }
 
 ///|
-let list_items : Map[Int, @tutuca.Value] = Map([])
+let list_items : Map[Int32, @tutuca.Value] = Map([])
 
 ///|
-let todo_rows : Map[Int, @tutuca.Value] = Map([])
+let todo_rows : Map[Int32, @tutuca.Value] = Map([])
 
 ///|
-let people_rows : Map[Int, @tutuca.Value] = Map([])
+let people_rows : Map[Int32, @tutuca.Value] = Map([])
 
 ///|
-let json_levels : Map[Int, @tutuca.Value] = Map([])
+let json_levels : Map[Int32, @tutuca.Value] = Map([])
 
 ///|
 /// The modules the scaled workloads mount, built once: `Component` values carry
@@ -238,13 +238,15 @@ let json_module : @component.ModuleDef = @examples.json_module()
 ///|
 /// The item counts every size-scaled workload runs at. 0 isolates per-mount
 /// cost; 1000 is where a per-item cost that is not linear becomes obvious.
-pub let sizes : Array[Int] = [0, 1, 5, 10, 100, 1000]
+pub let sizes : Array[Int32] = [0, 1, 5, 10, 100, 1000]
 
 ///|
 /// Named render workloads, for the executable shell under a profiler.
-pub fn render_workloads() -> Array[(String, () -> Int)] {
-  let out : Array[(String, () -> Int)] = [("all-examples", render_all_examples)]
-  let scaled : Array[(String, (Int) -> Int)] = [
+pub fn render_workloads() -> Array[(String, () -> Int32)] {
+  let out : Array[(String, () -> Int32)] = [
+    ("all-examples", render_all_examples),
+  ]
+  let scaled : Array[(String, (Int32) -> Int32)] = [
     ("list", render_list),
     ("todo", render_todo),
     ("people", render_people),

@@ -91,7 +91,7 @@ fn pb_rows(scope : @component.ComponentStack) -> @tutuca.Value raise {
 }
 
 ///|
-fn pb_row_title(tx : @transactor.Transactor, i : Int) -> @tutuca.Value {
+fn pb_row_title(tx : @transactor.Transactor, i : Int32) -> @tutuca.Value {
   v_at(tx, [
     SeqStep(field="rows", key=KInt(i)),
     FieldStep("doc"),

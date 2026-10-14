@@ -30,6 +30,7 @@ pub let supported_manifest_version : Int
 // Errors
 type ManifestError derive(@debug.Debug)
 pub fn ManifestError::message(Self) -> String
+pub fn ManifestError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub(all) enum ControlMsg {
@@ -44,12 +45,18 @@ pub(all) enum ControlMsg {
   SetAt(Array[@core.Step], String, @core.Value)
   StopPropagation
 } derive(Eq, @debug.Debug)
+pub fn ControlMsg::equal(Self, Self) -> Bool
+pub fn ControlMsg::not_equal(Self, Self) -> Bool
+pub fn ControlMsg::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DispatchResult {
   handled : Bool
   next : Int?
   msgs : Array[ControlMsg]
 } derive(Eq, @debug.Debug)
+pub fn DispatchResult::equal(Self, Self) -> Bool
+pub fn DispatchResult::not_equal(Self, Self) -> Bool
+pub fn DispatchResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DynComponentDef {
   name : String
@@ -82,8 +89,11 @@ pub(all) struct DynComponentDef {
   inits : Array[DynInitDef]
   style : String
 } derive(Eq, @debug.Debug)
+pub fn DynComponentDef::equal(Self, Self) -> Bool
 pub fn DynComponentDef::field_infos(Self) -> Array[@core.FieldInfo]
+pub fn DynComponentDef::not_equal(Self, Self) -> Bool
 pub fn DynComponentDef::property_infos(Self) -> Array[@core.PropertyInfo]
+pub fn DynComponentDef::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DynConfigDef {
   name : String
@@ -91,6 +101,9 @@ pub(all) struct DynConfigDef {
   default_ : String
   doc : String
 } derive(Eq, @debug.Debug)
+pub fn DynConfigDef::equal(Self, Self) -> Bool
+pub fn DynConfigDef::not_equal(Self, Self) -> Bool
+pub fn DynConfigDef::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DynFieldDef {
   name : String
@@ -100,6 +113,9 @@ pub(all) struct DynFieldDef {
   domains : Array[@core.Domain]
   default : @core.Value?
 } derive(Eq, @debug.Debug)
+pub fn DynFieldDef::equal(Self, Self) -> Bool
+pub fn DynFieldDef::not_equal(Self, Self) -> Bool
+pub fn DynFieldDef::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DynInitDef {
   name : String
@@ -111,11 +127,17 @@ pub(all) struct DynInitDef {
   drive_json : String
   intents_json : String
 } derive(Eq, @debug.Debug)
+pub fn DynInitDef::equal(Self, Self) -> Bool
+pub fn DynInitDef::not_equal(Self, Self) -> Bool
+pub fn DynInitDef::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DynMacroDef {
   name : String
   defaults : Map[String, String]
 } derive(Eq, @debug.Debug)
+pub fn DynMacroDef::equal(Self, Self) -> Bool
+pub fn DynMacroDef::not_equal(Self, Self) -> Bool
+pub fn DynMacroDef::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DynManifest {
   api_version : Int
@@ -129,7 +151,10 @@ pub(all) struct DynManifest {
   tutu : String
   macros : Array[DynMacroDef]
 } derive(Eq, @debug.Debug)
+pub fn DynManifest::equal(Self, Self) -> Bool
 pub fn DynManifest::from_json_string(String) -> Self raise ManifestError
+pub fn DynManifest::not_equal(Self, Self) -> Bool
+pub fn DynManifest::to_repr(Self) -> @debug.Repr
 
 pub struct DynObj {
   comp_id : Int
@@ -141,11 +166,32 @@ pub struct DynObj {
   id : @core.ObjId
   owned : Map[String, @core.Value]
 }
+pub fn DynObj::component_id(Self) -> Int?
 pub fn DynObj::component_name(Self) -> String
+pub fn DynObj::debug(Self) -> String
+pub fn DynObj::eq(Self, &@core.Obj) -> Bool
+pub fn DynObj::field(Self, String) -> @core.Value?
 pub fn DynObj::handle(Self) -> Int
+pub fn DynObj::handler(Self, @core.HandlerBucket, String) -> @core.Handler?
+pub fn DynObj::identity(Self) -> @core.ObjId?
 pub fn DynObj::inst(Self) -> &Inst
+pub fn DynObj::item(Self, @core.PathKey) -> @core.Value?
+pub fn DynObj::member_at(Self, String, &@core.Stack) -> @core.Value?
+pub fn DynObj::method_at(Self, String, &@core.Stack) -> @core.Value?
+pub fn DynObj::mutate_member(Self, String, String, Array[@core.Value]) -> @core.Outcome
 pub fn DynObj::new(Int, DynComponentDef, &Inst, schema~ : @core.SchemaInfo, pid? : String, owned? : Map[String, @core.Value]) -> Self
+pub fn DynObj::persist_id(Self) -> String?
+pub fn DynObj::property(Self, String) -> @core.Value?
+pub fn DynObj::schema(Self) -> @core.SchemaInfo?
+pub fn DynObj::seq_entries(Self) -> Array[(@core.PathKey, @core.Value)]?
+pub fn DynObj::set_member(Self, String, @core.Value) -> @core.Outcome
+pub fn DynObj::set_property(Self, String, @core.Value) -> @core.Outcome
+pub fn DynObj::size(Self) -> Int?
 pub fn DynObj::to_value(Self) -> @core.Value
+pub fn DynObj::trigger(Self, String) -> @core.Value?
+pub fn DynObj::trigger_at(Self, String, &@core.Stack) -> @core.Value?
+pub fn DynObj::with_field(Self, String, @core.Value) -> @core.Value?
+pub fn DynObj::with_item(Self, @core.PathKey, @core.Value) -> @core.Value?
 pub fn DynObj::with_persist_id(Self, String) -> Self
 pub impl @core.Obj for DynObj
 
@@ -156,12 +202,18 @@ pub(all) struct DynPropertyDef {
   writable : Bool
   doc : String
 } derive(Eq, @debug.Debug)
+pub fn DynPropertyDef::equal(Self, Self) -> Bool
+pub fn DynPropertyDef::not_equal(Self, Self) -> Bool
+pub fn DynPropertyDef::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DynProtocolBinding {
   protocol_id : String
   member_name : String
   source : String
 } derive(Eq, @debug.Debug)
+pub fn DynProtocolBinding::equal(Self, Self) -> Bool
+pub fn DynProtocolBinding::not_equal(Self, Self) -> Bool
+pub fn DynProtocolBinding::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DynProtocolDef {
   id : String
@@ -174,11 +226,17 @@ pub(all) struct DynProtocolDef {
   provides : Array[String]
   lookups : Array[String]
 } derive(Eq, @debug.Debug)
+pub fn DynProtocolDef::equal(Self, Self) -> Bool
+pub fn DynProtocolDef::not_equal(Self, Self) -> Bool
+pub fn DynProtocolDef::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DynViewDef {
   name : String
   bytes : Int
 } derive(Eq, @debug.Debug)
+pub fn DynViewDef::equal(Self, Self) -> Bool
+pub fn DynViewDef::not_equal(Self, Self) -> Bool
+pub fn DynViewDef::to_repr(Self) -> @debug.Repr
 
 pub(all) enum GuestPropertyResult {
   GuestPropertyMissing
@@ -186,18 +244,36 @@ pub(all) enum GuestPropertyResult {
   GuestPropertyRefused
   GuestPropertyChanged(Int)
 } derive(Eq, @debug.Debug)
+pub fn GuestPropertyResult::equal(Self, Self) -> Bool
+pub fn GuestPropertyResult::not_equal(Self, Self) -> Bool
+pub fn GuestPropertyResult::to_repr(Self) -> @debug.Repr
 
 pub struct HandleInst {
   guest : &Guest
   handle : Int
 }
+pub fn HandleInst::dispatch(Self, @core.HandlerBucket, String, Array[@core.Value], Map[String, @core.Value]) -> InstDispatch
+pub fn HandleInst::get_field(Self, String) -> @core.Value?
+pub fn HandleInst::get_property(Self, String) -> @core.Value?
+pub fn HandleInst::hand_over(Self) -> Unit
+pub fn HandleInst::identity(Self) -> String
 pub fn HandleInst::new(&Guest, Int) -> Self
+pub fn HandleInst::persist(Self) -> Bytes
+pub fn HandleInst::release(Self) -> Unit
+pub fn HandleInst::render_call(Self, String, String, Array[@core.Value], Map[String, @core.Value]) -> @core.Value
+pub fn HandleInst::set_property(Self, String, @core.Value) -> InstProperty
+pub fn HandleInst::token(Self) -> Int
+pub fn HandleInst::with_field(Self, String, @core.Value) -> &Inst?
 pub impl Inst for HandleInst
 
 pub struct HandleModule {
   guest : &Guest
 }
+pub fn HandleModule::make(Self, String, Map[String, @core.Value]) -> &Inst?
 pub fn HandleModule::new(&Guest) -> Self
+pub fn HandleModule::of_token(Self, Int) -> &Inst
+pub fn HandleModule::restore(Self, String, Bytes) -> &Inst?
+pub fn HandleModule::serve_intent(Self, String, Array[@core.Value]) -> Result[@core.Value, @core.Value]
 pub impl GuestModule for HandleModule
 
 pub(all) struct InstDispatch {
@@ -245,12 +321,18 @@ pub(all) struct ResolvedConfig {
   all : Map[String, String]
   view : Map[String, String]
 } derive(Eq, @debug.Debug)
+pub fn ResolvedConfig::equal(Self, Self) -> Bool
+pub fn ResolvedConfig::not_equal(Self, Self) -> Bool
+pub fn ResolvedConfig::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SlotOwner {
   Guest
   HostHolds(@core.Value)
   HostBuilds(String)
 } derive(Eq, @debug.Debug)
+pub fn SlotOwner::equal(Self, Self) -> Bool
+pub fn SlotOwner::not_equal(Self, Self) -> Bool
+pub fn SlotOwner::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

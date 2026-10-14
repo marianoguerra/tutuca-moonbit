@@ -35,7 +35,7 @@ fn format_epoch_ms(ms : Double) -> String {
   let year = if m <= 2 { y + 1 } else { y }
   let hh = secs_of_day / 3600
   let mm = secs_of_day % 3600 / 60
-  fn pad(n : Int) -> String {
+  fn pad(n : Int32) -> String {
     if n < 10 {
       "0\{n}"
     } else {

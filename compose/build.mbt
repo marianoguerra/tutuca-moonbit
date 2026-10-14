@@ -4,11 +4,11 @@ pub(all) struct PlanNode {
   ref_ : @catalog.ComponentRef
   args : Map[String, Json]
   /// How many cells to open with. Empty holes, all of them.
-  cells : Int
+  cells : Int32
   /// `(cell index, child)`, in order. A cell with no entry here is one left
   /// empty ON PURPOSE — the `+` a person fills in later — so it is absent
   /// rather than present and blank.
-  children : Array[(Int, PlanNode)]
+  children : Array[(Int32, PlanNode)]
 }
 
 ///|
@@ -97,7 +97,7 @@ fn built_tree(
   // The cells, deepest first. A child that could not be built leaves an EMPTY
   // hole rather than no cell: an arrangement with a gap in it is still an
   // arrangement, and a person can see which one failed and fill it.
-  let by_index : Map[Int, PlanNode] = Map([])
+  let by_index : Map[Int32, PlanNode] = Map([])
   for pair in node.children {
     by_index[pair.0] = pair.1
   }

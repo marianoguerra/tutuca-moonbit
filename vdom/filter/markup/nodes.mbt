@@ -39,7 +39,7 @@ pub fn html_nodes(
   html : String,
   host_tag : String,
   on_drop : (String, String, String, String) -> Unit,
-  attr? : String = RAW_ATTR,
+  attr~ : String = RAW_ATTR,
 ) -> Array[@vdom.Vdom] {
   let (doc, roots) = @anode.parse_fragment(html)
   build_roots({ sanitizer, host_tag, attr, on_drop, }, doc, roots)
@@ -69,7 +69,7 @@ pub fn svg_nodes(
   svg : String,
   host_tag : String,
   on_drop : (String, String, String, String) -> Unit,
-  attr? : String = SAFE_SVG_ATTR,
+  attr~ : String = SAFE_SVG_ATTR,
 ) -> Array[@vdom.Vdom] {
   let (doc, roots) = @anode.parse_fragment_svg(svg)
   build_roots({ sanitizer, host_tag, attr, on_drop, }, doc, roots)
@@ -79,7 +79,7 @@ pub fn svg_nodes(
 fn build_roots(
   b : Build,
   doc : @html5.Document,
-  roots : Array[Int],
+  roots : Array[Int32],
 ) -> Array[@vdom.Vdom] {
   let out : Array[@vdom.Vdom] = []
   for id in roots {
@@ -157,7 +157,7 @@ fn foreign_attr_name(name : String) -> String {
 }
 
 ///|
-fn Build::node(self : Build, doc : @html5.Document, id : Int) -> @vdom.Vdom? {
+fn Build::node(self : Build, doc : @html5.Document, id : Int32) -> @vdom.Vdom? {
   match doc.get_node(id) {
     Some(TextNode(s)) => Some(Text(s))
     Some(CommentNode(s)) =>
@@ -177,7 +177,7 @@ fn Build::node(self : Build, doc : @html5.Document, id : Int) -> @vdom.Vdom? {
 fn Build::element(
   self : Build,
   doc : @html5.Document,
-  id : Int,
+  id : Int32,
   el : @html5.Element,
 ) -> @vdom.Vdom? {
   let tag = el.tag_name

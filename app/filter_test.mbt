@@ -62,7 +62,7 @@ priv enum FilterMode {
 /// A host's own rule, of the kind `add_filter` is for: it drops `class`, which
 /// no built-in rule touches, so a test can tell which of the two ran.
 priv struct ClassDropper {
-  mut dropped : Int
+  mut dropped : Int32
 }
 
 ///|
@@ -226,7 +226,7 @@ test "a filter added after mount applies from the next render" {
 /// Counts elements it is shown, so a test can say how much of the tree the
 /// filter actually walked.
 priv struct CountingFilter {
-  mut elems : Int
+  mut elems : Int32
 }
 
 ///|
@@ -422,7 +422,7 @@ fn md_component() -> @component.Component {
 
 ///|
 fn mk_md_app(
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
 ) -> (@app.App[@memdom.MemNode], @memdom.MemNode) raise {
   let scope = @component.ComponentStack::new()
   scope.register_components([md_component()])

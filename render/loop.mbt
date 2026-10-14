@@ -51,8 +51,12 @@ fn loop_iter_data(
 
 ///|
 /// Array.slice index semantics: negatives count from the end, clamped.
-fn normalize_range(start : Int?, end : Int?, size : Int) -> (Int, Int) {
-  fn norm(i : Int) -> Int {
+fn normalize_range(
+  start : Int32?,
+  end : Int32?,
+  size : Int32,
+) -> (Int32, Int32) {
+  fn norm(i : Int32) -> Int32 {
     if i < 0 {
       if size + i > 0 {
         size + i

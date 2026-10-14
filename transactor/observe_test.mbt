@@ -147,7 +147,7 @@ test "on_drained fires once per outermost settle that did work" {
   let root : @tutuca.Value = Map({ "sheet": Obj(OSheet::{ title: "a", }) })
   let node : @tutuca.Value = root
   let tx = @transactor.Transactor::new(node)
-  let drains : Ref[Int] = { val: 0, }
+  let drains : Ref[Int32] = { val: 0, }
   tx.on_drained(() => drains.val = drains.val + 1)
   // empty settle: no work, no callback
   tx.settle() |> ignore

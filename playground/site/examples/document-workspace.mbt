@@ -4,7 +4,7 @@ fn build() -> @component.ModuleDef {
 
 ///|
 pub fn document_workspace_module(
-  later? : (() -> Unit) -> Unit = f => f(),
+  later~ : (() -> Unit) -> Unit = f => f(),
 ) -> @component.ModuleDef {
   let editor = document_editor_component()
   let make = (id : String, title : String) => {
@@ -50,7 +50,7 @@ pub fn document_workspace_module(
 
 ///|
 pub fn demo_intents(
-  later? : (() -> Unit) -> Unit = f => f(),
+  later~ : (() -> Unit) -> Unit = f => f(),
 ) -> Map[String, Array[@component.IntentFn]] {
   let documents : Map[String, @tutuca.Value] = {
     "welcome": Str("# Welcome"),

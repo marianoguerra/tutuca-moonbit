@@ -12,9 +12,6 @@
 import {
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/filter",
-  // `SinkHints.markup` — whether this element can carry a payload at all,
-  // decided by `render` off the view tree rather than by looking here.
-  "marianoguerra/tutuca/sinks",
   // the config model and its verdicts, shared with the registration-time pass
   // so a host cannot have two different answers to the same question
   "marianoguerra/tutuca/anode/sanitize",
@@ -25,7 +22,3 @@ import {
   "marianoguerra/tutuca/anode",
   "moonbit-community/html/src" @html5,
 }
-
-import {
-  "moonbitlang/core/debug",
-} for "test"

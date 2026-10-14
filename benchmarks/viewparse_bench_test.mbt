@@ -66,17 +66,18 @@ test "workload shape" {
   // 1066834 -> 1068078 with the reader's own whitespace: a view written over
   // several lines keeps the newlines between them, so the generated builders
   // carry the text nodes the file wrote. -> 1073880 when the generated doc
-  // comments started naming the `spec:` and `logic:` sections.
+  // comments started naming the `spec:` and `logic:` sections. -> 1149487
+  // when every derive gained its `pub extend` declarations.
   inspect(
     @benchmarks.gen(@benchmarks.all_views),
     content=(
-      #|1072847
+      #|1149487
     ),
   )
   inspect(
     @benchmarks.gen(giant_1x),
     content=(
-      #|133564
+      #|134191
     ),
   )
 }

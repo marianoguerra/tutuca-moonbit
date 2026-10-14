@@ -13,7 +13,3 @@
 import {
   "moonbitlang/core/builtin",
 }
-
-import {
-  "moonbitlang/core/debug",
-} for "test"

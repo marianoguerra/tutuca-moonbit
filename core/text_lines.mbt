@@ -8,7 +8,7 @@
 ///|
 /// How many newlines `s` contains — one less than the number of lines when it
 /// does not end in one, which is why it is named for what it counts.
-pub fn line_count(s : String) -> Int {
+pub fn line_count(s : String) -> Int32 {
   let mut n = 0
   for c in s {
     if c == '\n' {

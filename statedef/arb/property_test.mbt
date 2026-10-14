@@ -120,8 +120,8 @@ fn fixtures() -> Array[@statedef.StateDef] raise {
 /// schema and checked against another would pass vacuously.
 fn gen_state_of(
   def : @statedef.StateDef,
-) -> @gen.Gen[(@statedef.StateDef, Map[String, @tutuca.Value])] {
-  @arb.state_of(def).fmap(s => (def, s))
+) -> @gen.Generator[(@statedef.StateDef, Map[String, @tutuca.Value])] {
+  @arb.state_of(def).map(s => (def, s))
 }
 
 ///|
@@ -275,7 +275,7 @@ test "property: an interpreted rule agrees with what it declares" {
 /// the rule rejects.
 test "a nullable field under a relation draws both its empty and a value the relation admits" {
   let def = one(SELECTION)
-  let states = @arb.state_of(def).samples(size=8, seed=20260828)
+  let states = @arb.state_of(def).samples(count=8, size=8, seed=20260828)
   let sels = states.map(s => s.get("sel").unwrap_or(Null))
   // Both halves are reached...
   assert_true(sels.iter().any(v => v is Null))
@@ -317,12 +317,12 @@ test "the invariant filter finds states, and the unfiltered generator does not" 
   let rules = @arb.rules_of(def)
   let kept = rules
     .filter(@arb.state_of(def))
-    .samples(size=8, seed=20260827)
+    .samples(count=8, size=8, seed=20260827)
     .filter(s => s is Some(_))
   assert_true(kept.length() > 0)
   // And the unfiltered draw is often NOT capped, which is why the filter
   // exists. If this ever fails, the generator has collapsed to a corner.
-  let raw = @arb.state_of(def).samples(size=8, seed=20260827)
+  let raw = @arb.state_of(def).samples(count=8, size=8, seed=20260827)
   let broken = raw.filter(s => !rules.invariants_hold(s))
   assert_true(broken.length() > 0)
 }
@@ -484,7 +484,7 @@ test "property: every generated write names a declared field" {
     let names = def.fields.map(f => f.name)
     guard @arb.property_write_of(def) is Some(one) else { continue }
     @qc.quick_check(
-      @qc.forall(@gen.int_range(0, 8).bind(n => one.array_with_size(n)), script => {
+      @qc.forall(@gen.int_range(0, 8).flat_map(n => one.array_with_size(n)), script => {
         for w in script {
           if !names.contains(w.0) {
             return false

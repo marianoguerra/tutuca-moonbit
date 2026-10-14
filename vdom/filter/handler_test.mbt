@@ -9,22 +9,22 @@ fn nel(
   tag : String,
   attrs : Map[String, @vdom.AttrValue],
   ns? : @vdom.Ns,
-  childs? : Array[@vdom.Vdom] = [],
+  childs~ : Array[@vdom.Vdom] = [],
 ) -> @vdom.Vdom {
   Node({ tag, attrs, childs, key: None, ns, })
 }
 
 ///|
 fn handler_filtered(tree : @vdom.Vdom) -> (@vdom.Vdom, Array[String]) {
-  let f = HandlerFilter::new()
+  let f = @filter.HandlerFilter::new()
   f.filter_tree(tree)
-  (tree, f.take_reports().map(Dropped::to_string))
+  (tree, f.take_reports().map(@filter.Dropped::to_string))
 }
 
 ///|
 test "the prefix predicate matches handlers and nothing else" {
   for name in ["onclick", "onload", "onerror", "ONCLICK", "onAfterPrint"] {
-    assert_true(is_event_handler_attr(name))
+    assert_true(@filter.is_event_handler_attr(name))
   }
   // Two characters is not a handler, and neither is a name that merely starts
   // with the letters.
@@ -33,10 +33,10 @@ test "the prefix predicate matches handlers and nothing else" {
       // `one` DOES match the prefix test — three characters beginning `on`.
       // Not an HTML attribute, so the over-match costs nothing, and erring
       // this way is deliberate for a remove rule.
-      assert_true(is_event_handler_attr(name))
+      assert_true(@filter.is_event_handler_attr(name))
       continue
     }
-    assert_false(is_event_handler_attr(name))
+    assert_false(@filter.is_event_handler_attr(name))
   }
 }
 
@@ -109,7 +109,7 @@ test "data-* and aria-* are not handlers" {
 
 ///|
 test "Baseline applies both rules in one walk" {
-  let f = Baseline::new()
+  let f = @filter.Baseline::new()
   let tree = nel(
     "a",
     {
@@ -128,7 +128,7 @@ test "Baseline applies both rules in one walk" {
   guard el.childs[0] is Node(img) else { fail("expected an element") }
   assert_true(img.attrs.get("src") is Some(Str("data:image/png;base64,AAA")))
   // Both logs drain through the one call, URL drops first.
-  let reports = f.take_reports().map(Dropped::to_string)
+  let reports = f.take_reports().map(@filter.Dropped::to_string)
   inspect(reports.length(), content="2")
   assert_true(reports[0].contains("href"))
   assert_true(reports[1].contains("onclick"))
@@ -138,7 +138,7 @@ test "Baseline applies both rules in one walk" {
 
 ///|
 test "reports are bounded" {
-  let f = HandlerFilter::new(max_reports=2)
+  let f = @filter.HandlerFilter::new(max_reports=2)
   let childs = []
   for i in 0..<10 {
     childs.push(nel("div", { "onclick": Str("h\{i}") }))
@@ -150,7 +150,7 @@ test "reports are bounded" {
 
 ///|
 test "a tree with nothing to drop is left alone" {
-  let f = Baseline::new()
+  let f = @filter.Baseline::new()
   let tree = nel("div", { "class": Str("x") }, childs=[
     Text("hello"),
     Comment("§Comp§"),

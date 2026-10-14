@@ -291,7 +291,7 @@ pub fn drive(
   //
   // A closure rather than a number, because `on_app` fires at MOUNT and the
   // question is about afterwards.
-  let count : Ref[() -> Int] = { val: () => 0, }
+  let count : Ref[() -> Int32] = { val: () => 0, }
   let report = @drive.run(
     native,
     manifest,
@@ -312,11 +312,11 @@ pub fn drive(
 
 ///|
 /// What the host held after the last drive.
-let last_held : Ref[Int] = { val: 0, }
+let last_held : Ref[Int32] = { val: 0, }
 
 ///|
 /// …read from the page. `check-instances` is the only caller.
-pub fn instance_count() -> Int {
+pub fn instance_count() -> Int32 {
   last_held.val
 }
 

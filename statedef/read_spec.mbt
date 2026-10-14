@@ -18,7 +18,7 @@
 /// reaches the shared half.
 pub fn read_spec(
   source : String,
-  name? : String = "",
+  name~ : String = "",
 ) -> Array[StateDef] raise DefError {
   let sources = @report.Sources::new()
   let id = sources.add("spec.tutu", source)

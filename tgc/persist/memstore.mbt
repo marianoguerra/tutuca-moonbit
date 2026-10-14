@@ -19,7 +19,7 @@ pub fn MemStore::new() -> MemStore {
 ///|
 /// How many entries it holds — the one thing a caller asks a memory store that
 /// it would not ask a real one.
-pub fn MemStore::size(self : MemStore) -> Int {
+pub fn MemStore::size(self : MemStore) -> Int32 {
   self.entries.length()
 }
 
@@ -27,6 +27,9 @@ pub fn MemStore::size(self : MemStore) -> Int {
 pub impl Store for MemStore with fn get(self, key) {
   self.entries.get(key)
 }
+
+///|
+pub extend MemStore with Store::{keys, set, get, remove}
 
 ///|
 pub impl Store for MemStore with fn set(self, key, value) {

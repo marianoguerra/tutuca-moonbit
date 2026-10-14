@@ -34,6 +34,12 @@ pub(all) enum HandlerBucket {
 } derive(Debug, Eq)
 
 ///|
+pub extend HandlerBucket with Debug::{to_repr}
+
+///|
+pub extend HandlerBucket with Eq::{not_equal, equal}
+
+///|
 /// The bucket's case index on the WIRE.
 ///
 /// A numbering, not a vocabulary: the host's buckets and the guest's are the
@@ -41,7 +47,7 @@ pub(all) enum HandlerBucket {
 /// which is the WIT variant's case order and cannot be changed without
 /// changing the contract. It lives here, beside the enum, so the two numbers
 /// have exactly one owner: a second copy anywhere is a second contract.
-pub fn HandlerBucket::ordinal(self : HandlerBucket) -> Int {
+pub fn HandlerBucket::ordinal(self : HandlerBucket) -> Int32 {
   match self {
     Receive => 0
     Intent => 1
@@ -76,6 +82,12 @@ pub(all) enum Dispatch {
   Receive(String, Array[Value])
   Intent(String, Array[Value])
 } derive(Debug, Eq)
+
+///|
+pub extend Dispatch with Debug::{to_repr}
+
+///|
+pub extend Dispatch with Eq::{not_equal, equal}
 
 ///|
 /// Which bucket answers this dispatch.
@@ -131,6 +143,12 @@ pub(all) enum Leg {
   Dyn
   Lex
 } derive(Debug, Eq)
+
+///|
+pub extend Leg with Debug::{to_repr}
+
+///|
+pub extend Leg with Eq::{not_equal, equal}
 
 ///|
 /// The leg word a route is written with, so a route has one spelling and not
@@ -203,7 +221,7 @@ pub fn[T] route_lookup(
 /// nearest-ancestor-wins falls out of frame order for both without a second
 /// stack.
 pub fn is_type_name(s : String) -> Bool {
-  s.iter().next() is Some('A'..='Z')
+  s.iter().next() is Some('A'..<='Z')
 }
 
 ///|
@@ -217,6 +235,12 @@ pub(all) struct LookupOpts {
   /// The legs to walk, in order. `default_route()` when nothing says otherwise.
   route : Array[Leg]
 } derive(Debug, Eq)
+
+///|
+pub extend LookupOpts with Debug::{to_repr}
+
+///|
+pub extend LookupOpts with Eq::{not_equal, equal}
 
 ///|
 declare pub fn LookupOpts::new(route? : Array[Leg]) -> LookupOpts
@@ -247,6 +271,12 @@ pub(all) struct IntentOpts {
 } derive(Debug, Eq)
 
 ///|
+pub extend IntentOpts with Debug::{to_repr}
+
+///|
+pub extend IntentOpts with Eq::{not_equal, equal}
+
+///|
 declare pub fn IntentOpts::new(
   route? : Array[Leg],
   on_ok_name? : String,
@@ -274,6 +304,12 @@ pub(all) struct IntentCall {
 } derive(Debug, Eq)
 
 ///|
+pub extend IntentCall with Debug::{to_repr}
+
+///|
+pub extend IntentCall with Eq::{not_equal, equal}
+
+///|
 /// What a static intent handler answers.
 ///
 /// `Pass` is the case a walk needs: a handler that has nothing to say declines,
@@ -286,6 +322,12 @@ pub(all) enum IntentAnswer {
   /// Decline. The walk continues to the next handler on the route.
   Pass
 } derive(Debug, Eq)
+
+///|
+pub extend IntentAnswer with Debug::{to_repr}
+
+///|
+pub extend IntentAnswer with Eq::{not_equal, equal}
 
 ///|
 /// Who raised a dispatch.
@@ -309,6 +351,12 @@ pub(all) enum Origin {
   /// A handler already running. The only one that is not an input.
   Handler
 } derive(Debug, Eq)
+
+///|
+pub extend Origin with Debug::{to_repr}
+
+///|
+pub extend Origin with Eq::{not_equal, equal}
 
 ///|
 /// Did this dispatch enter the tree from outside it?
@@ -415,7 +463,7 @@ pub(open) trait Ctx {
   /// walkPath), invoking `callback(component_id, instance)` for each; return
   /// false to stop early. Non-component chain elements are skipped. The pure
   /// default walks nothing (no state root); the transactor implements it.
-  fn walk_path(Self, callback : (Int, Value) -> Bool) -> Unit = _
+  fn walk_path(Self, callback : (Int32, Value) -> Bool) -> Unit = _
 }
 
 ///|
@@ -539,6 +587,29 @@ pub impl Ctx for NullCtx with fn origin(_self) {
 }
 
 ///|
+pub extend NullCtx with Ctx::{
+  name,
+  forward,
+  path,
+  make,
+  fail,
+  send_at_path,
+  set_member_at_path,
+  stop_propagation,
+  walk_path,
+  target_path,
+  reply,
+  at,
+  send,
+  intent_at_path,
+  lookup,
+  origin,
+  set_property_at_path,
+  intent,
+  send_reply,
+}
+
+///|
 /// A leaf-update handler, resolved ON the leaf so `self` is pre-bound (the
 /// original bound `this` at call time; binding at
 /// resolution time is equivalent — same instance either way). Receives its
@@ -570,10 +641,22 @@ pub(all) struct StepKey {
 } derive(Debug, Eq)
 
 ///|
+pub extend StepKey with Debug::{to_repr}
+
+///|
+pub extend StepKey with Eq::{not_equal, equal}
+
+///|
 /// An address into the component/state tree: a sequence of steps root→leaf.
 pub(all) struct Path {
   steps : Array[Step]
 } derive(Debug, Eq)
+
+///|
+pub extend Path with Debug::{to_repr}
+
+///|
+pub extend Path with Eq::{not_equal, equal}
 
 ///|
 declare pub fn Path::new(steps? : Array[Step]) -> Path
@@ -619,8 +702,14 @@ declare pub fn Path::to_keys(self : Path) -> Array[StepKey]
 /// One ordinary hop inside a render-path frame. `origin` is the component id
 /// that contributed it.
 pub(all) enum DispatchStep {
-  Plain(step~ : Step, origin~ : Int?)
+  Plain(step~ : Step, origin~ : Int32?)
 } derive(Debug, Eq)
+
+///|
+pub extend DispatchStep with Debug::{to_repr}
+
+///|
+pub extend DispatchStep with Eq::{not_equal, equal}
 
 ///|
 /// A binding a render frame introduced, replayed when the frame is rebuilt.
@@ -649,6 +738,12 @@ pub(all) enum FrameBind {
 } derive(Debug, Eq)
 
 ///|
+pub extend FrameBind with Debug::{to_repr}
+
+///|
+pub extend FrameBind with Eq::{not_equal, equal}
+
+///|
 /// One frame of a render path. `base` is the absolute transaction path where
 /// rendering resumed; `items` are the ordinary visual descendants rendered
 /// from there.
@@ -660,8 +755,14 @@ pub(all) enum FrameBind {
 pub(all) struct DispatchFrame {
   base : Path
   items : Array[DispatchStep]
-  binds : Array[(Int, FrameBind)]
+  binds : Array[(Int32, FrameBind)]
 } derive(Debug, Eq)
+
+///|
+pub extend DispatchFrame with Debug::{to_repr}
+
+///|
+pub extend DispatchFrame with Eq::{not_equal, equal}
 
 ///|
 /// A render path as a stack of continuations. Normal rendering extends the
@@ -670,6 +771,12 @@ pub(all) struct DispatchFrame {
 pub(all) struct DispatchPath {
   frames : Array[DispatchFrame]
 } derive(Debug, Eq)
+
+///|
+pub extend DispatchPath with Debug::{to_repr}
+
+///|
+pub extend DispatchPath with Eq::{not_equal, equal}
 
 ///|
 declare pub fn DispatchPath::new(items? : Array[DispatchStep]) -> DispatchPath

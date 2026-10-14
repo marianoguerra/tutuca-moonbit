@@ -4,8 +4,7 @@
 //   tutuca gen shell.tutu --name Shell --out <dir>
 //
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component",
-//   "moonbitlang/core/debug"
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 
 ///|
 /// One row of the palette.
@@ -208,7 +207,7 @@ impl @component.Fields for PickerRowState with fn schema() {
 pub(all) struct ComponentPickerState {
   query : String
   hits : Array[@tutuca.Value]
-  cursor : Int
+  cursor : Int32
   open : Bool
   empty_message : String
 }
@@ -284,7 +283,7 @@ impl @component.Fields for ComponentPickerState with fn decode(f) {
 /// dispatch the section did not claim. They are still here because raising
 /// one is what a parent does, and `to_dispatch` is how.
 pub(all) enum ComponentPickerMsg {
-  SetCursor(Int)
+  SetCursor(Int32)
   Dismissed
   SetHits(Array[@tutuca.Value], String)
   Opened

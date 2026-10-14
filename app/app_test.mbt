@@ -6,7 +6,7 @@
 fn find_el(
   root : @memdom.MemNode,
   tag : String,
-  nth? : Int = 0,
+  nth~ : Int32 = 0,
 ) -> @memdom.MemNode? {
   let hits : Array[@memdom.MemNode] = []
   fn walk(n : @memdom.MemNode) {

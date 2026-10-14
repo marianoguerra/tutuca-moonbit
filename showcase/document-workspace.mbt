@@ -1,6 +1,6 @@
 ///|
 pub fn document_workspace_module(
-  later? : (() -> Unit) -> Unit = f => f(),
+  later~ : (() -> Unit) -> Unit = f => f(),
 ) -> @component.ModuleDef {
   let editor = document_editor_component()
   let make = (id : String, title : String) => {

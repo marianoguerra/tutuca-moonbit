@@ -33,20 +33,32 @@ pub struct Baseline {
   url : UrlFilter
   handlers : HandlerFilter
 }
+pub fn Baseline::filter_elem(Self, @vdom.VElem) -> Unit
+pub fn Baseline::filter_elem_hinted(Self, @vdom.VElem, @sinks.SinkHints) -> Unit
+pub fn Baseline::filter_tree(Self, @vdom.Vdom) -> Unit
 pub fn Baseline::new(max_reports? : Int) -> Self
+pub fn Baseline::take_reports(Self) -> Array[Dropped]
 pub impl VdomFilter for Baseline
 
 pub struct Chain {
   filters : Array[&VdomFilter]
 }
+pub fn Chain::filter_elem(Self, @vdom.VElem) -> Unit
+pub fn Chain::filter_elem_hinted(Self, @vdom.VElem, @sinks.SinkHints) -> Unit
+pub fn Chain::filter_tree(Self, @vdom.Vdom) -> Unit
 pub fn Chain::new(Array[&VdomFilter]) -> Self
+pub fn Chain::take_reports(Self) -> Array[Dropped]
 pub impl VdomFilter for Chain
 
 pub struct CssFilter {
   policy : @css.CssPolicy
   log : DropLog
 }
+pub fn CssFilter::filter_elem(Self, @vdom.VElem) -> Unit
+pub fn CssFilter::filter_elem_hinted(Self, @vdom.VElem, @sinks.SinkHints) -> Unit
+pub fn CssFilter::filter_tree(Self, @vdom.Vdom) -> Unit
 pub fn CssFilter::new(policy? : @css.CssPolicy, max_reports? : Int) -> Self
+pub fn CssFilter::take_reports(Self) -> Array[Dropped]
 pub impl VdomFilter for CssFilter
 
 pub struct DropLog {
@@ -63,18 +75,29 @@ pub(all) struct Dropped {
   value : String
   reason : String
 } derive(Eq, @debug.Debug)
+pub fn Dropped::equal(Self, Self) -> Bool
+pub fn Dropped::not_equal(Self, Self) -> Bool
+pub fn Dropped::to_repr(Self) -> @debug.Repr
 pub fn Dropped::to_string(Self) -> String
 
 pub struct HandlerFilter {
   log : DropLog
 }
+pub fn HandlerFilter::filter_elem(Self, @vdom.VElem) -> Unit
+pub fn HandlerFilter::filter_elem_hinted(Self, @vdom.VElem, @sinks.SinkHints) -> Unit
+pub fn HandlerFilter::filter_tree(Self, @vdom.Vdom) -> Unit
 pub fn HandlerFilter::new(max_reports? : Int) -> Self
+pub fn HandlerFilter::take_reports(Self) -> Array[Dropped]
 pub impl VdomFilter for HandlerFilter
 
 pub struct UrlFilter {
   log : DropLog
 }
+pub fn UrlFilter::filter_elem(Self, @vdom.VElem) -> Unit
+pub fn UrlFilter::filter_elem_hinted(Self, @vdom.VElem, @sinks.SinkHints) -> Unit
+pub fn UrlFilter::filter_tree(Self, @vdom.Vdom) -> Unit
 pub fn UrlFilter::new(max_reports? : Int) -> Self
+pub fn UrlFilter::take_reports(Self) -> Array[Dropped]
 pub impl VdomFilter for UrlFilter
 
 // Type aliases

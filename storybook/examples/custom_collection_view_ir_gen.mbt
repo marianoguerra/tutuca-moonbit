@@ -81,18 +81,18 @@ pub fn playlist_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn playlist_component(
-  name? : String = "Playlist",
-  views? : Map[String, @anode.View] = playlist_views(),
-  initial? : PlaylistState = PlaylistState::zero(),
-  common_style? : String = playlist_common_style,
-  global_style? : String = playlist_global_style,
+  name~ : String = "Playlist",
+  views~ : Map[String, @anode.View] = playlist_views(),
+  initial~ : PlaylistState = PlaylistState::zero(),
+  common_style~ : String = playlist_common_style,
+  global_style~ : String = playlist_global_style,
   update? : (PlaylistState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     PlaylistState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -139,18 +139,18 @@ pub fn song_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn song_component(
-  name? : String = "Song",
-  views? : Map[String, @anode.View] = song_views(),
-  initial? : SongState = SongState::zero(),
-  common_style? : String = song_common_style,
-  global_style? : String = song_global_style,
+  name~ : String = "Song",
+  views~ : Map[String, @anode.View] = song_views(),
+  initial~ : SongState = SongState::zero(),
+  common_style~ : String = song_common_style,
+  global_style~ : String = song_global_style,
   update? : (SongState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SongState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

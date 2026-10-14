@@ -342,11 +342,11 @@ fn is_hex_color(s : String) -> Bool {
 /// parsers read the same way.
 fn url_text(
   toks : ArrayView[@token.Token],
-  at : Int,
+  at : Int32,
   policy : CssPolicy,
   urls : Array[String],
   screen : (String) -> Bool,
-) -> Result[(String, Int), CssReason] {
+) -> Result[(String, Int32), CssReason] {
   if at + 2 >= toks.length() {
     return Err(Malformed("unclosed url("))
   }

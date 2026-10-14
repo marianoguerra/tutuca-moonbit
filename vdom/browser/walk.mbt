@@ -15,6 +15,14 @@ pub impl @vdom.DomWalk for BrowserNode with fn prev_sibling(self) {
 }
 
 ///|
+pub extend BrowserNode with @vdom.DomWalk::{
+  node_kind,
+  char_data,
+  attribute,
+  prev_sibling,
+}
+
+///|
 pub impl @vdom.DomWalk for BrowserNode with fn node_kind(self) {
   self.0._get("nodeType").cast()
 }

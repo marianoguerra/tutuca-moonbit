@@ -210,10 +210,10 @@ fn stamp_render_base(vdom : @vdom.Vdom, text : String) -> @vdom.Vdom {
 fn render_site(
   value : @tutuca.Value,
   view_val : @tutuca.Expr?,
-  node_id : Int?,
+  node_id : Int32?,
   stack : RenderStack,
   ctx : RenderCtx,
-  view? : String = "",
+  view~ : String = "",
   render_path? : @tutuca.DispatchPath,
   base? : @tutuca.Path,
 ) -> @vdom.Vdom? {
@@ -321,7 +321,7 @@ pub fn render_root(
   value : @tutuca.Value,
   stack : RenderStack,
   ctx : RenderCtx,
-  view? : String = "",
+  view~ : String = "",
 ) -> @vdom.Vdom? {
   render_site(value, None, None, stack, ctx, view~)
 }

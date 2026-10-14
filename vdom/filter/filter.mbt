@@ -118,6 +118,12 @@ pub(all) struct Dropped {
 } derive(Eq, Debug)
 
 ///|
+pub extend Dropped with Eq::{not_equal, equal}
+
+///|
+pub extend Dropped with Debug::{to_repr}
+
+///|
 pub fn Dropped::to_string(self : Dropped) -> String {
   "dropped \{self.attr} on <\{self.tag}>: \{self.reason} (\{self.value})"
 }
@@ -131,11 +137,11 @@ pub fn Dropped::to_string(self : Dropped) -> String {
 /// every element of every render and an unbounded log is the leak.
 pub struct DropLog {
   entries : Array[Dropped]
-  max : Int
+  max : Int32
 }
 
 ///|
-pub fn DropLog::new(max_reports? : Int = 64) -> DropLog {
+pub fn DropLog::new(max_reports~ : Int32 = 64) -> DropLog {
   { entries: [], max: max_reports, }
 }
 
@@ -185,6 +191,14 @@ pub impl VdomFilter for Chain with fn filter_elem(self, el) {
   for f in self.filters {
     f.filter_elem(el)
   }
+}
+
+///|
+pub extend Chain with VdomFilter::{
+  filter_elem_hinted,
+  filter_elem,
+  take_reports,
+  filter_tree,
 }
 
 ///|

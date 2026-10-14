@@ -5,7 +5,7 @@ import {
   "marianoguerra/tutuca/storybook",
   "marianoguerra/tutuca/storybook/ui",
   "marianoguerra/tutuca/storybook/ui/panels",
-  "mizchi/js/core",
+  "mizchi/js_core",
 }
 
 // Values
@@ -13,7 +13,7 @@ pub fn all(Array[@storybook.Section]) -> @ui.PanelSet[@marianoguerra/tutuca/vdom
 
 pub fn fuzz_effects() -> @panels.FuzzEffects
 
-pub fn on_event(@core.Any) -> Unit
+pub fn on_event(@js_core.Any) -> Unit
 
 pub fn on_file_text(Int, Bool, String) -> Unit
 

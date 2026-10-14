@@ -41,6 +41,9 @@ pub(all) enum ConfigError {
   DataAttrListed(name~ : String)
   DataAttrsWithGlobalRemove
 } derive(Eq, @debug.Debug)
+pub fn ConfigError::equal(Self, Self) -> Bool
+pub fn ConfigError::not_equal(Self, Self) -> Bool
+pub fn ConfigError::to_repr(Self) -> @debug.Repr
 pub fn ConfigError::to_string(Self) -> String
 
 pub(all) struct ElemAttrs {
@@ -53,25 +56,39 @@ pub(all) enum ElemNs {
   Svg
   MathML
 } derive(Eq, Hash, @debug.Debug)
+pub fn ElemNs::equal(Self, Self) -> Bool
+pub fn ElemNs::hash(Self) -> Int
+pub fn ElemNs::hash_combine(Self, Hasher) -> Unit
+pub fn ElemNs::not_equal(Self, Self) -> Bool
 pub fn ElemNs::of_anode(@anode.Ns?) -> Self
+pub fn ElemNs::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ElementName {
   name : String
   ns : ElemNs
 } derive(Eq, @debug.Debug)
+pub fn ElementName::equal(Self, Self) -> Bool
+pub fn ElementName::not_equal(Self, Self) -> Bool
+pub fn ElementName::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ElementRule {
   elem : ElementName
   attributes : Array[String]?
   remove_attributes : Array[String]?
 } derive(Eq, @debug.Debug)
+pub fn ElementRule::equal(Self, Self) -> Bool
+pub fn ElementRule::not_equal(Self, Self) -> Bool
 pub fn ElementRule::of(ElementName) -> Self
+pub fn ElementRule::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ElementVerdict {
   Keep
   Drop
   ReplaceWithChildren
 } derive(Eq, @debug.Debug)
+pub fn ElementVerdict::equal(Self, Self) -> Bool
+pub fn ElementVerdict::not_equal(Self, Self) -> Bool
+pub fn ElementVerdict::to_repr(Self) -> @debug.Repr
 
 pub struct Sanitizer {
   allow_elements : Map[String, ElemAttrs]?
@@ -105,7 +122,10 @@ pub(all) struct SanitizerConfig {
 } derive(Eq, @debug.Debug)
 pub fn SanitizerConfig::default() -> Self
 pub fn SanitizerConfig::empty() -> Self
+pub fn SanitizerConfig::equal(Self, Self) -> Bool
+pub fn SanitizerConfig::not_equal(Self, Self) -> Bool
 pub fn SanitizerConfig::spec_default() -> Self
+pub fn SanitizerConfig::to_repr(Self) -> @debug.Repr
 pub fn SanitizerConfig::validate(Self) -> Array[ConfigError]
 
 pub(all) enum Violation {
@@ -116,6 +136,9 @@ pub(all) enum Violation {
   RawMarkup(tag~ : String, at~ : String)
 } derive(Eq, @debug.Debug)
 pub fn Violation::at(Self) -> String
+pub fn Violation::equal(Self, Self) -> Bool
+pub fn Violation::not_equal(Self, Self) -> Bool
+pub fn Violation::to_repr(Self) -> @debug.Repr
 pub fn Violation::to_string(Self) -> String
 
 // Type aliases

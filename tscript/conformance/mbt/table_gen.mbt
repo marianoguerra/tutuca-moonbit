@@ -8,7 +8,7 @@
 ///|
 /// The name v2 case `i` was DISPATCHED under, or None when it was not
 /// projected.
-pub fn v2_case_name(i : Int) -> String? {
+pub fn v2_case_name(i : Int32) -> String? {
   match i {
     0 => Some("case0")
     1 => Some("nope")

@@ -35,8 +35,11 @@ pub(all) enum DeclKind {
   Macro
   Style
 } derive(Eq, @debug.Debug)
+pub fn DeclKind::equal(Self, Self) -> Bool
 pub fn DeclKind::keyword(Self) -> String
+pub fn DeclKind::not_equal(Self, Self) -> Bool
 pub fn DeclKind::noun(Self) -> String
+pub fn DeclKind::to_repr(Self) -> @debug.Repr
 pub fn DeclKind::wants_string_name(Self) -> Bool
 
 pub(all) enum Section {
@@ -48,8 +51,18 @@ pub(all) enum Section {
 } derive(Compare, Eq, Hash, @debug.Debug)
 pub fn Section::all() -> Array[Self]
 pub fn Section::bare_kind(Self) -> DeclKind
+pub fn Section::compare(Self, Self) -> Int
+pub fn Section::equal(Self, Self) -> Bool
+pub fn Section::hash(Self) -> Int
+pub fn Section::hash_combine(Self, Hasher) -> Unit
 pub fn Section::name(Self) -> String
+pub fn Section::not_equal(Self, Self) -> Bool
 pub fn Section::of_name(String) -> Self?
+pub fn Section::op_ge(Self, Self) -> Bool
+pub fn Section::op_gt(Self, Self) -> Bool
+pub fn Section::op_le(Self, Self) -> Bool
+pub fn Section::op_lt(Self, Self) -> Bool
+pub fn Section::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SectionBlock {
   section : Section

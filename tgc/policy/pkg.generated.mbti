@@ -36,6 +36,9 @@ pub(all) struct ConfigBinding {
   ty : ConfigTy
   value : String
 } derive(Eq, @debug.Debug)
+pub fn ConfigBinding::equal(Self, Self) -> Bool
+pub fn ConfigBinding::not_equal(Self, Self) -> Bool
+pub fn ConfigBinding::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ConfigTy {
   TyOrigin
@@ -43,7 +46,10 @@ pub(all) enum ConfigTy {
   TyBool
   TyNumber
 } derive(Eq, @debug.Debug)
+pub fn ConfigTy::equal(Self, Self) -> Bool
+pub fn ConfigTy::not_equal(Self, Self) -> Bool
 pub fn ConfigTy::parse(String) -> Self?
+pub fn ConfigTy::to_repr(Self) -> @debug.Repr
 pub fn ConfigTy::to_string(Self) -> String
 
 pub(all) struct ModuleFacts {
@@ -53,6 +59,9 @@ pub(all) struct ModuleFacts {
   max_style_bytes : Int
   max_fields : Int
 } derive(Eq, @debug.Debug)
+pub fn ModuleFacts::equal(Self, Self) -> Bool
+pub fn ModuleFacts::not_equal(Self, Self) -> Bool
+pub fn ModuleFacts::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Policy {
   tier : TrustTier
@@ -89,11 +98,17 @@ pub(all) struct Quotas {
   max_fields : Int
 } derive(Eq, @debug.Debug)
 pub fn Quotas::default() -> Self
+pub fn Quotas::equal(Self, Self) -> Bool
+pub fn Quotas::not_equal(Self, Self) -> Bool
+pub fn Quotas::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Rejection {
   where_ : String
   message : String
 } derive(Eq, @debug.Debug)
+pub fn Rejection::equal(Self, Self) -> Bool
+pub fn Rejection::not_equal(Self, Self) -> Bool
+pub fn Rejection::to_repr(Self) -> @debug.Repr
 pub fn Rejection::to_string(Self) -> String
 
 pub(all) enum TrustTier {
@@ -101,6 +116,9 @@ pub(all) enum TrustTier {
   Granted
   Untrusted
 } derive(Eq, @debug.Debug)
+pub fn TrustTier::equal(Self, Self) -> Bool
+pub fn TrustTier::not_equal(Self, Self) -> Bool
+pub fn TrustTier::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

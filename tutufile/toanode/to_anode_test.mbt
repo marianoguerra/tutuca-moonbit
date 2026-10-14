@@ -25,12 +25,12 @@ fn view_decls(src : String) -> Array[@tutufile.Decl] {
 
 ///|
 /// The first view declaration in a source, built directly.
-pub fn direct_view(src : String, name? : String = "") -> @anode.ANode? {
+pub fn direct_view(src : String, name~ : String = "") -> @anode.ANode? {
   let decls = view_decls(src)
-  let macros = macros_of(decls) catch { _ => return None }
+  let macros = @toanode.macros_of(decls) catch { _ => return None }
   for d in decls {
     if d.kind is View && (name == "" || d.name == name) {
-      let b = ViewBuilder::new(macros~)
+      let b = @toanode.ViewBuilder::new(macros~)
       let v = b.view(d) catch { _ => return None }
       return v.anode
     }
@@ -47,7 +47,7 @@ pub fn direct_view(src : String, name? : String = "") -> @anode.ANode? {
 /// the corpus, which is the half worth keeping. Every case below is a
 /// construct the notation has, and the claim is that the reader answers a tree
 /// for each of them.
-fn reads(src : String, name? : String = "") -> Unit raise {
+fn reads(src : String, name~ : String = "") -> Unit raise {
   assert_true(direct_view(src, name~) is Some(_), msg=src)
 }
 
@@ -146,7 +146,7 @@ test "a loop binding's member is a place with one step" {
   let sources = @report.Sources::new()
   let id = sources.add("card.tutu", src)
   ignore(id)
-  let direct = @debug.to_string(direct_view(src).map(strip_ws))
+  let direct = @debug.to_string(direct_view(src).map(@toanode.strip_ws))
   assert_true(direct.contains("PBind(\"value\"), steps: [PField(\"title\")]"))
 }
 
@@ -191,7 +191,7 @@ test "a macro parameter reaches the body" {
   let src = card(
     "  macro badge(~label: \"New\"):\n    span(class: \"badge\"): @(label)\n\n  Card:\n    div(): badge(~label: \"Sale\")",
   )
-  let direct = @debug.to_string(direct_view(src).map(strip_ws))
+  let direct = @debug.to_string(direct_view(src).map(@toanode.strip_ws))
   // the argument is in the tree, and nothing is left of the binding it went
   // through
   assert_true(direct.contains("ELit(lit=LStr(\"Sale\")"))
@@ -224,7 +224,7 @@ test "a macro whose body is more than one element" {
   let src = card(
     "  macro pair(~a: \"x\", ~b: \"y\"):\n    span(): @(a)\n    span(): @(b)\n\n  Card:\n    div(): pair(~a: \"1\", ~b: \"2\")",
   )
-  let direct = @debug.to_string(direct_view(src).map(strip_ws))
+  let direct = @debug.to_string(direct_view(src).map(@toanode.strip_ws))
   assert_false(direct.contains("MacroCall"))
   assert_true(direct.contains("ELit(lit=LStr(\"1\")"))
   assert_true(direct.contains("ELit(lit=LStr(\"2\")"))
@@ -239,7 +239,7 @@ test "a macro argument can be an expression" {
   let src = card(
     "  macro shout(~what: \"hi\"):\n    strong(): @(what)\n\n  Card:\n    div(): shout(~what: it.n)",
   )
-  let out = @debug.to_string(direct_view(src).map(strip_ws))
+  let out = @debug.to_string(direct_view(src).map(@toanode.strip_ws))
   assert_true(out.contains("PState(\"n\")"))
 }
 

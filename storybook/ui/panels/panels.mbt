@@ -35,8 +35,8 @@ pub let fuzz_fields : Map[String, @tutuca.Value] = {
 /// download.
 pub fn[N] all(
   sections : Array[@sb.Section],
-  effects? : FuzzEffects = FuzzEffects::none(),
-  files? : &@files.FileService = @files.MemFiles::new(),
+  effects~ : FuzzEffects = FuzzEffects::none(),
+  files~ : &@files.FileService = @files.MemFiles::new(),
 ) -> @sbui.PanelSet[N] {
   let insp = @inspector.Inspector::new()
   let slot : Ref[@app.App[N]?] = { val: None, }

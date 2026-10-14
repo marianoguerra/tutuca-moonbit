@@ -10,7 +10,7 @@
 /// Try to parse GFM footnote definition [^label]: content
 fn BlockParser::try_parse_footnote_definition(
   self : BlockParser,
-  start : Int,
+  start : Int32,
 ) -> Block? {
   let saved = self.scanner.pos
   let leading = self.read_leading_trivia()
@@ -124,7 +124,7 @@ fn BlockParser::try_parse_footnote_definition(
 /// Try to parse link reference definition
 fn BlockParser::try_parse_link_definition(
   self : BlockParser,
-  start : Int,
+  start : Int32,
 ) -> LinkDefinition? {
   let saved = self.scanner.pos
   let _ = self.scanner.skip_spaces()

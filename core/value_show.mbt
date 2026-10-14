@@ -174,6 +174,9 @@ pub impl Show for Expr with fn output(self, logger) {
 }
 
 ///|
+pub extend Expr with Show::{to_string, output}
+
+///|
 /// Written between its operands rather than in front of them. The compare
 /// family and nothing else: `and` / `or` / `implies` are named applications in
 /// a view slot and read as such.

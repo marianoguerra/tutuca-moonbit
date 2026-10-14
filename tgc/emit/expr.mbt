@@ -42,11 +42,11 @@ priv struct Ctx {
   /// map. So it returns one and the host merges it back.
   binds : String?
   /// The declaration's parameters, by name, in order.
-  params : Map[String, Int]
+  params : Map[String, Int32]
   /// Which callables this component actually has, so a call to a refused one is
   /// itself a refusal rather than a call to a function that is not there.
   callable : Map[String, @tscript.DeclKind]
-  mut temps : Int
+  mut temps : Int32
 }
 
 ///|
@@ -577,7 +577,7 @@ fn emit_read(
 /// | `pred` through `@when` | `(key, value, iter)` | a yes or a no |
 /// | `enrich` | `(binds, key, value, iter)` | the whole binding map |
 /// | `bindWith` | `()` | the whole binding map |
-fn bind_index(kind : @tscript.DeclKind, name : String) -> Int? {
+fn bind_index(kind : @tscript.DeclKind, name : String) -> Int32? {
   let base = match kind {
     DPred | DInvariant => 0
     DEnrich => 1

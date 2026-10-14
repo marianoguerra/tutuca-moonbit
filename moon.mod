@@ -19,12 +19,16 @@ preferred_target = "wasm-gc"
 description = "MoonBit port of the tutuca UI framework (value language, templates, vdom, components, app runtime, lint, CLI)"
 
 import {
-  "moonbitlang/quickcheck@0.14.0",
-  "mizchi/js@0.12.2",
-  "mizchi/js_browser@0.12.2",
-  "moonbitlang/async@0.21.2",
-  "moonbit-community/html@0.2.1",
+  "moonbitlang/quickcheck@0.15.0",
+  "mizchi/js_core@0.13.0",
+  "mizchi/js_browser@0.13.0",
+  "moonbitlang/async@0.22.5",
+  "moonbit-community/html@0.2.2",
   "mizchi/fswatch@0.2.1",
+  // Not imported: pinned so the resolver lifts `mizchi/fswatch`'s transitive
+  // `moonbitlang/regexp@0.3.5` (via `mizchi/x@0.4.0`), whose `moon.mod.json`
+  // the current toolchain refuses to build. Drop once fswatch moves past it.
+  "moonbitlang/regexp@0.3.6",
   // Only `mizchi/css/token` is used, by `anode/sanitize/css` — a css-syntax-3
   // tokenizer with no dependency of its own beyond `moonbitlang/core/string`.
   // The parser, cascade and computed packages are NOT used: `parse_inline_style`
@@ -36,7 +40,7 @@ import {
   // card-to-core-wasm route. `tgc` writes wap; wap lowers to the Wax AST.
   // Dependency-free itself, and MoonBit links per package, so a consumer who
   // never compiles a card pays the fetch and nothing else.
-  "marianoguerra/wax@0.2.1",
+  "marianoguerra/wax@0.3.0",
   // The `.tutu` file reader: shrubbery notation (groups, blocks, alternatives,
   // keyword options) plus the diagnostic reports its errors are carried in.
   "marianoguerra/shrubbery@0.1.1",
@@ -52,9 +56,9 @@ import {
   "marianoguerra/shrubbery-html@0.1.0",
   "marianoguerra/css@0.1.1",
   "marianoguerra/shrubbery-css@0.2.0",
-  "marianoguerra/tailwindcss@0.4.0",
-  "moonbitlang/x@0.5.1",
-  "marianoguerra/wap@0.2.1",
+  "marianoguerra/tailwindcss@0.4.1",
+  "moonbitlang/x@0.5.5",
+  "marianoguerra/wap@0.3.1",
 }
 
 // `.moonignore` defines the published inventory. `check-publish-graph` checks

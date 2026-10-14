@@ -339,11 +339,11 @@ fn contact_directory_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn contact_directory_component(
-  name? : String = "ContactDirectory",
-  views? : Map[String, @anode.View] = contact_directory_views(),
-  initial? : ContactDirectoryState = ContactDirectoryState::zero(),
-  common_style? : String = contact_directory_common_style,
-  global_style? : String = contact_directory_global_style,
+  name~ : String = "ContactDirectory",
+  views~ : Map[String, @anode.View] = contact_directory_views(),
+  initial~ : ContactDirectoryState = ContactDirectoryState::zero(),
+  common_style~ : String = contact_directory_common_style,
+  global_style~ : String = contact_directory_global_style,
   update? : (ContactDirectoryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ContactDirectoryState,
   ],
@@ -355,10 +355,10 @@ pub fn contact_directory_component(
     @tutuca.Value,
     &@tutuca.Stack,
   ) -> Unit)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -526,18 +526,18 @@ fn contact_editor_inline_update(
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn contact_editor_component(
-  name? : String = "ContactEditor",
-  views? : Map[String, @anode.View] = contact_editor_views(),
-  initial? : ContactEditorState = ContactEditorState::zero(),
-  common_style? : String = contact_editor_common_style,
-  global_style? : String = contact_editor_global_style,
+  name~ : String = "ContactEditor",
+  views~ : Map[String, @anode.View] = contact_editor_views(),
+  initial~ : ContactEditorState = ContactEditorState::zero(),
+  common_style~ : String = contact_editor_common_style,
+  global_style~ : String = contact_editor_global_style,
   update? : (ContactEditorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ContactEditorState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

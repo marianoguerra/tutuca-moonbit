@@ -3,7 +3,7 @@
 // saved visual caller.
 
 ///|
-fn plain(step : @core.Step, origin? : Int) -> @core.DispatchStep {
+fn plain(step : @core.Step, origin? : Int32) -> @core.DispatchStep {
   Plain(step~, origin~)
 }
 

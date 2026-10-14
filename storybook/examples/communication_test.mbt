@@ -1,6 +1,6 @@
 ///|
 test "send-receive: a message reaches a sibling child by path" {
-  let h = @harness.mount_example(send_receive_module(), "Default")
+  let h = @harness.mount_example(@examples.send_receive_module(), "Default")
   // the Status child starts empty, so @show="truthy? .message" hides it
   inspect(h.find_all(".alert").length(), content="0")
   h.type_into("input", "hello there")
@@ -14,7 +14,7 @@ test "send-receive: a message reaches a sibling child by path" {
 
 ///|
 test "send-receive: the receiver accumulates its own state across messages" {
-  let h = @harness.mount_example(send_receive_module(), "Default")
+  let h = @harness.mount_example(@examples.send_receive_module(), "Default")
   h.type_into("input", "one")
   h.key_down("input", "Enter") // @on.keydown+send="submit"
   h.type_into("input", "two")
@@ -27,7 +27,7 @@ test "send-receive: the receiver accumulates its own state across messages" {
 
 ///|
 test "send-receive: an empty draft sends nothing" {
-  let h = @harness.mount_example(send_receive_module(), "Default")
+  let h = @harness.mount_example(@examples.send_receive_module(), "Default")
   h.type_into("input", "   ")
   h.click(".send")
   inspect(h.find_all(".alert").length(), content="0")
@@ -35,7 +35,7 @@ test "send-receive: an empty draft sends nothing" {
 
 ///|
 test "tree: a component renders itself recursively" {
-  let h = @harness.mount_example(tree_module(), "Default")
+  let h = @harness.mount_example(@examples.tree_module(), "Default")
   // src > (components > button.js, card.js), index.js, README.md  = 6 nodes
   debug_inspect(
     h.texts(".head"),
@@ -60,7 +60,7 @@ test "tree: a component renders itself recursively" {
 
 ///|
 test "tree: clicking a node toggles it AND bubbles up to the root" {
-  let h = @harness.mount_example(tree_module(), "Default")
+  let h = @harness.mount_example(@examples.tree_module(), "Default")
   inspect(h.find_all("li").length(), content="0")
   // click "components" (a dir): it collapses, hiding its two children
   h.click(".head", nth=1)
@@ -95,7 +95,7 @@ test "tree: clicking a node toggles it AND bubbles up to the root" {
 
 ///|
 test "tree: a collapsed dir hides its subtree, and reopening restores it" {
-  let h = @harness.mount_example(tree_module(), "Default")
+  let h = @harness.mount_example(@examples.tree_module(), "Default")
   h.click(".head", nth=0) // collapse the root "src"
   debug_inspect(
     h.texts(".head"),

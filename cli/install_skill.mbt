@@ -20,6 +20,12 @@ pub(all) struct SkillInstallPlan {
 } derive(Debug, Eq)
 
 ///|
+pub extend SkillInstallPlan with Debug::{to_repr}
+
+///|
+pub extend SkillInstallPlan with Eq::{not_equal, equal}
+
+///|
 let install_skill_help : String =
   #|tutuca install-skill [--user | --project] [--dot-agents] [--dry-run] [--force]
   #|

@@ -13,7 +13,7 @@
 
 ///|
 /// Newest-first cap for an activity log (see ActivityLog `appendEntry`).
-let activity_cap : Int = 50
+let activity_cap : Int32 = 50
 
 ///|
 /// One row of dispatch activity. Pure display: a host builds these from

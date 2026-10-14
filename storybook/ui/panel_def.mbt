@@ -82,13 +82,13 @@ pub fn[N] PanelSet::none() -> PanelSet[N] {
 /// The shell's field set is `sN` per story, so a story IS a place — which is
 /// what makes "record only this example" expressible at all, and it is the
 /// address a panel layer dispatches and cuts at.
-pub fn story_field(idx : Int) -> String {
+pub fn story_field(idx : Int32) -> String {
   "s\{idx}"
 }
 
 ///|
 /// The story the gallery is currently showing, as an index — or -1.
-pub fn active_index(sections : Array[@sb.Section], active : String) -> Int {
+pub fn active_index(sections : Array[@sb.Section], active : String) -> Int32 {
   let mut idx = 0
   for sec in sections {
     for s in sec.stories {
@@ -103,7 +103,10 @@ pub fn active_index(sections : Array[@sb.Section], active : String) -> Int {
 
 ///|
 /// The index of the story on screen, or -1.
-pub fn[N] active_story(app : @app.App[N], sections : Array[@sb.Section]) -> Int {
+pub fn[N] active_story(
+  app : @app.App[N],
+  sections : Array[@sb.Section],
+) -> Int32 {
   active_index(sections, app.root_value().field("active").str(default=""))
 }
 
@@ -115,7 +118,7 @@ pub fn[N] shell_field(app : @app.App[N], name : String) -> @tutuca.Value {
 
 ///|
 /// A story's live instance.
-pub fn[N] story_value(app : @app.App[N], idx : Int) -> @tutuca.Value {
+pub fn[N] story_value(app : @app.App[N], idx : Int32) -> @tutuca.Value {
   app.root_value().field(story_field(idx))
 }
 
@@ -142,7 +145,7 @@ let story_scopes : Ref[Array[@component.ComponentStack]] = { val: [], }
 /// to be the story's OWN scope rather than a fresh one built from the same
 /// module: a `Component` carries an id bound to the scope it was registered
 /// in, so a value built elsewhere renders as a blank pane.
-pub fn story_scope(idx : Int) -> @component.ComponentStack? {
+pub fn story_scope(idx : Int32) -> @component.ComponentStack? {
   if idx < 0 || idx >= story_scopes.val.length() {
     None
   } else {
@@ -158,7 +161,7 @@ pub fn story_scope(idx : Int) -> @component.ComponentStack? {
 /// the reverse of what it received is not a thing that exists.
 pub fn[N] set_story_value(
   app : @app.App[N],
-  idx : Int,
+  idx : Int32,
   value : @tutuca.Value,
 ) -> Unit {
   app.send_at_root("setStoryValue", args=[Num(idx.to_double()), value])
@@ -173,7 +176,7 @@ pub fn[N] set_story_value(
 /// panel it built, and nothing else about where the pane lives.
 pub fn[N] push_panel(
   app : @app.App[N],
-  idx : Int,
+  idx : Int32,
   key : String,
   panel : @tutuca.Value,
 ) -> Unit {

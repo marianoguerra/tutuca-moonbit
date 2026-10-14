@@ -6,51 +6,49 @@
 
 ///|
 struct Lcg {
-  mut state : UInt
+  mut state : UInt32
 }
 
 ///|
-fn Lcg::next(self : Lcg) -> UInt {
+fn Lcg::next(self : Lcg) -> UInt32 {
   self.state = self.state * 1664525 + 1013904223
   self.state
 }
 
 ///|
 /// Uniform-ish value in 0..<n (n > 0).
-fn Lcg::below(self : Lcg, n : Int) -> Int {
+fn Lcg::below(self : Lcg, n : Int32) -> Int32 {
   (self.next() % n.reinterpret_as_uint()).reinterpret_as_int()
 }
 
 ///|
-fn gen_text_node() -> @gen.Gen[@vdom.Vdom] {
-  @gen.one_of_array(["a", "b", "hello", "x", ""]).fmap(@vdom.text)
+fn gen_text_node() -> @gen.Generator[@vdom.Vdom] {
+  @gen.elements(["a", "b", "hello", "x", ""]).map(@vdom.text)
 }
 
 ///|
-fn gen_comment_node() -> @gen.Gen[@vdom.Vdom] {
-  @gen.one_of_array(["c1", "note", "m"]).fmap(@vdom.comment)
+fn gen_comment_node() -> @gen.Generator[@vdom.Vdom] {
+  @gen.elements(["c1", "note", "m"]).map(@vdom.comment)
 }
 
 ///|
-fn gen_attr_pair() -> @gen.Gen[(String, @vdom.AttrValue)] {
+fn gen_attr_pair() -> @gen.Generator[(String, @vdom.AttrValue)] {
   @gen.one_of([
-    @gen.one_of_array(["x", "id1", "hello"]).fmap(v => ("id", Str(v))),
-    @gen.one_of_array(["red", "blue", "big red"]).fmap(v => {
-      ("className", Str(v))
-    }),
-    @gen.one_of_array(["color: red", "margin: 5px"]).fmap(v => ("style", Str(v))),
-    @gen.int_range(0, 100).fmap(v => ("data-n", @vdom.AttrValue::int(v))),
-    @gen.one_of_array([true, false]).fmap(v => ("aria-hidden", Bool(v))),
-    @gen.one_of_array(["v1", ""]).fmap(v => ("title", Str(v))),
+    @gen.elements(["x", "id1", "hello"]).map(v => ("id", Str(v))),
+    @gen.elements(["red", "blue", "big red"]).map(v => ("className", Str(v))),
+    @gen.elements(["color: red", "margin: 5px"]).map(v => ("style", Str(v))),
+    @gen.int_range(0, 100).map(v => ("data-n", @vdom.AttrValue::int(v))),
+    @gen.elements([true, false]).map(v => ("aria-hidden", Bool(v))),
+    @gen.elements(["v1", ""]).map(v => ("title", Str(v))),
   ])
 }
 
 ///|
-fn gen_attrs() -> @gen.Gen[Map[String, @vdom.AttrValue]] {
-  @gen.int_range(0, 3).bind(k => {
+fn gen_attrs() -> @gen.Generator[Map[String, @vdom.AttrValue]] {
+  @gen.int_range(0, 3).flat_map(k => {
     gen_attr_pair()
     .array_with_size(k)
-    .fmap(pairs => {
+    .map(pairs => {
       let m : Map[String, @vdom.AttrValue] = Map([])
       for p in pairs {
         m[p.0] = p.1
@@ -61,7 +59,7 @@ fn gen_attrs() -> @gen.Gen[Map[String, @vdom.AttrValue]] {
 }
 
 ///|
-fn gen_node(n : Int) -> @gen.Gen[@vdom.Vdom] {
+fn gen_node(n : Int32) -> @gen.Generator[@vdom.Vdom] {
   if n <= 0 {
     @gen.frequency([(3, gen_text_node()), (1, gen_comment_node())])
   } else {
@@ -74,15 +72,15 @@ fn gen_node(n : Int) -> @gen.Gen[@vdom.Vdom] {
 }
 
 ///|
-fn gen_element(n : Int) -> @gen.Gen[@vdom.Vdom] {
-  @gen.one_of_array(["div", "span", "p", "ul", "li", "section", "b"]).bind(tag => {
-    gen_attrs().bind(attrs => {
+fn gen_element(n : Int32) -> @gen.Generator[@vdom.Vdom] {
+  @gen.elements(["div", "span", "p", "ul", "li", "section", "b"]).flat_map(tag => {
+    gen_attrs().flat_map(attrs => {
       let kmax = if n < 4 { n } else { 4 }
-      @gen.int_range(0, kmax).bind(k => {
+      @gen.int_range(0, kmax).flat_map(k => {
         let child_budget = if k == 0 { 0 } else { (n - 1) / k }
         gen_node(child_budget)
         .array_with_size(k)
-        .fmap(childs => @vdom.h(tag, attrs~, childs~))
+        .map(childs => @vdom.h(tag, attrs~, childs~))
       })
     })
   })
@@ -90,14 +88,14 @@ fn gen_element(n : Int) -> @gen.Gen[@vdom.Vdom] {
 
 ///|
 /// Random Vdom tree (no keys); size-bounded at every recursion level.
-fn gen_vdom() -> @gen.Gen[@vdom.Vdom] {
+fn gen_vdom() -> @gen.Generator[@vdom.Vdom] {
   @gen.sized(n => gen_node(if n > 12 { 12 } else { n }))
 }
 
 ///|
 /// Deterministically mark a random subset of element children with unique
 /// keys (constructive — no rejection filtering).
-fn assign_keys(v : @vdom.Vdom, rng : Lcg, counter : Ref[Int]) -> @vdom.Vdom {
+fn assign_keys(v : @vdom.Vdom, rng : Lcg, counter : Ref[Int32]) -> @vdom.Vdom {
   match v {
     Node(el) => {
       let childs = el.childs.map(c => {
@@ -116,8 +114,10 @@ fn assign_keys(v : @vdom.Vdom, rng : Lcg, counter : Ref[Int]) -> @vdom.Vdom {
 }
 
 ///|
-fn gen_keyed_vdom() -> @gen.Gen[@vdom.Vdom] {
-  @gen.tuple(gen_vdom(), @gen.int_range(0, 1073741823)).fmap(p => {
+fn gen_keyed_vdom() -> @gen.Generator[@vdom.Vdom] {
+  gen_vdom()
+  .zip(@gen.int_range(0, 1073741823))
+  .map(p => {
     let rng = Lcg::{ state: p.1.reinterpret_as_uint(), }
     assign_keys(p.0, rng, Ref(0))
   })
@@ -188,8 +188,10 @@ fn mutate_childs(cs : Array[@vdom.Vdom], rng : Lcg) -> Array[@vdom.Vdom] {
 
 ///|
 /// (old, new) pairs where new is a localized mutation of old.
-fn gen_mutated_pair() -> @gen.Gen[(@vdom.Vdom, @vdom.Vdom)] {
-  @gen.tuple(gen_keyed_vdom(), @gen.int_range(0, 1073741823)).fmap(p => {
+fn gen_mutated_pair() -> @gen.Generator[(@vdom.Vdom, @vdom.Vdom)] {
+  gen_keyed_vdom()
+  .zip(@gen.int_range(0, 1073741823))
+  .map(p => {
     let rng = Lcg::{ state: p.1.reinterpret_as_uint(), }
     (p.0, mutate(p.0, rng))
   })

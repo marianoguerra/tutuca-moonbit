@@ -47,11 +47,23 @@ pub(all) struct Token {
 } derive(Debug, Eq)
 
 ///|
+pub extend Token with Debug::{to_repr}
+
+///|
+pub extend Token with Eq::{not_equal, equal}
+
+///|
 /// Parse-issue kind — only "bad-value" occurs here; other kinds
 /// (x-op, x-attr, …) join this enum when their modules are ported.
 pub(all) enum IssueKind {
   BadValue
 } derive(Debug, Eq)
+
+///|
+pub extend IssueKind with Debug::{to_repr}
+
+///|
+pub extend IssueKind with Eq::{not_equal, equal}
 
 ///|
 /// What was malformed (the `info.role`)
@@ -68,7 +80,7 @@ pub(all) enum IssueRole {
   /// "predicate-arity": wrong argument count. Carries the name and what the
   /// vocabulary says it takes, because with an open table the reader cannot
   /// look the arity up in an enum.
-  PredicateArity(name~ : String, want~ : Int)
+  PredicateArity(name~ : String, want~ : Int32)
   BadPredicateArg // "predicate-arg"
   /// "expression": a conditional slot whose expression the grammar refused,
   /// or which parsed into something a slot cannot hold. Carries the sentence
@@ -77,6 +89,12 @@ pub(all) enum IssueRole {
   /// instead of a translation of it.
   BadExpression(why~ : String)
 } derive(Debug, Eq)
+
+///|
+pub extend IssueRole with Debug::{to_repr}
+
+///|
+pub extend IssueRole with Eq::{not_equal, equal}
 
 ///|
 /// A parse issue, collected on the ParseCtx.
@@ -93,6 +111,12 @@ pub(all) struct Issue {
   value : String // offending token / source string
   span : Span
 } derive(Debug, Eq)
+
+///|
+pub extend Issue with Debug::{to_repr}
+
+///|
+pub extend Issue with Eq::{not_equal, equal}
 
 ///|
 /// Parse context (`px`): macro variables in scope plus collected issues
@@ -164,12 +188,24 @@ pub(all) enum PropertyAction {
 } derive(Debug, Eq)
 
 ///|
+pub extend PropertyAction with Debug::{to_repr}
+
+///|
+pub extend PropertyAction with Eq::{not_equal, equal}
+
+///|
 /// Handler reference plus parsed args for @on.<event>, or a property action.
 pub(all) struct HandlerParse {
   handler : @tutuca.Expr
   args : Array[@tutuca.Expr]
   action : PropertyAction?
 } derive(Debug, Eq)
+
+///|
+pub extend HandlerParse with Debug::{to_repr}
+
+///|
+pub extend HandlerParse with Eq::{not_equal, equal}
 
 ///|
 /// `$name` → Method, bare name → HandlerName(Receive); args allowed, a bad arg

@@ -1,7 +1,7 @@
 // Driving a component with generators derived from its own spec block.
 //
 // `statedef/arb` turns a `<script type="tutuca/spec">` block into
-// `@gen.Gen[...]` — values, states, dispatches, scripts, a shrinker, and the
+// `@gen.Generator[...]` — values, states, dispatches, scripts, a shrinker, and the
 // `Rules` that evaluate a `pred`/`invariant` over any state. What it does NOT
 // do is run one against a component: a generator produces a script, and
 // somebody has to send it somewhere and read back what happened. This is that
@@ -21,10 +21,8 @@ import {
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/statedef/arb",
-  "marianoguerra/tutuca/app",
-  "marianoguerra/tutuca/transactor",
   "marianoguerra/tutuca/testing/harness",
-  "moonbitlang/quickcheck/gen",
+  "moonbitlang/core/quickcheck" @gen,
   "moonbitlang/core/debug",
 }
 
@@ -37,5 +35,4 @@ import {
   // runtime does, to hold the generator to the same declaration.
   "marianoguerra/tutuca/statedef/info",
   "moonbitlang/core/cmp",
-  "moonbitlang/core/debug",
 } for "test"

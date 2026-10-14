@@ -114,18 +114,18 @@ pub fn json_null_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn json_null_component(
-  name? : String = "JsonNull",
-  views? : Map[String, @anode.View] = json_null_views(),
-  initial? : JsonNullState = JsonNullState::zero(),
-  common_style? : String = json_null_common_style,
-  global_style? : String = json_null_global_style,
+  name~ : String = "JsonNull",
+  views~ : Map[String, @anode.View] = json_null_views(),
+  initial~ : JsonNullState = JsonNullState::zero(),
+  common_style~ : String = json_null_common_style,
+  global_style~ : String = json_null_global_style,
   update? : (JsonNullState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonNullState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -187,11 +187,11 @@ pub fn json_boolean_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn json_boolean_component(
-  name? : String = "JsonBoolean",
-  views? : Map[String, @anode.View] = json_boolean_views(),
-  initial? : JsonBooleanState = JsonBooleanState::zero(),
-  common_style? : String = json_boolean_common_style,
-  global_style? : String = json_boolean_global_style,
+  name~ : String = "JsonBoolean",
+  views~ : Map[String, @anode.View] = json_boolean_views(),
+  initial~ : JsonBooleanState = JsonBooleanState::zero(),
+  common_style~ : String = json_boolean_common_style,
+  global_style~ : String = json_boolean_global_style,
   update? : (JsonBooleanState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonBooleanState,
   ],
@@ -200,10 +200,10 @@ pub fn json_boolean_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -265,11 +265,11 @@ pub fn json_number_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn json_number_component(
-  name? : String = "JsonNumber",
-  views? : Map[String, @anode.View] = json_number_views(),
-  initial? : JsonNumberState = JsonNumberState::zero(),
-  common_style? : String = json_number_common_style,
-  global_style? : String = json_number_global_style,
+  name~ : String = "JsonNumber",
+  views~ : Map[String, @anode.View] = json_number_views(),
+  initial~ : JsonNumberState = JsonNumberState::zero(),
+  common_style~ : String = json_number_common_style,
+  global_style~ : String = json_number_global_style,
   update? : (JsonNumberState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonNumberState,
   ],
@@ -278,10 +278,10 @@ pub fn json_number_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -344,11 +344,11 @@ pub fn json_string_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn json_string_component(
-  name? : String = "JsonString",
-  views? : Map[String, @anode.View] = json_string_views(),
-  initial? : JsonStringState = JsonStringState::zero(),
-  common_style? : String = json_string_common_style,
-  global_style? : String = json_string_global_style,
+  name~ : String = "JsonString",
+  views~ : Map[String, @anode.View] = json_string_views(),
+  initial~ : JsonStringState = JsonStringState::zero(),
+  common_style~ : String = json_string_common_style,
+  global_style~ : String = json_string_global_style,
   update? : (JsonStringState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonStringState,
   ],
@@ -357,10 +357,10 @@ pub fn json_string_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -422,18 +422,18 @@ pub fn value_fn_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn value_fn_component(
-  name? : String = "ValueFn",
-  views? : Map[String, @anode.View] = value_fn_views(),
-  initial? : ValueFnState = ValueFnState::zero(),
-  common_style? : String = value_fn_common_style,
-  global_style? : String = value_fn_global_style,
+  name~ : String = "ValueFn",
+  views~ : Map[String, @anode.View] = value_fn_views(),
+  initial~ : ValueFnState = ValueFnState::zero(),
+  common_style~ : String = value_fn_common_style,
+  global_style~ : String = value_fn_global_style,
   update? : (ValueFnState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ValueFnState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -487,18 +487,18 @@ pub fn value_obj_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn value_obj_component(
-  name? : String = "ValueObj",
-  views? : Map[String, @anode.View] = value_obj_views(),
-  initial? : ValueObjState = ValueObjState::zero(),
-  common_style? : String = value_obj_common_style,
-  global_style? : String = value_obj_global_style,
+  name~ : String = "ValueObj",
+  views~ : Map[String, @anode.View] = value_obj_views(),
+  initial~ : ValueObjState = ValueObjState::zero(),
+  common_style~ : String = value_obj_common_style,
+  global_style~ : String = value_obj_global_style,
   update? : (ValueObjState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ValueObjState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -694,11 +694,11 @@ fn json_array_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn json_array_component(
-  name? : String = "JsonArray",
-  views? : Map[String, @anode.View] = json_array_views(),
-  initial? : JsonArrayState = JsonArrayState::zero(),
-  common_style? : String = json_array_common_style,
-  global_style? : String = json_array_global_style,
+  name~ : String = "JsonArray",
+  views~ : Map[String, @anode.View] = json_array_views(),
+  initial~ : JsonArrayState = JsonArrayState::zero(),
+  common_style~ : String = json_array_common_style,
+  global_style~ : String = json_array_global_style,
   update? : (JsonArrayState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonArrayState,
   ],
@@ -712,10 +712,10 @@ pub fn json_array_component(
     @tutuca.Value,
     @component.LoopCtx,
   ) -> @component.LoopWith)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -945,11 +945,11 @@ fn json_object_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn json_object_component(
-  name? : String = "JsonObject",
-  views? : Map[String, @anode.View] = json_object_views(),
-  initial? : JsonObjectState = JsonObjectState::zero(),
-  common_style? : String = json_object_common_style,
-  global_style? : String = json_object_global_style,
+  name~ : String = "JsonObject",
+  views~ : Map[String, @anode.View] = json_object_views(),
+  initial~ : JsonObjectState = JsonObjectState::zero(),
+  common_style~ : String = json_object_common_style,
+  global_style~ : String = json_object_global_style,
   update? : (JsonObjectState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonObjectState,
   ],
@@ -963,10 +963,10 @@ pub fn json_object_component(
     @tutuca.Value,
     @component.LoopCtx,
   ) -> @component.LoopWith)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -1065,18 +1065,18 @@ pub fn json_property_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn json_property_component(
-  name? : String = "JsonProperty",
-  views? : Map[String, @anode.View] = json_property_views(),
-  initial? : JsonPropertyState = JsonPropertyState::zero(),
-  common_style? : String = json_property_common_style,
-  global_style? : String = json_property_global_style,
+  name~ : String = "JsonProperty",
+  views~ : Map[String, @anode.View] = json_property_views(),
+  initial~ : JsonPropertyState = JsonPropertyState::zero(),
+  common_style~ : String = json_property_common_style,
+  global_style~ : String = json_property_global_style,
   update? : (JsonPropertyState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonPropertyState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -1123,18 +1123,18 @@ pub fn data_inspector_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn data_inspector_component(
-  name? : String = "DataInspector",
-  views? : Map[String, @anode.View] = data_inspector_views(),
-  initial? : DataInspectorState = DataInspectorState::zero(),
-  common_style? : String = data_inspector_common_style,
-  global_style? : String = data_inspector_global_style,
+  name~ : String = "DataInspector",
+  views~ : Map[String, @anode.View] = data_inspector_views(),
+  initial~ : DataInspectorState = DataInspectorState::zero(),
+  common_style~ : String = data_inspector_common_style,
+  global_style~ : String = data_inspector_global_style,
   update? : (DataInspectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     DataInspectorState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

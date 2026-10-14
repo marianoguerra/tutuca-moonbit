@@ -102,6 +102,9 @@ pub(all) struct ProvideInfo {
 } derive(Debug)
 
 ///|
+pub extend ProvideInfo with Debug::{to_repr}
+
+///|
 /// Which keyspace a `provide` entry falls in, and whether it is well formed.
 ///
 /// The name rule splits the two keyspaces (`@tutuca.is_type_name`): an
@@ -120,6 +123,12 @@ pub(all) enum ProvideKind {
 } derive(Debug, Eq)
 
 ///|
+pub extend ProvideKind with Debug::{to_repr}
+
+///|
+pub extend ProvideKind with Eq::{not_equal, equal}
+
+///|
 /// Read a `provide` entry's keyspace and shape.
 ///
 /// ONE reader for the rule, because it is asked in three places that must
@@ -128,7 +137,7 @@ pub(all) enum ProvideKind {
 /// that has no source to offer — a registered PATH is not written as a
 /// `provide` value — leaves `src` alone and is answered about the keyspace
 /// alone.
-pub fn provide_kind(name : String, src? : String = "self") -> ProvideKind {
+pub fn provide_kind(name : String, src~ : String = "self") -> ProvideKind {
   if !@tutuca.is_type_name(name) {
     ProvideValue
   } else if src == "self" {
@@ -148,6 +157,9 @@ pub(all) struct LookupSpec {
   name : String
   default : String?
 } derive(Debug)
+
+///|
+pub extend LookupSpec with Debug::{to_repr}
 
 ///|
 /// A `lookup` entry as written, with no default. The common case, and the one
@@ -177,6 +189,9 @@ pub(all) struct LookupInfo {
 } derive(Debug)
 
 ///|
+pub extend LookupInfo with Debug::{to_repr}
+
+///|
 /// One frame of the dynamic-binding stack: what the component being entered
 /// publishes, pushed on entering it and popped with it.
 ///
@@ -200,9 +215,15 @@ pub(all) struct LocatedValue {
 } derive(Debug, Eq)
 
 ///|
+pub extend LocatedValue with Debug::{to_repr}
+
+///|
+pub extend LocatedValue with Eq::{not_equal, equal}
+
+///|
 pub(all) struct DynBinds {
   binds : Map[String, LocatedValue]
-  types : Map[String, Int]
+  types : Map[String, Int32]
   parent : DynBinds?
 }
 
@@ -219,7 +240,7 @@ declare pub fn DynBinds::lookup(
 ) -> @tutuca.Value?
 
 ///|
-declare pub fn DynBinds::lookup_type(self : DynBinds, name : String) -> Int?
+declare pub fn DynBinds::lookup_type(self : DynBinds, name : String) -> Int32?
 
 ///|
 /// All effectful dispatches in one enum — the typed-state `update` bucket
@@ -280,16 +301,16 @@ pub(all) struct LoopCtx {
 /// ordering entirely (skipping @when).
 pub(all) struct LoopWith {
   iter_data : @tutuca.Value?
-  start : Int?
-  end : Int?
+  start : Int32?
+  end : Int32?
   keys : Array[@tutuca.Value]?
 }
 
 ///|
 declare pub fn LoopWith::new(
   iter_data? : @tutuca.Value,
-  start? : Int,
-  end? : Int,
+  start? : Int32,
+  end? : Int32,
   keys? : Array[@tutuca.Value],
 ) -> LoopWith
 
@@ -304,7 +325,7 @@ pub using @tutuca {type IntentFn}
 /// `id` comes from a process-global counter — tests must not
 /// assert absolute ids.
 pub struct Component {
-  id : Int
+  id : Int32
   name : String
   views : Map[String, @anode.View]
   common_style : String
@@ -348,7 +369,7 @@ pub struct Component {
   /// Kept apart from `provide` because a type is not addressable: it can never
   /// be a render target and carries no located value for a `*name` read.
   /// Filled by compile().
-  provide_type : Map[String, Int]
+  provide_type : Map[String, Int32]
   lookup : Map[String, LookupInfo] // filled by compile()
   mut scope : ComponentStack?
 }
@@ -491,7 +512,7 @@ declare pub fn Component::compile_style(self : Component) -> String
 /// The component registry: id → Component plus the
 /// value → component association via Obj::component_id.
 pub struct Components {
-  by_id : Map[Int, Component]
+  by_id : Map[Int32, Component]
 }
 
 ///|
@@ -503,7 +524,7 @@ declare pub fn Components::register(self : Components, comp : Component) -> Unit
 ///|
 declare pub fn Components::get_component_for_id(
   self : Components,
-  id : Int,
+  id : Int32,
 ) -> Component?
 
 ///|

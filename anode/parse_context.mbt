@@ -119,7 +119,7 @@ fn ParseContext::issue(self : ParseContext, issue : ParseIssue) -> Unit {
 fn ParseContext::add_node_if(
   self : ParseContext,
   val : @tutuca.Expr?,
-  make : (Int, @tutuca.Expr) -> ANode,
+  make : (Int32, @tutuca.Expr) -> ANode,
 ) -> ANode? {
   match val {
     Some(v) => {
@@ -133,7 +133,10 @@ fn ParseContext::add_node_if(
 
 ///|
 /// Register a node that carries no value (e.g. RenderItNode).
-fn ParseContext::add_node(self : ParseContext, make : (Int) -> ANode) -> ANode {
+fn ParseContext::add_node(
+  self : ParseContext,
+  make : (Int32) -> ANode,
+) -> ANode {
   let node = make(self.nodes.length())
   self.nodes.push(node)
   node

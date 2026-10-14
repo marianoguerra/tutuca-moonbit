@@ -27,7 +27,7 @@ extern "js" fn inner_html_ffi(node : @core.Any) -> String =
 
 ///|
 priv struct SmokeCounterState {
-  n : Int
+  n : Int32
   label : String
 }
 
@@ -211,7 +211,7 @@ extern "js" fn outer_seen_ffi(doc : @core.Any) -> Bool =
 
 ///|
 priv struct EffectsState {
-  n : Int
+  n : Int32
 }
 
 ///|

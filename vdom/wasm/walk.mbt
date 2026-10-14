@@ -7,6 +7,14 @@ pub impl @vdom.DomWalk for WasmNode with fn prev_sibling(self) {
 }
 
 ///|
+pub extend WasmNode with @vdom.DomWalk::{
+  node_kind,
+  char_data,
+  attribute,
+  prev_sibling,
+}
+
+///|
 pub impl @vdom.DomWalk for WasmNode with fn node_kind(self) {
   tdom_node_type(self.0)
 }

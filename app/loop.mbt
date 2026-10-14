@@ -18,7 +18,7 @@ pub struct App[N] {
   /// state changed since the last render (batching flag)
   mut dirty : Bool
   /// renders performed (tests/diagnostics)
-  mut render_count : Int
+  mut render_count : Int32
   /// live drag capture (dragstart .. dragend)
   mut drag : DragState[N]?
   /// the element currently carrying data-draggingover
@@ -74,7 +74,7 @@ pub fn[N : @vdom.DomWalk] App::new(
   root_value : @tutuca.Value,
   root_node : N,
   opts : @vdom.RenderOpts[N],
-  view? : String = "",
+  view~ : String = "",
   intents? : &@transactor.Intents,
   markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter,
 ) -> App[N] raise {
@@ -127,8 +127,8 @@ pub fn[N : @vdom.DomWalk] App::from_module(
   root : String,
   root_node : N,
   opts : @vdom.RenderOpts[N],
-  args? : Map[String, @tutuca.Value] = Map([]),
-  view? : String = "",
+  args~ : Map[String, @tutuca.Value] = Map([]),
+  view~ : String = "",
   markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter,
 ) -> App[N] raise {
   let scope = @component.ComponentStack::new()
@@ -188,8 +188,8 @@ pub fn[N] App::destroy(self : App[N]) -> Unit {
 pub fn[N] App::send_at_root(
   self : App[N],
   name : String,
-  args? : Array[@tutuca.Value] = [],
-  max_turns? : Int = 10000,
+  args~ : Array[@tutuca.Value] = [],
+  max_turns~ : Int32 = 10000,
 ) -> @transactor.SettleResult {
   let _ = self.transactor.push_send(@tutuca.DispatchPath::new(), name, args)
   self.transactor.settle(max_turns~)
@@ -207,7 +207,7 @@ pub fn[N] App::set_at_root(
   self : App[N],
   name : String,
   value : @tutuca.Value,
-  max_turns? : Int = 10000,
+  max_turns~ : Int32 = 10000,
 ) -> @transactor.SettleResult {
   ignore(self.transactor.set_member(@tutuca.DispatchPath::new(), name, value))
   self.transactor.settle(max_turns~)
@@ -231,7 +231,7 @@ pub fn[N] App::root_value(self : App[N]) -> @tutuca.Value {
 /// queue pending.
 pub fn[N] App::drain_batched(
   self : App[N],
-  max_per_batch~ : Int,
+  max_per_batch~ : Int32,
   yield_between : () -> Unit,
 ) -> @transactor.SettleResult {
   let mut processed = 0

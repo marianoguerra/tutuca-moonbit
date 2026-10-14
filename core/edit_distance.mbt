@@ -7,7 +7,7 @@
 
 ///|
 /// Damerau-Levenshtein: an adjacent transposition counts as ONE edit.
-pub fn edit_distance(a : String, b : String) -> Int {
+pub fn edit_distance(a : String, b : String) -> Int32 {
   let (x, y) = (a.to_array(), b.to_array())
   let n = y.length()
   let mut prev2 = Array::make(n + 1, 0)
@@ -51,7 +51,7 @@ pub fn edit_distance(a : String, b : String) -> Int {
 pub fn closest_name(
   name : String,
   names : Array[String],
-  limit~ : Int,
+  limit~ : Int32,
 ) -> String? {
   let mut best : String? = None
   let mut best_d = limit + 1

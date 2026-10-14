@@ -42,27 +42,39 @@ pub(all) struct Scene {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend Scene with Eq::{not_equal, equal}
+
+///|
+pub extend Scene with Debug::{to_repr}
+
+///|
 /// One step of a scene: something done, or something read.
 ///
 /// `nth` picks among matches and is 0 when the block does not say.
 pub(all) enum Step {
-  Click(sel~ : String, nth~ : Int)
-  Type(sel~ : String, value~ : String, nth~ : Int)
-  Key(sel~ : String, key~ : String, value~ : @tutuca.Value?, nth~ : Int)
-  Check(sel~ : String, checked~ : Bool, nth~ : Int)
+  Click(sel~ : String, nth~ : Int32)
+  Type(sel~ : String, value~ : String, nth~ : Int32)
+  Key(sel~ : String, key~ : String, value~ : @tutuca.Value?, nth~ : Int32)
+  Check(sel~ : String, checked~ : Bool, nth~ : Int32)
   Fire(
     sel~ : String,
     event~ : String,
     value~ : @tutuca.Value?,
     key~ : String,
-    nth~ : Int
+    nth~ : Int32
   )
-  Drag(sel~ : String, from~ : Int, to~ : Int)
+  Drag(sel~ : String, from~ : Int32, to~ : Int32)
   /// A host dispatch at the root. `init` is the one every card needs, since
   /// tutuca has no lifecycle and the host is what runs it.
   Send(name~ : String, args~ : Array[@tutuca.Value])
   Read(Expect)
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend Step with Eq::{not_equal, equal}
+
+///|
+pub extend Step with Debug::{to_repr}
 
 ///|
 /// A read, and what it should answer.
@@ -73,13 +85,19 @@ pub(all) struct Expect {
   place : Array[@tutuca.Step]
   /// The attribute or property name, for the two readers that take one.
   name : String
-  nth : Int
+  nth : Int32
   /// What it should answer, or None for RECORD: the runner reads it and hands
   /// the answer back instead of judging it. That is `moon test --update` for a
   /// card, and it is what makes writing one of these worth an agent's time —
   /// drive first, read what the component actually did, keep what you meant.
   want : Want?
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend Expect with Eq::{not_equal, equal}
+
+///|
+pub extend Expect with Debug::{to_repr}
 
 ///|
 /// The readers. Each is one `Harness` call.
@@ -124,6 +142,12 @@ pub(all) enum Reader {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend Reader with Eq::{not_equal, equal}
+
+///|
+pub extend Reader with Debug::{to_repr}
+
+///|
 /// The two shapes an expectation comes in.
 pub(all) enum Want {
   /// `"is": …` — the whole answer, exactly.
@@ -132,6 +156,12 @@ pub(all) enum Want {
   /// anything else `is` says what is meant with no room to be approximate.
   WContains(String)
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend Want with Eq::{not_equal, equal}
+
+///|
+pub extend Want with Debug::{to_repr}
 
 ///|
 /// The word a reader is written with, for messages and for round-tripping a
@@ -154,18 +184,18 @@ pub suberror SceneError {
   /// A scene declares no `steps`, or declares something that is not a list.
   NoSteps(String)
   /// A step is not an object.
-  StepNotObject(scene~ : String, at~ : Int)
+  StepNotObject(scene~ : String, at~ : Int32)
   /// A step object names no verb this package knows.
-  NoVerb(scene~ : String, at~ : Int, suggestion~ : String?)
+  NoVerb(scene~ : String, at~ : Int32, suggestion~ : String?)
   /// A step names two. One key is the verb, and a step that says both `click`
   /// and `type` does not say which happens first.
-  TwoVerbs(scene~ : String, at~ : Int, first~ : String, second~ : String)
+  TwoVerbs(scene~ : String, at~ : Int32, first~ : String, second~ : String)
   /// A verb is missing a key it cannot be performed without.
-  MissingKey(scene~ : String, at~ : Int, verb~ : String, key~ : String)
+  MissingKey(scene~ : String, at~ : Int32, verb~ : String, key~ : String)
   /// A key is present with the wrong shape.
   BadType(
     scene~ : String,
-    at~ : Int,
+    at~ : Int32,
     key~ : String,
     want~ : String,
     got~ : String
@@ -173,18 +203,18 @@ pub suberror SceneError {
   /// `expect` names something that is not a reader.
   NoSuchReader(
     scene~ : String,
-    at~ : Int,
+    at~ : Int32,
     reader~ : String,
     suggestion~ : String?
   )
   /// A selector the harness cannot mean what the author meant by it.
-  BadSelector(scene~ : String, at~ : Int, sel~ : String, why~ : String)
+  BadSelector(scene~ : String, at~ : Int32, sel~ : String, why~ : String)
   /// A `state` place that does not read as one.
-  BadPlace(scene~ : String, at~ : Int, place~ : String, why~ : String)
+  BadPlace(scene~ : String, at~ : Int32, place~ : String, why~ : String)
   /// An intent fixture that is not one of the three answers.
   BadIntent(scene~ : String, name~ : String, why~ : String)
   /// `contains` on a reader that does not answer text.
-  NotContainable(scene~ : String, at~ : Int, reader~ : String)
+  NotContainable(scene~ : String, at~ : Int32, reader~ : String)
 }
 
 ///|

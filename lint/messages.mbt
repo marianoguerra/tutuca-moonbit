@@ -52,7 +52,7 @@ fn info_or(
 ///|
 /// JSON-quote a value the way JSON.stringify does.
 fn q(s : String) -> String {
-  s.to_json().stringify()
+  Json(s).stringify()
 }
 
 ///|

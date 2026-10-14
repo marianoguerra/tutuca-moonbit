@@ -21,9 +21,7 @@ import {
   // argument in main.mbt and the gallery is stories only.
   "marianoguerra/tutuca/storybook/ui/panels/wasm" @panelsw,
   // @core.Any: the DOM event the exported on_event receives from JS
-  "mizchi/js/core",
-  // `derive(Eq, @debug.Debug)` in the generated view module
-  "moonbitlang/core/debug",
+  "mizchi/js_core" @core,
 }
 
 supported_targets = "wasm-gc"

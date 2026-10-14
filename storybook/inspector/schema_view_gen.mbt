@@ -141,6 +141,12 @@ pub(all) enum SchemaBranchCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend SchemaBranchCompute with Eq::{not_equal, equal}
+
+///|
+pub extend SchemaBranchCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn SchemaBranchCompute::name(self : SchemaBranchCompute) -> String {
   match self {
     LabelCssClass => "label_css_class"

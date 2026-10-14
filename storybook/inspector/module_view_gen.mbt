@@ -18,7 +18,7 @@
 /// this struct lacks fails generation.
 pub(all) struct RichSampleState {
   title : String
-  count : Int
+  count : Int32
   tags : Array[String]
   open : Bool
 }
@@ -215,7 +215,7 @@ pub fn RichSampleIntent::to_dispatch(
 pub fn RichSampleIntent::dispatch(
   self : RichSampleIntent,
   ctx : &@tutuca.Ctx,
-  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
+  opts~ : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
 ) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.intent(name, args, opts)
@@ -237,6 +237,12 @@ pub(all) enum RichSampleCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend RichSampleCompute with Eq::{not_equal, equal}
+
+///|
+pub extend RichSampleCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn RichSampleCompute::name(self : RichSampleCompute) -> String {
   match self {
     Double => "double"
@@ -249,6 +255,12 @@ pub fn RichSampleCompute::name(self : RichSampleCompute) -> String {
 pub(all) enum RichSampleLoopWith {
   Rows
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend RichSampleLoopWith with Eq::{not_equal, equal}
+
+///|
+pub extend RichSampleLoopWith with @debug.Debug::{to_repr}
 
 ///|
 pub fn RichSampleLoopWith::name(self : RichSampleLoopWith) -> String {
@@ -291,7 +303,7 @@ impl @component.Fields for RichSampleState with fn schema() {
 /// this struct lacks fails generation.
 pub(all) struct SampleCardState {
   title : String
-  count : Int
+  count : Int32
   tags : Array[String]
   open : Bool
 }
@@ -421,6 +433,12 @@ pub let sample_card_global_style : String = ""
 pub(all) enum SampleCardCompute {
   Label
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend SampleCardCompute with Eq::{not_equal, equal}
+
+///|
+pub extend SampleCardCompute with @debug.Debug::{to_repr}
 
 ///|
 pub fn SampleCardCompute::name(self : SampleCardCompute) -> String {

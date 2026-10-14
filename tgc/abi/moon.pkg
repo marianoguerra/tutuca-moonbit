@@ -15,11 +15,8 @@ import {
   "marianoguerra/wax/basic",
   "marianoguerra/wax/wasm/types" @wasm_types,
   "marianoguerra/wap/ast" @wast,
-  "marianoguerra/wax/compile",
-  "moonbitlang/core/debug",
 }
 
 import {
   "marianoguerra/wax/message",
-  "marianoguerra/error-report",
 } for "test"

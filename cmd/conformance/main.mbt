@@ -12,7 +12,7 @@
 /// table pairing each case index with the NAME it was emitted under, which is
 /// the one thing a test cannot work out for itself once the rename has
 /// happened.
-extern "C" fn exit(code : Int) = "exit"
+extern "C" fn exit(code : Int32) = "exit"
 
 ///|
 /// The generated component's name.

@@ -8,7 +8,7 @@
 priv struct TodoState {
   title : String
   done : Bool
-  count : Int
+  count : Int32
   items : Array[@tutuca.Value]
   tags : Map[String, @tutuca.Value]
 }
@@ -278,7 +278,7 @@ test "update dispatches through Path::update; a write goes through set_member" {
 
 ///|
 priv struct CountOnly {
-  count : Int
+  count : Int32
 }
 
 ///|
@@ -613,7 +613,7 @@ test "Value fields in S carry Obj instances losslessly through updates" {
 /// The typed-struct half of the hybrid: a plain struct implementing Obj,
 /// registered through the same scope via Component::for_type.
 priv struct Badge {
-  cid : Int
+  cid : Int32
   label : String
 }
 

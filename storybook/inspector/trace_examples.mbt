@@ -23,13 +23,13 @@ fn tp(src : String) -> @trace.Place {
 
 ///|
 fn tev(
-  seq : Int,
-  turn : Int,
+  seq : Int32,
+  turn : Int32,
   at : String,
   op : @trace.Op,
-  input? : Bool = true,
-  walk? : Int = 0,
-  parent? : Int = 0,
+  input~ : Bool = true,
+  walk~ : Int32 = 0,
+  parent~ : Int32 = 0,
   after? : Json,
 ) -> @trace.Event {
   { seq, turn, walk, parent, at: tp(at), op, input, after, }

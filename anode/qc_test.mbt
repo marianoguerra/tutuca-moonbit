@@ -17,7 +17,7 @@ priv enum ChildSpec {
 }
 
 ///|
-fn spec_of(x : Int) -> ChildSpec {
+fn spec_of(x : Int32) -> ChildSpec {
   let i = if x < 0 { -(x + 1) } else { x }
   match i % 8 {
     0 => Ws(" ")
@@ -51,7 +51,7 @@ test "condense leaves no whitespace-only run with a newline" {
   // drop it. It runs exactly once per element, so the invariant that holds
   // is the newline one: every interior newline run collapses to " "/"" and
   // every edge whitespace run is dropped.
-  @qc.quick_check_fn(fn(xs : Array[Int]) -> Bool {
+  @qc.quick_check_fn(fn(xs : Array[Int32]) -> Bool {
     let out = @anode.condense_childs_whites(materialize(xs.map(spec_of)))
     for n in out {
       if n.is_whitespace() && n.has_newline() {
@@ -75,7 +75,7 @@ test "condense_childs_whites preserves non-whitespace text content" {
     out
   }
 
-  @qc.quick_check_fn(fn(xs : Array[Int]) -> Bool {
+  @qc.quick_check_fn(fn(xs : Array[Int32]) -> Bool {
     let specs = xs.map(spec_of)
     let before = non_ws_texts(materialize(specs))
     let after = non_ws_texts(@anode.condense_childs_whites(materialize(specs)))
@@ -95,7 +95,7 @@ test "condense_childs_whites preserves element count and order" {
     out
   }
 
-  @qc.quick_check_fn(fn(xs : Array[Int]) -> Bool {
+  @qc.quick_check_fn(fn(xs : Array[Int32]) -> Bool {
     let specs = xs.map(spec_of)
     let before = tags(materialize(specs))
     let after = tags(@anode.condense_childs_whites(materialize(specs)))
@@ -111,7 +111,7 @@ test "ANode::parse never panics on directive-free tag soup" {
     "<pre> a\n b</pre>", "<ul><li>a<li>b</ul>", "<p class=\"a\">", "</p>", "<x:m>",
     "</x:m>", "<x nope=\"v\"></x>",
   ]
-  @qc.quick_check_fn(fn(xs : Array[Int]) -> Bool {
+  @qc.quick_check_fn(fn(xs : Array[Int32]) -> Bool {
     let buf = StringBuilder()
     for x in xs {
       let i = if x < 0 { -(x + 1) } else { x }

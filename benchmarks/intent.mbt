@@ -40,7 +40,7 @@
 /// One child rather than a fan-out on purpose. The `dyn` leg walks ANCESTORS,
 /// so breadth adds render cost and no hops; a chain is the smallest tree that
 /// makes depth the only thing changing.
-fn tree_chain(depth : Int) -> @tutuca.Value {
+fn tree_chain(depth : Int32) -> @tutuca.Value {
   let item = comp_of(tree_module, "TreeItem")
   let make = (label : String, kids : Array[@tutuca.Value]) => {
     item.make({
@@ -59,11 +59,11 @@ fn tree_chain(depth : Int) -> @tutuca.Value {
 
 ///|
 /// The chains, built once: a `.make` per level is not what this measures.
-let tree_chains : Map[Int, @tutuca.Value] = Map([])
+let tree_chains : Map[Int32, @tutuca.Value] = Map([])
 
 ///|
 /// A TreeRoot holding a chain `depth` deep, mounted.
-pub fn mount_tree_chain(depth : Int) -> @harness.MemHarness {
+pub fn mount_tree_chain(depth : Int32) -> @harness.MemHarness {
   let root = items_for(tree_chains, depth, () => tree_chain(depth))
   mounted("tree-chain/\{depth}", tree_module, "TreeRoot", { "root": root })
 }
@@ -75,7 +75,7 @@ pub fn mount_tree_chain(depth : Int) -> @harness.MemHarness {
 /// index of the level. The selector walk that finds it grows with depth and is
 /// the harness's cost rather than the framework's — `find_cost` is the same
 /// walk on its own, for subtracting rather than guessing.
-pub fn intent_dyn(h : @harness.MemHarness, depth : Int) -> Int {
+pub fn intent_dyn(h : @harness.MemHarness, depth : Int32) -> Int32 {
   h.click(".head", nth=depth - 1) catch {
     e => fail_patch("ask dyn depth \{depth}", e)
   }
@@ -88,7 +88,7 @@ pub fn intent_dyn(h : @harness.MemHarness, depth : Int) -> Int {
 /// A list per name is what the `lex` leg walks, and `Pass` is what makes a list
 /// worth having — a handler that must respond has no way to decline, so one with nothing to
 /// contribute could only invent an error and there was nothing to walk past.
-fn declining_chain(n : Int) -> Map[String, Array[@component.IntentFn]] {
+fn declining_chain(n : Int32) -> Map[String, Array[@component.IntentFn]] {
   let fns : Array[@component.IntentFn] = []
   for _ in 0..<n {
     fns.push(IntentFn((_call, answer) => answer(Pass)))
@@ -103,7 +103,7 @@ fn declining_chain(n : Int) -> Map[String, Array[@component.IntentFn]] {
 
 ///|
 /// The request example, against a scope that declines `n` times first.
-pub fn mount_lex_chain(n : Int) -> @harness.MemHarness {
+pub fn mount_lex_chain(n : Int32) -> @harness.MemHarness {
   mounted(
     "lex-chain/\{n}",
     @examples.request_module(intents=declining_chain(n)),
@@ -118,7 +118,7 @@ pub fn mount_lex_chain(n : Int) -> @harness.MemHarness {
 /// `receive init` is what raises it, so this is one `send_at_root` and then the
 /// whole walk plus the `load_data_ok` that comes back — which is the round trip a
 /// caller actually pays for, not the leg on its own.
-pub fn intent_lex(h : @harness.MemHarness) -> Int {
+pub fn intent_lex(h : @harness.MemHarness) -> Int32 {
   h.send_at_root("init")
   h.render_count()
 }
@@ -128,7 +128,7 @@ pub fn intent_lex(h : @harness.MemHarness) -> Int {
 ///
 /// The counter's `inc` is an ordinary handler, so this is lookup + transition +
 /// patch: the baseline the next one is read against.
-pub fn dispatch_answered(h : @harness.MemHarness) -> Int {
+pub fn dispatch_answered(h : @harness.MemHarness) -> Int32 {
   h.send_at_root("inc")
   h.render_count()
 }
@@ -142,7 +142,7 @@ pub fn dispatch_answered(h : @harness.MemHarness) -> Int {
 /// simplification. Read against `dispatch_answered`: the difference is a
 /// transition and a patch this one does not do, so this number being the
 /// SMALLER of the two is the claim holding.
-pub fn dispatch_unanswered(h : @harness.MemHarness) -> Int {
+pub fn dispatch_unanswered(h : @harness.MemHarness) -> Int32 {
   h.send_at_root("noSuchNameAtAll")
   h.render_count()
 }
@@ -155,7 +155,7 @@ let tree_module : @component.ModuleDef = @examples.tree_module()
 ///
 /// Not a bench workload: `intent_test.mbt` uses it to pin the other end of the
 /// same walk, where the route runs out and the sender hears `<name>Unhandled`.
-pub fn declining_scope(n : Int) -> Map[String, Array[@component.IntentFn]] {
+pub fn declining_scope(n : Int32) -> Map[String, Array[@component.IntentFn]] {
   let fns : Array[@component.IntentFn] = []
   for _ in 0..<n {
     fns.push(IntentFn((_call, answer) => answer(Pass)))

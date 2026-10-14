@@ -15,7 +15,6 @@
 import {
   "marianoguerra/shrubbery" @shrub,
   "marianoguerra/shrubbery/ast",
-  "marianoguerra/shrubbery/basic",
   "marianoguerra/error-report" @report,
   "moonbitlang/core/debug",
 }

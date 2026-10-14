@@ -20,7 +20,7 @@ fn is_alnum(c : Char) -> Bool {
 ///|
 fn upper(c : Char) -> Char {
   if c >= 'a' && c <= 'z' {
-    Int::unsafe_to_char(c.to_int() - 32)
+    Int32::unsafe_to_char(c.to_int() - 32)
   } else {
     c
   }
@@ -29,7 +29,7 @@ fn upper(c : Char) -> Char {
 ///|
 fn lower(c : Char) -> Char {
   if c >= 'A' && c <= 'Z' {
-    Int::unsafe_to_char(c.to_int() + 32)
+    Int32::unsafe_to_char(c.to_int() + 32)
   } else {
     c
   }
@@ -163,7 +163,7 @@ pub fn binding_name(name : String) -> String {
 ///
 /// Named rather than inlined at the call sites because the NAME is what
 /// carries that reasoning; `lexical_compare` alone looks like a style choice.
-pub fn str_cmp(a : String, b : String) -> Int {
+pub fn str_cmp(a : String, b : String) -> Int32 {
   a.lexical_compare(b)
 }
 

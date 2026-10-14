@@ -34,6 +34,12 @@ pub(all) enum Fidelity {
 } derive(Eq, Debug)
 
 ///|
+pub extend Fidelity with Eq::{not_equal, equal}
+
+///|
+pub extend Fidelity with Debug::{to_repr}
+
+///|
 /// A mounted recording, positioned somewhere in its own event list.
 pub struct Player {
   /// The app the events are fed to. Public because everything a caller wants to
@@ -64,7 +70,7 @@ pub suberror ReplayError {
   /// through a `*dyn` render target. A stored address is the active TRANSACTION
   /// path, which is right for a message but omits the caller frames the live
   /// intent walk used.
-  Diverged(at~ : Int, want~ : @trace.Event, got~ : @trace.Event)
+  Diverged(at~ : Int32, want~ : @trace.Event, got~ : @trace.Event)
   /// The root component's shape moved since the recording was taken.
   ///
   /// Reported as itself rather than as the pile of decode failures it would
@@ -76,7 +82,7 @@ pub suberror ReplayError {
   /// the scope is not the one this was recorded against.
   RootUnbuildable(String)
   /// The trace's own version is not one this build knows.
-  UnknownVersion(got~ : Int)
+  UnknownVersion(got~ : Int32)
 }
 
 ///|
@@ -90,8 +96,8 @@ declare pub fn ReplayError::message(self : ReplayError) -> String
 /// on the id alone would hand a walk somebody else's answer and hide the
 /// divergence it should have reported. The NAME is checked too.
 pub struct Answers {
-  priv by_walk : Map[Int, Array[(String, Int, @tutuca.IntentAnswer)]]
-  priv mut next_walk : Int
+  priv by_walk : Map[Int32, Array[(String, Int32, @tutuca.IntentAnswer)]]
+  priv mut next_walk : Int32
 }
 
 ///|
@@ -130,6 +136,9 @@ declare pub fn RecordedHost::new(
 pub impl @transactor.Intents for RecordedHost
 
 // --- mounting and driving -----------------------------------------------------
+
+///|
+pub extend RecordedHost with @transactor.Intents::{intents_for}
 
 ///|
 /// Mount a recording's initial state and prepare to feed it.
@@ -175,7 +184,10 @@ declare pub fn Player::step_event(self : Player) -> Unit raise ReplayError
 
 ///|
 /// Feed events until `n` of them have been consumed.
-declare pub fn Player::run_to(self : Player, n : Int) -> Unit raise ReplayError
+declare pub fn Player::run_to(
+  self : Player,
+  n : Int32,
+) -> Unit raise ReplayError
 
 ///|
 /// Feed the rest.
@@ -187,7 +199,7 @@ declare pub fn Player::done(self : Player) -> Bool
 
 ///|
 /// How many events have been fed. The index of the next one.
-declare pub fn Player::at(self : Player) -> Int
+declare pub fn Player::at(self : Player) -> Int32
 
 ///|
 /// The recording being fed.

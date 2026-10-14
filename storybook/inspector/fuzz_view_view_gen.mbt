@@ -4,8 +4,7 @@
 //   tutuca gen fuzz_view.tutu --name FuzzView --out <dir>
 //
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component",
-//   "moonbitlang/core/debug"
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 
 ///|
 /// One dispatch of a generated script, and what it did.
@@ -19,7 +18,7 @@
 /// this struct lacks fails generation.
 pub(all) struct FuzzRowState {
   /// Position in the script, 0-based, as the driver numbers it.
-  at : Int
+  at : Int32
   /// The dispatch, as `name arg, arg`.
   name : String
   args : String
@@ -29,7 +28,7 @@ pub(all) struct FuzzRowState {
   verb_class : String
   /// How many renders it caused. 0 is a dispatch that changed nothing, which
   /// is a different thing from one that was declined.
-  renders : Int
+  renders : Int32
   /// The runtime declined it. Not a failure: a rule doing its job, and the
   /// only place a decline is visible at all.
   refused : Bool
@@ -672,7 +671,7 @@ pub(all) struct FuzzVerdictState {
   /// this moment, which is why it is carried rather than recomposed.
   sentence : String
   rule : String
-  at : Int
+  at : Int32
   /// Rules the block declares that `@core.Expr` could not lower, so the run
   /// is quieter than a green verdict looks.
   unchecked : String
@@ -906,8 +905,8 @@ pub(all) struct FuzzPanelState {
   log : @tutuca.Value
   has_run : Bool
   /// Cursor position, 1-based for display.
-  at : Int
-  total : Int
+  at : Int32
+  total : Int32
 }
 
 ///|

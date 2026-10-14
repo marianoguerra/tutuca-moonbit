@@ -43,7 +43,7 @@ test "an application resolves its name and applies the builtin" {
   // cannot import it), and what this is about is evaluation anyway.
   let stack : FieldStack = { fields: { "items": List([]), "name": Str("hi") }, }
   fn app(name : String, field : String) -> @core.Expr {
-    Expr::app(name, [Expr::field(field)])
+    @core.Expr::app(name, [@core.Expr::field(field)])
   }
 
   assert_true(app("empty?", "items").eval(stack) is Bool(true))
@@ -62,10 +62,10 @@ test "FieldVal.eval reads the raw field without invoking" {
   let stack : FieldStack = {
     fields: { "count": Num(7), "m": Fn(_args => Str("called")) },
   }
-  let count : @core.Expr = Expr::field("count")
+  let count : @core.Expr = @core.Expr::field("count")
   assert_true(count.eval(stack) is Num(7))
   // the function comes back raw, not invoked
-  let m : @core.Expr = Expr::field("m")
+  let m : @core.Expr = @core.Expr::field("m")
   guard! m.eval(stack) is Fn(f)
   assert_true(f([]) is Str("called"))
 }
@@ -73,7 +73,7 @@ test "FieldVal.eval reads the raw field without invoking" {
 ///|
 test "MethodVal.eval invokes the method" {
   let stack : MethodStack = { methods: { "fullName": Str("Ada L") }, }
-  let v : @core.Expr = Expr::method_("fullName")
+  let v : @core.Expr = @core.Expr::method_("fullName")
   assert_true(v.eval(stack) is Str("Ada L"))
 }
 
@@ -82,7 +82,7 @@ test "MethodVal.eval_as_handler hands back the raw function" {
   let stack : FieldStack = {
     fields: { "inc": Fn(_args => Str("inc-marker")) },
   }
-  let v : @core.Expr = Expr::method_("inc")
+  let v : @core.Expr = @core.Expr::method_("inc")
   guard! v.eval_as_handler(stack) is Fn(f)
   assert_true(f([]) is Str("inc-marker"))
 }
@@ -91,7 +91,10 @@ test "MethodVal.eval_as_handler hands back the raw function" {
 test "is eval compares the field value against the literal" {
   let stack : FieldStack = { fields: { "view": Str("detail") }, }
   fn eq(lit : String) -> @core.Expr {
-    Expr::app("is", [Expr::field("view"), Expr::lit(LStr(lit))])
+    @core.Expr::app("is", [
+      @core.Expr::field("view"),
+      @core.Expr::lit(LStr(lit)),
+    ])
   }
 
   assert_true(eq("detail").eval(stack) is Bool(true))
@@ -103,18 +106,18 @@ test "bind member eval reads the member off the resolved binding" {
   // map-like binding value: member lookup with Null default (covers both
   // original paths — immutable `.get` and plain-object property access)
   let im : BindStack = { bind: Map({ "title": Str("alpha") }), }
-  let hit : @core.Expr = Expr::bind_member("value", "title")
+  let hit : @core.Expr = @core.Expr::bind_member("value", "title")
   assert_true(hit.eval(im) is Str("alpha"))
-  let miss : @core.Expr = Expr::bind_member("value", "missing")
+  let miss : @core.Expr = @core.Expr::bind_member("value", "missing")
   assert_true(miss.eval(im) is Null)
   let plain : BindStack = { bind: Map({ "color": Str("red") }), }
-  let color : @core.Expr = Expr::bind_member("meta", "color")
+  let color : @core.Expr = @core.Expr::bind_member("meta", "color")
   assert_true(color.eval(plain) is Str("red"))
-  let missing : @core.Expr = Expr::bind_member("meta", "missing")
+  let missing : @core.Expr = @core.Expr::bind_member("meta", "missing")
   assert_true(missing.eval(plain) is Null)
   // unresolved binding
   let unresolved : BindStack = { bind: Null, }
-  let nope : @core.Expr = Expr::bind_member("nope", "x")
+  let nope : @core.Expr = @core.Expr::bind_member("nope", "x")
   assert_true(nope.eval(unresolved) is Null)
 }
 
@@ -176,21 +179,23 @@ test "the operators evaluate through the same table the shape predicates do" {
     },
   }
   fn f(n : String) -> @core.Expr {
-    Expr::field(n)
+    @core.Expr::field(n)
   }
 
   fn op(name : String, args : Array[@core.Expr]) -> @core.Value {
-    Expr::app(name, args).eval(stack)
+    @core.Expr::app(name, args).eval(stack)
   }
 
   assert_true(op("not", [f("shut")]) is Bool(true))
   assert_true(op("not", [f("open")]) is Bool(false))
   assert_true(op("and", [f("open"), f("shut")]) is Bool(false))
   assert_true(op("or", [f("open"), f("shut")]) is Bool(true))
-  assert_true(op("is", [f("kind"), Expr::lit(LStr("a"))]) is Bool(true))
-  assert_true(op("is not", [f("kind"), Expr::lit(LStr("b"))]) is Bool(true))
-  assert_true(op(">", [f("n"), Expr::lit(LNum(2))]) is Bool(true))
-  assert_true(op("<=", [f("n"), Expr::lit(LNum(3))]) is Bool(true))
+  assert_true(op("is", [f("kind"), @core.Expr::lit(LStr("a"))]) is Bool(true))
+  assert_true(
+    op("is not", [f("kind"), @core.Expr::lit(LStr("b"))]) is Bool(true),
+  )
+  assert_true(op(">", [f("n"), @core.Expr::lit(LNum(2))]) is Bool(true))
+  assert_true(op("<=", [f("n"), @core.Expr::lit(LNum(3))]) is Bool(true))
   assert_true(op("implies", [f("shut"), f("open")]) is Bool(true))
   assert_true(op("len", [f("items")]) is Num(0))
   // `and` / `or` coerce with `Value::is_truthy` and NOT `pred_truthy` — the
@@ -212,23 +217,23 @@ test "`and` and `or` stop early, so a slot can guard a compute" {
     fields: { "open": Bool(true), "shut": Bool(false) },
     asked: [],
   }
-  let guarded : @core.Expr = Expr::app("and", [
-    Expr::field("shut"),
-    Expr::method_("boom"),
+  let guarded : @core.Expr = @core.Expr::app("and", [
+    @core.Expr::field("shut"),
+    @core.Expr::method_("boom"),
   ])
   assert_true(guarded.eval(stack) is Bool(false))
   assert_eq(stack.asked, [])
   // …and the other way, `or` stops once the left answers yes.
-  let short : @core.Expr = Expr::app("or", [
-    Expr::field("open"),
-    Expr::method_("boom"),
+  let short : @core.Expr = @core.Expr::app("or", [
+    @core.Expr::field("open"),
+    @core.Expr::method_("boom"),
   ])
   assert_true(short.eval(stack) is Bool(true))
   assert_eq(stack.asked, [])
   // The control: when the left does NOT decide it, the right IS asked.
-  let both : @core.Expr = Expr::app("and", [
-    Expr::field("open"),
-    Expr::method_("fine"),
+  let both : @core.Expr = @core.Expr::app("and", [
+    @core.Expr::field("open"),
+    @core.Expr::method_("fine"),
   ])
   assert_true(both.eval(stack) is Bool(true))
   assert_eq(stack.asked, ["fine"])

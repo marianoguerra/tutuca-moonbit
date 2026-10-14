@@ -13,7 +13,7 @@
 /// One step's verdict.
 pub(all) struct StepResult {
   /// The step's index in the scene, so a report can be read beside the block.
-  at : Int
+  at : Int32
   ok : Bool
   /// What the step read, for a step that read something. Always present for a
   /// reader — including one that passed, because an agent that wrote no
@@ -25,6 +25,12 @@ pub(all) struct StepResult {
   /// Why it failed, in a sentence. Empty when it did not.
   why : String
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend StepResult with Eq::{not_equal, equal}
+
+///|
+pub extend StepResult with Debug::{to_repr}
 
 ///|
 /// What one scene did.
@@ -55,12 +61,18 @@ pub(all) struct SceneResult {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend SceneResult with Eq::{not_equal, equal}
+
+///|
+pub extend SceneResult with Debug::{to_repr}
+
+///|
 /// How many activity records a scene keeps.
 ///
 /// A bound rather than a budget, the same one the playground's panel has: a
 /// scene that drives a hundred steps through a cascade produces a trace nobody
 /// reads the middle of, and a report is a thing that gets pasted.
-pub const ACTIVITY_CAP : Int = 200
+pub const ACTIVITY_CAP : Int32 = 200
 
 ///|
 /// Drive every scene against one guest, and answer what each did.

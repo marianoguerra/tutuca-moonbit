@@ -126,7 +126,7 @@ fn double_lit(d : Double) -> String {
 
 ///|
 /// Some(i) for a Double that is exactly a small integer, so an id reads as one.
-fn whole(d : Double) -> Int? {
+fn whole(d : Double) -> Int32? {
   let i = d.to_int()
   if i.to_double() == d {
     Some(i)
@@ -277,7 +277,7 @@ fn val_arg(label : String, val : @tutuca.Expr?) -> String {
 }
 
 ///|
-fn int_arg(label : String, v : Int?) -> String {
+fn int_arg(label : String, v : Int32?) -> String {
   match v {
     Some(i) => ", \{label}=\{i}"
     None => ""
@@ -771,8 +771,8 @@ fn emit_init_invariants(
 /// to give.
 pub fn build_views(
   views : @viewfile.ViewSet,
-  macros? : Array[@viewfile.MacroDef] = [],
-  state? : @statedef.StateDef? = None,
+  macros~ : Array[@viewfile.MacroDef] = [],
+  state~ : @statedef.StateDef? = None,
 ) -> Map[String, @anode.View] raise GenError {
   let scope = FileMacros::of(macros)
   let out : Map[String, @anode.View] = Map([])

@@ -7,7 +7,7 @@
 
 ///|
 priv struct CounterState {
-  count : Int
+  count : Int32
 }
 
 ///|
@@ -122,7 +122,7 @@ test "mounts a sidebar and the first story's live instance" {
   assert_eq(sections[0].stories.length(), 3)
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let _app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let _app = @ui.mount(sections, container, @vdom.RenderOpts::new(doc))
   let html = container.to_html()
   // one sidebar entry per projected story, under the section it was given
   assert_true(html.contains("Demo"))
@@ -146,7 +146,7 @@ test "a story renders the args its example declared" {
   assert_eq(seeded.args.get("count"), Some(Num(7)))
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let _app = mount(
+  let _app = @ui.mount(
     @sb.sections_of([seeded]),
     container,
     @vdom.RenderOpts::new(doc),
@@ -158,7 +158,7 @@ test "a story renders the args its example declared" {
 test "themes are the caller's to choose" {
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let _app = mount(demo_sections(), container, @vdom.RenderOpts::new(doc), themes=[
+  let _app = @ui.mount(demo_sections(), container, @vdom.RenderOpts::new(doc), themes=[
     "light", "dark",
   ])
   let html = container.to_html()
@@ -174,7 +174,7 @@ test "no panels means no tab strip" {
   // else — and this package imports nothing that could draw more.
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let _app = mount(demo_sections(), container, @vdom.RenderOpts::new(doc))
+  let _app = @ui.mount(demo_sections(), container, @vdom.RenderOpts::new(doc))
   let html = container.to_html()
   assert_false(html.contains("role=\"tablist\""))
   assert_false(html.contains("instance-tab"))
@@ -186,9 +186,9 @@ test "no panels means no tab strip" {
 /// A panel layer of one panel, built from a closure that says what it saw.
 /// Enough to drive the whole seam without an inspector: the tab strip, the
 /// lazy build, the field the value lands in, and the two host doors.
-fn[N] marker_panels() -> PanelSet[N] {
+fn[N] marker_panels() -> @ui.PanelSet[N] {
   {
-    ..PanelSet::none(),
+    ..@ui.PanelSet::none(),
     defs: [
       {
         key: "marker",
@@ -212,7 +212,7 @@ fn[N] marker_panels() -> PanelSet[N] {
 test "a declared panel gets a tab, a field and a lazy build" {
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let app = mount(
+  let app = @ui.mount(
     demo_sections(),
     container,
     @vdom.RenderOpts::new(doc),
@@ -228,10 +228,10 @@ test "a declared panel gets a tab, a field and a lazy build" {
   // layer declared
   assert_eq(app.root_value().field("m0"), Str("built:0:set"))
   // the host can write one in from outside, addressed by key
-  push_panel(app, 0, "marker", Str("pushed"))
+  @ui.push_panel(app, 0, "marker", Str("pushed"))
   assert_eq(app.root_value().field("m0"), Str("pushed"))
   // …and setFields writes only names a panel declared
-  set_panel_fields(app, { "knob": Str("moved"), "active": Str("nope") })
+  @ui.set_panel_fields(app, { "knob": Str("moved"), "active": Str("nope") })
   assert_eq(app.root_value().field("knob"), Str("moved"))
   assert_eq(app.root_value().field("active"), Str("demo-counter-zero"))
 }
@@ -272,7 +272,7 @@ test "a story renders under the view its example named" {
   assert_eq(stories[1].view, "compact")
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let _app = mount(
+  let _app = @ui.mount(
     @sb.sections_of([stories[1]]),
     container,
     @vdom.RenderOpts::new(doc),

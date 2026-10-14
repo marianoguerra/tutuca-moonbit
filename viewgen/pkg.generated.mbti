@@ -62,6 +62,9 @@ pub(all) enum ArgType {
   VBool
   VValue
 } derive(Eq, @debug.Debug)
+pub fn ArgType::equal(Self, Self) -> Bool
+pub fn ArgType::not_equal(Self, Self) -> Bool
+pub fn ArgType::to_repr(Self) -> @debug.Repr
 
 pub(all) struct GeneratedModules {
   types_source : String
@@ -73,6 +76,9 @@ pub(all) struct InputSig {
   args : Array[ArgType]?
   sites : Array[String]
 } derive(Eq, @debug.Debug)
+pub fn InputSig::equal(Self, Self) -> Bool
+pub fn InputSig::not_equal(Self, Self) -> Bool
+pub fn InputSig::to_repr(Self) -> @debug.Repr
 
 pub struct ProgramIndex {
   defs : Map[String, @statedef.StateDef]
@@ -94,6 +100,9 @@ pub(all) struct Surface {
   bind_withs : Array[String]
   loop_withs : Array[String]
 } derive(Eq, @debug.Debug)
+pub fn Surface::equal(Self, Self) -> Bool
+pub fn Surface::not_equal(Self, Self) -> Bool
+pub fn Surface::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

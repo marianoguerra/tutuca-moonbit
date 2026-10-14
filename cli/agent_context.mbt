@@ -22,7 +22,7 @@
 /// 5: one command set. The `mode` field of 4 is gone with the embedded-module
 /// story, along with `lintCodes` (there is no runtime linter), `formats`, and
 /// the per-command `needsModule` / `needsEnv` / `defaultFormat`.
-const SCHEMA_VERSION : Int = 8
+const SCHEMA_VERSION : Int32 = 8
 
 ///|
 fn global_flags_schema() -> Array[FlagSpec] {
@@ -40,25 +40,25 @@ fn global_flags_schema() -> Array[FlagSpec] {
 /// Exit codes this CLI can produce. Lint failures are compile errors and
 /// nothing renders at run time, so there is no lint-findings or render-crash
 /// exit code: only 0 and 1 exist.
-fn exit_codes_schema() -> Array[(Int, String)] {
+fn exit_codes_schema() -> Array[(Int32, String)] {
   [(0, "success"), (1, "usage error, or a command failed")]
 }
 
 ///|
 /// Serialize a flag omitting absent optional keys.
 fn flag_to_json(f : FlagSpec) -> Json {
-  let m : Map[String, Json] = { "name": f.name.to_json() }
+  let m : Map[String, Json] = { "name": Json(f.name) }
   match f.short {
-    Some(s) => m["short"] = s.to_json()
+    Some(s) => m["short"] = Json(s)
     None => ()
   }
-  m["type"] = f.type_.to_json()
+  m["type"] = Json(f.type_)
   match f.enum_ {
-    Some(e) => m["enum"] = e.to_json()
+    Some(e) => m["enum"] = Json(e)
     None => ()
   }
   match f.description {
-    Some(d) => m["description"] = d.to_json()
+    Some(d) => m["description"] = Json(d)
     None => ()
   }
   Json::object(m)
@@ -67,15 +67,15 @@ fn flag_to_json(f : FlagSpec) -> Json {
 ///|
 fn positional_to_json(p : PositionalSpec) -> Json {
   let m : Map[String, Json] = {
-    "name": p.name.to_json(),
-    "required": p.required.to_json(),
+    "name": Json(p.name),
+    "required": Json(p.required),
   }
   match p.description {
-    Some(d) => m["description"] = d.to_json()
+    Some(d) => m["description"] = Json(d)
     None => ()
   }
   match p.note {
-    Some(n) => m["note"] = n.to_json()
+    Some(n) => m["note"] = Json(n)
     None => ()
   }
   Json::object(m)
@@ -84,8 +84,8 @@ fn positional_to_json(p : PositionalSpec) -> Json {
 ///|
 fn command_to_json(cmd : CommandSpec) -> Json {
   Json::object({
-    "name": cmd.name.to_json(),
-    "describe": cmd.describe.to_json(),
+    "name": Json(cmd.name),
+    "describe": Json(cmd.describe),
     "flags": Json::array(cmd.flags.map(flag_to_json)),
     "positionals": Json::array(cmd.positionals.map(positional_to_json)),
   })
@@ -94,9 +94,9 @@ fn command_to_json(cmd : CommandSpec) -> Json {
 ///|
 pub fn agent_context_text() -> String {
   let schema : Json = {
-    "schemaVersion": SCHEMA_VERSION.to_json(),
+    "schemaVersion": Json(SCHEMA_VERSION),
     "cli": "tutuca",
-    "version": VERSION.to_json(),
+    "version": Json(VERSION),
     "invocation": {
       "synopsis": "tutuca <command> [flags]",
       "note": "tutuca-mb compiles ahead of time, so this CLI does not inspect, document, lint or render components. `gen` compiles a view file into typed MoonBit, which makes a bad field reference or an unhandled @on handler a BUILD error; component behaviour is checked by `moon test` over the marianoguerra/tutuca/testing/harness package. There is no module path and no module concept.",
@@ -104,11 +104,11 @@ pub fn agent_context_text() -> String {
     "globalFlags": Json::array(global_flags_schema().map(flag_to_json)),
     "exitCodes": Json::array(
       exit_codes_schema().map(pair => {
-        let j : Json = { "code": pair.0.to_json(), "meaning": pair.1.to_json() }
+        let j : Json = { "code": Json(pair.0), "meaning": Json(pair.1) }
         j
       }),
     ),
-    "errorCodes": error_codes.to_json(),
+    "errorCodes": Json(error_codes),
     "commands": Json::array(commands.map(command_to_json)),
   }
   schema.stringify(indent=2, escape_slash=false) + "\n"

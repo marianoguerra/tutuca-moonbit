@@ -6,7 +6,7 @@
 
 ///|
 pub struct DynObj {
-  comp_id : Int
+  comp_id : Int32
   def : DynComponentDef
   /// The instance itself — not a name for it, and not the module it came from.
   /// Everything this object does to the guest, it does through here.
@@ -94,12 +94,12 @@ pub fn inst_of(v : @tutuca.Value) -> &Inst? {
 
 ///|
 pub fn DynObj::new(
-  comp_id : Int,
+  comp_id : Int32,
   def : DynComponentDef,
   inst : &Inst,
   schema~ : @tutuca.SchemaInfo,
-  pid? : String = "",
-  owned? : Map[String, @tutuca.Value] = Map([]),
+  pid~ : String = "",
+  owned~ : Map[String, @tutuca.Value] = Map([]),
 ) -> DynObj {
   {
     comp_id,
@@ -135,6 +135,12 @@ pub(all) enum SlotOwner {
   /// and a LIST of them has no count to build.
   HostBuilds(String)
 } derive(Eq, Debug)
+
+///|
+pub extend SlotOwner with Eq::{not_equal, equal}
+
+///|
+pub extend SlotOwner with Debug::{to_repr}
 
 ///|
 /// Who keeps this slot, given what the caller supplied.
@@ -213,7 +219,7 @@ pub fn DynObj::inst(self : DynObj) -> &Inst {
 ///
 /// Only a test reads it, and only to reach into a fake's own tables — which is
 /// a fair thing for a fake that does name instances by integer to expose.
-pub fn DynObj::handle(self : DynObj) -> Int {
+pub fn DynObj::handle(self : DynObj) -> Int32 {
   self.inst.token()
 }
 
@@ -443,6 +449,31 @@ fn DynObj::adopt(
 ///|
 pub impl @tutuca.Obj for DynObj with fn component_id(self) {
   Some(self.comp_id)
+}
+
+///|
+pub extend DynObj with @tutuca.Obj::{
+  trigger_at,
+  field,
+  with_item,
+  method_at,
+  eq,
+  component_id,
+  identity,
+  with_field,
+  set_property,
+  member_at,
+  persist_id,
+  trigger,
+  handler,
+  schema,
+  size,
+  mutate_member,
+  seq_entries,
+  property,
+  debug,
+  set_member,
+  item,
 }
 
 ///|

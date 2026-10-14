@@ -112,18 +112,18 @@ pub fn comp_name_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn comp_name_component(
-  name? : String = "CompName",
-  views? : Map[String, @anode.View] = comp_name_views(),
-  initial? : CompNameState = CompNameState::zero(),
-  common_style? : String = comp_name_common_style,
-  global_style? : String = comp_name_global_style,
+  name~ : String = "CompName",
+  views~ : Map[String, @anode.View] = comp_name_views(),
+  initial~ : CompNameState = CompNameState::zero(),
+  common_style~ : String = comp_name_common_style,
+  global_style~ : String = comp_name_global_style,
   update? : (CompNameState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     CompNameState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -194,18 +194,18 @@ pub fn comp_field_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn comp_field_component(
-  name? : String = "CompField",
-  views? : Map[String, @anode.View] = comp_field_views(),
-  initial? : CompFieldState = CompFieldState::zero(),
-  common_style? : String = comp_field_common_style,
-  global_style? : String = comp_field_global_style,
+  name~ : String = "CompField",
+  views~ : Map[String, @anode.View] = comp_field_views(),
+  initial~ : CompFieldState = CompFieldState::zero(),
+  common_style~ : String = comp_field_common_style,
+  global_style~ : String = comp_field_global_style,
   update? : (CompFieldState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     CompFieldState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -321,11 +321,11 @@ pub fn comp_view_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn comp_view_component(
-  name? : String = "CompView",
-  views? : Map[String, @anode.View] = comp_view_views(),
-  initial? : CompViewState = CompViewState::zero(),
-  common_style? : String = comp_view_common_style,
-  global_style? : String = comp_view_global_style,
+  name~ : String = "CompView",
+  views~ : Map[String, @anode.View] = comp_view_views(),
+  initial~ : CompViewState = CompViewState::zero(),
+  common_style~ : String = comp_view_common_style,
+  global_style~ : String = comp_view_global_style,
   update? : (CompViewState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     CompViewState,
   ],
@@ -334,10 +334,10 @@ pub fn comp_view_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -535,11 +535,11 @@ fn comp_section_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn comp_section_component(
-  name? : String = "CompSection",
-  views? : Map[String, @anode.View] = comp_section_views(),
-  initial? : CompSectionState = CompSectionState::zero(),
-  common_style? : String = comp_section_common_style,
-  global_style? : String = comp_section_global_style,
+  name~ : String = "CompSection",
+  views~ : Map[String, @anode.View] = comp_section_views(),
+  initial~ : CompSectionState = CompSectionState::zero(),
+  common_style~ : String = comp_section_common_style,
+  global_style~ : String = comp_section_global_style,
   update? : (CompSectionState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     CompSectionState,
   ],
@@ -553,10 +553,10 @@ pub fn comp_section_component(
     @tutuca.Value,
     @component.LoopCtx,
   ) -> @component.LoopWith)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -668,11 +668,11 @@ pub fn component_inspector_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn component_inspector_component(
-  name? : String = "ComponentInspector",
-  views? : Map[String, @anode.View] = component_inspector_views(),
-  initial? : ComponentInspectorState = ComponentInspectorState::zero(),
-  common_style? : String = component_inspector_common_style,
-  global_style? : String = component_inspector_global_style,
+  name~ : String = "ComponentInspector",
+  views~ : Map[String, @anode.View] = component_inspector_views(),
+  initial~ : ComponentInspectorState = ComponentInspectorState::zero(),
+  common_style~ : String = component_inspector_common_style,
+  global_style~ : String = component_inspector_global_style,
   update? : (ComponentInspectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ComponentInspectorState,
   ],
@@ -681,10 +681,10 @@ pub fn component_inspector_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

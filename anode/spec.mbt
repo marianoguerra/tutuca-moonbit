@@ -20,6 +20,12 @@ pub(all) enum Ns {
 } derive(Debug, Eq)
 
 ///|
+pub extend Ns with Debug::{to_repr}
+
+///|
+pub extend Ns with Eq::{not_equal, equal}
+
+///|
 /// Where a value string failed to parse (the "bad-value" roles).
 /// Anode/attr-level roles carry their slot; value-layer failures (macro vars,
 /// handler names, predicates) arrive via @tscript.ParseCtx.issues and are
@@ -31,6 +37,12 @@ pub(all) enum BadValueRole {
   IfDirective(name~ : String)
   ValueIssue(@tscript.IssueRole)
 } derive(Debug, Eq)
+
+///|
+pub extend BadValueRole with Debug::{to_repr}
+
+///|
+pub extend BadValueRole with Eq::{not_equal, equal}
 
 ///|
 /// Parse-time issues surfaced through ParseHandler::on_parse_issue (JS
@@ -56,6 +68,12 @@ pub(all) enum ParseIssue {
 // Attribute layer (parse side)
 
 ///|
+pub extend ParseIssue with Debug::{to_repr}
+
+///|
+pub extend ParseIssue with Eq::{not_equal, equal}
+
+///|
 /// `@if.<name>` conditional attribute with optional `@then`/`@else` branches
 /// (None = the not-set sentinel).
 pub(all) struct IfAttr {
@@ -64,6 +82,9 @@ pub(all) struct IfAttr {
   mut then_val : @tutuca.Expr?
   mut else_val : @tutuca.Expr?
 } derive(Debug)
+
+///|
+pub extend IfAttr with Debug::{to_repr}
 
 ///|
 /// One parsed attribute of a DynAttrs element.
@@ -109,6 +130,9 @@ pub(all) enum AttrItem {
 } derive(Debug)
 
 ///|
+pub extend AttrItem with Debug::{to_repr}
+
+///|
 /// An element's parsed attributes: fully-constant attrs collapse to an
 /// evaluated map (ConstAttrs), anything dynamic keeps the item list
 /// (DynAttrs). @tutuca.Lit doubles as the constant scalar type.
@@ -116,6 +140,9 @@ pub(all) enum Attrs {
   ConstAttrs(Map[String, @tutuca.Lit])
   DynAttrs(Array[AttrItem])
 } derive(Debug)
+
+///|
+pub extend Attrs with Debug::{to_repr}
 
 ///|
 /// The representation an item list calls for: a list nothing made dynamic
@@ -151,6 +178,12 @@ pub(all) enum WrapperKind {
 } derive(Debug, Eq)
 
 ///|
+pub extend WrapperKind with Debug::{to_repr}
+
+///|
+pub extend WrapperKind with Eq::{not_equal, equal}
+
+///|
 /// Wrapper descriptor produced by attribute parsing, in OUTERMOST-FIRST order
 /// (the first directive in source order wraps outermost). The three extras
 /// are only set for Each (from @enrich-with / @when / @loop-with).
@@ -164,6 +197,9 @@ pub(all) struct WrapperAttr {
 } derive(Debug)
 
 ///|
+pub extend WrapperAttr with Debug::{to_repr}
+
+///|
 /// Result of parsing an element's attribute list (the
 /// [pAttrs, wrapperAttrs, textChild] tuple; wrappers is empty instead of null).
 pub(all) struct AttrParseResult {
@@ -172,6 +208,9 @@ pub(all) struct AttrParseResult {
   text_child : @tutuca.Expr?
   bind : BindData?
 } derive(Debug)
+
+///|
+pub extend AttrParseResult with Debug::{to_repr}
 
 ///|
 /// A pending `@bind` found by the HTML parser. The view generator resolves it
@@ -184,6 +223,9 @@ pub(all) struct BindData {
 } derive(Debug)
 
 ///|
+pub extend BindData with Debug::{to_repr}
+
+///|
 /// The checked coercion attached to the setter event synthesized for
 /// `@bind`. Runtime dispatch uses it to reject invalid browser values before
 /// they can reach a generated field mutator.
@@ -193,9 +235,15 @@ pub(all) enum BindCoercion {
   BindPending
   BindString
   BindBool
-  BindInt(width~ : Int, signed~ : Bool)
+  BindInt(width~ : Int32, signed~ : Bool)
   BindDouble
 } derive(Debug, Eq)
+
+///|
+pub extend BindCoercion with Debug::{to_repr}
+
+///|
+pub extend BindCoercion with Eq::{not_equal, equal}
 
 ///|
 /// Parse an ordered attribute list (as delivered by the HTML parser).
@@ -204,7 +252,7 @@ pub(all) enum BindCoercion {
 declare fn parse_attributes(
   attrs : Array[(String, String)],
   px : ParseContext,
-  parse_all? : Bool = false,
+  parse_all~ : Bool = false,
 ) -> AttrParseResult
 
 ///|
@@ -212,9 +260,12 @@ declare fn parse_attributes(
 /// runtime modifier wrappers are out of scope). `id` round-trips through the
 /// element's data-eid attribute.
 pub(all) struct NodeEvents {
-  id : Int
+  id : Int32
   handlers : Array[NodeEvent]
 } derive(Debug)
+
+///|
+pub extend NodeEvents with Debug::{to_repr}
 
 ///|
 /// One `@on.<name>+mod+...` handler (minus compiled modifiers).
@@ -230,9 +281,15 @@ pub(all) struct NodeEvent {
 // reference types, so tree/registry aliasing matches the object graph)
 
 ///|
+pub extend NodeEvent with Debug::{to_repr}
+
+///|
 pub(all) struct TextData {
   mut val : String
 } derive(Debug)
+
+///|
+pub extend TextData with Debug::{to_repr}
 
 ///|
 pub(all) struct DomData {
@@ -259,43 +316,61 @@ pub(all) struct DomData {
 } derive(Debug)
 
 ///|
+pub extend DomData with Debug::{to_repr}
+
+///|
 pub(all) struct FragmentData {
   childs : Array[ANode]
 } derive(Debug)
 
 ///|
+pub extend FragmentData with Debug::{to_repr}
+
+///|
 /// `<x text=...>` / `@text` output node. node_id is None for the `@text`
 /// directive's child (built with a null nodeId, unregistered).
 pub(all) struct RenderTextData {
-  node_id : Int?
+  node_id : Int32?
   val : @tutuca.Expr
 } derive(Debug)
+
+///|
+pub extend RenderTextData with Debug::{to_repr}
 
 ///|
 /// `<x render="...">`: renders the component the value resolves to.
 /// view_val is the parsed `as=` view selector (None when absent).
 pub(all) struct RenderData {
-  node_id : Int
+  node_id : Int32
   val : @tutuca.Expr
   view_val : @tutuca.Expr?
 } derive(Debug)
 
 ///|
+pub extend RenderData with Debug::{to_repr}
+
+///|
 /// `<x render-it>`: renders the current item; carries no value of its own.
 pub(all) struct RenderItData {
-  node_id : Int
+  node_id : Int32
   view_val : @tutuca.Expr?
 } derive(Debug)
+
+///|
+pub extend RenderItData with Debug::{to_repr}
 
 ///|
 /// Shared payload of the value-carrying wrappers (Show/Hide/PushView/Scope).
 /// node_id is Some only when the node registers in ParseContext.nodes
 /// (Scope always; Show/Hide only in their <x>-extra-attr form).
 pub(all) struct WrapData {
-  node_id : Int?
+  node_id : Int32?
   val : @tutuca.Expr
   mut node : ANode
 } derive(Debug)
+
+///|
+pub extend WrapData with Debug::{to_repr}
 
 ///|
 /// `<x slot="name">` inside a macro call body.
@@ -303,6 +378,9 @@ pub(all) struct SlotData {
   name : String
   mut node : ANode
 } derive(Debug)
+
+///|
+pub extend SlotData with Debug::{to_repr}
 
 ///|
 /// Iteration spec shared by `@each` and `<x render-each>` (evaluation
@@ -315,14 +393,20 @@ pub(all) struct IterInfo {
 } derive(Debug)
 
 ///|
+pub extend IterInfo with Debug::{to_repr}
+
+///|
 pub(all) struct EachData {
-  node_id : Int
+  node_id : Int32
   iter_info : IterInfo
   mut node : ANode
   /// Marker for the linter: this Each is `<x render-each>` sugar and has no
   /// wrapper-attr record to check instead.
   mut from_render_each : Bool
 } derive(Debug)
+
+///|
+pub extend EachData with Debug::{to_repr}
 
 ///|
 /// A macro call site (`<x:name ...>`), expanded later by compile(scope).
@@ -361,6 +445,9 @@ pub(all) enum ANode {
 } derive(Debug)
 
 ///|
+pub extend ANode with Debug::{to_repr}
+
+///|
 /// True for Text/Comment whose text is only spaces/tabs/newlines/CRs.
 declare pub fn ANode::is_whitespace(self : ANode) -> Bool
 
@@ -377,7 +464,7 @@ declare fn ANode::for_each_child(self : ANode, visit : (ANode) -> Unit) -> Unit
 /// Replace a whitespace-only Text/Comment's text (whitespace condensing).
 declare fn ANode::condense_whitespace(
   self : ANode,
-  replacement? : String = "",
+  replacement~ : String = "",
 ) -> Unit
 
 ///|
@@ -483,7 +570,7 @@ declare pub fn attr_val(name : String, val : @tutuca.Expr) -> AttrItem
 
 ///|
 /// The `data-eid` stamp that ties an element to its NodeEvents entry.
-declare pub fn eid(id : Int) -> AttrItem
+declare pub fn eid(id : Int32) -> AttrItem
 
 ///|
 /// A dynamic `:attr`, evaluated per render (`Plain`).
@@ -526,33 +613,33 @@ declare pub fn frag(childs : Array[ANode]) -> ANode
 ///|
 /// `<x text=…>` / `@text` output. `id` is unset for the `@text` directive's
 /// child, which registers no node of its own.
-declare pub fn dyn_text(val : @tutuca.Expr, id? : Int) -> ANode
+declare pub fn dyn_text(val : @tutuca.Expr, id? : Int32) -> ANode
 
 ///|
 /// `<x render=…>`, with the optional `as=` view selector.
 declare pub fn render(
-  id : Int,
+  id : Int32,
   val : @tutuca.Expr,
   view? : @tutuca.Expr,
 ) -> ANode
 
 ///|
 /// `<x render-it>`, with the optional `as=` view selector.
-declare pub fn render_it(id : Int, view? : @tutuca.Expr) -> ANode
+declare pub fn render_it(id : Int32, view? : @tutuca.Expr) -> ANode
 
 ///|
 /// `@show`; `id` is set only in the `<x show=…>` form, which registers.
-declare pub fn show(val : @tutuca.Expr, node : ANode, id? : Int) -> ANode
+declare pub fn show(val : @tutuca.Expr, node : ANode, id? : Int32) -> ANode
 
 ///|
-declare pub fn hide(val : @tutuca.Expr, node : ANode, id? : Int) -> ANode
+declare pub fn hide(val : @tutuca.Expr, node : ANode, id? : Int32) -> ANode
 
 ///|
-declare pub fn push_view(val : @tutuca.Expr, node : ANode, id? : Int) -> ANode
+declare pub fn push_view(val : @tutuca.Expr, node : ANode, id? : Int32) -> ANode
 
 ///|
 /// A loop-less `@enrich-with` frame. Always registers, hence the plain id.
-declare pub fn scope(id : Int, val : @tutuca.Expr, node : ANode) -> ANode
+declare pub fn scope(id : Int32, val : @tutuca.Expr, node : ANode) -> ANode
 
 ///|
 declare pub fn slot(name : String, node : ANode) -> ANode
@@ -561,7 +648,7 @@ declare pub fn slot(name : String, node : ANode) -> ANode
 /// `@each` / `<x render-each>`; the three extras come from `@when`,
 /// `@loop-with` and `@enrich-with` on the same element.
 declare pub fn each(
-  id : Int,
+  id : Int32,
   val : @tutuca.Expr,
   node : ANode,
   when_val? : @tutuca.Expr,
@@ -618,6 +705,9 @@ pub(all) struct WarnHandler {}
 
 ///|
 pub impl ParseHandler for WarnHandler
+
+///|
+pub extend WarnHandler with ParseHandler::{on_parse_issue, on_attributes}
 
 ///|
 /// Per-macro-expansion state (px.frame).
@@ -779,8 +869,8 @@ declare pub fn View::from_ir(
 ///|
 declare pub fn View::new(
   name : String,
-  raw_view? : String = "No View Defined",
-  style? : String = "",
+  raw_view~ : String = "No View Defined",
+  style~ : String = "",
   config_vars? : Map[String, String],
 ) -> View
 

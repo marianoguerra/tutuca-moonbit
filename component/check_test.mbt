@@ -6,7 +6,7 @@
 
 ///|
 priv struct ChkState {
-  n : Int
+  n : Int32
 }
 
 ///|
@@ -30,9 +30,9 @@ impl @tutuca.Fields for ChkState with fn decode(f) {
 ///|
 fn chk_comp(
   name : String,
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
-  view? : String = "<div></div>",
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
+  view~ : String = "<div></div>",
 ) -> @component.Component {
   @component.component(
     views={ "main": @anode.View::new("main", raw_view=view) },

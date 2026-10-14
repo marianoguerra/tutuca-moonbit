@@ -117,7 +117,7 @@ fn answer_to_json(a : @tutuca.IntentAnswer) -> Json {
 ///|
 fn answer_of_json(
   j : Json,
-  line~ : Int,
+  line~ : Int32,
 ) -> @tutuca.IntentAnswer raise TraceError {
   match j {
     String("pass") => Pass
@@ -202,7 +202,7 @@ pub fn Event::to_json(self : Event) -> Json {
 }
 
 ///|
-fn int_at(m : Map[String, Json], key : String) -> Int {
+fn int_at(m : Map[String, Json], key : String) -> Int32 {
   match m.get(key) {
     Some(Number(n, ..)) => n.to_int()
     _ => 0
@@ -218,7 +218,7 @@ fn str_at(m : Map[String, Json], key : String) -> String {
 }
 
 ///|
-pub fn Event::from_json(j : Json, line~ : Int) -> Event raise TraceError {
+pub fn Event::from_json(j : Json, line~ : Int32) -> Event raise TraceError {
   guard j is Object(m) else { raise BadField(line~, key="", want="an object") }
   let at = match m.get("at") {
     None => Place([])
@@ -340,8 +340,8 @@ pub fn Trace::to_jsonl(self : Trace) -> String {
 /// Blank lines because a file that has been concatenated, edited by hand, or
 /// written with a trailing newline has them, and refusing one would be refusing
 /// a file that is otherwise perfectly readable.
-fn nonblank_lines(text : String) -> Array[(Int, String)] {
-  let out : Array[(Int, String)] = []
+fn nonblank_lines(text : String) -> Array[(Int32, String)] {
+  let out : Array[(Int32, String)] = []
   let mut n = 0
   for raw in text.split("\n") {
     n = n + 1
@@ -354,7 +354,7 @@ fn nonblank_lines(text : String) -> Array[(Int, String)] {
 }
 
 ///|
-fn parse_line(line : String, n : Int) -> Json raise TraceError {
+fn parse_line(line : String, n : Int32) -> Json raise TraceError {
   @json.parse(line) catch {
     e => raise NotJson(line=n, why=e.to_string())
   }

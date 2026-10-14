@@ -7,8 +7,8 @@
 /// page nobody can recover.
 pub fn entries_of_manifest(
   manifest : Json,
-  module_? : String = "",
-  annotations? : Map[String, Annotation] = Map([]),
+  module_~ : String = "",
+  annotations~ : Map[String, Annotation] = Map([]),
 ) -> Array[Entry] {
   let out : Array[Entry] = []
   guard manifest is Object(root) else { return out }

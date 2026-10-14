@@ -6,10 +6,10 @@
 
 ///|
 /// Read one source, with a name for the reports to point at.
-fn read_one(src : String) -> (TutuFile, @report.Sources) {
+fn read_one(src : String) -> (@tutufile.TutuFile, @report.Sources) {
   let sources = @report.Sources::new()
   let id = sources.add("todos.tutu", src)
-  (read(src, id), sources)
+  (@tutufile.read(src, id), sources)
 }
 
 ///|

@@ -157,6 +157,21 @@ pub impl @host.Inst for NativeInst with fn get_field(self, name) {
 }
 
 ///|
+pub extend NativeInst with @host.Inst::{
+  identity,
+  with_field,
+  set_property,
+  render_call,
+  hand_over,
+  get_field,
+  release,
+  token,
+  persist,
+  get_property,
+  dispatch,
+}
+
+///|
 /// `call(self, op, name, args, v)` — the signature, exactly.
 ///
 /// The JSON seam had eleven functions where this has one, and the difference is
@@ -165,7 +180,7 @@ pub impl @host.Inst for NativeInst with fn get_field(self, name) {
 /// written value". Here it is the fifth slot.
 fn NativeInst::call(
   self : NativeInst,
-  op : Int,
+  op : Int32,
   name : String,
   args : @core.Any,
   v : @core.Any,
@@ -319,6 +334,14 @@ pub impl @host.GuestModule for NativeModule with fn make(self, component, args) 
   } else {
     Some(NativeInst::{ owner: self, inst: out, })
   }
+}
+
+///|
+pub extend NativeModule with @host.GuestModule::{
+  make,
+  of_token,
+  restore,
+  serve_intent,
 }
 
 ///|

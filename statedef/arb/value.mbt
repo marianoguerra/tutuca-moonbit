@@ -11,7 +11,7 @@
 /// and a uniform walk over it produces values nobody reads the middle of; at
 /// the bottom the container's own ZERO is the honest answer, because an empty
 /// list is a value of the type and a truncated one is not.
-pub const MAX_DEPTH : Int = 3
+pub const MAX_DEPTH : Int32 = 3
 
 ///|
 /// How many elements a generated container holds.
@@ -19,7 +19,7 @@ pub const MAX_DEPTH : Int = 3
 /// Small on purpose, and skewed to the ends: a bug in a fold shows up at zero
 /// and one, and a bug in a comparison shows up at two. Sizes past that cost
 /// time and find nothing the third element did not.
-const MAX_ITEMS : Int = 3
+const MAX_ITEMS : Int32 = 3
 
 ///|
 /// A value of one declared type.
@@ -32,19 +32,18 @@ const MAX_ITEMS : Int = 3
 pub fn value_of(
   def : @statedef.StateDef,
   ty : @tutuca.Ty,
-  depth? : Int = MAX_DEPTH,
-) -> @gen.Gen[@tutuca.Value] {
+  depth~ : Int32 = MAX_DEPTH,
+) -> @gen.Generator[@tutuca.Value] {
   match ty {
-    TyBool =>
-      @gen.one_of_array([true, false]).fmap(b => (Bool(b) : @tutuca.Value))
+    TyBool => @gen.elements([true, false]).map(b => (Bool(b) : @tutuca.Value))
     TyInt(width~, signed~) => int_value(width, signed)
     TyFloat => float_value()
     TyText => text_value()
-    TyList(e) => items_of(def, e, depth).fmap(xs => (List(xs) : @tutuca.Value))
+    TyList(e) => items_of(def, e, depth).map(xs => (List(xs) : @tutuca.Value))
     // A tuple is a fixed-width list, so its length is not drawn — every
     // element is, at the declared type of that position.
     TyTuple(ts) =>
-      @gen.flatten_array(ts.map(t => value_of(def, t, depth=depth - 1))).fmap(xs => {
+      sequence(ts.map(t => value_of(def, t, depth=depth - 1))).map(xs => {
         (List(xs) : @tutuca.Value)
       })
     // The one type whose absence is a value. Null often, because a `T?` that
@@ -84,8 +83,8 @@ pub fn value_of(
 /// VIOLATE an invariant, which is the input a contract is tested with.
 pub fn state_of(
   def : @statedef.StateDef,
-  depth? : Int = MAX_DEPTH,
-) -> @gen.Gen[Map[String, @tutuca.Value]] {
+  depth~ : Int32 = MAX_DEPTH,
+) -> @gen.Generator[Map[String, @tutuca.Value]] {
   let domains = @info.domains_of(def)
   // The unconstrained case is every field independently, which is what this
   // did before domains existed and what most schemas still want. Kept as its
@@ -94,14 +93,13 @@ pub fn state_of(
   // should not pay for an ordering.
   if domains.is_empty() {
     let names = def.fields.map(f => f.name)
-    return @gen.flatten_array(def.fields.map(f => value_of(def, f.ty, depth~))).fmap(vs => {
-        let out : Map[String, @tutuca.Value] = Map([])
-        for i, n in names {
-          out[n] = vs[i]
-        }
-        out
-      },
-    )
+    return sequence(def.fields.map(f => value_of(def, f.ty, depth~))).map(vs => {
+      let out : Map[String, @tutuca.Value] = Map([])
+      for i, n in names {
+        out[n] = vs[i]
+      }
+      out
+    })
   }
   draw_in_order(def, order_fields(def, domains), domains, depth)
 }
@@ -156,16 +154,16 @@ fn order_fields(
 /// Draw each field in turn, with the ones already drawn in hand.
 ///
 /// Sequential by necessity: `currentIndex` cannot be drawn until `items` has a
-/// length, so this is a chain of `bind`s rather than the `flatten_array` the
+/// length, so this is a chain of `flat_map`s rather than the `sequence` the
 /// unconstrained path uses. That is the cost of the feature and it is paid
 /// only by the schemas that declare a `where`.
 fn draw_in_order(
   def : @statedef.StateDef,
   order : Array[String],
   domains : Array[@tutuca.FieldDomain],
-  depth : Int,
-) -> @gen.Gen[Map[String, @tutuca.Value]] {
-  fn step(i : Int, drawn : Map[String, @tutuca.Value]) {
+  depth : Int32,
+) -> @gen.Generator[Map[String, @tutuca.Value]] {
+  fn step(i : Int32, drawn : Map[String, @tutuca.Value]) {
     if i >= order.length() {
       return @gen.pure(drawn)
     }
@@ -175,7 +173,7 @@ fn draw_in_order(
     // about it — a list something indexes into is not empty.
     let mine = @tutuca.domains_of(domains, name) +
       implied_domains(domains, name)
-    field_gen(def, f, mine, drawn, depth).bind(v => {
+    field_gen(def, f, mine, drawn, depth).flat_map(v => {
       // A fresh map per draw rather than a mutated one: a `Gen` may be
       // sampled more than once, and a shared map would carry the previous
       // sample's values into the next.
@@ -201,8 +199,8 @@ fn field_gen(
   f : @statedef.FieldDef,
   mine : Array[@tutuca.Domain],
   drawn : Map[String, @tutuca.Value],
-  depth : Int,
-) -> @gen.Gen[@tutuca.Value] {
+  depth : Int32,
+) -> @gen.Generator[@tutuca.Value] {
   if mine.is_empty() {
     return value_of(def, f.ty, depth~)
   }
@@ -211,19 +209,19 @@ fn field_gen(
   if size_in_domain(mine, drawn) is Some(size) &&
     f.ty.iterable_elem() is Some(e) &&
     f.ty is (TyList(_) | TyOMap(_)) {
-    let elems = size.bind(n => {
+    let elems = size.flat_map(n => {
       value_of(def, e, depth=depth - 1).array_with_size(n)
     })
     return match f.ty {
       TyOMap(_) =>
-        elems.fmap(vs => {
+        elems.map(vs => {
           let m : Map[String, @tutuca.Value] = Map([])
           for i, x in vs {
             m["k\{i}"] = x
           }
           (Map(m) : @tutuca.Value)
         })
-      _ => elems.fmap(vs => (List(vs) : @tutuca.Value))
+      _ => elems.map(vs => (List(vs) : @tutuca.Value))
     }
   }
   // A nullable field's empty is admissible under EVERY relation — each one
@@ -241,7 +239,7 @@ fn field_gen(
   //
   // Same 1:2 as the unconstrained `TyOption` draw, so adding a `where` to a
   // nullable field does not quietly change how often it is empty.
-  let with_empty = fn(g : @gen.Gen[@tutuca.Value]) {
+  let with_empty = fn(g : @gen.Generator[@tutuca.Value]) {
     if f.ty is TyOption(_) {
       @gen.frequency([(1, @gen.pure((Null : @tutuca.Value))), (2, g)])
     } else {
@@ -268,7 +266,7 @@ fn field_gen(
           }
           true
         })
-        .bind(picked => {
+        .flat_map(picked => {
           match picked {
             Some(v) => @gen.pure(v)
             None => g
@@ -289,17 +287,17 @@ fn field_gen(
 /// come from the declaration, so an `Int8` field is generated at `Int8`'s
 /// edges rather than at `Int`'s — the decode is range-checked, and this is
 /// what tests it.
-fn int_value(width : Int, signed : Bool) -> @gen.Gen[@tutuca.Value] {
+fn int_value(width : Int32, signed : Bool) -> @gen.Generator[@tutuca.Value] {
   let (lo, hi) = int_bounds(width, signed)
   let (blo, bhi) = body_bounds(lo, hi)
   @gen.frequency([
     // The small neighbourhood, where a fold or an off-by-one shows.
     (5, @gen.int_range(if signed { -4 } else { 0 }, 5)),
     // The edges themselves, which nothing else reaches.
-    (2, @gen.one_of_array([lo, hi, lo + 1, hi - 1])),
+    (2, @gen.elements([lo, hi, lo + 1, hi - 1])),
     // And the body of the range, so the middle is not a blind spot.
     (3, @gen.int_range(blo, bhi)),
-  ]).fmap(n => (Num(n.to_double()) : @tutuca.Value))
+  ]).map(n => (Num(n.to_double()) : @tutuca.Value))
 }
 
 ///|
@@ -310,7 +308,7 @@ fn int_value(width : Int, signed : Bool) -> @gen.Gen[@tutuca.Value] {
 /// the unsized case is the one the WIRE keeps. The narrow widths ARE clamped,
 /// because those are the ones the generated decoder range-checks — and a
 /// generator that never produced 128 for an `Int8` would never test that.
-fn int_bounds(width : Int, signed : Bool) -> (Int, Int) {
+fn int_bounds(width : Int32, signed : Bool) -> (Int32, Int32) {
   match (width, signed) {
     (8, true) => (-128, 127)
     (8, false) => (0, 255)
@@ -330,7 +328,7 @@ fn int_bounds(width : Int, signed : Bool) -> (Int, Int) {
 /// draw is the right fix rather than a workaround: the edges are already drawn
 /// separately, and with far better odds than a uniform pick over 2^32 would
 /// ever give them, so this arm's only job is to cover the middle.
-fn body_bounds(lo : Int, hi : Int) -> (Int, Int) {
+fn body_bounds(lo : Int32, hi : Int32) -> (Int32, Int32) {
   let span = 1000000
   let blo = if lo < -span { -span } else { lo }
   let bhi = if hi > span { span } else { hi }
@@ -346,12 +344,12 @@ fn body_bounds(lo : Int, hi : Int) -> (Int, Int) {
 ///
 /// Negative zero and the fractions that do not round-trip through a decimal
 /// printer are the whole reason a float field is worth generating at all.
-fn float_value() -> @gen.Gen[@tutuca.Value] {
+fn float_value() -> @gen.Generator[@tutuca.Value] {
   @gen.frequency([
-    (4, @gen.one_of_array([0.0, -0.0, 1.0, -1.0, 0.5, -0.5])),
-    (3, @gen.int_range(-1000, 1000).fmap(n => n.to_double())),
-    (3, @gen.int_range(-1000, 1000).fmap(n => n.to_double() / 7.0)),
-  ]).fmap(d => (Num(d) : @tutuca.Value))
+    (4, @gen.elements([0.0, -0.0, 1.0, -1.0, 0.5, -0.5])),
+    (3, @gen.int_range(-1000, 1000).map(n => n.to_double())),
+    (3, @gen.int_range(-1000, 1000).map(n => n.to_double() / 7.0)),
+  ]).map(d => (Num(d) : @tutuca.Value))
 }
 
 ///|
@@ -361,20 +359,20 @@ fn float_value() -> @gen.Gen[@tutuca.Value] {
 /// in JSON, one with a path separator and one with a `~` — the last two
 /// because `core/path_*` reads those as structure, and a field holding one is
 /// how a path layer learns the difference between a name and a route.
-fn text_value() -> @gen.Gen[@tutuca.Value] {
-  @gen.one_of_array([
+fn text_value() -> @gen.Generator[@tutuca.Value] {
+  @gen.elements([
     "", "x", "hello", "a b", "a/b", "c~d", "<script>", "\"quoted\"", "líne\nbreak",
     "0",
-  ]).fmap(s => (Str(s) : @tutuca.Value))
+  ]).map(s => (Str(s) : @tutuca.Value))
 }
 
 ///|
 /// Anything at all, as the scalars a structural decoder has to tell apart.
-fn any_value() -> @gen.Gen[@tutuca.Value] {
+fn any_value() -> @gen.Generator[@tutuca.Value] {
   @gen.one_of([
     @gen.pure((Null : @tutuca.Value)),
-    @gen.one_of_array([true, false]).fmap(b => (Bool(b) : @tutuca.Value)),
-    @gen.int_range(-50, 50).fmap(n => (Num(n.to_double()) : @tutuca.Value)),
+    @gen.elements([true, false]).map(b => (Bool(b) : @tutuca.Value)),
+    @gen.int_range(-50, 50).map(n => (Num(n.to_double()) : @tutuca.Value)),
     text_value(),
   ])
 }
@@ -384,12 +382,12 @@ fn any_value() -> @gen.Gen[@tutuca.Value] {
 fn items_of(
   def : @statedef.StateDef,
   e : @tutuca.Ty,
-  depth : Int,
-) -> @gen.Gen[Array[@tutuca.Value]] {
+  depth : Int32,
+) -> @gen.Generator[Array[@tutuca.Value]] {
   if depth <= 0 {
     return @gen.pure([])
   }
-  @gen.int_range(0, MAX_ITEMS).bind(n => {
+  @gen.int_range(0, MAX_ITEMS).flat_map(n => {
     value_of(def, e, depth=depth - 1).array_with_size(n)
   })
 }
@@ -401,9 +399,9 @@ fn items_of(
 fn omap_value(
   def : @statedef.StateDef,
   v : @tutuca.Ty,
-  depth : Int,
-) -> @gen.Gen[@tutuca.Value] {
-  items_of(def, v, depth).fmap(vs => {
+  depth : Int32,
+) -> @gen.Generator[@tutuca.Value] {
+  items_of(def, v, depth).map(vs => {
     let m : Map[String, @tutuca.Value] = Map([])
     for i, x in vs {
       m["k\{i}"] = x
@@ -419,8 +417,8 @@ fn omap_value(
 fn record_value(
   def : @statedef.StateDef,
   n : String,
-  depth : Int,
-) -> @gen.Gen[@tutuca.Value] {
+  depth : Int32,
+) -> @gen.Generator[@tutuca.Value] {
   guard def.user_ty(n) is Some({ kind: URecord(fs), .. }) else {
     return @gen.pure(@info.zero_of(def, TyRecord(n)))
   }
@@ -428,7 +426,7 @@ fn record_value(
     return @gen.pure(@info.zero_of(def, TyRecord(n)))
   }
   let names = fs.map(f => f.name)
-  @gen.flatten_array(fs.map(f => value_of(def, f.ty, depth=depth - 1))).fmap(vs => {
+  sequence(fs.map(f => value_of(def, f.ty, depth=depth - 1))).map(vs => {
     let m : Map[String, @tutuca.Value] = Map([])
     for i, name in names {
       m[name] = vs[i]
@@ -441,11 +439,14 @@ fn record_value(
 /// One of the enum's cases, by its wire spelling. An enum with no cases cannot
 /// be declared, so the fallback is only reachable for a name this schema does
 /// not have.
-fn enum_value(def : @statedef.StateDef, n : String) -> @gen.Gen[@tutuca.Value] {
+fn enum_value(
+  def : @statedef.StateDef,
+  n : String,
+) -> @gen.Generator[@tutuca.Value] {
   guard def.user_ty(n) is Some({ kind: UEnum(cs), .. }) && !cs.is_empty() else {
     return @gen.pure(@info.zero_of(def, TyEnum(n)))
   }
-  @gen.one_of_array(cs.map(c => (Str(c.1) : @tutuca.Value)))
+  @gen.elements(cs.map(c => (Str(c.1) : @tutuca.Value)))
 }
 
 ///|
@@ -457,23 +458,22 @@ fn enum_value(def : @statedef.StateDef, n : String) -> @gen.Gen[@tutuca.Value] {
 fn variant_value(
   def : @statedef.StateDef,
   n : String,
-  depth : Int,
-) -> @gen.Gen[@tutuca.Value] {
+  depth : Int32,
+) -> @gen.Generator[@tutuca.Value] {
   guard def.user_ty(n) is Some({ kind: UVariant(cs), .. }) && !cs.is_empty() else {
     return @gen.pure(@info.zero_of(def, TyVariant(n)))
   }
-  @gen.one_of_array(cs).bind(c => {
+  @gen.elements(cs).flat_map(c => {
     if c.payload.is_empty() || depth <= 0 {
       @gen.pure((Str(c.variant) : @tutuca.Value))
     } else {
-      @gen.flatten_array(c.payload.map(p => value_of(def, p, depth=depth - 1))).fmap(ps => {
-          let parts : Array[@tutuca.Value] = [Str(c.variant)]
-          for p in ps {
-            parts.push(p)
-          }
-          (List(parts) : @tutuca.Value)
-        },
-      )
+      sequence(c.payload.map(p => value_of(def, p, depth=depth - 1))).map(ps => {
+        let parts : Array[@tutuca.Value] = [Str(c.variant)]
+        for p in ps {
+          parts.push(p)
+        }
+        (List(parts) : @tutuca.Value)
+      })
     }
   })
 }
@@ -482,7 +482,10 @@ fn variant_value(
 /// A closed set: a subset of the enum's cases, as the `Map[String, Bool]` both
 /// set kinds travel as. Membership is `Bool(true)` and a non-member is ABSENT
 /// rather than `Bool(false)`, which is the shape the generated mutators write.
-fn flags_value(def : @statedef.StateDef, n : String) -> @gen.Gen[@tutuca.Value] {
+fn flags_value(
+  def : @statedef.StateDef,
+  n : String,
+) -> @gen.Generator[@tutuca.Value] {
   let members : Array[String] = match def.user_ty(n) {
     Some({ kind: UEnum(ms), .. }) => ms.map(m => m.1)
     _ => []
@@ -492,18 +495,18 @@ fn flags_value(def : @statedef.StateDef, n : String) -> @gen.Gen[@tutuca.Value] 
 
 ///|
 /// An open set: a subset of a small pool, so two generated sets overlap often.
-fn set_value() -> @gen.Gen[@tutuca.Value] {
+fn set_value() -> @gen.Generator[@tutuca.Value] {
   subset_of(["a", "b", "c"])
 }
 
 ///|
 /// Each member in or out independently — every subset reachable, including the
 /// empty one and the full one, which a "pick n of them" draw reaches rarely.
-fn subset_of(members : Array[String]) -> @gen.Gen[@tutuca.Value] {
+fn subset_of(members : Array[String]) -> @gen.Generator[@tutuca.Value] {
   if members.is_empty() {
     return @gen.pure((Map(Map([])) : @tutuca.Value))
   }
-  @gen.flatten_array(members.map(_ => @gen.one_of_array([true, false]))).fmap(picks => {
+  sequence(members.map(_ => @gen.elements([true, false]))).map(picks => {
     let m : Map[String, @tutuca.Value] = Map([])
     for i, name in members {
       if picks[i] {
@@ -512,4 +515,37 @@ fn subset_of(members : Array[String]) -> @gen.Gen[@tutuca.Value] {
     }
     Map(m)
   })
+}
+
+///|
+/// Draw every generator in order with the same size and random state, the way
+/// one draw of a record or tuple draws each of its slots.
+fn[T] sequence(gens : Array[@gen.Generator[T]]) -> @gen.Generator[Array[T]] {
+  @gen.Generator((size, state) => gens.map(g => g.run(size, state)))
+}
+
+///|
+/// Draw until `pred` holds, growing the size from `n` to `2n`, and give up
+/// with `None` rather than loop when nothing in that window satisfies it.
+fn[T] @gen.Generator::such_that_maybe(
+  self : @gen.Generator[T],
+  pred : (T) -> Bool,
+) -> @gen.Generator[T?] {
+  fn attempt(m, n) {
+    if m > n {
+      @gen.pure(None)
+    } else {
+      self
+      .resize(m)
+      .flat_map(x => {
+        if pred(x) {
+          @gen.pure(Some(x))
+        } else {
+          attempt(m + 1, n)
+        }
+      })
+    }
+  }
+
+  @gen.sized(n => attempt(n, 2 * n))
 }

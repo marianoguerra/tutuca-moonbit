@@ -22,12 +22,12 @@ pub fn Story::new(
   title~ : String,
   module_~ : @component.ModuleDef,
   root~ : String,
-  section? : String = "",
-  description? : String = "",
-  args? : Map[String, @tutuca.Value] = Map([]),
-  view? : String = "",
-  renderable? : Bool = true,
-  init? : Bool = false,
+  section~ : String = "",
+  description~ : String = "",
+  args~ : Map[String, @tutuca.Value] = Map([]),
+  view~ : String = "",
+  renderable~ : Bool = true,
+  init~ : Bool = false,
 ) -> Story {
   {
     id,
@@ -104,12 +104,12 @@ pub fn story_title(ex : @component.ExampleDef) -> String {
 pub fn Story::of_example(
   module_ : @component.ModuleDef,
   ex : @component.ExampleDef,
-  section? : String = "",
-  id? : String = "",
-  title? : String = "",
-  description? : String = "",
-  renderable? : Bool = true,
-  init? : Bool = false,
+  section~ : String = "",
+  id~ : String = "",
+  title~ : String = "",
+  description~ : String = "",
+  renderable~ : Bool = true,
+  init~ : Bool = false,
 ) -> Story {
   {
     id: if id == "" {
@@ -139,7 +139,7 @@ pub fn Story::of_example(
 /// stories — the gallery has nothing to show a component it cannot make.
 pub fn stories_of_module(
   m : @component.ModuleDef,
-  section? : String = "",
+  section~ : String = "",
 ) -> Array[Story] {
   unique_ids(m.examples.map(ex => Story::of_example(m, ex, section~)))
 }
@@ -171,7 +171,7 @@ pub fn stories_of_modules(
 /// Two examples of one component with the same title would otherwise collide
 /// into one DOM id, one nav entry and one URL — a story you cannot reach.
 pub fn unique_ids(stories : Array[Story]) -> Array[Story] {
-  let seen : Map[String, Int] = Map([])
+  let seen : Map[String, Int32] = Map([])
   stories.map(s => {
     match seen.get(s.id) {
       None => {

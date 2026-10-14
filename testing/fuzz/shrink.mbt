@@ -20,9 +20,9 @@ pub fn[N] shrink(
   plan : Plan,
   script : Array[Action],
   remount : () -> @harness.Harness[N]?,
-  at? : @tutuca.DispatchPath = @tutuca.DispatchPath::new(),
+  at~ : @tutuca.DispatchPath = @tutuca.DispatchPath::new(),
   read? : Reader,
-  rounds? : Int = 200,
+  rounds~ : Int32 = 200,
 ) -> Array[Action] {
   let mut best = script
   let mut budget = rounds

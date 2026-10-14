@@ -19,27 +19,27 @@ pub fn FieldInfo::default(self : FieldInfo) -> Value {
 
 ///|
 pub fn SchemaInfo::new(
-  name? : String = "",
+  name~ : String = "",
   fingerprint~ : String,
-  fields? : Array[FieldInfo] = [],
-  properties? : Array[PropertyInfo] = [],
-  view_handlers? : Array[String] = [],
-  receives? : Array[String] = [],
-  intents? : Array[String] = [],
-  express_messages? : Array[String] = [],
-  express_intents? : Array[String] = [],
-  methods? : Array[String] = [],
-  invariants? : Array[String] = [],
-  domains? : Array[FieldDomain] = [],
-  ids? : Array[String] = [],
-  view_names? : Array[String] = [],
-  init_names? : Array[String] = [],
-  protocols? : Array[ProtocolInfo] = [],
-  implements? : Array[String] = [],
-  property_bindings? : Array[ProtocolBindingInfo] = [],
-  view_bindings? : Array[ProtocolBindingInfo] = [],
-  provide_bindings? : Array[ProtocolBindingInfo] = [],
-  lookup_bindings? : Array[ProtocolBindingInfo] = [],
+  fields~ : Array[FieldInfo] = [],
+  properties~ : Array[PropertyInfo] = [],
+  view_handlers~ : Array[String] = [],
+  receives~ : Array[String] = [],
+  intents~ : Array[String] = [],
+  express_messages~ : Array[String] = [],
+  express_intents~ : Array[String] = [],
+  methods~ : Array[String] = [],
+  invariants~ : Array[String] = [],
+  domains~ : Array[FieldDomain] = [],
+  ids~ : Array[String] = [],
+  view_names~ : Array[String] = [],
+  init_names~ : Array[String] = [],
+  protocols~ : Array[ProtocolInfo] = [],
+  implements~ : Array[String] = [],
+  property_bindings~ : Array[ProtocolBindingInfo] = [],
+  view_bindings~ : Array[ProtocolBindingInfo] = [],
+  provide_bindings~ : Array[ProtocolBindingInfo] = [],
+  lookup_bindings~ : Array[ProtocolBindingInfo] = [],
 ) -> SchemaInfo {
   {
     name,
@@ -248,11 +248,11 @@ pub fn mutator_name(verb : String, field : String) -> String {
 fn snake_word(w : String) -> String {
   let out = StringBuilder()
   for i, c in w.to_array() {
-    if c is ('A'..='Z') {
+    if c is ('A'..<='Z') {
       if i > 0 {
         out.write_char('_')
       }
-      out.write_char(Int::unsafe_to_char(c.to_int() + 32))
+      out.write_char(Int32::unsafe_to_char(c.to_int() + 32))
     } else {
       out.write_char(c)
     }

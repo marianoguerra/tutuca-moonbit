@@ -6,7 +6,3 @@ import {
   // no core import needed.
   "marianoguerra/tutuca/eventpath",
 }
-
-import {
-  "moonbitlang/core/debug",
-} for "test"

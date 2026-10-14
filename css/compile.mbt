@@ -7,7 +7,7 @@
 /// `compile_margaui` for those.
 pub fn compile_tailwind(
   classes : ArrayView[String],
-  polyfills? : Int = @tw.POLYFILL_ALL,
+  polyfills~ : Int32 = @tw.POLYFILL_ALL,
 ) -> String raise {
   compile_with(tailwind_entry, tailwind_bundle, classes, polyfills)
 }
@@ -22,7 +22,7 @@ pub fn compile_tailwind(
 /// hand-maintained tw/*.css, and they have run a minor version behind.
 pub fn compile_margaui(
   classes : ArrayView[String],
-  polyfills? : Int = @tw.POLYFILL_ALL,
+  polyfills~ : Int32 = @tw.POLYFILL_ALL,
 ) -> String raise {
   compile_with(
     margaui_entry,
@@ -42,7 +42,7 @@ fn compile_with(
   entry : String,
   files : Array[(String, String)],
   classes : ArrayView[String],
-  polyfills : Int,
+  polyfills : Int32,
 ) -> String raise {
   let loader = @tw.MemoryStylesheetLoader::new(files~)
   @tw.compile_sync(

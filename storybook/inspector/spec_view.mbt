@@ -92,7 +92,7 @@ fn Inspector::spec_field_rows(
 fn Inspector::spec_msg_rows(
   self : Inspector,
   msgs : Array[@statedef.MsgDef],
-  as_written? : Bool = false,
+  as_written~ : Bool = false,
 ) -> Array[@tutuca.Value] {
   msgs.map(m => {
     self.make_("SpecMsg", args={
@@ -158,7 +158,7 @@ fn Inspector::spec_section(
   self : Inspector,
   label : String,
   rows : Array[@tutuca.Value],
-  expanded? : Bool = false,
+  expanded~ : Bool = false,
 ) -> @tutuca.Value? {
   guard !rows.is_empty() else { return None }
   Some(

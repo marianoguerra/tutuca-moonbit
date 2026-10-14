@@ -26,12 +26,20 @@ pub(all) enum Answer {
   ABinds(Map[String, @core.Value])
   ANothing
 } derive(Eq, @debug.Debug)
+pub fn Answer::equal(Self, Self) -> Bool
+pub fn Answer::not_equal(Self, Self) -> Bool
+pub fn Answer::output(Self, &Logger) -> Unit
+pub fn Answer::to_repr(Self) -> @debug.Repr
+pub fn Answer::to_string(Self) -> String
 pub impl Show for Answer
 
 pub(all) enum Bucket {
   BReceive
   BIntent
 } derive(Eq, @debug.Debug)
+pub fn Bucket::equal(Self, Self) -> Bool
+pub fn Bucket::not_equal(Self, Self) -> Bool
+pub fn Bucket::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Case {
   name : String
@@ -52,7 +60,10 @@ pub(all) struct CaseEffect {
   args : Array[@core.Value]
   route : String
 } derive(Eq, @debug.Debug)
+pub fn CaseEffect::equal(Self, Self) -> Bool
+pub fn CaseEffect::not_equal(Self, Self) -> Bool
 pub fn CaseEffect::printed(Self) -> String
+pub fn CaseEffect::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ValueCase {
   name : String
@@ -73,6 +84,9 @@ pub(all) enum ValueRole {
   VEnrich
   VEnrichScope
 } derive(Eq, @debug.Debug)
+pub fn ValueRole::equal(Self, Self) -> Bool
+pub fn ValueRole::not_equal(Self, Self) -> Bool
+pub fn ValueRole::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

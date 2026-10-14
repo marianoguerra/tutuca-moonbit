@@ -8,9 +8,9 @@
 /// An event with a resolver that answers a marker for whatever it is handed,
 /// so a test can tell WHICH layer answered rather than only what it said.
 fn evt_with_reader(
-  name? : String = "input",
-  value? : @tutuca.Value = Null,
-  key? : String = "",
+  name~ : String = "input",
+  value~ : @tutuca.Value = Null,
+  key~ : String = "",
 ) -> @render.DomEvent {
   @render.DomEvent::new(
     name~,

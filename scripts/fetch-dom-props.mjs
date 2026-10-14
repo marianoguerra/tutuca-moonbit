@@ -345,6 +345,12 @@ pub(all) enum DomPropTy {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend DomPropTy with Eq::{not_equal, equal}
+
+///|
+pub extend DomPropTy with @debug.Debug::{to_repr}
+
+///|
 /// One interface: what it inherits, and what it declares.
 ///
 /// Declares, not carries — an inherited property is found by walking

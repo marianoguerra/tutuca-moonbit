@@ -11,8 +11,14 @@
 /// The `Due` variant.
 pub(all) enum NestedStateDue {
   Unscheduled
-  OnDay(Int)
+  OnDay(Int32)
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend NestedStateDue with Eq::{not_equal, equal}
+
+///|
+pub extend NestedStateDue with @debug.Debug::{to_repr}
 
 ///|
 /// The `Label` record.
@@ -22,11 +28,23 @@ pub(all) struct NestedStateLabel {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend NestedStateLabel with Eq::{not_equal, equal}
+
+///|
+pub extend NestedStateLabel with @debug.Debug::{to_repr}
+
+///|
 /// The `Priority` enum.
 pub(all) enum NestedStatePriority {
   Low
   High
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend NestedStatePriority with Eq::{not_equal, equal}
+
+///|
+pub extend NestedStatePriority with @debug.Debug::{to_repr}
 
 ///|
 /// The state of the NestedState component.
@@ -40,7 +58,7 @@ pub(all) struct NestedStateState {
   priority : NestedStatePriority
   due : NestedStateDue
   note : String?
-  size : (Int, Int)
+  size : (Int32, Int32)
 }
 
 ///|
@@ -66,6 +84,7 @@ pub fn NestedStateState::zero() -> NestedStateState {
 /// The `Due` variant as a `@tutuca.Value`: the bare case
 /// name when it carries nothing, else the name followed by its
 /// payload.
+#warnings("-unused_value")
 fn nested_state_due_to_value(x : NestedStateDue) -> @tutuca.Value {
   match x {
     Unscheduled => Str("Unscheduled")
@@ -76,6 +95,7 @@ fn nested_state_due_to_value(x : NestedStateDue) -> @tutuca.Value {
 ///|
 /// The `Due` variant back out. None on an unknown case or
 /// a payload that does not match the declared shape.
+#warnings("-unused_value")
 fn nested_state_due_of_value(v : @tutuca.Value) -> NestedStateDue? {
   if v is Str(s) {
     match s {
@@ -97,12 +117,14 @@ fn nested_state_due_of_value(v : @tutuca.Value) -> NestedStateDue? {
 
 ///|
 /// The `Label` record as a `@tutuca.Value`.
+#warnings("-unused_value")
 fn nested_state_label_to_value(x : NestedStateLabel) -> @tutuca.Value {
   Map({ "text": Str(x.text), "done": Bool(x.done) })
 }
 
 ///|
 /// The `Label` record back out. None on a shape mismatch.
+#warnings("-unused_value")
 fn nested_state_label_of_value(v : @tutuca.Value) -> NestedStateLabel? {
   guard v is Map(m) else { return None }
   guard m.get("text") is Some(Str(f_text)) else { return None }
@@ -112,6 +134,7 @@ fn nested_state_label_of_value(v : @tutuca.Value) -> NestedStateLabel? {
 
 ///|
 /// The `Priority` enum as a `@tutuca.Value`: the case name.
+#warnings("-unused_value")
 fn nested_state_priority_to_value(x : NestedStatePriority) -> @tutuca.Value {
   match x {
     Low => Str("Low")
@@ -121,6 +144,7 @@ fn nested_state_priority_to_value(x : NestedStatePriority) -> @tutuca.Value {
 
 ///|
 /// The `Priority` enum back out. None on an unknown case.
+#warnings("-unused_value")
 fn nested_state_priority_of_value(v : @tutuca.Value) -> NestedStatePriority? {
   guard v is Str(s) else { return None }
   match s {

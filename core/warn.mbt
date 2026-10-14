@@ -67,8 +67,8 @@ fn contract_failed(
 pub fn precondition_failed(
   handler~ : String,
   pred~ : String,
-  sentence? : String = "",
-  state? : Value = Null,
+  sentence~ : String = "",
+  state~ : Value = Null,
 ) -> Unit {
   contract_failed(
     Precondition,
@@ -87,8 +87,8 @@ pub fn precondition_failed(
 pub fn postcondition_failed(
   handler~ : String,
   pred~ : String,
-  sentence? : String = "",
-  state? : Value = Null,
+  sentence~ : String = "",
+  state~ : Value = Null,
 ) -> Unit {
   contract_failed(
     Postcondition,
@@ -106,8 +106,8 @@ pub fn postcondition_failed(
 pub fn invariant_failed(
   handler~ : String,
   pred~ : String,
-  sentence? : String = "",
-  state? : Value = Null,
+  sentence~ : String = "",
+  state~ : Value = Null,
 ) -> Unit {
   contract_failed(
     Invariant,
@@ -130,8 +130,8 @@ pub fn invariant_failed(
 pub fn domain_failed(
   handler~ : String,
   field~ : String,
-  sentence? : String = "",
-  state? : Value = Null,
+  sentence~ : String = "",
+  state~ : Value = Null,
 ) -> Unit {
   contract_failed(
     OutOfRange,

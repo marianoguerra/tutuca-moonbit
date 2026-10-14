@@ -1,6 +1,6 @@
 ///|
 test "macro-static: the macro expands in place, once per call site" {
-  let h = @harness.mount(macro_static_module(), "StaticMacro")
+  let h = @harness.mount(@examples.macro_static_module(), "StaticMacro")
   inspect(h.find_all(".badge").length(), content="2")
   inspect(h.text(".badge"), content="New")
   debug_inspect(
@@ -13,7 +13,7 @@ test "macro-static: the macro expands in place, once per call site" {
 
 ///|
 test "macro-params: defaults, static params, and dynamic params" {
-  let h = @harness.mount(macro_params_module(), "MacroParams")
+  let h = @harness.mount(@examples.macro_params_module(), "MacroParams")
   // in order: the default; label="Sale" (static); :label="'Sale'" (literal
   // expression); kind+label static; :label=".status" (a FIELD reference)
   debug_inspect(
@@ -45,7 +45,7 @@ test "macro-params: defaults, static params, and dynamic params" {
 
 ///|
 test "macro-params: a dynamic param tracks the field it reads" {
-  let h = @harness.mount(macro_params_module(), "MacroParams", args={
+  let h = @harness.mount(@examples.macro_params_module(), "MacroParams", args={
     "status": Str("archived"),
   })
   debug_inspect(
@@ -58,7 +58,7 @@ test "macro-params: a dynamic param tracks the field it reads" {
 
 ///|
 test "macro-slots: slot content lands inside the macro, and stays live" {
-  let h = @harness.mount(macro_slots_module(), "MacroSlots")
+  let h = @harness.mount(@examples.macro_slots_module(), "MacroSlots")
   debug_inspect(
     h.texts(".card-title"),
     content=(
@@ -74,7 +74,10 @@ test "macro-slots: slot content lands inside the macro, and stays live" {
 
 ///|
 test "macro-named-slots: each child lands in its named slot" {
-  let h = @harness.mount(macro_named_slots_module(), "MacroNamedSlots")
+  let h = @harness.mount(
+    @examples.macro_named_slots_module(),
+    "MacroNamedSlots",
+  )
   inspect(h.text(".card-title"), content="Dashboard")
   inspect(
     h.text(".foot"),

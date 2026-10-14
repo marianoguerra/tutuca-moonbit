@@ -31,7 +31,7 @@ fn where_of(
 /// The relation, from the term after the subject.
 fn relation_of(
   parts : Array[@ast.Node],
-  from : Int,
+  from : Int32,
   at : Span,
   refs : Array[(String, Span)],
 ) -> @tutuca.Domain raise DefError {
@@ -68,7 +68,7 @@ fn relation_of(
 /// `>= 0`, `< it.total` — an ordering and what it is compared against.
 fn compare_of(
   parts : Array[@ast.Node],
-  from : Int,
+  from : Int32,
   at : Span,
   refs : Array[(String, Span)],
 ) -> @tutuca.Domain raise DefError {
@@ -94,7 +94,7 @@ fn compare_of(
 /// pair would read as two terms of one expression.
 fn in_range(
   parts : Array[@ast.Node],
-  from : Int,
+  from : Int32,
   at : Span,
   refs : Array[(String, Span)],
 ) -> @tutuca.Domain raise DefError {
@@ -111,7 +111,7 @@ fn in_range(
 /// `is_one_of ["a", "b"]` — the closed set a value is drawn from.
 fn one_of(
   parts : Array[@ast.Node],
-  from : Int,
+  from : Int32,
   at : Span,
 ) -> @tutuca.Domain raise DefError {
   guard from < parts.length() && parts[from].it is Brackets(gs) else {
@@ -141,7 +141,7 @@ fn one_of(
 /// `it.<field>` after a relation word, as the field it names.
 fn field_after(
   parts : Array[@ast.Node],
-  from : Int,
+  from : Int32,
   at : Span,
   refs : Array[(String, Span)],
 ) -> String raise DefError {
@@ -161,7 +161,7 @@ fn field_after(
 ///|
 fn string_after(
   parts : Array[@ast.Node],
-  from : Int,
+  from : Int32,
   at : Span,
 ) -> String raise DefError {
   guard from < parts.length() && parts[from].it is Lit(Str(s)) else {
@@ -174,7 +174,7 @@ fn string_after(
 /// A bound: a number, or another field of this state.
 fn operand_at(
   parts : Array[@ast.Node],
-  from : Int,
+  from : Int32,
   at : Span,
   refs : Array[(String, Span)],
 ) -> @tutuca.DomainOperand raise DefError {

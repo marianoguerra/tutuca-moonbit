@@ -4,8 +4,7 @@
 //   tutuca gen counter.tutu --name Counter --out <dir>
 //
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component",
-//   "moonbitlang/core/debug"
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 
 ///|
 /// The state of the Counter component.
@@ -20,7 +19,7 @@ pub(all) struct CounterState {
   /// 
   /// A domain is worth writing when it is TRUE. The empty spec block is
   /// the honest answer here, and the counter is the example that says so.
-  count : Int
+  count : Int32
 }
 
 ///|

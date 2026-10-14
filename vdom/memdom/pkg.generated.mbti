@@ -21,6 +21,9 @@ pub(all) enum MemKind {
   CommentNode
   FragmentNode
 } derive(Eq, @debug.Debug)
+pub fn MemKind::equal(Self, Self) -> Bool
+pub fn MemKind::not_equal(Self, Self) -> Bool
+pub fn MemKind::to_repr(Self) -> @debug.Repr
 
 pub struct MemNode {
   kind : MemKind
@@ -35,9 +38,37 @@ pub struct MemNode {
   mut dangerous_html : String?
   mut inner_html_sets : Int
 }
+pub fn MemNode::append_child(Self, Self) -> Unit
+pub fn MemNode::attribute(Self, String) -> String?
+pub fn MemNode::char_data(Self) -> String
+pub fn MemNode::child_node_at(Self, Int) -> Self?
+pub fn MemNode::child_nodes(Self) -> Array[Self]
+pub fn MemNode::create_comment(Self, String) -> Self
+pub fn MemNode::create_element(Self, String, @vdom.Ns?, String?) -> Self
+pub fn MemNode::create_fragment(Self) -> Self
+pub fn MemNode::create_text(Self, String) -> Self
 pub fn MemNode::destroy_tree(Self) -> Unit
+pub fn MemNode::first_child(Self) -> Self?
 pub fn MemNode::get_attribute(Self, String) -> String?
+pub fn MemNode::get_inner_html(Self) -> String
 pub fn MemNode::get_property(Self, String) -> @vdom.AttrValue?
+pub fn MemNode::has_property(Self, String) -> Bool
+pub fn MemNode::insert_before(Self, Self, Self?) -> Unit
+pub fn MemNode::is_same_node(Self, Self) -> Bool
+pub fn MemNode::namespace_uri(Self) -> @vdom.Ns?
+pub fn MemNode::next_sibling(Self) -> Self?
+pub fn MemNode::node_kind(Self) -> Int
+pub fn MemNode::parent_node(Self) -> Self?
+pub fn MemNode::prev_sibling(Self) -> Self?
+pub fn MemNode::remove_attribute(Self, String) -> Unit
+pub fn MemNode::remove_child(Self, Self) -> Unit
+pub fn MemNode::replace_child(Self, Self, Self) -> Unit
+pub fn MemNode::replace_children(Self) -> Unit
+pub fn MemNode::set_attribute(Self, String, String) -> Unit
+pub fn MemNode::set_data(Self, String) -> Unit
+pub fn MemNode::set_inner_html(Self, String) -> Unit
+pub fn MemNode::set_property(Self, String, @vdom.AttrValue) -> Bool
+pub fn MemNode::tag_name(Self) -> String
 pub fn MemNode::to_html(Self) -> String
 pub impl @vdom.DomNode for MemNode
 pub impl @vdom.DomWalk for MemNode

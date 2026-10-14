@@ -8,7 +8,7 @@
 ///|
 pub(open) trait DomWalk: DomNode {
   fn prev_sibling(Self) -> Self?
-  fn node_kind(Self) -> Int // DOM nodeType: 1 element, 3 text, 8 comment, 9 document, 11 fragment
+  fn node_kind(Self) -> Int32 // DOM nodeType: 1 element, 3 text, 8 comment, 9 document, 11 fragment
   fn char_data(Self) -> String // comment/text character data; "" for elements
   fn attribute(Self, name : String) -> String?
 }

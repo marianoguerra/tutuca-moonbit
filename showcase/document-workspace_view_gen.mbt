@@ -204,6 +204,12 @@ pub(all) enum DocumentWorkspaceCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend DocumentWorkspaceCompute with Eq::{not_equal, equal}
+
+///|
+pub extend DocumentWorkspaceCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn DocumentWorkspaceCompute::name(
   self : DocumentWorkspaceCompute,
 ) -> String {
@@ -248,8 +254,8 @@ pub(all) struct DocumentEditorState {
   title : String
   source : String
   saved_source : String
-  revision : Int
-  load_revision : Int
+  revision : Int32
+  load_revision : Int32
   busy : Bool
   fail_next : Bool
   feedback : String

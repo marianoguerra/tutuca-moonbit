@@ -1,6 +1,6 @@
 ///|
 test "svg-interactive: the swatches render as real namespaced SVG elements" {
-  let h = @harness.mount_example(svg_interactive_module(), "Default")
+  let h = @harness.mount_example(@examples.svg_interactive_module(), "Default")
   inspect(h.find_all("circle").length(), content="8")
   inspect(h.ns_of("svg"), content="svg")
   inspect(h.ns_of("circle"), content="svg")
@@ -31,7 +31,7 @@ test "svg-interactive: the swatches render as real namespaced SVG elements" {
 
 ///|
 test "svg-interactive: clicking a circle sets the color, and the ring follows" {
-  let h = @harness.mount_example(svg_interactive_module(), "Default")
+  let h = @harness.mount_example(@examples.svg_interactive_module(), "Default")
   debug_inspect(
     h.attr(".preview", "fill"),
     content=(
@@ -79,7 +79,7 @@ test "svg-interactive: clicking a circle sets the color, and the ring follows" {
 
 ///|
 test "mathml-formula: the formula renders as real MathML" {
-  let h = @harness.mount_example(mathml_formula_module(), "Two roots")
+  let h = @harness.mount_example(@examples.mathml_formula_module(), "Two roots")
   inspect(h.ns_of("math"), content="mathml")
   inspect(h.ns_of(".m-a"), content="mathml")
   inspect(h.text(".m-a"), content="1")
@@ -92,7 +92,7 @@ test "mathml-formula: the formula renders as real MathML" {
 
 ///|
 test "mathml-formula: editing a coefficient re-renders the <mn> and the verdict" {
-  let h = @harness.mount_example(mathml_formula_module(), "Two roots")
+  let h = @harness.mount_example(@examples.mathml_formula_module(), "Two roots")
   // @on.input="setC e.valueAsInt" — the raw event value, coerced to an Int
   h.type_into(".in-c", "5")
   inspect(h.text(".m-c"), content="5")

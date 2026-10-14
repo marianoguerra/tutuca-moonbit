@@ -4,7 +4,7 @@
 // wasm-gc (typed Int/Double/prop-membership) plus hit-testing and dispatch
 // are injected per backend via TouchOps.
 import {
-  "mizchi/js/core",
+  "mizchi/js_core" @core,
 }
 
 supported_targets = "-all+js+wasm-gc"

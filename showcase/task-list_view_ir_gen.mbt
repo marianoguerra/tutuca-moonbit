@@ -260,11 +260,11 @@ fn task_list_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn task_list_component(
-  name? : String = "TaskList",
-  views? : Map[String, @anode.View] = task_list_views(),
-  initial? : TaskListState = TaskListState::zero(),
-  common_style? : String = task_list_common_style,
-  global_style? : String = task_list_global_style,
+  name~ : String = "TaskList",
+  views~ : Map[String, @anode.View] = task_list_views(),
+  initial~ : TaskListState = TaskListState::zero(),
+  common_style~ : String = task_list_common_style,
+  global_style~ : String = task_list_global_style,
   update? : (TaskListState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TaskListState,
   ],
@@ -280,10 +280,10 @@ pub fn task_list_component(
     @tutuca.Value,
     &@tutuca.Stack,
   ) -> Bool)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -443,18 +443,18 @@ fn task_item_inline_update(
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn task_item_component(
-  name? : String = "TaskItem",
-  views? : Map[String, @anode.View] = task_item_views(),
-  initial? : TaskItemState = TaskItemState::zero(),
-  common_style? : String = task_item_common_style,
-  global_style? : String = task_item_global_style,
+  name~ : String = "TaskItem",
+  views~ : Map[String, @anode.View] = task_item_views(),
+  initial~ : TaskItemState = TaskItemState::zero(),
+  common_style~ : String = task_item_common_style,
+  global_style~ : String = task_item_global_style,
   update? : (TaskItemState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TaskItemState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

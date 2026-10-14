@@ -3,14 +3,13 @@
 // (tests need `npm i happy-dom` in the module root).
 import {
   "marianoguerra/tutuca/vdom",
-  "mizchi/js/core",
+  "mizchi/js_core" @core,
   "mizchi/js_browser/dom",
 }
 
 import {
   "marianoguerra/tutuca/vdom",
-  "mizchi/js/core",
-  "mizchi/js_browser/dom",
+  "mizchi/js_core" @core,
   "mizchi/js_browser/test_utils",
 } for "test"
 

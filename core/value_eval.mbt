@@ -61,6 +61,9 @@ pub impl Eq for Value with fn equal(self, other) {
 }
 
 ///|
+pub extend Value with Eq::{not_equal, equal}
+
+///|
 /// Whether a 64-bit integer and a double name the same number.
 ///
 /// Through the double only when the integer fits one exactly; otherwise through
@@ -81,7 +84,7 @@ fn int_eq_num(a : Int64, b : Double) -> Bool {
 /// A custom collection answers too, through `size`. An
 /// instance that is NOT a sequence still answers None, which is the honest
 /// reading: a component has fields, not a size.
-pub fn size_of(v : Value) -> Int? {
+pub fn size_of(v : Value) -> Int32? {
   match v {
     Str(s) => Some(s.length())
     List(a) => Some(a.length())

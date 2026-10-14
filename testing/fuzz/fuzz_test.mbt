@@ -13,8 +13,8 @@
 
 ///|
 priv struct TillState {
-  till : Int
-  float_ : Int
+  till : Int32
+  float_ : Int32
 }
 
 ///|
@@ -47,7 +47,7 @@ const TILL_SPEC : String =
 /// when a rule is declared and nothing implements it — which is a thing that
 /// happens, silently, and which the schema cannot tell you because the schema
 /// lists the NAME either way.
-fn till_module(enforced? : Bool = true) -> @component.ModuleDef {
+fn till_module(enforced~ : Bool = true) -> @component.ModuleDef {
   let comp = @component.component(
     views={
       "main": @anode.View::new(
@@ -127,14 +127,14 @@ impl @component.Fields for TillState with fn schema() {
 }
 
 ///|
-fn till_comp(enforced? : Bool = true) -> @component.Component {
+fn till_comp(enforced~ : Bool = true) -> @component.Component {
   till_module(enforced~).components[0]
 }
 
 ///|
 fn till_plan(
-  source? : @fuzz.Source = Fields,
-  enforced? : Bool = true,
+  source~ : @fuzz.Source = Fields,
+  enforced~ : Bool = true,
 ) -> @fuzz.Plan raise {
   guard @fuzz.Plan::of_component(till_comp(enforced~), source~) is Some(p) else {
     fail("Till carries a spec block, so it has a plan")
@@ -471,7 +471,7 @@ test "a failing run shrinks to its cause" {
 ///|
 priv struct AlbumState {
   photos : Array[@tutuca.Value]
-  cursor : Int
+  cursor : Int32
 }
 
 ///|

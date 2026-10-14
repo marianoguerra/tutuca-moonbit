@@ -23,6 +23,12 @@ pub(all) enum ArgType {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend ArgType with Eq::{not_equal, equal}
+
+///|
+pub extend ArgType with Debug::{to_repr}
+
+///|
 /// One `@on.<event>` handler name as referenced across all views, with the
 /// argument shape inferred from its call sites. `args` is None when the call
 /// sites disagree on arity — the variant then carries the raw argument list.
@@ -32,6 +38,12 @@ pub(all) struct InputSig {
   /// `~on_click` call sites, in document order — used for the doc comment.
   sites : Array[String]
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend InputSig with Eq::{not_equal, equal}
+
+///|
+pub extend InputSig with Debug::{to_repr}
 
 ///|
 /// Everything the generator extracts from one file's compiled views.
@@ -64,6 +76,12 @@ pub(all) struct Surface {
   /// `@loop-with` names, sorted. They return a slice/order plan.
   loop_withs : Array[String]
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend Surface with Eq::{not_equal, equal}
+
+///|
+pub extend Surface with Debug::{to_repr}
 
 ///|
 /// Both generated modules from one shared view-compilation pass. `ir_source`
@@ -148,7 +166,7 @@ pub suberror GenError {
   /// The `logic:` section does not read. `line` is the
   /// line in the HTML file, not in the block, for the same reason a state
   /// block's is: that is the file the author has open.
-  BadScriptBlock(comp~ : String, line~ : Int, message~ : String)
+  BadScriptBlock(comp~ : String, line~ : Int32, message~ : String)
 }
 
 ///|

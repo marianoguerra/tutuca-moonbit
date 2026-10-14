@@ -18,7 +18,6 @@ import {
   "marianoguerra/tutuca/tutufile/names",
   "moonbitlang/x/fs",
   "moonbitlang/core/env",
-  "moonbitlang/core/json",
 }
 
 supported_targets = "native"

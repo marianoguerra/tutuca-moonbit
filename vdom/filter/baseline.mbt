@@ -25,7 +25,7 @@ pub struct Baseline {
 }
 
 ///|
-pub fn Baseline::new(max_reports? : Int = 64) -> Baseline {
+pub fn Baseline::new(max_reports~ : Int32 = 64) -> Baseline {
   {
     url: UrlFilter::new(max_reports~),
     handlers: HandlerFilter::new(max_reports~),
@@ -41,6 +41,14 @@ pub impl VdomFilter for Baseline with fn take_reports(self) {
   let out = VdomFilter::take_reports(self.url)
   out.append(VdomFilter::take_reports(self.handlers))
   out
+}
+
+///|
+pub extend Baseline with VdomFilter::{
+  filter_elem_hinted,
+  filter_elem,
+  take_reports,
+  filter_tree,
 }
 
 ///|

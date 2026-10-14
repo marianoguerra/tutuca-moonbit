@@ -133,7 +133,7 @@ pub fn Value::item_opt(self : Value, key : PathKey) -> Value? {
 pub fn Value::item(
   self : Value,
   key : PathKey,
-  default? : Value = Null,
+  default~ : Value = Null,
 ) -> Value {
   self.item_opt(key).unwrap_or(default)
 }
@@ -163,14 +163,14 @@ pub fn Value::as_key(self : Value) -> PathKey? {
 
 ///|
 /// `v.index(2)` — an item by position.
-pub fn Value::index(self : Value, i : Int, default? : Value = Null) -> Value {
+pub fn Value::index(self : Value, i : Int32, default~ : Value = Null) -> Value {
   self.item(KInt(i), default~)
 }
 
 ///|
 /// `v.key("id")` — an item by name. Distinct from `field`: a `Map` answers
 /// both, but a component instance keys its SEQUENCE here and its FIELDS there.
-pub fn Value::key(self : Value, k : String, default? : Value = Null) -> Value {
+pub fn Value::key(self : Value, k : String, default~ : Value = Null) -> Value {
   self.item(KStr(k), default~)
 }
 
@@ -185,7 +185,7 @@ pub fn Value::key(self : Value, k : String, default? : Value = Null) -> Value {
 // a caller reading a handler arg does not, and takes the total form.
 
 ///|
-pub fn Value::int_opt(self : Value) -> Int? {
+pub fn Value::int_opt(self : Value) -> Int32? {
   match self {
     Num(n) => Some(n.to_int())
     _ => None
@@ -193,7 +193,7 @@ pub fn Value::int_opt(self : Value) -> Int? {
 }
 
 ///|
-pub fn Value::int(self : Value, default? : Int = 0) -> Int {
+pub fn Value::int(self : Value, default~ : Int32 = 0) -> Int32 {
   self.int_opt().unwrap_or(default)
 }
 
@@ -206,7 +206,7 @@ pub fn Value::num_opt(self : Value) -> Double? {
 }
 
 ///|
-pub fn Value::num(self : Value, default? : Double = 0) -> Double {
+pub fn Value::num(self : Value, default~ : Double = 0) -> Double {
   self.num_opt().unwrap_or(default)
 }
 
@@ -219,7 +219,7 @@ pub fn Value::str_opt(self : Value) -> String? {
 }
 
 ///|
-pub fn Value::str(self : Value, default? : String = "") -> String {
+pub fn Value::str(self : Value, default~ : String = "") -> String {
   self.str_opt().unwrap_or(default)
 }
 
@@ -232,7 +232,7 @@ pub fn Value::bool_opt(self : Value) -> Bool? {
 }
 
 ///|
-pub fn Value::bool(self : Value, default? : Bool = false) -> Bool {
+pub fn Value::bool(self : Value, default~ : Bool = false) -> Bool {
   self.bool_opt().unwrap_or(default)
 }
 
@@ -405,7 +405,7 @@ pub fn Value::with_item(self : Value, key : PathKey, v : Value) -> Value {
 
 ///|
 /// How many items, or 0. The total form of `size_of`.
-pub fn Value::size(self : Value, default? : Int = 0) -> Int {
+pub fn Value::size(self : Value, default~ : Int32 = 0) -> Int32 {
   size_of(self).unwrap_or(default)
 }
 
@@ -452,7 +452,7 @@ pub fn Value::entries(self : Value) -> Array[(PathKey, Value)] {
 pub fn Value::call(
   self : Value,
   args : Array[Value],
-  this? : Value = Null,
+  this~ : Value = Null,
 ) -> Value {
   match self {
     Fn(f) => {

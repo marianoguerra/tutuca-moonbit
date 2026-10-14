@@ -91,8 +91,8 @@ pub(all) struct PsEntryState {
   title : String
   description : String
   lang : String
-  start_year : Int?
-  end_year : Int?
+  start_year : Int32?
+  end_year : Int32?
   role : String?
   featured : Bool
   url : String
@@ -161,7 +161,7 @@ impl @component.Fields for PsEntryState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   guard f.get("description") is Some(Str(v_description)) else { return None }
   guard f.get("lang") is Some(Str(v_lang)) else { return None }
-  let v_start_year : Int? = match f.get("start_year") {
+  let v_start_year : Int32? = match f.get("start_year") {
     None | Some(Null) => None
     Some(t1_start_year) => {
       guard t1_start_year is Num(u3_start_year) else { return None }
@@ -169,7 +169,7 @@ impl @component.Fields for PsEntryState with fn decode(f) {
       Some(x1_start_year)
     }
   }
-  let v_end_year : Int? = match f.get("end_year") {
+  let v_end_year : Int32? = match f.get("end_year") {
     None | Some(Null) => None
     Some(t1_end_year) => {
       guard t1_end_year is Num(u3_end_year) else { return None }
@@ -231,6 +231,12 @@ pub(all) enum PsEntryCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend PsEntryCompute with Eq::{not_equal, equal}
+
+///|
+pub extend PsEntryCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn PsEntryCompute::name(self : PsEntryCompute) -> String {
   match self {
     IsSpanish => "is_spanish"
@@ -244,6 +250,12 @@ pub fn PsEntryCompute::name(self : PsEntryCompute) -> String {
 pub(all) enum PsEntryEnrich {
   EnrichCategoryBadge
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend PsEntryEnrich with Eq::{not_equal, equal}
+
+///|
+pub extend PsEntryEnrich with @debug.Debug::{to_repr}
 
 ///|
 pub fn PsEntryEnrich::name(self : PsEntryEnrich) -> String {
@@ -551,6 +563,12 @@ pub(all) enum RootCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend RootCompute with Eq::{not_equal, equal}
+
+///|
+pub extend RootCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn RootCompute::name(self : RootCompute) -> String {
   match self {
     HasActiveFilters => "has_active_filters"
@@ -562,6 +580,12 @@ pub fn RootCompute::name(self : RootCompute) -> String {
 pub(all) enum RootWhen {
   FilterEntry
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend RootWhen with Eq::{not_equal, equal}
+
+///|
+pub extend RootWhen with @debug.Debug::{to_repr}
 
 ///|
 pub fn RootWhen::name(self : RootWhen) -> String {
@@ -576,6 +600,12 @@ pub(all) enum RootEnrich {
   EnrichCategoryBindings
   EnrichRoleBindings
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend RootEnrich with Eq::{not_equal, equal}
+
+///|
+pub extend RootEnrich with @debug.Debug::{to_repr}
 
 ///|
 pub fn RootEnrich::name(self : RootEnrich) -> String {

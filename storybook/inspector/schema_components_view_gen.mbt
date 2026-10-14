@@ -16,8 +16,8 @@
 pub(all) struct SchemaScalarState {
   items : Array[@tutuca.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
   type_label : String
   badges : Array[String]
   title : String
@@ -211,6 +211,12 @@ pub(all) enum SchemaScalarCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend SchemaScalarCompute with Eq::{not_equal, equal}
+
+///|
+pub extend SchemaScalarCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn SchemaScalarCompute::name(self : SchemaScalarCompute) -> String {
   match self {
     ArrowText => "arrow_text"
@@ -229,6 +235,12 @@ pub fn SchemaScalarCompute::name(self : SchemaScalarCompute) -> String {
 pub(all) enum SchemaScalarLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend SchemaScalarLoopWith with Eq::{not_equal, equal}
+
+///|
+pub extend SchemaScalarLoopWith with @debug.Debug::{to_repr}
 
 ///|
 pub fn SchemaScalarLoopWith::name(self : SchemaScalarLoopWith) -> String {
@@ -282,8 +294,8 @@ impl @component.Fields for SchemaScalarState with fn schema() {
 pub(all) struct SchemaObjectState {
   items : Array[@tutuca.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
   type_label : String
   badges : Array[String]
   title : String
@@ -477,6 +489,12 @@ pub(all) enum SchemaObjectCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend SchemaObjectCompute with Eq::{not_equal, equal}
+
+///|
+pub extend SchemaObjectCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn SchemaObjectCompute::name(self : SchemaObjectCompute) -> String {
   match self {
     ArrowText => "arrow_text"
@@ -495,6 +513,12 @@ pub fn SchemaObjectCompute::name(self : SchemaObjectCompute) -> String {
 pub(all) enum SchemaObjectLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend SchemaObjectLoopWith with Eq::{not_equal, equal}
+
+///|
+pub extend SchemaObjectLoopWith with @debug.Debug::{to_repr}
 
 ///|
 pub fn SchemaObjectLoopWith::name(self : SchemaObjectLoopWith) -> String {
@@ -548,8 +572,8 @@ impl @component.Fields for SchemaObjectState with fn schema() {
 pub(all) struct SchemaArrayState {
   items : Array[@tutuca.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
   type_label : String
   badges : Array[String]
   title : String
@@ -740,6 +764,12 @@ pub(all) enum SchemaArrayCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend SchemaArrayCompute with Eq::{not_equal, equal}
+
+///|
+pub extend SchemaArrayCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn SchemaArrayCompute::name(self : SchemaArrayCompute) -> String {
   match self {
     ArrowText => "arrow_text"
@@ -758,6 +788,12 @@ pub fn SchemaArrayCompute::name(self : SchemaArrayCompute) -> String {
 pub(all) enum SchemaArrayLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend SchemaArrayLoopWith with Eq::{not_equal, equal}
+
+///|
+pub extend SchemaArrayLoopWith with @debug.Debug::{to_repr}
 
 ///|
 pub fn SchemaArrayLoopWith::name(self : SchemaArrayLoopWith) -> String {
@@ -811,8 +847,8 @@ impl @component.Fields for SchemaArrayState with fn schema() {
 pub(all) struct SchemaEnumState {
   items : Array[@tutuca.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
   type_label : String
   badges : Array[String]
   title : String
@@ -1001,6 +1037,12 @@ pub(all) enum SchemaEnumCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend SchemaEnumCompute with Eq::{not_equal, equal}
+
+///|
+pub extend SchemaEnumCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn SchemaEnumCompute::name(self : SchemaEnumCompute) -> String {
   match self {
     ArrowText => "arrow_text"
@@ -1019,6 +1061,12 @@ pub fn SchemaEnumCompute::name(self : SchemaEnumCompute) -> String {
 pub(all) enum SchemaEnumLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend SchemaEnumLoopWith with Eq::{not_equal, equal}
+
+///|
+pub extend SchemaEnumLoopWith with @debug.Debug::{to_repr}
 
 ///|
 pub fn SchemaEnumLoopWith::name(self : SchemaEnumLoopWith) -> String {
@@ -1072,8 +1120,8 @@ impl @component.Fields for SchemaEnumState with fn schema() {
 pub(all) struct SchemaCombinatorState {
   items : Array[@tutuca.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
   type_label : String
   badges : Array[String]
   title : String
@@ -1267,6 +1315,12 @@ pub(all) enum SchemaCombinatorCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend SchemaCombinatorCompute with Eq::{not_equal, equal}
+
+///|
+pub extend SchemaCombinatorCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn SchemaCombinatorCompute::name(self : SchemaCombinatorCompute) -> String {
   match self {
     ArrowText => "arrow_text"
@@ -1285,6 +1339,12 @@ pub fn SchemaCombinatorCompute::name(self : SchemaCombinatorCompute) -> String {
 pub(all) enum SchemaCombinatorLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend SchemaCombinatorLoopWith with Eq::{not_equal, equal}
+
+///|
+pub extend SchemaCombinatorLoopWith with @debug.Debug::{to_repr}
 
 ///|
 pub fn SchemaCombinatorLoopWith::name(
@@ -1619,6 +1679,12 @@ pub(all) enum SchemaBooleanCompute {
   CssClass
   Text
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend SchemaBooleanCompute with Eq::{not_equal, equal}
+
+///|
+pub extend SchemaBooleanCompute with @debug.Debug::{to_repr}
 
 ///|
 pub fn SchemaBooleanCompute::name(self : SchemaBooleanCompute) -> String {

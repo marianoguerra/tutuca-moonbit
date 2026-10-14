@@ -72,8 +72,8 @@ pub fn entries() -> Array[@catalog.Entry] {
 fn note(
   keywords : Array[String],
   category : String,
-  presets? : Array[@catalog.Preset] = [],
-  hidden? : Bool = false,
+  presets~ : Array[@catalog.Preset] = [],
+  hidden~ : Bool = false,
 ) -> @catalog.Annotation {
   { keywords, category, presets, hidden, }
 }
@@ -83,7 +83,7 @@ fn preset(
   name : String,
   doc : String,
   args : Map[String, Json],
-  cells? : Int = 0,
+  cells~ : Int32 = 0,
 ) -> @catalog.Preset {
   { name, doc, args, cells, }
 }

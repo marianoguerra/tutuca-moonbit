@@ -21,7 +21,7 @@ pub struct Driver {
   /// recording IS the tree.
   priv base : @trace.Place
   /// How many events have been fed. The index of the next one.
-  priv mut at : Int
+  priv mut at : Int32
   /// The host, replaced by what it said last time — swapped in around a push
   /// and out again immediately, never left installed. `None` when the caller
   /// asked for the live host.
@@ -29,7 +29,7 @@ pub struct Driver {
   /// The rerun, recorded, so it can be held against the recording as like with
   /// like. `None` when `verify` is off.
   priv mut rerun : @trace.TraceRecorder?
-  priv mut checked : Int
+  priv mut checked : Int32
   priv mut watching : (() -> Unit)?
 }
 
@@ -50,9 +50,9 @@ pub struct Driver {
 pub fn Driver::new(
   t : @trace.Trace,
   tx : @transactor.Transactor,
-  base? : @trace.Place = Place([]),
+  base~ : @trace.Place = Place([]),
   verify? : Bool,
-  answer_intents? : Bool = true,
+  answer_intents~ : Bool = true,
 ) -> Driver {
   let verify = match verify {
     Some(v) => v
@@ -116,14 +116,14 @@ pub fn Driver::done(self : Driver) -> Bool {
 
 ///|
 /// How many events have been fed.
-pub fn Driver::at(self : Driver) -> Int {
+pub fn Driver::at(self : Driver) -> Int32 {
   self.at
 }
 
 ///|
 /// How many there are in all, so a caller can say "12 of 40" without reaching
 /// into the recording it was handed.
-pub fn Driver::total(self : Driver) -> Int {
+pub fn Driver::total(self : Driver) -> Int32 {
   self.trace.events.length()
 }
 
@@ -234,7 +234,7 @@ pub fn Driver::step(self : Driver) -> Unit raise ReplayError {
 }
 
 ///|
-pub fn Driver::run_to(self : Driver, n : Int) -> Unit raise ReplayError {
+pub fn Driver::run_to(self : Driver, n : Int32) -> Unit raise ReplayError {
   while self.at < n && !self.done() {
     self.step_event()
   }
@@ -258,7 +258,7 @@ pub fn Driver::run(self : Driver) -> Unit raise ReplayError {
 /// to the subtree and stripped back down before anything is compared. A rerun
 /// dispatch OUTSIDE the base is not a divergence: it is whatever else shares
 /// the transactor, doing its own work.
-fn Driver::check(self : Driver, from : Int) -> Unit raise ReplayError {
+fn Driver::check(self : Driver, from : Int32) -> Unit raise ReplayError {
   guard self.rerun is Some(_) else { return }
   fn dispatches(xs : Array[@trace.Event]) -> Array[@trace.Event] {
     xs.filter(e => e.op is Send(_) || e.op is Intent(_))

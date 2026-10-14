@@ -172,7 +172,7 @@ pub fn parse_answers(
 }
 
 ///|
-fn step_of(scene : String, at : Int, s : Json) -> Step raise SceneError {
+fn step_of(scene : String, at : Int32, s : Json) -> Step raise SceneError {
   guard s is Object(o) else { raise StepNotObject(scene~, at~) }
   // Exactly one verb. Finding two is worth its own error: the keys of a JSON
   // object have no order the author can rely on, so a step saying both `click`
@@ -267,9 +267,9 @@ fn step_of(scene : String, at : Int, s : Json) -> Step raise SceneError {
 ///|
 fn expect_of(
   scene : String,
-  at : Int,
+  at : Int32,
   o : Map[String, Json],
-  nth : Int,
+  nth : Int32,
 ) -> Expect raise SceneError {
   let word = need_str_at(scene, at, o, "expect")
   let mut reader : Reader? = None
@@ -350,7 +350,7 @@ fn expect_of(
 /// worst way for a test to be wrong: it passes.
 fn check_selector(
   scene : String,
-  at : Int,
+  at : Int32,
   sel : String,
 ) -> Unit raise SceneError {
   if sel.contains(" ") || sel.contains(">") || sel.contains(",") {
@@ -435,11 +435,11 @@ fn str_or(o : Map[String, Json], key : String, dflt : String) -> String {
 ///|
 fn int_or(
   scene : String,
-  at : Int,
+  at : Int32,
   o : Map[String, Json],
   key : String,
-  dflt : Int,
-) -> Int raise SceneError {
+  dflt : Int32,
+) -> Int32 raise SceneError {
   match o.get(key) {
     None => dflt
     Some(Number(n, ..)) => n.to_int()
@@ -452,7 +452,7 @@ fn int_or(
 /// The verb's own value, which for every selector verb is the selector.
 fn sel_at(
   scene : String,
-  at : Int,
+  at : Int32,
   o : Map[String, Json],
   verb : String,
 ) -> String raise SceneError {
@@ -464,7 +464,7 @@ fn sel_at(
 ///|
 fn need_str_at(
   scene : String,
-  at : Int,
+  at : Int32,
   o : Map[String, Json],
   key : String,
 ) -> String raise SceneError {
@@ -479,7 +479,7 @@ fn need_str_at(
 ///|
 fn need_str(
   scene : String,
-  at : Int,
+  at : Int32,
   o : Map[String, Json],
   verb : String,
   key : String,

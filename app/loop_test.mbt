@@ -4,7 +4,7 @@
 ///|
 priv struct EditorState {
   text : String
-  count : Int
+  count : Int32
 }
 
 ///|
@@ -302,7 +302,7 @@ priv struct PickerState {
 
 ///|
 priv struct ChattyState {
-  n : Int
+  n : Int32
 }
 
 ///|

@@ -48,9 +48,9 @@
 /// (Found as: an app in view mode still showing the editing chrome, but only
 /// below a `TabPage`.)
 priv struct CacheEntry {
-  rev : Int
-  node_id : Int?
-  cid : Int
+  rev : Int32
+  node_id : Int32?
+  cid : Int32
   vid : String
   render_path : @tutuca.DispatchPath
   base : @tutuca.Path?
@@ -126,7 +126,7 @@ fn trail_eq(a : Array[String], b : Array[String]) -> Bool {
 fn CacheEntry::valid(
   self : CacheEntry,
   id : @tutuca.ObjId,
-  node_id : Int?,
+  node_id : Int32?,
   rv : ResolvedView,
   value : @tutuca.Value,
   dyn_binds : @component.DynBinds?,
@@ -152,7 +152,7 @@ fn CacheEntry::valid(
 fn RenderCache::get(
   self : RenderCache,
   id : @tutuca.ObjId,
-  node_id : Int?,
+  node_id : Int32?,
   rv : ResolvedView,
   value : @tutuca.Value,
   dyn_binds : @component.DynBinds?,
@@ -181,7 +181,7 @@ fn RenderCache::get(
 fn RenderCache::set(
   self : RenderCache,
   id : @tutuca.ObjId,
-  node_id : Int?,
+  node_id : Int32?,
   rv : ResolvedView,
   value : @tutuca.Value,
   dyn_binds : @component.DynBinds?,

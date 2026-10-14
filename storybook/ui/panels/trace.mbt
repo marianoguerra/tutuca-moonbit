@@ -14,7 +14,7 @@ priv struct TraceSession {
   mut taken : @trace.Trace?
   /// The story index the recording is about, so the panel goes back to the
   /// pane that started it.
-  mut idx : Int
+  mut idx : Int32
   mut scope : String
   mut selected_place : String?
   /// Whether a click on the page means "pick this" rather than "use this".
@@ -90,7 +90,7 @@ fn TraceSession::recording(self : TraceSession) -> Bool {
 /// expressible at all: it is a cut at `.sN`, and the same operation that trims
 /// a finished recording. The field name is the shell's to say
 /// (`@sbui.story_field`); turning it into a place is ours.
-fn story_place(idx : Int) -> @trace.Place {
+fn story_place(idx : Int32) -> @trace.Place {
   Place([{ field: @sbui.story_field(idx), key: None, }])
 }
 
@@ -104,7 +104,7 @@ fn story_place(idx : Int) -> @trace.Place {
 fn[N] start_recording(
   app : @app.App[N],
   session : TraceSession,
-  idx : Int,
+  idx : Int32,
   scope : String,
 ) -> Unit {
   session.idx = idx
@@ -164,7 +164,7 @@ fn[N] push_trace_panel(
   app : @app.App[N],
   insp : @inspector.Inspector,
   session : TraceSession,
-  tab? : String = "",
+  tab~ : String = "",
 ) -> Unit {
   guard session.idx >= 0 else { return }
   let t = session.current()

@@ -48,7 +48,7 @@ priv struct Comp {
 }
 
 ///|
-fn Comp::field_index(self : Comp, name : String) -> Int? {
+fn Comp::field_index(self : Comp, name : String) -> Int32? {
   for i, f in self.fields {
     if f.name == name {
       return Some(i)

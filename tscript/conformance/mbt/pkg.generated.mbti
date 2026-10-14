@@ -43,6 +43,9 @@ pub(all) struct CorpusLabel {
   text : String
   done : Bool
 } derive(Eq, @debug.Debug)
+pub fn CorpusLabel::equal(Self, Self) -> Bool
+pub fn CorpusLabel::not_equal(Self, Self) -> Bool
+pub fn CorpusLabel::to_repr(Self) -> @debug.Repr
 
 pub(all) enum CorpusMsg {
   Case0
@@ -88,7 +91,26 @@ pub fn CorpusState::zero() -> Self
 pub(all) struct Recorder {
   seen : Array[String]
 }
+pub fn Recorder::at(Self) -> @core.PathChanges
+pub fn Recorder::fail(Self, @core.Value) -> Unit
+pub fn Recorder::forward(Self, Array[@core.Value]?, @core.IntentOpts?) -> Unit
+pub fn Recorder::intent(Self, String, Array[@core.Value], @core.IntentOpts) -> Unit
+pub fn Recorder::intent_at_path(Self, @core.DispatchPath, String, Array[@core.Value], @core.IntentOpts) -> Unit
+pub fn Recorder::lookup(Self, String, @core.LookupOpts) -> @core.Value
+pub fn Recorder::make(Self, String, Map[String, @core.Value], @core.LookupOpts) -> @core.Value?
+pub fn Recorder::name(Self) -> String?
 pub fn Recorder::new() -> Self
+pub fn Recorder::origin(Self) -> @core.Origin
+pub fn Recorder::path(Self) -> @core.DispatchPath
+pub fn Recorder::reply(Self, @core.Value) -> Unit
+pub fn Recorder::send(Self, String, Array[@core.Value]) -> Unit
+pub fn Recorder::send_at_path(Self, @core.DispatchPath, String, Array[@core.Value]) -> Unit
+pub fn Recorder::send_reply(Self, String, Array[@core.Value]) -> Unit
+pub fn Recorder::set_member_at_path(Self, @core.DispatchPath, String, @core.Value) -> Unit
+pub fn Recorder::set_property_at_path(Self, @core.DispatchPath, String, @core.Value) -> Unit
+pub fn Recorder::stop_propagation(Self) -> Unit
+pub fn Recorder::target_path(Self) -> @core.DispatchPath
+pub fn Recorder::walk_path(Self, (Int, @core.Value) -> Bool) -> Unit
 pub impl @core.Ctx for Recorder
 
 // Type aliases

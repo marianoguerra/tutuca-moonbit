@@ -218,18 +218,18 @@ fn state_editor_row_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn state_editor_row_component(
-  name? : String = "StateEditorRow",
-  views? : Map[String, @anode.View] = state_editor_row_views(),
-  initial? : StateEditorRowState = StateEditorRowState::zero(),
-  common_style? : String = state_editor_row_common_style,
-  global_style? : String = state_editor_row_global_style,
+  name~ : String = "StateEditorRow",
+  views~ : Map[String, @anode.View] = state_editor_row_views(),
+  initial~ : StateEditorRowState = StateEditorRowState::zero(),
+  common_style~ : String = state_editor_row_common_style,
+  global_style~ : String = state_editor_row_global_style,
   update? : (StateEditorRowState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     StateEditorRowState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -292,18 +292,18 @@ pub fn state_editor_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn state_editor_component(
-  name? : String = "StateEditor",
-  views? : Map[String, @anode.View] = state_editor_views(),
-  initial? : StateEditorState = StateEditorState::zero(),
-  common_style? : String = state_editor_common_style,
-  global_style? : String = state_editor_global_style,
+  name~ : String = "StateEditor",
+  views~ : Map[String, @anode.View] = state_editor_views(),
+  initial~ : StateEditorState = StateEditorState::zero(),
+  common_style~ : String = state_editor_common_style,
+  global_style~ : String = state_editor_global_style,
   update? : (StateEditorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     StateEditorState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

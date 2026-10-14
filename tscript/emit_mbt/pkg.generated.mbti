@@ -31,6 +31,9 @@ pub(all) struct Emitted {
   answers_property_set : Array[String]
   refusals : Array[@check.Refusal]
 } derive(Eq, @debug.Debug)
+pub fn Emitted::equal(Self, Self) -> Bool
+pub fn Emitted::not_equal(Self, Self) -> Bool
+pub fn Emitted::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Role {
   RMethod
@@ -38,6 +41,16 @@ pub(all) enum Role {
   REnrich
   RBindWith
 } derive(Compare, Eq, Hash, @debug.Debug)
+pub fn Role::compare(Self, Self) -> Int
+pub fn Role::equal(Self, Self) -> Bool
+pub fn Role::hash(Self) -> Int
+pub fn Role::hash_combine(Self, Hasher) -> Unit
+pub fn Role::not_equal(Self, Self) -> Bool
+pub fn Role::op_ge(Self, Self) -> Bool
+pub fn Role::op_gt(Self, Self) -> Bool
+pub fn Role::op_le(Self, Self) -> Bool
+pub fn Role::op_lt(Self, Self) -> Bool
+pub fn Role::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Roles {
   methods : Array[String]
@@ -45,7 +58,10 @@ pub(all) struct Roles {
   enriches : Array[String]
   bind_withs : Array[String]
 } derive(Eq, @debug.Debug)
+pub fn Roles::equal(Self, Self) -> Bool
 pub fn Roles::none() -> Self
+pub fn Roles::not_equal(Self, Self) -> Bool
+pub fn Roles::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

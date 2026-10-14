@@ -63,6 +63,12 @@ pub(all) enum RenderWithScopeEnrichScope {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend RenderWithScopeEnrichScope with Eq::{not_equal, equal}
+
+///|
+pub extend RenderWithScopeEnrichScope with @debug.Debug::{to_repr}
+
+///|
 pub fn RenderWithScopeEnrichScope::name(
   self : RenderWithScopeEnrichScope,
 ) -> String {
@@ -154,6 +160,12 @@ pub(all) enum ListFilterEnrichWhen {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend ListFilterEnrichWhen with Eq::{not_equal, equal}
+
+///|
+pub extend ListFilterEnrichWhen with @debug.Debug::{to_repr}
+
+///|
 pub fn ListFilterEnrichWhen::name(self : ListFilterEnrichWhen) -> String {
   match self {
     FilterItem => "filter_item"
@@ -165,6 +177,12 @@ pub fn ListFilterEnrichWhen::name(self : ListFilterEnrichWhen) -> String {
 pub(all) enum ListFilterEnrichEnrich {
   EnrichItem
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend ListFilterEnrichEnrich with Eq::{not_equal, equal}
+
+///|
+pub extend ListFilterEnrichEnrich with @debug.Debug::{to_repr}
 
 ///|
 pub fn ListFilterEnrichEnrich::name(self : ListFilterEnrichEnrich) -> String {
@@ -259,6 +277,12 @@ pub(all) enum ListFilterEnrichWithWhen {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend ListFilterEnrichWithWhen with Eq::{not_equal, equal}
+
+///|
+pub extend ListFilterEnrichWithWhen with @debug.Debug::{to_repr}
+
+///|
 pub fn ListFilterEnrichWithWhen::name(
   self : ListFilterEnrichWithWhen,
 ) -> String {
@@ -274,6 +298,12 @@ pub(all) enum ListFilterEnrichWithEnrich {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend ListFilterEnrichWithEnrich with Eq::{not_equal, equal}
+
+///|
+pub extend ListFilterEnrichWithEnrich with @debug.Debug::{to_repr}
+
+///|
 pub fn ListFilterEnrichWithEnrich::name(
   self : ListFilterEnrichWithEnrich,
 ) -> String {
@@ -287,6 +317,12 @@ pub fn ListFilterEnrichWithEnrich::name(
 pub(all) enum ListFilterEnrichWithLoopWith {
   GetIterData
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend ListFilterEnrichWithLoopWith with Eq::{not_equal, equal}
+
+///|
+pub extend ListFilterEnrichWithLoopWith with @debug.Debug::{to_repr}
 
 ///|
 pub fn ListFilterEnrichWithLoopWith::name(

@@ -115,6 +115,7 @@ pub fn ANode::has_newline(Self) -> Bool
 pub fn ANode::has_raw_html(Self) -> Bool
 pub fn ANode::is_whitespace(Self) -> Bool
 pub fn ANode::parse(String, ParseContext) -> Self?
+pub fn ANode::to_repr(Self) -> @debug.Repr
 
 pub(all) enum AttrItem {
   Plain(name~ : String, val~ : @core.Expr)
@@ -125,6 +126,7 @@ pub(all) enum AttrItem {
   SafeSvg(val~ : @core.Expr?)
   If(IfAttr)
 } derive(@debug.Debug)
+pub fn AttrItem::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AttrParseResult {
   attrs : Attrs
@@ -132,12 +134,14 @@ pub(all) struct AttrParseResult {
   text_child : @core.Expr?
   bind : BindData?
 } derive(@debug.Debug)
+pub fn AttrParseResult::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Attrs {
   ConstAttrs(Map[String, @core.Lit])
   DynAttrs(Array[AttrItem])
 } derive(@debug.Debug)
 pub fn Attrs::is_constant(Self) -> Bool
+pub fn Attrs::to_repr(Self) -> @debug.Repr
 
 pub(all) enum BadValueRole {
   XOp(op~ : String)
@@ -146,6 +150,9 @@ pub(all) enum BadValueRole {
   IfDirective(name~ : String)
   ValueIssue(@tscript.IssueRole)
 } derive(Eq, @debug.Debug)
+pub fn BadValueRole::equal(Self, Self) -> Bool
+pub fn BadValueRole::not_equal(Self, Self) -> Bool
+pub fn BadValueRole::to_repr(Self) -> @debug.Repr
 
 pub(all) enum BindCoercion {
   BindPending
@@ -154,12 +161,16 @@ pub(all) enum BindCoercion {
   BindInt(width~ : Int, signed~ : Bool)
   BindDouble
 } derive(Eq, @debug.Debug)
+pub fn BindCoercion::equal(Self, Self) -> Bool
+pub fn BindCoercion::not_equal(Self, Self) -> Bool
+pub fn BindCoercion::to_repr(Self) -> @debug.Repr
 
 pub(all) struct BindData {
   target : @core.Expr
   property : String
   event : NodeEvent
 } derive(@debug.Debug)
+pub fn BindData::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DomData {
   tag : String
@@ -169,6 +180,7 @@ pub(all) struct DomData {
   mut sink_hints : @sinks.SinkHints?
   bind : BindData?
 } derive(@debug.Debug)
+pub fn DomData::to_repr(Self) -> @debug.Repr
 
 pub(all) struct EachData {
   node_id : Int
@@ -176,10 +188,12 @@ pub(all) struct EachData {
   mut node : ANode
   mut from_render_each : Bool
 } derive(@debug.Debug)
+pub fn EachData::to_repr(Self) -> @debug.Repr
 
 pub(all) struct FragmentData {
   childs : Array[ANode]
 } derive(@debug.Debug)
+pub fn FragmentData::to_repr(Self) -> @debug.Repr
 
 pub(all) struct IfAttr {
   name : String
@@ -187,6 +201,7 @@ pub(all) struct IfAttr {
   mut then_val : @core.Expr?
   mut else_val : @core.Expr?
 } derive(@debug.Debug)
+pub fn IfAttr::to_repr(Self) -> @debug.Repr
 
 pub(all) struct IterInfo {
   val : @core.Expr
@@ -194,6 +209,7 @@ pub(all) struct IterInfo {
   mut loop_with_val : @core.Expr?
   mut enrich_with_val : @core.Expr?
 } derive(@debug.Debug)
+pub fn IterInfo::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Macro {
   defaults : Map[String, String]
@@ -209,6 +225,7 @@ pub(all) struct MacroData {
   mut node : ANode?
   data_attrs : Map[String, @core.Lit]
 }
+pub fn MacroData::to_repr(Self) -> @debug.Repr
 pub impl @debug.Debug for MacroData
 
 pub(all) struct MacroFrame {
@@ -224,16 +241,21 @@ pub(all) struct NodeEvent {
   mut binding : BindCoercion?
 } derive(@debug.Debug)
 pub fn NodeEvent::method_in_event(Self) -> String?
+pub fn NodeEvent::to_repr(Self) -> @debug.Repr
 
 pub(all) struct NodeEvents {
   id : Int
   handlers : Array[NodeEvent]
 } derive(@debug.Debug)
+pub fn NodeEvents::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Ns {
   Svg
   MathML
 } derive(Eq, @debug.Debug)
+pub fn Ns::equal(Self, Self) -> Bool
+pub fn Ns::not_equal(Self, Self) -> Bool
+pub fn Ns::to_repr(Self) -> @debug.Repr
 
 pub struct ParseContext {
   nodes : Array[ANode]
@@ -258,31 +280,39 @@ pub(all) enum ParseIssue {
   XOpIgnoresChildren(op~ : String)
   BadValue(role~ : BadValueRole, value~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ParseIssue::equal(Self, Self) -> Bool
+pub fn ParseIssue::not_equal(Self, Self) -> Bool
+pub fn ParseIssue::to_repr(Self) -> @debug.Repr
 
 pub(all) struct RenderData {
   node_id : Int
   val : @core.Expr
   view_val : @core.Expr?
 } derive(@debug.Debug)
+pub fn RenderData::to_repr(Self) -> @debug.Repr
 
 pub(all) struct RenderItData {
   node_id : Int
   view_val : @core.Expr?
 } derive(@debug.Debug)
+pub fn RenderItData::to_repr(Self) -> @debug.Repr
 
 pub(all) struct RenderTextData {
   node_id : Int?
   val : @core.Expr
 } derive(@debug.Debug)
+pub fn RenderTextData::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SlotData {
   name : String
   mut node : ANode
 } derive(@debug.Debug)
+pub fn SlotData::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TextData {
   mut val : String
 } derive(@debug.Debug)
+pub fn TextData::to_repr(Self) -> @debug.Repr
 
 pub(all) struct View {
   name : String
@@ -300,6 +330,8 @@ pub fn View::new(String, raw_view? : String, style? : String, config_vars? : Map
 
 pub(all) struct WarnHandler {
 }
+pub fn WarnHandler::on_attributes(Self, AttrParseResult, Bool, String) -> Unit
+pub fn WarnHandler::on_parse_issue(Self, ParseIssue, String?) -> Unit
 pub impl ParseHandler for WarnHandler
 
 pub(all) struct WrapData {
@@ -307,6 +339,7 @@ pub(all) struct WrapData {
   val : @core.Expr
   mut node : ANode
 } derive(@debug.Debug)
+pub fn WrapData::to_repr(Self) -> @debug.Repr
 
 pub(all) struct WrapperAttr {
   kind : WrapperKind
@@ -316,6 +349,7 @@ pub(all) struct WrapperAttr {
   mut when_val : @core.Expr?
   mut loop_with_val : @core.Expr?
 } derive(@debug.Debug)
+pub fn WrapperAttr::to_repr(Self) -> @debug.Repr
 
 pub(all) enum WrapperKind {
   Show
@@ -324,6 +358,9 @@ pub(all) enum WrapperKind {
   Scope
   PushView
 } derive(Eq, @debug.Debug)
+pub fn WrapperKind::equal(Self, Self) -> Bool
+pub fn WrapperKind::not_equal(Self, Self) -> Bool
+pub fn WrapperKind::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

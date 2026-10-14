@@ -14,7 +14,7 @@ priv enum ValueRepr {
   RObj(String)
   RInt(Int64)
   RBin(Bytes)
-  RInstant(Int64, Int)
+  RInstant(Int64, Int32)
 } derive(Debug)
 
 ///|
@@ -44,3 +44,6 @@ fn value_repr(v : Value) -> ValueRepr {
 pub impl Debug for Value with fn to_repr(self) {
   Repr(value_repr(self))
 }
+
+///|
+pub extend Value with Debug::{to_repr}

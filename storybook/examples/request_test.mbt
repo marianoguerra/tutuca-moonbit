@@ -1,6 +1,6 @@
 ///|
 test "request-example: nothing loads until the host sends `init`" {
-  let h = @harness.mount(request_module(), "RequestExample")
+  let h = @harness.mount(@examples.request_module(), "RequestExample")
   // tutuca has no lifecycle — start() alone runs no request
   inspect(h.find_all(".rows .card-title").length(), content="0")
   inspect(h.find_all(".loading").length(), content="0")
@@ -8,7 +8,7 @@ test "request-example: nothing loads until the host sends `init`" {
 
 ///|
 test "request-example: receive.init fires the request, and the response lands" {
-  let h = @harness.mount(request_module(), "RequestExample")
+  let h = @harness.mount(@examples.request_module(), "RequestExample")
   h.send_at_root("init")
   // the fixture responds synchronously, so by the time the send has drained the
   // loading flag is back off and the items are in
@@ -26,7 +26,7 @@ test "request-example: the SAME component with a failing handler takes the error
   // the request implementation lives OUTSIDE the component, so swapping it is
   // all it takes to drive the failure case
   let h = @harness.mount(
-    request_module(intents=failing_request_handlers()),
+    @examples.request_module(intents=@examples.failing_request_handlers()),
     "RequestExample",
   )
   h.send_at_root("init")
@@ -47,7 +47,7 @@ test "request-example: a scope that DECLINES is not a scope that failed" {
   // different sentence from "a handler refused it", and the distinction is the
   // one the refusal taxonomy already draws everywhere else.
   let h = @harness.mount(
-    request_module(intents=declining_request_handlers()),
+    @examples.request_module(intents=@examples.declining_request_handlers()),
     "RequestExample",
   )
   h.send_at_root("init")
@@ -58,7 +58,7 @@ test "request-example: a scope that DECLINES is not a scope that failed" {
 ///|
 test "request-example: onOkName / onFailedName route to different handlers" {
   let h = @harness.mount(
-    request_module(intents=failing_request_handlers()),
+    @examples.request_module(intents=@examples.failing_request_handlers()),
     "RequestExample",
   )
   // "Load Another Way" names its own three outcomes in `IntentOpts`, where
@@ -70,7 +70,7 @@ test "request-example: onOkName / onFailedName route to different handlers" {
 
 ///|
 test "request-example: loaded items filter and switch views like any others" {
-  let h = @harness.mount(request_module(), "RequestExample")
+  let h = @harness.mount(@examples.request_module(), "RequestExample")
   h.send_at_root("init")
   h.type_into("input", "Moon")
   debug_inspect(

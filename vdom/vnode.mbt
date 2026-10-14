@@ -17,6 +17,12 @@ pub(all) enum Ns {
 } derive(Eq, Debug)
 
 ///|
+pub extend Ns with Eq::{not_equal, equal}
+
+///|
+pub extend Ns with Debug::{to_repr}
+
+///|
 pub fn Ns::to_uri(self : Ns) -> String {
   match self {
     Svg => svg_uri
@@ -58,6 +64,12 @@ pub(all) enum Vdom {
 } derive(Eq, Debug)
 
 ///|
+pub extend Vdom with Eq::{not_equal, equal}
+
+///|
+pub extend Vdom with Debug::{to_repr}
+
+///|
 /// An element virtual node. `tag` is uppercase for HTML elements and
 /// spec-cased under a namespace (see `h`); `ns : None` means HTML.
 pub(all) struct VElem {
@@ -69,9 +81,15 @@ pub(all) struct VElem {
 } derive(Eq, Debug)
 
 ///|
+pub extend VElem with Eq::{not_equal, equal}
+
+///|
+pub extend VElem with Debug::{to_repr}
+
+///|
 /// DOM nodeType parity: Element 1, Text 3, Comment 8,
 /// DocumentFragment 11.
-pub fn Vdom::node_type(self : Vdom) -> Int {
+pub fn Vdom::node_type(self : Vdom) -> Int32 {
   match self {
     Text(_) => 3
     Comment(_) => 8

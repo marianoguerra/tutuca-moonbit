@@ -6,7 +6,10 @@
 
 ///|
 test "custom-collection: @each iterates the keyed list in insertion order" {
-  let h = @harness.mount_example(custom_collection_module(), "Playlist")
+  let h = @harness.mount_example(
+    @examples.custom_collection_module(),
+    "Playlist",
+  )
   debug_inspect(
     h.texts(".song"),
     content=(
@@ -17,7 +20,10 @@ test "custom-collection: @each iterates the keyed list in insertion order" {
 
 ///|
 test "custom-collection: remove resolves @key through the walker" {
-  let h = @harness.mount_example(custom_collection_module(), "Playlist")
+  let h = @harness.mount_example(
+    @examples.custom_collection_module(),
+    "Playlist",
+  )
   // the middle button's @key is "middle" — removal is by key, not index
   h.click(".rm", nth=1)
   debug_inspect(
@@ -38,7 +44,7 @@ test "custom-collection: remove resolves @key through the walker" {
 ///|
 test "dynamic-selected-edit: both dynamics resolve and lists mirror" {
   let h = @harness.mount_example(
-    dynamic_selected_edit_module(),
+    @examples.dynamic_selected_edit_module(),
     "First selected",
   )
   inspect(h.text(".selected-key"), content="a")
@@ -57,7 +63,7 @@ test "dynamic-selected-edit: both dynamics resolve and lists mirror" {
 ///|
 test "dynamic-selected-edit: select changes the edit target" {
   let h = @harness.mount_example(
-    dynamic_selected_edit_module(),
+    @examples.dynamic_selected_edit_module(),
     "First selected",
   )
   h.click(".select", nth=2)
@@ -68,7 +74,7 @@ test "dynamic-selected-edit: select changes the edit target" {
 ///|
 test "dynamic-selected-edit: edits in the resumed child reach the owner" {
   let h = @harness.mount_example(
-    dynamic_selected_edit_module(),
+    @examples.dynamic_selected_edit_module(),
     "Second selected",
   )
   inspect(h.value_of(".edit-name"), content="beta")
@@ -85,7 +91,7 @@ test "dynamic-selected-edit: edits in the resumed child reach the owner" {
 
 ///|
 test "file-picker: empty state, then metadata summary" {
-  let h = @harness.mount_example(file_picker_module(), "Empty")
+  let h = @harness.mount_example(@examples.file_picker_module(), "Empty")
   inspect(h.find_all(".empty").length(), content="1")
   // picking a file delivers its metadata Map as `value`
   h.fire(
@@ -111,7 +117,7 @@ test "file-picker: empty state, then metadata summary" {
 
 ///|
 test "file-picker: the pre-populated example formats its labels" {
-  let h = @harness.mount_example(file_picker_module(), "With a file")
+  let h = @harness.mount_example(@examples.file_picker_module(), "With a file")
   inspect(h.text(".fname"), content="report.pdf")
   inspect(h.text(".fsize"), content="239.92 KB")
   inspect(h.text(".ftype"), content="application/pdf")
@@ -119,7 +125,7 @@ test "file-picker: the pre-populated example formats its labels" {
 
 ///|
 test "web-component: the custom event's detail selects the emoji" {
-  let h = @harness.mount_example(web_component_module(), "Default")
+  let h = @harness.mount_example(@examples.web_component_module(), "Default")
   inspect(h.find_all(".hint").length(), content="1")
   // emoji-picker-element dispatches CustomEvent("emoji-click", {detail});
   // the glue maps detail -> value as a Map
@@ -136,7 +142,7 @@ test "web-component: the custom event's detail selects the emoji" {
 
 ///|
 test "web-component: toggle shows and hides the picker element" {
-  let h = @harness.mount_example(web_component_module(), "Default")
+  let h = @harness.mount_example(@examples.web_component_module(), "Default")
   inspect(h.find_all("emoji-picker").length(), content="0")
   h.click(".toggle-btn")
   inspect(h.find_all("emoji-picker").length(), content="1")
@@ -146,7 +152,10 @@ test "web-component: toggle shows and hides the picker element" {
 
 ///|
 test "composability: tabs switch which sub-app is visible" {
-  let h = @harness.mount_example(composability_module(), "Default (To-Do tab)")
+  let h = @harness.mount_example(
+    @examples.composability_module(),
+    "Default (To-Do tab)",
+  )
   // all sub-apps are mounted; only the active pane is shown
   inspect(h.find_all(".pane-todo").length(), content="1")
   inspect(h.find_all(".pane-json").length(), content="0")
@@ -159,14 +168,20 @@ test "composability: tabs switch which sub-app is visible" {
 
 ///|
 test "composability: the JSON-tab preset starts on the JSON editor" {
-  let h = @harness.mount_example(composability_module(), "JSON Editor Selected")
+  let h = @harness.mount_example(
+    @examples.composability_module(),
+    "JSON Editor Selected",
+  )
   inspect(h.find_all(".pane-json").length(), content="1")
   inspect(h.find_all(".pane-todo").length(), content="0")
 }
 
 ///|
 test "composability: init forwards to the personal-site sub-app" {
-  let h = @harness.mount_example(composability_module(), "Default (To-Do tab)")
+  let h = @harness.mount_example(
+    @examples.composability_module(),
+    "Default (To-Do tab)",
+  )
   h.send_at_root("init")
   h.click("#tab-personal-site")
   // the personal-site app loaded its data through its request handler

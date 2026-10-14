@@ -23,11 +23,23 @@ pub(all) enum DomainOp {
 } derive(Eq, Debug)
 
 ///|
+pub extend DomainOp with Eq::{not_equal, equal}
+
+///|
+pub extend DomainOp with Debug::{to_repr}
+
+///|
 /// A comparison's right-hand side: a literal, or another field of this state.
 pub(all) enum DomainOperand {
   DLit(Double)
   DField(String)
 } derive(Eq, Debug)
+
+///|
+pub extend DomainOperand with Eq::{not_equal, equal}
+
+///|
+pub extend DomainOperand with Debug::{to_repr}
 
 ///|
 /// What a field's declared domain is.
@@ -83,6 +95,12 @@ pub(all) enum Domain {
 } derive(Eq, Debug)
 
 ///|
+pub extend Domain with Eq::{not_equal, equal}
+
+///|
+pub extend Domain with Debug::{to_repr}
+
+///|
 /// One field's domain, as the schema carries it.
 ///
 /// A flat list of pairs and not a map, because several clauses may name one
@@ -93,6 +111,12 @@ pub(all) struct FieldDomain {
   field : String
   domain : Domain
 } derive(Eq, Debug)
+
+///|
+pub extend FieldDomain with Eq::{not_equal, equal}
+
+///|
+pub extend FieldDomain with Debug::{to_repr}
 
 ///|
 /// Whether `v` is in `domain`, read against the state it would live in.

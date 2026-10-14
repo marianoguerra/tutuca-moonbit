@@ -5,8 +5,8 @@
 // which it does not get to skip (see the last test in this file).
 
 ///|
-fn ce_container() -> (MemNode, @vdom.RenderOpts[MemNode]) {
-  let doc = document()
+fn ce_container() -> (@memdom.MemNode, @vdom.RenderOpts[@memdom.MemNode]) {
+  let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
   (container, @vdom.RenderOpts::new(doc))
 }

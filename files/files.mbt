@@ -37,7 +37,7 @@ pub(open) trait FileService {
   /// `then` is called exactly once, with `Err` carrying a sentence fit to show
   /// a person: an id nothing answers to, a read the browser refused. A caller
   /// that cannot proceed without the text shows the sentence and stops.
-  fn read_text(Self, id~ : Int, then~ : (Result[String, String]) -> Unit) -> Unit
+  fn read_text(Self, id~ : Int32, then~ : (Result[String, String]) -> Unit) -> Unit
 }
 
 ///|

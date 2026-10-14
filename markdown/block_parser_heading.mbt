@@ -4,7 +4,7 @@
 /// Try to parse ATX heading (# Heading)
 fn BlockParser::try_parse_atx_heading(
   self : BlockParser,
-  start : Int,
+  start : Int32,
 ) -> Block? {
   let leading = self.read_leading_trivia()
 
@@ -53,7 +53,7 @@ fn BlockParser::try_parse_atx_heading(
 
 ///|
 /// Parse heading content, returning (content, closing_hash_count)
-fn parse_heading_content(line : String) -> (String, Int) {
+fn parse_heading_content(line : String) -> (String, Int32) {
   let trimmed = line.trim_end(chars=" \t").to_owned()
 
   // Count trailing #
@@ -91,7 +91,7 @@ fn parse_heading_content(line : String) -> (String, Int) {
 /// Try to parse setext heading
 fn BlockParser::try_parse_setext_heading(
   self : BlockParser,
-  start : Int,
+  start : Int32,
 ) -> Block? {
   let saved = self.scanner.pos
   let leading = self.read_leading_trivia()

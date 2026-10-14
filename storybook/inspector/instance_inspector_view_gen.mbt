@@ -16,8 +16,8 @@
 pub(all) struct InstanceFieldsState {
   items : Array[@tutuca.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
   type_name : String
 }
 
@@ -185,6 +185,12 @@ pub(all) enum InstanceFieldsCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend InstanceFieldsCompute with Eq::{not_equal, equal}
+
+///|
+pub extend InstanceFieldsCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn InstanceFieldsCompute::name(self : InstanceFieldsCompute) -> String {
   match self {
     ArrowText => "arrow_text"
@@ -203,6 +209,12 @@ pub fn InstanceFieldsCompute::name(self : InstanceFieldsCompute) -> String {
 pub(all) enum InstanceFieldsLoopWith {
   GetPageRange
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend InstanceFieldsLoopWith with Eq::{not_equal, equal}
+
+///|
+pub extend InstanceFieldsLoopWith with @debug.Debug::{to_repr}
 
 ///|
 pub fn InstanceFieldsLoopWith::name(self : InstanceFieldsLoopWith) -> String {

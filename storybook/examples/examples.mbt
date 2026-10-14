@@ -152,7 +152,7 @@ fn ex(
   root : String,
   module_ : @component.ModuleDef,
   title? : String,
-  init? : Bool = false,
+  init~ : Bool = false,
 ) -> ExampleModule {
   { name, root, module_, example_title: title, init, }
 }

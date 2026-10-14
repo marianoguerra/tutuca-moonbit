@@ -38,6 +38,9 @@ pub struct Command {
   prog : String
   args : Array[String]
 } derive(Eq, @debug.Debug)
+pub fn Command::equal(Self, Self) -> Bool
+pub fn Command::not_equal(Self, Self) -> Bool
+pub fn Command::to_repr(Self) -> @debug.Repr
 
 pub enum Step {
   Run(Command)
@@ -47,6 +50,9 @@ pub enum Step {
   GenSkillAssets(src_dir~ : String, to~ : String)
   GenStorybookTemplate(to~ : String)
 } derive(Eq, @debug.Debug)
+pub fn Step::equal(Self, Self) -> Bool
+pub fn Step::not_equal(Self, Self) -> Bool
+pub fn Step::to_repr(Self) -> @debug.Repr
 
 pub struct Task {
   name : String

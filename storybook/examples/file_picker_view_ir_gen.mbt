@@ -153,11 +153,11 @@ fn file_picker_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn file_picker_component(
-  name? : String = "FilePicker",
-  views? : Map[String, @anode.View] = file_picker_views(),
-  initial? : FilePickerState = FilePickerState::zero(),
-  common_style? : String = file_picker_common_style,
-  global_style? : String = file_picker_global_style,
+  name~ : String = "FilePicker",
+  views~ : Map[String, @anode.View] = file_picker_views(),
+  initial~ : FilePickerState = FilePickerState::zero(),
+  common_style~ : String = file_picker_common_style,
+  global_style~ : String = file_picker_global_style,
   update? : (FilePickerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     FilePickerState,
   ],
@@ -166,10 +166,10 @@ pub fn file_picker_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

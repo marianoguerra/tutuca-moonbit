@@ -1,6 +1,9 @@
 ///|
 test "render-with-scope: @enrich-with publishes derived @-bindings to a subtree" {
-  let h = @harness.mount(render_with_scope_module(), "RenderWithScope")
+  let h = @harness.mount(
+    @examples.render_with_scope_module(),
+    "RenderWithScope",
+  )
   inspect(h.text(".v-text"), content="Hello")
   inspect(h.text(".v-len"), content="5")
   inspect(h.text(".v-upper"), content="HELLO")
@@ -12,9 +15,11 @@ test "render-with-scope: @enrich-with publishes derived @-bindings to a subtree"
 
 ///|
 test "list-filter-enrich: @enrich-with adds a per-item binding" {
-  let h = @harness.mount(list_filter_enrich_module(), "ListFilterEnrich", args={
-    "items": List([Str("one"), Str("three")]),
-  })
+  let h = @harness.mount(
+    @examples.list_filter_enrich_module(),
+    "ListFilterEnrich",
+    args={ "items": List([Str("one"), Str("three")]) },
+  )
   debug_inspect(
     h.texts("li"),
     content=(
@@ -25,9 +30,11 @@ test "list-filter-enrich: @enrich-with adds a per-item binding" {
 
 ///|
 test "list-filter-enrich: filter and enrich compose" {
-  let h = @harness.mount(list_filter_enrich_module(), "ListFilterEnrich", args={
-    "items": List(items()),
-  })
+  let h = @harness.mount(
+    @examples.list_filter_enrich_module(),
+    "ListFilterEnrich",
+    args={ "items": List(@examples.items()) },
+  )
   h.type_into("input", "emperor")
   debug_inspect(
     h.texts("li"),
@@ -40,7 +47,7 @@ test "list-filter-enrich: filter and enrich compose" {
 ///|
 test "list-filter-enrich-with: @loop-with data reaches @when AND @enrich-with" {
   let h = @harness.mount(
-    list_filter_enrich_with_module(),
+    @examples.list_filter_enrich_with_module(),
     "ListFilterEnrichWith",
     args={ "items": List([Str("one"), Str("three")]) },
   )
@@ -56,7 +63,7 @@ test "list-filter-enrich-with: @loop-with data reaches @when AND @enrich-with" {
 ///|
 test "list-filter-enrich-with: totals are computed BEFORE filtering" {
   let h = @harness.mount(
-    list_filter_enrich_with_module(),
+    @examples.list_filter_enrich_with_module(),
     "ListFilterEnrichWith",
     args={ "items": List([Str("one"), Str("three")]) },
   )

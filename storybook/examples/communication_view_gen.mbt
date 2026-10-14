@@ -15,7 +15,7 @@
 /// this struct lacks fails generation.
 pub(all) struct StatusState {
   message : String
-  count : Int
+  count : Int32
 }
 
 ///|
@@ -439,6 +439,12 @@ pub let tree_item_global_style : String = ""
 pub(all) enum TreeItemCompute {
   AreChildsVisible
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend TreeItemCompute with Eq::{not_equal, equal}
+
+///|
+pub extend TreeItemCompute with @debug.Debug::{to_repr}
 
 ///|
 pub fn TreeItemCompute::name(self : TreeItemCompute) -> String {

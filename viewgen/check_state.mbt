@@ -68,7 +68,7 @@ fn check_views(
   def : @statedef.StateDef,
   prog : ProgramIndex,
   hints : Array[String],
-  script_answers? : Array[String] = [],
+  script_answers~ : Array[String] = [],
 ) -> Unit raise GenError {
   for view in views {
     let c = Checker::{ def, prog, view: view.raw.name, hints, script_answers, }
@@ -370,7 +370,7 @@ fn Checker::val(
             name~,
             scope=t.show_source(),
             suggestion=self.members_of(t)
-              |> fn(ns) { @statedef.nearest(name, ns) },
+              |> ns => { @statedef.nearest(name, ns) },
           )
         }
       SComp(d) =>
@@ -396,7 +396,7 @@ fn Checker::val(
               name=prop,
               scope="the loop item (\{t.show_source()})",
               suggestion=self.members_of(t)
-                |> fn(ns) { @statedef.nearest(prop, ns) },
+                |> ns => { @statedef.nearest(prop, ns) },
             )
           }
         SComp(d) =>
@@ -688,10 +688,10 @@ pub fn check_component_views(
   views : Array[@viewfile.RawView],
   def : @statedef.StateDef,
   prog : ProgramIndex,
-  macros? : Array[@viewfile.MacroDef] = [],
-  comps? : Array[String] = [],
-  open_senders? : Bool = false,
-  hints? : Array[String] = [],
+  macros~ : Array[@viewfile.MacroDef] = [],
+  comps~ : Array[String] = [],
+  open_senders~ : Bool = false,
+  hints~ : Array[String] = [],
 ) -> @check.Surface raise GenError {
   let compiled = compile_views(views, FileMacros::of(macros))
   lower_binds(compiled, Some(def))

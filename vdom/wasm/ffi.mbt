@@ -5,7 +5,7 @@
 // The JS side of `tdom` lives in the demo's loader.mjs.
 
 ///|
-extern "wasm" fn tdom_node_type(node : @core.Any) -> Int = "tdom" "node_type"
+extern "wasm" fn tdom_node_type(node : @core.Any) -> Int32 = "tdom" "node_type"
 
 ///|
 extern "wasm" fn tdom_has_prop(obj : @core.Any, name : String) -> Bool = "tdom" "has_prop"

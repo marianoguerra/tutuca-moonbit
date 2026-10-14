@@ -157,7 +157,7 @@ priv struct Collect {
   /// Map / Null (Value). Absent = the default `String`. Filled by the tree
   /// walk, read by the events pass; eids restart per view, so walk_view
   /// clears it before each walk.
-  value_kinds : Map[Int, ArgType]
+  value_kinds : Map[Int32, ArgType]
   /// Advisory findings the events pass turned up; see `Surface.hints`.
   hints : Array[String]
   /// The view being walked, for a hint raised from inside the value walk —
@@ -409,7 +409,7 @@ fn static_attr(attrs : @anode.Attrs, name : String) -> String? {
 
 ///|
 /// The element's `data-eid` stamp — the key into its NodeEvents entry.
-fn eid_of(attrs : @anode.Attrs) -> Int? {
+fn eid_of(attrs : @anode.Attrs) -> Int32? {
   match attrs {
     ConstAttrs(m) =>
       match m.get("data-eid") {
@@ -602,8 +602,8 @@ fn join_arg(a : ArgType, b : ArgType) -> ArgType {
 /// (if it were not).
 pub fn view_surface(
   views : Array[@viewfile.RawView],
-  macros? : Array[@viewfile.MacroDef] = [],
-  state? : @statedef.StateDef? = None,
+  macros~ : Array[@viewfile.MacroDef] = [],
+  state~ : @statedef.StateDef? = None,
 ) -> Surface raise GenError {
   let scope = FileMacros::of(macros)
   let compiled = compile_views(views, scope)

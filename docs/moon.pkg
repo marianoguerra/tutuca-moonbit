@@ -21,5 +21,4 @@ import {
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/transactor",
   "marianoguerra/tutuca/testing/harness",
-  "moonbitlang/core/json",
 } for "test"

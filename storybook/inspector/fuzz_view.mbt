@@ -65,8 +65,8 @@ fn fuzz_args_of(d : @fuzz.Action) -> String {
 pub fn Inspector::fuzz_row(
   self : Inspector,
   step : @fuzz.Step,
-  at~ : Int,
-  current? : Bool = false,
+  at~ : Int32,
+  current~ : Bool = false,
 ) -> @tutuca.Value {
   let (verb, verb_class) = fuzz_verb_of(step.dispatch)
   let broke = step.broke.length() > 0
@@ -120,8 +120,8 @@ pub fn Inspector::fuzz_row(
 pub fn Inspector::fuzz_log(
   self : Inspector,
   steps : Array[@fuzz.Step],
-  at? : Int = -1,
-  planned? : Int = 0,
+  at~ : Int32 = -1,
+  planned~ : Int32 = 0,
 ) -> @tutuca.Value {
   let rows : Array[@tutuca.Value] = []
   for i, s in steps {
@@ -147,11 +147,11 @@ pub fn Inspector::fuzz_controls(
   seed~ : String,
   steps~ : String,
   source~ : String,
-  playing? : Bool = false,
-  can_run? : Bool = true,
-  no_plan_hint? : String = "",
-  can_draw? : Bool = true,
-  no_draw_hint? : String = "",
+  playing~ : Bool = false,
+  can_run~ : Bool = true,
+  no_plan_hint~ : String = "",
+  can_draw~ : Bool = true,
+  no_draw_hint~ : String = "",
 ) -> @tutuca.Value {
   self.make_("FuzzControls", args={
     "seed": Str(seed),
@@ -191,8 +191,8 @@ fn source_class(name : String, cur : String) -> String {
 pub fn Inspector::fuzz_verdict(
   self : Inspector,
   outcome? : @fuzz.Outcome,
-  unchecked? : Array[(String, String)] = [],
-  reproducer? : Array[@fuzz.Action] = [],
+  unchecked~ : Array[(String, String)] = [],
+  reproducer~ : Array[@fuzz.Action] = [],
 ) -> @tutuca.Value {
   let (kind, colour, headline, sentence, rule, at) = match outcome {
     None => ("none", "badge-ghost", "", "", "", -1)
@@ -250,17 +250,17 @@ pub fn Inspector::fuzz_panel(
   seed~ : String,
   steps~ : String,
   source~ : String,
-  run_steps? : Array[@fuzz.Step] = [],
-  at? : Int = -1,
-  planned? : Int = 0,
-  playing? : Bool = false,
-  can_run? : Bool = true,
-  no_plan_hint? : String = "",
-  can_draw? : Bool = true,
-  no_draw_hint? : String = "",
+  run_steps~ : Array[@fuzz.Step] = [],
+  at~ : Int32 = -1,
+  planned~ : Int32 = 0,
+  playing~ : Bool = false,
+  can_run~ : Bool = true,
+  no_plan_hint~ : String = "",
+  can_draw~ : Bool = true,
+  no_draw_hint~ : String = "",
   outcome? : @fuzz.Outcome,
-  unchecked? : Array[(String, String)] = [],
-  reproducer? : Array[@fuzz.Action] = [],
+  unchecked~ : Array[(String, String)] = [],
+  reproducer~ : Array[@fuzz.Action] = [],
 ) -> @tutuca.Value {
   self.make_("FuzzPanel", args={
     "controls": self.fuzz_controls(

@@ -1,6 +1,6 @@
 ///|
 test "styles-example: the same component renders in three views at once" {
-  let h = @harness.mount_example(styles_module(), "Default")
+  let h = @harness.mount_example(@examples.styles_module(), "Default")
   // one <x render> per view: main, one, two — the same value, three templates
   debug_inspect(
     h.texts("p").filter(t => t.has_prefix("View:")),
@@ -12,7 +12,7 @@ test "styles-example: the same component renders in three views at once" {
 
 ///|
 test "styles-example: each rendered view is stamped with its own data-vid" {
-  let h = @harness.mount_example(styles_module(), "Default")
+  let h = @harness.mount_example(@examples.styles_module(), "Default")
   // the first <section> is the root component's own view; then one per child view
   let vids = h.find_all("section").map(n => n.get_attribute("data-vid"))
   debug_inspect(
@@ -25,7 +25,7 @@ test "styles-example: each rendered view is stamped with its own data-vid" {
 
 ///|
 test "styles-example: style is per-view, commonStyle per-component, globalStyle unscoped" {
-  let h = @harness.mount_example(styles_module(), "Default")
+  let h = @harness.mount_example(@examples.styles_module(), "Default")
   let css = h.styles()
   // Styles are wrapped in a NESTED scope selector, not a descendant one:
   //   [data-cid="N"]{ … }                  <- commonStyle: every view

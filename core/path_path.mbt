@@ -30,7 +30,7 @@ pub fn Path::field(self : Path, name : String) -> Path {
 /// A positional item of a sequence FIELD. There is no bare-index step: a Path
 /// addresses field-then-key, so a nested `.a[0][1]` is not expressible and the
 /// value-level `item`/`index` are what read one.
-pub fn Path::index(self : Path, name : String, i : Int) -> Path {
+pub fn Path::index(self : Path, name : String, i : Int32) -> Path {
   self.concat([SeqStep(field=name, key=KInt(i))])
 }
 
@@ -242,13 +242,16 @@ pub impl Show for Path with fn output(self, logger) {
 }
 
 ///|
+pub extend Path with Show::{to_string, output}
+
+///|
 /// `route` defaults to `default_route()` — the one place `dyn lex` is written.
 pub fn IntentOpts::new(
-  route? : Array[Leg] = default_route(),
+  route~ : Array[Leg] = default_route(),
   on_ok_name? : String,
   on_failed_name? : String,
   on_unhandled_name? : String,
-  live_path? : Bool = false,
+  live_path~ : Bool = false,
 ) -> IntentOpts {
   { route, on_ok_name, on_failed_name, on_unhandled_name, live_path, }
 }
@@ -335,6 +338,6 @@ pub fn Path::update(
 
 ///|
 /// `route` defaults to `default_route()`, the same one an intent takes.
-pub fn LookupOpts::new(route? : Array[Leg] = default_route()) -> LookupOpts {
+pub fn LookupOpts::new(route~ : Array[Leg] = default_route()) -> LookupOpts {
   { route, }
 }

@@ -110,7 +110,7 @@ pub(open) trait Inst {
   /// names instances by integer — the in-process fake does, and so did the
   /// JSON seam this replaced — answers that name; one that hands the reference
   /// over answers 0, and nothing asks.
-  fn token(Self) -> Int
+  fn token(Self) -> Int32
 }
 
 ///|
@@ -143,7 +143,7 @@ pub(open) trait GuestModule {
   /// Transport-specific for the same reason `Inst::token` is, and the inverse
   /// of it: a decoder holding an integer out of a `$dyn` marker needs the
   /// instance back, and only the module that minted the integer can say.
-  fn of_token(Self, token : Int) -> &Inst
+  fn of_token(Self, token : Int32) -> &Inst
 }
 
 ///|
@@ -155,7 +155,7 @@ pub(open) trait GuestModule {
 /// to live.
 pub struct HandleInst {
   guest : &Guest
-  handle : Int
+  handle : Int32
 }
 
 ///|
@@ -170,13 +170,28 @@ pub struct HandleInst {
 /// so a handle can be — or override `identity` to say which module. A
 /// downstream host hit exactly this with a counter per card, and its symptom
 /// was a stale component rather than an error.
-pub fn HandleInst::new(guest : &Guest, handle : Int) -> HandleInst {
+pub fn HandleInst::new(guest : &Guest, handle : Int32) -> HandleInst {
   { guest, handle, }
 }
 
 ///|
 pub impl Inst for HandleInst with fn get_field(self, name) {
   self.guest.get_field(self.handle, name)
+}
+
+///|
+pub extend HandleInst with Inst::{
+  identity,
+  with_field,
+  set_property,
+  render_call,
+  hand_over,
+  get_field,
+  release,
+  token,
+  persist,
+  get_property,
+  dispatch,
 }
 
 ///|
@@ -286,6 +301,14 @@ pub impl GuestModule for HandleModule with fn make(self, component, args) {
   } else {
     Some(HandleInst::{ guest: self.guest, handle: h, })
   }
+}
+
+///|
+pub extend HandleModule with GuestModule::{
+  make,
+  of_token,
+  restore,
+  serve_intent,
 }
 
 ///|

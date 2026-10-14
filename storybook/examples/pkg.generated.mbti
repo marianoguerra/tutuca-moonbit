@@ -794,12 +794,18 @@ pub fn AttributeBindingState::zero() -> Self
 pub(all) enum BarChartEnrich {
   Bar
 } derive(Eq, @debug.Debug)
+pub fn BarChartEnrich::equal(Self, Self) -> Bool
 pub fn BarChartEnrich::name(Self) -> String
+pub fn BarChartEnrich::not_equal(Self, Self) -> Bool
+pub fn BarChartEnrich::to_repr(Self) -> @debug.Repr
 
 pub(all) enum BarChartLoopWith {
   Layout
 } derive(Eq, @debug.Debug)
+pub fn BarChartLoopWith::equal(Self, Self) -> Bool
 pub fn BarChartLoopWith::name(Self) -> String
+pub fn BarChartLoopWith::not_equal(Self, Self) -> Bool
+pub fn BarChartLoopWith::to_repr(Self) -> @debug.Repr
 
 pub(all) enum BarChartMsg {
   AddBar
@@ -849,12 +855,18 @@ pub fn CounterState::zero() -> Self
 pub(all) enum CoupledPeopleEnrichScope {
   PagerInfo
 } derive(Eq, @debug.Debug)
+pub fn CoupledPeopleEnrichScope::equal(Self, Self) -> Bool
 pub fn CoupledPeopleEnrichScope::name(Self) -> String
+pub fn CoupledPeopleEnrichScope::not_equal(Self, Self) -> Bool
+pub fn CoupledPeopleEnrichScope::to_repr(Self) -> @debug.Repr
 
 pub(all) enum CoupledPeopleLoopWith {
   ForwardKeys
 } derive(Eq, @debug.Debug)
+pub fn CoupledPeopleLoopWith::equal(Self, Self) -> Bool
 pub fn CoupledPeopleLoopWith::name(Self) -> String
+pub fn CoupledPeopleLoopWith::not_equal(Self, Self) -> Bool
+pub fn CoupledPeopleLoopWith::to_repr(Self) -> @debug.Repr
 
 pub(all) enum CoupledPeopleMsg {
   Next
@@ -888,7 +900,10 @@ pub fn DnDExampleState::zero() -> Self
 pub(all) enum DnDExampleWhen {
   FilterItem
 } derive(Eq, @debug.Debug)
+pub fn DnDExampleWhen::equal(Self, Self) -> Bool
 pub fn DnDExampleWhen::name(Self) -> String
+pub fn DnDExampleWhen::not_equal(Self, Self) -> Bool
+pub fn DnDExampleWhen::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DseEditorState {
   missing : @core.Value
@@ -977,7 +992,10 @@ pub(all) enum FilePickerCompute {
   SizeLabel
   TypeLabel
 } derive(Eq, @debug.Debug)
+pub fn FilePickerCompute::equal(Self, Self) -> Bool
 pub fn FilePickerCompute::name(Self) -> String
+pub fn FilePickerCompute::not_equal(Self, Self) -> Bool
+pub fn FilePickerCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum FilePickerMsg {
   OnPickFile(@core.Value)
@@ -1062,6 +1080,7 @@ pub fn JsonBoolState::zero() -> Self
 
 pub(all) struct JsonNullState {
 } derive(Default)
+pub fn JsonNullState::default() -> Self
 pub fn JsonNullState::zero() -> Self
 
 pub(all) enum JsonNumberMsg {
@@ -1113,6 +1132,7 @@ pub fn JsonSelectorMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct JsonSelectorState {
 } derive(Default)
+pub fn JsonSelectorState::default() -> Self
 pub fn JsonSelectorState::zero() -> Self
 
 pub(all) struct JsonStringState {
@@ -1138,12 +1158,18 @@ pub fn ListAndFilterState::zero() -> Self
 pub(all) enum ListAndFilterWhen {
   FilterItem
 } derive(Eq, @debug.Debug)
+pub fn ListAndFilterWhen::equal(Self, Self) -> Bool
 pub fn ListAndFilterWhen::name(Self) -> String
+pub fn ListAndFilterWhen::not_equal(Self, Self) -> Bool
+pub fn ListAndFilterWhen::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ListFilterEnrichEnrich {
   EnrichItem
 } derive(Eq, @debug.Debug)
+pub fn ListFilterEnrichEnrich::equal(Self, Self) -> Bool
 pub fn ListFilterEnrichEnrich::name(Self) -> String
+pub fn ListFilterEnrichEnrich::not_equal(Self, Self) -> Bool
+pub fn ListFilterEnrichEnrich::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ListFilterEnrichState {
   items : Array[String]
@@ -1154,17 +1180,26 @@ pub fn ListFilterEnrichState::zero() -> Self
 pub(all) enum ListFilterEnrichWhen {
   FilterItem
 } derive(Eq, @debug.Debug)
+pub fn ListFilterEnrichWhen::equal(Self, Self) -> Bool
 pub fn ListFilterEnrichWhen::name(Self) -> String
+pub fn ListFilterEnrichWhen::not_equal(Self, Self) -> Bool
+pub fn ListFilterEnrichWhen::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ListFilterEnrichWithEnrich {
   EnrichItem
 } derive(Eq, @debug.Debug)
+pub fn ListFilterEnrichWithEnrich::equal(Self, Self) -> Bool
 pub fn ListFilterEnrichWithEnrich::name(Self) -> String
+pub fn ListFilterEnrichWithEnrich::not_equal(Self, Self) -> Bool
+pub fn ListFilterEnrichWithEnrich::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ListFilterEnrichWithLoopWith {
   GetIterData
 } derive(Eq, @debug.Debug)
+pub fn ListFilterEnrichWithLoopWith::equal(Self, Self) -> Bool
 pub fn ListFilterEnrichWithLoopWith::name(Self) -> String
+pub fn ListFilterEnrichWithLoopWith::not_equal(Self, Self) -> Bool
+pub fn ListFilterEnrichWithLoopWith::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ListFilterEnrichWithState {
   items : Array[String]
@@ -1175,7 +1210,10 @@ pub fn ListFilterEnrichWithState::zero() -> Self
 pub(all) enum ListFilterEnrichWithWhen {
   FilterItem
 } derive(Eq, @debug.Debug)
+pub fn ListFilterEnrichWithWhen::equal(Self, Self) -> Bool
 pub fn ListFilterEnrichWithWhen::name(Self) -> String
+pub fn ListFilterEnrichWithWhen::not_equal(Self, Self) -> Bool
+pub fn ListFilterEnrichWithWhen::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ListIterationState {
   items : Array[String]
@@ -1199,10 +1237,12 @@ pub fn MacroSlotsState::zero() -> Self
 
 pub(all) struct MacrosNoState {
 } derive(Default)
+pub fn MacrosNoState::default() -> Self
 pub fn MacrosNoState::zero() -> Self
 
 pub(all) struct MinimumViableComponentState {
 } derive(Default)
+pub fn MinimumViableComponentState::default() -> Self
 pub fn MinimumViableComponentState::zero() -> Self
 
 pub(all) struct MultipleViewsState {
@@ -1213,12 +1253,18 @@ pub fn MultipleViewsState::zero() -> Self
 pub(all) enum NaivePeopleEnrichScope {
   PagerInfo
 } derive(Eq, @debug.Debug)
+pub fn NaivePeopleEnrichScope::equal(Self, Self) -> Bool
 pub fn NaivePeopleEnrichScope::name(Self) -> String
+pub fn NaivePeopleEnrichScope::not_equal(Self, Self) -> Bool
+pub fn NaivePeopleEnrichScope::to_repr(Self) -> @debug.Repr
 
 pub(all) enum NaivePeopleLoopWith {
   TablePage
 } derive(Eq, @debug.Debug)
+pub fn NaivePeopleLoopWith::equal(Self, Self) -> Bool
 pub fn NaivePeopleLoopWith::name(Self) -> String
+pub fn NaivePeopleLoopWith::not_equal(Self, Self) -> Bool
+pub fn NaivePeopleLoopWith::to_repr(Self) -> @debug.Repr
 
 pub(all) enum NaivePeopleMsg {
   Next
@@ -1241,17 +1287,26 @@ pub fn NaivePeopleState::zero() -> Self
 pub(all) enum NaivePeopleWhen {
   OnlyMatches
 } derive(Eq, @debug.Debug)
+pub fn NaivePeopleWhen::equal(Self, Self) -> Bool
 pub fn NaivePeopleWhen::name(Self) -> String
+pub fn NaivePeopleWhen::not_equal(Self, Self) -> Bool
+pub fn NaivePeopleWhen::to_repr(Self) -> @debug.Repr
 
 pub(all) enum NestedStateDue {
   Unscheduled
   OnDay(Int)
 } derive(Eq, @debug.Debug)
+pub fn NestedStateDue::equal(Self, Self) -> Bool
+pub fn NestedStateDue::not_equal(Self, Self) -> Bool
+pub fn NestedStateDue::to_repr(Self) -> @debug.Repr
 
 pub(all) struct NestedStateLabel {
   text : String
   done : Bool
 } derive(Eq, @debug.Debug)
+pub fn NestedStateLabel::equal(Self, Self) -> Bool
+pub fn NestedStateLabel::not_equal(Self, Self) -> Bool
+pub fn NestedStateLabel::to_repr(Self) -> @debug.Repr
 
 pub(all) enum NestedStateMsg {
   BumpPriority
@@ -1266,6 +1321,9 @@ pub(all) enum NestedStatePriority {
   Low
   High
 } derive(Eq, @debug.Debug)
+pub fn NestedStatePriority::equal(Self, Self) -> Bool
+pub fn NestedStatePriority::not_equal(Self, Self) -> Bool
+pub fn NestedStatePriority::to_repr(Self) -> @debug.Repr
 
 pub(all) struct NestedStateState {
   title : String
@@ -1287,12 +1345,18 @@ pub(all) enum PaginationCompute {
   IsLastPage
   PageLabel
 } derive(Eq, @debug.Debug)
+pub fn PaginationCompute::equal(Self, Self) -> Bool
 pub fn PaginationCompute::name(Self) -> String
+pub fn PaginationCompute::not_equal(Self, Self) -> Bool
+pub fn PaginationCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum PaginationLoopWith {
   Paginate
 } derive(Eq, @debug.Debug)
+pub fn PaginationLoopWith::equal(Self, Self) -> Bool
 pub fn PaginationLoopWith::name(Self) -> String
+pub fn PaginationLoopWith::not_equal(Self, Self) -> Bool
+pub fn PaginationLoopWith::to_repr(Self) -> @debug.Repr
 
 pub(all) enum PaginationMsg {
   Next
@@ -1340,12 +1404,18 @@ pub(all) enum PsEntryCompute {
   LangFlag
   YearDisplay
 } derive(Eq, @debug.Debug)
+pub fn PsEntryCompute::equal(Self, Self) -> Bool
 pub fn PsEntryCompute::name(Self) -> String
+pub fn PsEntryCompute::not_equal(Self, Self) -> Bool
+pub fn PsEntryCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum PsEntryEnrich {
   EnrichCategoryBadge
 } derive(Eq, @debug.Debug)
+pub fn PsEntryEnrich::equal(Self, Self) -> Bool
 pub fn PsEntryEnrich::name(Self) -> String
+pub fn PsEntryEnrich::not_equal(Self, Self) -> Bool
+pub fn PsEntryEnrich::to_repr(Self) -> @debug.Repr
 
 pub(all) struct PsEntryState {
   title : String
@@ -1370,7 +1440,10 @@ pub fn PseudoXDemoState::zero() -> Self
 pub(all) enum PushViewCompute {
   GetToggleLabel
 } derive(Eq, @debug.Debug)
+pub fn PushViewCompute::equal(Self, Self) -> Bool
 pub fn PushViewCompute::name(Self) -> String
+pub fn PushViewCompute::not_equal(Self, Self) -> Bool
+pub fn PushViewCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum PushViewMsg {
   ToggleView
@@ -1390,13 +1463,19 @@ pub fn PushViewState::zero() -> Self
 pub(all) enum PushViewWhen {
   FilterItem
 } derive(Eq, @debug.Debug)
+pub fn PushViewWhen::equal(Self, Self) -> Bool
 pub fn PushViewWhen::name(Self) -> String
+pub fn PushViewWhen::not_equal(Self, Self) -> Bool
+pub fn PushViewWhen::to_repr(Self) -> @debug.Repr
 
 pub(all) enum QuadraticCompute {
   Classify
   Discriminant
 } derive(Eq, @debug.Debug)
+pub fn QuadraticCompute::equal(Self, Self) -> Bool
 pub fn QuadraticCompute::name(Self) -> String
+pub fn QuadraticCompute::not_equal(Self, Self) -> Bool
+pub fn QuadraticCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) struct QuadraticState {
   a : Int
@@ -1408,7 +1487,10 @@ pub fn QuadraticState::zero() -> Self
 pub(all) enum RenderWithScopeEnrichScope {
   EnrichScope
 } derive(Eq, @debug.Debug)
+pub fn RenderWithScopeEnrichScope::equal(Self, Self) -> Bool
 pub fn RenderWithScopeEnrichScope::name(Self) -> String
+pub fn RenderWithScopeEnrichScope::not_equal(Self, Self) -> Bool
+pub fn RenderWithScopeEnrichScope::to_repr(Self) -> @debug.Repr
 
 pub(all) struct RenderWithScopeState {
   text : String
@@ -1440,18 +1522,27 @@ pub fn RequestExampleState::zero() -> Self
 pub(all) enum RequestExampleWhen {
   FilterItem
 } derive(Eq, @debug.Debug)
+pub fn RequestExampleWhen::equal(Self, Self) -> Bool
 pub fn RequestExampleWhen::name(Self) -> String
+pub fn RequestExampleWhen::not_equal(Self, Self) -> Bool
+pub fn RequestExampleWhen::to_repr(Self) -> @debug.Repr
 
 pub(all) enum RootCompute {
   HasActiveFilters
 } derive(Eq, @debug.Debug)
+pub fn RootCompute::equal(Self, Self) -> Bool
 pub fn RootCompute::name(Self) -> String
+pub fn RootCompute::not_equal(Self, Self) -> Bool
+pub fn RootCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum RootEnrich {
   EnrichCategoryBindings
   EnrichRoleBindings
 } derive(Eq, @debug.Debug)
+pub fn RootEnrich::equal(Self, Self) -> Bool
 pub fn RootEnrich::name(Self) -> String
+pub fn RootEnrich::not_equal(Self, Self) -> Bool
+pub fn RootEnrich::to_repr(Self) -> @debug.Repr
 
 pub(all) enum RootMsg {
   Init
@@ -1483,7 +1574,10 @@ pub fn RootState::zero() -> Self
 pub(all) enum RootWhen {
   FilterEntry
 } derive(Eq, @debug.Debug)
+pub fn RootWhen::equal(Self, Self) -> Bool
 pub fn RootWhen::name(Self) -> String
+pub fn RootWhen::not_equal(Self, Self) -> Bool
+pub fn RootWhen::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ScopedStyleDemoState {
   count : Int
@@ -1527,7 +1621,10 @@ pub fn SendReceiveState::zero() -> Self
 pub(all) enum SeqItemAccessCompute {
   GetMaxIndex
 } derive(Eq, @debug.Debug)
+pub fn SeqItemAccessCompute::equal(Self, Self) -> Bool
 pub fn SeqItemAccessCompute::name(Self) -> String
+pub fn SeqItemAccessCompute::not_equal(Self, Self) -> Bool
+pub fn SeqItemAccessCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SeqItemAccessState {
   by_key : Map[String, @core.Value]
@@ -1545,12 +1642,18 @@ pub fn SetInnerMdState::zero() -> Self
 pub(all) enum SharedPeopleEnrichScope {
   PagerInfo
 } derive(Eq, @debug.Debug)
+pub fn SharedPeopleEnrichScope::equal(Self, Self) -> Bool
 pub fn SharedPeopleEnrichScope::name(Self) -> String
+pub fn SharedPeopleEnrichScope::not_equal(Self, Self) -> Bool
+pub fn SharedPeopleEnrichScope::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SharedPeopleLoopWith {
   Page
 } derive(Eq, @debug.Debug)
+pub fn SharedPeopleLoopWith::equal(Self, Self) -> Bool
 pub fn SharedPeopleLoopWith::name(Self) -> String
+pub fn SharedPeopleLoopWith::not_equal(Self, Self) -> Bool
+pub fn SharedPeopleLoopWith::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SharedPeopleMsg {
   Next
@@ -1565,7 +1668,10 @@ pub fn SharedPeopleMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) enum SharedPeopleWhen {
   OnlyMatches
 } derive(Eq, @debug.Debug)
+pub fn SharedPeopleWhen::equal(Self, Self) -> Bool
 pub fn SharedPeopleWhen::name(Self) -> String
+pub fn SharedPeopleWhen::not_equal(Self, Self) -> Bool
+pub fn SharedPeopleWhen::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SheetState {
   title : String
@@ -1575,7 +1681,10 @@ pub fn SheetState::zero() -> Self
 pub(all) enum ShowHideCompute {
   Label
 } derive(Eq, @debug.Debug)
+pub fn ShowHideCompute::equal(Self, Self) -> Bool
 pub fn ShowHideCompute::name(Self) -> String
+pub fn ShowHideCompute::not_equal(Self, Self) -> Bool
+pub fn ShowHideCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ShowHideMsg {
   IncCount
@@ -1598,6 +1707,7 @@ pub fn SongState::zero() -> Self
 
 pub(all) struct StaticViewComponentState {
 } derive(Default)
+pub fn StaticViewComponentState::default() -> Self
 pub fn StaticViewComponentState::zero() -> Self
 
 pub(all) enum StatusMsg {
@@ -1629,12 +1739,16 @@ pub fn StylesExampleRootState::zero() -> Self
 
 pub(all) struct StylesExampleState {
 } derive(Default)
+pub fn StylesExampleState::default() -> Self
 pub fn StylesExampleState::zero() -> Self
 
 pub(all) enum SwatchPickerEnrich {
   Swatch
 } derive(Eq, @debug.Debug)
+pub fn SwatchPickerEnrich::equal(Self, Self) -> Bool
 pub fn SwatchPickerEnrich::name(Self) -> String
+pub fn SwatchPickerEnrich::not_equal(Self, Self) -> Bool
+pub fn SwatchPickerEnrich::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SwatchPickerState {
   color : String
@@ -1657,7 +1771,10 @@ pub fn TableRowState::zero() -> Self
 pub(all) enum TextDirectiveCompute {
   GetStrUpper
 } derive(Eq, @debug.Debug)
+pub fn TextDirectiveCompute::equal(Self, Self) -> Bool
 pub fn TextDirectiveCompute::name(Self) -> String
+pub fn TextDirectiveCompute::not_equal(Self, Self) -> Bool
+pub fn TextDirectiveCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TextDirectiveState {
   str : String
@@ -1680,12 +1797,16 @@ pub fn TmItemsState::zero() -> Self
 
 pub(all) struct ToolbarState {
 } derive(Default)
+pub fn ToolbarState::default() -> Self
 pub fn ToolbarState::zero() -> Self
 
 pub(all) enum TrafficLightCompute {
   Light
 } derive(Eq, @debug.Debug)
+pub fn TrafficLightCompute::equal(Self, Self) -> Bool
 pub fn TrafficLightCompute::name(Self) -> String
+pub fn TrafficLightCompute::not_equal(Self, Self) -> Bool
+pub fn TrafficLightCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum TrafficLightMsg {
   NextLight
@@ -1703,7 +1824,10 @@ pub fn TrafficLightState::zero() -> Self
 pub(all) enum TreeItemCompute {
   AreChildsVisible
 } derive(Eq, @debug.Debug)
+pub fn TreeItemCompute::equal(Self, Self) -> Bool
 pub fn TreeItemCompute::name(Self) -> String
+pub fn TreeItemCompute::not_equal(Self, Self) -> Bool
+pub fn TreeItemCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum TreeItemMsg {
   OnItemClick
@@ -1736,6 +1860,7 @@ pub fn VwContainerState::zero() -> Self
 
 pub(all) struct VwEmptyState {
 } derive(Default)
+pub fn VwEmptyState::default() -> Self
 pub fn VwEmptyState::zero() -> Self
 
 pub(all) struct VwIfState {
@@ -1784,7 +1909,10 @@ pub fn VwTypesState::zero() -> Self
 pub(all) enum WorkspaceCompute {
   SheetTitle
 } derive(Eq, @debug.Debug)
+pub fn WorkspaceCompute::equal(Self, Self) -> Bool
 pub fn WorkspaceCompute::name(Self) -> String
+pub fn WorkspaceCompute::not_equal(Self, Self) -> Bool
+pub fn WorkspaceCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) struct WorkspaceState {
   sheet : @core.Value

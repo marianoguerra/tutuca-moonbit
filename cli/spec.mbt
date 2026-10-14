@@ -25,6 +25,12 @@ pub(all) struct GlobalOpts {
 } derive(Debug, Eq)
 
 ///|
+pub extend GlobalOpts with Debug::{to_repr}
+
+///|
+pub extend GlobalOpts with Eq::{not_equal, equal}
+
+///|
 /// A coded CLI error. Rendering is plain text, or a single-line JSON
 /// envelope under --json.
 pub(all) struct ErrShape {
@@ -33,8 +39,14 @@ pub(all) struct ErrShape {
   suggestion : @lint.Suggestion?
   hint : String?
   where_ : String?
-  exit_code : Int
+  exit_code : Int32
 } derive(Debug, Eq)
+
+///|
+pub extend ErrShape with Debug::{to_repr}
+
+///|
+pub extend ErrShape with Eq::{not_equal, equal}
 
 ///|
 /// Flag metadata for help + the agent-context schema.
@@ -47,12 +59,24 @@ pub(all) struct FlagSpec {
 } derive(Debug, Eq)
 
 ///|
+pub extend FlagSpec with Debug::{to_repr}
+
+///|
+pub extend FlagSpec with Eq::{not_equal, equal}
+
+///|
 pub(all) struct PositionalSpec {
   name : String
   required : Bool
   description : String?
   note : String?
 } derive(Debug, Eq)
+
+///|
+pub extend PositionalSpec with Debug::{to_repr}
+
+///|
+pub extend PositionalSpec with Eq::{not_equal, equal}
 
 ///|
 /// One command. Every registered command is runnable — there is no
@@ -65,13 +89,25 @@ pub(all) struct CommandSpec {
 } derive(Debug, Eq)
 
 ///|
+pub extend CommandSpec with Debug::{to_repr}
+
+///|
+pub extend CommandSpec with Eq::{not_equal, equal}
+
+///|
 /// What the shell should do: write `out` to stdout, `err` to stderr, exit
 /// with `exit_code`.
 pub(all) struct Emit {
   out : String
   err : String
-  exit_code : Int
+  exit_code : Int32
 } derive(Debug, Eq)
+
+///|
+pub extend Emit with Debug::{to_repr}
+
+///|
+pub extend Emit with Eq::{not_equal, equal}
 
 ///|
 /// Result of pure dispatch. `Feedback` defers to the shell for the stdin
@@ -124,6 +160,12 @@ pub(all) enum Outcome {
 } derive(Debug, Eq)
 
 ///|
+pub extend Outcome with Debug::{to_repr}
+
+///|
+pub extend Outcome with Eq::{not_equal, equal}
+
+///|
 /// What `gen-tailwind-css` / `gen-margaui-css` asked for. `margaui` is the only
 /// difference between the two commands: which stylesheet set the collected
 /// classes are compiled against.
@@ -142,10 +184,16 @@ pub(all) struct CssPlan {
   /// Print the collected class names instead of compiling them.
   print_classes : Bool
   /// The compiler's polyfill level, 0..3 (`@tw.POLYFILL_*`).
-  polyfills : Int
+  polyfills : Int32
   /// Compile against Tailwind + margaui rather than Tailwind alone.
   margaui : Bool
 } derive(Debug, Eq)
+
+///|
+pub extend CssPlan with Debug::{to_repr}
+
+///|
+pub extend CssPlan with Eq::{not_equal, equal}
 
 ///|
 /// Top-level dispatcher: parse argv into an Outcome for the shell to carry out.
@@ -186,6 +234,12 @@ pub(all) struct GenInput {
   name : String
   source : String
 } derive(Debug, Eq)
+
+///|
+pub extend GenInput with Debug::{to_repr}
+
+///|
+pub extend GenInput with Eq::{not_equal, equal}
 
 ///|
 /// Resolve one view path's output module and component name from the flags,
@@ -238,8 +292,8 @@ declare pub fn collect_view_classes(
 /// The line the shell prints after writing the CSS.
 declare pub fn gen_css_success(
   target : String,
-  files~ : Int,
-  classes~ : Int,
+  files~ : Int32,
+  classes~ : Int32,
 ) -> String
 
 ///|
@@ -248,13 +302,13 @@ declare pub fn class_list_text(classes : Array[String]) -> String
 
 ///|
 /// The line printed after `watch` rewrites the stylesheet.
-declare pub fn watch_css_line(target : String, classes~ : Int) -> String
+declare pub fn watch_css_line(target : String, classes~ : Int32) -> String
 
 ///|
 /// Byte-lexicographic string order — NOT `String`'s own `Compare`, which sorts
 /// by length first. Shared with the shell so the class list it merges
 /// `--classes` into keeps the same order this produced.
-declare pub fn lex_compare(a : String, b : String) -> Int
+declare pub fn lex_compare(a : String, b : String) -> Int32
 
 ///|
 /// True for a path the watcher should react to; everything else in a watched
@@ -292,7 +346,7 @@ declare pub fn err(
   suggestion? : @lint.Suggestion,
   hint? : String,
   where_? : String,
-  exit_code? : Int = 1,
+  exit_code~ : Int32 = 1,
 ) -> ErrShape
 
 ///|

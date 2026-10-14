@@ -40,6 +40,8 @@ pub suberror SceneError {
   NotContainable(scene~ : String, at~ : Int, reader~ : String)
 }
 pub fn SceneError::message(Self) -> String
+pub fn SceneError::output(Self, &Logger) -> Unit
+pub fn SceneError::to_string(Self) -> String
 pub impl Show for SceneError
 
 // Types and methods
@@ -51,6 +53,9 @@ pub(all) struct Expect {
   nth : Int
   want : Want?
 } derive(Eq, @debug.Debug)
+pub fn Expect::equal(Self, Self) -> Bool
+pub fn Expect::not_equal(Self, Self) -> Bool
+pub fn Expect::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Reader {
   RText
@@ -66,6 +71,9 @@ pub(all) enum Reader {
   RRefused
   RLog
 } derive(Eq, @debug.Debug)
+pub fn Reader::equal(Self, Self) -> Bool
+pub fn Reader::not_equal(Self, Self) -> Bool
+pub fn Reader::to_repr(Self) -> @debug.Repr
 pub fn Reader::word(Self) -> String
 
 pub(all) struct Scene {
@@ -77,6 +85,9 @@ pub(all) struct Scene {
   raw : Bool
   steps : Array[Step]
 } derive(Eq, @debug.Debug)
+pub fn Scene::equal(Self, Self) -> Bool
+pub fn Scene::not_equal(Self, Self) -> Bool
+pub fn Scene::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Step {
   Click(sel~ : String, nth~ : Int)
@@ -88,11 +99,17 @@ pub(all) enum Step {
   Send(name~ : String, args~ : Array[@core.Value])
   Read(Expect)
 } derive(Eq, @debug.Debug)
+pub fn Step::equal(Self, Self) -> Bool
+pub fn Step::not_equal(Self, Self) -> Bool
+pub fn Step::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Want {
   WIs(@core.Value)
   WContains(String)
 } derive(Eq, @debug.Debug)
+pub fn Want::equal(Self, Self) -> Bool
+pub fn Want::not_equal(Self, Self) -> Bool
+pub fn Want::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

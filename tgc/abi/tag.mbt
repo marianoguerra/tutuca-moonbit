@@ -1,5 +1,5 @@
 ///|
-pub fn Tag::code(self : Tag) -> Int {
+pub fn Tag::code(self : Tag) -> Int32 {
   match self {
     TagNull => 0
     TagBool => 1
@@ -17,7 +17,7 @@ pub fn Tag::code(self : Tag) -> Int {
 }
 
 ///|
-pub fn Tag::of_code(code : Int) -> Tag? {
+pub fn Tag::of_code(code : Int32) -> Tag? {
   match code {
     0 => Some(TagNull)
     1 => Some(TagBool)

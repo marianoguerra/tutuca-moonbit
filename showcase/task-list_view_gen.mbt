@@ -15,7 +15,7 @@
 /// this struct lacks fails generation.
 pub(all) struct TaskListState {
   draft : String
-  next_id : Int
+  next_id : Int32
   items : Map[String, @tutuca.Value]
   completed : Map[String, Bool]
   filter : String
@@ -276,7 +276,7 @@ pub fn TaskListIntent::to_dispatch(
 pub fn TaskListIntent::dispatch(
   self : TaskListIntent,
   ctx : &@tutuca.Ctx,
-  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
+  opts~ : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
 ) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.intent(name, args, opts)
@@ -301,6 +301,12 @@ pub(all) enum TaskListCompute {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend TaskListCompute with Eq::{not_equal, equal}
+
+///|
+pub extend TaskListCompute with @debug.Debug::{to_repr}
+
+///|
 pub fn TaskListCompute::name(self : TaskListCompute) -> String {
   match self {
     Visible => "visible"
@@ -312,6 +318,12 @@ pub fn TaskListCompute::name(self : TaskListCompute) -> String {
 pub(all) enum TaskListWhen {
   Visible
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend TaskListWhen with Eq::{not_equal, equal}
+
+///|
+pub extend TaskListWhen with @debug.Debug::{to_repr}
 
 ///|
 pub fn TaskListWhen::name(self : TaskListWhen) -> String {

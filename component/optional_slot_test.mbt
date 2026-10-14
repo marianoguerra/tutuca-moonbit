@@ -48,7 +48,7 @@ impl @component.Fields for ParentState with fn decode(f) {
 
 ///|
 priv struct KidState {
-  n : Int
+  n : Int32
 }
 
 ///|

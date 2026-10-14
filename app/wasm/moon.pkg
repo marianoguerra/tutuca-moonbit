@@ -14,7 +14,7 @@ import {
   "marianoguerra/tutuca/render",
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/wasm" @wdom,
-  "mizchi/js/core",
+  "mizchi/js_core" @core,
   "moonbitlang/core/json",
 }
 

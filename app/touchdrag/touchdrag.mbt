@@ -12,7 +12,7 @@
 /// `target` (a raw element, never null).
 pub(all) struct TouchOps {
   has_prop : (@core.Any, String) -> Bool
-  get_int : (@core.Any, String) -> Int
+  get_int : (@core.Any, String) -> Int32
   get_num : (@core.Any, String) -> Double
   element_from_point : (@core.Any, Double, Double) -> @core.Any
   fire : (String, @core.Any) -> Unit
@@ -65,7 +65,7 @@ fn TouchDrag::prevent_default(self : TouchDrag, ev : @core.Any) -> Unit {
 }
 
 ///|
-fn TouchDrag::touches_len(self : TouchDrag, ev : @core.Any) -> Int {
+fn TouchDrag::touches_len(self : TouchDrag, ev : @core.Any) -> Int32 {
   let ts = ev._get("touches")
   if @core.is_nullish(ts) {
     0

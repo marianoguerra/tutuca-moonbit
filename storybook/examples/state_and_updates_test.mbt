@@ -1,6 +1,9 @@
 ///|
 test "attribute-binding: :value / :checked bind state into the inputs" {
-  let h = @harness.mount(attribute_binding_module(), "AttributeBinding")
+  let h = @harness.mount(
+    @examples.attribute_binding_module(),
+    "AttributeBinding",
+  )
   inspect(h.value_of(".s"), content="hello")
   inspect(h.value_of(".n"), content="42")
   inspect(h.checked_of(".b"), content="true")
@@ -15,7 +18,10 @@ test "attribute-binding: :value / :checked bind state into the inputs" {
 
 ///|
 test "attribute-binding: typing updates the field, the template, and the echo" {
-  let h = @harness.mount(attribute_binding_module(), "AttributeBinding")
+  let h = @harness.mount(
+    @examples.attribute_binding_module(),
+    "AttributeBinding",
+  )
   h.type_into(".s", "tutuca")
   inspect(h.text(".o-str"), content="tutuca")
   debug_inspect(
@@ -28,7 +34,10 @@ test "attribute-binding: typing updates the field, the template, and the echo" {
 
 ///|
 test "attribute-binding: setRawNumber validates — a bad number is ignored" {
-  let h = @harness.mount(attribute_binding_module(), "AttributeBinding")
+  let h = @harness.mount(
+    @examples.attribute_binding_module(),
+    "AttributeBinding",
+  )
   h.type_into(".n", "100")
   inspect(h.text(".o-num"), content="100")
   h.type_into(".n", "not a number")
@@ -37,7 +46,10 @@ test "attribute-binding: setRawNumber validates — a bad number is ignored" {
 
 ///|
 test "attribute-binding: a checkbox input carries `checked` as its value" {
-  let h = @harness.mount(attribute_binding_module(), "AttributeBinding")
+  let h = @harness.mount(
+    @examples.attribute_binding_module(),
+    "AttributeBinding",
+  )
   h.check(".b", false)
   inspect(h.text(".o-bool"), content="false")
   inspect(h.checked_of(".b"), content="false")
@@ -46,7 +58,7 @@ test "attribute-binding: a checkbox input carries `checked` as its value" {
 ///|
 test "conditional-attributes: @if/@then/@else pick class AND title" {
   let h = @harness.mount(
-    conditional_attributes_module(),
+    @examples.conditional_attributes_module(),
     "ConditionalAttributes",
   )
   debug_inspect(
@@ -82,7 +94,7 @@ test "conditional-attributes: @if/@then/@else pick class AND title" {
 
 ///|
 test "event-modifiers: +send fires only on Enter, +cancel only on Escape" {
-  let h = @harness.mount(event_modifiers_module(), "EventModifiers")
+  let h = @harness.mount(@examples.event_modifiers_module(), "EventModifiers")
   h.type_into("input", "borges")
   inspect(h.value_of("input"), content="borges")
   // @show="truthy? .lastSentSearch" — nothing sent yet, so the <p> is absent
@@ -103,7 +115,7 @@ test "event-modifiers: +send fires only on Enter, +cancel only on Escape" {
 
 ///|
 test "show-hide: @show / @hide add and remove the node" {
-  let h = @harness.mount(show_hide_module(), "ShowHide")
+  let h = @harness.mount(@examples.show_hide_module(), "ShowHide")
   inspect(h.text(".toggle-btn"), content="Show details")
   inspect(h.find_all(".details").length(), content="0")
   inspect(h.text(".hint"), content="(details are hidden)")
@@ -123,7 +135,7 @@ test "show-hide: @show / @hide add and remove the node" {
 
 ///|
 test "show-hide: the revealed panel's button is live" {
-  let h = @harness.mount(show_hide_module(), "ShowHide", args={
+  let h = @harness.mount(@examples.show_hide_module(), "ShowHide", args={
     "is_open": Bool(true),
   })
   h.click(".bump")

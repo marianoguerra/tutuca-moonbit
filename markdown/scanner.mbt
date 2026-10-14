@@ -7,9 +7,9 @@
 pub(all) struct Scanner {
   source : String
   chars : Array[Char] // Empty for BMP input, pre-converted code points for non-BMP
-  mut pos : Int // Position in code points
-  len : Int // Length in code points
-  utf16_offsets : Array[Int]? // Maps code point index -> UTF-16 index (None if all BMP)
+  mut pos : Int32 // Position in code points
+  len : Int32 // Length in code points
+  utf16_offsets : Array[Int32]? // Maps code point index -> UTF-16 index (None if all BMP)
 }
 
 ///|
@@ -42,7 +42,7 @@ pub fn Scanner::new(source : String) -> Scanner {
   let chars = source.to_array()
   let len = chars.length()
 
-  let offsets : Array[Int] = Array::make(len + 1, 0)
+  let offsets : Array[Int32] = Array::make(len + 1, 0)
   let mut utf16_pos = 0
   for i = 0; i < len; i = i + 1 {
     offsets[i] = utf16_pos
@@ -69,7 +69,7 @@ fn Scanner::is_bmp(self : Scanner) -> Bool {
 
 ///|
 /// Convert code point index to UTF-16 index
-fn Scanner::to_utf16_index(self : Scanner, cp_index : Int) -> Int {
+fn Scanner::to_utf16_index(self : Scanner, cp_index : Int32) -> Int32 {
   match self.utf16_offsets {
     Some(offsets) => offsets[cp_index]
     None => cp_index // All BMP: same index
@@ -77,7 +77,7 @@ fn Scanner::to_utf16_index(self : Scanner, cp_index : Int) -> Int {
 }
 
 ///|
-fn Scanner::unsafe_char_at(self : Scanner, index : Int) -> Char {
+fn Scanner::unsafe_char_at(self : Scanner, index : Int32) -> Char {
   match self.utf16_offsets {
     Some(_) => self.chars[index]
     None => self.source.unsafe_get(index).unsafe_to_char()
@@ -85,7 +85,7 @@ fn Scanner::unsafe_char_at(self : Scanner, index : Int) -> Char {
 }
 
 ///|
-fn Scanner::move_to_line_end(self : Scanner) -> (Int, Int) {
+fn Scanner::move_to_line_end(self : Scanner) -> (Int32, Int32) {
   let start = self.pos
   match self.utf16_offsets {
     Some(_) =>
@@ -110,8 +110,8 @@ fn Scanner::move_to_line_end(self : Scanner) -> (Int, Int) {
 fn Scanner::write_range_to(
   self : Scanner,
   buf : StringBuilder,
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
 ) -> Unit {
   if end <= start {
     return
@@ -131,7 +131,7 @@ fn Scanner::append_line_to(self : Scanner, buf : StringBuilder) -> Unit {
 fn Scanner::append_line_stripped_indent_to(
   self : Scanner,
   buf : StringBuilder,
-  indent : Int,
+  indent : Int32,
 ) -> Unit {
   let (start, end) = self.move_to_line_end()
   let mut stripped = 0
@@ -225,7 +225,7 @@ pub fn Scanner::peek(self : Scanner) -> Char? {
 
 ///|
 /// Peek character at offset from current position (O(1))
-pub fn Scanner::peek_at(self : Scanner, offset : Int) -> Char? {
+pub fn Scanner::peek_at(self : Scanner, offset : Int32) -> Char? {
   let idx = self.pos + offset
   if idx >= self.len || idx < 0 {
     None
@@ -239,7 +239,7 @@ pub fn Scanner::peek_at(self : Scanner, offset : Int) -> Char? {
 
 ///|
 /// Advance position by n characters
-pub fn Scanner::advance(self : Scanner, n : Int) -> Unit {
+pub fn Scanner::advance(self : Scanner, n : Int32) -> Unit {
   self.pos = self.pos + n
   if self.pos > self.len {
     self.pos = self.len
@@ -276,7 +276,7 @@ pub fn Scanner::remaining(self : Scanner) -> String {
 
 ///|
 /// Get substring from start to end position (code point indices)
-pub fn Scanner::substring(self : Scanner, start : Int, end : Int) -> String {
+pub fn Scanner::substring(self : Scanner, start : Int32, end : Int32) -> String {
   // Clamp indices to valid range
   let clamped_start = if start < 0 {
     0
@@ -304,7 +304,7 @@ pub fn Scanner::substring(self : Scanner, start : Int, end : Int) -> String {
 
 ///|
 /// Skip whitespace (space and tab only) - O(1) per char
-pub fn Scanner::skip_spaces(self : Scanner) -> Int {
+pub fn Scanner::skip_spaces(self : Scanner) -> Int32 {
   let start = self.pos
   match self.utf16_offsets {
     Some(_) =>
@@ -331,7 +331,7 @@ pub fn Scanner::skip_spaces(self : Scanner) -> Int {
 
 ///|
 /// Count leading spaces (without advancing) - O(1) per char
-pub fn Scanner::count_leading_spaces(self : Scanner) -> Int {
+pub fn Scanner::count_leading_spaces(self : Scanner) -> Int32 {
   let mut count = 0
   let mut idx = self.pos
   match self.utf16_offsets {
@@ -477,7 +477,7 @@ pub fn Scanner::consume_str(self : Scanner, s : String) -> Bool {
 
 ///|
 /// Count consecutive occurrences of a character from current position - O(1) per char
-pub fn Scanner::count_char(self : Scanner, c : Char) -> Int {
+pub fn Scanner::count_char(self : Scanner, c : Char) -> Int32 {
   let mut count = 0
   let mut idx = self.pos
   match self.utf16_offsets {
@@ -510,13 +510,13 @@ pub fn Scanner::count_char(self : Scanner, c : Char) -> Int {
 
 ///|
 /// Save current position
-pub fn Scanner::save(self : Scanner) -> Int {
+pub fn Scanner::save(self : Scanner) -> Int32 {
   self.pos
 }
 
 ///|
 /// Restore to saved position
-pub fn Scanner::restore(self : Scanner, pos : Int) -> Unit {
+pub fn Scanner::restore(self : Scanner, pos : Int32) -> Unit {
   self.pos = pos
 }
 

@@ -18,7 +18,7 @@ fn is_alnum(c : Char) -> Bool {
 ///|
 fn upper(c : Char) -> Char {
   if c >= 'a' && c <= 'z' {
-    Int::unsafe_to_char(c.to_int() - 32)
+    Int32::unsafe_to_char(c.to_int() - 32)
   } else {
     c
   }

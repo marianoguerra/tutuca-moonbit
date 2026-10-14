@@ -67,6 +67,12 @@ pub(all) struct ComponentRef {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend ComponentRef with Eq::{not_equal, equal}
+
+///|
+pub extend ComponentRef with Debug::{to_repr}
+
+///|
 pub fn ComponentRef::to_id(self : ComponentRef) -> String {
   self.module_ + "/" + self.name
 }
@@ -81,6 +87,12 @@ pub(all) struct FieldInfo {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend FieldInfo with Eq::{not_equal, equal}
+
+///|
+pub extend FieldInfo with Debug::{to_repr}
+
+///|
 /// A named set of construction arguments, and how many cells to open with.
 ///
 /// `cells` is how many the container is CONSTRUCTED with — they go into the
@@ -91,8 +103,14 @@ pub(all) struct Preset {
   name : String
   doc : String
   args : Map[String, Json]
-  cells : Int
+  cells : Int32
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend Preset with Eq::{not_equal, equal}
+
+///|
+pub extend Preset with Debug::{to_repr}
 
 ///|
 /// The half a card manifest cannot carry, supplied by whoever ships the card.
@@ -115,6 +133,12 @@ pub(all) struct Annotation {
   /// Kept out of the palette, though still resolvable by name.
   hidden : Bool
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend Annotation with Eq::{not_equal, equal}
+
+///|
+pub extend Annotation with Debug::{to_repr}
 
 ///|
 pub fn Annotation::none() -> Annotation {
@@ -147,6 +171,12 @@ pub(all) struct Entry {
   hidden : Bool
   module_doc : String
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend Entry with Eq::{not_equal, equal}
+
+///|
+pub extend Entry with Debug::{to_repr}
 
 ///|
 pub fn Entry::is_holder(self : Entry) -> Bool {

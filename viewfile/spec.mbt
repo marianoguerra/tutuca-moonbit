@@ -36,7 +36,7 @@ pub(all) struct CompiledTree {
   /// it so that a host's quota can refuse a view before reading one — a
   /// refusal is meant to cost no parsing — and only the reader is in a
   /// position to say, because it is the only thing that ever held the slice.
-  bytes : Int
+  bytes : Int32
 }
 
 ///|
@@ -51,6 +51,12 @@ pub(all) struct MacroDef {
   defaults : Map[String, String]
   source : String
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend MacroDef with Eq::{not_equal, equal}
+
+///|
+pub extend MacroDef with Debug::{to_repr}
 
 ///|
 /// One component's views, `main` first.
@@ -74,9 +80,15 @@ pub(all) struct ViewSet {
 /// message says out loud.
 pub(all) struct Block {
   text : String
-  offset : Int
-  line : Int
+  offset : Int32
+  line : Int32
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend Block with Eq::{not_equal, equal}
+
+///|
+pub extend Block with Debug::{to_repr}
 
 ///|
 /// One `<script type="tutuca/script">` block and the component it answers for.

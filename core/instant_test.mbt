@@ -3,7 +3,7 @@
 /// back as a different instant is the failure this exists to prevent, so every
 /// row asserts both directions rather than just the print.
 test "instant spellings round-trip" {
-  let rows : Array[(Int64, Int, String)] = [
+  let rows : Array[(Int64, Int32, String)] = [
     (0L, 0, "1970-01-01T00:00:00Z"),
     (1_756_915_200L, 0, "2025-09-03T16:00:00Z"),
     (1_756_915_200L, 123_000_000, "2025-09-03T16:00:00.123Z"),

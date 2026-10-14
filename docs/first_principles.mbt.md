@@ -449,7 +449,7 @@ produces a new instance:
 ```mbt check
 ///|
 test "instances are copy-on-write values, visible through Obj" {
-  let greeting = fp_greeting_component(initial={ name: "world", })
+  let greeting = @docs.fp_greeting_component(initial={ name: "world", })
   let a = greeting.make(Map([]))
   // writes go through the Obj trait (or a `.field = v` in a view):
   // they return a NEW instance value
@@ -503,13 +503,13 @@ tree is navigable and rebuildable:
 /// A parent holding a child component in a field — the smallest tree with a
 /// spine worth rebuilding.
 fn mailbox_module() -> @component.ModuleDef {
-  let note = note_component(update=(_s, msg, _ctx) => {
-    match NoteMsg::from_dispatch(msg) {
+  let note = @docs.note_component(update=(_s, msg, _ctx) => {
+    match @docs.NoteMsg::from_dispatch(msg) {
       Some(Write(t)) => Next({ text: t, })
       Some(Unknown(_, _)) | None => Unhandled
     }
   })
-  let mailbox = mailbox_component(update=(_s, msg, ctx) => {
+  let mailbox = @docs.mailbox_component(update=(_s, msg, ctx) => {
     match msg {
       // forward to the child by path — used from the host in section 9
       Receive("write", args) => {

@@ -81,6 +81,34 @@ pub impl @vdom.DomNode for MemNode with fn has_property(self, name) {
 }
 
 ///|
+pub extend MemNode with @vdom.DomNode::{
+  create_comment,
+  child_nodes,
+  replace_child,
+  is_same_node,
+  has_property,
+  set_property,
+  set_inner_html,
+  create_fragment,
+  remove_child,
+  remove_attribute,
+  child_node_at,
+  get_inner_html,
+  first_child,
+  next_sibling,
+  set_attribute,
+  set_data,
+  create_element,
+  insert_before,
+  replace_children,
+  namespace_uri,
+  parent_node,
+  tag_name,
+  create_text,
+  append_child,
+}
+
+///|
 /// Store the property; reflected names also write their attribute (that is
 /// what keeps attribute-level DOM comparison in agreement between a morphed
 /// tree and a fresh render, mirroring reflected-IDL behavior). memdom

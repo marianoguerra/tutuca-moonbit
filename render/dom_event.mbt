@@ -5,15 +5,15 @@
 ///|
 pub fn DomEvent::new(
   name~ : String,
-  value? : @tutuca.Value = Null,
+  value~ : @tutuca.Value = Null,
   read_path? : EventPathReader,
-  key? : String = "",
-  key_code? : Int = 0,
-  alt? : Bool = false,
-  shift? : Bool = false,
-  ctrl_or_cmd? : Bool = false,
-  meta? : Bool = false,
-  drag_info? : @tutuca.Value = Null,
+  key~ : String = "",
+  key_code~ : Int32 = 0,
+  alt~ : Bool = false,
+  shift~ : Bool = false,
+  ctrl_or_cmd~ : Bool = false,
+  meta~ : Bool = false,
+  drag_info~ : @tutuca.Value = Null,
   prevent_default? : EventEffect,
   stop_propagation? : EventEffect,
 ) -> DomEvent {
@@ -199,7 +199,7 @@ fn is_computed_accessor(name : String) -> Bool {
 pub fn event_path(
   e : DomEvent,
   segments : Array[String],
-  profile? : @eventpath.EventPathProfile = Open,
+  profile~ : @eventpath.EventPathProfile = Open,
 ) -> @tutuca.Value {
   // Layer 1. Only a single segment can be a computed accessor: they are
   // framework names, not properties of anything, so `e.value.length` is not a

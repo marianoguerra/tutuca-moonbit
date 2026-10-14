@@ -4,7 +4,7 @@
 
 ///|
 test "nested state: the view renders the nested fields" {
-  let h = @harness.mount(nested_state_module(), "NestedState")
+  let h = @harness.mount(@examples.nested_state_module(), "NestedState")
   inspect(h.text(".card-title"), content="Write the codec")
   // the `list<label>` of records, iterated
   debug_inspect(
@@ -22,7 +22,7 @@ test "nested state: the view renders the nested fields" {
 /// those decoded wrong the write would be rejected as a shape mismatch and the
 /// list would come back empty.
 test "nested state: a write round-trips the whole nested state" {
-  let h = @harness.mount(nested_state_module(), "NestedState")
+  let h = @harness.mount(@examples.nested_state_module(), "NestedState")
   h.click(".btn-primary") // bumpPriority: Low -> High
   debug_inspect(
     h.texts(".btn-xs"),

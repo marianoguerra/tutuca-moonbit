@@ -370,18 +370,18 @@ pub fn composability_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn composability_component(
-  name? : String = "Composability",
-  views? : Map[String, @anode.View] = composability_views(),
-  initial? : ComposabilityState = ComposabilityState::zero(),
-  common_style? : String = composability_common_style,
-  global_style? : String = composability_global_style,
+  name~ : String = "Composability",
+  views~ : Map[String, @anode.View] = composability_views(),
+  initial~ : ComposabilityState = ComposabilityState::zero(),
+  common_style~ : String = composability_common_style,
+  global_style~ : String = composability_global_style,
   update? : (ComposabilityState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ComposabilityState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

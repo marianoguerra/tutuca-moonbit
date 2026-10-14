@@ -164,7 +164,7 @@ fn Transactor::try_lex(
   self : Transactor,
   w : IntentWalk,
   handlers : Array[IntentFn],
-  i : Int,
+  i : Int32,
 ) -> Unit {
   if w.answered || w.stopped {
     return

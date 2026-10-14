@@ -192,7 +192,7 @@ fn can_qualify(word : String) -> Bool {
 
 ///|
 /// Where an annotation or initialiser ends: the next option, block, or `=`.
-fn next_boundary(parts : Array[@ast.Node], from : Int) -> Int {
+fn next_boundary(parts : Array[@ast.Node], from : Int32) -> Int32 {
   let mut i = from
   while i < parts.length() {
     match parts[i].it {

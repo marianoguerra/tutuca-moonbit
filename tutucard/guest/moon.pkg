@@ -16,7 +16,7 @@ import {
   "marianoguerra/tutuca/tgc/host",
   "marianoguerra/tutuca/tgc/host/browser",
   "marianoguerra/tutuca/tgc/policy",
-  "mizchi/js/core",
+  "mizchi/js_core" @core,
 }
 
 supported_targets = "js"

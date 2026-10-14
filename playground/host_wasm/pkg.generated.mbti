@@ -3,6 +3,8 @@ package "marianoguerra/tutuca/playground/host_wasm"
 
 import {
   "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
+  "mizchi/js_core",
 }
 
 // Values
@@ -10,9 +12,9 @@ pub fn activity_json() -> String
 
 pub fn classes_json() -> String
 
-pub fn mount(@component.ModuleDef, String, root? : String, args? : Map[String, @marianoguerra/tutuca/core.Value]) -> Unit
+pub fn mount(@component.ModuleDef, String, root? : String, args? : Map[String, @core.Value]) -> Unit
 
-pub fn on_event(@mizchi/js/core.Any) -> Unit
+pub fn on_event(@js_core.Any) -> Unit
 
 pub fn state_json() -> String
 

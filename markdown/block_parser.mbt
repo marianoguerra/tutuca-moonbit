@@ -17,8 +17,8 @@ pub(all) struct ParseResult {
 /// When strict=false (default), uses fast single-pass parser
 pub fn parse(
   source : String,
-  strict? : Bool = false,
-  wikilinks? : Bool = false,
+  strict~ : Bool = false,
+  wikilinks~ : Bool = false,
 ) -> ParseResult {
   let scanner = Scanner::new(source)
   let parser = BlockParser::new(scanner, strict, wikilinks)
@@ -196,7 +196,7 @@ fn BlockParser::parse_block(self : BlockParser) -> Block? {
 /// Try to parse thematic break (---, ***, ___)
 fn BlockParser::try_parse_thematic_break(
   self : BlockParser,
-  start : Int,
+  start : Int32,
 ) -> Block? {
   let leading = self.read_leading_trivia()
   let marker = match self.scanner.peek() {
@@ -232,7 +232,10 @@ fn BlockParser::try_parse_thematic_break(
 
 ///|
 /// Try to parse blockquote
-fn BlockParser::try_parse_blockquote(self : BlockParser, start : Int) -> Block? {
+fn BlockParser::try_parse_blockquote(
+  self : BlockParser,
+  start : Int32,
+) -> Block? {
   let leading = self.read_leading_trivia()
   if !char_is(self.scanner.peek(), '>') {
     return None
@@ -296,7 +299,7 @@ fn BlockParser::try_parse_blockquote(self : BlockParser, start : Int) -> Block? 
 
 ///|
 /// Parse paragraph (default block type)
-fn BlockParser::parse_paragraph(self : BlockParser, start : Int) -> Block? {
+fn BlockParser::parse_paragraph(self : BlockParser, start : Int32) -> Block? {
   let leading = self.read_leading_trivia()
   let content_buf = StringBuilder()
   let mut first = true

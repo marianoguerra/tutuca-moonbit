@@ -2,7 +2,7 @@
 package "marianoguerra/tutuca/app/touchdrag"
 
 import {
-  "mizchi/js/core",
+  "mizchi/js_core",
 }
 
 // Values
@@ -15,15 +15,15 @@ pub struct TouchDrag {
   ops : TouchOps
   // private fields
 }
-pub fn TouchDrag::handle(Self, @core.Any, String, @core.Any) -> Unit
+pub fn TouchDrag::handle(Self, @js_core.Any, String, @js_core.Any) -> Unit
 pub fn TouchDrag::new(TouchOps) -> Self
 
 pub(all) struct TouchOps {
-  has_prop : (@core.Any, String) -> Bool
-  get_int : (@core.Any, String) -> Int
-  get_num : (@core.Any, String) -> Double
-  element_from_point : (@core.Any, Double, Double) -> @core.Any
-  fire : (String, @core.Any) -> Unit
+  has_prop : (@js_core.Any, String) -> Bool
+  get_int : (@js_core.Any, String) -> Int
+  get_num : (@js_core.Any, String) -> Double
+  element_from_point : (@js_core.Any, Double, Double) -> @js_core.Any
+  fire : (String, @js_core.Any) -> Unit
 }
 
 // Type aliases

@@ -8,7 +8,7 @@
 
 ///|
 priv struct CountState {
-  count : Int
+  count : Int32
 }
 
 ///|
@@ -59,7 +59,7 @@ fn mounted() -> (@app.App[@memdom.MemNode], @memdom.MemNode) raise {
     sections,
     container,
     @vdom.RenderOpts::new(doc),
-    panels=all(sections),
+    panels=@panels.all(sections),
   )
   (app, container)
 }

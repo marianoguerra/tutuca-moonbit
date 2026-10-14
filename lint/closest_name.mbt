@@ -7,7 +7,7 @@
 pub fn closest_name(
   name : String,
   candidates : Array[String],
-  max_distance? : Int = 2,
+  max_distance~ : Int32 = 2,
 ) -> String? {
   if name == "" {
     return None

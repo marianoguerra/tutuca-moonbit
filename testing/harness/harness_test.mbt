@@ -11,7 +11,7 @@
 
 ///|
 priv struct CounterState {
-  count : Int
+  count : Int32
   label : String
 }
 

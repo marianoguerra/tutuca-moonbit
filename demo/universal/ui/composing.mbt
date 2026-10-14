@@ -125,8 +125,8 @@ pub fn library_rows(cards : Array[(String, String)]) -> Array[@tutuca.Value] {
 /// send somebody looking for a typo in a page with an empty catalog.
 pub fn empty_message(
   query : String,
-  total~ : Int,
-  offered? : Bool = true,
+  total~ : Int32,
+  offered~ : Bool = true,
 ) -> String {
   if !offered {
     "this page cannot place components"

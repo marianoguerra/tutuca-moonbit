@@ -112,11 +112,11 @@ pub fn render_with_scope_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn render_with_scope_component(
-  name? : String = "RenderWithScope",
-  views? : Map[String, @anode.View] = render_with_scope_views(),
-  initial? : RenderWithScopeState = RenderWithScopeState::zero(),
-  common_style? : String = render_with_scope_common_style,
-  global_style? : String = render_with_scope_global_style,
+  name~ : String = "RenderWithScope",
+  views~ : Map[String, @anode.View] = render_with_scope_views(),
+  initial~ : RenderWithScopeState = RenderWithScopeState::zero(),
+  common_style~ : String = render_with_scope_common_style,
+  global_style~ : String = render_with_scope_global_style,
   update? : (RenderWithScopeState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     RenderWithScopeState,
   ],
@@ -124,10 +124,10 @@ pub fn render_with_scope_component(
     RenderWithScopeState,
     &@tutuca.Stack,
   ) -> Map[String, @tutuca.Value])?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -229,11 +229,11 @@ pub fn list_filter_enrich_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn list_filter_enrich_component(
-  name? : String = "ListFilterEnrich",
-  views? : Map[String, @anode.View] = list_filter_enrich_views(),
-  initial? : ListFilterEnrichState = ListFilterEnrichState::zero(),
-  common_style? : String = list_filter_enrich_common_style,
-  global_style? : String = list_filter_enrich_global_style,
+  name~ : String = "ListFilterEnrich",
+  views~ : Map[String, @anode.View] = list_filter_enrich_views(),
+  initial~ : ListFilterEnrichState = ListFilterEnrichState::zero(),
+  common_style~ : String = list_filter_enrich_common_style,
+  global_style~ : String = list_filter_enrich_global_style,
   update? : (ListFilterEnrichState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ListFilterEnrichState,
   ],
@@ -252,10 +252,10 @@ pub fn list_filter_enrich_component(
     @tutuca.Value,
     &@tutuca.Stack,
   ) -> Unit)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -369,11 +369,11 @@ pub fn list_filter_enrich_with_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn list_filter_enrich_with_component(
-  name? : String = "ListFilterEnrichWith",
-  views? : Map[String, @anode.View] = list_filter_enrich_with_views(),
-  initial? : ListFilterEnrichWithState = ListFilterEnrichWithState::zero(),
-  common_style? : String = list_filter_enrich_with_common_style,
-  global_style? : String = list_filter_enrich_with_global_style,
+  name~ : String = "ListFilterEnrichWith",
+  views~ : Map[String, @anode.View] = list_filter_enrich_with_views(),
+  initial~ : ListFilterEnrichWithState = ListFilterEnrichWithState::zero(),
+  common_style~ : String = list_filter_enrich_with_common_style,
+  global_style~ : String = list_filter_enrich_with_global_style,
   update? : (ListFilterEnrichWithState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ListFilterEnrichWithState,
   ],
@@ -397,10 +397,10 @@ pub fn list_filter_enrich_with_component(
     @tutuca.Value,
     @component.LoopCtx,
   ) -> @component.LoopWith)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

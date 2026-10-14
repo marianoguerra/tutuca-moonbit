@@ -162,8 +162,8 @@ impl @component.Fields for StrategiesState with fn schema() {
 pub(all) struct NaivePeopleState {
   items : Array[@tutuca.Value]
   query : String
-  page : Int
-  page_size : Int
+  page : Int32
+  page_size : Int32
 }
 
 ///|
@@ -304,6 +304,12 @@ pub(all) enum NaivePeopleWhen {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend NaivePeopleWhen with Eq::{not_equal, equal}
+
+///|
+pub extend NaivePeopleWhen with @debug.Debug::{to_repr}
+
+///|
 pub fn NaivePeopleWhen::name(self : NaivePeopleWhen) -> String {
   match self {
     OnlyMatches => "only_matches"
@@ -317,6 +323,12 @@ pub(all) enum NaivePeopleEnrichScope {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend NaivePeopleEnrichScope with Eq::{not_equal, equal}
+
+///|
+pub extend NaivePeopleEnrichScope with @debug.Debug::{to_repr}
+
+///|
 pub fn NaivePeopleEnrichScope::name(self : NaivePeopleEnrichScope) -> String {
   match self {
     PagerInfo => "pager_info"
@@ -328,6 +340,12 @@ pub fn NaivePeopleEnrichScope::name(self : NaivePeopleEnrichScope) -> String {
 pub(all) enum NaivePeopleLoopWith {
   TablePage
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend NaivePeopleLoopWith with Eq::{not_equal, equal}
+
+///|
+pub extend NaivePeopleLoopWith with @debug.Debug::{to_repr}
 
 ///|
 pub fn NaivePeopleLoopWith::name(self : NaivePeopleLoopWith) -> String {
@@ -456,6 +474,12 @@ pub(all) enum SharedPeopleWhen {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend SharedPeopleWhen with Eq::{not_equal, equal}
+
+///|
+pub extend SharedPeopleWhen with @debug.Debug::{to_repr}
+
+///|
 pub fn SharedPeopleWhen::name(self : SharedPeopleWhen) -> String {
   match self {
     OnlyMatches => "only_matches"
@@ -469,6 +493,12 @@ pub(all) enum SharedPeopleEnrichScope {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend SharedPeopleEnrichScope with Eq::{not_equal, equal}
+
+///|
+pub extend SharedPeopleEnrichScope with @debug.Debug::{to_repr}
+
+///|
 pub fn SharedPeopleEnrichScope::name(self : SharedPeopleEnrichScope) -> String {
   match self {
     PagerInfo => "pager_info"
@@ -480,6 +510,12 @@ pub fn SharedPeopleEnrichScope::name(self : SharedPeopleEnrichScope) -> String {
 pub(all) enum SharedPeopleLoopWith {
   Page
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend SharedPeopleLoopWith with Eq::{not_equal, equal}
+
+///|
+pub extend SharedPeopleLoopWith with @debug.Debug::{to_repr}
 
 ///|
 pub fn SharedPeopleLoopWith::name(self : SharedPeopleLoopWith) -> String {
@@ -582,6 +618,12 @@ pub(all) enum CoupledPeopleEnrichScope {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend CoupledPeopleEnrichScope with Eq::{not_equal, equal}
+
+///|
+pub extend CoupledPeopleEnrichScope with @debug.Debug::{to_repr}
+
+///|
 pub fn CoupledPeopleEnrichScope::name(
   self : CoupledPeopleEnrichScope,
 ) -> String {
@@ -595,6 +637,12 @@ pub fn CoupledPeopleEnrichScope::name(
 pub(all) enum CoupledPeopleLoopWith {
   ForwardKeys
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend CoupledPeopleLoopWith with Eq::{not_equal, equal}
+
+///|
+pub extend CoupledPeopleLoopWith with @debug.Debug::{to_repr}
 
 ///|
 pub fn CoupledPeopleLoopWith::name(self : CoupledPeopleLoopWith) -> String {

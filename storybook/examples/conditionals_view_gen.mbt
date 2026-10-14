@@ -14,7 +14,7 @@
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct TrafficLightState {
-  light_index : Int
+  light_index : Int32
 }
 
 ///|
@@ -133,6 +133,12 @@ pub let traffic_light_global_style : String = ""
 pub(all) enum TrafficLightCompute {
   Light
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend TrafficLightCompute with Eq::{not_equal, equal}
+
+///|
+pub extend TrafficLightCompute with @debug.Debug::{to_repr}
 
 ///|
 pub fn TrafficLightCompute::name(self : TrafficLightCompute) -> String {
@@ -302,6 +308,12 @@ pub let list_and_filter_global_style : String = ""
 pub(all) enum ListAndFilterWhen {
   FilterItem
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend ListAndFilterWhen with Eq::{not_equal, equal}
+
+///|
+pub extend ListAndFilterWhen with @debug.Debug::{to_repr}
 
 ///|
 pub fn ListAndFilterWhen::name(self : ListAndFilterWhen) -> String {

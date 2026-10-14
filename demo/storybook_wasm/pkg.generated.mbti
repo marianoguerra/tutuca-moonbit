@@ -2,13 +2,13 @@
 package "marianoguerra/tutuca/demo/storybook_wasm"
 
 import {
-  "mizchi/js/core",
+  "mizchi/js_core",
 }
 
 // Values
 pub fn mount() -> Unit
 
-pub fn on_event(@core.Any) -> Unit
+pub fn on_event(@js_core.Any) -> Unit
 
 pub fn on_file_text(Int, Bool, String) -> Unit
 

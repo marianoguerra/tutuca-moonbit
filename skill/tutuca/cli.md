@@ -151,11 +151,12 @@ the `.tutu` and regenerating breaks the build until it is handled, instead of
 falling into a silent `_ => Unhandled`. Handlers served by the auto-generated
 field mutators return `None` and fall through to them, as before.
 
-The generated package must import `"marianoguerra/tutuca/core" @tutuca`,
-`"marianoguerra/tutuca/component"` and `"moonbitlang/core/debug"` — plus
-`"marianoguerra/tutuca/anode"` unless you pass `--no-ir`, since the IR module
-spells `@anode.View` directly. Each generated file's header repeats the list it
-needs.
+The generated package must import `"marianoguerra/tutuca/core" @tutuca` and
+`"marianoguerra/tutuca/component"` — plus `"moonbitlang/core/debug"` when the
+module declares a named type or a name enum the script has to answer (those
+derive `@debug.Debug`), and `"marianoguerra/tutuca/anode"` unless you pass
+`--no-ir`, since the IR module spells `@anode.View` directly. Each generated
+file's header lists exactly what it needs, so read it rather than guessing.
 
 The schema goes in a `spec:` section and not a `view:` one, because script
 content is raw text to an HTML parser and template content is markup — a

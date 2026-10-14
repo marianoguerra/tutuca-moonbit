@@ -26,9 +26,15 @@ pub(all) struct Refusal {
   /// What cannot be compiled, and what to do instead.
   reason : String
   /// The 1-based line, or 0 when only the span is known.
-  line : Int
+  line : Int32
   span : @tutuca.Span
 } derive(Debug, Eq)
+
+///|
+pub extend Refusal with Debug::{to_repr}
+
+///|
+pub extend Refusal with Eq::{not_equal, equal}
 
 ///|
 /// One finding. Collected rather than raised: a type error does not cascade
@@ -54,11 +60,23 @@ pub(all) struct Finding {
 } derive(Debug, Eq)
 
 ///|
+pub extend Finding with Debug::{to_repr}
+
+///|
+pub extend Finding with Eq::{not_equal, equal}
+
+///|
 /// Whether a finding stops a build.
 pub(all) enum Severity {
   SError
   SWarning
 } derive(Debug, Eq)
+
+///|
+pub extend Severity with Debug::{to_repr}
+
+///|
+pub extend Severity with Eq::{not_equal, equal}
 
 ///|
 /// What the views contribute to checking a block, which the schema cannot
@@ -115,6 +133,12 @@ pub(all) struct Surface {
   /// until that is worth paying for.
   comps : Array[String]
 } derive(Debug, Eq)
+
+///|
+pub extend Surface with Debug::{to_repr}
+
+///|
+pub extend Surface with Eq::{not_equal, equal}
 
 ///|
 /// A surface that knows nothing — every handler's arguments opaque, and no

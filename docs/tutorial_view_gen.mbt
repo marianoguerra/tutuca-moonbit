@@ -14,7 +14,7 @@
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct CounterState {
-  count : Int
+  count : Int32
 }
 
 ///|
@@ -419,6 +419,12 @@ pub let fruits_global_style : String = ""
 pub(all) enum FruitsWhen {
   NotTooLong
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend FruitsWhen with Eq::{not_equal, equal}
+
+///|
+pub extend FruitsWhen with @debug.Debug::{to_repr}
 
 ///|
 pub fn FruitsWhen::name(self : FruitsWhen) -> String {

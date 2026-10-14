@@ -113,18 +113,18 @@ pub fn styles_example_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn styles_example_component(
-  name? : String = "StylesExample",
-  views? : Map[String, @anode.View] = styles_example_views(),
-  initial? : StylesExampleState = StylesExampleState::zero(),
-  common_style? : String = styles_example_common_style,
-  global_style? : String = styles_example_global_style,
+  name~ : String = "StylesExample",
+  views~ : Map[String, @anode.View] = styles_example_views(),
+  initial~ : StylesExampleState = StylesExampleState::zero(),
+  common_style~ : String = styles_example_common_style,
+  global_style~ : String = styles_example_global_style,
   update? : (StylesExampleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     StylesExampleState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -183,18 +183,18 @@ pub fn styles_example_root_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn styles_example_root_component(
-  name? : String = "StylesExampleRoot",
-  views? : Map[String, @anode.View] = styles_example_root_views(),
-  initial? : StylesExampleRootState = StylesExampleRootState::zero(),
-  common_style? : String = styles_example_root_common_style,
-  global_style? : String = styles_example_root_global_style,
+  name~ : String = "StylesExampleRoot",
+  views~ : Map[String, @anode.View] = styles_example_root_views(),
+  initial~ : StylesExampleRootState = StylesExampleRootState::zero(),
+  common_style~ : String = styles_example_root_common_style,
+  global_style~ : String = styles_example_root_global_style,
   update? : (StylesExampleRootState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     StylesExampleRootState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

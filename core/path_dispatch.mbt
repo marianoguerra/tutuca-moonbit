@@ -77,9 +77,9 @@ pub fn DispatchPath::can_pop(self : DispatchPath) -> Bool {
 /// A bind is placed by how many items preceded it, so the ones that came after
 /// the item now gone are exactly those whose index exceeds the shortened list.
 fn keep_binds(
-  binds : Array[(Int, FrameBind)],
-  items_len : Int,
-) -> Array[(Int, FrameBind)] {
+  binds : Array[(Int32, FrameBind)],
+  items_len : Int32,
+) -> Array[(Int32, FrameBind)] {
   binds.filter(b => b.0 <= items_len)
 }
 

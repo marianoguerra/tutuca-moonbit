@@ -35,7 +35,7 @@ pub fn fnv1a_hex(s : String) -> String {
 }
 
 ///|
-fn mix_byte(h : UInt64, b : Int) -> UInt64 {
+fn mix_byte(h : UInt64, b : Int32) -> UInt64 {
   (h ^ b.reinterpret_as_uint().to_uint64()) * FNV_PRIME
 }
 

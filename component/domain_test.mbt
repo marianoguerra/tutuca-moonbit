@@ -11,9 +11,9 @@
 priv struct GalleryState {
   items : Array[@tutuca.Value]
   entries : Map[String, @tutuca.Value]
-  currentIndex : Int
+  currentIndex : Int32
   currentKey : String
-  count : Int
+  count : Int32
   choice : String
 }
 

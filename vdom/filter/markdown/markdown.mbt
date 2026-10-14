@@ -44,8 +44,8 @@ pub const MD_ATTR : String = "setInnerMd"
 
 ///|
 pub fn MdFilter::new(
-  sanitizer? : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
-  max_reports? : Int = 64,
+  sanitizer~ : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
+  max_reports~ : Int32 = 64,
 ) -> MdFilter {
   { sanitizer, log: @filter.DropLog::new(max_reports~), }
 }
@@ -54,6 +54,14 @@ pub fn MdFilter::new(
 /// Everything dropped since the last call, and clears the log.
 pub impl @filter.VdomFilter for MdFilter with fn take_reports(self) {
   self.log.take()
+}
+
+///|
+pub extend MdFilter with @filter.VdomFilter::{
+  filter_elem_hinted,
+  filter_elem,
+  take_reports,
+  filter_tree,
 }
 
 ///|

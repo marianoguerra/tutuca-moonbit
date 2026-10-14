@@ -5,18 +5,18 @@
 ///|
 /// Delimiter entry for the stack algorithm
 priv struct Delimiter {
-  pos : Int // Position in text
+  pos : Int32 // Position in text
   marker : Char // '*' or '_'
-  length : Int // Number of consecutive markers
-  mut remaining : Int // Remaining markers not yet matched
+  length : Int32 // Number of consecutive markers
+  mut remaining : Int32 // Remaining markers not yet matched
   can_open : Bool // Can this be an opener?
   can_close : Bool // Can this be a closer?
   mut active : Bool // Is this delimiter still active?
 }
 
 ///|
-fn build_utf16_offsets(chars : Array[Char]) -> Array[Int] {
-  let offsets : Array[Int] = Array::make(chars.length() + 1, 0)
+fn build_utf16_offsets(chars : Array[Char]) -> Array[Int32] {
+  let offsets : Array[Int32] = Array::make(chars.length() + 1, 0)
   let mut utf16_pos = 0
   for i = 0; i < chars.length(); i = i + 1 {
     offsets[i] = utf16_pos
@@ -33,9 +33,9 @@ fn build_utf16_offsets(chars : Array[Char]) -> Array[Int] {
 ///|
 fn substring_by_codepoint(
   text : String,
-  utf16_offsets : Array[Int],
-  start : Int,
-  end : Int,
+  utf16_offsets : Array[Int32],
+  start : Int32,
+  end : Int32,
 ) -> String {
   if utf16_offsets.is_empty() {
     return text.unsafe_substring(start~, end~)
@@ -44,7 +44,10 @@ fn substring_by_codepoint(
 }
 
 ///|
-fn collect_delimiters(len : Int, char_at : (Int) -> Char) -> Array[Delimiter] {
+fn collect_delimiters(
+  len : Int32,
+  char_at : (Int32) -> Char,
+) -> Array[Delimiter] {
   let delimiters : Array[Delimiter] = []
   let mut i = 0
   while i < len {
@@ -124,13 +127,13 @@ fn collect_delimiters(len : Int, char_at : (Int) -> Char) -> Array[Delimiter] {
 /// Parse inlines using delimiter stack algorithm (CommonMark spec)
 fn parse_inlines_with_delimiter_stack(
   text : String,
-  wikilinks? : Bool = false,
-  known_bmp? : Bool = false,
+  wikilinks~ : Bool = false,
+  known_bmp~ : Bool = false,
 ) -> Array[Inline] {
   let (len, utf16_offsets, delimiters) = if known_bmp {
     (
       text.length(),
-      ([] : Array[Int]),
+      ([] : Array[Int32]),
       collect_delimiters(text.length(), fn(i) {
         text.unsafe_get(i).unsafe_to_char()
       }),
@@ -146,7 +149,7 @@ fn parse_inlines_with_delimiter_stack(
 
   // Phase 2: Process delimiters to find matching pairs
   // Result: list of (opener_pos, closer_pos, marker, is_strong)
-  let matches : Array[(Int, Int, Char, Bool)] = []
+  let matches : Array[(Int32, Int32, Char, Bool)] = []
 
   // Process closers from left to right
   for closer_idx = 0
@@ -244,12 +247,12 @@ fn parse_inlines_with_delimiter_stack(
 /// Build inline elements from delimiter matches
 fn build_inlines_from_matches(
   text : String,
-  utf16_offsets : Array[Int],
-  len : Int,
+  utf16_offsets : Array[Int32],
+  len : Int32,
   known_bmp : Bool,
-  matches : Array[(Int, Int, Char, Bool)],
+  matches : Array[(Int32, Int32, Char, Bool)],
   result : Array[Inline],
-  wikilinks? : Bool = false,
+  wikilinks~ : Bool = false,
 ) -> Unit {
   // Sort matches by opener position
   let sorted = matches.copy()
@@ -274,15 +277,15 @@ fn build_inlines_from_matches(
 /// Recursively build inline elements
 fn build_inlines_recursive(
   text : String,
-  utf16_offsets : Array[Int],
+  utf16_offsets : Array[Int32],
   known_bmp : Bool,
-  start : Int,
-  end : Int,
-  matches : Array[(Int, Int, Char, Bool)],
-  match_start : Int,
-  match_end : Int,
+  start : Int32,
+  end : Int32,
+  matches : Array[(Int32, Int32, Char, Bool)],
+  match_start : Int32,
+  match_end : Int32,
   result : Array[Inline],
-  wikilinks? : Bool = false,
+  wikilinks~ : Bool = false,
 ) -> Unit {
   let mut pos = start
   for i = match_start; i < match_end; i = i + 1 {
@@ -390,9 +393,9 @@ fn build_inlines_recursive(
 /// Parse a text segment for non-emphasis inlines (code spans, links, etc.)
 fn parse_segment_simple(
   text : String,
-  offset : Int,
-  wikilinks? : Bool = false,
-  known_bmp? : Bool = false,
+  offset : Int32,
+  wikilinks~ : Bool = false,
+  known_bmp~ : Bool = false,
 ) -> Array[Inline] {
   // For now, just return as text. Full implementation would parse
   // code spans, links, etc. here.

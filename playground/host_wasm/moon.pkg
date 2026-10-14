@@ -12,7 +12,7 @@ import {
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/app/wasm" @wglue,
   "marianoguerra/tutuca/vdom/wasm" @wdom,
-  "mizchi/js/core",
+  "mizchi/js_core" @core,
 }
 
 supported_targets = "wasm-gc"

@@ -10,9 +10,9 @@
 
 ///|
 priv struct LedgerState {
-  here : Int
-  there : Int
-  total : Int
+  here : Int32
+  there : Int32
+  total : Int32
 }
 
 ///|

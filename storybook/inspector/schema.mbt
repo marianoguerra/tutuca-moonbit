@@ -163,7 +163,7 @@ fn Inspector::schema_branch(
   self : Inspector,
   label : String,
   child : @tutuca.Value,
-  label_class? : String = "text-accent",
+  label_class~ : String = "text-accent",
 ) -> @tutuca.Value {
   self.make_("SchemaBranch", args={
     "label": Str(label),

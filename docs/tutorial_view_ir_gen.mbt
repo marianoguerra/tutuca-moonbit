@@ -140,18 +140,18 @@ fn counter_inline_update(
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn counter_component(
-  name? : String = "Counter",
-  views? : Map[String, @anode.View] = counter_views(),
-  initial? : CounterState = CounterState::zero(),
-  common_style? : String = counter_common_style,
-  global_style? : String = counter_global_style,
+  name~ : String = "Counter",
+  views~ : Map[String, @anode.View] = counter_views(),
+  initial~ : CounterState = CounterState::zero(),
+  common_style~ : String = counter_common_style,
+  global_style~ : String = counter_global_style,
   update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     CounterState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -262,18 +262,18 @@ pub fn profile_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn profile_component(
-  name? : String = "Profile",
-  views? : Map[String, @anode.View] = profile_views(),
-  initial? : ProfileState = ProfileState::zero(),
-  common_style? : String = profile_common_style,
-  global_style? : String = profile_global_style,
+  name~ : String = "Profile",
+  views~ : Map[String, @anode.View] = profile_views(),
+  initial~ : ProfileState = ProfileState::zero(),
+  common_style~ : String = profile_common_style,
+  global_style~ : String = profile_global_style,
   update? : (ProfileState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ProfileState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -358,18 +358,18 @@ pub fn search_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn search_component(
-  name? : String = "Search",
-  views? : Map[String, @anode.View] = search_views(),
-  initial? : SearchState = SearchState::zero(),
-  common_style? : String = search_common_style,
-  global_style? : String = search_global_style,
+  name~ : String = "Search",
+  views~ : Map[String, @anode.View] = search_views(),
+  initial~ : SearchState = SearchState::zero(),
+  common_style~ : String = search_common_style,
+  global_style~ : String = search_global_style,
   update? : (SearchState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SearchState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -461,18 +461,18 @@ pub fn toggle_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn toggle_component(
-  name? : String = "Toggle",
-  views? : Map[String, @anode.View] = toggle_views(),
-  initial? : ToggleState = ToggleState::zero(),
-  common_style? : String = toggle_common_style,
-  global_style? : String = toggle_global_style,
+  name~ : String = "Toggle",
+  views~ : Map[String, @anode.View] = toggle_views(),
+  initial~ : ToggleState = ToggleState::zero(),
+  common_style~ : String = toggle_common_style,
+  global_style~ : String = toggle_global_style,
   update? : (ToggleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ToggleState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -530,11 +530,11 @@ pub fn fruits_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn fruits_component(
-  name? : String = "Fruits",
-  views? : Map[String, @anode.View] = fruits_views(),
-  initial? : FruitsState = FruitsState::zero(),
-  common_style? : String = fruits_common_style,
-  global_style? : String = fruits_global_style,
+  name~ : String = "Fruits",
+  views~ : Map[String, @anode.View] = fruits_views(),
+  initial~ : FruitsState = FruitsState::zero(),
+  common_style~ : String = fruits_common_style,
+  global_style~ : String = fruits_global_style,
   update? : (FruitsState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     FruitsState,
   ],
@@ -545,10 +545,10 @@ pub fn fruits_component(
     @tutuca.Value,
     &@tutuca.Stack,
   ) -> Bool)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -624,18 +624,18 @@ pub fn greeting_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn greeting_component(
-  name? : String = "Greeting",
-  views? : Map[String, @anode.View] = greeting_views(),
-  initial? : GreetingState = GreetingState::zero(),
-  common_style? : String = greeting_common_style,
-  global_style? : String = greeting_global_style,
+  name~ : String = "Greeting",
+  views~ : Map[String, @anode.View] = greeting_views(),
+  initial~ : GreetingState = GreetingState::zero(),
+  common_style~ : String = greeting_common_style,
+  global_style~ : String = greeting_global_style,
   update? : (GreetingState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     GreetingState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -688,18 +688,18 @@ pub fn page_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn page_component(
-  name? : String = "Page",
-  views? : Map[String, @anode.View] = page_views(),
-  initial? : PageState = PageState::zero(),
-  common_style? : String = page_common_style,
-  global_style? : String = page_global_style,
+  name~ : String = "Page",
+  views~ : Map[String, @anode.View] = page_views(),
+  initial~ : PageState = PageState::zero(),
+  common_style~ : String = page_common_style,
+  global_style~ : String = page_global_style,
   update? : (PageState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     PageState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -749,18 +749,18 @@ pub fn status_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn status_component(
-  name? : String = "Status",
-  views? : Map[String, @anode.View] = status_views(),
-  initial? : StatusState = StatusState::zero(),
-  common_style? : String = status_common_style,
-  global_style? : String = status_global_style,
+  name~ : String = "Status",
+  views~ : Map[String, @anode.View] = status_views(),
+  initial~ : StatusState = StatusState::zero(),
+  common_style~ : String = status_common_style,
+  global_style~ : String = status_global_style,
   update? : (StatusState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     StatusState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -833,18 +833,18 @@ pub fn chat_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn chat_component(
-  name? : String = "Chat",
-  views? : Map[String, @anode.View] = chat_views(),
-  initial? : ChatState = ChatState::zero(),
-  common_style? : String = chat_common_style,
-  global_style? : String = chat_global_style,
+  name~ : String = "Chat",
+  views~ : Map[String, @anode.View] = chat_views(),
+  initial~ : ChatState = ChatState::zero(),
+  common_style~ : String = chat_common_style,
+  global_style~ : String = chat_global_style,
   update? : (ChatState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ChatState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -906,18 +906,18 @@ pub fn quotes_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn quotes_component(
-  name? : String = "Quotes",
-  views? : Map[String, @anode.View] = quotes_views(),
-  initial? : QuotesState = QuotesState::zero(),
-  common_style? : String = quotes_common_style,
-  global_style? : String = quotes_global_style,
+  name~ : String = "Quotes",
+  views~ : Map[String, @anode.View] = quotes_views(),
+  initial~ : QuotesState = QuotesState::zero(),
+  common_style~ : String = quotes_common_style,
+  global_style~ : String = quotes_global_style,
   update? : (QuotesState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     QuotesState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -980,18 +980,18 @@ pub fn features_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn features_component(
-  name? : String = "Features",
-  views? : Map[String, @anode.View] = features_views(),
-  initial? : FeaturesState = FeaturesState::zero(),
-  common_style? : String = features_common_style,
-  global_style? : String = features_global_style,
+  name~ : String = "Features",
+  views~ : Map[String, @anode.View] = features_views(),
+  initial~ : FeaturesState = FeaturesState::zero(),
+  common_style~ : String = features_common_style,
+  global_style~ : String = features_global_style,
   update? : (FeaturesState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     FeaturesState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

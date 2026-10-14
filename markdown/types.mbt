@@ -12,13 +12,19 @@
 /// Using #valtype to avoid heap allocation for this frequently-used small struct
 #valtype
 pub(all) struct Span {
-  from : Int
-  to : Int
+  from : Int32
+  to : Int32
 } derive(Eq, Debug)
 
 ///|
+pub extend Span with Eq::{not_equal, equal}
+
+///|
+pub extend Span with Debug::{to_repr}
+
+///|
 /// Create a span
-pub fn Span::new(from : Int, to : Int) -> Span {
+pub fn Span::new(from : Int32, to : Int32) -> Span {
   { from, to, }
 }
 
@@ -40,11 +46,23 @@ pub(all) enum EmphasisMarker {
 } derive(Eq, Debug)
 
 ///|
+pub extend EmphasisMarker with Eq::{not_equal, equal}
+
+///|
+pub extend EmphasisMarker with Debug::{to_repr}
+
+///|
 /// Fence marker for code blocks: ``` or ~~~
 pub(all) enum FenceMarker {
   Backtick // ```
   Tilde // ~~~
 } derive(Eq, Debug)
+
+///|
+pub extend FenceMarker with Eq::{not_equal, equal}
+
+///|
+pub extend FenceMarker with Debug::{to_repr}
 
 ///|
 /// List marker for unordered lists: -, *, +
@@ -55,11 +73,23 @@ pub(all) enum BulletMarker {
 } derive(Eq, Debug)
 
 ///|
+pub extend BulletMarker with Eq::{not_equal, equal}
+
+///|
+pub extend BulletMarker with Debug::{to_repr}
+
+///|
 /// Ordered list delimiter: . or )
 pub(all) enum OrderedDelimiter {
   Dot // 1.
   Paren // 1)
 } derive(Eq, Debug)
+
+///|
+pub extend OrderedDelimiter with Eq::{not_equal, equal}
+
+///|
+pub extend OrderedDelimiter with Debug::{to_repr}
 
 ///|
 /// Heading style
@@ -73,10 +103,22 @@ pub(all) enum HeadingStyle {
 // =============================================================================
 
 ///|
+pub extend HeadingStyle with Eq::{not_equal, equal}
+
+///|
+pub extend HeadingStyle with Debug::{to_repr}
+
+///|
 /// Trivia represents non-semantic characters that should be preserved
 pub(all) struct Trivia {
   content : String
 } derive(Eq, Debug)
+
+///|
+pub extend Trivia with Eq::{not_equal, equal}
+
+///|
+pub extend Trivia with Debug::{to_repr}
 
 ///|
 pub fn Trivia::new(content : String) -> Trivia {
@@ -94,12 +136,18 @@ pub impl Show for Span with fn output(self : Span, logger : &Logger) -> Unit {
 }
 
 ///|
+pub extend Span with Show::{to_string, output}
+
+///|
 pub impl Show for EmphasisMarker with fn output(
   self : EmphasisMarker,
   logger : &Logger,
 ) -> Unit {
   logger.write_string(@debug.to_string(self))
 }
+
+///|
+pub extend EmphasisMarker with Show::{to_string, output}
 
 ///|
 pub impl Show for FenceMarker with fn output(
@@ -110,12 +158,18 @@ pub impl Show for FenceMarker with fn output(
 }
 
 ///|
+pub extend FenceMarker with Show::{to_string, output}
+
+///|
 pub impl Show for BulletMarker with fn output(
   self : BulletMarker,
   logger : &Logger,
 ) -> Unit {
   logger.write_string(@debug.to_string(self))
 }
+
+///|
+pub extend BulletMarker with Show::{to_string, output}
 
 ///|
 pub impl Show for OrderedDelimiter with fn output(
@@ -126,12 +180,18 @@ pub impl Show for OrderedDelimiter with fn output(
 }
 
 ///|
+pub extend OrderedDelimiter with Show::{to_string, output}
+
+///|
 pub impl Show for HeadingStyle with fn output(
   self : HeadingStyle,
   logger : &Logger,
 ) -> Unit {
   logger.write_string(@debug.to_string(self))
 }
+
+///|
+pub extend HeadingStyle with Show::{to_string, output}
 
 ///|
 pub impl Show for Trivia with fn output(self : Trivia, logger : &Logger) -> Unit {
@@ -141,6 +201,9 @@ pub impl Show for Trivia with fn output(self : Trivia, logger : &Logger) -> Unit
 // =============================================================================
 // Block-level CST Nodes
 // =============================================================================
+
+///|
+pub extend Trivia with Show::{to_string, output}
 
 ///|
 /// Document root
@@ -164,17 +227,17 @@ pub(all) enum Block {
   /// Thematic break (---, ***, ___)
   ThematicBreak(
     marker~ : Char, // '-', '*', or '_'
-    count~ : Int, // Number of marker chars (>= 3)
+    count~ : Int32, // Number of marker chars (>= 3)
     span~ : Span,
     leading_trivia~ : Trivia,
     trailing_trivia~ : Trivia
   )
   /// ATX or Setext heading
   Heading(
-    level~ : Int, // 1-6
+    level~ : Int32, // 1-6
     style~ : HeadingStyle,
     children~ : Array[Inline],
-    closing_hashes~ : Int, // For ATX: number of closing # (0 if none)
+    closing_hashes~ : Int32, // For ATX: number of closing # (0 if none)
     span~ : Span,
     leading_trivia~ : Trivia,
     trailing_trivia~ : Trivia
@@ -189,10 +252,10 @@ pub(all) enum Block {
   /// Fenced code block
   FencedCode(
     fence_marker~ : FenceMarker,
-    fence_length~ : Int, // Number of fence chars (>= 3)
+    fence_length~ : Int32, // Number of fence chars (>= 3)
     info~ : String, // Language info (e.g., "json:file.json")
     code~ : String, // Code content
-    indent~ : Int, // Leading spaces on fence (0-3)
+    indent~ : Int32, // Leading spaces on fence (0-3)
     span~ : Span,
     leading_trivia~ : Trivia,
     trailing_trivia~ : Trivia
@@ -222,7 +285,7 @@ pub(all) enum Block {
   )
   /// Ordered list
   OrderedList(
-    start~ : Int, // Starting number
+    start~ : Int32, // Starting number
     delimiter~ : OrderedDelimiter,
     tight~ : Bool,
     items~ : Array[ListItem],
@@ -247,7 +310,7 @@ pub(all) enum Block {
     trailing_trivia~ : Trivia
   )
   /// Blank lines (preserved)
-  BlankLines(count~ : Int, span~ : Span)
+  BlankLines(count~ : Int32, span~ : Span)
   /// Footnote definition [^label]: content (GFM)
   FootnoteDefinition(
     label~ : String,
@@ -263,8 +326,8 @@ pub(all) enum Block {
 pub(all) struct ListItem {
   children : Array[Block]
   checked : Bool? // For task lists: Some(true), Some(false), or None
-  marker_offset : Int // Spaces before marker
-  content_offset : Int // Spaces after marker before content
+  marker_offset : Int32 // Spaces before marker
+  content_offset : Int32 // Spaces after marker before content
   span : Span
 }
 
@@ -289,6 +352,12 @@ pub(all) enum TableAlign {
 // =============================================================================
 
 ///|
+pub extend TableAlign with Eq::{not_equal, equal}
+
+///|
+pub extend TableAlign with Debug::{to_repr}
+
+///|
 /// Inline-level nodes
 pub(all) enum Inline {
   /// Plain text
@@ -306,7 +375,7 @@ pub(all) enum Inline {
   /// Inline code (`code`)
   Code(
     content~ : String,
-    backtick_count~ : Int, // Number of backticks used
+    backtick_count~ : Int32, // Number of backticks used
     span~ : Span
   )
   /// Wiki link [[target]] or [[target|label]] (opt-in extension)
@@ -335,9 +404,18 @@ pub(all) enum HardBreakStyle {
 } derive(Eq, Debug)
 
 ///|
+pub extend HardBreakStyle with Eq::{not_equal, equal}
+
+///|
+pub extend HardBreakStyle with Debug::{to_repr}
+
+///|
 pub impl Show for TableAlign with fn output(self : TableAlign, logger : &Logger) -> Unit {
   logger.write_string(@debug.to_string(self))
 }
+
+///|
+pub extend TableAlign with Show::{to_string, output}
 
 ///|
 pub impl Show for HardBreakStyle with fn output(
@@ -350,6 +428,9 @@ pub impl Show for HardBreakStyle with fn output(
 // =============================================================================
 // Reference Definitions
 // =============================================================================
+
+///|
+pub extend HardBreakStyle with Show::{to_string, output}
 
 ///|
 /// Link reference definition [label]: url "title"

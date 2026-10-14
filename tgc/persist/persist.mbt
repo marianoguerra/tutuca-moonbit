@@ -38,6 +38,12 @@ pub(all) struct Snapshot {
 } derive(Eq, Debug)
 
 ///|
+pub extend Snapshot with Eq::{not_equal, equal}
+
+///|
+pub extend Snapshot with Debug::{to_repr}
+
+///|
 /// A key-value store of TEXT.
 ///
 /// Text rather than bytes because every store worth having on a page is
@@ -71,7 +77,7 @@ pub fn key_of(prefix : String, id : String) -> String {
 pub fn save(
   store : &Store,
   snap : Snapshot,
-  prefix? : String = "tutuca:",
+  prefix~ : String = "tutuca:",
 ) -> Bool {
   guard snap.id != "" else { return false }
   store.set(key_of(prefix, snap.id), snap.to_json().stringify())
@@ -85,7 +91,7 @@ pub fn save(
 pub fn load(
   store : &Store,
   id : String,
-  prefix? : String = "tutuca:",
+  prefix~ : String = "tutuca:",
 ) -> Snapshot? {
   guard store.get(key_of(prefix, id)) is Some(text) else { return None }
   let parsed = @json.parse(text) catch { _ => return None }
@@ -97,7 +103,7 @@ pub fn load(
 pub fn forget(
   store : &Store,
   id : String,
-  prefix? : String = "tutuca:",
+  prefix~ : String = "tutuca:",
 ) -> Unit {
   store.remove(key_of(prefix, id))
 }
@@ -105,7 +111,7 @@ pub fn forget(
 ///|
 /// The ids this store holds under `prefix`, with the prefix stripped — what a
 /// host restoring a page asks for before it knows what it will find.
-pub fn saved_ids(store : &Store, prefix? : String = "tutuca:") -> Array[String] {
+pub fn saved_ids(store : &Store, prefix~ : String = "tutuca:") -> Array[String] {
   store
   .keys(prefix~)
   .map(k => {

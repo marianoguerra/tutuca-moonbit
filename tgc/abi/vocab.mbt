@@ -18,9 +18,9 @@ let opt_val : @wast.Type = Nullable(Named("tgabi.tg_val"))
 ///|
 fn f(
   name : String,
-  import_name? : String? = None,
-  supplier? : Supplier = Runtime,
-  frozen? : String? = None,
+  import_name~ : String? = None,
+  supplier~ : Supplier = Runtime,
+  frozen~ : String? = None,
   params : Array[(String, @wast.Type)],
   results : Array[@wast.Type],
 ) -> VocabFn {

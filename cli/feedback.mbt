@@ -70,9 +70,9 @@ pub fn feedback_record_line(
   message : String,
 ) -> String {
   let record : Json = {
-    "ts": ts_iso.to_json(),
-    "version": version.to_json(),
-    "message": message.to_json(),
+    "ts": Json(ts_iso),
+    "version": Json(version),
+    "message": Json(message),
   }
   record.stringify(escape_slash=false) + "\n"
 }

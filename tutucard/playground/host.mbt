@@ -20,7 +20,7 @@ priv struct Slot {
   /// is what tells a late answer from a live one — per slot rather than
   /// global, because an embedded card mounting elsewhere says nothing about
   /// whether this one is still there.
-  mut gen : Int
+  mut gen : Int32
 }
 
 ///|
@@ -175,7 +175,7 @@ extern "js" fn publish(
   classes_at : (String) -> String,
   mount_compiled : (String, String, String) -> String,
   drive : (String, String, String, String) -> String,
-  instance_count : () -> Int,
+  instance_count : () -> Int32,
   runtime_wasm : () -> String,
 ) -> Unit =
   #|(check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive, instanceCount, runtimeWasm) => { globalThis.__tutucard = { check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive, instanceCount, runtimeWasm } }
@@ -268,7 +268,7 @@ fn teardown(id : String) -> Unit {
 ///|
 /// `setTimeout`, for the one thing the fixtures below need that the runtime
 /// deliberately has none of: a clock.
-extern "js" fn set_timeout(cb : () -> Unit, ms : Int) -> Unit =
+extern "js" fn set_timeout(cb : () -> Unit, ms : Int32) -> Unit =
   #|(cb, ms) => { setTimeout(cb, ms) }
 
 ///|
@@ -299,9 +299,9 @@ extern "js" fn set_timeout(cb : () -> Unit, ms : Int) -> Unit =
 /// torn down since gets no answer, because there is nobody left to tell.
 fn playground_intents(
   slot : Slot,
-  gen : Int,
+  gen : Int32,
 ) -> Map[String, Array[@component.IntentFn]] {
-  fn later(ms : Int, f : () -> Unit) -> Unit {
+  fn later(ms : Int32, f : () -> Unit) -> Unit {
     set_timeout(() => if slot.gen == gen { f() }, ms)
   }
 

@@ -22,6 +22,9 @@ pub impl @tutuca.ComponentSource for ComponentStack with fn describe(
 }
 
 ///|
+pub extend ComponentStack with @tutuca.ComponentSource::{describe, build}
+
+///|
 /// Build through `Component::make`, which is what applies the rule this whole
 /// codec defers to: a field the document supplied and coerced is used, and a
 /// field it did not is the component's own default — including a child slot,

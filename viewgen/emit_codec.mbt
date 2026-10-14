@@ -40,6 +40,10 @@ fn uty_fn(ty : @statedef.UserTy) -> String {
 /// Functions rather than inlined expressions because a record can nest, and a
 /// converter that can call itself is the only shape that terminates on a type
 /// graph rather than on a fixed depth.
+///
+/// Each is `#warnings("-unused_value")`: which ones get called is up to the
+/// script module (`*_view_ir_gen.mbt`), which is emitted separately, so a type
+/// only a handler constructs still gets both directions here.
 fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
   for ty in def.types {
     let base = uty_fn(ty)
@@ -51,6 +55,7 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
         out.write_string(
           "///|\n" +
           "/// The `\{ty.source_name}` record as a `@tutuca.Value`.\n" +
+          "#warnings(\"-unused_value\")\n" +
           "fn \{base}_to_value(x : \{ty.name}) -> @tutuca.Value {\n" +
           "  Map({\n",
         )
@@ -63,6 +68,7 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
         out.write_string(
           "///|\n" +
           "/// The `\{ty.source_name}` record back out. None on a shape mismatch.\n" +
+          "#warnings(\"-unused_value\")\n" +
           "fn \{base}_of_value(v : @tutuca.Value) -> \{ty.name}? {\n" +
           "  guard v is Map(m) else { return None }\n",
         )
@@ -90,6 +96,7 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
         out.write_string(
           "///|\n" +
           "/// The `\{ty.source_name}` enum as a `@tutuca.Value`: the case name.\n" +
+          "#warnings(\"-unused_value\")\n" +
           "fn \{base}_to_value(x : \{ty.name}) -> @tutuca.Value {\n" +
           "  match x {\n",
         )
@@ -100,6 +107,7 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
         out.write_string(
           "///|\n" +
           "/// The `\{ty.source_name}` enum back out. None on an unknown case.\n" +
+          "#warnings(\"-unused_value\")\n" +
           "fn \{base}_of_value(v : @tutuca.Value) -> \{ty.name}? {\n" +
           "  guard v is Str(s) else { return None }\n" +
           "  match s {\n",
@@ -115,6 +123,7 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
           "/// The `\{ty.source_name}` variant as a `@tutuca.Value`: the bare case\n" +
           "/// name when it carries nothing, else the name followed by its\n" +
           "/// payload.\n" +
+          "#warnings(\"-unused_value\")\n" +
           "fn \{base}_to_value(x : \{ty.name}) -> @tutuca.Value {\n" +
           "  match x {\n",
         )
@@ -136,6 +145,7 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
           "///|\n" +
           "/// The `\{ty.source_name}` variant back out. None on an unknown case or\n" +
           "/// a payload that does not match the declared shape.\n" +
+          "#warnings(\"-unused_value\")\n" +
           "fn \{base}_of_value(v : @tutuca.Value) -> \{ty.name}? {\n",
         )
         // payload-free cases arrive as a bare string
@@ -308,7 +318,7 @@ fn dec_stmts(
   src : String,
   name : String,
   base : String,
-  depth : Int,
+  depth : Int32,
 ) -> String {
   let pad = "  ".repeat(depth)
   let tmp = "t\{depth}_\{base}"
@@ -355,7 +365,7 @@ fn dec_val(
   src : String,
   name : String,
   base : String,
-  depth : Int,
+  depth : Int32,
 ) -> String {
   let pad = "  ".repeat(depth)
   let tmp = "u\{depth}_\{base}"

@@ -44,8 +44,8 @@ pub fn root_for(
 pub fn mount(
   t : @trace.Trace,
   scope : @component.ComponentStack,
-  fidelity? : Fidelity = Live,
-  verify? : Bool = true,
+  fidelity~ : Fidelity = Live,
+  verify~ : Bool = true,
   markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter,
 ) -> Player raise ReplayError {
   let root = root_for(t, scope)
@@ -95,7 +95,7 @@ pub fn Player::done(self : Player) -> Bool {
 
 ///|
 /// How many events have been fed. The index of the next one.
-pub fn Player::at(self : Player) -> Int {
+pub fn Player::at(self : Player) -> Int32 {
   self.driver.at()
 }
 
@@ -136,7 +136,7 @@ pub fn Player::step(self : Player) -> Unit raise ReplayError {
 }
 
 ///|
-pub fn Player::run_to(self : Player, n : Int) -> Unit raise ReplayError {
+pub fn Player::run_to(self : Player, n : Int32) -> Unit raise ReplayError {
   self.driver.run_to(n)
 }
 
@@ -168,8 +168,8 @@ fn same(a : @trace.Event, b : @trace.Event) -> Bool {
 pub fn replay(
   t : @trace.Trace,
   scope : @component.ComponentStack,
-  fidelity? : Fidelity = Live,
-  verify? : Bool = true,
+  fidelity~ : Fidelity = Live,
+  verify~ : Bool = true,
 ) -> Json raise ReplayError {
   let p = mount(t, scope, fidelity~, verify~)
   p.run()

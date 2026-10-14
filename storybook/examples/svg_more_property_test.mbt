@@ -37,7 +37,7 @@ fn contracts() -> Array[(String, String)] {
 /// The component carries its own spec source, so this reads the declaration
 /// that produced the compiled arms rather than a copy of it. A plan is `None`
 /// only for a component with no block, which BarChart is not.
-fn bar_chart_plan(source? : @fuzz.Source = Fields) -> @fuzz.Plan raise {
+fn bar_chart_plan(source~ : @fuzz.Source = Fields) -> @fuzz.Plan raise {
   guard @fuzz.Plan::of_component(bar_chart_comp(), source~) is Some(p) else {
     fail("BarChart declares a spec block, so it has a plan")
   }
@@ -46,7 +46,9 @@ fn bar_chart_plan(source? : @fuzz.Source = Fields) -> @fuzz.Plan raise {
 
 ///|
 fn bar_chart_comp() -> @component.Component raise {
-  let comps = svg_bar_chart_module().components.filter(c => c.name == "BarChart")
+  let comps = @examples.svg_bar_chart_module().components.filter(c => {
+    c.name == "BarChart"
+  })
   guard comps.length() == 1 else {
     fail("the svg-bar-chart module declares one BarChart")
   }
@@ -60,7 +62,7 @@ fn bar_chart_comp() -> @component.Component raise {
 /// mount that fails is a different failure from a property that does not hold,
 /// so it is carried as an absence rather than thrown through the harness.
 fn fresh_chart() -> @harness.Harness[@memdom.MemNode]? {
-  Some(@harness.mount_example(svg_bar_chart_module(), "Default")) catch {
+  Some(@harness.mount_example(@examples.svg_bar_chart_module(), "Default")) catch {
     _ => None
   }
 }
@@ -112,7 +114,7 @@ test "the component carries the block it was declared in" {
   assert_eq(p.def.invariants(), ["never_empty"])
   // The generated schema lists the same invariant by name — two projections of
   // one declaration, which is the sync this file is really about.
-  let h = @harness.mount_example(svg_bar_chart_module(), "Default")
+  let h = @harness.mount_example(@examples.svg_bar_chart_module(), "Default")
   guard h.drive_value() is Obj(o) && o.schema() is Some(schema) else {
     fail("a mounted BarChart answers its own schema")
   }
@@ -143,7 +145,7 @@ test "property: no generated mutator can drive the chart through its invariant" 
   let p = bar_chart_plan()
   @qc.quick_check(
     @qc.forall_shrink(
-      @gen.int_range(0, 6).bind(n => p.script_gen(n)),
+      @gen.int_range(0, 6).flat_map(n => p.script_gen(n)),
       @fuzz.shrink_actions,
       script => {
         guard fresh_chart() is Some(h) else { return false }
@@ -186,7 +188,7 @@ test "property: an interpreted precondition predicts the compiled one" {
   let names = contracts().map(c => c.0)
   @qc.quick_check(
     @qc.forall(
-      @gen.int_range(0, 6).bind(n => @gen.one_of_array(names).array_with_size(n)),
+      @gen.int_range(0, 6).flat_map(n => @gen.elements(names).array_with_size(n)),
       script => {
         guard fresh_chart() is Some(h) else { return false }
         for name in script {
@@ -224,7 +226,7 @@ test "property: an interpreted precondition predicts the compiled one" {
 /// by generated mutators rather than by nine button presses, so the sentence
 /// is checked against a state the generator found.
 test "a declined precondition says the rule's own sentence" {
-  let h = @harness.mount_example(svg_bar_chart_module(), "Default")
+  let h = @harness.mount_example(@examples.svg_bar_chart_module(), "Default")
   let p = bar_chart_plan()
   // Nine bars, WRITTEN rather than pushed one button-press at a time: a write
   // is ungated — no `requires` stands in front of it — and it is the shortest

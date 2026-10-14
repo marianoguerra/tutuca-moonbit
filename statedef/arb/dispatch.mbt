@@ -27,6 +27,12 @@ pub(all) enum Bucket {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend Bucket with Eq::{not_equal, equal}
+
+///|
+pub extend Bucket with Debug::{to_repr}
+
+///|
 /// One dispatch the component declares it answers, with arguments at their
 /// declared types.
 ///
@@ -35,14 +41,14 @@ pub(all) enum Bucket {
 /// unhandled path while claiming to test the handled one.
 pub fn dispatch_of(
   def : @statedef.StateDef,
-  bucket? : Bucket = BEither,
-  depth? : Int = MAX_DEPTH,
-) -> @gen.Gen[@component.Dispatch]? {
-  let choices : Array[@gen.Gen[@component.Dispatch]] = []
+  bucket~ : Bucket = BEither,
+  depth~ : Int32 = MAX_DEPTH,
+) -> @gen.Generator[@component.Dispatch]? {
+  let choices : Array[@gen.Generator[@component.Dispatch]] = []
   if bucket is (BReceive | BEither) {
     for m in def.receive {
       choices.push(
-        args_of(def, m, depth).fmap(a => {
+        args_of(def, m, depth).map(a => {
           (Receive(m.name, a) : @component.Dispatch)
         }),
       )
@@ -51,7 +57,7 @@ pub fn dispatch_of(
   if bucket is (BIntent | BEither) {
     for m in def.intent {
       choices.push(
-        args_of(def, m, depth).fmap(a => {
+        args_of(def, m, depth).map(a => {
           (Intent(m.name, a) : @component.Dispatch)
         }),
       )
@@ -75,12 +81,12 @@ pub fn dispatch_of(
 /// breaks an invariant" is a real failure and the shortest one.
 pub fn script_of(
   def : @statedef.StateDef,
-  bucket? : Bucket = BEither,
-  len? : @gen.Gen[Int] = @gen.int_range(0, 8),
-  depth? : Int = MAX_DEPTH,
-) -> @gen.Gen[Array[@component.Dispatch]]? {
+  bucket~ : Bucket = BEither,
+  len~ : @gen.Generator[Int32] = @gen.int_range(0, 8),
+  depth~ : Int32 = MAX_DEPTH,
+) -> @gen.Generator[Array[@component.Dispatch]]? {
   guard dispatch_of(def, bucket~, depth~) is Some(one) else { return None }
-  Some(len.bind(n => one.array_with_size(n)))
+  Some(len.flat_map(n => one.array_with_size(n)))
 }
 
 ///|
@@ -128,12 +134,12 @@ pub fn shrink_script(
 fn args_of(
   def : @statedef.StateDef,
   m : @statedef.MsgDef,
-  depth : Int,
-) -> @gen.Gen[Array[@tutuca.Value]] {
+  depth : Int32,
+) -> @gen.Generator[Array[@tutuca.Value]] {
   if m.payload.is_empty() {
     return @gen.pure([])
   }
-  @gen.flatten_array(m.payload.map(t => value_of(def, t, depth~)))
+  sequence(m.payload.map(t => value_of(def, t, depth~)))
 }
 
 ///|
@@ -150,23 +156,23 @@ fn args_of(
 pub fn protocol_dispatch_of(
   def : @statedef.StateDef,
   protocol_id : String,
-  depth? : Int = MAX_DEPTH,
-) -> @gen.Gen[@component.Dispatch]? {
-  let choices : Array[@gen.Gen[@component.Dispatch]] = []
+  depth~ : Int32 = MAX_DEPTH,
+) -> @gen.Generator[@component.Dispatch]? {
+  let choices : Array[@gen.Generator[@component.Dispatch]] = []
   for p in def.protocols {
     if p.id != protocol_id {
       continue
     }
     for m in p.handle_message {
       choices.push(
-        args_of(def, m, depth).fmap(a => {
+        args_of(def, m, depth).map(a => {
           (Receive(m.name, a) : @component.Dispatch)
         }),
       )
     }
     for m in p.handle_intent {
       choices.push(
-        args_of(def, m, depth).fmap(a => {
+        args_of(def, m, depth).map(a => {
           (Intent(m.name, a) : @component.Dispatch)
         }),
       )
@@ -197,11 +203,11 @@ pub fn protocol_dispatch_of(
 /// through.
 pub fn property_write_of(
   def : @statedef.StateDef,
-  depth? : Int = MAX_DEPTH,
-  state? : Map[String, @tutuca.Value] = Map([]),
-) -> @gen.Gen[(String, @tutuca.Value)]? {
+  depth~ : Int32 = MAX_DEPTH,
+  state~ : Map[String, @tutuca.Value] = Map([]),
+) -> @gen.Generator[(String, @tutuca.Value)]? {
   let domains = def.field_domains()
-  let choices : Array[@gen.Gen[(String, @tutuca.Value)]] = []
+  let choices : Array[@gen.Generator[(String, @tutuca.Value)]] = []
   for f in def.fields {
     let name = f.name
     // The declared domain first: a `where` read backwards produces a value the
@@ -214,7 +220,7 @@ pub fn property_write_of(
       [one, ..] => one
       [] => value_of(def, f.ty, depth~)
     }
-    choices.push(g.fmap(v => (name, v)))
+    choices.push(g.map(v => (name, v)))
   }
   if choices.is_empty() {
     return None
@@ -230,14 +236,14 @@ pub fn property_write_of(
 /// what a name DOES, this builds what it TAKES.
 pub fn mutator_args(
   def : @statedef.StateDef,
-  depth? : Int = MAX_DEPTH,
-  state? : Map[String, @tutuca.Value] = Map([]),
-) -> Map[String, @gen.Gen[Array[@tutuca.Value]]] {
-  let out : Map[String, @gen.Gen[Array[@tutuca.Value]]] = Map([])
-  let none : @gen.Gen[Array[@tutuca.Value]] = @gen.pure([])
+  depth~ : Int32 = MAX_DEPTH,
+  state~ : Map[String, @tutuca.Value] = Map([]),
+) -> Map[String, @gen.Generator[Array[@tutuca.Value]]] {
+  let out : Map[String, @gen.Generator[Array[@tutuca.Value]]] = Map([])
+  let none : @gen.Generator[Array[@tutuca.Value]] = @gen.pure([])
   let domains = @info.domains_of(def)
   for f in def.fields {
-    let one = setter_arg(def, f, domains, state, depth).fmap(v => [v])
+    let one = setter_arg(def, f, domains, state, depth).map(v => [v])
     out[@tutuca.mutator_name("set", f.name)] = one
     out[@tutuca.mutator_name("reset", f.name)] = none
     out[f.name + "_len"] = none
@@ -247,7 +253,7 @@ pub fn mutator_args(
         // A member, as the string the set is keyed by. Drawn from the declared
         // members when the set is closed, so a `Set[Priority]` is exercised
         // with the enum's own cases rather than with strings it never holds.
-        let m = member_of(def, f.ty).fmap(v => [v])
+        let m = member_of(def, f.ty).map(v => [v])
         for verb in ["addIn", "deleteIn", "removeIn", "hasIn", "toggleIn"] {
           out[@tutuca.mutator_name(verb, f.name)] = m
         }
@@ -259,19 +265,19 @@ pub fn mutator_args(
         // draw OUT of range as well as in — a delete at 99 is the case that
         // decides whether a copy-on-write path answers the original.
         let key = if f.ty.kind() is FList {
-          @gen.int_range(-1, 5).fmap(n => (Num(n.to_double()) : @tutuca.Value))
+          @gen.int_range(-1, 5).map(n => (Num(n.to_double()) : @tutuca.Value))
         } else {
-          @gen.one_of_array(["k0", "k1", "absent"]).fmap(s => {
+          @gen.elements(["k0", "k1", "absent"]).map(s => {
             (Str(s) : @tutuca.Value)
           })
         }
         let v = value_of(def, elem, depth~)
-        out[@tutuca.mutator_name("pushIn", f.name)] = v.fmap(x => [x])
-        let keyed = @gen.liftA2((k, x) => [k, x], key, v)
+        out[@tutuca.mutator_name("pushIn", f.name)] = v.map(x => [x])
+        let keyed = key.zip_with(v, (k, x) => [k, x])
         out[@tutuca.mutator_name("insertIn", f.name) + "_at"] = keyed
         out[@tutuca.mutator_name("setIn", f.name) + "_at"] = keyed
         for verb in ["deleteIn", "removeIn"] {
-          out[@tutuca.mutator_name(verb, f.name) + "_at"] = key.fmap(k => [k])
+          out[@tutuca.mutator_name(verb, f.name) + "_at"] = key.map(k => [k])
         }
       }
       _ => ()
@@ -285,7 +291,7 @@ pub fn mutator_args(
 fn member_of(
   def : @statedef.StateDef,
   ty : @tutuca.Ty,
-) -> @gen.Gen[@tutuca.Value] {
+) -> @gen.Generator[@tutuca.Value] {
   let members : Array[String] = match ty {
     TyFlags(n, _) =>
       match def.user_ty(n) {
@@ -297,11 +303,11 @@ fn member_of(
   if members.is_empty() {
     // An OPEN set takes any string, and one it does not hold is as much a
     // member to test with as one it does.
-    return @gen.one_of_array(["a", "b", "c", "absent"]).fmap(s => {
+    return @gen.elements(["a", "b", "c", "absent"]).map(s => {
       (Str(s) : @tutuca.Value)
     })
   }
-  @gen.one_of_array(members.map(m => (Str(m) : @tutuca.Value)))
+  @gen.elements(members.map(m => (Str(m) : @tutuca.Value)))
 }
 
 ///|
@@ -336,8 +342,8 @@ fn setter_arg(
   f : @statedef.FieldDef,
   domains : Array[@tutuca.FieldDomain],
   state : Map[String, @tutuca.Value],
-  depth : Int,
-) -> @gen.Gen[@tutuca.Value] {
+  depth : Int32,
+) -> @gen.Generator[@tutuca.Value] {
   let free = value_of(def, f.ty, depth~)
   let mine = @tutuca.domains_of(domains, f.name)
   if mine.is_empty() {
@@ -365,9 +371,9 @@ fn setter_arg(
 pub fn field_value_of(
   def : @statedef.StateDef,
   field : String,
-  depth? : Int = MAX_DEPTH,
-  state? : Map[String, @tutuca.Value] = Map([]),
-) -> @gen.Gen[@tutuca.Value]? {
+  depth~ : Int32 = MAX_DEPTH,
+  state~ : Map[String, @tutuca.Value] = Map([]),
+) -> @gen.Generator[@tutuca.Value]? {
   guard def.fields.iter().find_first(f => f.name == field) is Some(f) else {
     return None
   }

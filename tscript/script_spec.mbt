@@ -68,6 +68,12 @@ pub(all) enum DeclKind {
 } derive(Debug, Eq)
 
 ///|
+pub extend DeclKind with Debug::{to_repr}
+
+///|
+pub extend DeclKind with Eq::{not_equal, equal}
+
+///|
 /// One declared parameter. Types are INFERRED, never annotated: an `on`
 /// handler's arguments come from what the views write at the call site, and a
 /// `receive` handler's from the schema's `MsgDef.payload`.
@@ -75,6 +81,12 @@ pub(all) struct Param {
   name : String
   span : Span
 } derive(Debug, Eq)
+
+///|
+pub extend Param with Debug::{to_repr}
+
+///|
+pub extend Param with Eq::{not_equal, equal}
 
 ///|
 /// A `pred` a transition attaches, by name.
@@ -88,6 +100,12 @@ pub(all) struct Attach {
   name : String
   span : Span
 } derive(Debug, Eq)
+
+///|
+pub extend Attach with Debug::{to_repr}
+
+///|
+pub extend Attach with Eq::{not_equal, equal}
 
 ///|
 /// One declaration: a kind, a name, its parameters, its contracts and its body.
@@ -138,6 +156,12 @@ pub(all) struct Decl {
 } derive(Debug, Eq)
 
 ///|
+pub extend Decl with Debug::{to_repr}
+
+///|
+pub extend Decl with Eq::{not_equal, equal}
+
+///|
 /// What a declaration's braces hold.
 pub(all) enum Body {
   /// Statements: `receive` / `intent` / `set` / `enrich` / `enrichScope`.
@@ -148,11 +172,23 @@ pub(all) enum Body {
 } derive(Debug, Eq)
 
 ///|
+pub extend Body with Debug::{to_repr}
+
+///|
+pub extend Body with Eq::{not_equal, equal}
+
+///|
 pub(all) enum AssignOp {
   ASet // =
   AAdd // +=
   ASub // -=
 } derive(Debug, Eq)
+
+///|
+pub extend AssignOp with Debug::{to_repr}
+
+///|
+pub extend AssignOp with Eq::{not_equal, equal}
 
 ///|
 /// A statement. Statements end at a newline or a `;`.
@@ -206,6 +242,12 @@ pub(all) enum Stmt {
 } derive(Debug, Eq)
 
 ///|
+pub extend Stmt with Debug::{to_repr}
+
+///|
+pub extend Stmt with Eq::{not_equal, equal}
+
+///|
 /// The name a `new` was applied to, in the `tutuca/spec` spelling:
 /// `Label`, `Array[String]`, `Map[String, Int]`.
 ///
@@ -219,6 +261,12 @@ pub(all) struct TyRef {
   args : Array[TyRef]
   span : Span
 } derive(Debug, Eq)
+
+///|
+pub extend TyRef with Debug::{to_repr}
+
+///|
+pub extend TyRef with Eq::{not_equal, equal}
 
 ///|
 /// The name `new` writes and the statements under it read: `cur`.
@@ -315,7 +363,7 @@ declare pub fn TyRef::to_source(self : TyRef) -> String
 /// The mutating collection methods, receiver-first. Mirrors the
 /// runtime-generic mutators one for one with the `In<Field>At` infix dropped:
 /// `.items.push v` IS `pushInItems`.
-declare pub fn collection_method(name : String) -> Int?
+declare pub fn collection_method(name : String) -> Int32?
 
 ///|
 /// Which collection methods apply to a declared type. The ONE table, so a
@@ -331,4 +379,4 @@ declare pub fn collection_methods_for(t : @tutuca.Ty) -> Array[String]
 /// no `walk_path` and no way to name an intent's answer arms here: those and
 /// walking the dispatch path are the parts a small language would model badly,
 /// and they stay in MoonBit.
-declare pub fn effect_min_arity(name : String) -> Int?
+declare pub fn effect_min_arity(name : String) -> Int32?

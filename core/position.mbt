@@ -58,6 +58,12 @@ pub(all) enum Position {
 } derive(Debug, Eq)
 
 ///|
+pub extend Position with Debug::{to_repr}
+
+///|
+pub extend Position with Eq::{not_equal, equal}
+
+///|
 /// What a position answers about a form.
 ///
 /// Three answers rather than two, because "no" comes in two kinds and they are
@@ -72,6 +78,12 @@ pub(all) enum Admission {
   NotHere
   Refused(String)
 } derive(Debug, Eq)
+
+///|
+pub extend Admission with Debug::{to_repr}
+
+///|
+pub extend Admission with Eq::{not_equal, equal}
 
 ///|
 /// The ten flat shapes a slot's admission table is written over.

@@ -59,7 +59,7 @@ pub(all) struct MacroDef {
 /// The state one file's views are built with: the node ids handed out, the
 /// event table they index, and the macros the file declares.
 pub struct ViewBuilder {
-  mut next_id : Int
+  mut next_id : Int32
   /// The namespace elements are being built in.
   ///
   /// An element inside `<svg>` is in the SVG namespace, and the HTML parser
@@ -99,7 +99,7 @@ pub(all) struct Slots {
 
 ///|
 pub fn ViewBuilder::new(
-  macros? : Map[String, MacroDef] = Map([]),
+  macros~ : Map[String, MacroDef] = Map([]),
   config? : Map[String, String],
 ) -> ViewBuilder {
   {
@@ -117,7 +117,7 @@ pub fn ViewBuilder::new(
 /// The next registration id. Ids only have to be unique and to match what the
 /// tree carries — `ParseContext::from_ir` recovers the node array from the tree
 /// by reading them back — so a counter is the whole of it.
-fn ViewBuilder::alloc(self : ViewBuilder) -> Int {
+fn ViewBuilder::alloc(self : ViewBuilder) -> Int32 {
   let id = self.next_id
   self.next_id = id + 1
   id
@@ -131,7 +131,7 @@ fn ViewBuilder::alloc(self : ViewBuilder) -> Int {
 fn ViewBuilder::register(
   self : ViewBuilder,
   events : Array[@anode.NodeEvent],
-) -> Int {
+) -> Int32 {
   self.handlers.push(events)
   self.handlers.length() - 1
 }
@@ -196,7 +196,7 @@ pub fn macros_of(
 pub fn ViewBuilder::view(
   self : ViewBuilder,
   decl : @tutufile.Decl,
-  style? : String = "",
+  style~ : String = "",
 ) -> @anode.View raise ExError {
   let childs = []
   let css = StringBuilder()
@@ -266,7 +266,7 @@ pub fn style_is_global(decl : @tutufile.Decl) -> Bool {
 /// The CSS a `style()` group holds, or `None` when the group is not one.
 fn style_body(
   group : @ast.Node,
-  global? : Bool = false,
+  global~ : Bool = false,
 ) -> String? raise ExError {
   guard group.it is Group(parts) && parts.length() >= 1 else { return None }
   guard parts[0].it is Id("style") else { return None }

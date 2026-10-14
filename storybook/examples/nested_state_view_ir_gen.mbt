@@ -112,18 +112,18 @@ pub fn nested_state_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn nested_state_component(
-  name? : String = "NestedState",
-  views? : Map[String, @anode.View] = nested_state_views(),
-  initial? : NestedStateState = NestedStateState::zero(),
-  common_style? : String = nested_state_common_style,
-  global_style? : String = nested_state_global_style,
+  name~ : String = "NestedState",
+  views~ : Map[String, @anode.View] = nested_state_views(),
+  initial~ : NestedStateState = NestedStateState::zero(),
+  common_style~ : String = nested_state_common_style,
+  global_style~ : String = nested_state_global_style,
   update? : (NestedStateState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     NestedStateState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

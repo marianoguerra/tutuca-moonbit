@@ -22,9 +22,9 @@ priv struct C {
   mut decl_name : String
   /// Which declarations the block itself makes, by name: predicates and
   /// computes are callable, and everything else is not.
-  callable : Map[String, Int]
+  callable : Map[String, Int32]
   /// The callables a `requires` / `ensures` may name, by name and arity.
-  predicate : Map[String, Int]
+  predicate : Map[String, Int32]
   /// True inside `enrich` / `bind_with`, the only kinds that may assign a
   /// binding.
   mut binds_assignable : Bool
@@ -96,8 +96,8 @@ pub fn Surface::empty() -> Surface {
 /// Every span here is relative to the SPEC block; rebase with
 /// `@viewfile.ViewFile::state_block`.
 pub fn check_rules(def : @statedef.StateDef) -> Array[Finding] {
-  let callable : Map[String, Int] = Map([])
-  let predicate : Map[String, Int] = Map([])
+  let callable : Map[String, Int32] = Map([])
+  let predicate : Map[String, Int32] = Map([])
   for r in def.rules {
     callable[r.name] = 0
     predicate[r.name] = 0
@@ -153,17 +153,17 @@ fn rebase(s : @statedef.Span) -> @tutuca.Span {
 pub fn check(
   decls : Array[@tscript.Decl],
   def : @statedef.StateDef,
-  surface? : Surface = Surface::empty(),
+  surface~ : Surface = Surface::empty(),
 ) -> Array[Finding] {
   // Collected first, because a body may apply a predicate declared BELOW it.
   // Declaration order is only a termination proof for predicates calling
   // predicates, which is a rule for a later pass; nothing here needs order.
-  let callable : Map[String, Int] = Map([])
+  let callable : Map[String, Int32] = Map([])
   // The subset a contract may name. Separate rather than a flag on the map
   // above, because the two questions are different: "can a body apply this" is
   // answered by every value body, and "is this a rule" only by the two kinds
   // that declare their answer to be a yes or a no.
-  let predicate : Map[String, Int] = Map([])
+  let predicate : Map[String, Int32] = Map([])
   // The spec block's rules FIRST, because that is where a `pred` and an
   // `invariant` now live: a rule is not behaviour — no statements, no effects,
   // no parameters — and an invariant in particular has nowhere per-handler to

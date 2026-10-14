@@ -7,7 +7,7 @@
 /// that checks the status saw success and went on to read whatever `.wasm` was
 /// already at that path. A stale artifact is worse than none: the build that
 /// produced it succeeded once, so nothing about it looks wrong.
-extern "c" fn process_exit(code : Int) = "exit"
+extern "c" fn process_exit(code : Int32) = "exit"
 
 ///|
 fn main raise {

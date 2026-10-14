@@ -162,6 +162,7 @@ fn emit_user_types(
           out.write_string("  \{f.binding} : \{def.moonbit_ty(f.ty)}\n")
         }
         out.write_string("} derive(\{derives})\n\n")
+        emit_extends(ty.name, derives, out)
       }
       UEnum(cases) => {
         out.write_string("///|\n")
@@ -171,6 +172,7 @@ fn emit_user_types(
           out.write_string("  \{c.1}\n")
         }
         out.write_string("} derive(\{derives})\n\n")
+        emit_extends(ty.name, derives, out)
       }
       UVariant(cases) => {
         out.write_string("///|\n")
@@ -185,6 +187,7 @@ fn emit_user_types(
           }
         }
         out.write_string("} derive(\{derives})\n\n")
+        emit_extends(ty.name, derives, out)
       }
       // A `flags` set is Map-backed at runtime like any other set, so it
       // contributes no MoonBit type — only the member list, which the specs
@@ -235,6 +238,7 @@ fn emit_state_struct(
     // `\{t}State::default()` relies on an implicit promotion the compiler now
     // deprecates. See `emit_zero` and the decoder.
     out.write_string("pub(all) struct \{t}State {} derive(Default)\n\n")
+    emit_extends("\{t}State", "Default", out)
     return
   }
   out.write_string("pub(all) struct \{t}State {\n")

@@ -64,7 +64,7 @@ pub fn contact_directory_module() -> @component.ModuleDef {
 
 ///|
 pub fn demo_intents(
-  later? : (() -> Unit) -> Unit = f => f(),
+  later~ : (() -> Unit) -> Unit = f => f(),
 ) -> Map[String, Array[@component.IntentFn]] {
   let documents : Map[String, @tutuca.Value] = {
     "welcome": Str("# Welcome"),

@@ -65,7 +65,7 @@ pub fn Meta::to_comment_text(self : Meta) -> String {
 fn write_json_string(sb : StringBuilder, s : String) -> Unit {
   for c in s {
     if c < ' ' || c > '~' || c == '"' || c == '\\' {
-      sb.write_string((s.to_json() : Json).stringify())
+      sb.write_string((Json(s) : Json).stringify())
       return
     }
   }
@@ -157,7 +157,7 @@ pub fn Meta::parse(text : String) -> Meta? {
   let j = @json.parse(inner.to_owned()) catch { _ => return None }
   match j {
     { "$": "Comp", "cid": Number(cid, ..), "vid": String(vid), .. } as obj => {
-      let nid : Int? = match obj {
+      let nid : Int32? = match obj {
         { "nid": Number(n, ..), .. } => Some(n.to_int())
         _ => None
       }

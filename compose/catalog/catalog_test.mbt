@@ -11,10 +11,10 @@ fn manifest(module_ : String, comps : Array[Json]) -> Json {
 ///|
 fn comp(
   name : String,
-  doc? : String = "",
-  module_? : String = "",
-  implements? : Array[String] = [],
-  fields? : Array[String] = [],
+  doc~ : String = "",
+  module_~ : String = "",
+  implements~ : Array[String] = [],
+  fields~ : Array[String] = [],
 ) -> Json {
   let out : Map[String, Json] = {
     "name": Json::string(name),

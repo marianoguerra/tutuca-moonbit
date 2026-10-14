@@ -1,10 +1,8 @@
 import {
   "marianoguerra/tutuca/core" @tutuca,
-  "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/render",
   "marianoguerra/tutuca/transactor",
-  "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/filter",
   "marianoguerra/tutuca/vdom/filter/markup",
@@ -18,6 +16,7 @@ import {
 import {
   "marianoguerra/tutuca/vdom/memdom",
   "marianoguerra/tutuca/vdom/filter/markdown" @mdfilter,
+  "marianoguerra/tutuca/anode",
 } for "test"
 
 // Warning 73 (`unnecessary_annotation`) is off HERE and nowhere else, for one

@@ -120,11 +120,11 @@ pub fn dn_d_example_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn dn_d_example_component(
-  name? : String = "DnDExample",
-  views? : Map[String, @anode.View] = dn_d_example_views(),
-  initial? : DnDExampleState = DnDExampleState::zero(),
-  common_style? : String = dn_d_example_common_style,
-  global_style? : String = dn_d_example_global_style,
+  name~ : String = "DnDExample",
+  views~ : Map[String, @anode.View] = dn_d_example_views(),
+  initial~ : DnDExampleState = DnDExampleState::zero(),
+  common_style~ : String = dn_d_example_common_style,
+  global_style~ : String = dn_d_example_global_style,
   update? : (DnDExampleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     DnDExampleState,
   ],
@@ -135,10 +135,10 @@ pub fn dn_d_example_component(
     @tutuca.Value,
     &@tutuca.Stack,
   ) -> Bool)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

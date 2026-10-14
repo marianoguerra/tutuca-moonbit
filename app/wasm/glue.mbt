@@ -12,7 +12,7 @@
 extern "wasm" fn tdom_has_prop(obj : @core.Any, name : String) -> Bool = "tdom" "has_prop"
 
 ///|
-extern "wasm" fn tdom_get_int(obj : @core.Any, name : String) -> Int = "tdom" "get_int"
+extern "wasm" fn tdom_get_int(obj : @core.Any, name : String) -> Int32 = "tdom" "get_int"
 
 ///|
 extern "wasm" fn tdom_get_bool(obj : @core.Any, name : String) -> Bool = "tdom" "get_bool"
@@ -327,7 +327,7 @@ pub fn element_by_id(doc : @wdom.WasmNode, id : String) -> @wdom.WasmNode? {
 pub fn mount_in(
   m : @component.ModuleDef,
   root_name : String,
-  id? : String = "app",
+  id~ : String = "app",
   args? : Map[String, @tutuca.Value],
   markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter,
 ) -> @app.App[@wdom.WasmNode]? {

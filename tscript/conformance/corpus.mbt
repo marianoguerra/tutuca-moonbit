@@ -41,6 +41,12 @@ pub(all) struct CaseEffect {
 } derive(Debug, Eq)
 
 ///|
+pub extend CaseEffect with Debug::{to_repr}
+
+///|
+pub extend CaseEffect with Eq::{not_equal, equal}
+
+///|
 /// The printed form — derived from what the corpus stores. Two adapters still
 /// compare against it, because what they have in hand is a line their own
 /// recorder wrote.
@@ -62,9 +68,9 @@ pub fn CaseEffect::printed(self : CaseEffect) -> String {
 /// A `send`, and the others by the same shape.
 pub fn effect(
   kind : String,
-  name? : String = "",
-  args? : Array[@tutuca.Value] = [],
-  route? : String = "",
+  name~ : String = "",
+  args~ : Array[@tutuca.Value] = [],
+  route~ : String = "",
 ) -> CaseEffect {
   { kind, name, args, route, }
 }
@@ -105,6 +111,12 @@ pub(all) enum ValueRole {
 } derive(Debug, Eq)
 
 ///|
+pub extend ValueRole with Debug::{to_repr}
+
+///|
+pub extend ValueRole with Eq::{not_equal, equal}
+
+///|
 /// A value body's answer, in the shape its role returns.
 ///
 /// `ANothing` is the case worth having a corpus for, exactly as `after: None`
@@ -116,6 +128,12 @@ pub(all) enum Answer {
   ABinds(Map[String, @tutuca.Value])
   ANothing
 } derive(Debug, Eq)
+
+///|
+pub extend Answer with Debug::{to_repr}
+
+///|
+pub extend Answer with Eq::{not_equal, equal}
 
 ///|
 /// What an answer reads as in a failure message. Both adapters print one, so
@@ -141,6 +159,9 @@ pub impl Show for Answer with fn output(self, logger) {
     },
   )
 }
+
+///|
+pub extend Answer with Show::{to_string, output}
 
 ///|
 /// The printed form of an effect, which is what a case compares against.
@@ -218,10 +239,10 @@ fn value_case(
   name : String,
   script : String,
   callable : String,
-  role? : ValueRole = VMethod,
-  args? : Array[@tutuca.Value] = [],
-  key? : @tutuca.Value = Null,
-  value? : @tutuca.Value = Null,
+  role~ : ValueRole = VMethod,
+  args~ : Array[@tutuca.Value] = [],
+  key~ : @tutuca.Value = Null,
+  value~ : @tutuca.Value = Null,
   answer~ : Answer,
 ) -> ValueCase {
   {
@@ -439,6 +460,12 @@ pub(all) enum Bucket {
 } derive(Debug, Eq)
 
 ///|
+pub extend Bucket with Debug::{to_repr}
+
+///|
+pub extend Bucket with Eq::{not_equal, equal}
+
+///|
 /// One transition, stated so that any backend can be held to it.
 ///
 /// A schema, a script, a starting state, a dispatch, and what the state and
@@ -493,9 +520,9 @@ fn recv_case(
   name : String,
   script : String,
   handler : String,
-  args? : Array[@tutuca.Value] = [],
+  args~ : Array[@tutuca.Value] = [],
   after~ : Map[String, @tutuca.Value]?,
-  effects? : Array[CaseEffect] = [],
+  effects~ : Array[CaseEffect] = [],
 ) -> Case {
   {
     name,
@@ -516,9 +543,9 @@ fn intent_case(
   name : String,
   script : String,
   handler : String,
-  args? : Array[@tutuca.Value] = [],
+  args~ : Array[@tutuca.Value] = [],
   after~ : Map[String, @tutuca.Value]?,
-  effects? : Array[CaseEffect] = [],
+  effects~ : Array[CaseEffect] = [],
 ) -> Case {
   {
     name,

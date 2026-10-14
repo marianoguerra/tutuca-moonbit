@@ -53,8 +53,8 @@ pub fn fragment(childs : Array[Vdom]) -> Vdom {
 /// ```
 pub fn h(
   tag : String,
-  attrs? : Map[String, AttrValue] = Map([]),
-  childs? : Array[Vdom] = [],
+  attrs~ : Map[String, AttrValue] = Map([]),
+  childs~ : Array[Vdom] = [],
   key? : String,
   ns? : Ns,
 ) -> Vdom {
@@ -104,7 +104,7 @@ pub fn h(
     }
   }
   let tag = if ns is None &&
-    tag.get_char(0) is Some('a'..='z') &&
+    tag.get_char(0) is Some('a'..<='z') &&
     tag == tag.to_lower() {
     tag.to_upper()
   } else {

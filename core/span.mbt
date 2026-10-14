@@ -21,9 +21,15 @@
 /// a span from a slot value and a span from the file agree for any input,
 /// astral characters included.
 pub(all) struct Span {
-  start : Int
-  end_ : Int
+  start : Int32
+  end_ : Int32
 } derive(Debug, Eq)
+
+///|
+pub extend Span with Debug::{to_repr}
+
+///|
+pub extend Span with Eq::{not_equal, equal}
 
 ///|
 /// The empty span, for a value with no source of its own — a `^macro`

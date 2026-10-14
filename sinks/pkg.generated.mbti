@@ -19,6 +19,9 @@ pub(all) struct SinkHints {
 pub fn SinkHints::all() -> Self
 pub fn SinkHints::any(Self) -> Bool
 pub fn SinkHints::empty() -> Self
+pub fn SinkHints::equal(Self, Self) -> Bool
+pub fn SinkHints::not_equal(Self, Self) -> Bool
+pub fn SinkHints::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

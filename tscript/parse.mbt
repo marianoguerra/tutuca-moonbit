@@ -47,10 +47,10 @@ fn val_in_position(val : @tutuca.Expr, pos : @tutuca.Position) -> Bool {
 /// trailing `?` (lets predicate names parse as ordinary Name tokens).
 fn is_valid_val_id(s : String) -> Bool {
   let chars : Array[Char] = s.iter().collect()
-  guard chars.get(0) is Some('a'..='z' | 'A'..='Z') else { return false }
+  guard chars.get(0) is Some('a'..<='z' | 'A'..<='Z') else { return false }
   let mut i = 1
   while i < chars.length() &&
-        chars[i] is ('a'..='z' | 'A'..='Z' | '0'..='9' | '_') {
+        chars[i] is ('a'..<='z' | 'A'..<='Z' | '0'..<='9' | '_') {
     i = i + 1
   }
   if i < chars.length() && chars[i] == '?' {
@@ -65,7 +65,7 @@ fn is_float_literal(s : String) -> Bool {
   let chars : Array[Char] = s.iter().collect()
   let mut i = if chars.get(0) is Some('-') { 1 } else { 0 }
   let int_start = i
-  while i < chars.length() && chars[i] is ('0'..='9') {
+  while i < chars.length() && chars[i] is ('0'..<='9') {
     i = i + 1
   }
   if i == int_start {
@@ -74,7 +74,7 @@ fn is_float_literal(s : String) -> Bool {
   if i < chars.length() && chars[i] == '.' {
     i = i + 1
     let frac_start = i
-    while i < chars.length() && chars[i] is ('0'..='9') {
+    while i < chars.length() && chars[i] is ('0'..<='9') {
       i = i + 1
     }
     if i == frac_start {
@@ -187,10 +187,10 @@ fn parse_tok(tok : Token, ctx : ParseCtx) -> @tutuca.Expr? {
           Some(@tutuca.Expr::event_path(segments, span~))
         }
       }
-      if c0 is ('a'..='z') {
+      if c0 is ('a'..<='z') {
         return mk_id(s, n => @tutuca.Expr::name(n, span~))
       }
-      if c0 is ('A'..='Z') {
+      if c0 is ('A'..<='Z') {
         return mk_id(s, n => @tutuca.Expr::type_name(n, span~))
       }
       None
@@ -208,7 +208,7 @@ fn mk_id(name : String, make : (String) -> @tutuca.Expr) -> @tutuca.Expr? {
 }
 
 ///|
-fn find_char(s : String, c : Char) -> Int? {
+fn find_char(s : String, c : Char) -> Int32? {
   let mut i = 0
   for ch in s {
     if ch == c {
@@ -568,8 +568,8 @@ fn resolve_expr(
     // reader is looking at.
     EName(name~, span~) =>
       match name.get_char(0) {
-        Some('A'..='Z') => Some(@tutuca.Expr::type_name(name, span~))
-        Some('a'..='z') => Some(e)
+        Some('A'..<='Z') => Some(@tutuca.Expr::type_name(name, span~))
+        Some('a'..<='z') => Some(e)
         _ => refuse("`\{name}` is not a name", span)
       }
     _ => Some(e)

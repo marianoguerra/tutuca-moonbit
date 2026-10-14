@@ -19,9 +19,5 @@ import {
   // resolves under, and the allowlist the safe one holds steps to — see
   // `view_authority.mbt`'s `check_event_paths`.
   "marianoguerra/tutuca/eventpath",
-  "moonbitlang/core/debug",
   "moonbitlang/core/string",
 }
-
-import {
-} for "test"

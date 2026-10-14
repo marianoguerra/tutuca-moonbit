@@ -150,18 +150,18 @@ pub fn person_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn person_component(
-  name? : String = "Person",
-  views? : Map[String, @anode.View] = person_views(),
-  initial? : PersonState = PersonState::zero(),
-  common_style? : String = person_common_style,
-  global_style? : String = person_global_style,
+  name~ : String = "Person",
+  views~ : Map[String, @anode.View] = person_views(),
+  initial~ : PersonState = PersonState::zero(),
+  common_style~ : String = person_common_style,
+  global_style~ : String = person_global_style,
   update? : (PersonState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     PersonState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -227,18 +227,18 @@ pub fn strategies_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn strategies_component(
-  name? : String = "Strategies",
-  views? : Map[String, @anode.View] = strategies_views(),
-  initial? : StrategiesState = StrategiesState::zero(),
-  common_style? : String = strategies_common_style,
-  global_style? : String = strategies_global_style,
+  name~ : String = "Strategies",
+  views~ : Map[String, @anode.View] = strategies_views(),
+  initial~ : StrategiesState = StrategiesState::zero(),
+  common_style~ : String = strategies_common_style,
+  global_style~ : String = strategies_global_style,
   update? : (StrategiesState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     StrategiesState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -383,11 +383,11 @@ pub fn naive_people_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn naive_people_component(
-  name? : String = "NaivePeople",
-  views? : Map[String, @anode.View] = naive_people_views(),
-  initial? : NaivePeopleState = NaivePeopleState::zero(),
-  common_style? : String = naive_people_common_style,
-  global_style? : String = naive_people_global_style,
+  name~ : String = "NaivePeople",
+  views~ : Map[String, @anode.View] = naive_people_views(),
+  initial~ : NaivePeopleState = NaivePeopleState::zero(),
+  common_style~ : String = naive_people_common_style,
+  global_style~ : String = naive_people_global_style,
   update? : (NaivePeopleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     NaivePeopleState,
   ],
@@ -407,10 +407,10 @@ pub fn naive_people_component(
     @tutuca.Value,
     @component.LoopCtx,
   ) -> @component.LoopWith)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

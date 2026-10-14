@@ -36,8 +36,8 @@ pub type MemHarness = Harness[@memdom.MemNode]
 pub fn mount(
   m : @component.ModuleDef,
   root : String,
-  args? : Map[String, @tutuca.Value] = Map([]),
-  view? : String = "",
+  args~ : Map[String, @tutuca.Value] = Map([]),
+  view~ : String = "",
   markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter,
 ) -> Harness[@memdom.MemNode] raise {
   let (doc, container) = new_mount()
@@ -263,7 +263,7 @@ pub fn[N : @vdom.DomWalk] Harness::find_all(
 pub fn[N : @vdom.DomWalk] Harness::find(
   self : Harness[N],
   sel : String,
-  nth? : Int = 0,
+  nth~ : Int32 = 0,
 ) -> N raise {
   let s = parse_selector(sel)
   let mut seen = 0
@@ -300,7 +300,7 @@ pub fn[N : @vdom.DomWalk] Harness::find(
 pub fn[N : @vdom.DomWalk] Harness::text(
   self : Harness[N],
   sel : String,
-  nth? : Int = 0,
+  nth~ : Int32 = 0,
 ) -> String raise {
   node_text(self.find(sel, nth~))
 }
@@ -360,7 +360,7 @@ pub fn[N : @vdom.DomWalk] Harness::attr(
   self : Harness[N],
   sel : String,
   name : String,
-  nth? : Int = 0,
+  nth~ : Int32 = 0,
 ) -> String? raise {
   self.find(sel, nth~).attribute(name)
 }
@@ -373,7 +373,7 @@ pub fn Harness::prop(
   self : Harness[@memdom.MemNode],
   sel : String,
   name : String,
-  nth? : Int = 0,
+  nth~ : Int32 = 0,
 ) -> @vdom.AttrValue? raise {
   self.find(sel, nth~).get_property(name)
 }
@@ -385,7 +385,7 @@ pub fn Harness::prop(
 pub fn[N : @vdom.DomWalk] Harness::ns_of(
   self : Harness[N],
   sel : String,
-  nth? : Int = 0,
+  nth~ : Int32 = 0,
 ) -> String raise {
   match @vdom.DomNode::namespace_uri(self.find(sel, nth~)) {
     Some(Svg) => "svg"
@@ -400,7 +400,7 @@ pub fn[N : @vdom.DomWalk] Harness::ns_of(
 pub fn Harness::checked_of(
   self : Harness[@memdom.MemNode],
   sel : String,
-  nth? : Int = 0,
+  nth~ : Int32 = 0,
 ) -> Bool raise {
   self.prop(sel, "checked", nth~) is Some(Bool(true))
 }
@@ -410,7 +410,7 @@ pub fn Harness::checked_of(
 pub fn Harness::value_of(
   self : Harness[@memdom.MemNode],
   sel : String,
-  nth? : Int = 0,
+  nth~ : Int32 = 0,
 ) -> String raise {
   match self.prop(sel, "value", nth~) {
     Some(Str(s)) => s
@@ -430,7 +430,7 @@ pub fn[N : @vdom.DomWalk] Harness::fire(
   self : Harness[N],
   sel : String,
   e : @render.DomEvent,
-  nth? : Int = 0,
+  nth~ : Int32 = 0,
 ) -> Unit raise {
   let node = self.find(sel, nth~)
   let _ = self.app.dispatch(node, e)
@@ -440,7 +440,7 @@ pub fn[N : @vdom.DomWalk] Harness::fire(
 pub fn[N : @vdom.DomWalk] Harness::click(
   self : Harness[N],
   sel : String,
-  nth? : Int = 0,
+  nth~ : Int32 = 0,
 ) -> Unit raise {
   self.fire(sel, @render.DomEvent::new(name="click"), nth~)
 }
@@ -451,7 +451,7 @@ pub fn[N : @vdom.DomWalk] Harness::type_into(
   self : Harness[N],
   sel : String,
   value : String,
-  nth? : Int = 0,
+  nth~ : Int32 = 0,
 ) -> Unit raise {
   self.fire(sel, @render.DomEvent::new(name="input", value=Str(value)), nth~)
 }
@@ -462,7 +462,7 @@ pub fn[N : @vdom.DomWalk] Harness::check(
   self : Harness[N],
   sel : String,
   checked : Bool,
-  nth? : Int = 0,
+  nth~ : Int32 = 0,
 ) -> Unit raise {
   self.fire(sel, @render.DomEvent::new(name="input", value=Bool(checked)), nth~)
 }
@@ -474,8 +474,8 @@ pub fn[N : @vdom.DomWalk] Harness::key_down(
   self : Harness[N],
   sel : String,
   key : String,
-  value? : @tutuca.Value = Null,
-  nth? : Int = 0,
+  value~ : @tutuca.Value = Null,
+  nth~ : Int32 = 0,
 ) -> Unit raise {
   self.fire(sel, @render.DomEvent::new(name="keydown", key~, value~), nth~)
 }
@@ -487,8 +487,8 @@ pub fn[N : @vdom.DomWalk] Harness::key_down(
 pub fn[N : @vdom.DomWalk] Harness::drag(
   self : Harness[N],
   sel : String,
-  from : Int,
-  to : Int,
+  from : Int32,
+  to : Int32,
 ) -> Unit raise {
   self.fire(sel, @render.DomEvent::new(name="dragstart"), nth=from)
   self.fire(sel, @render.DomEvent::new(name="dragover"), nth=to)
@@ -499,7 +499,7 @@ pub fn[N : @vdom.DomWalk] Harness::drag(
 ///|
 /// Renders performed so far — proves the batching invariant (one morph per
 /// drained cascade), and that an interaction re-rendered at all.
-pub fn[N] Harness::render_count(self : Harness[N]) -> Int {
+pub fn[N] Harness::render_count(self : Harness[N]) -> Int32 {
   self.app.render_count
 }
 
@@ -518,7 +518,7 @@ pub fn[N] Harness::styles(self : Harness[N]) -> String {
 pub fn[N] Harness::send_at_root(
   self : Harness[N],
   name : String,
-  args? : Array[@tutuca.Value] = [],
+  args~ : Array[@tutuca.Value] = [],
 ) -> Unit {
   let first = self.app.send_at_root(name, args~)
   if first.pending {

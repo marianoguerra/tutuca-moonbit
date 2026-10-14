@@ -191,11 +191,11 @@ fn push_view_inline_update(
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn push_view_component(
-  name? : String = "PushView",
-  views? : Map[String, @anode.View] = push_view_views(),
-  initial? : PushViewState = PushViewState::zero(),
-  common_style? : String = push_view_common_style,
-  global_style? : String = push_view_global_style,
+  name~ : String = "PushView",
+  views~ : Map[String, @anode.View] = push_view_views(),
+  initial~ : PushViewState = PushViewState::zero(),
+  common_style~ : String = push_view_common_style,
+  global_style~ : String = push_view_global_style,
   update? : (PushViewState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     PushViewState,
   ],
@@ -211,10 +211,10 @@ pub fn push_view_component(
     @tutuca.Value,
     &@tutuca.Stack,
   ) -> Bool)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -348,11 +348,11 @@ pub fn seq_item_access_views() -> Map[String, @anode.View] {
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn seq_item_access_component(
-  name? : String = "SeqItemAccess",
-  views? : Map[String, @anode.View] = seq_item_access_views(),
-  initial? : SeqItemAccessState = SeqItemAccessState::zero(),
-  common_style? : String = seq_item_access_common_style,
-  global_style? : String = seq_item_access_global_style,
+  name~ : String = "SeqItemAccess",
+  views~ : Map[String, @anode.View] = seq_item_access_views(),
+  initial~ : SeqItemAccessState = SeqItemAccessState::zero(),
+  common_style~ : String = seq_item_access_common_style,
+  global_style~ : String = seq_item_access_global_style,
   update? : (SeqItemAccessState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SeqItemAccessState,
   ],
@@ -361,10 +361,10 @@ pub fn seq_item_access_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -598,11 +598,11 @@ fn pagination_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn pagination_component(
-  name? : String = "Pagination",
-  views? : Map[String, @anode.View] = pagination_views(),
-  initial? : PaginationState = PaginationState::zero(),
-  common_style? : String = pagination_common_style,
-  global_style? : String = pagination_global_style,
+  name~ : String = "Pagination",
+  views~ : Map[String, @anode.View] = pagination_views(),
+  initial~ : PaginationState = PaginationState::zero(),
+  common_style~ : String = pagination_common_style,
+  global_style~ : String = pagination_global_style,
   update? : (PaginationState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     PaginationState,
   ],
@@ -616,10 +616,10 @@ pub fn pagination_component(
     @tutuca.Value,
     @component.LoopCtx,
   ) -> @component.LoopWith)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

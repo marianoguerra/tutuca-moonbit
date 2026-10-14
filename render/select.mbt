@@ -3,23 +3,29 @@
 
 ///|
 pub(all) struct Crossing {
-  cid : Int
+  cid : Int32
   vid : String
   path : @tutuca.DispatchPath
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend Crossing with Eq::{not_equal, equal}
+
+///|
+pub extend Crossing with Debug::{to_repr}
 
 ///|
 pub fn[N : @vdom.DomWalk] components_at(
   node : N,
   root_node : N,
   comps : &Boundaries,
-  max_depth? : Int = 1000000,
+  max_depth~ : Int32 = 1000000,
 ) -> Array[Crossing] {
   let parts : Array[PathPart] = []
   let refs : Array[NodeRef] = []
-  let crossings : Array[(Int, String, Int)] = []
+  let crossings : Array[(Int32, String, Int32)] = []
 
-  fn cross(cid : Int, vid : String) -> Unit {
+  fn cross(cid : Int32, vid : String) -> Unit {
     match resolve_path_part(comps, cid, vid, refs) {
       Some(part) => parts.push(part)
       None => ()

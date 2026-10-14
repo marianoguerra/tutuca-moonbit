@@ -61,7 +61,7 @@ pub impl ViewResolver for @component.Components with fn resolve_view(
 ///|
 fn view_ctx(
   comps : @component.Components,
-  cid : Int,
+  cid : Int32,
   vid : String,
 ) -> @anode.ParseContext? {
   match comps.get_component_for_id(cid) {

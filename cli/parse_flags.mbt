@@ -23,6 +23,12 @@ pub(all) enum FlagValue {
 } derive(Debug, Eq)
 
 ///|
+pub extend FlagValue with Debug::{to_repr}
+
+///|
+pub extend FlagValue with Eq::{not_equal, equal}
+
+///|
 /// `Some(value)` for a string flag that was given, `None` otherwise.
 pub fn ParsedArgs::str(self : ParsedArgs, name : String) -> String? {
   match self.flags.get(name) {

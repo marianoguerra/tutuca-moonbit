@@ -50,6 +50,6 @@ pub fn refresh_margaui() -> Unit {
 ///
 /// An export for the reason `on_event` is one: a closure cannot cross into JS
 /// on wasm-gc, so an asynchronous read is answered by calling back IN.
-pub fn on_file_text(req_id : Int, ok : Bool, text : String) -> Unit {
+pub fn on_file_text(req_id : Int32, ok : Bool, text : String) -> Unit {
   @panelsw.on_file_text(req_id, ok, text)
 }

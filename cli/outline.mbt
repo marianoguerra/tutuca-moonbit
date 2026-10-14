@@ -17,6 +17,12 @@ pub(all) struct OutlinePlan {
 } derive(Debug, Eq)
 
 ///|
+pub extend OutlinePlan with Debug::{to_repr}
+
+///|
+pub extend OutlinePlan with Eq::{not_equal, equal}
+
+///|
 /// Parse `outline` arguments.
 fn run_outline(args : Array[String], opts : GlobalOpts) -> Outcome {
   let parsed = match parse_flags(args, command_spec("outline")) {
@@ -137,7 +143,7 @@ fn outline_entry(d : @tutufile.Decl) -> String {
 
 ///|
 /// Left-align a column so the section names line up.
-fn pad(text : String, width : Int) -> String {
+fn pad(text : String, width : Int32) -> String {
   let out = StringBuilder()
   out.write_string(text)
   for _ in text.length()..<width {

@@ -27,7 +27,7 @@ import {
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/wasm" @wdom,
   // @core.Any: the DOM event the host's exported on_event receives from JS
-  "mizchi/js/core",
+  "mizchi/js_core" @core,
 }
 
 supported_targets = "wasm-gc"

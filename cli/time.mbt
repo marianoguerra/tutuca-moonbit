@@ -20,7 +20,7 @@ pub fn iso8601_utc(ms : UInt64) -> String {
   let day = doy - (153 * mp + 2) / 5 + 1
   let month = if mp < 10 { mp + 3 } else { mp - 9 }
   let year = yoe + era * 400 + (if month <= 2 { 1 } else { 0 })
-  let p2 = (n : Int) => n.to_string().pad_start(2, '0')
+  let p2 = (n : Int32) => n.to_string().pad_start(2, '0')
   "\{year.to_string().pad_start(4, '0')}-\{p2(month)}-\{p2(day)}" +
   "T\{p2(hour)}:\{p2(minute)}:\{p2(second)}.\{milli.to_string().pad_start(3, '0')}Z"
 }

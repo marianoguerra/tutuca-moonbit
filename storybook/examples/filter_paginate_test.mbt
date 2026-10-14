@@ -4,7 +4,7 @@
 
 ///|
 test "filter-paginate: all three strategies render the same first page" {
-  let h = @harness.mount_example(filter_paginate_module(), "Default")
+  let h = @harness.mount_example(@examples.filter_paginate_module(), "Default")
   // 14 people, pageSize 5 -> first page is 5 rows, in each of the 3 sections
   inspect(h.find_all("section").length(), content="3")
   inspect(h.find_all("li").length(), content="15") // 5 per strategy
@@ -46,7 +46,10 @@ test "filter-paginate: all three strategies render the same first page" {
 
 ///|
 test "filter-paginate: paging one strategy keeps ORIGINAL keys" {
-  let h = @harness.mount_example(filter_paginate_module(), "Shared alone")
+  let h = @harness.mount_example(
+    @examples.filter_paginate_module(),
+    "Shared alone",
+  )
   inspect(h.text(".pglabel"), content="Page 1 of 3 · 14 matches")
   debug_inspect(
     h.texts(".badge"),
@@ -76,7 +79,10 @@ test "filter-paginate: paging one strategy keeps ORIGINAL keys" {
 
 ///|
 test "filter-paginate: filtering pages the MATCHES, not the raw list" {
-  let h = @harness.mount_example(filter_paginate_module(), "Shared alone")
+  let h = @harness.mount_example(
+    @examples.filter_paginate_module(),
+    "Shared alone",
+  )
   h.type_into(".q", "nasa")
   // 2 of 14 match "nasa" (Margaret Hamilton, Katherine Johnson)
   inspect(h.text(".pglabel"), content="Page 1 of 1 · 2 matches")
@@ -91,7 +97,10 @@ test "filter-paginate: filtering pages the MATCHES, not the raw list" {
 
 ///|
 test "filter-paginate: searching resets to page 0 (never stranded)" {
-  let h = @harness.mount_example(filter_paginate_module(), "Shared alone")
+  let h = @harness.mount_example(
+    @examples.filter_paginate_module(),
+    "Shared alone",
+  )
   h.click(".next")
   h.click(".next") // now on page 3
   inspect(h.text(".pglabel"), content="Page 3 of 3 · 14 matches")
@@ -109,7 +118,7 @@ test "filter-paginate: searching resets to page 0 (never stranded)" {
 test "filter-paginate: the naive and coupled strategies agree with shared" {
   // drive all three at once via the Strategies root, then filter — the point of
   // the example is that the three internal approaches are indistinguishable
-  let h = @harness.mount_example(filter_paginate_module(), "Default")
+  let h = @harness.mount_example(@examples.filter_paginate_module(), "Default")
   h.type_into(".q", "nasa", nth=0) // naive
   h.type_into(".q", "nasa", nth=1) // shared
   h.type_into(".q", "nasa", nth=2) // coupled
@@ -133,7 +142,10 @@ test "filter-paginate: the naive and coupled strategies agree with shared" {
 
 ///|
 test "filter-paginate: editing a row on a filtered page hits the right person" {
-  let h = @harness.mount_example(filter_paginate_module(), "Shared alone")
+  let h = @harness.mount_example(
+    @examples.filter_paginate_module(),
+    "Shared alone",
+  )
   h.type_into(".q", "nasa")
   // each row is its own Person component: rename the second match (Katherine)
   h.type_into("input.name", "Katherine G. Johnson", nth=1)

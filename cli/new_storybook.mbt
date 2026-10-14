@@ -24,6 +24,12 @@ pub(all) struct StorybookScaffoldPlan {
 } derive(Debug, Eq)
 
 ///|
+pub extend StorybookScaffoldPlan with Debug::{to_repr}
+
+///|
+pub extend StorybookScaffoldPlan with Eq::{not_equal, equal}
+
+///|
 let new_storybook_help : String =
   #|tutuca new-storybook <name> [--dir <path>] [--dry-run] [--force]
   #|

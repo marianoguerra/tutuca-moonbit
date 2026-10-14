@@ -40,7 +40,7 @@ test "a component that renders itself renders a marker, not a stack overflow" {
 }
 
 ///|
-fn count_of(haystack : String, needle : String) -> Int {
+fn count_of(haystack : String, needle : String) -> Int32 {
   let mut n = 0
   let mut rest = haystack
   while rest.find(needle) is Some(at) {

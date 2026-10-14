@@ -3,8 +3,10 @@ package "marianoguerra/tutuca/storybook/ui/wasm"
 
 import {
   "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/storybook",
   "marianoguerra/tutuca/storybook/ui",
+  "mizchi/js_core",
 }
 
 // Values
@@ -12,15 +14,15 @@ pub fn current_gallery() -> @app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode]?
 
 pub let default_theme_base_url : String
 
-pub fn mount(Array[@storybook.Section], root_id? : String, themes? : Array[String], panels? : @ui.PanelSet[@marianoguerra/tutuca/vdom/wasm.WasmNode], intents? : Map[String, Array[@marianoguerra/tutuca/core.IntentFn]], theme_base_url? : String) -> @app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode]?
+pub fn mount(Array[@storybook.Section], root_id? : String, themes? : Array[String], panels? : @ui.PanelSet[@marianoguerra/tutuca/vdom/wasm.WasmNode], intents? : Map[String, Array[@core.IntentFn]], theme_base_url? : String) -> @app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode]?
 
-pub fn on_event(@mizchi/js/core.Any, before? : (@marianoguerra/tutuca/vdom/wasm.WasmNode, String) -> Bool) -> Unit
+pub fn on_event(@js_core.Any, before? : (@marianoguerra/tutuca/vdom/wasm.WasmNode, String) -> Bool) -> Unit
 
 pub fn on_popstate() -> Unit
 
 pub fn refresh_margaui() -> Unit
 
-pub fn url_request_handlers(theme_base_url? : String) -> Map[String, Array[@marianoguerra/tutuca/core.IntentFn]]
+pub fn url_request_handlers(theme_base_url? : String) -> Map[String, Array[@core.IntentFn]]
 
 // Errors
 

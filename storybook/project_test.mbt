@@ -17,11 +17,11 @@ fn ex_(component : String, title : String) -> @component.ExampleDef {
 
 ///|
 test "slug lowercases, collapses and trims" {
-  assert_eq(slug("Basic Counter"), "basic-counter")
-  assert_eq(slug("Lists & Data"), "lists-data")
-  assert_eq(slug("  spaced  out  "), "spaced-out")
-  assert_eq(slug("Todo/List (v2)"), "todo-list-v2")
-  assert_eq(slug("!!!"), "")
+  assert_eq(@storybook.slug("Basic Counter"), "basic-counter")
+  assert_eq(@storybook.slug("Lists & Data"), "lists-data")
+  assert_eq(@storybook.slug("  spaced  out  "), "spaced-out")
+  assert_eq(@storybook.slug("Todo/List (v2)"), "todo-list-v2")
+  assert_eq(@storybook.slug("!!!"), "")
 }
 
 ///|
@@ -30,7 +30,7 @@ test "a story per declared example, in declaration order" {
     ex_("Counter", "Basic"),
     ex_("Counter", "Negative start"),
   ])
-  let stories = stories_of_module(m, section="Basics")
+  let stories = @storybook.stories_of_module(m, section="Basics")
   assert_eq(stories.length(), 2)
   assert_eq(stories[0].id, "counter-counter-basic")
   assert_eq(stories[0].title, "Counter · Basic")
@@ -44,7 +44,7 @@ test "a story per declared example, in declaration order" {
 
 ///|
 test "an untitled example is titled by its component" {
-  let stories = stories_of_module(mod_("hello", [ex_("Hello", "")]))
+  let stories = @storybook.stories_of_module(mod_("hello", [ex_("Hello", "")]))
   assert_eq(stories[0].id, "hello-hello")
   assert_eq(stories[0].title, "Hello")
 }
@@ -59,7 +59,7 @@ test "args and view come from the example" {
       view: Some("edit"),
     },
   ])
-  let s = stories_of_module(m)[0]
+  let s = @storybook.stories_of_module(m)[0]
   assert_eq(s.args.get("count"), Some(Num(3)))
   assert_eq(s.view, "edit")
 }
@@ -69,7 +69,7 @@ test "colliding ids are suffixed, never merged" {
   // same component, same title, twice: distinct stories need distinct ids,
   // because an id is a DOM id and a URL value
   let m = mod_("dup", [ex_("A", "One"), ex_("A", "One"), ex_("A", "One")])
-  let ids = stories_of_module(m).map(s => s.id)
+  let ids = @storybook.stories_of_module(m).map(s => s.id)
   assert_eq(ids, ["dup-a-one", "dup-a-one-2", "dup-a-one-3"])
 }
 
@@ -77,7 +77,7 @@ test "colliding ids are suffixed, never merged" {
 test "several modules at once, sectioned by module" {
   let a = mod_("counter", [ex_("Counter", "")])
   let b = mod_("todo", [ex_("Todo", ""), ex_("Todo", "Filtered")])
-  let stories = stories_of_modules([a, b], section_of=m => {
+  let stories = @storybook.stories_of_modules([a, b], section_of=m => {
     match m.name {
       "counter" => "Basics"
       _ => "Data"
@@ -88,26 +88,26 @@ test "several modules at once, sectioned by module" {
   ])
   assert_eq(stories.map(s => s.section), ["Basics", "Data", "Data"])
   // and grouping them puts the named order first
-  let sections = sections_of(stories, order=["Data", "Basics"])
+  let sections = @storybook.sections_of(stories, order=["Data", "Basics"])
   assert_eq(sections.map(s => s.title), ["Data", "Basics"])
 }
 
 ///|
 test "a module with no examples projects to no stories" {
-  assert_eq(stories_of_module(mod_("empty", [])).length(), 0)
+  assert_eq(@storybook.stories_of_module(mod_("empty", [])).length(), 0)
 }
 
 ///|
 test "an unlisted section is kept, appended after the ordered ones" {
   let stories = [
-    Story::new(
+    @storybook.Story::new(
       id="a",
       title="A",
       module_=mod_("m", []),
       root="A",
       section="Zed",
     ),
-    Story::new(
+    @storybook.Story::new(
       id="b",
       title="B",
       module_=mod_("m", []),
@@ -115,6 +115,6 @@ test "an unlisted section is kept, appended after the ordered ones" {
       section="Basics",
     ),
   ]
-  let sections = sections_of(stories, order=["Basics"])
+  let sections = @storybook.sections_of(stories, order=["Basics"])
   assert_eq(sections.map(s => s.title), ["Basics", "Zed"])
 }

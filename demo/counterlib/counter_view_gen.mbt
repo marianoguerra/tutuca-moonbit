@@ -4,8 +4,7 @@
 //   tutuca gen counter.tutu --name Counter --out <dir>
 //
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component",
-//   "moonbitlang/core/debug"
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 
 ///|
 /// The state of the Counter component.
@@ -15,8 +14,8 @@
 /// this struct lacks fails generation.
 pub(all) struct CounterState {
   label : String
-  count : Int
-  history : Array[Int]
+  count : Int32
+  history : Array[Int32]
 }
 
 ///|
@@ -104,7 +103,7 @@ impl @component.Fields for CounterState with fn decode(f) {
   let v_count = t1_count.to_int()
   guard f.get("history") is Some(t1_history) else { return None }
   guard t1_history is List(u1_history) else { return None }
-  let v_history : Array[Int] = []
+  let v_history : Array[Int32] = []
   for e1_history in u1_history {
     guard e1_history is Num(u2_history) else { return None }
     let x1_history = u2_history.to_int()
@@ -128,7 +127,7 @@ impl @component.Fields for CounterState with fn decode(f) {
 /// dispatch the section did not claim. They are still here because raising
 /// one is what a parent does, and `to_dispatch` is how.
 pub(all) enum CounterMsg {
-  ResetTo(Int)
+  ResetTo(Int32)
   Add(Double)
   /// A message the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.

@@ -26,6 +26,18 @@ pub(all) enum Section {
 } derive(Eq, Compare, Hash, @debug.Debug)
 
 ///|
+pub extend Section with Eq::{not_equal, equal}
+
+///|
+pub extend Section with Compare::{op_lt, op_le, op_ge, compare, op_gt}
+
+///|
+pub extend Section with Hash::{hash, hash_combine}
+
+///|
+pub extend Section with Debug::{to_repr}
+
+///|
 /// What a declaration inside a section is.
 ///
 /// `Component`, `View`, `Fixture` and `Scene` are the four kinds written with
@@ -52,6 +64,12 @@ pub(all) enum DeclKind {
   Macro
   Style
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend DeclKind with Eq::{not_equal, equal}
+
+///|
+pub extend DeclKind with Debug::{to_repr}
 
 ///|
 /// One declaration recovered from a section.

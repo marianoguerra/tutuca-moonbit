@@ -4,8 +4,7 @@
 //   tutuca gen state_editor.tutu --name StateEditor --out <dir>
 //
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component",
-//   "moonbitlang/core/debug"
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 
 ///|
 /// One field of the edited instance. `kind` picks the control; `text`,

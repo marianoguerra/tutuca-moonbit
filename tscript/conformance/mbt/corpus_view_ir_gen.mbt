@@ -470,18 +470,18 @@ fn corpus_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn corpus_component(
-  name? : String = "Corpus",
-  views? : Map[String, @anode.View] = corpus_views(),
-  initial? : CorpusState = CorpusState::zero(),
-  common_style? : String = corpus_common_style,
-  global_style? : String = corpus_global_style,
+  name~ : String = "Corpus",
+  views~ : Map[String, @anode.View] = corpus_views(),
+  initial~ : CorpusState = CorpusState::zero(),
+  common_style~ : String = corpus_common_style,
+  global_style~ : String = corpus_global_style,
   update? : (CorpusState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     CorpusState,
   ],
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

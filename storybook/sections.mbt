@@ -10,7 +10,7 @@
 /// to a metadata gap.
 pub fn sections_of(
   stories : Array[Story],
-  order? : Array[String] = [],
+  order~ : Array[String] = [],
 ) -> Array[Section] {
   let by_name : Map[String, Array[Story]] = Map([])
   let seen_order : Array[String] = []

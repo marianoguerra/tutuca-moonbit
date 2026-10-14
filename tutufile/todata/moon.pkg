@@ -12,7 +12,6 @@ import {
   "marianoguerra/tutuca/tutufile/shrub" @sh,
   "marianoguerra/shrubbery/ast",
   "marianoguerra/error-report" @report,
-  "moonbitlang/core/json",
 }
 
 import {

@@ -152,7 +152,7 @@ fn answer_json(a : @conformance.Answer) -> Json {
 fn card_of(
   schema : String,
   script : String,
-  row? : String = "",
+  row~ : String = "",
 ) -> String raise {
   let defs = @statedef.parse_state(schema)
   guard defs is [def, ..] else {

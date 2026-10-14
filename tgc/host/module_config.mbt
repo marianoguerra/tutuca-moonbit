@@ -22,6 +22,12 @@ pub(all) struct ResolvedConfig {
 } derive(Debug, Eq)
 
 ///|
+pub extend ResolvedConfig with Debug::{to_repr}
+
+///|
+pub extend ResolvedConfig with Eq::{not_equal, equal}
+
+///|
 /// A stable serialization of the resolved config: names sorted, so two hosts
 /// that bound the same things in a different order get the same string.
 ///

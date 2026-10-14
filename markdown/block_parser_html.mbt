@@ -51,7 +51,10 @@ fn is_custom_element_tag(tag : String) -> Bool {
 
 ///|
 /// Try to parse HTML block
-fn BlockParser::try_parse_html_block(self : BlockParser, start : Int) -> Block? {
+fn BlockParser::try_parse_html_block(
+  self : BlockParser,
+  start : Int32,
+) -> Block? {
   let saved = self.scanner.pos
   let leading = self.read_leading_trivia()
 

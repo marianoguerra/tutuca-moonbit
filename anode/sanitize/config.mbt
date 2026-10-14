@@ -17,6 +17,15 @@ pub(all) enum ElemNs {
 } derive(Eq, Debug, Hash)
 
 ///|
+pub extend ElemNs with Eq::{not_equal, equal}
+
+///|
+pub extend ElemNs with Debug::{to_repr}
+
+///|
+pub extend ElemNs with Hash::{hash, hash_combine}
+
+///|
 /// The anode spelling of a namespace, as `DomData.ns` carries it.
 pub fn ElemNs::of_anode(ns : @anode.Ns?) -> ElemNs {
   match ns {
@@ -32,6 +41,12 @@ pub(all) struct ElementName {
   name : String
   ns : ElemNs
 } derive(Eq, Debug)
+
+///|
+pub extend ElementName with Eq::{not_equal, equal}
+
+///|
+pub extend ElementName with Debug::{to_repr}
 
 ///|
 /// An element in the HTML namespace. Names are matched case-insensitively
@@ -75,6 +90,12 @@ pub(all) struct ElementRule {
 } derive(Eq, Debug)
 
 ///|
+pub extend ElementRule with Eq::{not_equal, equal}
+
+///|
+pub extend ElementRule with Debug::{to_repr}
+
+///|
 /// A plain allowed element, no per-element attribute rules.
 pub fn ElementRule::of(elem : ElementName) -> ElementRule {
   { elem, attributes: None, remove_attributes: None, }
@@ -106,6 +127,12 @@ pub(all) struct SanitizerConfig {
   /// denied.
   raw_markup : Bool?
 } derive(Eq, Debug)
+
+///|
+pub extend SanitizerConfig with Eq::{not_equal, equal}
+
+///|
+pub extend SanitizerConfig with Debug::{to_repr}
 
 ///|
 /// The empty config: valid, and allows everything. `{}` is a valid
@@ -149,6 +176,12 @@ pub(all) enum ConfigError {
   /// A global `remove_attributes` and `data_attributes` cannot coexist.
   DataAttrsWithGlobalRemove
 } derive(Eq, Debug)
+
+///|
+pub extend ConfigError with Eq::{not_equal, equal}
+
+///|
+pub extend ConfigError with Debug::{to_repr}
 
 ///|
 pub fn ConfigError::to_string(self : ConfigError) -> String {

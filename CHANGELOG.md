@@ -6,6 +6,32 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Building on moonc 0.10.15
+
+The toolchain stopped building two published dependencies, so every
+dependency moves to its latest release. The rest follows from that.
+
+- Dependencies: `moonbitlang/quickcheck` 0.15.0, `mizchi/js_core` 0.13.0 (it
+  replaces `mizchi/js`, whose `core` package is now its own module),
+  `mizchi/js_browser` 0.13.0, `moonbitlang/async` 0.22.5, `moonbitlang/x`
+  0.5.5, `moonbit-community/html` 0.2.2, `marianoguerra/wax` 0.3.0,
+  `marianoguerra/wap` 0.3.1 and `marianoguerra/tailwindcss` 0.4.1.
+  `moonbitlang/regexp` 0.3.6 is pinned directly to lift the copy
+  `mizchi/fswatch` reaches, which the toolchain refuses to build.
+- Generators come from `moonbitlang/core/quickcheck`, still imported as
+  `@gen`: `Gen` is `Generator`, `fmap`/`bind` are `map`/`flat_map`, and
+  `one_of_array` is `elements`.
+- Every trait impl a type's methods came from is now declared with
+  `pub extend T with Trait::{…}`, since moonc deprecates promoting them
+  implicitly. Generated view modules emit the same declarations beside their
+  derives, so the `.mbti` files list those methods.
+- The scaffolded storybook gallery imports `mizchi/js_core` as `@core`, and no
+  longer imports `moonbitlang/core/debug`: a generated view module's header
+  names that import only when the module uses `@debug`, so a fresh project
+  builds without an unused-package warning.
+- The native test leg links with a 16 MB stack; moonc 0.10.15's linker
+  overflows the default 8 MB on the largest test package.
+
 ## [0.56.0] - 2026-09-09
 
 ### What an app opts into, and what a check actually reads

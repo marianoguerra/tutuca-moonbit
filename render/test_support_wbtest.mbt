@@ -29,7 +29,7 @@ impl ViewResolver for ViewMap with fn resolve_view(self, names, _value) {
 
 ///|
 priv struct CompiledView {
-  cid : Int
+  cid : Int32
   vid : String
   node : @anode.ANode
   px : @anode.ParseContext
@@ -81,7 +81,7 @@ impl ViewResolver for ViewRegistry with fn resolve_view(self, names, _value) {
 ///|
 fn ViewRegistry::view_for(
   self : ViewRegistry,
-  cid : Int,
+  cid : Int32,
   vid : String,
 ) -> CompiledView? {
   match self.by_name.get(vid) {

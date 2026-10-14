@@ -13,9 +13,9 @@ fn el(tag : String, attrs : Map[String, @vdom.AttrValue]) -> @vdom.Vdom {
 
 ///|
 fn filtered(tree : @vdom.Vdom) -> (@vdom.Vdom, Array[String]) {
-  let f = UrlFilter::new()
+  let f = @filter.UrlFilter::new()
   f.filter_tree(tree)
-  (tree, f.take_reports().map(Dropped::to_string))
+  (tree, f.take_reports().map(@filter.Dropped::to_string))
 }
 
 ///|
@@ -25,13 +25,13 @@ test "relative URLs are untouched" {
     url in [
       "/about", "about.html", "../x", "#frag", "?q=1", "//example.com/x", "",
     ] {
-    assert_true(url_value_allowed("href", url))
-    debug_inspect(scheme_of(url), content="None")
+    assert_true(@filter.url_value_allowed("href", url))
+    debug_inspect(@filter.scheme_of(url), content="None")
   }
   // A colon after a path separator is not a scheme.
-  debug_inspect(scheme_of("/a/b:c"), content="None")
-  debug_inspect(scheme_of("?x=a:b"), content="None")
-  assert_true(url_value_allowed("href", "/a/b:c"))
+  debug_inspect(@filter.scheme_of("/a/b:c"), content="None")
+  debug_inspect(@filter.scheme_of("?x=a:b"), content="None")
+  assert_true(@filter.url_value_allowed("href", "/a/b:c"))
 }
 
 ///|
@@ -42,7 +42,7 @@ test "ordinary schemes are allowed" {
       "https://example.com", "http://example.com", "mailto:a@b.c", "tel:+123", "blob:https://example.com/x",
       "ftp://example.com",
     ] {
-    assert_true(url_value_allowed("href", url))
+    assert_true(@filter.url_value_allowed("href", url))
   }
 }
 
@@ -58,17 +58,17 @@ test "script schemes are denied however they are spelled" {
       "\tjavascript:alert(1)", "java\tscript:alert(1)", "java\nscript:alert(1)",
       "java\rscript:alert(1)", "jav\ta\nscr\ript:alert(1)", "vbscript:msgbox(1)",
     ] {
-    assert_false(url_value_allowed("href", url))
+    assert_false(@filter.url_value_allowed("href", url))
   }
   // The normalization, made visible.
   debug_inspect(
-    scheme_of("java\tscript:x"),
+    @filter.scheme_of("java\tscript:x"),
     content=(
       #|Some("javascript")
     ),
   )
   debug_inspect(
-    scheme_of("  \n HTTPS://x"),
+    @filter.scheme_of("  \n HTTPS://x"),
     content=(
       #|Some("https")
     ),
@@ -81,10 +81,12 @@ test "script schemes are denied however they are spelled" {
 /// `<a href="data:text/html,…">` is a document that runs in the page's origin.
 test "data: depends on whether the attribute navigates" {
   for attr in ["href", "action", "formaction", "ping", "data", "xlink:href"] {
-    assert_false(url_value_allowed(attr, "data:text/html,<script>x</script>"))
+    assert_false(
+      @filter.url_value_allowed(attr, "data:text/html,<script>x</script>"),
+    )
   }
   for attr in ["src", "srcset", "poster", "background"] {
-    assert_true(url_value_allowed(attr, "data:image/png;base64,iVBOR"))
+    assert_true(@filter.url_value_allowed(attr, "data:image/png;base64,iVBOR"))
   }
 }
 
@@ -166,7 +168,7 @@ test "filtering preserves node identity" {
     key: None,
     ns: None,
   })
-  let f = UrlFilter::new()
+  let f = @filter.UrlFilter::new()
   f.filter_tree(tree)
   guard tree is Node(root) else { fail("expected an element") }
   // The same object, with the attribute gone from it.
@@ -193,7 +195,7 @@ test "an Html value is left for the filter that can parse it" {
 /// The bound exists so a component rendering a bad URL inside an `@each` over
 /// ten thousand rows cannot turn the report log into the memory leak.
 test "reports are bounded" {
-  let f = UrlFilter::new(max_reports=2)
+  let f = @filter.UrlFilter::new(max_reports=2)
   for _i in 0..<10 {
     f.filter_tree(el("A", { "href": Str("javascript:alert(1)") }))
   }

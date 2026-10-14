@@ -74,6 +74,12 @@ pub(all) enum SwatchPickerEnrich {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub extend SwatchPickerEnrich with Eq::{not_equal, equal}
+
+///|
+pub extend SwatchPickerEnrich with @debug.Debug::{to_repr}
+
+///|
 pub fn SwatchPickerEnrich::name(self : SwatchPickerEnrich) -> String {
   match self {
     Swatch => "swatch"
@@ -109,9 +115,9 @@ impl @component.Fields for SwatchPickerState with fn schema() {
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct QuadraticState {
-  a : Int
-  b : Int
-  c : Int
+  a : Int32
+  b : Int32
+  c : Int32
 }
 
 ///|
@@ -168,6 +174,12 @@ pub(all) enum QuadraticCompute {
   Classify
   Discriminant
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend QuadraticCompute with Eq::{not_equal, equal}
+
+///|
+pub extend QuadraticCompute with @debug.Debug::{to_repr}
 
 ///|
 pub fn QuadraticCompute::name(self : QuadraticCompute) -> String {

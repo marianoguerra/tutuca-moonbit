@@ -85,7 +85,7 @@ fn exports_of(b : Bytes) -> Array[String] {
 
 ///|
 /// One LEB128 unsigned integer: its value, and where it ended.
-fn uleb(b : Bytes, at : Int) -> (Int, Int) {
+fn uleb(b : Bytes, at : Int32) -> (Int32, Int32) {
   let mut i = at
   let mut value = 0
   let mut shift = 0

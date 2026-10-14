@@ -75,10 +75,10 @@ fn out(block : String) -> @emit_mbt.Emitted raise {
 /// once the views have said which name is reached how.
 fn out_values(
   block : String,
-  methods? : Array[String] = [],
-  whens? : Array[String] = [],
-  enriches? : Array[String] = [],
-  bind_withs? : Array[String] = [],
+  methods~ : Array[String] = [],
+  whens~ : Array[String] = [],
+  enriches~ : Array[String] = [],
+  bind_withs~ : Array[String] = [],
 ) -> @emit_mbt.Emitted raise {
   @emit_mbt.emit(
     @tscript.parse_script(block),

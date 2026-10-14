@@ -17,5 +17,4 @@
 import {
   "marianoguerra/tutuca/tgc/emit",
   "marianoguerra/tutuca/compose/catalog",
-  "moonbitlang/core/json",
 }

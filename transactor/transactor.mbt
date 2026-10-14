@@ -159,7 +159,7 @@ pub fn Transactor::mutate_member(
 ///|
 /// The next walk id. Never 0: 0 is what a record carries when it belongs to no
 /// walk, so a real walk must not be able to collide with it.
-fn Transactor::next_walk_id(self : Transactor) -> Int {
+fn Transactor::next_walk_id(self : Transactor) -> Int32 {
   self.walk_seq = self.walk_seq + 1
   self.walk_seq
 }
@@ -209,9 +209,9 @@ fn Transactor::emit_record(
   matched : ObserveMatch,
   before : @tutuca.Value?,
   after : @tutuca.Value?,
-  walk? : Int = 0,
-  parent_seq? : Int = 0,
-) -> Int {
+  walk~ : Int32 = 0,
+  parent_seq~ : Int32 = 0,
+) -> Int32 {
   self.obs_seq = self.obs_seq + 1
   let record : ObserveRecord = {
     origin,
@@ -364,14 +364,14 @@ fn Transactor::mk_txn(
   bucket : @tutuca.HandlerBucket,
   name : String,
   args : Array[@tutuca.Value],
-  origin? : @tutuca.Origin = Host,
+  origin~ : @tutuca.Origin = Host,
   target_path? : @tutuca.DispatchPath,
   txn_path? : @tutuca.Path,
   parent? : Transaction,
   walk? : IntentWalk,
-  walk_id? : Int = 0,
-  walk_parent? : Int = 0,
-  is_answer? : Bool = false,
+  walk_id~ : Int32 = 0,
+  walk_parent~ : Int32 = 0,
+  is_answer~ : Bool = false,
   sender? : @tutuca.DispatchPath,
   sender_pinned? : @tutuca.Path,
 ) -> Transaction {
@@ -421,7 +421,7 @@ pub fn Transactor::push_send(
   args : Array[@tutuca.Value],
   parent? : Transaction,
   sender? : @tutuca.DispatchPath,
-  origin? : @tutuca.Origin = Host,
+  origin~ : @tutuca.Origin = Host,
 ) -> Transaction {
   let sender_pinned : @tutuca.Path? = match sender {
     Some(o) => Some(o.to_transaction_path().pin_keys(self.root))
@@ -449,7 +449,7 @@ pub fn Transactor::push_send(
 /// The SAME counter the observer records use, deliberately: a recording
 /// interleaves both kinds and a reader orders them by this one number. Two
 /// counters would mean two orderings and no way to merge them.
-fn Transactor::next_record_seq(self : Transactor) -> Int {
+fn Transactor::next_record_seq(self : Transactor) -> Int32 {
   self.obs_seq = self.obs_seq + 1
   self.obs_seq
 }
@@ -466,7 +466,7 @@ pub fn Transactor::has_pending(self : Transactor) -> Bool {
 ///|
 pub fn Transactor::settle(
   self : Transactor,
-  max_turns? : Int = 10000,
+  max_turns~ : Int32 = 10000,
 ) -> SettleResult {
   if self.draining || max_turns <= 0 {
     return { processed: 0, pending: self.has_pending(), }
@@ -818,7 +818,7 @@ impl @tutuca.Ctx for EventContext with fn make(self, name, args, opts) {
 ///|
 /// The component instance a chain node carries, with its component id — None
 /// for non-component nodes.
-fn node_component(node : @tutuca.Value) -> (Int, @tutuca.Value)? {
+fn node_component(node : @tutuca.Value) -> (Int32, @tutuca.Value)? {
   match node {
     Obj(o) =>
       match o.component_id() {

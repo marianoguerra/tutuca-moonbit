@@ -3,7 +3,7 @@
 ///
 /// Wrapping past the end of a search result list is how you select the wrong
 /// thing while looking at the right one.
-fn moved(cursor : Int, by : Int, len : Int) -> Int {
+fn moved(cursor : Int32, by : Int32, len : Int32) -> Int32 {
   if len == 0 {
     return 0
   }

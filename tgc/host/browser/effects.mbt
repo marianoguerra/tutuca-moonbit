@@ -42,7 +42,7 @@ extern "js" fn entry_verb(e : @core.Any) -> String =
 ///|
 /// A NAME, which is `tg_bytes`: the guest wrote it, and the guest keeps text
 /// as bytes.
-fn entry_str(rt : @core.Any, e : @core.Any, i : Int) -> String {
+fn entry_str(rt : @core.Any, e : @core.Any, i : Int32) -> String {
   let v = arr_at(e, i)
   if is_absent(v) {
     ""
@@ -58,7 +58,7 @@ fn entry_str(rt : @core.Any, e : @core.Any, i : Int) -> String {
 /// Written RESOLVED — a bare `ask` is `dyn lex` — because the default route is
 /// exactly the kind of thing two backends can agree to disagree about while
 /// every case with an explicit route passes.
-fn route_of(n : Int) -> Array[@tutuca.Leg] {
+fn route_of(n : Int32) -> Array[@tutuca.Leg] {
   match n {
     1 => [Dyn]
     2 => [Lex]
@@ -69,7 +69,7 @@ fn route_of(n : Int) -> Array[@tutuca.Leg] {
 }
 
 ///|
-fn opts_of(n : Int) -> @tutuca.IntentOpts {
+fn opts_of(n : Int32) -> @tutuca.IntentOpts {
   let legs = route_of(n)
   if legs.is_empty() {
     @tutuca.IntentOpts::new()
@@ -127,7 +127,7 @@ fn drained(owner : NativeModule) -> Array[@host.ControlMsg] {
   let decode = (v : @core.Any) => {
     value_of(rt, v, inst => wrap(owner, inst)).unwrap_or(Null)
   }
-  let args_at = (e : @core.Any, i : Int) => {
+  let args_at = (e : @core.Any, i : Int32) => {
     match decode(arr_at(e, i)) {
       List(items) => items
       Null => []

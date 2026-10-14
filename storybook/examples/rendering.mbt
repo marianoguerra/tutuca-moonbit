@@ -163,7 +163,7 @@ fn pagination_comp() -> @component.Component {
 }
 
 ///|
-fn page_count(s : PaginationState) -> Int {
+fn page_count(s : PaginationState) -> Int32 {
   let size = s.items.length()
   let per = @cmp.maximum(1, s.page_size)
   @cmp.maximum(1, (size + per - 1) / per) // ceil

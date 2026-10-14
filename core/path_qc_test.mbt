@@ -12,42 +12,42 @@
 
 ///|
 struct Lcg {
-  mut state : UInt
+  mut state : UInt32
 }
 
 ///|
-fn Lcg::next(self : Lcg) -> UInt {
+fn Lcg::next(self : Lcg) -> UInt32 {
   self.state = self.state * 1664525 + 1013904223
   self.state
 }
 
 ///|
-fn Lcg::below(self : Lcg, n : Int) -> Int {
+fn Lcg::below(self : Lcg, n : Int32) -> Int32 {
   (self.next() % n.reinterpret_as_uint()).reinterpret_as_int()
 }
 
 ///|
-fn gen_scalar() -> @gen.Gen[@core.Value] {
+fn gen_scalar() -> @gen.Generator[@core.Value] {
   @gen.one_of([
-    @gen.one_of_array([Null, Bool(true), Bool(false)]),
-    @gen.int_range(0, 100).fmap(n => Num(n.to_double())),
-    @gen.one_of_array(["x", "y", "hello", ""]).fmap(s => Str(s)),
+    @gen.elements([Null, Bool(true), Bool(false)]),
+    @gen.int_range(0, 100).map(n => Num(n.to_double())),
+    @gen.elements(["x", "y", "hello", ""]).map(s => Str(s)),
   ])
 }
 
 ///|
-fn gen_entry(depth : Int) -> @gen.Gen[(String, @core.Value)] {
-  @gen.one_of_array(["a", "b", "c", "items", "sel"]).bind(k => {
-    gen_value(depth - 1).fmap(v => (k, v))
+fn gen_entry(depth : Int32) -> @gen.Generator[(String, @core.Value)] {
+  @gen.elements(["a", "b", "c", "items", "sel"]).flat_map(k => {
+    gen_value(depth - 1).map(v => (k, v))
   })
 }
 
 ///|
-fn gen_vmap(depth : Int) -> @gen.Gen[@core.Value] {
-  @gen.int_range(1, 4).bind(k => {
+fn gen_vmap(depth : Int32) -> @gen.Generator[@core.Value] {
+  @gen.int_range(1, 4).flat_map(k => {
     gen_entry(depth)
     .array_with_size(k)
-    .fmap(entries => {
+    .map(entries => {
       let m : Map[String, @core.Value] = Map([])
       for e in entries {
         m[e.0] = e.1
@@ -58,14 +58,14 @@ fn gen_vmap(depth : Int) -> @gen.Gen[@core.Value] {
 }
 
 ///|
-fn gen_vlist(depth : Int) -> @gen.Gen[@core.Value] {
-  @gen.int_range(1, 4).bind(k => {
-    gen_value(depth - 1).array_with_size(k).fmap(a => List(a))
+fn gen_vlist(depth : Int32) -> @gen.Generator[@core.Value] {
+  @gen.int_range(1, 4).flat_map(k => {
+    gen_value(depth - 1).array_with_size(k).map(a => List(a))
   })
 }
 
 ///|
-fn gen_value(depth : Int) -> @gen.Gen[@core.Value] {
+fn gen_value(depth : Int32) -> @gen.Generator[@core.Value] {
   if depth <= 0 {
     gen_scalar()
   } else {
@@ -160,9 +160,9 @@ fn invalidate(steps : Array[@core.Step], rng : Lcg) -> Array[@core.Step] {
 }
 
 ///|
-fn gen_tree_and_path() -> @gen.Gen[(@core.Value, Array[@core.Step])] {
-  gen_value(3).bind(tree => {
-    @gen.int_range(0, 1073741823).fmap(seed => {
+fn gen_tree_and_path() -> @gen.Generator[(@core.Value, Array[@core.Step])] {
+  gen_value(3).flat_map(tree => {
+    @gen.int_range(0, 1073741823).map(seed => {
       let rng = Lcg::{ state: seed.reinterpret_as_uint(), }
       (tree, derive_path(tree, rng))
     })
@@ -170,10 +170,10 @@ fn gen_tree_and_path() -> @gen.Gen[(@core.Value, Array[@core.Step])] {
 }
 
 ///|
-fn gen_tree_path_value() -> @gen.Gen[
+fn gen_tree_path_value() -> @gen.Generator[
   (@core.Value, Array[@core.Step], @core.Value),
 ] {
-  gen_tree_and_path().bind(tp => gen_value(1).fmap(v => (tp.0, tp.1, v)))
+  gen_tree_and_path().flat_map(tp => gen_value(1).map(v => (tp.0, tp.1, v)))
 }
 
 ///|
@@ -212,7 +212,7 @@ test "property: put-get reads back the written value" {
 test "property: put-put — the last write wins" {
   @qc.quick_check(
     @qc.forall(
-      gen_tree_path_value().bind(tpv => gen_value(1).fmap(v2 => (tpv, v2))),
+      gen_tree_path_value().flat_map(tpv => gen_value(1).map(v2 => (tpv, v2))),
       x => {
         let ((tree, steps, v1), v2) = x
         let root : @core.Value = tree
@@ -228,8 +228,8 @@ test "property: put-put — the last write wins" {
 test "property: put through an unresolvable path is physically identity" {
   @qc.quick_check(
     @qc.forall(
-      gen_tree_path_value().bind(tpv => {
-        @gen.int_range(0, 1073741823).fmap(seed => (tpv, seed))
+      gen_tree_path_value().flat_map(tpv => {
+        @gen.int_range(0, 1073741823).map(seed => (tpv, seed))
       }),
       x => {
         let ((tree, steps, v), seed) = x

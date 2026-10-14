@@ -18,8 +18,8 @@ fn view_style(src : String) -> String {
   let decls = view_decls(src)
   for d in decls {
     if d.kind is View {
-      let macros = macros_of(decls) catch { _ => return "!macros" }
-      let b = ViewBuilder::new(macros~)
+      let macros = @toanode.macros_of(decls) catch { _ => return "!macros" }
+      let b = @toanode.ViewBuilder::new(macros~)
       let v = b.view(d) catch { _ => return "!refused" }
       return v.style
     }

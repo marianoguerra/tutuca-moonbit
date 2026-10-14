@@ -3,9 +3,9 @@
 ///|
 fn FieldSpec::comp(
   name : String,
-  args? : Map[String, @tutuca.Value] = Map([]),
-  protocol_ids? : Array[String] = [],
-  protocols? : Array[@tutuca.ProtocolInfo] = [],
+  args~ : Map[String, @tutuca.Value] = Map([]),
+  protocol_ids~ : Array[String] = [],
+  protocols~ : Array[@tutuca.ProtocolInfo] = [],
 ) -> FieldSpec {
   { kind: FComp(comp=name, args~), default: Null, protocol_ids, protocols, }
 }

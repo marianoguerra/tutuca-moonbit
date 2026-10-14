@@ -223,7 +223,7 @@ pub fn Sanitizer::attribute_value(
   self : Sanitizer,
   name : String,
   value : String,
-  screen? : (String) -> Bool = _ => false,
+  screen~ : (String) -> Bool = _ => false,
 ) -> String? {
   let attr = name.to_lower()
   if attr == "style" {
@@ -259,6 +259,12 @@ pub(all) enum ElementVerdict {
   Drop
   ReplaceWithChildren
 } derive(Eq, Debug)
+
+///|
+pub extend ElementVerdict with Eq::{not_equal, equal}
+
+///|
+pub extend ElementVerdict with Debug::{to_repr}
 
 ///|
 pub fn Sanitizer::element_verdict(
@@ -375,6 +381,12 @@ pub(all) enum Violation {
   Comment(at~ : String)
   RawMarkup(tag~ : String, at~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend Violation with Eq::{not_equal, equal}
+
+///|
+pub extend Violation with Debug::{to_repr}
 
 ///|
 pub fn Violation::at(self : Violation) -> String {

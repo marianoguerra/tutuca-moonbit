@@ -26,9 +26,9 @@ pub fn ANode::parse(html : String, px : ParseContext) -> ANode? {
 ///|
 fn is_valid_tag_name(tag : String) -> Bool {
   // JS: /^[a-zA-Z][a-zA-Z0-9-]*$/
-  guard tag.get_char(0) is Some('a'..='z' | 'A'..='Z') else { return false }
+  guard tag.get_char(0) is Some('a'..<='z' | 'A'..<='Z') else { return false }
   for c in tag {
-    if !(c is ('a'..='z' | 'A'..='Z' | '0'..='9' | '-')) {
+    if !(c is ('a'..<='z' | 'A'..<='Z' | '0'..<='9' | '-')) {
       return false
     }
   }
@@ -41,7 +41,7 @@ fn is_valid_tag_name(tag : String) -> Bool {
 /// failed <x> ops).
 fn ANode::from_dom(
   doc : @html5.Document,
-  node_id : Int,
+  node_id : Int32,
   px : ParseContext,
 ) -> ANode? {
   match doc.get_node(node_id) {
@@ -56,7 +56,7 @@ fn ANode::from_dom(
 ///|
 fn from_element(
   doc : @html5.Document,
-  node_id : Int,
+  node_id : Int32,
   el : @html5.Element,
   px : ParseContext,
 ) -> ANode? {

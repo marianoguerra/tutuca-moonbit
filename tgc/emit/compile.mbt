@@ -114,11 +114,11 @@ fn issue_of(r : @report.Report, src : @report.Source) -> Issue {
 fn comp_of(
   def : @statedef.StateDef,
   decls : Array[@tscript.Decl],
-  authored? : Array[@tscript.Decl] = [],
-  views? : Array[@viewfile.RawView] = [],
-  common_style? : String = "",
-  inits? : Array[@statedef.InitState] = [],
-  siblings? : Array[String] = [],
+  authored~ : Array[@tscript.Decl] = [],
+  views~ : Array[@viewfile.RawView] = [],
+  common_style~ : String = "",
+  inits~ : Array[@statedef.InitState] = [],
+  siblings~ : Array[String] = [],
 ) -> Comp {
   {
     def,
@@ -466,8 +466,8 @@ let card_module : String = "card"
 fn build(
   comps : Array[Comp],
   name : String,
-  macros? : Array[@viewfile.MacroDef] = [],
-  source? : String = "",
+  macros~ : Array[@viewfile.MacroDef] = [],
+  source~ : String = "",
 ) -> Compiled raise GenError {
   let b = B::new(@report.Sources::new().add("card", ""))
   // The BODY first, then the imports it turned out to need. A module's import

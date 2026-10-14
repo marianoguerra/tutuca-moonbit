@@ -104,13 +104,13 @@ fn resolve_ref(def : @statedef.StateDef, t : @tscript.TyRef) -> @tutuca.Ty? {
 /// nobody has views for yet.
 pub fn schema_info(
   def : @statedef.StateDef,
-  name? : String = "",
+  name~ : String = "",
   fingerprint? : String,
-  view_handlers? : Array[String] = [],
-  methods? : Array[String] = [],
-  ids? : Array[String] = [],
-  view_names? : Array[String] = [],
-  init_names? : Array[String] = [],
+  view_handlers~ : Array[String] = [],
+  methods~ : Array[String] = [],
+  ids~ : Array[String] = [],
+  view_names~ : Array[String] = [],
+  init_names~ : Array[String] = [],
 ) -> @tutuca.SchemaInfo {
   let fields = def.fields.map(f => @tutuca.FieldInfo::new(f.name, f.ty))
   // The same one-element fingerprint the emitter writes, so a card and a

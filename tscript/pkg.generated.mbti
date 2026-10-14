@@ -90,17 +90,26 @@ pub(all) enum AssignOp {
   AAdd
   ASub
 } derive(Eq, @debug.Debug)
+pub fn AssignOp::equal(Self, Self) -> Bool
+pub fn AssignOp::not_equal(Self, Self) -> Bool
+pub fn AssignOp::to_repr(Self) -> @debug.Repr
 pub fn AssignOp::word(Self) -> String
 
 pub(all) struct Attach {
   name : String
   span : @core.Span
 } derive(Eq, @debug.Debug)
+pub fn Attach::equal(Self, Self) -> Bool
+pub fn Attach::not_equal(Self, Self) -> Bool
+pub fn Attach::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Body {
   Stmts(Array[Stmt])
   Value(@core.Expr)
 } derive(Eq, @debug.Debug)
+pub fn Body::equal(Self, Self) -> Bool
+pub fn Body::not_equal(Self, Self) -> Bool
+pub fn Body::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Decl {
   kind : DeclKind
@@ -114,6 +123,9 @@ pub(all) struct Decl {
   span : @core.Span
   name_span : @core.Span
 } derive(Eq, @debug.Debug)
+pub fn Decl::equal(Self, Self) -> Bool
+pub fn Decl::not_equal(Self, Self) -> Bool
+pub fn Decl::to_repr(Self) -> @debug.Repr
 pub fn Decl::to_source(Self) -> String
 
 pub(all) enum DeclKind {
@@ -127,12 +139,18 @@ pub(all) enum DeclKind {
   DEnrich
   DBindWith
 } derive(Eq, @debug.Debug)
+pub fn DeclKind::equal(Self, Self) -> Bool
+pub fn DeclKind::not_equal(Self, Self) -> Bool
+pub fn DeclKind::to_repr(Self) -> @debug.Repr
 
 pub(all) struct HandlerParse {
   handler : @core.Expr
   args : Array[@core.Expr]
   action : PropertyAction?
 } derive(Eq, @debug.Debug)
+pub fn HandlerParse::equal(Self, Self) -> Bool
+pub fn HandlerParse::not_equal(Self, Self) -> Bool
+pub fn HandlerParse::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Issue {
   kind : IssueKind
@@ -140,10 +158,16 @@ pub(all) struct Issue {
   value : String
   span : @core.Span
 } derive(Eq, @debug.Debug)
+pub fn Issue::equal(Self, Self) -> Bool
+pub fn Issue::not_equal(Self, Self) -> Bool
+pub fn Issue::to_repr(Self) -> @debug.Repr
 
 pub(all) enum IssueKind {
   BadValue
 } derive(Eq, @debug.Debug)
+pub fn IssueKind::equal(Self, Self) -> Bool
+pub fn IssueKind::not_equal(Self, Self) -> Bool
+pub fn IssueKind::to_repr(Self) -> @debug.Repr
 
 pub(all) enum IssueRole {
   BadMacroVar
@@ -155,11 +179,17 @@ pub(all) enum IssueRole {
   BadPredicateArg
   BadExpression(why~ : String)
 } derive(Eq, @debug.Debug)
+pub fn IssueRole::equal(Self, Self) -> Bool
+pub fn IssueRole::not_equal(Self, Self) -> Bool
+pub fn IssueRole::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Param {
   name : String
   span : @core.Span
 } derive(Eq, @debug.Debug)
+pub fn Param::equal(Self, Self) -> Bool
+pub fn Param::not_equal(Self, Self) -> Bool
+pub fn Param::to_repr(Self) -> @debug.Repr
 
 pub struct ParseCtx {
   macro_vars : Map[String, String]
@@ -173,6 +203,9 @@ pub(all) enum PropertyAction {
   PropertyReset(String)
   PropertyCall(name~ : String, operation~ : String, args~ : Array[@core.Expr])
 } derive(Eq, @debug.Debug)
+pub fn PropertyAction::equal(Self, Self) -> Bool
+pub fn PropertyAction::not_equal(Self, Self) -> Bool
+pub fn PropertyAction::to_repr(Self) -> @debug.Repr
 
 pub(all) enum STok {
   TLBrace
@@ -199,12 +232,18 @@ pub(all) enum STok {
   TDoc(String)
   TEof
 } derive(Eq, @debug.Debug)
+pub fn STok::equal(Self, Self) -> Bool
+pub fn STok::not_equal(Self, Self) -> Bool
+pub fn STok::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ScriptToken {
   tok : STok
   span : @core.Span
   pre_space : Bool
 } derive(Eq, @debug.Debug)
+pub fn ScriptToken::equal(Self, Self) -> Bool
+pub fn ScriptToken::not_equal(Self, Self) -> Bool
+pub fn ScriptToken::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Stmt {
   SAssign(place~ : @core.Place, op~ : AssignOp, value~ : @core.Expr, span~ : @core.Span)
@@ -213,17 +252,26 @@ pub(all) enum Stmt {
   SIf(cond~ : @core.Expr, then_~ : Array[Stmt], else_~ : Array[Stmt], span~ : @core.Span)
   SNew(ty~ : TyRef, span~ : @core.Span)
 } derive(Eq, @debug.Debug)
+pub fn Stmt::equal(Self, Self) -> Bool
+pub fn Stmt::not_equal(Self, Self) -> Bool
+pub fn Stmt::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Token {
   text : String
   span : @core.Span
 } derive(Eq, @debug.Debug)
+pub fn Token::equal(Self, Self) -> Bool
+pub fn Token::not_equal(Self, Self) -> Bool
+pub fn Token::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TyRef {
   name : String
   args : Array[TyRef]
   span : @core.Span
 } derive(Eq, @debug.Debug)
+pub fn TyRef::equal(Self, Self) -> Bool
+pub fn TyRef::not_equal(Self, Self) -> Bool
+pub fn TyRef::to_repr(Self) -> @debug.Repr
 pub fn TyRef::to_source(Self) -> String
 
 // Type aliases

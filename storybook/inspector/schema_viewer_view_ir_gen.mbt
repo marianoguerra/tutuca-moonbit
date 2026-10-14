@@ -138,11 +138,11 @@ fn schema_viewer_inline_compute() -> Map[
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
 pub fn schema_viewer_component(
-  name? : String = "SchemaViewer",
-  views? : Map[String, @anode.View] = schema_viewer_views(),
-  initial? : SchemaViewerState = SchemaViewerState::zero(),
-  common_style? : String = schema_viewer_common_style,
-  global_style? : String = schema_viewer_global_style,
+  name~ : String = "SchemaViewer",
+  views~ : Map[String, @anode.View] = schema_viewer_views(),
+  initial~ : SchemaViewerState = SchemaViewerState::zero(),
+  common_style~ : String = schema_viewer_common_style,
+  global_style~ : String = schema_viewer_global_style,
   update? : (SchemaViewerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaViewerState,
   ],
@@ -151,10 +151,10 @@ pub fn schema_viewer_component(
     Array[@tutuca.Value],
     &@tutuca.Stack,
   ) -> @tutuca.Value)?,
-  slots? : Map[String, String] = Map([]),
-  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Array[@component.LookupSpec] = [],
+  slots~ : Map[String, String] = Map([]),
+  slot_args~ : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide~ : Map[String, String] = Map([]),
+  lookup~ : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

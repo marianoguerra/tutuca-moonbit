@@ -21,7 +21,7 @@ pub(open) trait DomNode {
   fn first_child(Self) -> Self?
   fn next_sibling(Self) -> Self?
   fn child_nodes(Self) -> Array[Self] // snapshot, not a live collection
-  fn child_node_at(Self, Int) -> Self? // live childNodes[i]
+  fn child_node_at(Self, Int32) -> Self? // live childNodes[i]
   fn is_same_node(Self, Self) -> Bool
   fn set_attribute(Self, name : String, value : String) -> Unit
   fn remove_attribute(Self, String) -> Unit

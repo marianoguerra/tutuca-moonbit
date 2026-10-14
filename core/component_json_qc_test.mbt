@@ -16,15 +16,17 @@
 /// A type, and a value inhabiting it, generated together — a value drawn
 /// independently of its type would be rejected by the codec almost every time
 /// and the property would pass vacuously.
-fn gen_ty_and_value(depth : Int) -> @gen.Gen[(@core.TyInfo, @core.Value)] {
+fn gen_ty_and_value(
+  depth : Int32,
+) -> @gen.Generator[(@core.TyInfo, @core.Value)] {
   if depth <= 0 {
     return gen_scalar_ty()
   }
   @gen.one_of([
     gen_scalar_ty(),
     // a list of one element type
-    gen_ty_and_value(depth - 1).bind(tv => {
-      @gen.int_range(0, 3).fmap(n => {
+    gen_ty_and_value(depth - 1).flat_map(tv => {
+      @gen.int_range(0, 3).map(n => {
         let items : Array[@core.Value] = []
         for _ in 0..<n {
           items.push(tv.1)
@@ -33,8 +35,8 @@ fn gen_ty_and_value(depth : Int) -> @gen.Gen[(@core.TyInfo, @core.Value)] {
       })
     }),
     // an ordered map of one value type
-    gen_ty_and_value(depth - 1).bind(tv => {
-      @gen.one_of_array([["a"], ["a", "b"], []]).fmap(keys => {
+    gen_ty_and_value(depth - 1).flat_map(tv => {
+      @gen.elements([["a"], ["a", "b"], []]).map(keys => {
         let m : Map[String, @core.Value] = Map([])
         for k in keys {
           m[k] = tv.1
@@ -43,25 +45,25 @@ fn gen_ty_and_value(depth : Int) -> @gen.Gen[(@core.TyInfo, @core.Value)] {
       })
     }),
     // a free slot: empty, or holding an instance
-    gen_qc_instance(depth - 1).fmap(v => ((TyComp(None) : @core.TyInfo), v)),
+    gen_qc_instance(depth - 1).map(v => ((TyComp(None) : @core.TyInfo), v)),
     // `any`, which is the position that most needs the tag
-    gen_qc_instance(depth - 1).fmap(v => ((TyAny : @core.TyInfo), v)),
+    gen_qc_instance(depth - 1).map(v => ((TyAny : @core.TyInfo), v)),
   ])
 }
 
 ///|
-fn gen_scalar_ty() -> @gen.Gen[(@core.TyInfo, @core.Value)] {
+fn gen_scalar_ty() -> @gen.Generator[(@core.TyInfo, @core.Value)] {
   @gen.one_of([
-    @gen.one_of_array([true, false]).fmap(b => {
+    @gen.elements([true, false]).map(b => {
       ((TyBool : @core.TyInfo), (Bool(b) : @core.Value))
     }),
-    @gen.int_range(-50, 50).fmap(n => {
+    @gen.int_range(-50, 50).map(n => {
       (
         (TyInt(width=32, signed=true) : @core.TyInfo),
         (Num(n.to_double()) : @core.Value),
       )
     }),
-    @gen.one_of_array(["", "x", "a/b", "c~d", "hello"]).fmap(s => {
+    @gen.elements(["", "x", "a/b", "c~d", "hello"]).map(s => {
       ((TyText : @core.TyInfo), (Str(s) : @core.Value))
     }),
   ])
@@ -71,14 +73,14 @@ fn gen_scalar_ty() -> @gen.Gen[(@core.TyInfo, @core.Value)] {
 /// An instance whose schema is generated alongside it: `f0`, `f1`, … each with
 /// a generated type and a value of that type. Null half the time, because an
 /// empty slot is the case a value-inspecting codec cannot see.
-fn gen_qc_instance(depth : Int) -> @gen.Gen[@core.Value] {
+fn gen_qc_instance(depth : Int32) -> @gen.Generator[@core.Value] {
   if depth <= 0 {
     return @gen.pure(Null)
   }
-  @gen.int_range(0, 3).bind(n => {
+  @gen.int_range(0, 3).flat_map(n => {
     gen_ty_and_value(depth - 1)
     .array_with_size(n)
-    .fmap(tvs => {
+    .map(tvs => {
       if tvs.is_empty() {
         return Null
       }

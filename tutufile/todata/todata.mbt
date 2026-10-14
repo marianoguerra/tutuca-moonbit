@@ -198,7 +198,7 @@ fn step_json(group : @ast.Node) -> Json raise @sh.ExError {
   let args = @sh.read_args(gs)
   let pos = @sh.positional(args)
   let obj = Map([])
-  let arg = fn(i : Int) -> Json raise @sh.ExError { json_of(pos[i]) }
+  let arg = fn(i : Int32) -> Json raise @sh.ExError { json_of(pos[i]) }
   match verb {
     "click" => obj["click"] = arg(0)
     "type" => {
@@ -323,7 +323,7 @@ fn expect_json(
 
 ///|
 /// Where the comparison starts, so a state place can be read up to it.
-fn comparison_at(parts : Array[@ast.Node], from : Int) -> Int {
+fn comparison_at(parts : Array[@ast.Node], from : Int32) -> Int32 {
   let mut i = from
   while i < parts.length() {
     match parts[i].it {

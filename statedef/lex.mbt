@@ -126,7 +126,7 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
   let mut rule_name = false
   let mut rule_clause = false
   let mut after_format = false
-  fn push(t : Tok, start : Int, end_ : Int) -> Unit {
+  fn push(t : Tok, start : Int32, end_ : Int32) -> Unit {
     out.push({ tok: t, span: { start, end_, }, })
   }
 
@@ -137,7 +137,7 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
   // One scanner for both reads, because the two differ only in what stops them
   // — and a second copy is the kind of thing that grows a bug on one side of
   // the pair a year later.
-  fn scan_opaque(from : Int, stop : (Char, Int) -> Bool) -> Int {
+  fn scan_opaque(from : Int32, stop : (Char, Int32) -> Bool) -> Int32 {
     let mut j = from
     let mut depth = 0
     let mut quoted = false
@@ -172,7 +172,7 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
     j
   }
 
-  fn slice(from : Int, to : Int) -> String {
+  fn slice(from : Int32, to : Int32) -> String {
     let text = StringBuilder()
     for k in from..<to {
       text.write_char(chars[k])
@@ -182,7 +182,7 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
 
   // The identifier starting at `from`, and where it ends. ("", from) when there
   // is none.
-  fn word_at(from : Int) -> (String, Int) {
+  fn word_at(from : Int32) -> (String, Int32) {
     if from >= n || !@tutuca.is_ident_start(chars[from]) {
       return ("", from)
     }
@@ -193,7 +193,7 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
     (slice(from, k), k)
   }
 
-  fn skip_space(from : Int) -> Int {
+  fn skip_space(from : Int32) -> Int32 {
     let mut k = from
     while k < n &&
           (

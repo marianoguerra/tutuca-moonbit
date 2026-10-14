@@ -17,8 +17,8 @@
 /// render count here is what keeps that property from silently regressing.
 fn assert_round_trip(
   h : @harness.MemHarness,
-  run : (@harness.MemHarness) -> Int,
-  rerenders? : Bool = true,
+  run : (@harness.MemHarness) -> Int32,
+  rerenders~ : Bool = true,
 ) -> Unit raise {
   let before = h.html()
   let renders = h.render_count()

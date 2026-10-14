@@ -19,7 +19,7 @@
 
 ///|
 /// `.name` — a read of one of this component's own fields.
-pub fn Expr::field(name : String, span? : Span = no_span) -> Expr {
+pub fn Expr::field(name : String, span~ : Span = no_span) -> Expr {
   ERead(place={ root: PState(name), steps: [], span, }, span~)
 }
 
@@ -34,7 +34,7 @@ pub fn Expr::as_field(self : Expr) -> String? {
 
 ///|
 /// `@name` — a read of a render binding.
-pub fn Expr::bind(name : String, span? : Span = no_span) -> Expr {
+pub fn Expr::bind(name : String, span~ : Span = no_span) -> Expr {
   ERead(place={ root: PBind(name), steps: [], span, }, span~)
 }
 
@@ -52,7 +52,7 @@ pub fn Expr::as_bind(self : Expr) -> String? {
 pub fn Expr::bind_member(
   name : String,
   prop : String,
-  span? : Span = no_span,
+  span~ : Span = no_span,
 ) -> Expr {
   ERead(place={ root: PBind(name), steps: [PField(prop)], span, }, span~)
 }
@@ -78,7 +78,7 @@ pub fn Expr::as_bind_member(self : Expr) -> (String, String)? {
 pub fn Expr::seq_access(
   seq : String,
   key : String,
-  span? : Span = no_span,
+  span~ : Span = no_span,
 ) -> Expr {
   ERead(
     place={ root: PState(seq), steps: [PIndex(Expr::field(key, span~))], span, },
@@ -104,8 +104,8 @@ pub fn Expr::as_seq_access(self : Expr) -> (String, String)? {
 /// A literal.
 pub fn Expr::lit(
   lit : Lit,
-  from_macro? : Bool = false,
-  span? : Span = no_span,
+  from_macro~ : Bool = false,
+  span~ : Span = no_span,
 ) -> Expr {
   ELit(lit~, from_macro~, span~)
 }
@@ -121,25 +121,25 @@ pub fn Expr::as_lit(self : Expr) -> Lit? {
 
 ///|
 /// `$name` — a declared `compute` or `pred`, answered by the render stack.
-pub fn Expr::method_(name : String, span? : Span = no_span) -> Expr {
+pub fn Expr::method_(name : String, span~ : Span = no_span) -> Expr {
   EMethod(name~, span~)
 }
 
 ///|
 /// `*name` — a dynamic binding.
-pub fn Expr::dyn_(name : String, span? : Span = no_span) -> Expr {
+pub fn Expr::dyn_(name : String, span~ : Span = no_span) -> Expr {
   EDyn(name~, span~)
 }
 
 ///|
 /// A bare name, in the position where it is a value rather than a handler.
-pub fn Expr::name(name : String, span? : Span = no_span) -> Expr {
+pub fn Expr::name(name : String, span~ : Span = no_span) -> Expr {
   EName(name~, span~)
 }
 
 ///|
 /// A bare Uppercase name — a component type.
-pub fn Expr::type_name(name : String, span? : Span = no_span) -> Expr {
+pub fn Expr::type_name(name : String, span~ : Span = no_span) -> Expr {
   ETypeName(name~, span~)
 }
 
@@ -148,14 +148,14 @@ pub fn Expr::type_name(name : String, span? : Span = no_span) -> Expr {
 pub fn Expr::app(
   name : String,
   args : Array[Expr],
-  span? : Span = no_span,
+  span~ : Span = no_span,
 ) -> Expr {
   EApp(name~, args~, span~)
 }
 
 ///|
 /// `$'…'` — a string template.
-pub fn Expr::tpl(parts : Array[TplPart], span? : Span = no_span) -> Expr {
+pub fn Expr::tpl(parts : Array[TplPart], span~ : Span = no_span) -> Expr {
   ETpl(parts~, span~)
 }
 
@@ -163,7 +163,7 @@ pub fn Expr::tpl(parts : Array[TplPart], span? : Span = no_span) -> Expr {
 /// `e.value` — a rooted path into the DOM event being handled.
 pub fn Expr::event_path(
   segments : Array[String],
-  span? : Span = no_span,
+  span~ : Span = no_span,
 ) -> Expr {
   EEventPath(segments~, span~)
 }

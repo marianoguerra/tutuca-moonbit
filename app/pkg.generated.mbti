@@ -59,6 +59,7 @@ pub struct DragState[N] {
 pub(all) struct ScopeIntents {
   comps : @component.Components
 }
+pub fn ScopeIntents::intents_for(Self, @core.Value, String) -> Array[@core.IntentFn]
 pub impl @transactor.Intents for ScopeIntents
 
 pub(all) struct ScopeNames {
@@ -67,6 +68,11 @@ pub(all) struct ScopeNames {
   mut memo_at : @core.DispatchPath?
   mut memo_stack : @render.RenderStack?
 }
+pub fn ScopeNames::build(Self, Int, Map[String, @core.Value]) -> @core.Value?
+pub fn ScopeNames::dyn_type(Self, @core.Value, @core.DispatchPath, String) -> Int?
+pub fn ScopeNames::dyn_value(Self, @core.Value, @core.DispatchPath, String) -> @core.Value?
+pub fn ScopeNames::lex_type(Self, @core.Value, @core.DispatchPath, String) -> Int?
+pub fn ScopeNames::lex_value(Self, @core.Value, @core.DispatchPath, String) -> @core.Value?
 pub fn ScopeNames::new(@component.Components) -> Self
 pub impl @transactor.Names for ScopeNames
 

@@ -74,8 +74,8 @@ pub const SAFE_SVG_ATTR : String = "setInnerSvg"
 /// out and paint itself, may point at an SVG gradient it defined, and may not
 /// fetch, overlay, or carry a `<style>` block.
 pub fn SafeMarkupFilter::new(
-  sanitizer? : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
-  max_reports? : Int = 64,
+  sanitizer~ : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
+  max_reports~ : Int32 = 64,
 ) -> SafeMarkupFilter {
   {
     sanitizer: sanitizer.with_css(@safecss.CssPolicy::payload()),
@@ -87,6 +87,14 @@ pub fn SafeMarkupFilter::new(
 /// Everything dropped since the last call, and clears the log.
 pub impl @filter.VdomFilter for SafeMarkupFilter with fn take_reports(self) {
   self.log.take()
+}
+
+///|
+pub extend SafeMarkupFilter with @filter.VdomFilter::{
+  filter_elem_hinted,
+  filter_elem,
+  take_reports,
+  filter_tree,
 }
 
 ///|

@@ -35,9 +35,10 @@ import {
   "marianoguerra/wap/parse",
   "marianoguerra/wap/lower" @waplower,
   "marianoguerra/wax/compile",
-  "marianoguerra/error-report" @report,
   "marianoguerra/wax/message",
-  "moonbitlang/core/debug",
-  "moonbitlang/core/json",
   "moonbitlang/core/set",
 }
+
+import {
+  "moonbitlang/core/debug",
+} for "test"

@@ -1,5 +1,5 @@
 ///|
-pub fn Op::code(self : Op) -> Int {
+pub fn Op::code(self : Op) -> Int32 {
   match self {
     OpWithField => 1
     OpHandleMessage => 2
@@ -20,7 +20,7 @@ pub fn Op::code(self : Op) -> Int {
 }
 
 ///|
-pub fn Op::of_code(code : Int) -> Op? {
+pub fn Op::of_code(code : Int32) -> Op? {
   match code {
     1 => Some(OpWithField)
     2 => Some(OpHandleMessage)

@@ -30,6 +30,12 @@ pub(all) enum CssLevel {
 } derive(Eq, Debug)
 
 ///|
+pub extend CssLevel with Eq::{not_equal, equal}
+
+///|
+pub extend CssLevel with Debug::{to_repr}
+
+///|
 /// What may appear inside `url()`, when a level would otherwise admit the
 /// property carrying it.
 ///
@@ -62,6 +68,12 @@ pub(all) enum UrlRule {
 } derive(Eq, Debug)
 
 ///|
+pub extend UrlRule with Eq::{not_equal, equal}
+
+///|
+pub extend UrlRule with Debug::{to_repr}
+
+///|
 /// A level and the two switches, which together are everything a caller says.
 pub(all) struct CssPolicy {
   level : CssLevel
@@ -89,6 +101,12 @@ pub(all) struct CssPolicy {
   /// the string-concatenation they always were — `tgc/SECURITY.md` §7.
   stylesheet : Bool
 } derive(Eq, Debug)
+
+///|
+pub extend CssPolicy with Eq::{not_equal, equal}
+
+///|
+pub extend CssPolicy with Debug::{to_repr}
 
 ///|
 /// No CSS. Today's `without_css`, as a level.
@@ -148,6 +166,12 @@ pub(all) enum CssReason {
 } derive(Eq, Debug)
 
 ///|
+pub extend CssReason with Eq::{not_equal, equal}
+
+///|
+pub extend CssReason with Debug::{to_repr}
+
+///|
 /// One dropped declaration.
 pub(all) struct CssDrop {
   /// The property, lowercased; `""` when the drop happened before a property
@@ -155,6 +179,12 @@ pub(all) struct CssDrop {
   property : String
   reason : CssReason
 } derive(Eq, Debug)
+
+///|
+pub extend CssDrop with Eq::{not_equal, equal}
+
+///|
+pub extend CssDrop with Debug::{to_repr}
 
 ///|
 /// A one-line rendering, for a report a person reads.
@@ -193,16 +223,22 @@ pub(all) struct CssResult {
 } derive(Eq, Debug)
 
 ///|
+pub extend CssResult with Eq::{not_equal, equal}
+
+///|
+pub extend CssResult with Debug::{to_repr}
+
+///|
 /// Caps, so a pathological value costs bounded time rather than a frozen tab.
 ///
 /// Generous by design, in the same register as `Policy::check_quotas`: they
 /// catch a runaway, not an author. A `style` attribute with 128 declarations is
 /// already not something a person wrote.
-pub let max_declarations : Int = 128
+pub let max_declarations : Int32 = 128
 
 ///|
-pub let max_tokens : Int = 4096
+pub let max_tokens : Int32 = 4096
 
 ///|
 /// How deep functions may nest. `calc(1px + calc(2px * (3 + 4)))` is 3.
-pub let max_nesting : Int = 8
+pub let max_nesting : Int32 = 8

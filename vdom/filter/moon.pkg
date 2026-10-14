@@ -25,6 +25,5 @@ import {
 
 import {
   "marianoguerra/tutuca/anode/sanitize/css" @safecss,
-  "moonbitlang/core/debug",
   "moonbitlang/core/test",
 } for "test"

@@ -20,6 +20,12 @@ pub(all) struct GenPlan {
 } derive(Debug, Eq)
 
 ///|
+pub extend GenPlan with Debug::{to_repr}
+
+///|
+pub extend GenPlan with Eq::{not_equal, equal}
+
+///|
 /// View diagnostics, reported at generation time.
 ///
 /// This is where view checking happens, and the only place it happens: these
@@ -498,7 +504,7 @@ pub fn gen_views_all(
 /// Several name themselves in the body instead. `where_` has one slot and
 /// `render_error` prints it as a claim about location, so picking one of three
 /// failing files to put in it would be a claim about the other two.
-fn batch_error(total : Int, failures : Array[(String, String)]) -> ErrShape {
+fn batch_error(total : Int32, failures : Array[(String, String)]) -> ErrShape {
   if failures.length() == 1 {
     let (input, why) = failures[0]
     return err(CODE_VIEW_GEN_FAILED, "\{input}: \{why}", where_=input)

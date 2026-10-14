@@ -29,12 +29,12 @@ pub struct Module {
   /// The schema is built ONCE here and carried: every instance reads it (its
   /// fields, its fingerprint, its mutators), and rebuilding it per
   /// `make_instance` would pay for a value that cannot change.
-  comps : Map[String, (Int, @tutuca.SchemaInfo, DynComponentDef)]
+  comps : Map[String, (Int32, @tutuca.SchemaInfo, DynComponentDef)]
   /// Where minted persist ids come from (see `make_instance`). A counter
   /// rather than anything derived from the state, because two instances with
   /// equal state are still two instances, and a store keyed on their contents
   /// would silently keep one of them.
-  next_pid : Ref[Int]
+  next_pid : Ref[Int32]
   /// The child scope this module registered into, kept so `make_instance` can
   /// resolve a declared PLACEHOLDER (see `DynObj.owned`). `lookup_component`
   /// walks to the parent, so a guest naming a component the HOST registered
@@ -152,7 +152,7 @@ pub fn register_module(
   scope : @component.ComponentStack,
   gmod : &GuestModule,
   manifest : DynManifest,
-  policy? : @policy.Policy = @policy.Policy::untrusted(),
+  policy~ : @policy.Policy = @policy.Policy::untrusted(),
 ) -> Module raise ManifestError {
   // Everything the host decides about a module happens first and together, so
   // a refusal costs no parsing and leaves nothing behind. `@policy` owns the
@@ -165,7 +165,7 @@ pub fn register_module(
   // said it trusts. Both have to be settled first or the two disagree.
   let (config, policy) = resolve_config(manifest, policy, diagnostics)
   let child = scope.enter()
-  let comps : Map[String, (Int, @tutuca.SchemaInfo, DynComponentDef)] = Map([])
+  let comps : Map[String, (Int32, @tutuca.SchemaInfo, DynComponentDef)] = Map([])
   let synthesized = []
   // The module, before it exists. `Component::make` has to be able to build
   // one of these — that is what a `provide {Cell: "self"}` publishes and what
@@ -623,8 +623,8 @@ fn facts_of(manifest : DynManifest) -> @policy.ModuleFacts {
 pub fn Module::make_instance(
   self : Module,
   component : String,
-  args? : Map[String, @tutuca.Value] = Map([]),
-  pid? : String = "",
+  args~ : Map[String, @tutuca.Value] = Map([]),
+  pid~ : String = "",
 ) -> DynObj? {
   match self.comps.get(component) {
     Some((comp_id, schema, def)) => {
@@ -762,7 +762,7 @@ pub fn Module::init_names(self : Module, component : String) -> Array[String] {
 pub fn Module::wrap_instance(
   self : Module,
   component : String,
-  handle : Int,
+  handle : Int32,
 ) -> @tutuca.Value? {
   self.wrap_inst(component, self.gmod.of_token(handle))
 }

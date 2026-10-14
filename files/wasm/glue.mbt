@@ -25,7 +25,7 @@ extern "wasm" fn tfiles_save_text(
 ///
 /// Answers nothing here: the browser's read is a promise, and the reply
 /// arrives through `on_file_text`.
-extern "wasm" fn tfiles_read_text(file_id : Int, req_id : Int) -> Unit = "tfiles" "read_text"
+extern "wasm" fn tfiles_read_text(file_id : Int32, req_id : Int32) -> Unit = "tfiles" "read_text"
 
 ///|
 /// The reads that have been asked for and not yet answered.
@@ -33,10 +33,10 @@ extern "wasm" fn tfiles_read_text(file_id : Int, req_id : Int) -> Unit = "tfiles
 /// Module-level because the answer comes back through a package-level EXPORT,
 /// which is the only door a wasm-gc page has: an export is a function, not a
 /// method, so there is nowhere else for it to look. One page, one table.
-let pending : Map[Int, (Result[String, String]) -> Unit] = Map([])
+let pending : Map[Int32, (Result[String, String]) -> Unit] = Map([])
 
 ///|
-let next_req : Ref[Int] = { val: 1, }
+let next_req : Ref[Int32] = { val: 1, }
 
 ///|
 /// The page's answer to one `read_text`.
@@ -45,7 +45,7 @@ let next_req : Ref[Int] = { val: 1, }
 /// treated as an error: a read whose continuation has already been taken is a
 /// double answer, and running the continuation twice would import the same
 /// file twice.
-pub fn on_file_text(req_id : Int, ok : Bool, text : String) -> Unit {
+pub fn on_file_text(req_id : Int32, ok : Bool, text : String) -> Unit {
   match pending.get(req_id) {
     Some(then) => {
       pending.remove(req_id)
@@ -76,6 +76,9 @@ pub impl @files.FileService for BrowserFiles with fn save_text(
 ) {
   tfiles_save_text(name, mime, text)
 }
+
+///|
+pub extend BrowserFiles with @files.FileService::{save_text, read_text}
 
 ///|
 pub impl @files.FileService for BrowserFiles with fn read_text(

@@ -15,7 +15,6 @@ import {
   "moonbitlang/async",
   "moonbitlang/x/fs",
   "moonbitlang/core/env",
-  "moonbitlang/core/string",
 }
 
 supported_targets = "native"

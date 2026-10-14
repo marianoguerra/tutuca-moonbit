@@ -16,6 +16,9 @@
 pub(all) struct MinimumViableComponentState {} derive(Default)
 
 ///|
+pub extend MinimumViableComponentState with Default::{default}
+
+///|
 /// The zero state: every field at its type's empty value.
 ///
 /// The `spec:` section states no defaults here — a default is a value,
@@ -75,6 +78,9 @@ impl @component.Fields for MinimumViableComponentState with fn schema() {
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct StaticViewComponentState {} derive(Default)
+
+///|
+pub extend StaticViewComponentState with Default::{default}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -137,7 +143,7 @@ impl @component.Fields for StaticViewComponentState with fn schema() {
 /// this struct lacks fails generation.
 pub(all) struct TextDirectiveState {
   str : String
-  num : Int
+  num : Int32
   bool : Bool
   not_set : @tutuca.Value
 }
@@ -195,6 +201,12 @@ pub let text_directive_global_style : String = ""
 pub(all) enum TextDirectiveCompute {
   GetStrUpper
 } derive(Eq, @debug.Debug)
+
+///|
+pub extend TextDirectiveCompute with Eq::{not_equal, equal}
+
+///|
+pub extend TextDirectiveCompute with @debug.Debug::{to_repr}
 
 ///|
 pub fn TextDirectiveCompute::name(self : TextDirectiveCompute) -> String {

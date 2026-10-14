@@ -122,7 +122,7 @@ fn print_type(t : @wast.Type) -> String {
 }
 
 ///|
-fn indent(out : StringBuilder, depth : Int) -> Unit {
+fn indent(out : StringBuilder, depth : Int32) -> Unit {
   for _ in 0..<depth {
     out.write_string("  ")
   }
@@ -130,7 +130,7 @@ fn indent(out : StringBuilder, depth : Int) -> Unit {
 
 ///|
 /// One node, as a line or a block of them.
-fn print_node(out : StringBuilder, n : @wast.Node, depth : Int) -> Unit {
+fn print_node(out : StringBuilder, n : @wast.Node, depth : Int32) -> Unit {
   match n.it {
     Bind(binders~, value~, mutable~) => {
       indent(out, depth)

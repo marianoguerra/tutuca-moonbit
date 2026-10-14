@@ -158,7 +158,7 @@ fn print_step(step : @scenedef.Step) -> String raise NoSpelling {
 }
 
 ///|
-fn nth_opt(nth : Int) -> String {
+fn nth_opt(nth : Int32) -> String {
   if nth == 0 {
     ""
   } else {
@@ -168,7 +168,7 @@ fn nth_opt(nth : Int) -> String {
 
 ///|
 /// `~nth:` as a STEP takes, which is an argument of the call.
-fn step_nth(nth : Int) -> String {
+fn step_nth(nth : Int32) -> String {
   if nth == 0 {
     ""
   } else {

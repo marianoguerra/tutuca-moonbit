@@ -35,7 +35,7 @@ fn html_host(payload : String) -> @vdom.Vdom {
 /// sanitized into children, and the directive `set_prop` looks for is gone.
 test "a permissive sanitizer gets a filter that handles raw markup" {
   let tree = html_host("<p>hi <script>alert(1)</script><b>there</b></p>")
-  filter_for(permissive()).filter_tree(tree)
+  @markdown.filter_for(permissive()).filter_tree(tree)
   guard tree is Node(el) else { fail("expected an element") }
   // Never handed to set_inner_html — the attribute it keys on is gone.
   debug_inspect(el.attrs.contains(@markup.RAW_ATTR), content="false")
@@ -54,7 +54,7 @@ test "a permissive sanitizer gets a filter that handles raw markup" {
 /// render looking for a construct that registration already refuses.
 test "a baseline sanitizer gets no markup filter" {
   let tree = html_host("<p>hi</p>")
-  filter_for(@sanitize.Sanitizer::default()).filter_tree(tree)
+  @markdown.filter_for(@sanitize.Sanitizer::default()).filter_tree(tree)
   guard tree is Node(el) else { fail("expected an element") }
   // Untouched: the directive is still there, so `set_prop` will do what it has
   // always done. That is correct — a guest carrying this never registered, and
@@ -72,9 +72,9 @@ test "a baseline sanitizer gets no markup filter" {
 /// not tighten anything; it would just make the directive render nothing.
 test "markdown is handled under the default sanitizer, with no permission" {
   let tree = host("# hi\n")
-  filter_for(@sanitize.Sanitizer::default()).filter_tree(tree)
+  @markdown.filter_for(@sanitize.Sanitizer::default()).filter_tree(tree)
   guard tree is Node(el) else { fail("expected an element") }
-  debug_inspect(el.attrs.contains(MD_ATTR), content="false")
+  debug_inspect(el.attrs.contains(@markdown.MD_ATTR), content="false")
   inspect(
     shape(tree),
     content=(
@@ -88,7 +88,7 @@ test "markdown is handled under the default sanitizer, with no permission" {
 /// not silently change what markdown does.
 test "markdown is handled under a permissive sanitizer too" {
   let tree = host("# hi\n")
-  filter_for(permissive()).filter_tree(tree)
+  @markdown.filter_for(permissive()).filter_tree(tree)
   inspect(
     shape(tree),
     content=(
@@ -106,7 +106,7 @@ test "an element rule reaches markdown through the chain" {
     remove_elements: Some([@sanitize.html("h1")]),
   })
   let tree = host("# gone\n\nkept\n")
-  filter_for(s).filter_tree(tree)
+  @markdown.filter_for(s).filter_tree(tree)
   inspect(
     shape(tree),
     content=(
@@ -131,7 +131,7 @@ test "the baseline rules run either way" {
         "title": Str("kept"),
       }),
     ])
-    filter_for(sanitizer).filter_tree(tree)
+    @markdown.filter_for(sanitizer).filter_tree(tree)
     guard tree is Node(el) else { fail("expected an element") }
     guard el.childs[0] is Node(a) else { fail("expected an element") }
     assert_true(a.attrs.get("href") is None)
@@ -147,7 +147,7 @@ test "the baseline rules run either way" {
 /// `javascript:` URL through.
 test "markup runs before the attribute rules" {
   let tree = html_host("<a href=\"javascript:alert(1)\" title=\"t\">x</a>")
-  let f = filter_for(permissive())
+  let f = @markdown.filter_for(permissive())
   f.filter_tree(tree)
   inspect(
     shape(tree),
@@ -169,7 +169,7 @@ test "markup runs before the attribute rules" {
 /// would not be doing the job the order exists for.
 test "markdown runs before the attribute rules" {
   let tree = host("[x](javascript:alert(1))\n")
-  let f = filter_for(@sanitize.Sanitizer::default())
+  let f = @markdown.filter_for(@sanitize.Sanitizer::default())
   f.filter_tree(tree)
   inspect(
     shape(tree),
@@ -193,7 +193,7 @@ test "both directives on one element resolve deterministically" {
     "dangerouslySetInnerHTML": Html("<b>html</b>"),
     "setInnerMd": Md("*md*"),
   })
-  filter_for(permissive()).filter_tree(tree)
+  @markdown.filter_for(permissive()).filter_tree(tree)
   inspect(
     shape(tree),
     content=(

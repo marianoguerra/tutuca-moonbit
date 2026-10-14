@@ -23,7 +23,7 @@ fn vw_with_editing(v : @tutuca.Value) -> @tutuca.Value {
 }
 
 ///|
-fn vw_int_arg(args : Array[@tutuca.Value], i : Int) -> Int {
+fn vw_int_arg(args : Array[@tutuca.Value], i : Int32) -> Int32 {
   match args.get(i) {
     Some(Num(n)) => n.to_int()
     _ => 0
@@ -55,7 +55,7 @@ fn vw_make_type(reg : VwReg, cname : String) -> @tutuca.Value {
 fn vw_insert_picker(
   reg : VwReg,
   items : Array[@tutuca.Value],
-  i : Int,
+  i : Int32,
 ) -> Array[@tutuca.Value] {
   let out = items.copy()
   let at = @cmp.minimum(@cmp.maximum(0, i), out.length())
@@ -102,7 +102,7 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
             [Str(t), ..] => t
             _ => ""
           }
-          let parsed : Int? = Some(@string.parse_int(raw)) catch { _ => None }
+          let parsed : Int32? = Some(@string.parse_int(raw)) catch { _ => None }
           Next(
             match parsed {
               Some(v) => { value: v, raw_value: raw, }
@@ -614,10 +614,10 @@ fn vw_section_comp() -> @component.Component {
 }
 
 ///|
-fn vw_int_value(args : Array[@tutuca.Value], fallback : Int) -> Int {
+fn vw_int_value(args : Array[@tutuca.Value], fallback : Int32) -> Int32 {
   match args {
     [Str(t), ..] => {
-      let parsed : Int? = Some(@string.parse_int(t)) catch { _ => None }
+      let parsed : Int32? = Some(@string.parse_int(t)) catch { _ => None }
       match parsed {
         Some(n) => n
         None => fallback

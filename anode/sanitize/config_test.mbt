@@ -8,23 +8,23 @@
 /// config this package accepts and the platform rejects would give that away.
 
 ///|
-fn errs(cfg : SanitizerConfig) -> Array[String] {
-  cfg.validate().map(ConfigError::to_string)
+fn errs(cfg : @sanitize.SanitizerConfig) -> Array[String] {
+  cfg.validate().map(@sanitize.ConfigError::to_string)
 }
 
 ///|
 test "the empty config is valid, and so is the default" {
-  debug_inspect(errs(SanitizerConfig::empty()), content="[]")
-  debug_inspect(errs(SanitizerConfig::default()), content="[]")
+  debug_inspect(errs(@sanitize.SanitizerConfig::empty()), content="[]")
+  debug_inspect(errs(@sanitize.SanitizerConfig::default()), content="[]")
 }
 
 ///|
 test "an allow list and a remove list are mutually exclusive" {
   debug_inspect(
     errs({
-      ..SanitizerConfig::empty(),
-      elements: Some([ElementRule::of(html("div"))]),
-      remove_elements: Some([html("script")]),
+      ..@sanitize.SanitizerConfig::empty(),
+      elements: Some([@sanitize.ElementRule::of(@sanitize.html("div"))]),
+      remove_elements: Some([@sanitize.html("script")]),
       attributes: Some(["class"]),
       remove_attributes: Some(["style"]),
     }),
@@ -41,15 +41,15 @@ test "an allow list and a remove list are mutually exclusive" {
 test "duplicates and overlaps" {
   debug_inspect(
     errs({
-      ..SanitizerConfig::empty(),
+      ..@sanitize.SanitizerConfig::empty(),
       elements: Some([
-        ElementRule::of(html("div")),
-        ElementRule::of(html("DIV")),
+        @sanitize.ElementRule::of(@sanitize.html("div")),
+        @sanitize.ElementRule::of(@sanitize.html("DIV")),
       ]),
       replace_with_children_elements: Some([
-        html("div"),
-        html("span"),
-        html("span"),
+        @sanitize.html("div"),
+        @sanitize.html("span"),
+        @sanitize.html("span"),
       ]),
     }),
     content=(
@@ -70,15 +70,15 @@ test "duplicates and overlaps" {
 test "per-element rules against the global lists" {
   debug_inspect(
     errs({
-      ..SanitizerConfig::empty(),
+      ..@sanitize.SanitizerConfig::empty(),
       elements: Some([
         {
-          elem: html("a"),
+          elem: @sanitize.html("a"),
           attributes: Some(["class"]),
           remove_attributes: Some(["title"]),
         },
         {
-          elem: html("p"),
+          elem: @sanitize.html("p"),
           attributes: None,
           remove_attributes: Some(["href"]),
         },
@@ -103,7 +103,7 @@ test "per-element rules against the global lists" {
 test "dataAttributes interacts with every list" {
   debug_inspect(
     errs({
-      ..SanitizerConfig::empty(),
+      ..@sanitize.SanitizerConfig::empty(),
       attributes: Some(["data-role"]),
       data_attributes: Some(true),
     }),
@@ -113,7 +113,7 @@ test "dataAttributes interacts with every list" {
   )
   debug_inspect(
     errs({
-      ..SanitizerConfig::empty(),
+      ..@sanitize.SanitizerConfig::empty(),
       remove_attributes: Some(["style"]),
       data_attributes: Some(false),
     }),
@@ -128,12 +128,14 @@ test "dataAttributes interacts with every list" {
 /// provoke, so it fails at construction rather than degrading into a sanitizer
 /// that permits more than its author meant.
 test "an invalid config does not compile into a sanitizer" {
-  let bad : SanitizerConfig = {
-    ..SanitizerConfig::empty(),
-    elements: Some([ElementRule::of(html("div"))]),
-    remove_elements: Some([html("script")]),
+  let bad : @sanitize.SanitizerConfig = {
+    ..@sanitize.SanitizerConfig::empty(),
+    elements: Some([@sanitize.ElementRule::of(@sanitize.html("div"))]),
+    remove_elements: Some([@sanitize.html("script")]),
   }
-  let e : InvalidConfig = @test.expect_error(() => Sanitizer::new(bad) |> ignore)
+  let e : @sanitize.InvalidConfig = @test.expect_error(() => {
+    @sanitize.Sanitizer::new(bad) |> ignore
+  })
   inspect(
     e.to_string(),
     content="config sets both elements and remove_elements; the spec allows one or the other",

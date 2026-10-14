@@ -112,11 +112,17 @@ pub(all) struct ContactDirectoryContactData {
   name : String
   email : String
 } derive(Eq, @debug.Debug)
+pub fn ContactDirectoryContactData::equal(Self, Self) -> Bool
+pub fn ContactDirectoryContactData::not_equal(Self, Self) -> Bool
+pub fn ContactDirectoryContactData::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ContactDirectoryEnrich {
   ContactLabel
 } derive(Eq, @debug.Debug)
+pub fn ContactDirectoryEnrich::equal(Self, Self) -> Bool
 pub fn ContactDirectoryEnrich::name(Self) -> String
+pub fn ContactDirectoryEnrich::not_equal(Self, Self) -> Bool
+pub fn ContactDirectoryEnrich::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ContactDirectoryIntent {
   UpdateContact(String, String, String)
@@ -159,6 +165,9 @@ pub(all) struct ContactEditorContactData {
   name : String
   email : String
 } derive(Eq, @debug.Debug)
+pub fn ContactEditorContactData::equal(Self, Self) -> Bool
+pub fn ContactEditorContactData::not_equal(Self, Self) -> Bool
+pub fn ContactEditorContactData::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ContactEditorMsg {
   Save
@@ -209,7 +218,10 @@ pub fn DocumentEditorState::zero() -> Self
 pub(all) enum DocumentWorkspaceCompute {
   SelectedDocument
 } derive(Eq, @debug.Debug)
+pub fn DocumentWorkspaceCompute::equal(Self, Self) -> Bool
 pub fn DocumentWorkspaceCompute::name(Self) -> String
+pub fn DocumentWorkspaceCompute::not_equal(Self, Self) -> Bool
+pub fn DocumentWorkspaceCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum DocumentWorkspaceMsg {
   Init
@@ -282,7 +294,10 @@ pub fn TaskItemState::zero() -> Self
 pub(all) enum TaskListCompute {
   Visible
 } derive(Eq, @debug.Debug)
+pub fn TaskListCompute::equal(Self, Self) -> Bool
 pub fn TaskListCompute::name(Self) -> String
+pub fn TaskListCompute::not_equal(Self, Self) -> Bool
+pub fn TaskListCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) enum TaskListIntent {
   RemoveTask(String)
@@ -314,7 +329,10 @@ pub fn TaskListState::zero() -> Self
 pub(all) enum TaskListWhen {
   Visible
 } derive(Eq, @debug.Debug)
+pub fn TaskListWhen::equal(Self, Self) -> Bool
 pub fn TaskListWhen::name(Self) -> String
+pub fn TaskListWhen::not_equal(Self, Self) -> Bool
+pub fn TaskListWhen::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

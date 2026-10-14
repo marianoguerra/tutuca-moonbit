@@ -4,8 +4,7 @@
 //   tutuca gen lint_errors.tutu --name LintErrors --out <dir>
 //
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component",
-//   "moonbitlang/core/debug"
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 
 ///|
 /// The state of the LintDemo component.
@@ -14,7 +13,7 @@
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct LintDemoState {
-  count : Int
+  count : Int32
   items : Array[@tutuca.Value]
   kind : String
   is_open : Bool
@@ -99,7 +98,7 @@ impl @component.Fields for LintDemoState with fn schema() {
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct HtmlLintDemoState {
-  count : Int
+  count : Int32
 }
 
 ///|
@@ -154,7 +153,7 @@ impl @component.Fields for HtmlLintDemoState with fn schema() {
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct ScopedStyleDemoState {
-  count : Int
+  count : Int32
 }
 
 ///|

@@ -4,8 +4,7 @@
 //   tutuca gen spec_view.tutu --name SpecView --out <dir>
 //
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component",
-//   "moonbitlang/core/debug"
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 
 ///|
 /// The declaration a component was built from, as something to READ.
@@ -484,7 +483,7 @@ pub fn SpecViewerIntent::to_dispatch(
 pub fn SpecViewerIntent::dispatch(
   self : SpecViewerIntent,
   ctx : &@tutuca.Ctx,
-  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
+  opts~ : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
 ) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.intent(name, args, opts)

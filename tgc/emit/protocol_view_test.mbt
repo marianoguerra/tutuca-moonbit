@@ -7,7 +7,7 @@
 ///
 /// Both bodies arrive already indented for the section they go in, because
 /// re-indenting them here would mean a helper that reads shrubbery to write it.
-fn card(spec : String, script : String, view? : String = "div()") -> String {
+fn card(spec : String, script : String, view~ : String = "div()") -> String {
   "spec:\n\{spec}\nlogic:\n  B:\n\{script}\nview:\n  B:\n    \{view}\n"
 }
 

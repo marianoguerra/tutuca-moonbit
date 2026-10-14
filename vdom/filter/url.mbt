@@ -167,7 +167,7 @@ pub struct UrlFilter {
 }
 
 ///|
-pub fn UrlFilter::new(max_reports? : Int = 64) -> UrlFilter {
+pub fn UrlFilter::new(max_reports~ : Int32 = 64) -> UrlFilter {
   { log: DropLog::new(max_reports~), }
 }
 
@@ -175,6 +175,14 @@ pub fn UrlFilter::new(max_reports? : Int = 64) -> UrlFilter {
 /// Everything dropped since the last call, and clears the log.
 pub impl VdomFilter for UrlFilter with fn take_reports(self) {
   self.log.take()
+}
+
+///|
+pub extend UrlFilter with VdomFilter::{
+  filter_elem_hinted,
+  filter_elem,
+  take_reports,
+  filter_tree,
 }
 
 ///|
@@ -201,7 +209,7 @@ pub fn is_url_attr(name : String) -> Bool {
     return true
   }
   for c in name {
-    if c is ('A'..='Z') {
+    if c is ('A'..<='Z') {
       return url_attrs.contains(name.to_lower())
     }
   }

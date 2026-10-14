@@ -76,7 +76,7 @@ fn quadratic_comp() -> @component.Component {
 }
 
 ///|
-fn discriminant_of(s : QuadraticState) -> Int {
+fn discriminant_of(s : QuadraticState) -> Int32 {
   s.b * s.b - 4 * s.a * s.c
 }
 

@@ -13,8 +13,8 @@ fn parsed(html : String) -> @anode.ANode {
 }
 
 ///|
-fn shown(vs : Array[Violation]) -> Array[String] {
-  vs.map(Violation::to_string)
+fn shown(vs : Array[@sanitize.Violation]) -> Array[String] {
+  vs.map(@sanitize.Violation::to_string)
 }
 
 ///|
@@ -23,7 +23,7 @@ fn shown(vs : Array[Violation]) -> Array[String] {
 /// it is handed — and here there is no unsafe entry point at all, so it is
 /// unconditional.
 test "the baseline holds against a config that allows everything" {
-  let s = Sanitizer::default()
+  let s = @sanitize.Sanitizer::default()
   debug_inspect(
     shown(s.check(parsed("<div><script></script><p>ok</p></div>"))),
     content=(
@@ -31,11 +31,11 @@ test "the baseline holds against a config that allows everything" {
     ),
   )
   // Even naming it in an allowlist does not get it back.
-  let permissive = Sanitizer::new({
-    ..SanitizerConfig::empty(),
+  let permissive = @sanitize.Sanitizer::new({
+    ..@sanitize.SanitizerConfig::empty(),
     elements: Some([
-      ElementRule::of(html("div")),
-      ElementRule::of(html("script")),
+      @sanitize.ElementRule::of(@sanitize.html("div")),
+      @sanitize.ElementRule::of(@sanitize.html("script")),
     ]),
   })
   debug_inspect(
@@ -51,8 +51,8 @@ test "the baseline holds against a config that allows everything" {
 /// half of the spec's baseline that is a PREDICATE rather than a list, which
 /// is why it cannot live in a config's `remove_attributes`.
 test "event handlers are refused by name, whatever the config says" {
-  let s = Sanitizer::new({
-    ..SanitizerConfig::empty(),
+  let s = @sanitize.Sanitizer::new({
+    ..@sanitize.SanitizerConfig::empty(),
     attributes: Some(["onclick", "class"]),
   })
   // The literal form an attacker writes, and the dynamic form. Both are a
@@ -69,11 +69,11 @@ test "event handlers are refused by name, whatever the config says" {
       #|["attribute 'onclick' is not allowed on <div> (at div)"]
     ),
   )
-  assert_true(is_event_handler_attr("onclick"))
-  assert_true(is_event_handler_attr("onafterprint"))
+  assert_true(@sanitize.is_event_handler_attr("onclick"))
+  assert_true(@sanitize.is_event_handler_attr("onafterprint"))
   // `on` alone is not a handler, and nothing else in HTML starts with it.
-  assert_false(is_event_handler_attr("on"))
-  assert_false(is_event_handler_attr("open"))
+  assert_false(@sanitize.is_event_handler_attr("on"))
+  assert_false(@sanitize.is_event_handler_attr("open"))
 }
 
 ///|
@@ -87,11 +87,11 @@ test "the reserved data attributes survive dataAttributes: false" {
   // means "not automatically allowed", not "removed", and a remove
   // configuration allows what it does not name. `comments` is not symmetric
   // with it: that one is an explicit boolean and removes either way.
-  let s = Sanitizer::new({
-    ..SanitizerConfig::empty(),
+  let s = @sanitize.Sanitizer::new({
+    ..@sanitize.SanitizerConfig::empty(),
     elements: Some([
-      ElementRule::of(html("div")),
-      ElementRule::of(html("button")),
+      @sanitize.ElementRule::of(@sanitize.html("div")),
+      @sanitize.ElementRule::of(@sanitize.html("button")),
     ]),
     attributes: Some(["class"]),
   })
@@ -114,9 +114,9 @@ test "the reserved data attributes survive dataAttributes: false" {
 /// configuration keeps it. Absent and empty are different, which is why every
 /// config field is an Option.
 test "allow and remove configurations are not each other's complement" {
-  let allow = Sanitizer::new({
-    ..SanitizerConfig::empty(),
-    elements: Some([ElementRule::of(html("div"))]),
+  let allow = @sanitize.Sanitizer::new({
+    ..@sanitize.SanitizerConfig::empty(),
+    elements: Some([@sanitize.ElementRule::of(@sanitize.html("div"))]),
   })
   debug_inspect(
     shown(allow.check(parsed("<div><span>x</span></div>"))),
@@ -124,9 +124,9 @@ test "allow and remove configurations are not each other's complement" {
       #|["<span> is not allowed (at div>span)"]
     ),
   )
-  let remove = Sanitizer::new({
-    ..SanitizerConfig::empty(),
-    remove_elements: Some([html("span")]),
+  let remove = @sanitize.Sanitizer::new({
+    ..@sanitize.SanitizerConfig::empty(),
+    remove_elements: Some([@sanitize.html("span")]),
   })
   debug_inspect(
     shown(remove.check(parsed("<div><span>x</span><b>y</b></div>"))),
@@ -135,8 +135,8 @@ test "allow and remove configurations are not each other's complement" {
     ),
   )
   // An EMPTY allowlist allows nothing, and is not the same as no allowlist.
-  let nothing = Sanitizer::new({
-    ..SanitizerConfig::empty(),
+  let nothing = @sanitize.Sanitizer::new({
+    ..@sanitize.SanitizerConfig::empty(),
     elements: Some([]),
   })
   debug_inspect(
@@ -152,11 +152,15 @@ test "allow and remove configurations are not each other's complement" {
 /// `SanitizerElementNamespaceWithAttributes` — and narrow or widen the global
 /// list for that element alone.
 test "per-element attribute rules" {
-  let s = Sanitizer::new({
-    ..SanitizerConfig::empty(),
+  let s = @sanitize.Sanitizer::new({
+    ..@sanitize.SanitizerConfig::empty(),
     elements: Some([
-      { elem: html("a"), attributes: Some(["href"]), remove_attributes: None, },
-      ElementRule::of(html("div")),
+      {
+        elem: @sanitize.html("a"),
+        attributes: Some(["href"]),
+        remove_attributes: None,
+      },
+      @sanitize.ElementRule::of(@sanitize.html("div")),
     ]),
     attributes: Some(["class"]),
   })
@@ -172,12 +176,12 @@ test "per-element attribute rules" {
 /// `lineargradient` are different SVG elements, while `<DIV>` and `<div>` are
 /// one.
 test "namespaces and the casing rule" {
-  let s = Sanitizer::new({
-    ..SanitizerConfig::empty(),
+  let s = @sanitize.Sanitizer::new({
+    ..@sanitize.SanitizerConfig::empty(),
     elements: Some([
-      ElementRule::of(html("div")),
-      ElementRule::of(html("svg")),
-      ElementRule::of(svg("linearGradient")),
+      @sanitize.ElementRule::of(@sanitize.html("div")),
+      @sanitize.ElementRule::of(@sanitize.html("svg")),
+      @sanitize.ElementRule::of(@sanitize.svg("linearGradient")),
     ]),
   })
   debug_inspect(s.element_verdict("DIV", None), content="Keep")
@@ -198,11 +202,13 @@ test "namespaces and the casing rule" {
 /// comments would turn a guest's typo into a refusal about something else.
 test "comments" {
   debug_inspect(
-    shown(Sanitizer::default().check(parsed("<div><!-- hi --></div>"))),
+    shown(
+      @sanitize.Sanitizer::default().check(parsed("<div><!-- hi --></div>")),
+    ),
     content="[]",
   )
-  let drop = Sanitizer::new({
-    ..SanitizerConfig::empty(),
+  let drop = @sanitize.Sanitizer::new({
+    ..@sanitize.SanitizerConfig::empty(),
     comments: Some(false),
   })
   debug_inspect(
@@ -218,7 +224,7 @@ test "comments" {
 /// field. There is no `innerHTML` attribute for the spec to have an opinion
 /// about, so this is tutuca's own extension to the model.
 test "raw markup is a config field, denied by default" {
-  let s = Sanitizer::default()
+  let s = @sanitize.Sanitizer::default()
   debug_inspect(
     shown(s.check(parsed("<div @dangerouslysetinnerhtml=\".payload\"></div>"))),
     content=(
@@ -244,15 +250,15 @@ test "raw markup is a config field, denied by default" {
 /// already has over every other node in the tree, and which reaches markdown
 /// through the filter. `vdom/filter/markdown/install_test.mbt` holds that half.
 test "markdown is not a violation, under any config" {
-  let default_ = Sanitizer::default()
+  let default_ = @sanitize.Sanitizer::default()
   debug_inspect(
     shown(default_.check(parsed("<div @setinnermd=\".body\"></div>"))),
     content="[]",
   )
   // Not even under a config that refuses raw markup as tightly as it can while
   // naming nothing about markdown.
-  let strict = Sanitizer::new({
-    ..SanitizerConfig::empty(),
+  let strict = @sanitize.Sanitizer::new({
+    ..@sanitize.SanitizerConfig::empty(),
     raw_markup: Some(false),
   })
   debug_inspect(
@@ -261,8 +267,8 @@ test "markdown is not a violation, under any config" {
   )
   // And the two are independent: permitting raw markup does not change it, and
   // the raw-HTML directive beside it is still judged on its own.
-  let permissive = Sanitizer::new({
-    ..SanitizerConfig::empty(),
+  let permissive = @sanitize.Sanitizer::new({
+    ..@sanitize.SanitizerConfig::empty(),
     raw_markup: Some(true),
   })
   debug_inspect(
@@ -293,7 +299,7 @@ test "a macro call's slots are part of the caller's own view" {
   debug_inspect(tree.has_raw_html(), content="false")
   // What this walk says:
   debug_inspect(
-    shown(Sanitizer::default().check(tree)),
+    shown(@sanitize.Sanitizer::default().check(tree)),
     content=(
       #|["<div> sets markup directly (@dangerouslysetinnerhtml), which cannot be checked before it renders (at div)"]
     ),
@@ -303,7 +309,7 @@ test "a macro call's slots are part of the caller's own view" {
     "<x:card><x:slot name=\"body\"><script></script></x:slot></x:card>",
   )
   debug_inspect(
-    shown(Sanitizer::default().check(named)),
+    shown(@sanitize.Sanitizer::default().check(named)),
     content=(
       #|["<script> is not allowed (at script)"]
     ),
@@ -317,7 +323,7 @@ test "a macro call's slots are part of the caller's own view" {
 /// site are not the same author at the same trust level.
 test "a macro call's own body is not the caller's to answer for" {
   let tree = parsed("<x:card title=\"hi\"></x:card>")
-  debug_inspect(shown(Sanitizer::default().check(tree)), content="[]")
+  debug_inspect(shown(@sanitize.Sanitizer::default().check(tree)), content="[]")
 }
 
 // ---------------------------------------------------------------------------
@@ -334,7 +340,9 @@ test "an SVG script is refused" {
     "<div><svg><script>alert(1)</script></svg></div>", px,
   ).unwrap()
   debug_inspect(
-    Sanitizer::default().check(tree).map(Violation::to_string),
+    @sanitize.Sanitizer::default()
+    .check(tree)
+    .map(@sanitize.Violation::to_string),
     content=(
       #|["<script> is not allowed (at div>svg>script)"]
     ),
@@ -347,7 +355,7 @@ test "an SVG script is refused" {
 /// spec leaves to the config layer). Regenerate the right-hand side with
 /// `node scripts/fetch-sanitizer-defaults.mjs`.
 test "the baseline covers everything the spec's baseline removes" {
-  fn shown(e : ElementName) -> String {
+  fn shown(e : @sanitize.ElementName) -> String {
     match e.ns {
       Html => e.name
       Svg => "svg:" + e.name
@@ -355,16 +363,16 @@ test "the baseline covers everything the spec's baseline removes" {
     }
   }
 
-  let ours = @set.Set::from_array(unsafe_elements.map(shown))
-  for e in spec_baseline_removes {
+  let ours = @set.Set::from_array(@sanitize.unsafe_elements.map(shown))
+  for e in @sanitize.spec_baseline_removes {
     assert_true(ours.contains(shown(e)))
   }
   // The deliberate differences, stated so a regen that dropped one would be
   // noticed rather than absorbed. `base` retargets relative URLs; the four SMIL
   // elements write an attribute after both passes have run. See `default.mbt`.
-  let spec = @set.Set::from_array(spec_baseline_removes.map(shown))
+  let spec = @set.Set::from_array(@sanitize.spec_baseline_removes.map(shown))
   debug_inspect(
-    unsafe_elements.map(shown).filter(k => !spec.contains(k)),
+    @sanitize.unsafe_elements.map(shown).filter(k => !spec.contains(k)),
     content=(
       #|[
       #|  "base",
@@ -382,15 +390,15 @@ test "the baseline covers everything the spec's baseline removes" {
 /// relation — which is not free, since it carries both a global attribute list
 /// and per-element ones.
 test "the spec's default configuration is valid and usable" {
-  let cfg = SanitizerConfig::spec_default()
+  let cfg = @sanitize.SanitizerConfig::spec_default()
   debug_inspect(cfg.validate(), content="[]")
-  let s = Sanitizer::new(cfg)
+  let s = @sanitize.Sanitizer::new(cfg)
   let px = @anode.ParseContext::new()
   // Document content passes.
   let doc = @anode.ANode::parse(
     "<div><p>hi <em>there</em></p><ul><li>a</li></ul></div>", px,
   ).unwrap()
-  debug_inspect(s.check(doc).map(Violation::to_string), content="[]")
+  debug_inspect(s.check(doc).map(@sanitize.Violation::to_string), content="[]")
 }
 
 ///|
@@ -403,7 +411,7 @@ test "the spec's default configuration is valid and usable" {
 /// Nothing else in the suite notices, because the rest of the list is already
 /// lowercase and matches either way.
 test "the spec's default keeps the camelCase SVG attributes" {
-  let s = Sanitizer::new(SanitizerConfig::spec_default())
+  let s = @sanitize.Sanitizer::new(@sanitize.SanitizerConfig::spec_default())
   for name in ["viewBox", "preserveAspectRatio"] {
     assert_true(s.attribute_allowed("svg", Some(Svg), name))
   }
@@ -425,9 +433,9 @@ test "the spec's default keeps the camelCase SVG attributes" {
 /// Folding is what keeps a *remove* list from having a case bypass: a config
 /// that removes `viewBox` removes it however a guest spells it.
 test "attribute removal is case-folded too" {
-  let s = Sanitizer::new({
-    ..SanitizerConfig::empty(),
-    elements: Some([ElementRule::of(svg("svg"))]),
+  let s = @sanitize.Sanitizer::new({
+    ..@sanitize.SanitizerConfig::empty(),
+    elements: Some([@sanitize.ElementRule::of(@sanitize.svg("svg"))]),
     remove_attributes: Some(["viewBox"]),
   })
   assert_false(s.attribute_allowed("svg", Some(Svg), "viewBox"))
@@ -439,13 +447,13 @@ test "attribute removal is case-folded too" {
 /// DOCUMENT content, and a tutuca view describes an INTERACTIVE component. A
 /// guest with a button is not an unusual guest.
 test "the spec's default configuration refuses an ordinary component view" {
-  let s = Sanitizer::new(SanitizerConfig::spec_default())
+  let s = @sanitize.Sanitizer::new(@sanitize.SanitizerConfig::spec_default())
   let px = @anode.ParseContext::new()
   let view = @anode.ANode::parse(
     "<div><button @on.click=\"go\">go</button><input :value=\".q\"></div>", px,
   ).unwrap()
   debug_inspect(
-    s.check(view).map(Violation::to_string),
+    s.check(view).map(@sanitize.Violation::to_string),
     content=(
       #|[
       #|  "<button> is not allowed (at div>button)",
@@ -463,7 +471,7 @@ test "the spec's default configuration refuses an ordinary component view" {
 /// cases from `RawHtml`. See `check_attrs` — there is no unchecked route to the
 /// DOM to permit, so there is nothing here to refuse.
 test "the safe markup directives are never a violation" {
-  let s = Sanitizer::default()
+  let s = @sanitize.Sanitizer::default()
   debug_inspect(
     shown(s.check(parsed("<article @setinnerhtml=\".body\"></article>"))),
     content="[]",
@@ -492,15 +500,15 @@ test "the safe markup directives are never a violation" {
 /// pass here and after the render-time filter. The `href` anything checked is
 /// not the `href` that navigates.
 test "SMIL is refused whatever the config says" {
-  let s = Sanitizer::new({
-    ..SanitizerConfig::empty(),
+  let s = @sanitize.Sanitizer::new({
+    ..@sanitize.SanitizerConfig::empty(),
     elements: Some([
-      ElementRule::of(svg("svg")),
-      ElementRule::of(svg("a")),
-      ElementRule::of(svg("animate")),
-      ElementRule::of(svg("animateMotion")),
-      ElementRule::of(svg("animateTransform")),
-      ElementRule::of(svg("set")),
+      @sanitize.ElementRule::of(@sanitize.svg("svg")),
+      @sanitize.ElementRule::of(@sanitize.svg("a")),
+      @sanitize.ElementRule::of(@sanitize.svg("animate")),
+      @sanitize.ElementRule::of(@sanitize.svg("animateMotion")),
+      @sanitize.ElementRule::of(@sanitize.svg("animateTransform")),
+      @sanitize.ElementRule::of(@sanitize.svg("set")),
     ]),
   })
   debug_inspect(
@@ -528,7 +536,7 @@ test "SMIL is refused whatever the config says" {
 /// widening, which is why it can sit beside the baseline rather than inside a
 /// config.
 test "without_css takes style and leaves everything else" {
-  let plain = Sanitizer::default()
+  let plain = @sanitize.Sanitizer::default()
   let no_css = plain.without_css()
   // Before: the default is a remove configuration, so `style` is allowed.
   assert_true(plain.element_verdict("style", None) is Keep)
@@ -552,9 +560,12 @@ test "without_css takes style and leaves everything else" {
 /// merged `SanitizerConfig` could not have expressed at all, since the spec's
 /// validity relation forbids `remove_elements` beside an `elements` list.
 test "without_css composes with an allow-list config" {
-  let s = Sanitizer::new({
-    ..SanitizerConfig::empty(),
-    elements: Some([ElementRule::of(html("b")), ElementRule::of(html("style"))]),
+  let s = @sanitize.Sanitizer::new({
+    ..@sanitize.SanitizerConfig::empty(),
+    elements: Some([
+      @sanitize.ElementRule::of(@sanitize.html("b")),
+      @sanitize.ElementRule::of(@sanitize.html("style")),
+    ]),
     attributes: Some(["style", "class"]),
   }).without_css()
   assert_true(s.element_verdict("b", None) is Keep)
