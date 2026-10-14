@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.57.0] - 2026-10-14
+
 ### Building on moonc 0.10.15
 
 The toolchain stopped building two published dependencies, so every
@@ -8953,7 +8955,8 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.56.0...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.57.0...HEAD
+[0.57.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.56.0...v0.57.0
 [0.56.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.55.4...v0.56.0
 [0.55.4]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.55.3...v0.55.4
 [0.55.3]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.55.2...v0.55.3
