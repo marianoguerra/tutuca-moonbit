@@ -11,7 +11,7 @@
 //
 // A gallery of this project's own tutuca components.
 //
-// `mizchi/js` is declared directly because `page/` imports `mizchi/js/core`
+// `mizchi/js_core` is declared directly because `page/` imports it
 // for the `@core.Any` in `on_event`, and a package may only import from a
 // module its own module declares. Pin it to the version tutuca resolves, so
 // there is one copy of it in the graph.
@@ -27,6 +27,6 @@ description = "A storybook gallery built only from published packages, exactly a
 preferred_target = "wasm-gc"
 
 import {
-  "marianoguerra/tutuca@0.56.0",
-  "mizchi/js@0.12.2",
+  "marianoguerra/tutuca@0.57.0",
+  "mizchi/js_core@0.13.0",
 }
