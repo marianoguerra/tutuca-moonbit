@@ -8,14 +8,14 @@ import {
 // Values
 pub fn browser_files() -> BrowserFiles
 
-pub fn on_file_text(Int, Bool, String) -> Unit
+pub fn on_file_text(Int32, Bool, String) -> Unit
 
 // Errors
 
 // Types and methods
 pub struct BrowserFiles {
 }
-pub fn BrowserFiles::read_text(Self, id~ : Int, then~ : (Result[String, String]) -> Unit) -> Unit
+pub fn BrowserFiles::read_text(Self, id~ : Int32, then~ : (Result[String, String]) -> Unit) -> Unit
 pub fn BrowserFiles::save_text(Self, name~ : String, mime~ : String, String) -> Unit
 pub impl @files.FileService for BrowserFiles
 

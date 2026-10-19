@@ -16,7 +16,7 @@ pub fn WasmNode::append_child(Self, Self) -> Unit
 pub fn WasmNode::as_any(Self) -> @js_core.Any
 pub fn WasmNode::attribute(Self, String) -> String?
 pub fn WasmNode::char_data(Self) -> String
-pub fn WasmNode::child_node_at(Self, Int) -> Self?
+pub fn WasmNode::child_node_at(Self, Int32) -> Self?
 pub fn WasmNode::child_nodes(Self) -> Array[Self]
 pub fn WasmNode::create_comment(Self, String) -> Self
 pub fn WasmNode::create_element(Self, String, @vdom.Ns?, String?) -> Self
@@ -29,7 +29,7 @@ pub fn WasmNode::insert_before(Self, Self, Self?) -> Unit
 pub fn WasmNode::is_same_node(Self, Self) -> Bool
 pub fn WasmNode::namespace_uri(Self) -> @vdom.Ns?
 pub fn WasmNode::next_sibling(Self) -> Self?
-pub fn WasmNode::node_kind(Self) -> Int
+pub fn WasmNode::node_kind(Self) -> Int32
 pub fn WasmNode::of_any(@js_core.Any) -> Self
 pub fn WasmNode::parent_node(Self) -> Self?
 pub fn WasmNode::prev_sibling(Self) -> Self?

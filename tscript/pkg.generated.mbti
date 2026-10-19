@@ -11,13 +11,13 @@ pub fn all_decl_kinds() -> Array[DeclKind]
 
 pub fn ask_names_a_question(Array[@core.Expr]) -> Bool
 
-pub fn collection_method(String) -> Int?
+pub fn collection_method(String) -> Int32?
 
 pub fn collection_methods_for(@core.Ty) -> Array[String]
 
 pub let config_root : String
 
-pub fn effect_min_arity(String) -> Int?
+pub fn effect_min_arity(String) -> Int32?
 
 pub fn effect_names() -> Array[String]
 
@@ -59,7 +59,7 @@ pub fn parse_text(String, ParseCtx) -> @core.Expr?
 
 pub fn parse_token(String, ParseCtx) -> @core.Expr?
 
-pub fn script_builtin(String) -> Int?
+pub fn script_builtin(String) -> Int32?
 
 pub fn script_builtin_names() -> Array[String]
 
@@ -175,7 +175,7 @@ pub(all) enum IssueRole {
   BadHandlerName
   BadHandlerArg
   UnknownPredicate
-  PredicateArity(name~ : String, want~ : Int)
+  PredicateArity(name~ : String, want~ : Int32)
   BadPredicateArg
   BadExpression(why~ : String)
 } derive(Eq, @debug.Debug)

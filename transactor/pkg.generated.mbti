@@ -7,21 +7,21 @@ import {
 }
 
 // Values
-pub const INTENT_DEPTH : Int = 64
+pub const INTENT_DEPTH : Int32 = 64
 
 // Errors
 
 // Types and methods
 pub(all) struct Answered {
-  walk : Int
-  parent : Int
-  nth : Int
+  walk : Int32
+  parent : Int32
+  nth : Int32
   answer : @core.IntentAnswer
-  seq : Int
+  seq : Int32
 }
 
 pub struct Completion {
-  mut pending : Int
+  mut pending : Int32
   mut self_settled : Bool
   mut subtree_settled : Bool
   mut self_released : Bool
@@ -36,26 +36,26 @@ pub(all) struct Dispatched {
   name : String
   args : Array[@core.Value]
   at : @core.Path
-  walk : Int
-  parent : Int
+  walk : Int32
+  parent : Int32
   opts : @core.IntentOpts
-  turn : Int
-  seq : Int
+  turn : Int32
+  seq : Int32
 }
 
 pub struct IntentWalk {
-  mut raise_seq : Int
-  id : Int
+  mut raise_seq : Int32
+  id : Int32
   name : String
   mut route : Array[@core.Leg]
-  mut leg : Int
+  mut leg : Int32
   mut dyn_at : @core.DispatchPath
   mut args : Array[@core.Value]
   opts : @core.IntentOpts
   sender : @core.DispatchPath
   mut answered : Bool
   mut stopped : Bool
-  mut hops : Int
+  mut hops : Int32
   // private fields
 }
 
@@ -66,10 +66,10 @@ pub impl Intents for NoIntents
 
 pub(all) struct NoNames {
 }
-pub fn NoNames::build(Self, Int, Map[String, @core.Value]) -> @core.Value?
-pub fn NoNames::dyn_type(Self, @core.Value, @core.DispatchPath, String) -> Int?
+pub fn NoNames::build(Self, Int32, Map[String, @core.Value]) -> @core.Value?
+pub fn NoNames::dyn_type(Self, @core.Value, @core.DispatchPath, String) -> Int32?
 pub fn NoNames::dyn_value(Self, @core.Value, @core.DispatchPath, String) -> @core.Value?
-pub fn NoNames::lex_type(Self, @core.Value, @core.DispatchPath, String) -> Int?
+pub fn NoNames::lex_type(Self, @core.Value, @core.DispatchPath, String) -> Int32?
 pub fn NoNames::lex_value(Self, @core.Value, @core.DispatchPath, String) -> @core.Value?
 pub impl Names for NoNames
 
@@ -103,25 +103,25 @@ pub(all) struct ObserveRecord {
   matched : ObserveMatch
   before : @core.Value?
   after : @core.Value?
-  seq : Int
-  walk : Int
-  parent_seq : Int
+  seq : Int32
+  walk : Int32
+  parent_seq : Int32
 }
 pub fn ObserveRecord::kind_label(Self) -> String
 pub fn ObserveRecord::to_json(Self) -> Json
 
 pub(all) struct Offered {
-  walk : Int
-  parent : Int
+  walk : Int32
+  parent : Int32
   name : String
   args : Array[@core.Value]
   from : @core.Path
-  nth : Int
-  seq : Int
+  nth : Int32
+  seq : Int32
 }
 
 pub(all) struct SettleResult {
-  processed : Int
+  processed : Int32
   pending : Bool
 } derive(Eq, @debug.Debug)
 pub fn SettleResult::equal(Self, Self) -> Bool
@@ -162,7 +162,7 @@ pub fn Transactor::set_intents(Self, &Intents) -> Unit
 pub fn Transactor::set_member(Self, @core.DispatchPath, String, @core.Value) -> @core.Outcome
 pub fn Transactor::set_property(Self, @core.DispatchPath, String, @core.Value) -> @core.Outcome
 pub fn Transactor::set_recorder(Self, &Recorder) -> Unit
-pub fn Transactor::settle(Self, max_turns? : Int) -> SettleResult
+pub fn Transactor::settle(Self, max_turns? : Int32) -> SettleResult
 
 // Type aliases
 pub using @core {type IntentFn}
@@ -174,10 +174,10 @@ pub(open) trait Intents {
 
 pub(open) trait Names {
   fn dyn_value(Self, @core.Value, @core.DispatchPath, String) -> @core.Value? = _
-  fn dyn_type(Self, @core.Value, @core.DispatchPath, String) -> Int? = _
+  fn dyn_type(Self, @core.Value, @core.DispatchPath, String) -> Int32? = _
   fn lex_value(Self, @core.Value, @core.DispatchPath, String) -> @core.Value? = _
-  fn lex_type(Self, @core.Value, @core.DispatchPath, String) -> Int? = _
-  fn build(Self, Int, Map[String, @core.Value]) -> @core.Value? = _
+  fn lex_type(Self, @core.Value, @core.DispatchPath, String) -> Int32? = _
+  fn build(Self, Int32, Map[String, @core.Value]) -> @core.Value? = _
 }
 
 pub(open) trait Recorder {

@@ -19,11 +19,11 @@ pub let css_properties : @set.Set[String]
 
 pub let css_wide_keywords : @set.Set[String]
 
-pub let max_declarations : Int
+pub let max_declarations : Int32
 
-pub let max_nesting : Int
+pub let max_nesting : Int32
 
-pub let max_tokens : Int
+pub let max_tokens : Int32
 
 pub let named_colors : @set.Set[String]
 

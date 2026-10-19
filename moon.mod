@@ -35,16 +35,16 @@ import {
   // returns a layout engine's `@style.Style`, which cannot round-trip a
   // declaration list, and round-tripping is the whole point. Apache-2.0, where
   // this module is MIT.
-  "mizchi/css@0.7.3",
+  "mizchi/css@0.7.4",
   // The wap compiler and the Wax backend under it, for `tgc/emit` — the
   // card-to-core-wasm route. `tgc` writes wap; wap lowers to the Wax AST.
   // Dependency-free itself, and MoonBit links per package, so a consumer who
   // never compiles a card pays the fetch and nothing else.
-  "marianoguerra/wax@0.3.0",
+  "marianoguerra/wax@0.3.1",
   // The `.tutu` file reader: shrubbery notation (groups, blocks, alternatives,
   // keyword options) plus the diagnostic reports its errors are carried in.
-  "marianoguerra/shrubbery@0.1.1",
-  "marianoguerra/error-report@0.1.0",
+  "marianoguerra/shrubbery@0.1.2",
+  "marianoguerra/error-report@0.1.1",
   // The markup and CSS halves of the notation, and the two bridges to them.
   // A view IS Shrubbery HTML plus tutuca's extensions, so the name tables --
   // void elements, raw text, the integration points, SVG's casing, `_` to `-`
@@ -52,13 +52,13 @@ import {
   // is what a `style()` body written as notation rather than as raw text is
   // lowered by; it reaches the reader through `shrubbery-html`'s raw-text hook,
   // which exists for exactly this composition.
-  "marianoguerra/html@0.1.0",
-  "marianoguerra/shrubbery-html@0.1.0",
-  "marianoguerra/css@0.1.1",
-  "marianoguerra/shrubbery-css@0.2.0",
-  "marianoguerra/tailwindcss@0.4.1",
+  "marianoguerra/html@0.1.1",
+  "marianoguerra/shrubbery-html@0.1.1",
+  "marianoguerra/css@0.1.2",
+  "marianoguerra/shrubbery-css@0.2.1",
+  "marianoguerra/tailwindcss@0.4.3",
   "moonbitlang/x@0.5.5",
-  "marianoguerra/wap@0.3.1",
+  "marianoguerra/wap@0.3.2",
 }
 
 // `.moonignore` defines the published inventory. `check-publish-graph` checks

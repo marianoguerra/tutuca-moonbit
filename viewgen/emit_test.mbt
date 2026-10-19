@@ -129,7 +129,6 @@ test "the generated counter module" {
       #|}
       #|
       #|
-
     ),
   )
 }

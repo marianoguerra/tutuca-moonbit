@@ -151,8 +151,8 @@ pub(all) struct ContactDirectoryState {
   contacts : Map[String, @core.Value]
   order : Array[String]
   query : String
-  page : Int
-  pages : Int
+  page : Int32
+  pages : Int32
   keys : Array[String]
   selected : String
   editor : @core.Value
@@ -206,8 +206,8 @@ pub(all) struct DocumentEditorState {
   title : String
   source : String
   saved_source : String
-  revision : Int
-  load_revision : Int
+  revision : Int32
+  load_revision : Int32
   busy : Bool
   fail_next : Bool
   feedback : String
@@ -269,8 +269,8 @@ pub fn QuantityPickerMsg::send(Self, &@core.Ctx) -> Unit
 pub fn QuantityPickerMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct QuantityPickerState {
-  quantity : Int
-  unit_cents : Int
+  quantity : Int32
+  unit_cents : Int32
 }
 pub fn QuantityPickerState::fixture(String) -> Self?
 pub fn QuantityPickerState::zero() -> Self
@@ -318,7 +318,7 @@ pub fn TaskListMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct TaskListState {
   draft : String
-  next_id : Int
+  next_id : Int32
   items : Map[String, @core.Value]
   completed : Map[String, Bool]
   filter : String

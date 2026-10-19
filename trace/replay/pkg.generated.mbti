@@ -23,10 +23,10 @@ pub fn root_for(@trace.Trace, @component.ComponentStack) -> @core.Value raise Re
 
 // Errors
 pub suberror ReplayError {
-  Diverged(at~ : Int, want~ : @trace.Event, got~ : @trace.Event)
+  Diverged(at~ : Int32, want~ : @trace.Event, got~ : @trace.Event)
   ShapeChanged(component~ : String, want~ : String, got~ : String)
   RootUnbuildable(String)
-  UnknownVersion(got~ : Int)
+  UnknownVersion(got~ : Int32)
 }
 pub fn ReplayError::message(Self) -> String
 
@@ -41,16 +41,16 @@ pub struct Driver {
   // private fields
 }
 pub fn Driver::answers(Self) -> Answers?
-pub fn Driver::at(Self) -> Int
+pub fn Driver::at(Self) -> Int32
 pub fn Driver::done(Self) -> Bool
 pub fn Driver::new(@trace.Trace, @transactor.Transactor, base? : @trace.Place, verify? : Bool, answer_intents? : Bool) -> Self
 pub fn Driver::observed(Self) -> Array[@trace.Event]
 pub fn Driver::run(Self) -> Unit raise ReplayError
-pub fn Driver::run_to(Self, Int) -> Unit raise ReplayError
+pub fn Driver::run_to(Self, Int32) -> Unit raise ReplayError
 pub fn Driver::step(Self) -> Unit raise ReplayError
 pub fn Driver::step_event(Self) -> Unit raise ReplayError
 pub fn Driver::stop(Self) -> Unit
-pub fn Driver::total(Self) -> Int
+pub fn Driver::total(Self) -> Int32
 pub fn Driver::trace(Self) -> @trace.Trace
 
 pub(all) enum Fidelity {
@@ -66,14 +66,14 @@ pub struct Player {
   fidelity : Fidelity
   // private fields
 }
-pub fn Player::at(Self) -> Int
+pub fn Player::at(Self) -> Int32
 pub fn Player::destroy(Self) -> Unit
 pub fn Player::done(Self) -> Bool
 pub fn Player::harness(Self) -> @harness.Harness[@memdom.MemNode]
 pub fn Player::html(Self) -> String
 pub fn Player::observed(Self) -> Array[@trace.Event]
 pub fn Player::run(Self) -> Unit raise ReplayError
-pub fn Player::run_to(Self, Int) -> Unit raise ReplayError
+pub fn Player::run_to(Self, Int32) -> Unit raise ReplayError
 pub fn Player::snapshot(Self) -> Json
 pub fn Player::step(Self) -> Unit raise ReplayError
 pub fn Player::step_event(Self) -> Unit raise ReplayError

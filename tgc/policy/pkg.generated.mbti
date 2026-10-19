@@ -53,11 +53,11 @@ pub fn ConfigTy::to_repr(Self) -> @debug.Repr
 pub fn ConfigTy::to_string(Self) -> String
 
 pub(all) struct ModuleFacts {
-  components : Int
-  max_views : Int
-  max_view_bytes : Int
-  max_style_bytes : Int
-  max_fields : Int
+  components : Int32
+  max_views : Int32
+  max_view_bytes : Int32
+  max_style_bytes : Int32
+  max_fields : Int32
 } derive(Eq, @debug.Debug)
 pub fn ModuleFacts::equal(Self, Self) -> Bool
 pub fn ModuleFacts::not_equal(Self, Self) -> Bool
@@ -91,11 +91,11 @@ pub fn Policy::with_open_event_paths(Self) -> Self
 pub fn Policy::with_sanitizer(Self, @sanitize.SanitizerConfig) -> Self raise @sanitize.InvalidConfig
 
 pub(all) struct Quotas {
-  max_components : Int
-  max_views_per_component : Int
-  max_view_bytes : Int
-  max_style_bytes : Int
-  max_fields : Int
+  max_components : Int32
+  max_views_per_component : Int32
+  max_view_bytes : Int32
+  max_style_bytes : Int32
+  max_fields : Int32
 } derive(Eq, @debug.Debug)
 pub fn Quotas::default() -> Self
 pub fn Quotas::equal(Self, Self) -> Bool

@@ -28,7 +28,7 @@ pub fn MemStore::keys(Self, prefix~ : String) -> Array[String]
 pub fn MemStore::new() -> Self
 pub fn MemStore::remove(Self, String) -> Unit
 pub fn MemStore::set(Self, String, String) -> Unit
-pub fn MemStore::size(Self) -> Int
+pub fn MemStore::size(Self) -> Int32
 pub impl Store for MemStore
 
 pub(all) struct Snapshot {

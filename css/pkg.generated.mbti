@@ -2,9 +2,9 @@
 package "marianoguerra/tutuca/css"
 
 // Values
-pub fn compile_margaui(ArrayView[String], polyfills? : Int) -> String raise
+pub fn compile_margaui(ArrayView[String], polyfills? : Int32) -> String raise
 
-pub fn compile_tailwind(ArrayView[String], polyfills? : Int) -> String raise
+pub fn compile_tailwind(ArrayView[String], polyfills? : Int32) -> String raise
 
 pub let margaui_bundle : Array[(String, String)]
 

@@ -25,7 +25,7 @@ pub struct App[N] {
   opts : @vdom.RenderOpts[N]
   mut prev : @vdom.RenderResult[N]?
   mut dirty : Bool
-  mut render_count : Int
+  mut render_count : Int32
   mut drag : DragState[N]?
   mut cur_drag_over : N?
   render_cache : @render.RenderCache
@@ -39,13 +39,13 @@ pub struct App[N] {
 pub fn[N] App::add_filter(Self[N], &@filter.VdomFilter) -> Unit
 pub fn[N] App::destroy(Self[N]) -> Unit
 pub fn[N : @vdom.DomWalk] App::dispatch(Self[N], N, @render.DomEvent) -> Bool
-pub fn[N] App::drain_batched(Self[N], max_per_batch~ : Int, () -> Unit) -> @transactor.SettleResult
+pub fn[N] App::drain_batched(Self[N], max_per_batch~ : Int32, () -> Unit) -> @transactor.SettleResult
 pub fn[N] App::event_names(Self[N]) -> Array[String]
 pub fn[N : @vdom.DomWalk] App::from_module(@component.ModuleDef, String, N, @vdom.RenderOpts[N], args? : Map[String, @core.Value], view? : String, markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter) -> Self[N] raise
 pub fn[N : @vdom.DomWalk] App::new(@component.ComponentStack, @core.Value, N, @vdom.RenderOpts[N], view? : String, intents? : &@transactor.Intents, markdown_filter? : (@sanitize.Sanitizer) -> &@filter.VdomFilter) -> Self[N] raise
 pub fn[N] App::root_value(Self[N]) -> @core.Value
-pub fn[N] App::send_at_root(Self[N], String, args? : Array[@core.Value], max_turns? : Int) -> @transactor.SettleResult
-pub fn[N] App::set_at_root(Self[N], String, @core.Value, max_turns? : Int) -> @transactor.SettleResult
+pub fn[N] App::send_at_root(Self[N], String, args? : Array[@core.Value], max_turns? : Int32) -> @transactor.SettleResult
+pub fn[N] App::set_at_root(Self[N], String, @core.Value, max_turns? : Int32) -> @transactor.SettleResult
 pub fn[N] App::set_event_paths(Self[N], @eventpath.EventPathProfile) -> Unit
 pub fn[N] App::set_sanitizer(Self[N], @sanitize.Sanitizer) -> Unit
 pub fn[N : @vdom.DomWalk] App::start(Self[N]) -> Unit
@@ -68,10 +68,10 @@ pub(all) struct ScopeNames {
   mut memo_at : @core.DispatchPath?
   mut memo_stack : @render.RenderStack?
 }
-pub fn ScopeNames::build(Self, Int, Map[String, @core.Value]) -> @core.Value?
-pub fn ScopeNames::dyn_type(Self, @core.Value, @core.DispatchPath, String) -> Int?
+pub fn ScopeNames::build(Self, Int32, Map[String, @core.Value]) -> @core.Value?
+pub fn ScopeNames::dyn_type(Self, @core.Value, @core.DispatchPath, String) -> Int32?
 pub fn ScopeNames::dyn_value(Self, @core.Value, @core.DispatchPath, String) -> @core.Value?
-pub fn ScopeNames::lex_type(Self, @core.Value, @core.DispatchPath, String) -> Int?
+pub fn ScopeNames::lex_type(Self, @core.Value, @core.DispatchPath, String) -> Int32?
 pub fn ScopeNames::lex_value(Self, @core.Value, @core.DispatchPath, String) -> @core.Value?
 pub fn ScopeNames::new(@component.Components) -> Self
 pub impl @transactor.Names for ScopeNames

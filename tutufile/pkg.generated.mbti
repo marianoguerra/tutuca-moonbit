@@ -51,9 +51,9 @@ pub(all) enum Section {
 } derive(Compare, Eq, Hash, @debug.Debug)
 pub fn Section::all() -> Array[Self]
 pub fn Section::bare_kind(Self) -> DeclKind
-pub fn Section::compare(Self, Self) -> Int
+pub fn Section::compare(Self, Self) -> Int32
 pub fn Section::equal(Self, Self) -> Bool
-pub fn Section::hash(Self) -> Int
+pub fn Section::hash(Self) -> Int32
 pub fn Section::hash_combine(Self, Hasher) -> Unit
 pub fn Section::name(Self) -> String
 pub fn Section::not_equal(Self, Self) -> Bool

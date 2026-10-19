@@ -19,7 +19,7 @@ pub let corpus_spec_source : String
 
 pub fn corpus_views() -> Map[String, @anode.View]
 
-pub fn v2_case_name(Int) -> String?
+pub fn v2_case_name(Int32) -> String?
 
 // Errors
 
@@ -27,8 +27,8 @@ pub fn v2_case_name(Int) -> String?
 pub(all) enum CorpusIntent {
   Case18(String)
   Case19(String)
-  Case20(Int)
-  Case21(Int)
+  Case20(Int32)
+  Case21(Int32)
   Case22(String)
   Case23(String)
   Case24(String)
@@ -50,9 +50,9 @@ pub fn CorpusLabel::to_repr(Self) -> @debug.Repr
 pub(all) enum CorpusMsg {
   Case0
   Case1
-  Case2(Int)
+  Case2(Int32)
   Case3(String)
-  Case4(Int)
+  Case4(Int32)
   Case5(String)
   Case6(String)
   Case7(String)
@@ -60,13 +60,13 @@ pub(all) enum CorpusMsg {
   Case9(String)
   Case10
   Case11
-  Case12(Int)
+  Case12(Int32)
   Case13
   Case14
   Case15
   Case16
   Case17
-  Case26(Int)
+  Case26(Int32)
   Case27(String)
   Case28(String)
   Unknown(String, Array[@core.Value])
@@ -77,13 +77,13 @@ pub fn CorpusMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct CorpusState {
   name : String
-  count : Int
+  count : Int32
   ratio : Double
   ok : Bool
   items : Array[String]
   labels : Array[CorpusLabel]
   tags : Map[String, Bool]
-  page : Int
+  page : Int32
   note : String?
 }
 pub fn CorpusState::zero() -> Self
@@ -110,7 +110,7 @@ pub fn Recorder::set_member_at_path(Self, @core.DispatchPath, String, @core.Valu
 pub fn Recorder::set_property_at_path(Self, @core.DispatchPath, String, @core.Value) -> Unit
 pub fn Recorder::stop_propagation(Self) -> Unit
 pub fn Recorder::target_path(Self) -> @core.DispatchPath
-pub fn Recorder::walk_path(Self, (Int, @core.Value) -> Bool) -> Unit
+pub fn Recorder::walk_path(Self, (Int32, @core.Value) -> Bool) -> Unit
 pub impl @core.Ctx for Recorder
 
 // Type aliases

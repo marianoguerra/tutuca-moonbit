@@ -41,9 +41,9 @@ pub(all) enum Role {
   REnrich
   RBindWith
 } derive(Compare, Eq, Hash, @debug.Debug)
-pub fn Role::compare(Self, Self) -> Int
+pub fn Role::compare(Self, Self) -> Int32
 pub fn Role::equal(Self, Self) -> Bool
-pub fn Role::hash(Self) -> Int
+pub fn Role::hash(Self) -> Int32
 pub fn Role::hash_combine(Self, Hasher) -> Unit
 pub fn Role::not_equal(Self, Self) -> Bool
 pub fn Role::op_ge(Self, Self) -> Bool

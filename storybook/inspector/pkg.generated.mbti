@@ -573,8 +573,8 @@ pub fn CompSectionMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct CompSectionState {
   items : Array[@core.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
   label : String
 }
 pub fn CompSectionState::zero() -> Self
@@ -621,7 +621,7 @@ pub fn ComponentInspectorIntent::to_dispatch(Self) -> (String, Array[@core.Value
 
 pub(all) struct ComponentInspectorState {
   comp_name : String
-  comp_id : Int
+  comp_id : Int32
   sections : Array[@core.Value]
 }
 pub fn ComponentInspectorState::zero() -> Self
@@ -674,8 +674,8 @@ pub(all) struct FuzzPanelState {
   verdict : @core.Value
   log : @core.Value
   has_run : Bool
-  at : Int
-  total : Int
+  at : Int32
+  total : Int32
 }
 pub fn FuzzPanelState::zero() -> Self
 
@@ -688,12 +688,12 @@ pub fn FuzzRowMsg::send(Self, &@core.Ctx) -> Unit
 pub fn FuzzRowMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct FuzzRowState {
-  at : Int
+  at : Int32
   name : String
   args : String
   verb : String
   verb_class : String
-  renders : Int
+  renders : Int32
   refused : Bool
   refused_rule : String
   refused_sentence : String
@@ -721,7 +721,7 @@ pub(all) struct FuzzVerdictState {
   headline : String
   sentence : String
   rule : String
-  at : Int
+  at : Int32
   unchecked : String
   has_unchecked : Bool
   reproducer : Array[@core.Value]
@@ -741,9 +741,9 @@ pub fn Inspector::editor_rows(Self, @core.Value) -> Array[@core.Value]
 pub fn Inspector::explore_value(Self, @core.Value, comps? : @component.Components) -> @core.Value
 pub fn Inspector::fuzz_controls(Self, seed~ : String, steps~ : String, source~ : String, playing? : Bool, can_run? : Bool, no_plan_hint? : String, can_draw? : Bool, no_draw_hint? : String) -> @core.Value
 pub fn Inspector::fuzz_examples(Self) -> Array[@component.ExampleDef]
-pub fn Inspector::fuzz_log(Self, Array[@fuzz.Step], at? : Int, planned? : Int) -> @core.Value
-pub fn Inspector::fuzz_panel(Self, seed~ : String, steps~ : String, source~ : String, run_steps? : Array[@fuzz.Step], at? : Int, planned? : Int, playing? : Bool, can_run? : Bool, no_plan_hint? : String, can_draw? : Bool, no_draw_hint? : String, outcome? : @fuzz.Outcome, unchecked? : Array[(String, String)], reproducer? : Array[@fuzz.Action]) -> @core.Value
-pub fn Inspector::fuzz_row(Self, @fuzz.Step, at~ : Int, current? : Bool) -> @core.Value
+pub fn Inspector::fuzz_log(Self, Array[@fuzz.Step], at? : Int32, planned? : Int32) -> @core.Value
+pub fn Inspector::fuzz_panel(Self, seed~ : String, steps~ : String, source~ : String, run_steps? : Array[@fuzz.Step], at? : Int32, planned? : Int32, playing? : Bool, can_run? : Bool, no_plan_hint? : String, can_draw? : Bool, no_draw_hint? : String, outcome? : @fuzz.Outcome, unchecked? : Array[(String, String)], reproducer? : Array[@fuzz.Action]) -> @core.Value
+pub fn Inspector::fuzz_row(Self, @fuzz.Step, at~ : Int32, current? : Bool) -> @core.Value
 pub fn Inspector::fuzz_verdict(Self, outcome? : @fuzz.Outcome, unchecked? : Array[(String, String)], reproducer? : Array[@fuzz.Action]) -> @core.Value
 pub fn Inspector::inspect_component(Self, @component.Component) -> @core.Value
 pub fn Inspector::inspect_instance(Self, @core.Value, @component.Component) -> @core.Value
@@ -751,16 +751,16 @@ pub fn Inspector::module_(Self) -> @component.ModuleDef
 pub fn Inspector::new() -> Self
 pub fn Inspector::place_candidates(Self, Array[(String, String)], @trace.Trace, selected? : String) -> @core.Value
 pub fn Inspector::record_to_entry(Self, @transactor.ObserveRecord, inspect? : (@core.Value) -> @core.Value, path_label? : String, time? : String) -> @core.Value
-pub fn Inspector::recorder_bar(Self, recording? : Bool, scope? : String, events? : Int, turns? : Int, has_trace? : Bool, picking? : Bool) -> @core.Value
+pub fn Inspector::recorder_bar(Self, recording? : Bool, scope? : String, events? : Int32, turns? : Int32, has_trace? : Bool, picking? : Bool) -> @core.Value
 pub fn Inspector::schema_view(Self, @core.Value) -> @core.Value
 pub fn Inspector::spec_panel(Self, comp? : @component.Component) -> @core.Value
 pub fn Inspector::spec_source_panel(Self, comp? : @component.Component) -> @core.Value
 pub fn Inspector::trace_examples(Self) -> Array[@component.ExampleDef]
 pub fn Inspector::trace_header(Self, @trace.Trace) -> @core.Value
-pub fn Inspector::trace_log(Self, @trace.Trace, at? : Int, inputs_only? : Bool, turn? : Int) -> @core.Value
-pub fn Inspector::trace_panel(Self, trace? : @trace.Trace, tab? : String, recording? : Bool, scope? : String, picking? : Bool, selecting? : Bool, at? : Int, selected_place? : String, inputs_only? : Bool, places? : @core.Value, notice? : String, draft? : String, can_replay? : Bool, replaying? : Bool) -> @core.Value
+pub fn Inspector::trace_log(Self, @trace.Trace, at? : Int32, inputs_only? : Bool, turn? : Int32) -> @core.Value
+pub fn Inspector::trace_panel(Self, trace? : @trace.Trace, tab? : String, recording? : Bool, scope? : String, picking? : Bool, selecting? : Bool, at? : Int32, selected_place? : String, inputs_only? : Bool, places? : @core.Value, notice? : String, draft? : String, can_replay? : Bool, replaying? : Bool) -> @core.Value
 pub fn Inspector::trace_places(Self, @trace.Trace, selected? : String, heading? : String, empty_hint? : String) -> @core.Value
-pub fn Inspector::trace_row(Self, @trace.Event, depth? : Int, current? : Bool) -> @core.Value
+pub fn Inspector::trace_row(Self, @trace.Event, depth? : Int32, current? : Bool) -> @core.Value
 
 pub struct InspectorViews {
   instance_view : @core.Value
@@ -811,8 +811,8 @@ pub fn InstanceFieldsMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct InstanceFieldsState {
   items : Array[@core.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
   type_name : String
 }
 pub fn InstanceFieldsState::zero() -> Self
@@ -857,8 +857,8 @@ pub fn JsonArrayMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct JsonArrayState {
   items : Array[@core.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
 }
 pub fn JsonArrayState::zero() -> Self
 
@@ -929,8 +929,8 @@ pub fn JsonObjectMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct JsonObjectState {
   items : Array[@core.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
 }
 pub fn JsonObjectState::zero() -> Self
 
@@ -973,8 +973,8 @@ pub(all) struct RecorderBarState {
   all_class : String
   section_class : String
   example_class : String
-  events : Int
-  turns : Int
+  events : Int32
+  turns : Int32
   has_trace : Bool
   picking : Bool
 }
@@ -1018,7 +1018,7 @@ pub fn RichSampleMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct RichSampleState {
   title : String
-  count : Int
+  count : Int32
   tags : Array[String]
   open : Bool
 }
@@ -1042,7 +1042,7 @@ pub fn SampleCardMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct SampleCardState {
   title : String
-  count : Int
+  count : Int32
   tags : Array[String]
   open : Bool
 }
@@ -1083,8 +1083,8 @@ pub fn SchemaArrayMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct SchemaArrayState {
   items : Array[@core.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
   type_label : String
   badges : Array[String]
   title : String
@@ -1157,8 +1157,8 @@ pub fn SchemaCombinatorMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct SchemaCombinatorState {
   items : Array[@core.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
   type_label : String
   badges : Array[String]
   title : String
@@ -1217,8 +1217,8 @@ pub fn SchemaEnumMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct SchemaEnumState {
   items : Array[@core.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
   type_label : String
   badges : Array[String]
   title : String
@@ -1267,8 +1267,8 @@ pub fn SchemaObjectMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct SchemaObjectState {
   items : Array[@core.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
   type_label : String
   badges : Array[String]
   title : String
@@ -1324,8 +1324,8 @@ pub fn SchemaScalarMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct SchemaScalarState {
   items : Array[@core.Value]
   is_expanded : Bool
-  items_per_page : Int
-  current_page : Int
+  items_per_page : Int32
+  current_page : Int32
   type_label : String
   badges : Array[String]
   title : String
@@ -1437,9 +1437,9 @@ pub(all) struct TraceHeaderState {
   module_ : String
   example : String
   fingerprint : String
-  events : Int
-  inputs : Int
-  turns : Int
+  events : Int32
+  inputs : Int32
+  turns : Int32
   relocated_from : String
   is_relocated : Bool
   compacted : Bool
@@ -1447,7 +1447,7 @@ pub(all) struct TraceHeaderState {
 pub fn TraceHeaderState::zero() -> Self
 
 pub(all) enum TraceLogMsg {
-  SetTurn(Int)
+  SetTurn(Int32)
   ShowAllTurns
   Unknown(String, Array[@core.Value])
 }
@@ -1459,14 +1459,14 @@ pub(all) struct TraceLogState {
   rows : Array[@core.Value]
   has_rows : Bool
   inputs_only : Bool
-  turn : Int
+  turn : Int32
   empty_hint : String
 }
 pub fn TraceLogState::zero() -> Self
 
 pub(all) enum TracePanelMsg {
   SetTab(String)
-  SetAt(Int)
+  SetAt(Int32)
   ToggleSelecting
   ExportTrace
   ImportDraft
@@ -1495,8 +1495,8 @@ pub(all) struct TracePanelState {
   show_trace : Bool
   show_replay : Bool
   show_import : Bool
-  at : Int
-  total : Int
+  at : Int32
+  total : Int32
   notice : String
   has_notice : Bool
   draft : String
@@ -1518,8 +1518,8 @@ pub(all) struct TracePlaceState {
   label : String
   display : String
   component : String
-  events : Int
-  depth : Int
+  events : Int32
+  depth : Int32
   selected : Bool
   row_class : String
   mountable : Bool
@@ -1544,9 +1544,9 @@ pub fn TraceRowMsg::send(Self, &@core.Ctx) -> Unit
 pub fn TraceRowMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct TraceRowState {
-  seq : Int
-  turn : Int
-  walk : Int
+  seq : Int32
+  turn : Int32
+  walk : Int32
   has_walk : Bool
   verb : String
   verb_class : String
@@ -1555,7 +1555,7 @@ pub(all) struct TraceRowState {
   args : String
   input : Bool
   row_class : String
-  depth : Int
+  depth : Int32
   current : Bool
   after : @core.Value?
   has_after : Bool

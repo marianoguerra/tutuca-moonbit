@@ -152,7 +152,7 @@ pub fn CounterMsg::send(Self, &@core.Ctx) -> Unit
 pub fn CounterMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct CounterState {
-  count : Int
+  count : Int32
 }
 pub fn CounterState::zero() -> Self
 

@@ -36,7 +36,7 @@ pub struct Baseline {
 pub fn Baseline::filter_elem(Self, @vdom.VElem) -> Unit
 pub fn Baseline::filter_elem_hinted(Self, @vdom.VElem, @sinks.SinkHints) -> Unit
 pub fn Baseline::filter_tree(Self, @vdom.Vdom) -> Unit
-pub fn Baseline::new(max_reports? : Int) -> Self
+pub fn Baseline::new(max_reports? : Int32) -> Self
 pub fn Baseline::take_reports(Self) -> Array[Dropped]
 pub impl VdomFilter for Baseline
 
@@ -57,15 +57,15 @@ pub struct CssFilter {
 pub fn CssFilter::filter_elem(Self, @vdom.VElem) -> Unit
 pub fn CssFilter::filter_elem_hinted(Self, @vdom.VElem, @sinks.SinkHints) -> Unit
 pub fn CssFilter::filter_tree(Self, @vdom.Vdom) -> Unit
-pub fn CssFilter::new(policy? : @css.CssPolicy, max_reports? : Int) -> Self
+pub fn CssFilter::new(policy? : @css.CssPolicy, max_reports? : Int32) -> Self
 pub fn CssFilter::take_reports(Self) -> Array[Dropped]
 pub impl VdomFilter for CssFilter
 
 pub struct DropLog {
   entries : Array[Dropped]
-  max : Int
+  max : Int32
 }
-pub fn DropLog::new(max_reports? : Int) -> Self
+pub fn DropLog::new(max_reports? : Int32) -> Self
 pub fn DropLog::record(Self, Dropped) -> Unit
 pub fn DropLog::take(Self) -> Array[Dropped]
 
@@ -86,7 +86,7 @@ pub struct HandlerFilter {
 pub fn HandlerFilter::filter_elem(Self, @vdom.VElem) -> Unit
 pub fn HandlerFilter::filter_elem_hinted(Self, @vdom.VElem, @sinks.SinkHints) -> Unit
 pub fn HandlerFilter::filter_tree(Self, @vdom.Vdom) -> Unit
-pub fn HandlerFilter::new(max_reports? : Int) -> Self
+pub fn HandlerFilter::new(max_reports? : Int32) -> Self
 pub fn HandlerFilter::take_reports(Self) -> Array[Dropped]
 pub impl VdomFilter for HandlerFilter
 
@@ -96,7 +96,7 @@ pub struct UrlFilter {
 pub fn UrlFilter::filter_elem(Self, @vdom.VElem) -> Unit
 pub fn UrlFilter::filter_elem_hinted(Self, @vdom.VElem, @sinks.SinkHints) -> Unit
 pub fn UrlFilter::filter_tree(Self, @vdom.Vdom) -> Unit
-pub fn UrlFilter::new(max_reports? : Int) -> Self
+pub fn UrlFilter::new(max_reports? : Int32) -> Self
 pub fn UrlFilter::take_reports(Self) -> Array[Dropped]
 pub impl VdomFilter for UrlFilter
 

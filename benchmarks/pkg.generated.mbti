@@ -11,87 +11,87 @@ import {
 // Values
 pub let all_views : String
 
-pub fn build(String) -> Int
+pub fn build(String) -> Int32
 
 pub let corpora : Array[(String, String)]
 
-pub fn declining_scope(Int) -> Map[String, Array[@core.IntentFn]]
+pub fn declining_scope(Int32) -> Map[String, Array[@core.IntentFn]]
 
-pub fn dispatch_answered(@harness.Harness[@memdom.MemNode]) -> Int
+pub fn dispatch_answered(@harness.Harness[@memdom.MemNode]) -> Int32
 
-pub fn dispatch_unanswered(@harness.Harness[@memdom.MemNode]) -> Int
+pub fn dispatch_unanswered(@harness.Harness[@memdom.MemNode]) -> Int32
 
-pub fn find_cost(@harness.Harness[@memdom.MemNode], String) -> Int
+pub fn find_cost(@harness.Harness[@memdom.MemNode], String) -> Int32
 
-pub fn gen(String) -> Int
+pub fn gen(String) -> Int32
 
-pub fn giant_view(Int) -> String
+pub fn giant_view(Int32) -> String
 
-pub fn intent_dyn(@harness.Harness[@memdom.MemNode], Int) -> Int
+pub fn intent_dyn(@harness.Harness[@memdom.MemNode], Int32) -> Int32
 
-pub fn intent_lex(@harness.Harness[@memdom.MemNode]) -> Int
+pub fn intent_lex(@harness.Harness[@memdom.MemNode]) -> Int32
 
-pub fn json_args(Int, Int) -> Map[String, @core.Value]
+pub fn json_args(Int32, Int32) -> Map[String, @core.Value]
 
-pub fn list_args(Int) -> Map[String, @core.Value]
+pub fn list_args(Int32) -> Map[String, @core.Value]
 
 pub fn mount_counter() -> @harness.Harness[@memdom.MemNode]
 
-pub fn mount_json(Int, Int) -> @harness.Harness[@memdom.MemNode]
+pub fn mount_json(Int32, Int32) -> @harness.Harness[@memdom.MemNode]
 
-pub fn mount_lex_chain(Int) -> @harness.Harness[@memdom.MemNode]
+pub fn mount_lex_chain(Int32) -> @harness.Harness[@memdom.MemNode]
 
-pub fn mount_people(Int) -> @harness.Harness[@memdom.MemNode]
+pub fn mount_people(Int32) -> @harness.Harness[@memdom.MemNode]
 
 pub fn mount_tabs() -> @harness.Harness[@memdom.MemNode]
 
-pub fn mount_todo(Int) -> @harness.Harness[@memdom.MemNode]
+pub fn mount_todo(Int32) -> @harness.Harness[@memdom.MemNode]
 
-pub fn mount_tree_chain(Int) -> @harness.Harness[@memdom.MemNode]
+pub fn mount_tree_chain(Int32) -> @harness.Harness[@memdom.MemNode]
 
 pub let one_big_view_body : String
 
-pub fn patch_add_remove(@harness.Harness[@memdom.MemNode]) -> Int
+pub fn patch_add_remove(@harness.Harness[@memdom.MemNode]) -> Int32
 
-pub fn patch_counter(@harness.Harness[@memdom.MemNode]) -> Int
+pub fn patch_counter(@harness.Harness[@memdom.MemNode]) -> Int32
 
-pub fn patch_move(@harness.Harness[@memdom.MemNode]) -> Int
+pub fn patch_move(@harness.Harness[@memdom.MemNode]) -> Int32
 
-pub fn patch_noop(@harness.Harness[@memdom.MemNode]) -> Int
+pub fn patch_noop(@harness.Harness[@memdom.MemNode]) -> Int32
 
-pub fn patch_page(@harness.Harness[@memdom.MemNode]) -> Int
+pub fn patch_page(@harness.Harness[@memdom.MemNode]) -> Int32
 
-pub fn patch_refilter(@harness.Harness[@memdom.MemNode]) -> Int
+pub fn patch_refilter(@harness.Harness[@memdom.MemNode]) -> Int32
 
-pub fn patch_switch_view(@harness.Harness[@memdom.MemNode]) -> Int
+pub fn patch_switch_view(@harness.Harness[@memdom.MemNode]) -> Int32
 
-pub fn patch_toggle(@harness.Harness[@memdom.MemNode]) -> Int
+pub fn patch_toggle(@harness.Harness[@memdom.MemNode]) -> Int32
 
-pub fn patch_workloads() -> Array[(String, () -> Int)]
+pub fn patch_workloads() -> Array[(String, () -> Int32)]
 
-pub fn people_args(Int) -> Map[String, @core.Value]
+pub fn people_args(Int32) -> Map[String, @core.Value]
 
-pub fn render_all_examples() -> Int
+pub fn render_all_examples() -> Int32
 
-pub fn render_json(Int, Int) -> Int
+pub fn render_json(Int32, Int32) -> Int32
 
-pub fn render_list(Int) -> Int
+pub fn render_list(Int32) -> Int32
 
-pub fn render_people(Int) -> Int
+pub fn render_people(Int32) -> Int32
 
-pub fn render_todo(Int) -> Int
+pub fn render_todo(Int32) -> Int32
 
-pub fn render_workloads() -> Array[(String, () -> Int)]
+pub fn render_workloads() -> Array[(String, () -> Int32)]
 
-pub let sizes : Array[Int]
+pub let sizes : Array[Int32]
 
-pub fn split(String) -> Int
+pub fn split(String) -> Int32
 
-pub let stages : Array[(String, (String) -> Int)]
+pub let stages : Array[(String, (String) -> Int32)]
 
-pub fn surface(String) -> Int
+pub fn surface(String) -> Int32
 
-pub fn todo_args(Int) -> Map[String, @core.Value]
+pub fn todo_args(Int32) -> Map[String, @core.Value]
 
 pub let todo_module : @component.ModuleDef
 

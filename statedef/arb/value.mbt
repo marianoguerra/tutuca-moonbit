@@ -521,7 +521,7 @@ fn subset_of(members : Array[String]) -> @gen.Generator[@tutuca.Value] {
 /// Draw every generator in order with the same size and random state, the way
 /// one draw of a record or tuple draws each of its slots.
 fn[T] sequence(gens : Array[@gen.Generator[T]]) -> @gen.Generator[Array[T]] {
-  @gen.Generator((size, state) => gens.map(g => g.run(size, state)))
+  Generator((size, state) => gens.map(g => g.run(size, state)))
 }
 
 ///|

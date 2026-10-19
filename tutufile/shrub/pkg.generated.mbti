@@ -21,7 +21,7 @@ pub fn decl_doc(@tutufile.Decl) -> String?
 
 pub fn doc_of(@ast.Node) -> String?
 
-pub fn find_op(Array[@ast.Node], Array[String]) -> Int?
+pub fn find_op(Array[@ast.Node], Array[String]) -> Int32?
 
 pub fn from_macro(@core.Expr) -> @core.Expr
 
@@ -31,7 +31,7 @@ pub fn kw_arg(Array[Arg], String) -> Ex?
 
 pub fn member_doc(@ast.Node, @ast.Node?) -> String?
 
-pub fn member_name(Array[@ast.Node], Int) -> (String, Int)?
+pub fn member_name(Array[@ast.Node], Int32) -> (String, Int32)?
 
 pub fn node_text(@ast.Node) -> String
 
@@ -39,7 +39,7 @@ pub fn positional(Array[Arg]) -> Array[Ex]
 
 pub fn positional_args(Array[Arg]) -> Array[Ex]
 
-pub fn qualified(Array[@ast.Node], Int) -> (String, Int)?
+pub fn qualified(Array[@ast.Node], Int32) -> (String, Int32)?
 
 pub fn read_args(Array[@ast.Node]) -> Array[Arg] raise ExError
 
@@ -55,7 +55,7 @@ pub fn row_members(Array[@tutufile.Decl]) -> Array[String]
 
 pub fn span_of(@ast.Node) -> @error-report.Span
 
-pub fn split_binder(Array[@ast.Node]) -> (Array[String], Ex, Int) raise ExError
+pub fn split_binder(Array[@ast.Node]) -> (Array[String], Ex, Int32) raise ExError
 
 pub fn split_call(Array[@ast.Node]) -> (Array[@ast.Node], Array[@ast.Node]) raise ExError
 

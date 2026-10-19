@@ -27,7 +27,7 @@ pub fn schema_writers(@core.SchemaInfo) -> Map[String, (FieldBox, Array[@core.Va
 
 // Types and methods
 pub struct Component {
-  id : Int
+  id : Int32
   name : String
   views : Map[String, @anode.View]
   common_style : String
@@ -39,7 +39,7 @@ pub struct Component {
   raw_provide : Map[String, String]
   raw_lookup : Array[LookupSpec]
   provide : Map[String, ProvideInfo]
-  provide_type : Map[String, Int]
+  provide_type : Map[String, Int32]
   lookup : Map[String, LookupInfo]
   mut scope : ComponentStack?
   // private fields
@@ -80,23 +80,23 @@ pub impl @anode.MacroScope for ComponentStack
 pub impl @core.ComponentSource for ComponentStack
 
 pub struct Components {
-  by_id : Map[Int, Component]
+  by_id : Map[Int32, Component]
 }
 pub fn Components::collect_classes(Self) -> Array[String]
 pub fn Components::compile_styles(Self) -> String
 pub fn Components::get_comp_for(Self, @core.Value) -> Component?
-pub fn Components::get_component_for_id(Self, Int) -> Component?
+pub fn Components::get_component_for_id(Self, Int32) -> Component?
 pub fn Components::new() -> Self
 pub fn Components::register(Self, Component) -> Unit
 
 pub(all) struct DynBinds {
   binds : Map[String, LocatedValue]
-  types : Map[String, Int]
+  types : Map[String, Int32]
   parent : DynBinds?
 }
 pub fn DynBinds::lookup(Self, String) -> @core.Value?
 pub fn DynBinds::lookup_located(Self, String) -> LocatedValue?
-pub fn DynBinds::lookup_type(Self, String) -> Int?
+pub fn DynBinds::lookup_type(Self, String) -> Int32?
 
 pub(all) struct ExampleDef {
   component : String
@@ -140,11 +140,11 @@ pub fn LoopCtx::to_value(Self) -> @core.Value
 
 pub(all) struct LoopWith {
   iter_data : @core.Value?
-  start : Int?
-  end : Int?
+  start : Int32?
+  end : Int32?
   keys : Array[@core.Value]?
 }
-pub fn LoopWith::new(iter_data? : @core.Value, start? : Int, end? : Int, keys? : Array[@core.Value]) -> Self
+pub fn LoopWith::new(iter_data? : @core.Value, start? : Int32, end? : Int32, keys? : Array[@core.Value]) -> Self
 pub fn LoopWith::of_value(@core.Value, @core.Value) -> Self
 pub fn LoopWith::to_value(Self) -> @core.Value
 

@@ -20,7 +20,7 @@ pub fn TouchDrag::new(TouchOps) -> Self
 
 pub(all) struct TouchOps {
   has_prop : (@js_core.Any, String) -> Bool
-  get_int : (@js_core.Any, String) -> Int
+  get_int : (@js_core.Any, String) -> Int32
   get_num : (@js_core.Any, String) -> Double
   element_from_point : (@js_core.Any, Double, Double) -> @js_core.Any
   fire : (String, @js_core.Any) -> Unit

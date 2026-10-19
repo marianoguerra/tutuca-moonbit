@@ -49,7 +49,7 @@ pub suberror GenError {
   AlwaysTruthy(view~ : String, directive~ : String, expr~ : String, ty~ : String)
   NotIterable(view~ : String, expr~ : String, ty~ : String)
   NotRenderable(view~ : String, expr~ : String, ty~ : String)
-  BadScriptBlock(comp~ : String, line~ : Int, message~ : String)
+  BadScriptBlock(comp~ : String, line~ : Int32, message~ : String)
 }
 pub fn GenError::code(Self) -> String
 pub fn GenError::message(Self) -> String

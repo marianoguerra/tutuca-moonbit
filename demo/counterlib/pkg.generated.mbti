@@ -28,7 +28,7 @@ pub fn module_def() -> @component.ModuleDef
 
 // Types and methods
 pub(all) enum CounterMsg {
-  ResetTo(Int)
+  ResetTo(Int32)
   Add(Double)
   Unknown(String, Array[@core.Value])
 }
@@ -38,8 +38,8 @@ pub fn CounterMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct CounterState {
   label : String
-  count : Int
-  history : Array[Int]
+  count : Int32
+  history : Array[Int32]
 }
 pub fn CounterState::fixture(String) -> Self?
 pub fn CounterState::zero() -> Self

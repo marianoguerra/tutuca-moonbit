@@ -785,7 +785,7 @@ pub fn AttributeBindingMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct AttributeBindingState {
   str : String
-  num : Int
+  num : Int32
   bool : Bool
   not_set : @core.Value
 }
@@ -818,7 +818,7 @@ pub fn BarChartMsg::send(Self, &@core.Ctx) -> Unit
 pub fn BarChartMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct BarChartState {
-  values : Array[Int]
+  values : Array[Int32]
 }
 pub fn BarChartState::zero() -> Self
 
@@ -848,7 +848,7 @@ pub fn CounterMsg::send(Self, &@core.Ctx) -> Unit
 pub fn CounterMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct CounterState {
-  count : Int
+  count : Int32
 }
 pub fn CounterState::zero() -> Self
 
@@ -1020,12 +1020,12 @@ pub(all) struct GreetingState {
 pub fn GreetingState::zero() -> Self
 
 pub(all) struct HtmlLintDemoState {
-  count : Int
+  count : Int32
 }
 pub fn HtmlLintDemoState::zero() -> Self
 
 pub(all) struct IconGalleryState {
-  size : Int
+  size : Int32
 }
 pub fn IconGalleryState::zero() -> Self
 
@@ -1141,7 +1141,7 @@ pub(all) struct JsonStringState {
 pub fn JsonStringState::zero() -> Self
 
 pub(all) struct LintDemoState {
-  count : Int
+  count : Int32
   items : Array[@core.Value]
   kind : String
   is_open : Bool
@@ -1221,7 +1221,7 @@ pub(all) struct ListIterationState {
 pub fn ListIterationState::zero() -> Self
 
 pub(all) struct MacroNamedSlotsState {
-  count : Int
+  count : Int32
 }
 pub fn MacroNamedSlotsState::zero() -> Self
 
@@ -1231,7 +1231,7 @@ pub(all) struct MacroParamsState {
 pub fn MacroParamsState::zero() -> Self
 
 pub(all) struct MacroSlotsState {
-  count : Int
+  count : Int32
 }
 pub fn MacroSlotsState::zero() -> Self
 
@@ -1279,8 +1279,8 @@ pub fn NaivePeopleMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct NaivePeopleState {
   items : Array[@core.Value]
   query : String
-  page : Int
-  page_size : Int
+  page : Int32
+  page_size : Int32
 }
 pub fn NaivePeopleState::zero() -> Self
 
@@ -1294,7 +1294,7 @@ pub fn NaivePeopleWhen::to_repr(Self) -> @debug.Repr
 
 pub(all) enum NestedStateDue {
   Unscheduled
-  OnDay(Int)
+  OnDay(Int32)
 } derive(Eq, @debug.Debug)
 pub fn NestedStateDue::equal(Self, Self) -> Bool
 pub fn NestedStateDue::not_equal(Self, Self) -> Bool
@@ -1331,7 +1331,7 @@ pub(all) struct NestedStateState {
   priority : NestedStatePriority
   due : NestedStateDue
   note : String?
-  size : (Int, Int)
+  size : (Int32, Int32)
 }
 pub fn NestedStateState::zero() -> Self
 
@@ -1369,8 +1369,8 @@ pub fn PaginationMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct PaginationState {
   items : Array[String]
-  page : Int
-  page_size : Int
+  page : Int32
+  page_size : Int32
 }
 pub fn PaginationState::zero() -> Self
 
@@ -1421,8 +1421,8 @@ pub(all) struct PsEntryState {
   title : String
   description : String
   lang : String
-  start_year : Int?
-  end_year : Int?
+  start_year : Int32?
+  end_year : Int32?
   role : String?
   featured : Bool
   url : String
@@ -1478,9 +1478,9 @@ pub fn QuadraticCompute::not_equal(Self, Self) -> Bool
 pub fn QuadraticCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) struct QuadraticState {
-  a : Int
-  b : Int
-  c : Int
+  a : Int32
+  b : Int32
+  c : Int32
 }
 pub fn QuadraticState::zero() -> Self
 
@@ -1580,7 +1580,7 @@ pub fn RootWhen::not_equal(Self, Self) -> Bool
 pub fn RootWhen::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ScopedStyleDemoState {
-  count : Int
+  count : Int32
 }
 pub fn ScopedStyleDemoState::zero() -> Self
 
@@ -1630,7 +1630,7 @@ pub(all) struct SeqItemAccessState {
   by_key : Map[String, @core.Value]
   by_index : Array[@core.Value]
   current_key : @core.Value
-  current_index : Int
+  current_index : Int32
 }
 pub fn SeqItemAccessState::zero() -> Self
 
@@ -1696,7 +1696,7 @@ pub fn ShowHideMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct ShowHideState {
   is_open : Bool
-  count : Int
+  count : Int32
 }
 pub fn ShowHideState::zero() -> Self
 
@@ -1721,7 +1721,7 @@ pub fn StatusMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct StatusState {
   message : String
-  count : Int
+  count : Int32
 }
 pub fn StatusState::zero() -> Self
 
@@ -1763,7 +1763,7 @@ pub fn TabbedUIState::zero() -> Self
 
 pub(all) struct TableRowState {
   name : String
-  qty : Int
+  qty : Int32
   price : Double
 }
 pub fn TableRowState::zero() -> Self
@@ -1778,7 +1778,7 @@ pub fn TextDirectiveCompute::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TextDirectiveState {
   str : String
-  num : Int
+  num : Int32
   bool : Bool
   not_set : @core.Value
 }
@@ -1817,7 +1817,7 @@ pub fn TrafficLightMsg::send(Self, &@core.Ctx) -> Unit
 pub fn TrafficLightMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct TrafficLightState {
-  light_index : Int
+  light_index : Int32
 }
 pub fn TrafficLightState::zero() -> Self
 
@@ -1874,14 +1874,14 @@ pub(all) struct VwIfState {
 pub fn VwIfState::zero() -> Self
 
 pub(all) struct VwImmState {
-  value : Int
+  value : Int32
   raw_value : String
 }
 pub fn VwImmState::zero() -> Self
 
 pub(all) struct VwMemoryState {
-  n : Int
-  m : Int
+  n : Int32
+  m : Int32
 }
 pub fn VwMemoryState::zero() -> Self
 
@@ -1893,7 +1893,7 @@ pub(all) struct VwPickerState {
 pub fn VwPickerState::zero() -> Self
 
 pub(all) struct VwSectionState {
-  id : Int
+  id : Int32
   name : String
   items : Array[@core.Value]
   expanded : Bool

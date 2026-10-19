@@ -51,7 +51,7 @@ pub fn EventPathProfile::to_repr(Self) -> @debug.Repr
 
 pub(all) enum EventPathVerdict {
   PathOk
-  BadStep(step~ : String, index~ : Int)
+  BadStep(step~ : String, index~ : Int32)
 } derive(Eq, @debug.Debug)
 pub fn EventPathVerdict::equal(Self, Self) -> Bool
 pub fn EventPathVerdict::not_equal(Self, Self) -> Bool

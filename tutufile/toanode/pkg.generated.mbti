@@ -42,7 +42,7 @@ pub(all) struct Slots {
 }
 
 pub struct ViewBuilder {
-  mut next_id : Int
+  mut next_id : Int32
   mut ns : @anode.Ns?
   handlers : Array[Array[@anode.NodeEvent]]
   macros : Map[String, MacroDef]

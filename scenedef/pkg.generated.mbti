@@ -28,16 +28,16 @@ pub suberror SceneError {
   NotScenes
   SceneNotObject(String)
   NoSteps(String)
-  StepNotObject(scene~ : String, at~ : Int)
-  NoVerb(scene~ : String, at~ : Int, suggestion~ : String?)
-  TwoVerbs(scene~ : String, at~ : Int, first~ : String, second~ : String)
-  MissingKey(scene~ : String, at~ : Int, verb~ : String, key~ : String)
-  BadType(scene~ : String, at~ : Int, key~ : String, want~ : String, got~ : String)
-  NoSuchReader(scene~ : String, at~ : Int, reader~ : String, suggestion~ : String?)
-  BadSelector(scene~ : String, at~ : Int, sel~ : String, why~ : String)
-  BadPlace(scene~ : String, at~ : Int, place~ : String, why~ : String)
+  StepNotObject(scene~ : String, at~ : Int32)
+  NoVerb(scene~ : String, at~ : Int32, suggestion~ : String?)
+  TwoVerbs(scene~ : String, at~ : Int32, first~ : String, second~ : String)
+  MissingKey(scene~ : String, at~ : Int32, verb~ : String, key~ : String)
+  BadType(scene~ : String, at~ : Int32, key~ : String, want~ : String, got~ : String)
+  NoSuchReader(scene~ : String, at~ : Int32, reader~ : String, suggestion~ : String?)
+  BadSelector(scene~ : String, at~ : Int32, sel~ : String, why~ : String)
+  BadPlace(scene~ : String, at~ : Int32, place~ : String, why~ : String)
   BadIntent(scene~ : String, name~ : String, why~ : String)
-  NotContainable(scene~ : String, at~ : Int, reader~ : String)
+  NotContainable(scene~ : String, at~ : Int32, reader~ : String)
 }
 pub fn SceneError::message(Self) -> String
 pub fn SceneError::output(Self, &Logger) -> Unit
@@ -50,7 +50,7 @@ pub(all) struct Expect {
   sel : String
   place : Array[@core.Step]
   name : String
-  nth : Int
+  nth : Int32
   want : Want?
 } derive(Eq, @debug.Debug)
 pub fn Expect::equal(Self, Self) -> Bool
@@ -90,12 +90,12 @@ pub fn Scene::not_equal(Self, Self) -> Bool
 pub fn Scene::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Step {
-  Click(sel~ : String, nth~ : Int)
-  Type(sel~ : String, value~ : String, nth~ : Int)
-  Key(sel~ : String, key~ : String, value~ : @core.Value?, nth~ : Int)
-  Check(sel~ : String, checked~ : Bool, nth~ : Int)
-  Fire(sel~ : String, event~ : String, value~ : @core.Value?, key~ : String, nth~ : Int)
-  Drag(sel~ : String, from~ : Int, to~ : Int)
+  Click(sel~ : String, nth~ : Int32)
+  Type(sel~ : String, value~ : String, nth~ : Int32)
+  Key(sel~ : String, key~ : String, value~ : @core.Value?, nth~ : Int32)
+  Check(sel~ : String, checked~ : Bool, nth~ : Int32)
+  Fire(sel~ : String, event~ : String, value~ : @core.Value?, key~ : String, nth~ : Int32)
+  Drag(sel~ : String, from~ : Int32, to~ : Int32)
   Send(name~ : String, args~ : Array[@core.Value])
   Read(Expect)
 } derive(Eq, @debug.Debug)

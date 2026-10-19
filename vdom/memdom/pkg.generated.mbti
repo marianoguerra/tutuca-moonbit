@@ -36,12 +36,12 @@ pub struct MemNode {
   mut data : String
   mut created_is : String?
   mut dangerous_html : String?
-  mut inner_html_sets : Int
+  mut inner_html_sets : Int32
 }
 pub fn MemNode::append_child(Self, Self) -> Unit
 pub fn MemNode::attribute(Self, String) -> String?
 pub fn MemNode::char_data(Self) -> String
-pub fn MemNode::child_node_at(Self, Int) -> Self?
+pub fn MemNode::child_node_at(Self, Int32) -> Self?
 pub fn MemNode::child_nodes(Self) -> Array[Self]
 pub fn MemNode::create_comment(Self, String) -> Self
 pub fn MemNode::create_element(Self, String, @vdom.Ns?, String?) -> Self
@@ -57,7 +57,7 @@ pub fn MemNode::insert_before(Self, Self, Self?) -> Unit
 pub fn MemNode::is_same_node(Self, Self) -> Bool
 pub fn MemNode::namespace_uri(Self) -> @vdom.Ns?
 pub fn MemNode::next_sibling(Self) -> Self?
-pub fn MemNode::node_kind(Self) -> Int
+pub fn MemNode::node_kind(Self) -> Int32
 pub fn MemNode::parent_node(Self) -> Self?
 pub fn MemNode::prev_sibling(Self) -> Self?
 pub fn MemNode::remove_attribute(Self, String) -> Unit

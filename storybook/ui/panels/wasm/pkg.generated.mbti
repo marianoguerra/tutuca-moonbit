@@ -15,7 +15,7 @@ pub fn fuzz_effects() -> @panels.FuzzEffects
 
 pub fn on_event(@js_core.Any) -> Unit
 
-pub fn on_file_text(Int, Bool, String) -> Unit
+pub fn on_file_text(Int32, Bool, String) -> Unit
 
 pub fn on_fuzz_tick() -> Unit
 

@@ -18,11 +18,11 @@ pub fn build_stack(@core.Path, RenderStack) -> RenderStack?
 
 pub fn clean_vdom(@vdom.Vdom) -> @vdom.Vdom?
 
-pub fn[N : @vdom.DomWalk] components_at(N, N, &Boundaries, max_depth? : Int) -> Array[Crossing]
+pub fn[N : @vdom.DomWalk] components_at(N, N, &Boundaries, max_depth? : Int32) -> Array[Crossing]
 
 pub fn event_path(DomEvent, Array[String], profile? : @eventpath.EventPathProfile) -> @core.Value
 
-pub fn[N : @vdom.DomWalk] from_node_and_event_name(N, String, N, &Boundaries, max_depth? : Int, stop_on_no_event? : Bool) -> EventDispatch?
+pub fn[N : @vdom.DomWalk] from_node_and_event_name(N, String, N, &Boundaries, max_depth? : Int32, stop_on_no_event? : Bool) -> EventDispatch?
 
 pub fn is_internal_attr(String) -> Bool
 
@@ -36,7 +36,7 @@ pub fn render_root(@core.Value, RenderStack, RenderCtx, view? : String) -> @vdom
 
 // Types and methods
 pub(all) struct Crossing {
-  cid : Int
+  cid : Int32
   vid : String
   path : @core.DispatchPath
 } derive(Eq, @debug.Debug)
@@ -48,7 +48,7 @@ pub(all) struct DomEvent {
   name : String
   value : @core.Value
   key : String
-  key_code : Int
+  key_code : Int32
   alt : Bool
   shift : Bool
   ctrl_or_cmd : Bool
@@ -59,7 +59,7 @@ pub(all) struct DomEvent {
   stop_propagation : EventEffect?
 } derive(@debug.Debug)
 pub fn DomEvent::bind_value(Self, @anode.BindCoercion) -> @core.Value?
-pub fn DomEvent::new(name~ : String, value? : @core.Value, read_path? : EventPathReader, key? : String, key_code? : Int, alt? : Bool, shift? : Bool, ctrl_or_cmd? : Bool, meta? : Bool, drag_info? : @core.Value, prevent_default? : EventEffect, stop_propagation? : EventEffect) -> Self
+pub fn DomEvent::new(name~ : String, value? : @core.Value, read_path? : EventPathReader, key? : String, key_code? : Int32, alt? : Bool, shift? : Bool, ctrl_or_cmd? : Bool, meta? : Bool, drag_info? : @core.Value, prevent_default? : EventEffect, stop_propagation? : EventEffect) -> Self
 pub fn DomEvent::to_repr(Self) -> @debug.Repr
 
 pub(all) struct EventDispatch {
@@ -76,9 +76,9 @@ pub fn EventPathReader::to_repr(Self) -> @debug.Repr
 pub impl @debug.Debug for EventPathReader
 
 pub(all) enum Meta {
-  Comp(nid~ : Int?, cid~ : Int, vid~ : String, base~ : @core.Path?)
-  Each(nid~ : Int, key~ : @core.PathKey)
-  Scope(nid~ : Int)
+  Comp(nid~ : Int32?, cid~ : Int32, vid~ : String, base~ : @core.Path?)
+  Each(nid~ : Int32, key~ : @core.PathKey)
+  Scope(nid~ : Int32)
 } derive(Eq, @debug.Debug)
 pub fn Meta::equal(Self, Self) -> Bool
 pub fn Meta::not_equal(Self, Self) -> Bool
@@ -117,7 +117,7 @@ pub(all) struct RenderStack {
 pub fn RenderStack::enter(Self, @core.Value, Map[String, @core.Value], is_frame? : Bool, render_path? : @core.DispatchPath, pending_frame? : Bool) -> Self
 pub fn RenderStack::lookup_bare(Self, String) -> @core.Value
 pub fn RenderStack::lookup_bind(Self, String) -> @core.Value
-pub fn RenderStack::lookup_dyn_type(Self, String) -> Int?
+pub fn RenderStack::lookup_dyn_type(Self, String) -> Int32?
 pub fn RenderStack::lookup_dynamic(Self, String) -> @core.Value
 pub fn RenderStack::lookup_dynamic_located(Self, String) -> @component.LocatedValue?
 pub fn RenderStack::lookup_event_path(Self, Array[String]) -> @core.Value
@@ -131,7 +131,7 @@ pub impl @core.Stack for RenderStack
 
 pub(all) struct ResolvedView {
   node : @anode.ANode
-  cid : Int
+  cid : Int32
   vid : String
 } derive(@debug.Debug)
 pub fn ResolvedView::to_repr(Self) -> @debug.Repr
@@ -140,8 +140,8 @@ pub fn ResolvedView::to_repr(Self) -> @debug.Repr
 
 // Traits
 pub(open) trait Boundaries {
-  fn node_for(Self, Int, String, Int) -> @anode.ANode? = _
-  fn events_for(Self, Int, String, Int) -> @anode.NodeEvents? = _
+  fn node_for(Self, Int32, String, Int32) -> @anode.ANode? = _
+  fn events_for(Self, Int32, String, Int32) -> @anode.NodeEvents? = _
 }
 pub impl Boundaries for @component.Components
 

@@ -18,10 +18,10 @@ pub struct MemFiles {
 }
 pub fn MemFiles::last_saved(Self) -> SavedFile?
 pub fn MemFiles::new() -> Self
-pub fn MemFiles::provide(Self, id~ : Int, String) -> Unit
-pub fn MemFiles::provide_error(Self, id~ : Int, String) -> Unit
-pub fn MemFiles::read_text(Self, id~ : Int, then~ : (Result[String, String]) -> Unit) -> Unit
-pub fn MemFiles::round_trip(Self) -> Int?
+pub fn MemFiles::provide(Self, id~ : Int32, String) -> Unit
+pub fn MemFiles::provide_error(Self, id~ : Int32, String) -> Unit
+pub fn MemFiles::read_text(Self, id~ : Int32, then~ : (Result[String, String]) -> Unit) -> Unit
+pub fn MemFiles::round_trip(Self) -> Int32?
 pub fn MemFiles::save_text(Self, name~ : String, mime~ : String, String) -> Unit
 pub fn MemFiles::saved(Self) -> Array[SavedFile]
 pub impl FileService for MemFiles
@@ -40,5 +40,5 @@ pub fn SavedFile::to_repr(Self) -> @debug.Repr
 // Traits
 pub(open) trait FileService {
   fn save_text(Self, name~ : String, mime~ : String, String) -> Unit
-  fn read_text(Self, id~ : Int, then~ : (Result[String, String]) -> Unit) -> Unit
+  fn read_text(Self, id~ : Int32, then~ : (Result[String, String]) -> Unit) -> Unit
 }

@@ -13,7 +13,7 @@ import {
 }
 
 // Values
-pub const ACTIVITY_CAP : Int = 200
+pub const ACTIVITY_CAP : Int32 = 200
 
 pub fn drive_scene(@harness.Harness[@memdom.MemNode], @scenedef.Scene, take_log? : () -> Array[String]) -> SceneResult
 
@@ -54,7 +54,7 @@ pub fn SceneResult::not_equal(Self, Self) -> Bool
 pub fn SceneResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct StepResult {
-  at : Int
+  at : Int32
   ok : Bool
   got : @core.Value?
   want : @core.Value?

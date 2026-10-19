@@ -26,7 +26,7 @@ pub fn component_picker_views() -> Map[String, @anode.View]
 
 pub fn components() -> Array[@component.Component]
 
-pub fn empty_message(String, total~ : Int, offered? : Bool) -> String
+pub fn empty_message(String, total~ : Int32, offered? : Bool) -> String
 
 pub fn forget_cell() -> Unit
 
@@ -104,7 +104,7 @@ pub(all) struct CardRowState {
 pub fn CardRowState::zero() -> Self
 
 pub(all) enum ComponentPickerMsg {
-  SetCursor(Int)
+  SetCursor(Int32)
   Dismissed
   SetHits(Array[@core.Value], String)
   Opened
@@ -120,7 +120,7 @@ pub fn ComponentPickerMsg::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct ComponentPickerState {
   query : String
   hits : Array[@core.Value]
-  cursor : Int
+  cursor : Int32
   open : Bool
   empty_message : String
 }

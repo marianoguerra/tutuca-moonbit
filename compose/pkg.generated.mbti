@@ -28,8 +28,8 @@ pub(all) struct ComposeHost {
 pub(all) struct PlanNode {
   ref_ : @catalog.ComponentRef
   args : Map[String, Json]
-  cells : Int
-  children : Array[(Int, PlanNode)]
+  cells : Int32
+  children : Array[(Int32, PlanNode)]
 }
 
 // Type aliases

@@ -28,7 +28,7 @@ pub fn read_spec(String, name? : String) -> Array[StateDef] raise DefError
 
 pub fn state_of_tutu(Array[@tutufile.Decl], name? : String) -> Array[StateDef] raise DefError
 
-pub fn str_cmp(String, String) -> Int
+pub fn str_cmp(String, String) -> Int32
 
 pub fn upper_name(String) -> String
 
@@ -45,7 +45,7 @@ pub suberror DefError {
   NoState(span~ : @core.Span)
   UnsupportedType(ty~ : String, why~ : String, span~ : @core.Span)
   UnknownTypeRef(name~ : String, span~ : @core.Span)
-  BadTypeArgs(name~ : String, want~ : Int, got~ : Int, span~ : @core.Span)
+  BadTypeArgs(name~ : String, want~ : Int32, got~ : Int32, span~ : @core.Span)
   CyclicType(name~ : String, span~ : @core.Span)
   Collision(kind~ : String, ident~ : String, first~ : String, second~ : String, span~ : @core.Span)
   BadComponentName(name~ : String, span~ : @core.Span)

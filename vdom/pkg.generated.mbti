@@ -44,7 +44,7 @@ pub(all) enum AttrValue {
   Data(Json)
 } derive(Eq, @debug.Debug)
 pub fn AttrValue::equal(Self, Self) -> Bool
-pub fn AttrValue::int(Int) -> Self
+pub fn AttrValue::int(Int32) -> Self
 pub fn AttrValue::not_equal(Self, Self) -> Bool
 pub fn AttrValue::to_attr_string(Self) -> String
 pub fn AttrValue::to_repr(Self) -> @debug.Repr
@@ -90,7 +90,7 @@ pub(all) enum Vdom {
 } derive(Eq, @debug.Debug)
 pub fn Vdom::equal(Self, Self) -> Bool
 pub fn Vdom::is_equal_to(Self, Self) -> Bool
-pub fn Vdom::node_type(Self) -> Int
+pub fn Vdom::node_type(Self) -> Int32
 pub fn Vdom::not_equal(Self, Self) -> Bool
 pub fn Vdom::to_repr(Self) -> @debug.Repr
 
@@ -111,7 +111,7 @@ pub(open) trait DomNode {
   fn first_child(Self) -> Self?
   fn next_sibling(Self) -> Self?
   fn child_nodes(Self) -> Array[Self]
-  fn child_node_at(Self, Int) -> Self?
+  fn child_node_at(Self, Int32) -> Self?
   fn is_same_node(Self, Self) -> Bool
   fn set_attribute(Self, String, String) -> Unit
   fn remove_attribute(Self, String) -> Unit
@@ -126,7 +126,7 @@ pub(open) trait DomNode {
 
 pub(open) trait DomWalk : DomNode {
   fn prev_sibling(Self) -> Self?
-  fn node_kind(Self) -> Int
+  fn node_kind(Self) -> Int32
   fn char_data(Self) -> String
   fn attribute(Self, String) -> String?
 }

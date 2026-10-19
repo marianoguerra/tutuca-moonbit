@@ -31,7 +31,7 @@ pub const CODE_USAGE_UNKNOWN_FLAG : String = "ERR_USAGE_UNKNOWN_FLAG"
 
 pub const CODE_VIEW_GEN_FAILED : String = "ERR_VIEW_GEN_FAILED"
 
-pub const MODULE_VERSION : String = "0.56.0"
+pub const MODULE_VERSION : String = "0.57.1"
 
 pub const VERSION : String = "0.13.0"
 
@@ -45,7 +45,7 @@ pub fn command_names() -> Array[String]
 
 pub fn command_spec(String) -> CommandSpec
 
-pub fn err(String, String, suggestion? : @lint.Suggestion, hint? : String, where_? : String, exit_code? : Int) -> ErrShape
+pub fn err(String, String, suggestion? : @lint.Suggestion, hint? : String, where_? : String, exit_code? : Int32) -> ErrShape
 
 pub let error_codes : Array[String]
 
@@ -63,7 +63,7 @@ pub fn feedback_success_line(String) -> String
 
 pub fn find_command(String) -> CommandSpec?
 
-pub fn gen_css_success(String, files~ : Int, classes~ : Int) -> String
+pub fn gen_css_success(String, files~ : Int32, classes~ : Int32) -> String
 
 pub fn gen_views(String, name~ : String, input~ : String, target~ : String, ir~ : Bool) -> Result[GenPlan, ErrShape]
 
@@ -85,7 +85,7 @@ pub fn is_view_path(String) -> Bool
 
 pub fn iso8601_utc(UInt64) -> String
 
-pub fn lex_compare(String, String) -> Int
+pub fn lex_compare(String, String) -> Int32
 
 pub fn new_storybook_success(String, String) -> String
 
@@ -113,7 +113,7 @@ pub fn validate_gen_paths(Array[String], String?, String?) -> ErrShape?
 
 pub fn watch_banner(Array[String], Array[String]) -> String
 
-pub fn watch_css_line(String, classes~ : Int) -> String
+pub fn watch_css_line(String, classes~ : Int32) -> String
 
 pub fn watch_error_line(String) -> String
 
@@ -144,7 +144,7 @@ pub(all) struct CssPlan {
   entry : String?
   extra_classes : String?
   print_classes : Bool
-  polyfills : Int
+  polyfills : Int32
   margaui : Bool
 } derive(Eq, @debug.Debug)
 pub fn CssPlan::equal(Self, Self) -> Bool
@@ -154,7 +154,7 @@ pub fn CssPlan::to_repr(Self) -> @debug.Repr
 pub(all) struct Emit {
   out : String
   err : String
-  exit_code : Int
+  exit_code : Int32
 } derive(Eq, @debug.Debug)
 pub fn Emit::equal(Self, Self) -> Bool
 pub fn Emit::not_equal(Self, Self) -> Bool
@@ -166,7 +166,7 @@ pub(all) struct ErrShape {
   suggestion : @lint.Suggestion?
   hint : String?
   where_ : String?
-  exit_code : Int
+  exit_code : Int32
 } derive(Eq, @debug.Debug)
 pub fn ErrShape::equal(Self, Self) -> Bool
 pub fn ErrShape::not_equal(Self, Self) -> Bool
@@ -279,7 +279,7 @@ pub fn StorybookScaffoldPlan::to_repr(Self) -> @debug.Repr
 
 pub(all) enum TraceOp {
   Info
-  Trim(at~ : Int)
+  Trim(at~ : Int32)
   Relocate(place~ : String, compact~ : Bool)
 } derive(Eq, @debug.Debug)
 pub fn TraceOp::equal(Self, Self) -> Bool

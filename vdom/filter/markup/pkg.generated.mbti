@@ -31,7 +31,7 @@ pub struct MarkupFilter {
 pub fn MarkupFilter::filter_elem(Self, @vdom.VElem) -> Unit
 pub fn MarkupFilter::filter_elem_hinted(Self, @vdom.VElem, @sinks.SinkHints) -> Unit
 pub fn MarkupFilter::filter_tree(Self, @vdom.Vdom) -> Unit
-pub fn MarkupFilter::new(sanitizer? : @sanitize.Sanitizer, max_reports? : Int) -> Self
+pub fn MarkupFilter::new(sanitizer? : @sanitize.Sanitizer, max_reports? : Int32) -> Self
 pub fn MarkupFilter::take_reports(Self) -> Array[@filter.Dropped]
 pub impl @filter.VdomFilter for MarkupFilter
 
@@ -42,7 +42,7 @@ pub struct SafeMarkupFilter {
 pub fn SafeMarkupFilter::filter_elem(Self, @vdom.VElem) -> Unit
 pub fn SafeMarkupFilter::filter_elem_hinted(Self, @vdom.VElem, @sinks.SinkHints) -> Unit
 pub fn SafeMarkupFilter::filter_tree(Self, @vdom.Vdom) -> Unit
-pub fn SafeMarkupFilter::new(sanitizer? : @sanitize.Sanitizer, max_reports? : Int) -> Self
+pub fn SafeMarkupFilter::new(sanitizer? : @sanitize.Sanitizer, max_reports? : Int32) -> Self
 pub fn SafeMarkupFilter::take_reports(Self) -> Array[@filter.Dropped]
 pub impl @filter.VdomFilter for SafeMarkupFilter
 

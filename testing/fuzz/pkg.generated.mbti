@@ -14,7 +14,7 @@ import {
 // Values
 pub fn[N] settled(@harness.Harness[N], read? : Reader) -> Map[String, @core.Value]
 
-pub fn[N] shrink(Plan, Array[Action], () -> @harness.Harness[N]?, at? : @core.DispatchPath, read? : Reader, rounds? : Int) -> Array[Action]
+pub fn[N] shrink(Plan, Array[Action], () -> @harness.Harness[N]?, at? : @core.DispatchPath, read? : Reader, rounds? : Int32) -> Array[Action]
 
 pub fn shrink_actions(Array[Action]) -> Iter[Array[Action]]
 
@@ -32,8 +32,8 @@ pub fn Action::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Outcome {
   Held
-  Broke(rule~ : String, sentence~ : String, at~ : Int)
-  Disagreed(rule~ : String, at~ : Int)
+  Broke(rule~ : String, sentence~ : String, at~ : Int32)
+  Disagreed(rule~ : String, at~ : Int32)
   Stuck(String)
 } derive(Eq, @debug.Debug)
 pub fn Outcome::equal(Self, Self) -> Bool
@@ -46,16 +46,16 @@ pub struct Plan {
   rules : @arb.Rules
   one : @quickcheck.Generator[Action]?
   source : Source
-  depth : Int
+  depth : Int32
 }
 pub fn Plan::has_inputs(Self) -> Bool
 pub fn Plan::has_oracle(Self) -> Bool
-pub fn Plan::next_at(Self, Map[String, @core.Value], seed~ : UInt64, step~ : Int) -> Action?
-pub fn Plan::of_component(@component.Component, source? : Source, depth? : Int) -> Self?
+pub fn Plan::next_at(Self, Map[String, @core.Value], seed~ : UInt64, step~ : Int32) -> Action?
+pub fn Plan::of_component(@component.Component, source? : Source, depth? : Int32) -> Self?
 pub fn[N] Plan::run(Self, @harness.Harness[N], Array[Action], seed? : UInt64, at? : @core.DispatchPath, read? : Reader) -> Run raise
-pub fn[N] Plan::run_live(Self, @harness.Harness[N], steps~ : Int, seed? : UInt64, at? : @core.DispatchPath, read? : Reader) -> Run raise
-pub fn Plan::script(Self, seed~ : UInt64, steps~ : Int) -> Array[Action]
-pub fn Plan::script_gen(Self, Int) -> @quickcheck.Generator[Array[Action]]
+pub fn[N] Plan::run_live(Self, @harness.Harness[N], steps~ : Int32, seed? : UInt64, at? : @core.DispatchPath, read? : Reader) -> Run raise
+pub fn Plan::script(Self, seed~ : UInt64, steps~ : Int32) -> Array[Action]
+pub fn Plan::script_gen(Self, Int32) -> @quickcheck.Generator[Array[Action]]
 pub fn Plan::sentence_of(Self, String) -> String
 pub fn Plan::state_aware(Self) -> Bool
 pub fn[N] Plan::step(Self, @harness.Harness[N], Action, at? : @core.DispatchPath, read? : Reader) -> Step raise
@@ -88,7 +88,7 @@ pub(all) struct Step {
   broke : Array[String]
   disagreed : Array[String]
   after : Map[String, @core.Value]
-  renders : Int
+  renders : Int32
 }
 
 // Type aliases

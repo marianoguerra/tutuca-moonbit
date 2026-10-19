@@ -57,7 +57,7 @@ pub(all) enum ElemNs {
   MathML
 } derive(Eq, Hash, @debug.Debug)
 pub fn ElemNs::equal(Self, Self) -> Bool
-pub fn ElemNs::hash(Self) -> Int
+pub fn ElemNs::hash(Self) -> Int32
 pub fn ElemNs::hash_combine(Self, Hasher) -> Unit
 pub fn ElemNs::not_equal(Self, Self) -> Bool
 pub fn ElemNs::of_anode(@anode.Ns?) -> Self

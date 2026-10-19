@@ -25,7 +25,6 @@ import {
   "marianoguerra/tutuca/showcase",
   "marianoguerra/tutuca/vdom/filter/markdown" @mdfilter,
   "marianoguerra/tutuca/app",
-  "marianoguerra/tutuca/transactor",
   "marianoguerra/tutuca/component",
   // The card compiler: core wasm plus GC, no component model, no archive.
   "marianoguerra/tutuca/tgc/emit" @tgc,
@@ -50,7 +49,6 @@ import {
   "marianoguerra/tutuca/app/browser" @glue,
   "marianoguerra/tutuca/vdom/browser" @bdom,
   "mizchi/js_browser/dom",
-  "moonbitlang/core/json",
 }
 
 supported_targets = "js"

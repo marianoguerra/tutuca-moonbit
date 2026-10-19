@@ -20,7 +20,7 @@ pub fn builtin(String) -> Builtin?
 
 pub fn builtin_names() -> Array[String]
 
-pub fn closest_name(String, Array[String], limit~ : Int) -> String?
+pub fn closest_name(String, Array[String], limit~ : Int32) -> String?
 
 pub let component_key : String
 
@@ -38,7 +38,7 @@ pub fn domains_of_json(Json) -> Array[FieldDomain]
 
 pub fn domains_to_json(Array[FieldDomain]) -> Json
 
-pub fn edit_distance(String, String) -> Int
+pub fn edit_distance(String, String) -> Int32
 
 pub fn escape_of(Char) -> Char?
 
@@ -48,9 +48,9 @@ pub fn first_broken_domain(Array[FieldDomain], Map[String, Value]) -> FieldDomai
 
 pub fn fnv1a_hex(String) -> String
 
-pub fn instant_of_rfc3339(String) -> (Int64, Int) raise BadInstant
+pub fn instant_of_rfc3339(String) -> (Int64, Int32) raise BadInstant
 
-pub fn instant_to_rfc3339(Int64, Int) -> String
+pub fn instant_to_rfc3339(Int64, Int32) -> String
 
 pub fn invariant_failed(handler~ : String, pred~ : String, sentence? : String, state? : Value) -> Unit
 
@@ -62,7 +62,7 @@ pub fn is_ident_start(Char) -> Bool
 
 pub fn is_type_name(String) -> Bool
 
-pub fn line_count(String) -> Int
+pub fn line_count(String) -> Int32
 
 pub let module_key : String
 
@@ -88,7 +88,7 @@ pub fn route_label(Array[Leg]) -> String
 
 pub fn[T] route_lookup(Array[Leg], () -> T?, () -> T?) -> T?
 
-pub fn size_of(Value) -> Int?
+pub fn size_of(Value) -> Int32?
 
 pub fn step_get(Value, Step) -> Value?
 
@@ -122,7 +122,7 @@ pub fn Admission::to_repr(Self) -> @debug.Repr
 
 pub struct Builtin {
   name : String
-  arity : Int
+  arity : Int32
   apply : (Array[Value]) -> Value
 }
 
@@ -151,7 +151,7 @@ pub fn Dispatch::to_repr(Self) -> @debug.Repr
 pub(all) struct DispatchFrame {
   base : Path
   items : Array[DispatchStep]
-  binds : Array[(Int, FrameBind)]
+  binds : Array[(Int32, FrameBind)]
 } derive(Eq, @debug.Debug)
 pub fn DispatchFrame::equal(Self, Self) -> Bool
 pub fn DispatchFrame::not_equal(Self, Self) -> Bool
@@ -176,7 +176,7 @@ pub fn DispatchPath::to_repr(Self) -> @debug.Repr
 pub fn DispatchPath::to_transaction_path(Self) -> Path
 
 pub(all) enum DispatchStep {
-  Plain(step~ : Step, origin~ : Int?)
+  Plain(step~ : Step, origin~ : Int32?)
 } derive(Eq, @debug.Debug)
 pub fn DispatchStep::equal(Self, Self) -> Bool
 pub fn DispatchStep::not_equal(Self, Self) -> Bool
@@ -326,7 +326,7 @@ pub(all) enum HandlerBucket {
 pub fn HandlerBucket::equal(Self, Self) -> Bool
 pub fn HandlerBucket::label(Self) -> String
 pub fn HandlerBucket::not_equal(Self, Self) -> Bool
-pub fn HandlerBucket::ordinal(Self) -> Int
+pub fn HandlerBucket::ordinal(Self) -> Int32
 pub fn HandlerBucket::to_repr(Self) -> @debug.Repr
 
 pub(all) enum IntentAnswer {
@@ -408,7 +408,7 @@ pub fn NullCtx::set_member_at_path(Self, DispatchPath, String, Value) -> Unit
 pub fn NullCtx::set_property_at_path(Self, DispatchPath, String, Value) -> Unit
 pub fn NullCtx::stop_propagation(Self) -> Unit
 pub fn NullCtx::target_path(Self) -> DispatchPath
-pub fn NullCtx::walk_path(Self, (Int, Value) -> Bool) -> Unit
+pub fn NullCtx::walk_path(Self, (Int32, Value) -> Bool) -> Unit
 pub impl Ctx for NullCtx
 
 pub(all) struct NullStack {
@@ -425,7 +425,7 @@ pub impl Stack for NullStack
 
 pub(all) struct ObjId {
   origin : UInt64
-  rev : Int
+  rev : Int32
 } derive(Eq, @debug.Debug)
 pub fn ObjId::equal(Self, Self) -> Bool
 pub fn ObjId::next(Self) -> Self
@@ -470,7 +470,7 @@ pub(all) struct Path {
 pub fn Path::concat(Self, Array[Step]) -> Self
 pub fn Path::equal(Self, Self) -> Bool
 pub fn Path::field(Self, String) -> Self
-pub fn Path::index(Self, String, Int) -> Self
+pub fn Path::index(Self, String, Int32) -> Self
 pub fn Path::key(Self, String, String) -> Self
 pub fn Path::lookup(Self, Value) -> Value?
 pub fn Path::new(steps? : Array[Step]) -> Self
@@ -493,7 +493,7 @@ pub struct PathChanges {
 }
 pub fn PathChanges::build_path(Self) -> DispatchPath
 pub fn PathChanges::field(Self, String) -> Self
-pub fn PathChanges::index(Self, String, Int) -> Self
+pub fn PathChanges::index(Self, String, Int32) -> Self
 pub fn PathChanges::intent(Self, String, Array[Value], opts? : IntentOpts) -> Unit
 pub fn PathChanges::key(Self, String, String) -> Self
 pub fn PathChanges::send(Self, String, Array[Value]) -> Unit
@@ -501,7 +501,7 @@ pub fn PathChanges::set(Self, String, Value) -> Unit
 pub fn PathChanges::set_property(Self, String, Value) -> Unit
 
 pub(all) enum PathKey {
-  KInt(Int)
+  KInt(Int32)
   KStr(String)
 } derive(Eq, @debug.Debug)
 pub fn PathKey::equal(Self, Self) -> Bool
@@ -726,8 +726,8 @@ pub fn SchemaInfo::new(name? : String, fingerprint~ : String, fields? : Array[Fi
 pub fn SchemaInfo::shape_fingerprint(Self) -> String
 
 pub(all) struct Span {
-  start : Int
-  end_ : Int
+  start : Int32
+  end_ : Int32
 } derive(Eq, @debug.Debug)
 pub fn Span::equal(Self, Self) -> Bool
 pub fn Span::not_equal(Self, Self) -> Bool
@@ -766,7 +766,7 @@ pub impl @debug.Debug for TplPart
 #alias(TyInfo)
 pub(all) enum Ty {
   TyBool
-  TyInt(width~ : Int, signed~ : Bool)
+  TyInt(width~ : Int32, signed~ : Bool)
   TyFloat
   TyText
   TyList(Ty)
@@ -817,7 +817,7 @@ pub(all) enum Value {
   Int(Int64)
   Str(String)
   Bin(Bytes)
-  Instant(secs~ : Int64, nanos~ : Int)
+  Instant(secs~ : Int64, nanos~ : Int32)
   List(Array[Value])
   Map(Map[String, Value])
   Fn((Array[Value]) -> Value)
@@ -841,9 +841,9 @@ pub fn Value::from_component_json(Json, &ComponentSource) -> Self?
 pub fn Value::from_json(Json) -> Self
 pub fn Value::handler(Self, HandlerBucket, String) -> Handler?
 pub fn Value::identity(Self) -> ObjId?
-pub fn Value::index(Self, Int, default? : Self) -> Self
-pub fn Value::int(Self, default? : Int) -> Int
-pub fn Value::int_opt(Self) -> Int?
+pub fn Value::index(Self, Int32, default? : Self) -> Self
+pub fn Value::int(Self, default? : Int32) -> Int32
+pub fn Value::int_opt(Self) -> Int32?
 pub fn Value::is_truthy(Self) -> Bool
 pub fn Value::item(Self, PathKey, default? : Self) -> Self
 pub fn Value::item_opt(Self, PathKey) -> Self?
@@ -865,7 +865,7 @@ pub fn Value::schema(Self) -> SchemaInfo?
 pub fn Value::set_member(Self, String, Self) -> Outcome
 pub fn Value::set_property(Self, String, Self) -> Outcome
 pub fn Value::set_property_at(Self, Path, String, Self) -> Outcome
-pub fn Value::size(Self, default? : Int) -> Int
+pub fn Value::size(Self, default? : Int32) -> Int32
 pub fn Value::snapshot(Self) -> Map[String, Self]
 pub fn Value::str(Self, default? : String) -> String
 pub fn Value::str_opt(Self) -> String?
@@ -911,7 +911,7 @@ pub(open) trait Ctx {
   fn fail(Self, Value) -> Unit = _
   fn stop_propagation(Self) -> Unit = _
   fn at(Self) -> PathChanges = _
-  fn walk_path(Self, (Int, Value) -> Bool) -> Unit = _
+  fn walk_path(Self, (Int32, Value) -> Bool) -> Unit = _
 }
 
 pub(open) trait Fields {
@@ -921,7 +921,7 @@ pub(open) trait Fields {
 }
 
 pub(open) trait Obj {
-  fn component_id(Self) -> Int? = _
+  fn component_id(Self) -> Int32? = _
   fn field(Self, String) -> Value? = _
   fn with_field(Self, String, Value) -> Value? = _
   fn property(Self, String) -> Value? = _
@@ -937,7 +937,7 @@ pub(open) trait Obj {
   fn trigger_at(Self, String, &Stack) -> Value? = _
   fn handler(Self, HandlerBucket, String) -> Handler? = _
   fn schema(Self) -> SchemaInfo? = _
-  fn size(Self) -> Int? = _
+  fn size(Self) -> Int32? = _
   fn identity(Self) -> ObjId? = _
   fn eq(Self, &Obj) -> Bool = _
   fn debug(Self) -> String = _

@@ -8,7 +8,7 @@ import {
 }
 
 // Values
-pub const VERSION : Int = 1
+pub const VERSION : Int32 = 1
 
 pub fn cut_root(Json, Place) -> Json?
 
@@ -21,36 +21,36 @@ pub fn split_lines(String) -> (Array[String], Array[String]) raise TraceError
 // Errors
 pub suberror TraceError {
   NoHeader(String)
-  NotJson(line~ : Int, why~ : String)
-  NotATrace(line~ : Int)
-  BadVersion(line~ : Int, got~ : Int, want~ : Int)
-  NoRoot(line~ : Int)
-  LateHeader(line~ : Int)
-  NoOp(line~ : Int, keys~ : Array[String])
-  BadField(line~ : Int, key~ : String, want~ : String)
-  BadPlace(line~ : Int, why~ : String)
+  NotJson(line~ : Int32, why~ : String)
+  NotATrace(line~ : Int32)
+  BadVersion(line~ : Int32, got~ : Int32, want~ : Int32)
+  NoRoot(line~ : Int32)
+  LateHeader(line~ : Int32)
+  NoOp(line~ : Int32, keys~ : Array[String])
+  BadField(line~ : Int32, key~ : String, want~ : String)
+  BadPlace(line~ : Int32, why~ : String)
 }
 pub fn TraceError::message(Self) -> String
 
 // Types and methods
 pub(all) struct Event {
-  seq : Int
-  turn : Int
-  walk : Int
-  parent : Int
+  seq : Int32
+  turn : Int32
+  walk : Int32
+  parent : Int32
   at : Place
   op : Op
   input : Bool
   after : Json?
 } derive(Eq, @debug.Debug)
 pub fn Event::equal(Self, Self) -> Bool
-pub fn Event::from_json(Json, line~ : Int) -> Self raise TraceError
+pub fn Event::from_json(Json, line~ : Int32) -> Self raise TraceError
 pub fn Event::not_equal(Self, Self) -> Bool
 pub fn Event::to_json(Self) -> Json
 pub fn Event::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Gap {
-  UnansweredIntent(name~ : String, seq~ : Int)
+  UnansweredIntent(name~ : String, seq~ : Int32)
   UnprovidedName(name~ : String)
   NoDerivedStream
   NoSuchPlace(place~ : String)
@@ -64,8 +64,8 @@ pub fn Gap::to_repr(Self) -> @debug.Repr
 pub(all) enum Op {
   Send(name~ : String, args~ : Array[@core.Value])
   Intent(name~ : String, args~ : Array[@core.Value], opts~ : @core.IntentOpts)
-  Offered(name~ : String, args~ : Array[@core.Value], nth~ : Int)
-  Answer(nth~ : Int, answer~ : @core.IntentAnswer)
+  Offered(name~ : String, args~ : Array[@core.Value], nth~ : Int32)
+  Answer(nth~ : Int32, answer~ : @core.IntentAnswer)
   Refused(code~ : String, asked~ : String, rule~ : String, sentence~ : String)
 } derive(Eq, @debug.Debug)
 pub fn Op::equal(Self, Self) -> Bool
@@ -85,7 +85,7 @@ pub fn Origin::not_equal(Self, Self) -> Bool
 pub fn Origin::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Place(Array[@core.StepKey]) derive(Eq, @debug.Debug)
-pub fn Place::depth(Self) -> Int
+pub fn Place::depth(Self) -> Int32
 pub fn Place::equal(Self, Self) -> Bool
 pub fn Place::from_json(Json) -> Self?
 pub fn Place::label(Self) -> String
@@ -102,7 +102,7 @@ pub fn Place::under(Self, Self) -> Self
 pub struct RingRecorder {
   // private fields
 }
-pub fn RingRecorder::new(turns~ : Int, snapshot~ : () -> Json, origin? : Origin, keep_after? : Bool) -> Self
+pub fn RingRecorder::new(turns~ : Int32, snapshot~ : () -> Json, origin? : Origin, keep_after? : Bool) -> Self
 pub fn RingRecorder::on_answer(Self, @transactor.Answered) -> Unit
 pub fn RingRecorder::on_dispatch(Self, @transactor.Dispatched) -> Unit
 pub fn RingRecorder::on_observed(Self, @transactor.ObserveRecord) -> Unit
@@ -124,7 +124,7 @@ pub fn ScopedRecorder::take(Self) -> Trace
 pub impl @transactor.Recorder for ScopedRecorder
 
 pub(all) struct Trace {
-  version : Int
+  version : Int32
   origin : Origin
   root : Json
   relocated_from : Array[Place]
@@ -134,17 +134,17 @@ pub(all) struct Trace {
 pub fn Trace::compact(Self) -> Self
 pub fn Trace::equal(Self, Self) -> Bool
 pub fn Trace::from_json(Json) -> Self raise TraceError
-pub fn Trace::input_count(Self) -> Int
+pub fn Trace::input_count(Self) -> Int32
 pub fn Trace::new(root~ : Json, origin? : Origin) -> Self
 pub fn Trace::not_equal(Self, Self) -> Bool
 pub fn Trace::places(Self) -> Array[Place]
-pub fn Trace::prefix(Self, Int) -> Self
-pub fn Trace::rebase(Self, at~ : Int, root~ : Json) -> Self
+pub fn Trace::prefix(Self, Int32) -> Self
+pub fn Trace::rebase(Self, at~ : Int32, root~ : Json) -> Self
 pub fn Trace::relocate(Self, Place) -> (Self, Array[Gap])
 pub fn Trace::to_json(Self) -> Json
 pub fn Trace::to_jsonl(Self) -> String
 pub fn Trace::to_repr(Self) -> @debug.Repr
-pub fn Trace::turn_boundary(Self, Int) -> Int
+pub fn Trace::turn_boundary(Self, Int32) -> Int32
 pub fn Trace::turns(Self) -> Array[Array[Event]]
 
 pub struct TraceRecorder {

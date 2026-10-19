@@ -9,35 +9,35 @@ import {
 }
 
 // Values
-pub const MAX_DEPTH : Int = 3
+pub const MAX_DEPTH : Int32 = 3
 
-pub fn dispatch_of(@statedef.StateDef, bucket? : Bucket, depth? : Int) -> @quickcheck.Generator[@core.Dispatch]?
+pub fn dispatch_of(@statedef.StateDef, bucket? : Bucket, depth? : Int32) -> @quickcheck.Generator[@core.Dispatch]?
 
 pub fn domain_deps(@core.Domain) -> Array[String]
 
-pub fn field_value_of(@statedef.StateDef, String, depth? : Int, state? : Map[String, @core.Value]) -> @quickcheck.Generator[@core.Value]?
+pub fn field_value_of(@statedef.StateDef, String, depth? : Int32, state? : Map[String, @core.Value]) -> @quickcheck.Generator[@core.Value]?
 
 pub fn implied_domains(Array[@core.FieldDomain], String) -> Array[@core.Domain]
 
-pub fn mutator_args(@statedef.StateDef, depth? : Int, state? : Map[String, @core.Value]) -> Map[String, @quickcheck.Generator[Array[@core.Value]]]
+pub fn mutator_args(@statedef.StateDef, depth? : Int32, state? : Map[String, @core.Value]) -> Map[String, @quickcheck.Generator[Array[@core.Value]]]
 
-pub fn property_write_of(@statedef.StateDef, depth? : Int, state? : Map[String, @core.Value]) -> @quickcheck.Generator[(String, @core.Value)]?
+pub fn property_write_of(@statedef.StateDef, depth? : Int32, state? : Map[String, @core.Value]) -> @quickcheck.Generator[(String, @core.Value)]?
 
-pub fn protocol_dispatch_of(@statedef.StateDef, String, depth? : Int) -> @quickcheck.Generator[@core.Dispatch]?
+pub fn protocol_dispatch_of(@statedef.StateDef, String, depth? : Int32) -> @quickcheck.Generator[@core.Dispatch]?
 
 pub fn rules_of(@statedef.StateDef) -> Rules
 
-pub fn script_of(@statedef.StateDef, bucket? : Bucket, len? : @quickcheck.Generator[Int], depth? : Int) -> @quickcheck.Generator[Array[@core.Dispatch]]?
+pub fn script_of(@statedef.StateDef, bucket? : Bucket, len? : @quickcheck.Generator[Int32], depth? : Int32) -> @quickcheck.Generator[Array[@core.Dispatch]]?
 
 pub fn shrink_script(Array[@core.Dispatch]) -> Iter[Array[@core.Dispatch]]
 
-pub fn size_in_domain(Array[@core.Domain], Map[String, @core.Value]) -> @quickcheck.Generator[Int]?
+pub fn size_in_domain(Array[@core.Domain], Map[String, @core.Value]) -> @quickcheck.Generator[Int32]?
 
-pub fn state_of(@statedef.StateDef, depth? : Int) -> @quickcheck.Generator[Map[String, @core.Value]]
+pub fn state_of(@statedef.StateDef, depth? : Int32) -> @quickcheck.Generator[Map[String, @core.Value]]
 
 pub fn value_in_domain(@core.Domain, Map[String, @core.Value]) -> @quickcheck.Generator[@core.Value]?
 
-pub fn value_of(@statedef.StateDef, @core.Ty, depth? : Int) -> @quickcheck.Generator[@core.Value]
+pub fn value_of(@statedef.StateDef, @core.Ty, depth? : Int32) -> @quickcheck.Generator[@core.Value]
 
 // Errors
 

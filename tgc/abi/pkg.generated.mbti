@@ -7,7 +7,7 @@ import {
 }
 
 // Values
-pub const ABI_VERSION : Int = 2
+pub const ABI_VERSION : Int32 = 2
 
 pub fn all_ops() -> Array[Op]
 
@@ -67,14 +67,14 @@ pub(all) enum Op {
   OpIdentity
   OpDebug
 } derive(Compare, Eq, Hash, @debug.Debug)
-pub fn Op::code(Self) -> Int
-pub fn Op::compare(Self, Self) -> Int
+pub fn Op::code(Self) -> Int32
+pub fn Op::compare(Self, Self) -> Int32
 pub fn Op::equal(Self, Self) -> Bool
-pub fn Op::hash(Self) -> Int
+pub fn Op::hash(Self) -> Int32
 pub fn Op::hash_combine(Self, Hasher) -> Unit
 pub fn Op::name(Self) -> String
 pub fn Op::not_equal(Self, Self) -> Bool
-pub fn Op::of_code(Int) -> Self?
+pub fn Op::of_code(Int32) -> Self?
 pub fn Op::op_ge(Self, Self) -> Bool
 pub fn Op::op_gt(Self, Self) -> Bool
 pub fn Op::op_le(Self, Self) -> Bool
@@ -103,13 +103,13 @@ pub(all) enum Tag {
   TagComp
   TagExt
 } derive(Compare, Eq, Hash, @debug.Debug)
-pub fn Tag::code(Self) -> Int
-pub fn Tag::compare(Self, Self) -> Int
+pub fn Tag::code(Self) -> Int32
+pub fn Tag::compare(Self, Self) -> Int32
 pub fn Tag::equal(Self, Self) -> Bool
-pub fn Tag::hash(Self) -> Int
+pub fn Tag::hash(Self) -> Int32
 pub fn Tag::hash_combine(Self, Hasher) -> Unit
 pub fn Tag::not_equal(Self, Self) -> Bool
-pub fn Tag::of_code(Int) -> Self?
+pub fn Tag::of_code(Int32) -> Self?
 pub fn Tag::op_ge(Self, Self) -> Bool
 pub fn Tag::op_gt(Self, Self) -> Bool
 pub fn Tag::op_le(Self, Self) -> Bool

@@ -54,7 +54,7 @@ pub fn Catalog::all(Self) -> Array[Entry]
 pub fn Catalog::find(Self, String, module_? : String) -> Entry?
 pub fn Catalog::forget(Self, String) -> Unit
 pub fn Catalog::new() -> Self
-pub fn Catalog::search(Self, String, limit? : Int) -> Array[Hit]
+pub fn Catalog::search(Self, String, limit? : Int32) -> Array[Hit]
 
 pub(all) struct ComponentRef {
   module_ : String
@@ -100,7 +100,7 @@ pub fn FieldInfo::to_repr(Self) -> @debug.Repr
 pub(all) struct Hit {
   entry : Entry
   preset : String
-  score : Int
+  score : Int32
   why : Array[String]
 } derive(Eq, @debug.Debug)
 pub fn Hit::equal(Self, Self) -> Bool
@@ -113,7 +113,7 @@ pub(all) struct Preset {
   name : String
   doc : String
   args : Map[String, Json]
-  cells : Int
+  cells : Int32
 } derive(Eq, @debug.Debug)
 pub fn Preset::equal(Self, Self) -> Bool
 pub fn Preset::not_equal(Self, Self) -> Bool

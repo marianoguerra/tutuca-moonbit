@@ -37,11 +37,11 @@ pub fn const_str(String) -> @core.Expr
 
 pub fn dyn_attr(String, @core.Expr) -> AttrItem
 
-pub fn dyn_text(@core.Expr, id? : Int) -> ANode
+pub fn dyn_text(@core.Expr, id? : Int32) -> ANode
 
-pub fn each(Int, @core.Expr, ANode, when_val? : @core.Expr, loop_with_val? : @core.Expr, enrich_with_val? : @core.Expr, from_render_each? : Bool) -> ANode
+pub fn each(Int32, @core.Expr, ANode, when_val? : @core.Expr, loop_with_val? : @core.Expr, enrich_with_val? : @core.Expr, from_render_each? : Bool) -> ANode
 
-pub fn eid(Int) -> AttrItem
+pub fn eid(Int32) -> AttrItem
 
 pub fn events_of(Array[Array[NodeEvent]]) -> Array[NodeEvents]
 
@@ -49,7 +49,7 @@ pub fn frag(Array[ANode]) -> ANode
 
 pub fn h(String, Array[AttrItem], Array[ANode], ns? : Ns, bind? : BindData) -> ANode
 
-pub fn hide(@core.Expr, ANode, id? : Int) -> ANode
+pub fn hide(@core.Expr, ANode, id? : Int32) -> ANode
 
 pub fn if_attr(String, @core.Expr, then_val? : @core.Expr, else_val? : @core.Expr) -> AttrItem
 
@@ -57,21 +57,21 @@ pub fn methods_in_events(Array[NodeEvents]) -> Array[(String, String)]
 
 pub fn on(String, @core.Expr, args? : Array[@core.Expr], modifiers? : Array[String], binding? : BindCoercion, action? : @tscript.PropertyAction) -> NodeEvent
 
-pub fn parse_fragment(String) -> (@src.Document, Array[Int])
+pub fn parse_fragment(String) -> (@src.Document, Array[Int32])
 
-pub fn parse_fragment_svg(String) -> (@src.Document, Array[Int])
+pub fn parse_fragment_svg(String) -> (@src.Document, Array[Int32])
 
-pub fn push_view(@core.Expr, ANode, id? : Int) -> ANode
+pub fn push_view(@core.Expr, ANode, id? : Int32) -> ANode
 
 pub fn raw_html(val? : @core.Expr) -> AttrItem
 
-pub fn render(Int, @core.Expr, view? : @core.Expr) -> ANode
+pub fn render(Int32, @core.Expr, view? : @core.Expr) -> ANode
 
-pub fn render_it(Int, view? : @core.Expr) -> ANode
+pub fn render_it(Int32, view? : @core.Expr) -> ANode
 
 pub fn reset_property_action(String) -> @tscript.PropertyAction
 
-pub fn scope(Int, @core.Expr, ANode) -> ANode
+pub fn scope(Int32, @core.Expr, ANode) -> ANode
 
 pub fn set_inner_html(val? : @core.Expr) -> AttrItem
 
@@ -81,7 +81,7 @@ pub fn set_inner_svg(val? : @core.Expr) -> AttrItem
 
 pub fn set_property_action(String, @core.Expr) -> @tscript.PropertyAction
 
-pub fn show(@core.Expr, ANode, id? : Int) -> ANode
+pub fn show(@core.Expr, ANode, id? : Int32) -> ANode
 
 pub fn slot(String, ANode) -> ANode
 
@@ -158,7 +158,7 @@ pub(all) enum BindCoercion {
   BindPending
   BindString
   BindBool
-  BindInt(width~ : Int, signed~ : Bool)
+  BindInt(width~ : Int32, signed~ : Bool)
   BindDouble
 } derive(Eq, @debug.Debug)
 pub fn BindCoercion::equal(Self, Self) -> Bool
@@ -183,7 +183,7 @@ pub(all) struct DomData {
 pub fn DomData::to_repr(Self) -> @debug.Repr
 
 pub(all) struct EachData {
-  node_id : Int
+  node_id : Int32
   iter_info : IterInfo
   mut node : ANode
   mut from_render_each : Bool
@@ -244,7 +244,7 @@ pub fn NodeEvent::method_in_event(Self) -> String?
 pub fn NodeEvent::to_repr(Self) -> @debug.Repr
 
 pub(all) struct NodeEvents {
-  id : Int
+  id : Int32
   handlers : Array[NodeEvent]
 } derive(@debug.Debug)
 pub fn NodeEvents::to_repr(Self) -> @debug.Repr
@@ -285,20 +285,20 @@ pub fn ParseIssue::not_equal(Self, Self) -> Bool
 pub fn ParseIssue::to_repr(Self) -> @debug.Repr
 
 pub(all) struct RenderData {
-  node_id : Int
+  node_id : Int32
   val : @core.Expr
   view_val : @core.Expr?
 } derive(@debug.Debug)
 pub fn RenderData::to_repr(Self) -> @debug.Repr
 
 pub(all) struct RenderItData {
-  node_id : Int
+  node_id : Int32
   view_val : @core.Expr?
 } derive(@debug.Debug)
 pub fn RenderItData::to_repr(Self) -> @debug.Repr
 
 pub(all) struct RenderTextData {
-  node_id : Int?
+  node_id : Int32?
   val : @core.Expr
 } derive(@debug.Debug)
 pub fn RenderTextData::to_repr(Self) -> @debug.Repr
@@ -335,7 +335,7 @@ pub fn WarnHandler::on_parse_issue(Self, ParseIssue, String?) -> Unit
 pub impl ParseHandler for WarnHandler
 
 pub(all) struct WrapData {
-  node_id : Int?
+  node_id : Int32?
   val : @core.Expr
   mut node : ANode
 } derive(@debug.Debug)

@@ -10,15 +10,15 @@ import {
 }
 
 // Values
-pub fn line_of(String, Int) -> Int
+pub fn line_of(String, Int32) -> Int32
 
 // Errors
 
 // Types and methods
 pub(all) struct Block {
   text : String
-  offset : Int
-  line : Int
+  offset : Int32
+  line : Int32
 } derive(Eq, @debug.Debug)
 pub fn Block::equal(Self, Self) -> Bool
 pub fn Block::not_equal(Self, Self) -> Bool
@@ -27,7 +27,7 @@ pub fn Block::to_repr(Self) -> @debug.Repr
 pub(all) struct CompiledTree {
   root : @anode.ANode
   events : Array[@anode.NodeEvents]
-  bytes : Int
+  bytes : Int32
 }
 
 pub(all) struct MacroDef {
