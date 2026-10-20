@@ -30,3 +30,7 @@ skill/_snippets_check/
 # The stamp beside the compiler blob: what worker it is, written by
 # playground/build/fetch-compiler.mjs. Gitignored with the blob it describes.
 playground/vendor/moonc-web.json
+
+# Example apps are not published API; their generated interfaces stay local.
+# (Library packages DO track pkg.generated.mbti.)
+examples/**/pkg.generated.mbti
