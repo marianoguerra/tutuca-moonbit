@@ -94,6 +94,8 @@ pub extend MemNode with @vdom.DomNode::{
   remove_attribute,
   child_node_at,
   get_inner_html,
+  get_value,
+  get_checked,
   first_child,
   next_sibling,
   set_attribute,
@@ -119,6 +121,9 @@ pub extend MemNode with @vdom.DomNode::{
 pub impl @vdom.DomNode for MemNode with fn set_property(self, name, value) {
   if name == "throwingProp" {
     return false
+  }
+  if name is ("value" | "checked") {
+    self.value_sets += 1
   }
   if self.tag == "SELECT" && name == "value" {
     select_set_value(self, value)
@@ -154,4 +159,17 @@ fn select_set_value(sel : MemNode, value : @vdom.AttrValue) -> Unit {
     }
   }
   sel.props["value"] = Str(if found { target } else { "" })
+}
+
+///|
+pub impl @vdom.DomNode for MemNode with fn get_value(self) {
+  match self.props.get("value") {
+    Some(v) => v.to_attr_string()
+    None => ""
+  }
+}
+
+///|
+pub impl @vdom.DomNode for MemNode with fn get_checked(self) {
+  self.props.get("checked") is Some(Bool(true))
 }

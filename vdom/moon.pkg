@@ -1,5 +1,9 @@
 // Core virtual DOM: types, h(), diff/morph over the DomNode trait.
 // Backend-agnostic — no js-only code here.
 import {
+  "moonbitlang/core/string",
+}
+
+import {
   "moonbitlang/core/debug",
 } for "test"

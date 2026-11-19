@@ -33,6 +33,7 @@ pub struct MemNode {
   mut created_is : String? // `is` option passed at creation time
   mut dangerous_html : String?
   mut inner_html_sets : Int32 // counts real set_inner_html writes (skip test)
+  mut value_sets : Int32 // counts value/checked writes (skip test)
 }
 
 ///|
@@ -54,6 +55,7 @@ fn MemNode::make(
     created_is: None,
     dangerous_html: None,
     inner_html_sets: 0,
+    value_sets: 0,
   }
 }
 

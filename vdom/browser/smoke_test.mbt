@@ -158,3 +158,28 @@ test "browser: svg namespace and innerHTML" {
     content="<b>bold</b>",
   )
 }
+
+///|
+/// The morph compares an input against what the element holds now, which the
+/// user changes without a render (see `holds_value` in vdom/diff.mbt)
+test "browser: get_value and get_checked read the live element" {
+  let (c, o) = env()
+  let _ = @vdom.render(
+    @vdom.h("div", childs=[
+      @vdom.h("input", attrs={ "value": Str("a") }),
+      @vdom.h("input", attrs={ "type": Str("checkbox"), "checked": Bool(true) }),
+    ]),
+    c,
+    o,
+  )
+  let root = @vdom.DomNode::child_nodes(c)[0]
+  let text = @vdom.DomNode::child_nodes(root)[0]
+  let checkbox = @vdom.DomNode::child_nodes(root)[1]
+  inspect(@vdom.DomNode::get_value(text), content="a")
+  assert_true(@vdom.DomNode::get_checked(checkbox))
+  // as if the user typed and unchecked
+  text.as_any()._set("value", @core.any("ab"))
+  checkbox.as_any()._set("checked", @core.any(false))
+  inspect(@vdom.DomNode::get_value(text), content="ab")
+  assert_false(@vdom.DomNode::get_checked(checkbox))
+}

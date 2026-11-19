@@ -30,6 +30,38 @@ pub fn diff_props(
 }
 
 ///|
+/// Can the user change the element's `value` or `checked` without a render?
+fn[N : DomNode] is_user_editable(node : N) -> Bool {
+  node.tag_name() is ("INPUT" | "TEXTAREA" | "SELECT")
+}
+
+///|
+/// Does a user-editable element already hold `value`? The user edits it
+/// directly, so it can differ from the previous render, and writing a value it
+/// already holds is not a no-op: it resets the cursor, and a number input
+/// showing "1." reports its value as "1", so writing "1" drops the ".". A
+/// number compares numerically, so "1.50" holds 1.5, but "" never holds 0
+/// (React's rule for controlled inputs).
+fn[N : DomNode] holds_value(node : N, value : AttrValue) -> Bool {
+  if !is_user_editable(node) {
+    return false
+  }
+  let live = node.get_value()
+  match value {
+    Num(d) =>
+      live != "" &&
+      (@string.parse_double(live) catch { _ => return false }) == d
+    _ => live == value.to_attr_string()
+  }
+}
+
+///|
+/// Does a user-editable element already hold `checked`? As for `holds_value`.
+fn[N : DomNode] holds_checked(node : N, checked : Bool) -> Bool {
+  is_user_editable(node) && node.get_checked() == checked
+}
+
+///|
 /// Morph `dom_node` (currently rendering `source`) into `target`. Returns the
 /// node representing `target` — the same node patched in place when the kinds
 /// match, or a replacement created via `to_dom`.
@@ -79,13 +111,16 @@ fn[N : DomNode] morph_node(
         morph_children(dom_node, s.childs, t.childs, child_opts(t, ns, opts))
       }
       if value_diff is Some(v) {
-        apply_value_last(dom_node, v)
+        if !(v is Some(nv) && holds_value(dom_node, nv)) {
+          apply_value_last(dom_node, v)
+        }
       } else if s.tag == "SELECT" && t.attrs.get("value") is Some(v) {
         // For <select>, re-apply value even when not in the diff: changing
         // the <option> children can silently shift dom.value to "".
         apply_value_last(dom_node, Some(v))
       }
-      if checked_diff is Some(c) {
+      if checked_diff is Some(c) &&
+        !(c is Some(Bool(b)) && holds_checked(dom_node, b)) {
         set_prop(dom_node, "checked", c, false)
       }
       dom_node
