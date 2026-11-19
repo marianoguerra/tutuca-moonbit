@@ -23,7 +23,9 @@ pub fn WasmNode::create_element(Self, String, @vdom.Ns?, String?) -> Self
 pub fn WasmNode::create_fragment(Self) -> Self
 pub fn WasmNode::create_text(Self, String) -> Self
 pub fn WasmNode::first_child(Self) -> Self?
+pub fn WasmNode::get_checked(Self) -> Bool
 pub fn WasmNode::get_inner_html(Self) -> String
+pub fn WasmNode::get_value(Self) -> String
 pub fn WasmNode::has_property(Self, String) -> Bool
 pub fn WasmNode::insert_before(Self, Self, Self?) -> Unit
 pub fn WasmNode::is_same_node(Self, Self) -> Bool

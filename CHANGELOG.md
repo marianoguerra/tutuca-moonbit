@@ -6,6 +6,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### A morph leaves an edited input alone
+
+The user changes an input's `value`, and a checkbox's `checked`, without a
+render, so the element can hold something other than what the previous render
+said. A morph now compares the new render against the element before writing
+either, and skips the write when the element already holds it — the rule React
+and Preact follow for controlled inputs. Writing an equal value was not a
+no-op: it reset the cursor, and a number input showing "1." reports its value
+as "1", so re-rendering "1" deleted the ".".
+
+- `DomNode` gains `get_value` and `get_checked`, implemented by the browser,
+  wasm and memdom adapters. The morph only asks them of INPUT, TEXTAREA and
+  SELECT.
+- A number compares numerically, so a field showing "1.50" holds 1.5; a blank
+  field never holds 0.
+- memdom counts `value`/`checked` writes in `MemNode::value_sets`.
+
 ## [0.57.1] - 2026-10-19
 
 ### Building on moonc 0.10.16

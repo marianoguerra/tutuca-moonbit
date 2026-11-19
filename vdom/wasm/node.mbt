@@ -65,6 +65,8 @@ pub extend WasmNode with @vdom.DomNode::{
   remove_attribute,
   child_node_at,
   get_inner_html,
+  get_value,
+  get_checked,
   first_child,
   next_sibling,
   set_attribute,
@@ -192,6 +194,17 @@ pub impl @vdom.DomNode for WasmNode with fn set_inner_html(self, html) {
 ///|
 pub impl @vdom.DomNode for WasmNode with fn get_inner_html(self) {
   to_str(self.0._get("innerHTML"))
+}
+
+///|
+pub impl @vdom.DomNode for WasmNode with fn get_value(self) {
+  to_str(self.0._get("value"))
+}
+
+///|
+pub impl @vdom.DomNode for WasmNode with fn get_checked(self) {
+  // a JS boolean reads back through the string conversion
+  to_str(self.0._get("checked")) == "true"
 }
 
 ///|

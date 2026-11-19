@@ -93,6 +93,8 @@ pub extend BrowserNode with @vdom.DomNode::{
   remove_attribute,
   child_node_at,
   get_inner_html,
+  get_value,
+  get_checked,
   first_child,
   next_sibling,
   set_attribute,
@@ -217,6 +219,16 @@ pub impl @vdom.DomNode for BrowserNode with fn set_inner_html(self, html) {
 ///|
 pub impl @vdom.DomNode for BrowserNode with fn get_inner_html(self) {
   self.0._get("innerHTML").cast()
+}
+
+///|
+pub impl @vdom.DomNode for BrowserNode with fn get_value(self) {
+  self.0._get("value").cast()
+}
+
+///|
+pub impl @vdom.DomNode for BrowserNode with fn get_checked(self) {
+  self.0._get("checked").cast()
 }
 
 ///|

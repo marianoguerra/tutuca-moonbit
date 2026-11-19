@@ -7,6 +7,11 @@
 /// `is_same_node` is reference equality; adapters whose wrapper values are re-created
 /// per call must compare the underlying node, so the core never uses
 /// `physical_equal` on trait values.
+///
+/// `get_value` and `get_checked` read what the element holds now, which the
+/// user can change without a render: a morph compares against them rather
+/// than the previous render before writing `value` or `checked` (see
+/// `holds_value`). They are only asked of INPUT, TEXTAREA and SELECT.
 pub(open) trait DomNode {
   fn create_element(Self, tag : String, ns : Ns?, is_attr : String?) -> Self
   fn create_text(Self, String) -> Self
@@ -29,6 +34,8 @@ pub(open) trait DomNode {
   fn set_property(Self, name : String, value : AttrValue) -> Bool
   fn set_inner_html(Self, String) -> Unit
   fn get_inner_html(Self) -> String
+  fn get_value(Self) -> String // `node.value`
+  fn get_checked(Self) -> Bool // `node.checked`
   fn set_data(Self, String) -> Unit // text/comment character data
   fn tag_name(Self) -> String
   fn namespace_uri(Self) -> Ns? // None = HTML (adapters map null and the HTML ns)

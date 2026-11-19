@@ -37,6 +37,7 @@ pub struct MemNode {
   mut created_is : String?
   mut dangerous_html : String?
   mut inner_html_sets : Int32
+  mut value_sets : Int32
 }
 pub fn MemNode::append_child(Self, Self) -> Unit
 pub fn MemNode::attribute(Self, String) -> String?
@@ -50,8 +51,10 @@ pub fn MemNode::create_text(Self, String) -> Self
 pub fn MemNode::destroy_tree(Self) -> Unit
 pub fn MemNode::first_child(Self) -> Self?
 pub fn MemNode::get_attribute(Self, String) -> String?
+pub fn MemNode::get_checked(Self) -> Bool
 pub fn MemNode::get_inner_html(Self) -> String
 pub fn MemNode::get_property(Self, String) -> @vdom.AttrValue?
+pub fn MemNode::get_value(Self) -> String
 pub fn MemNode::has_property(Self, String) -> Bool
 pub fn MemNode::insert_before(Self, Self, Self?) -> Unit
 pub fn MemNode::is_same_node(Self, Self) -> Bool

@@ -119,6 +119,8 @@ pub(open) trait DomNode {
   fn set_property(Self, String, AttrValue) -> Bool
   fn set_inner_html(Self, String) -> Unit
   fn get_inner_html(Self) -> String
+  fn get_value(Self) -> String
+  fn get_checked(Self) -> Bool
   fn set_data(Self, String) -> Unit
   fn tag_name(Self) -> String
   fn namespace_uri(Self) -> Ns?
